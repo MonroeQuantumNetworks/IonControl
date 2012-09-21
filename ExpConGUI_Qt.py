@@ -356,6 +356,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
         else:
             self.PCon.parameter_set('CHECK_SWITCH', 0)
 
+        self.PCon.params.save_params("Params")
+        self.PCon.update_state()
+        coltree_Qt.save_state("State", self.PCon.state)
 
         self.timestamp = time.strftime('%Y%m%d_%H%M%S')
         if not os.path.isdir(dirname + self.timestamp + '/'):

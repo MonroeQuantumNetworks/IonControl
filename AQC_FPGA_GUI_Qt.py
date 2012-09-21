@@ -80,7 +80,7 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = '1725_Test_FPGA'#'AQC_1272_PP'#'Sandia_1725_PP'#'Spencer-FPGA'  #must match FPGA name Changed to Sandia_1725_PP CWC 07112012
+    _FPGA_name = 'AQC_1272_PP'#'1725_Test_FPGA'##'Sandia_1725_PP'#'Spencer-FPGA'  #must match FPGA name Changed to Sandia_1725_PP CWC 07112012
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
@@ -89,7 +89,7 @@ class gui(QtGui.QWidget):
     #for each output clock : (pll_index, )
     #_FPGA_PLL_outputData = {1: ()}
 
-    _FPGA_bitFile = 'fpgafirmware.bit'#'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
+    _FPGA_bitFile = 'fpgafirmware_DAC_busy_bypassed09212012.bit'#'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
     _checkOutputs = False #True
 
     #################################################################
