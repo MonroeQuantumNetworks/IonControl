@@ -13,13 +13,14 @@
 
 #define SHUTR_LOAD 13
 #define SHUTR_WAIT 10
-#define SHUTR_EXP_WAIT 8
 #define SHUTR_COOL 13
-#define SHUTR_OP 8
+#define SHUTR_OP 13
 #define SHUTR_DEPUMP 2
 #define	SHUTR_REPUMP 2
 #define SHUTR_DETECT 13
-#define	SHUTR_EXP   8
+#define	SHUTR_EXP   2
+#define SHUTR_EXP_WAIT 10
+#define SHUTR_EXP_WAIT_AFTER 10
 #define SHUTR_CHECK 13
 #define DAC_ch_MOT_coil 0
 #define DAC_ch_Repump 1
@@ -191,7 +192,10 @@ load: NOP
 	JMPZ     load
 	JMPNZ    wait
 
-wait: NOP
+wait: NOP 
+	DAC	 	 DAC_ch_MOT, V_MOT_comp 
+	DACUP 
+	DELAY	 us_comp_wait
 	SHUTR 	 SHUTR_WAIT
 	DDSFRQ	 DDS_ch_MOT, F_MOT_cool
 	DDSFRQ	 DDS_ch_REPUMP, F_REPUMP_cool
@@ -251,7 +255,7 @@ OPump: NOP
 	JMPZ	 Exp
 	DDSFRQ	 DDS_ch_REPUMP, F_REPUMP_op
 	DDSFRQ	 DDS_ch_OP, F_OP_op
-	DAC		 DAC_ch_MOT_coil, V_MOT_op
+	DAC		 DAC_ch_MOT, V_MOT_op
 	DAC		 DAC_ch_Repump, V_Repump_op
 	DAC		 DAC_ch_Bx, V_Bx_op
 	DAC		 DAC_ch_By, V_By_op
@@ -260,7 +264,7 @@ OPump: NOP
 	DACUP
 	SHUTR    SHUTR_OP
 	DELAY	 us_OP
-	SHUTR	 SHUTR_EXP
+	SHUTR	 SHUTR_EXP_WAIT
 	JMP		 Exp
 
 Exp: NOP
@@ -275,8 +279,8 @@ Exp: NOP
 	DAC		 DAC_ch_Bz, V_Bz_exp
 	DACUP
     SHUTR    SHUTR_EXP
-	DELAY	 us_EXP
-	SHUTR	 SHUTR_EXP_WAIT
+	DELAY	 us_EXP 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp
+	SHUTR	 SHUTR_EXP_WAIT_AFTER
 	DAC	 	 DAC_ch_MOT, V_MOT_Detect
 	DAC		 DAC_ch_Dipole, V_Dipole_Detect
 	DAC		 DAC_ch_Bx, V_Bx_Detect

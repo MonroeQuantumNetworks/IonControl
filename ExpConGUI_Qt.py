@@ -161,6 +161,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.scan_range_low_sb.setRange(-10, 10)
         self.scan_range_low_sb.setSingleStep(0.1)
         self.scan_range_low_sb.setValue(0)
+        self.scan_range_low_sb.setDecimals(3);
         hbox3.addWidget(self.range_low_label)
         hbox3.addWidget(self.scan_range_low_sb)
 
@@ -169,6 +170,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.scan_range_high_sb.setRange(-10, 10)
         self.scan_range_high_sb.setSingleStep(0.1)
         self.scan_range_high_sb.setValue(10)
+        self.scan_range_high_sb.setDecimals(3);
         hbox3.addWidget(self.range_high_label)
         hbox3.addWidget(self.scan_range_high_sb)
 
@@ -356,6 +358,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
         else:
             self.PCon.parameter_set('CHECK_SWITCH', 0)
 
+        self.PCon.params.save_params("Params")
+        self.PCon.update_state()
+        coltree_Qt.save_state("State", self.PCon.state)
 
         self.timestamp = time.strftime('%Y%m%d_%H%M%S')
         if not os.path.isdir(dirname + self.timestamp + '/'):
@@ -410,7 +415,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.text_to_write+=params_to_write
             self.text_to_write+=stateobj_to_write
             scan_vals = numpy.linspace(self.scan_range_low_sb.value(), self.scan_range_high_sb.value(),self.n_points_sb.value())
-            scan_vals = map(lambda x: float(round(1000*x)/1000), scan_vals)
+            scan_vals = map(lambda x: float(round(10000*x)/10000), scan_vals)
             self.plotdata[:,0]=scan_vals
             self.ind = {}
             for n in range(len(scan_vals)):
