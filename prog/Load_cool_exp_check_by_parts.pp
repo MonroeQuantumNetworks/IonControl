@@ -223,6 +223,7 @@ ini_sub_D_cooling: NOP
 	DAC		 DAC_ch_Bz, V_Bz_cool
 	DACUP
 	DDSFRQ	 DDS_ch_MOT, F_MOT_cool
+	DELAY	 us_cool_delay
 	SHUTR 	 SHUTR_COOL
 	CLRW
 	STWR     RAMPIND
