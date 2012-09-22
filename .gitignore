@@ -1,0 +1,9 @@
+# Compiled files
+*.pyc
+
+# Configuration files
+config.ddscon
+
+# Other system files
+*.swp
+*.swo
