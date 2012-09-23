@@ -1,0 +1,7 @@
+AQC_FPGA_GUI_QT
+
+	classes gui
+			indexed_spin_button
+
+	class gui
+		

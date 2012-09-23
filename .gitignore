@@ -3,7 +3,8 @@
 
 # Configuration files
 config.ddscon
-
-# Other system files
+*.vim
 *.swp
 *.swo
+-Mini*
+.this_s*
