@@ -1,6 +1,4 @@
-#TODO lbah
-print 2+2
-print "hello world"
-import os
+import numpy as np
 
-
+a = ['adblah']
+print range(1)

@@ -4,4 +4,10 @@ AQC_FPGA_GUI_QT
 			indexed_spin_button
 
 	class gui
+
+
+	Accessed classes
+		adBoard(self,xemObject,adType,index) 	# DDS hardware related?
+		adDAC(self,xemObject,dacType,index)		# DDS hardware related?
+			- setting analog outputs (*.setValue)
 		

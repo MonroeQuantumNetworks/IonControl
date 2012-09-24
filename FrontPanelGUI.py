@@ -38,6 +38,7 @@
 # follow the ubuntu 10.04 instructions
 
 #------------------------------------------------------------------------------
+#import pdb; pdb.set_trace()
 import sys
 import os
 import platform
@@ -50,8 +51,12 @@ if (operatingSystem == 'Windows'):
 elif (operatingSystem == 'Linux'):
     ok_path = 'Drivers/Linux/'
 sys.path.append(ok_path)
+
+# board specific imports
 import ok
-#import pdb; pdb.set_trace()
+#from adBoard import *
+#from adDAC import * #new module for DACs CWC 08132012
+from fpgaInit import * #new modules  CWC 07112012
 
 import gtk, gobject, pango, math
 import numpy
@@ -68,10 +73,7 @@ from matplotlib.axes import Subplot
 from matplotlib.axes import Axes
 
 from ppcomp import *
-from adBoard import *
-from fpgaInit import * #new modules  CWC 07112012
 
-from adDAC import * #new module for DACs CWC 08132012
 import ExpConGUI_Qt#09132012
 
 from PyQt4 import *
@@ -104,6 +106,7 @@ class gui(QtGui.QWidget):
     #'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
     _FPGA_bitFile = 'fpgafirmware_DAC_busy_bypassed09212012.bit'
     checkOutputs = False #True
+    _checkOutputs = False #True
     
     #################################################################
     # __init__
@@ -112,9 +115,11 @@ class gui(QtGui.QWidget):
     #################################################################
     def __init__(self):
         super(gui, self).__init__()
+
+        # TODO: move this code into FrontPanel.py
         #initialize FPGA
         self.xem = ok.FrontPanel()
-
+        
         #New CWC 07112012
         self.xem = fpgaInit(self._FPGA_name, 0, self._FPGA_bitFile)
         worked = self.xem.ConfigureFPGA('./FPGA/'+self._FPGA_bitFile)
@@ -129,16 +134,35 @@ class gui(QtGui.QWidget):
             for j in range(b.channelLimit):
                 self.boardChannelIndex.append((i, j))
 
-        #initialize AD DAC Boards New CWC 08132012
+        ##initialize AD DAC Boards New CWC 08132012
+        #self.dacs = []
+        #self.dacChannelIndex = [];
+        #for i in range(len(self._dacs)):
+        #    print 'Initializing DAC ' + self._dacs[i]
+        #    d = adDAC(self.xem, self._dacs[i], i)
+        #    d.initialize(self._checkOutputs)
+        #    self.dacs.append(d)
+        #    for j in range(d.channelLimit):
+        #        self.dacChannelIndex.append((i, j))
+
+        # Use when FPGA is absent
+        self.boards = []           # should be objects not numbers
+        self.boardChannelIndex = []
+
+        for i in range(1):          # one board
+            b = adBoard()
+            self.boards.append(b)
+            for j in range(0,1):
+                self.boardChannelIndex.append((i,j))
+
         self.dacs = []
-        self.dacChannelIndex = [];
-        for i in range(len(self._dacs)):
-            print 'Initializing DAC ' + self._dacs[i]
-            d = adDAC(self.xem, self._dacs[i], i)
-            d.initialize(self._checkOutputs)
+        self.dacChannelIndex = []
+        for i in range(0,3):
+            d = adDAC()
             self.dacs.append(d)
-            for j in range(d.channelLimit):
-                self.dacChannelIndex.append((i, j))
+            for j in range(0,1):
+                self.dacChannelIndex.append((i,j))
+
 
 
         #initialize GUI
@@ -148,16 +172,16 @@ class gui(QtGui.QWidget):
         self.stateobj = {}
         self.state = {}
         self.ExpConGUIstarted = False
-# removed DDS base freq. def. CWC 07112012
+
+        # removed DDS base freq. def. CWC 07112012
         vbox = QtGui.QVBoxLayout()
         hbox = QtGui.QHBoxLayout()
         self.setWindowTitle(self._FPGA_name+"contnroller")
 
-
         box = self.make_state_view()
         #stateframe.addWidget(box)
         progdef = self.make_progdef_view()
-        (controlbox1,controlbox2,controlbox3) = self.make_control_view()  #,controlbox4,controlbox5
+        (controlbox1,controlbox2,controlbox3) = self.make_control_view()
 
         self.figure = plt.figure() # define the Figure
         self.axis1 = self.figure.add_subplot(111)  # Add Plot to the figure
@@ -298,6 +322,7 @@ class gui(QtGui.QWidget):
         box4 = QtGui.QHBoxLayout()
         box5 = QtGui.QHBoxLayout()
         # buttons to run pulse sequencer
+        #
 
         button_plot_reset = QtGui.QPushButton("Reset Plot", self)
         box1.addWidget(button_plot_reset)
@@ -393,63 +418,6 @@ class gui(QtGui.QWidget):
             gtk.gdk.threads_leave()
         return rv
 
-#    def update_state(self):
-#        self.lock.acquire()
-#        try:
-#			#Commented CWC 04032012
-#            data = '\x00'*32
-#            self.xem.ReadFromPipeOut(0xA1, data)
-#
-#            if ((data[:2] != '\xED\xFE') or (data[-2:] != '\xED\x0F')):
-#                print "Bad data string: ", map(ord, data)
-#                return True
-#
-#            data = map(ord, data[2:-2])
-#
-#            #Decode
-#            active =  bool(data[1] & 0x80)
-#            self.state['pp_PC'] = ((data[1] & 0xF)<<8) + data[0]
-#            self.state['pp_W'] = (data[3]<<8) + data[2]
-#            self.state['pp_DATA'] = (data[6]<<16) + (data[5]<<8) + data[4]
-#            self.state['pp_CMD'] = data[7]
-#            for i in range(len(self.boardChannelIndex)):
-#                self.state['DDS%i_FRQ'%i] = self.boards(i).freqLimit*((data[11]<<24) + (data[10]<<16) + (data[9]<<8) + data[8])
-                #self.state['DDS1_FRQ'] = self.dds_base_freq*((data[15]<<24) + (data[14]<<16) + (data[13]<<8) + data[12])
-                #self.state['DDS2_FRQ'] = self.dds_base_freq*((data[19]<<24) + (data[18]<<16) + (data[17]<<8) + data[16])
-#            self.state['DDS0_AMP'] = data[20]&0x3F
-#            self.state['DDS1_AMP'] = ((data[21]&0xF)<<2) + (data[20]>>6)
-#            self.state['DDS2_AMP'] = ((data[22]&0x3)<<4) + (data[21]>>4)
-#            self.state['DDS0_PHS'] = (data[23]<<6) + (data[22]>>2)
-#            self.state['DDS1_PHS'] = ((data[25]&0x3F)<<8) + (data[24])
-#            self.state['DDS2_PHS'] = ((data[27]&0xF)<<10) + (data[26]<<6) + (data[25]>>6)
-#            self.state['SHUTR'] = data[27]>>4
-#
-#            # Display
-#            self.stateobj['PC'].set_label('%d'%self.state['pp_PC'])
-#            self.stateobj['CMD'].set_label('%d'%self.state['pp_CMD'])
-#            self.stateobj['DATA'].set_label('%d'%self.state['pp_DATA'])
-#            self.stateobj['W'].set_label('%d'%self.state['pp_W'])
-#
-#            for key in self.state:
-#                if not self.stateobj.has_key(key):
-#                    continue
-#
-#                if ((self.state.has_key('pp_active') and self.state['pp_active']) or active):
-#                    self.stateobj[key][0].handler_block(self.stateobj[key][1])
-#                    self.stateobj[key][0].set_sensitive(False)
-#                    self.stateobj[key][0].set_value(self.state[key])
-#                    self.stateobj[key][0].handler_unblock(self.stateobj[key][1])
-#                else:
-#                    self.stateobj[key][0].set_sensitive(True)
-#
-#                    if (abs(self.stateobj[key][0].get_value() - self.state[key]) > 1e-6): #modified? 04042012
-#                        print "Inconsistent state of %s, actual value:"%(key), self.state[key], self.stateobj[key][0].get_value()
-#
-#            self.state['pp_active'] =  bool(data[1] & 0x80)
-#        finally:
-#            self.lock.release()
-#
-#        return True
 
     def update_state(self): #Only updating the state shown on the panel to self.state CWC 09012012
         for key in self.stateobj:
@@ -909,6 +877,41 @@ class indexed_spin_button(QtGui.QWidget):
         self.valchanged()
         return
 
+
+class adBoard:
+    """
+    Dummy adBoard class for when FPGA is not plugged in
+    DDS hardware related
+    """
+    def __init__(self):
+        self.freqLimit = 500
+        self.ampLimit = 1023
+        self.phaseLimit = 360
+        return
+
+    def _checkOutputs(self):
+        return
+    
+
+
+class adDAC:
+    """
+    Dummy adDAC class for when FPGA is not plugged in
+    DDS hardware related
+    """
+    def __init__(self):
+        self.amplitude = 0
+        self.frequency = 0
+        self.phase = 0
+        self.VoutLimit = 5
+        return
+
+    def _checkOutputs(self):
+        return
+
+    def setVout(self,Vout,chan,check):
+        return
+            
 def main():
     app = QtGui.QApplication(sys.argv)
     ex = gui()
