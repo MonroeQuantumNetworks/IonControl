@@ -118,21 +118,21 @@ class gui(QtGui.QWidget):
 
         # TODO: move this code into FrontPanel.py
         #initialize FPGA
-        self.xem = ok.FrontPanel()
+        #self.xem = ok.FrontPanel()
         
         #New CWC 07112012
-        self.xem = fpgaInit(self._FPGA_name, 0, self._FPGA_bitFile)
-        worked = self.xem.ConfigureFPGA('./FPGA/'+self._FPGA_bitFile)
-        print worked
-        self.boards = []
-        self.boardChannelIndex = [];
-        for i in range(len(self._boards)):
-            print 'Initializing board ' + self._boards[i]
-            b = adBoard(self.xem, self._boards[i], i)
-            b.initialize(self._checkOutputs)
-            self.boards.append(b)
-            for j in range(b.channelLimit):
-                self.boardChannelIndex.append((i, j))
+        #self.xem = fpgaInit(self._FPGA_name, 0, self._FPGA_bitFile)
+        #worked = self.xem.ConfigureFPGA('./FPGA/'+self._FPGA_bitFile)
+        #print worked
+        #self.boards = []
+        #self.boardChannelIndex = [];
+        #for i in range(len(self._boards)):
+        #    print 'Initializing board ' + self._boards[i]
+        #    b = adBoard(self.xem, self._boards[i], i)
+        #    b.initialize(self._checkOutputs)
+        #    self.boards.append(b)
+        #    for j in range(b.channelLimit):
+        #        self.boardChannelIndex.append((i, j))
 
         ##initialize AD DAC Boards New CWC 08132012
         #self.dacs = []
@@ -145,22 +145,22 @@ class gui(QtGui.QWidget):
         #    for j in range(d.channelLimit):
         #        self.dacChannelIndex.append((i, j))
 
-        # Use when FPGA is absent
+        ## Use when FPGA is absent
         self.boards = []           # should be objects not numbers
         self.boardChannelIndex = []
 
         for i in range(1):          # one board
             b = adBoard()
             self.boards.append(b)
-            for j in range(0,1):
+            for j in range(0,4):
                 self.boardChannelIndex.append((i,j))
 
         self.dacs = []
         self.dacChannelIndex = []
-        for i in range(0,3):
+        for i in range(1):
             d = adDAC()
             self.dacs.append(d)
-            for j in range(0,1):
+            for j in range(0,16):
                 self.dacChannelIndex.append((i,j))
 
 
@@ -455,15 +455,17 @@ class gui(QtGui.QWidget):
         self.boards[board].setPhase(phase, chan, self._checkOutputs)
         return True
 
+    # TODO: move to frontpanel class
+    #def shutter_changed(self):#, widget, data=None):
+    #    widget = self.sender()
+    #    shutter = int(max(0, widget.value()))
+    #    self.xem.SetWireInValue(0x00, shutter<<12, 0xF000)    # address, value, mask
+    #    self.xem.SetWireInValue(0x04, shutter>>4, 0x00FF)
+    #    self.xem.UpdateWireIns()
+    #    self.xem.ActivateTriggerIn(0x40, 1) #Added by CWC 07132012
+    #    print "Setting shutter to %d"%(shutter)
+    #    return True
     def shutter_changed(self):#, widget, data=None):
-        widget = self.sender()
-        shutter = int(max(0, widget.value()))
-        self.xem.SetWireInValue(0x00, shutter<<12, 0xF000)    # address, value, mask
-        self.xem.SetWireInValue(0x04, shutter>>4, 0x00FF)
-        self.xem.UpdateWireIns()
-        self.xem.ActivateTriggerIn(0x40, 1) #Added by CWC 07132012
-        print "Setting shutter to %d"%(shutter)
-
         return True
 
     def Vout_changed(self, data = None):#, widget, data = None):
@@ -582,10 +584,12 @@ class gui(QtGui.QWidget):
         t4 = time.time()
         #print "pp compile time %fs"%(t4 - t3)
         t1 = time.time()
-        self.xem.SetWireInValue(0x00, 0, 0x0FFF)	# start addr at zero
-        self.xem.UpdateWireIns()
-        self.xem.ActivateTriggerIn(0x41, 1)
-        self.xem.WriteToPipeIn(0x80, databuf)
+
+        # TODO: move to FrontPanel() class
+        #self.xem.SetWireInValue(0x00, 0, 0x0FFF)	# start addr at zero
+        #self.xem.UpdateWireIns()
+        #self.xem.ActivateTriggerIn(0x41, 1)
+        #self.xem.WriteToPipeIn(0x80, databuf)
         t2 = time.time()
         print "Upload successful in time %fs"%(t2 - t1)
         return True
@@ -884,15 +888,31 @@ class adBoard:
     DDS hardware related
     """
     def __init__(self):
+        #self._xem = xemObject
+        self.board = 'adType_blah'
+        self.boardIndex = 0
         self.freqLimit = 500
-        self.ampLimit = 1023
+        self.halfClockLimit = 250
         self.phaseLimit = 360
+        self.ampLimit = 1023
+        self.channelLimit = 4
+        self.boardID = 0
         return
 
     def _checkOutputs(self):
         return
-    
 
+    def setAmplitude(self, amp, chan, check):
+        return
+    
+    def setFrequency(self, freq, chan, check):
+        return
+
+    def setPhase(self, phs, chan, check):
+        return
+
+    def addCMD(self,chan):
+        return 1
 
 class adDAC:
     """

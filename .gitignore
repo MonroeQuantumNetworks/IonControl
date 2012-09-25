@@ -2,7 +2,7 @@
 *.pyc
 
 # Configuration files
-config.ddscon
+config.*
 *.vim
 *.swp
 *.swo
