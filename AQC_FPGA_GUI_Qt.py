@@ -288,7 +288,7 @@ class gui(QtGui.QWidget):
 
         for key in sorted(defs.iterkeys()):#defs:
             self.params.add_row(key, defs[key])
-        for i in range(len(defs), 80):
+        for i in range(len(defs), 200):
             self.params.add_row('<PARAM%d>'%(i), 0)
 
 ##        self.params.restore_state('Params')
@@ -342,7 +342,7 @@ class gui(QtGui.QWidget):
         box3.addWidget(Filename_label)
 
         self.Filename_entry=QtGui.QLineEdit()
-        self.Filename_entry.setText("Load_cool_exp_check_by_parts.pp")
+        self.Filename_entry.setText("Load_cool_exp_check_by_parts_table_GUI.pp")
         box3.addWidget(self.Filename_entry)
 
         button_quit= QtGui.QPushButton("Quit", self)
