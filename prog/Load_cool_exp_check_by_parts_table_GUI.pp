@@ -151,7 +151,7 @@ sub_D_cooling: NOP	#Ramp MOT beam freq. and power.
 	INC		 RAMPIND
 	STWR	 RAMPIND
 	CMP	 	 RAMPTOT
-	JMPNZ    OPump
+	JMPNZ    wait2
 	DDSFRQ	 DDS_ch_MOT, F_MOT
 	DAC	 	 DAC_ch_MOT, V_MOT
 	DACUP
@@ -185,9 +185,8 @@ OPump: NOP
 	DAC		 DAC_ch_OP, V_OP_op
 	DACUP
 	SHUTRVAR SHUTR_op
-	DELAY	 us_Time_op
-	SHUTR	 SHUTR_EXP_WAIT
-	JMP		 Exp
+	DELAY	 us_Time_op 	#SHUTR	 SHUTR_EXP_WAIT
+	JMP		 wait3
 
 wait3: NOP
 	LDWR	 WAIT3_SWITCH
@@ -219,7 +218,6 @@ Exp: NOP
 	DACUP
     SHUTRVAR SHUTR_exp
 	DELAY	 us_Time_exp 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp
-	SHUTR	 SHUTR_EXP_WAIT_AFTER
 	
 wait4: NOP
 	LDWR	 WAIT4_SWITCH
@@ -247,7 +245,7 @@ Detect: NOP
 	SHUTRVAR SHUTR_detect
 
 	COUNT    us_Time_detect
-	SHUTR	 SHUTR_EXP_WAIT
+
 	STWR     DETECTCOUNT
 
 	CMP		 CHECKTHOLD
@@ -255,7 +253,8 @@ Detect: NOP
 	JMPNZ	 save_data
 
 save_data: NOP
-	DAC	 	DAC_ch_MOT, V_MOT_wait5 # changed from V_MOT_exp_end CWC 09262012
+	SHUTRVAR	SHUTR_wait5
+	DAC	 		DAC_ch_MOT, V_MOT_wait5 # changed from V_MOT_exp_end CWC 09262012
 	DACUP
 	DELAY 	us_Time_wait5
 	INC 	atomReuse		# v
@@ -282,8 +281,6 @@ ini_check: NOP
 	JMPZ	 save_data
 	CLRW
 	STWR     CHECKIND
-	SHUTR	 SHUTR_REPUMP
-	DELAY	 ms_Repump
 	SHUTRVAR SHUTR_wait5
 	DAC	 	 DAC_ch_MOT, V_MOT_check
 	DAC		 DAC_ch_Dipole, V_Dipole_check

@@ -74,7 +74,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.t1 = time.time()
         self.scan_types =['Continuous','Frequency','Time','Voltage']
         self.text_to_write = ''
-        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_': 6, 'SHUTR_Raman_': 4, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_': 5, 'SHUTR_MOTradial_': 2} #Define the TTL channels
+        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_': 6, 'SHUTR_Raman_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_': 4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
         #self.index = 0
 
 
@@ -392,7 +392,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
         self.v_sb_labels = ['Duration (us)','MOT coils', 'Repump detuning', 'MOT power', 'MOT detuning', 'Dipole power', 'Bx', 'By', 'Bz']
         self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_Repump_', 'V_MOT_', 'F_MOT_', 'V_Dipole_', 'V_Bx_', 'V_By_', 'V_Bz_']
-        self.v_tb_labels = ['MOT', 'Repump', 'uWave', 'Raman', 'Dipole', 'MOT P servo', 'MOT radial']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL6)', 'Raman (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
         self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_Raman_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
 
         for i in range(len(self.h_labels)):
