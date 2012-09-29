@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
-import pango, math
+#import pango, math
 import numpy
 import threading,  time
 ##import matplotlib

@@ -50,6 +50,8 @@ if (operatingSystem == 'Windows'):
     ok_path = 'Drivers/Windows/'
 elif (operatingSystem == 'Linux'):
     ok_path = 'Drivers/Linux/'
+elif (operatingSystem == 'Darwin'):
+    ok_path = 'Drivers/Darwin/' 
 sys.path.append(ok_path)
 
 # board specific imports
@@ -58,7 +60,9 @@ import ok
 #from adDAC import * #new module for DACs CWC 08132012
 from fpgaInit import * #new modules  CWC 07112012
 
-import gtk, gobject, pango, math
+#import gtk, gobject, pango, math
+#import pango, math
+import math
 import numpy
 import threading, socket, time
 import coltree_Qt, etherplug

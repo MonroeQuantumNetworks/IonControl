@@ -2,9 +2,11 @@
 *.pyc
 
 # Configuration files
-config.*
 *.vim
 *.swp
 *.swo
 -Mini*
 .this_s*
+.DS_Store
+__pycache__/*
+__pycache__
