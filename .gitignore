@@ -2,7 +2,6 @@
 *.pyc
 
 # Configuration files
-*.vim
 *.swp
 *.swo
 -Mini*
@@ -10,3 +9,4 @@
 .DS_Store
 __pycache__/*
 __pycache__
+.gitignore.*

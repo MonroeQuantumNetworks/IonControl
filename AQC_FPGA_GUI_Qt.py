@@ -1,6 +1,10 @@
 #!/usr/bin/python2.7
-# GaTech PP Gui (a modification of MIT PP Gui with collaboration from Sandia
-# National Labs).  Craig R. Clark March 3-23-2012 C. Spencer Nichols 5-31-2012
+# GaTech PP Gui (a modification of MIT PP Gui with collaboration
+#                from Sandia National Labs).
+# Craig R. Clark
+# March 3-23-2012
+# C. Spencer Nichols
+# 5-31-2012
 #------------------------------------------------------------------------------------------------------------------------------------------
 # Install Requirments
 
@@ -20,8 +24,8 @@
 #   (file--matplotlib-1.1.0.win32-py2.7.exe) 
 # need to instal Opal Kelly Software # to have appropriate python API
 
-#Other Requirments --- #Make sure the FPGA id is correct on line 719, 721 and
-# 722.  This can be changed via the Front Panel Softwarw provided by Opal Kelly
+#Other Requirments ---
+#Make sure the FPGA id is correct on line 719, 721 and 722.  This can be changed via the Front Panel Softwarw provided by Opal Kelly
 
 #UBUNTU 10.04
 # - ubuntu comes with python 2.6 with the following packages: - os, gobject,
@@ -60,10 +64,8 @@ import coltree_Qt, etherplug
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
-#from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as
-#        FigureCanvas
-from matplotlib.backends.backend_qt4agg import\
-        FigureCanvasQTAgg as FigureCanvas
+#from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.axes import Subplot
 from matplotlib.axes import Axes
 
@@ -91,18 +93,13 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    #
-    # 1725_Test_FPGA'##'Sandia_1725_PP'#'Spencer-FPGA'  #must match FPGA name l
-    # Changed to Sandia_1725_PP CWC 07112012
-    #
-    # TODO: move to fpga front panel class
-    _FPGA_name = 'AQC_1272_PP'
+    _FPGA_name = '1725_Test_FPGA'# AQC_1272_PP
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
     # TODO: Move to fpga front panel class 
     #'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
-    _FPGA_bitFile = 'fpgafirmware_DAC_busy_bypassed09212012.bit'
+    _FPGA_bitFile = 'fpgafirmware.bit'
     checkOutputs = False #True
     
     #################################################################
@@ -285,7 +282,7 @@ class gui(QtGui.QWidget):
 
         for key in sorted(defs.iterkeys()):#defs:
             self.params.add_row(key, defs[key])
-        for i in range(len(defs), 80):
+        for i in range(len(defs), 200):
             self.params.add_row('<PARAM%d>'%(i), 0)
 
         box.addWidget(self.params.table)
@@ -327,7 +324,7 @@ class gui(QtGui.QWidget):
         box3.addWidget(Filename_label)
 
         self.Filename_entry=QtGui.QLineEdit()
-        self.Filename_entry.setText("Load_cool_exp_check_by_parts.pp")
+        self.Filename_entry.setText("Load_cool_exp_check_by_parts_table_GUI.pp")
         box3.addWidget(self.Filename_entry)
 
         button_quit= QtGui.QPushButton("Quit", self)
