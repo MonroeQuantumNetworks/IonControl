@@ -1,10 +1,10 @@
 Params:tree:CHECKREP:1:4.0
 Params:tree:CHECKTHOLD:1:4.0
-Params:tree:CHECK_SWITCH:1:1.0
+Params:tree:CHECK_SWITCH:1:0.0
 Params:tree:COOL_SWITCH:1:1.0
-Params:tree:EXP_SWITCH:1:0.0
+Params:tree:EXP_SWITCH:1:1.0
 Params:tree:FMOT_wait6:1:89
-Params:tree:F_INC:1:0.04
+Params:tree:F_INC:1:0.09
 Params:tree:F_MOT_check:1:88.9
 Params:tree:F_MOT_cool:1:91.0
 Params:tree:F_MOT_detect:1:88.9
@@ -33,7 +33,7 @@ Params:tree:F_Repump_wait6:1:7.369
 Params:tree:F_uWave_exp:1:7.4
 Params:tree:LOADREP:1:8000.0
 Params:tree:LOADTHOLD:1:6.0
-Params:tree:LOAD_SWITCH:1:1.0
+Params:tree:LOAD_SWITCH:1:0.0
 Params:tree:OP_SWITCH:1:1.0
 Params:tree:RAMPTOT:1:100.0
 Params:tree:SHUTR_TEST:1:15

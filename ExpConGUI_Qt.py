@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
-import pango, math
+#import pango, math
 import numpy
 import threading,  time
 ##import matplotlib
@@ -34,7 +34,8 @@ import coltree_Qt
 from PyQt4 import QtGui, QtCore
 import shutil
 
-dirname = 'C:/Data/'
+#dirname = 'C:/Data/'
+dirname = '/Users/ahankin/Research/Data/'
 
 
 
@@ -48,33 +49,29 @@ dirname = 'C:/Data/'
 class ExpConGUI_Qt(QtGui.QWidget):
     def __init__(self,driver,file):#):#
         super(ExpConGUI_Qt, self).__init__()
-        #self.lock = threading.Lock()
         self.threads = []
         self.thread_count = 0
         self.ppfile = './prog/'+file
         self.plotdatalength = 21
         self.plotdata=numpy.zeros((self.plotdatalength,2),'Float32')
-        self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1, self.plotdatalength)
-        self.plotdata[:,1]=numpy.zeros(self.plotdatalength)#sin(self.plotdata[:,0]*2*numpy.pi/100)
+        self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1,
+                self.plotdatalength)
+        self.plotdata[:,1]=numpy.zeros(self.plotdatalength)
         self.stateobj = {}
         self.controls = {}
         self.ind = {}
         self.filename = []
         self.timestamp = time.strftime('%Y%m%d_%H%M%S')
-##        self.ContPlot = False
         self.run_exp = True
         self.pause = False
         self.new_scan = True #Switch for a new scan. Log file created if True.
-        #self.n_reps = 100
-        #self.data_start = 4000 - self.n_reps+1 #changed CWC 09122012
-        #self.us_MeasTime = 500
         self.hist_max = 30
-##        self.timer = QtCore.QTimer()
-##        self.timer.timeout.connect(self.update_plot)
         self.t1 = time.time()
         self.scan_types =['Continuous','Frequency','Time','Voltage']
         self.text_to_write = ''
-        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_': 7, 'SHUTR_Raman_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_': 4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
+        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
+                7, 'SHUTR_Raman_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+                4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
         #self.index = 0
 
 
@@ -571,34 +568,16 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_cont.setDisabled(True)
 
         print "Starting a new scan: %i" %self.new_scan
-        if self.new_scan: #Only update the log file when starting a new scan. Parameters can not be changed if continuing a scan. CWC 09242012
-    #Determine if a certain step in the pulse sequence Load_cool_exp_check should be skipped CWC 09172012
-##            if (self.Load_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('LOAD_SWITCH', 1)
-##                self.set_stage_Disabled('Load',False)
-##            else:
-##                self.PCon.parameter_set('LOAD_SWITCH', 0)
-##                self.set_stage_Disabled('Load',True)
-##
-##            if (self.Cool_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('COOL_SWITCH', 1)
-##                self.set_stage_Disabled('PG cooling',False)
-##            else:
-##                self.PCon.parameter_set('COOL_SWITCH', 0)
-##                self.set_stage_Disabled('PG cooling',True)
-##
-##            if (self.OP_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('OP_SWITCH', 1)
-##            else:
-##                self.PCon.parameter_set('OP_SWITCH', 0)
-##
-##            if (self.Check_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('CHECK_SWITCH', 1)
-##            else:
-##                self.PCon.parameter_set('CHECK_SWITCH', 0)
+
+        # Only update the log file when starting a new scan. Parameters can not
+        # be changed if continuing a scan. CWC 09242012
+        # Determine if a certain step in the pulse sequence Load_cool_exp_check
+        # should be skipped CWC 09172012
+        if self.new_scan:
             for key in self.controls:
                 if not key[:3]=='SHU':
-                    self.update_global_var(self.controls[key][1],self.controls[key][0].value())
+                    self.update_global_var(self.controls[key][1],
+                            self.controls[key][0].value())
             for i in range(len(self.h_subscripts)):
                 self.update_SHUTR(self.h_subscripts[i])
 
@@ -606,15 +585,20 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.PCon.update_state()
             coltree_Qt.save_state("State", self.PCon.state)
 
+            # Save data to 'this.savedir' and copy current config files
             self.timestamp = time.strftime('%Y%m%d_%H%M%S')
-            if not os.path.isdir(dirname + self.timestamp + '/'):
-                os.mkdir(dirname + self.timestamp + '/')
-            shutil.copy2(str(self.ppfile), dirname + self.timestamp + '/') #copy the pp file to the data directory CWC 09242012
-            shutil.copy2('config.ddscon', dirname + self.timestamp + '/')  #copy the updated config file to the data directory CWC 09242012
-            self.filename = dirname + self.timestamp + '/' + str(self.scan_entry.currentText()) + '_scan'
+            self.savedir = (dirname + self.timestamp + '_' +
+                    str(self.scan_entry.currentText()) +  '/')
+            if not os.path.isdir(self.savedir):
+                os.mkdir(self.savedir)
+            shutil.copy2(str(self.ppfile), self.savedir) 
+            shutil.copy2('config.ddscon', self.savedir)  
+            self.filename = (self.savedir + str(self.scan_entry.currentText())
+                    + '_scan')
             if (self.scan_entry.currentText()!='Continuous'):
-                self.filename+= '_' + str(self.var_entry.currentText())
+                self.filename += '_' + str(self.var_entry.currentText())
             fd = file(self.filename+'.txt', "a")
+
 
             self.n_reps = self.rep_sb.value()
             self.PCon.parameter_set('datastart', 4000-self.n_reps+1) #changed CWC 09132012
@@ -782,27 +766,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_cont.setDisabled(False)
         self.PCon.user_stop() #Added for proper stop CWC 09172012
 
-        #pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
-        #pp.savefig(self.figure)
-        #self.figure.savefig(pp, format='pdf')
-        #pp.close()
-        #print 'Saving figure...'
-
-        #self.fit_result()
-
     def continue_scan(self):
         self.new_scan = False
         self.run_scan()
 
-##    def cont_plot(self):
-##        self.ContPlot = True
-##
-##        #self.timer.start(0.001)
-##        self.update_plot()
-
     def update_plot_save_data(self, scan_index, new_mean, new_data):
         if (self.scan_entry.currentText()=='Continuous'):
-            self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[1:self.plotdatalength,1]
+            self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[
+                    1:self.plotdatalength,1]
             self.plotdata[self.plotdatalength-1,1] = new_mean
             self.line1.set_ydata(self.plotdata[:,1])
         elif (self.scan_entry.currentText()=='Frequency'):
@@ -817,7 +788,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         #print "%d, %d" %(len(self.plotdata[:,0]),len(self.plotdata[:,1]))
         ymax = numpy.max(self.plotdata[:,1])
         ymin = numpy.min(self.plotdata[:,1])
-        self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01, ymax+0.1*(ymax-ymin)+0.01)
+        self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01,
+                ymax+0.1*(ymax-ymin)+0.01)
 
         self.trace2.clear()
         #self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
@@ -827,7 +799,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         if (self.scan_entry.currentText()=='Continuous'):
             self.text_to_write = str(self.plotdata[scan_index,1])+'\t'
         else:
-            self.text_to_write = str(self.plotdata[scan_index,0]) + '\t' + str(self.plotdata[scan_index,1])+'\t'
+            self.text_to_write = str(self.plotdata[scan_index,0]) + '\t' + \
+                    str(self.plotdata[scan_index,1])+'\t'
         for n in range(self.rep_sb.value()):
             self.text_to_write += str(new_data[n])+'\t'
         self.text_to_write += '\n'
@@ -835,61 +808,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         fd.seek(0,2)
         fd.write(self.text_to_write)
         fd.close()
-        #numpy.savetxt(self.filename,new_data,fmt='%i')
 
-##    def update_plot(self):
-##        if(self.ContPlot == True):
-##            #print self.PCon.pp_is_running()
-##            #t1 = time.time()
-##            self.PCon.pp_run_2()
-##            readoutOK=self.PCon.update_count()
-##            #t2 = time.time()
-##            if(readoutOK):
-##                #print self.PCon.pp_is_running()
-##                #addr = self.PCon.read_memory(13,1)
-##                #print "%d repetitions in %.6f seconds." %(addr - self.data_start-1, t2-t1)
-####            #self.index = self.index+1 and not self.PCon.pp_is_running()
-####            #print self.index
-####            self.PCon.set_runprog()                #Runs the loaded .pp file
-####
-####            #time.sleep(0.1)
-####            counts=self.PCon.read_memory()         #Extracts the data from the memory
-####            #print counts
-####            #counts1=self.PCon.read_memory()         #Extracts the data from the memory
-####            #print counts1
-##
-####            if not (numpy.size(counts)==1):
-##
-##                #t1 = time.time()
-####              pyplot implementation
-####                self.trace1.clear()
-####                self.trace2.clear()
-####                self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[1:self.plotdatalength,1]
-####                self.plotdata[self.plotdatalength-1,1] = numpy.mean(self.PCon.data[:,1])
-####                self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
-####                self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
-####                self.plot.draw()
-####              animation implementation
-##                self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[1:self.plotdatalength,1]
-##                self.plotdata[self.plotdatalength-1,1] = numpy.mean(self.PCon.data[:,1])
-##                self.line1.set_ydata(self.plotdata[:,1])
-##                ymax = numpy.max(self.plotdata[:,1])
-##                ymin = numpy.min(self.plotdata[:,1])
-##                self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01, ymax+0.1*(ymax-ymin)+0.01)
-##
-##                self.trace2.clear()
-##                #self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
-##                self.update_hist(self.PCon.data[:,1])
-##                self.plot.draw()
-##                t2 = time.time()
-##                #print 'Cycle time %.6f seconds' %(t2-self.t1)
-##                self.t1 = t2
-##                #print 'Plot time %.6f seconds' %(t2-t1)
-##                #print "addr = %d" %addr
-##            threading.Timer(0.005, self.update_plot,()).start()
-##            #self.timer.singleShot(0.005,self.update_plot)
-####        else:
-####            self.stop_plot()
 
     def update_hist(self, data):
         #Animating the histogram, see http://matplotlib.sourceforge.net/examples/animation/histogram.html
@@ -948,29 +867,6 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
     def closeEvent(self, event):
         self.PCon.ExpConGUIstarted = False
-
-##class UpdatePlotThread(QtCore.QThread):
-##    def __init__(self, GUI):
-##        super(UpdatePlotThread, self).__init__()
-##
-##    def stop(self):
-##        self.stopped = 1
-##    def run(self):
-##
-##    def customEvent(self):
-##        qApp.lock()
-##        GUI.plotdata[0:GUI.plotdatalength-1,1] = GUI.plotdata[1:GUI.plotdatalength,1]
-##        GUI.plotdata[self.plotdatalength-1,1] = numpy.mean(self.PCon.data[:,1])
-##        GUI.line1.set_ydata(GUI.plotdata[:,1])
-##        ymax = numpy.max(self.plotdata[:,1])
-##        ymin = numpy.min(self.plotdata[:,1])
-##        GUI.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01, ymax+0.1*(ymax-ymin)+0.01)
-##
-##        GUI.trace2.clear()
-##        #self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
-##        GUI.update_hist(self.PCon.data[:,1])
-##        GUI.plot.draw()
-##        qApp.unlock()
 
 class ExpThread(QtCore.QThread):
     def __init__(self, GUI, scan_vals, receiver):

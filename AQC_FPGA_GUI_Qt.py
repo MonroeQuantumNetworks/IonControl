@@ -5,7 +5,7 @@
 # March 3-23-2012
 # C. Spencer Nichols
 # 5-31-2012
-#------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Install Requirments
 
 #WINDOWS
@@ -24,8 +24,8 @@
 #   (file--matplotlib-1.1.0.win32-py2.7.exe) 
 # need to instal Opal Kelly Software # to have appropriate python API
 
-#Other Requirments ---
-#Make sure the FPGA id is correct on line 719, 721 and 722.  This can be changed via the Front Panel Softwarw provided by Opal Kelly
+#Other Requirments --- #Make sure the FPGA id is correct on line 719, 721 and
+#722.  This can be changed via the Front Panel Softwarw provided by Opal Kelly
 
 #UBUNTU 10.04
 # - ubuntu comes with python 2.6 with the following packages: - os, gobject,
@@ -53,11 +53,12 @@ if (operatingSystem == 'Windows'):
     ok_path = 'Drivers/Windows/'
 elif (operatingSystem == 'Linux'):
     ok_path = 'Drivers/Linux/'
+elif (operatingSystem == 'Darwin'):
+    ok_path = 'Drivers/Darwin/'
 sys.path.append(ok_path)
 import ok
-#import pdb; pdb.set_trace()
 
-import gtk, gobject, pango, math
+#import gtk, gobject, pango, math
 import numpy
 import threading, socket, time
 import coltree_Qt, etherplug
@@ -65,7 +66,8 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
 #from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as \
+        FigureCanvas
 from matplotlib.axes import Subplot
 from matplotlib.axes import Axes
 
@@ -93,14 +95,14 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = '1725_Test_FPGA'# AQC_1272_PP
+    _FPGA_name = 'AQC_1272_PP'# AQC_1272_PP 1725_Test_FPGA
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
     # TODO: Move to fpga front panel class 
     #'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
     _FPGA_bitFile = 'fpgafirmware.bit'
-    checkOutputs = False #True
+    _checkOutputs = False #True
     
     #################################################################
     # __init__
