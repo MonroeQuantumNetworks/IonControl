@@ -175,7 +175,7 @@ wait2: NOP
 OPump: NOP
 	LDWR	 OP_SWITCH
 	CMP		 SWITCH
-	JMPZ	 Exp
+	JMPZ	 wait3
 	DDSFRQ	 DDS_ch_REPUMP, F_Repump_op
 	DDSFRQ	 DDS_ch_OP, F_OP_op
 	DAC		 DAC_ch_MOT, V_MOT_op
@@ -186,12 +186,11 @@ OPump: NOP
 	DACUP
 	SHUTRVAR SHUTR_op
 	DELAY	 us_Time_op 	#SHUTR	 SHUTR_EXP_WAIT
-	JMP		 wait3
 
 wait3: NOP
 	LDWR	 WAIT3_SWITCH
 	CMP		 SWITCH
-	JMPZ	 OPump
+	JMPZ	 Exp
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_wait3
 	DAC	 	 DAC_ch_MOT, V_MOT_wait3
 	DAC		 DAC_ch_Dipole, V_Dipole_wait3
@@ -218,6 +217,7 @@ Exp: NOP
 	DACUP
     SHUTRVAR SHUTR_exp
 	DELAY	 us_Time_exp 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp
+	SHUTRVAR SHUTR_exp_after
 	
 wait4: NOP
 	LDWR	 WAIT4_SWITCH

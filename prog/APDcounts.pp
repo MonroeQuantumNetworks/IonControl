@@ -19,9 +19,8 @@ var sample 0
 	STWR     addr
 
 init_f: NOP
-	SHUTRVAR    SHUTR_TEST
-	COUNT    us_MeasTime
-	SHUTR    0
+	SHUTRVAR   SHUTR_TEST
+	COUNT    us_MeasTime #SHUTR    0
 	DELAY	 ms_WAIT
 	LDINDF   addr
 	STWI                     #stores data to wherever addr is pointing
