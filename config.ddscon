@@ -137,9 +137,12 @@ Params:tree:V_Repump_wait4:1:0
 Params:tree:WAIT2_SWITCH:1:1.0
 Params:tree:WAIT3_SWITCH:1:0.0
 Params:tree:WAIT4_SWITCH:1:1.0
-Params:tree:datastart:1:3801.0
-Params:tree:ms_Repump:1:0
+Params:tree:datastart:1:3501.0
+Params:tree:ms_Repump:1:0.0
 Params:tree:ms_WAIT:1:1
+Params:tree:reuseBinAddr:1:3000.0
+Params:tree:reuseDataEnd:1:3500.0
+Params:tree:reuseDataStart:1:3001.0
 Params:tree:us_CheckTime:1:2000
 Params:tree:us_LoadDetectTime:1:500
 Params:tree:us_MeasTime:1:500
@@ -189,4 +192,4 @@ State:DDS2_PHS:0.0
 State:DDS3_AMP:1023.0
 State:DDS3_FRQ:7.3
 State:DDS3_PHS:0.0
-State:SHUTR:15.0
+State:SHUTR:19.0
