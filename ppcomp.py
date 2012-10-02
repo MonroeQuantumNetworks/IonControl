@@ -48,7 +48,7 @@ OPS = {'NOP'    : 0x00,
        'SHUTRVAR':0x28,
        'END'    : 0xFF }
 
-debug = True
+debug = False
 
 def pp2bytecode(pp_file, adIndexList, adBoards, parameters = None):
     globals().update(parameters)

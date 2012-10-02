@@ -2,9 +2,11 @@
 *.pyc
 
 # Configuration files
-config.ddscon
-*.vim
 *.swp
 *.swo
 -Mini*
 .this_s*
+.DS_Store
+__pycache__/*
+__pycache__
+.gitignore.*
