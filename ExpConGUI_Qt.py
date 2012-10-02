@@ -36,8 +36,8 @@ import coltree_Qt
 from PyQt4 import QtGui, QtCore
 import shutil
 
-#dirname = 'C:/Data/'
-dirname = '/Users/ahankin/Research/Data/'
+dirname = 'C:/Data/'
+#dirname = '/Users/ahankin/Research/Data/'
 
 
 
