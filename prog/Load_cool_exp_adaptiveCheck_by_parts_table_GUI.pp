@@ -20,7 +20,7 @@ var LOADIND        0
 var us_DEPUMP      2
 var addr		   0
 var CHECKIND       0
-var CHECKCOUNT     0
+var CHECKCOUNT_ACC 0
 var DETECTCOUNT    0
 var LOADCOUNT      0
 var RAMPIND 	   0
@@ -282,8 +282,7 @@ ini_check: NOP
 	JMPZ	 save_data
 	CLRW
 	STWR     CHECKIND
-	SHUTR	 SHUTR_REPUMP
-	DELAY	 ms_Repump
+	STWR	 CHECKCOUNT_ACC
 	SHUTRVAR SHUTR_wait5
 	DAC	 	 DAC_ch_MOT, V_MOT_check
 	DAC		 DAC_ch_Dipole, V_Dipole_check
@@ -298,7 +297,8 @@ check: NOP
 	SHUTRVAR	SHUTR_check
     COUNT		us_Time_check
 	SHUTRVAR	SHUTR_wait6
-	STWR		CHECKCOUNT
+	ADD			CHECKCOUNT_ACC
+	STWR		CHECKCOUNT_ACC
     CMP     	CHECKTHOLD
 	JMPNZ		save_data
 	INC 		CHECKIND
