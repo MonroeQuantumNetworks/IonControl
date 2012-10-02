@@ -50,20 +50,23 @@ class ExpConGUI_Qt(QtGui.QWidget):
         super(ExpConGUI_Qt, self).__init__()
         #self.lock = threading.Lock()
         self.threads = []
+        self.thread_count = 0
         self.ppfile = './prog/'+file
         self.plotdatalength = 21
         self.plotdata=numpy.zeros((self.plotdatalength,2),'Float32')
         self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1, self.plotdatalength)
         self.plotdata[:,1]=numpy.zeros(self.plotdatalength)#sin(self.plotdata[:,0]*2*numpy.pi/100)
         self.stateobj = {}
+        self.controls = {}
         self.ind = {}
         self.filename = []
         self.timestamp = time.strftime('%Y%m%d_%H%M%S')
 ##        self.ContPlot = False
         self.run_exp = True
         self.pause = False
-        self.n_reps = 100
-        self.data_start = 4000 - self.n_reps+1 #changed CWC 09122012
+        self.new_scan = True #Switch for a new scan. Log file created if True.
+        #self.n_reps = 100
+        #self.data_start = 4000 - self.n_reps+1 #changed CWC 09122012
         #self.us_MeasTime = 500
         self.hist_max = 30
 ##        self.timer = QtCore.QTimer()
@@ -71,6 +74,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.t1 = time.time()
         self.scan_types =['Continuous','Frequency','Time','Voltage']
         self.text_to_write = ''
+        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_': 7, 'SHUTR_Raman_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_': 4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
         #self.index = 0
 
 
@@ -89,7 +93,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.PCon.pp_setprog(str(self.ppfile))#DarkHist  Detect DarkHist
         self.PCon.pp_upload()
 
-        self.n_of_data = self.PCon.get_datapoints()
+        self.n_reps = self.PCon.get_datapoints()
 
         vbox = QtGui.QVBoxLayout()
         hbox = QtGui.QHBoxLayout()
@@ -97,6 +101,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         hbox2 = QtGui.QHBoxLayout()
         hbox3 = QtGui.QHBoxLayout()
         hbox4 = QtGui.QHBoxLayout()
+        hbox5 = QtGui.QHBoxLayout()
+        hbox6 = QtGui.QHBoxLayout()
         #window.set_title(file)
         self.setWindowTitle("AQC Exp. Control")
 
@@ -128,40 +134,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
         hbox2.addWidget(self.var_entry)
         self.var_entry.currentIndexChanged.connect(self.update_var)
 
-        self.Load_SW_label = QtGui.QLabel("Load atom")
-        self.Load_SW_cb = QtGui.QCheckBox()
-        self.Load_SW_cb.setTristate(False)
-        self.Load_SW_cb.setCheckState(True)
-        hbox4.addWidget(self.Load_SW_label)
-        hbox4.addWidget(self.Load_SW_cb)
-
-        self.Cool_SW_label = QtGui.QLabel("PG cooling")
-        self.Cool_SW_cb = QtGui.QCheckBox()
-        self.Cool_SW_cb.setTristate(False)
-        self.Cool_SW_cb.setCheckState(True)
-        hbox4.addWidget(self.Cool_SW_label)
-        hbox4.addWidget(self.Cool_SW_cb)
-
-        self.OP_SW_label = QtGui.QLabel("O. Pumping")
-        self.OP_SW_cb = QtGui.QCheckBox()
-        self.OP_SW_cb.setTristate(False)
-        self.OP_SW_cb.setCheckState(True)
-        hbox4.addWidget(self.OP_SW_label)
-        hbox4.addWidget(self.OP_SW_cb)
-
-        self.Check_SW_label = QtGui.QLabel("Check atom")
-        self.Check_SW_cb = QtGui.QCheckBox()
-        self.Check_SW_cb.setTristate(False)
-        self.Check_SW_cb.setCheckState(True)
-        hbox4.addWidget(self.Check_SW_label)
-        hbox4.addWidget(self.Check_SW_cb)
+        control_table = self.make_table_control()
 
         self.range_low_label = QtGui.QLabel("Start")
         self.scan_range_low_sb = QtGui.QDoubleSpinBox()
         self.scan_range_low_sb.setRange(-10, 10)
         self.scan_range_low_sb.setSingleStep(0.1)
         self.scan_range_low_sb.setValue(0)
-        self.scan_range_low_sb.setDecimals(3);
+        self.scan_range_low_sb.setDecimals(3)
         hbox3.addWidget(self.range_low_label)
         hbox3.addWidget(self.scan_range_low_sb)
 
@@ -170,7 +150,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.scan_range_high_sb.setRange(-10, 10)
         self.scan_range_high_sb.setSingleStep(0.1)
         self.scan_range_high_sb.setValue(10)
-        self.scan_range_high_sb.setDecimals(3);
+        self.scan_range_high_sb.setDecimals(3)
         hbox3.addWidget(self.range_high_label)
         hbox3.addWidget(self.scan_range_high_sb)
 
@@ -194,8 +174,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         self.shuffle_label = QtGui.QLabel("Shuffle scan")
         self.shuffle_cb = QtGui.QCheckBox()
-        self.shuffle_cb.setTristate(False)
-        self.shuffle_cb.setCheckState(True)
+        self.shuffle_cb.setChecked(True)
         self.shuffle_cb.setDisabled(True)
         hbox3.addWidget(self.shuffle_label)
         hbox3.addWidget(self.shuffle_cb)
@@ -210,14 +189,150 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.data_start = 4000 - self.n_reps+1; #Changed CWC 09122012
         self.PCon.parameter_set('datastart',self.data_start)
 
-        self.figure = plt.figure()
-        self.trace1 = self.figure.add_subplot(211)
-        self.plot = FigureCanvas(self.figure)
-        #self.plotdata[:,1] = numpy.random.shuffle(arange(21))
-        self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
-        self.trace2 = self.figure.add_subplot(212)
-        #self.trace2.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
-        self.plot.draw()
+        self.Load_SW_label = QtGui.QLabel("Load atom")
+        self.Load_SW_cb = QtGui.QCheckBox()
+        self.Load_SW_cb.setChecked(True)
+        self.Load_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['LOAD_SWITCH'])==1):
+            self.Load_SW_cb.setChecked(False)
+        hbox4.addWidget(self.Load_SW_label)
+        hbox4.addWidget(self.Load_SW_cb)
+
+        self.Cool_SW_label = QtGui.QLabel("PG cooling")
+        self.Cool_SW_cb = QtGui.QCheckBox()
+        self.Cool_SW_cb.setChecked(True)
+        self.Cool_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['COOL_SWITCH'])==1):
+            self.Cool_SW_cb.setChecked(False)
+        hbox4.addWidget(self.Cool_SW_label)
+        hbox4.addWidget(self.Cool_SW_cb)
+
+        self.Wait2_SW_label = QtGui.QLabel("Wait2")
+        self.Wait2_SW_cb = QtGui.QCheckBox()
+        self.Wait2_SW_cb.setChecked(True)
+        self.Wait2_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['WAIT2_SWITCH'])==1):
+            self.Wait2_SW_cb.setChecked(False)
+        hbox4.addWidget(self.Wait2_SW_label)
+        hbox4.addWidget(self.Wait2_SW_cb)
+
+        self.OP_SW_label = QtGui.QLabel("O. Pumping")
+        self.OP_SW_cb = QtGui.QCheckBox()
+        self.OP_SW_cb.setChecked(True)
+        self.OP_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['OP_SWITCH'])==1):
+            self.OP_SW_cb.setChecked(False)
+        hbox4.addWidget(self.OP_SW_label)
+        hbox4.addWidget(self.OP_SW_cb)
+
+        self.Wait3_SW_label = QtGui.QLabel("Wait3")
+        self.Wait3_SW_cb = QtGui.QCheckBox()
+        self.Wait3_SW_cb.setChecked(True)
+        self.Wait3_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['WAIT3_SWITCH'])==1):
+            self.Wait3_SW_cb.setChecked(False)
+        hbox4.addWidget(self.Wait3_SW_label)
+        hbox4.addWidget(self.Wait3_SW_cb)
+
+        self.Exp_SW_label = QtGui.QLabel("Exp")
+        self.Exp_SW_cb = QtGui.QCheckBox()
+        self.Exp_SW_cb.setChecked(True)
+        self.Exp_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['EXP_SWITCH'])==1):
+            self.Exp_SW_cb.setChecked(False)
+        hbox4.addWidget(self.Exp_SW_label)
+        hbox4.addWidget(self.Exp_SW_cb)
+
+        self.Wait4_SW_label = QtGui.QLabel("Wait4")
+        self.Wait4_SW_cb = QtGui.QCheckBox()
+        self.Wait4_SW_cb.setChecked(True)
+        self.Wait4_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['WAIT4_SWITCH'])==1):
+            self.Wait4_SW_cb.setChecked(False)
+        hbox4.addWidget(self.Wait4_SW_label)
+        hbox4.addWidget(self.Wait4_SW_cb)
+
+        self.Check_SW_label = QtGui.QLabel("Check atom for reuse")
+        self.Check_SW_cb = QtGui.QCheckBox()
+        self.Check_SW_cb.setChecked(True)
+        self.Check_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['CHECK_SWITCH'])==1):
+            self.Check_SW_cb.setChecked(False)
+        hbox4.addWidget(self.Check_SW_label)
+        hbox4.addWidget(self.Check_SW_cb)
+
+        self.LOADTHOLD_label = QtGui.QLabel("LOADTHOLD")
+        self.LOADTHOLD_lsb = LabeledSpinBox('LOADTHOLD',self.update_global_var)#QtGui.QSpinBox()
+        self.LOADTHOLD_lsb.sb.setRange(0, 25)
+        self.LOADTHOLD_lsb.sb.setSingleStep(1)
+        self.LOADTHOLD_lsb.sb.setDecimals(0)
+        self.LOADTHOLD_lsb.sb.setValue(float(self.PCon.params.defs['LOADTHOLD']))
+        self.controls['LOADTHOLD']=(self.LOADTHOLD_lsb.sb, 'LOADTHOLD')
+        hbox5.addWidget(self.LOADTHOLD_label)
+        hbox5.addLayout(self.LOADTHOLD_lsb.box)
+
+        self.LOADREP_label = QtGui.QLabel("LOADREP")
+        self.LOADREP_lsb = LabeledSpinBox('LOADREP',self.update_global_var)#QtGui.QSpinBox()
+        self.LOADREP_lsb.sb.setRange(0, 10000)
+        self.LOADREP_lsb.sb.setSingleStep(1)
+        self.LOADREP_lsb.sb.setDecimals(0)
+        self.LOADREP_lsb.sb.setValue(float(self.PCon.params.defs['LOADREP']))
+        self.controls['LOADREP']=(self.LOADREP_lsb.sb, 'LOADREP')
+        hbox5.addWidget(self.LOADREP_label)
+        hbox5.addLayout(self.LOADREP_lsb.box)
+
+        self.CHECKTHOLD_label = QtGui.QLabel("CHECKTHOLD")
+        self.CHECKTHOLD_lsb = LabeledSpinBox('CHECKTHOLD',self.update_global_var)#QtGui.QSpinBox()
+        self.CHECKTHOLD_lsb.sb.setRange(0, 25)
+        self.CHECKTHOLD_lsb.sb.setSingleStep(1)
+        self.CHECKTHOLD_lsb.sb.setDecimals(0)
+        self.CHECKTHOLD_lsb.sb.setValue(float(self.PCon.params.defs['CHECKTHOLD']))
+        self.controls['CHECKTHOLD']=(self.CHECKTHOLD_lsb.sb, 'CHECKTHOLD')
+        hbox5.addWidget(self.CHECKTHOLD_label)
+        hbox5.addLayout(self.CHECKTHOLD_lsb.box)
+
+        self.CHECKREP_label = QtGui.QLabel("CHECKREP")
+        self.CHECKREP_lsb = LabeledSpinBox('CHECKREP',self.update_global_var)#QtGui.QSpinBox()
+        self.CHECKREP_lsb.sb.setRange(0, 5)
+        self.CHECKREP_lsb.sb.setSingleStep(1)
+        self.CHECKREP_lsb.sb.setDecimals(0)
+        self.CHECKREP_lsb.sb.setValue(float(self.PCon.params.defs['CHECKREP']))
+        self.controls['CHECKREP']=(self.CHECKREP_lsb.sb, 'CHECKREP')
+        hbox5.addWidget(self.CHECKREP_label)
+        hbox5.addLayout(self.CHECKREP_lsb.box)
+
+        self.F_MOT_cool_final_label = QtGui.QLabel("F_MOT_cool_final")
+        self.F_MOT_cool_final_lsb = LabeledSpinBox('F_INC',self.update_F_MOT_cool_final)#QtGui.QSpinBox()
+        self.F_MOT_cool_final_lsb.sb.setRange(0, 100)
+        self.F_MOT_cool_final_lsb.sb.setSingleStep(0.1)
+        self.F_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['F_MOT_cool'])+float(self.PCon.params.defs['F_INC'])*float(self.PCon.params.defs['RAMPTOT']))
+        hbox6.addWidget(self.F_MOT_cool_final_label)
+        hbox6.addLayout(self.F_MOT_cool_final_lsb.box)
+
+        self.V_MOT_cool_final_label = QtGui.QLabel("V_MOT_cool_final")
+        self.V_MOT_cool_final_lsb = LabeledSpinBox('V_INC',self.update_V_MOT_cool_final)#QtGui.QSpinBox()
+        self.V_MOT_cool_final_lsb.sb.setRange(0, 4.999)
+        self.V_MOT_cool_final_lsb.sb.setSingleStep(0.01)
+        self.V_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['V_MOT_cool'])+float(self.PCon.params.defs['V_INC'])*float(self.PCon.params.defs['RAMPTOT']))
+        hbox6.addWidget(self.V_MOT_cool_final_label)
+        hbox6.addLayout(self.V_MOT_cool_final_lsb.box)
+
+        self.RAMPTOT_label = QtGui.QLabel("PG cooling ramp steps")
+        self.RAMPTOT_lsb = LabeledSpinBox('RAMPTOT',self.update_global_var)#QtGui.QSpinBox()
+        self.RAMPTOT_lsb.sb.setRange(0, 200)
+        self.RAMPTOT_lsb.sb.setValue(float(self.PCon.params.defs['RAMPTOT']))
+        self.controls['RAMPTOT']=(self.RAMPTOT_lsb.sb, 'RAMPTOT')
+        hbox6.addWidget(self.RAMPTOT_label)
+        hbox6.addLayout(self.RAMPTOT_lsb.box)
+
+##        self.figure = plt.figure()
+##        self.trace1 = self.figure.add_subplot(211)
+##        self.plot = FigureCanvas(self.figure)
+##        #self.plotdata[:,1] = numpy.random.shuffle(arange(21))
+##        self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
+##        self.trace2 = self.figure.add_subplot(212)
+##        #self.trace2.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
+##        self.plot.draw()
 
 
 ##        ion()
@@ -248,11 +363,16 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_stop.setDisabled(True)
         hbox.addWidget(self.button_stop)
 
+        self.button_cont = QtGui.QPushButton("Continue",self)
+        self.button_cont.setDisabled(True)
+        hbox.addWidget(self.button_cont)
+
         self.button_upParams.clicked.connect(self.update_params)
-        self.button_run.clicked.connect(self.run_scan)
+        self.button_run.clicked.connect(self.start_new_scan)
         self.button_pause.clicked.connect(self.pause_scan)
         self.button_resume.clicked.connect(self.resume_scan)
         self.button_stop.clicked.connect(self.stop_scan)
+        self.button_cont.clicked.connect(self.continue_scan)
 
         vbox.addStretch(1)
         vbox.addLayout(hbox)
@@ -260,9 +380,110 @@ class ExpConGUI_Qt(QtGui.QWidget):
         vbox.addLayout(hbox2)
         vbox.addLayout(hbox4)
         vbox.addLayout(hbox3)
+        vbox.addLayout(hbox5)
+        vbox.addLayout(hbox6)
         #vbox.addWidget(self.plot)
+
+        vbox.addLayout(control_table)
         self.setLayout(vbox)
         self.show()
+
+    def make_table_control(self):
+        table_control = QtGui.QGridLayout()
+        self.h_labels = ['Load', 'Wait1', 'PG cooling', 'Wait2', 'OP', 'Wait3', 'Exp', 'Wait4', 'Detect', 'Wait5', 'Check','Wait6']
+        self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
+        self.v_sb_labels = ['Duration (us)','MOT coils', 'Repump detuning', 'MOT power', 'MOT detuning', 'Dipole power', 'Bx', 'By', 'Bz']
+        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_Repump_', 'V_MOT_', 'F_MOT_', 'V_Dipole_', 'V_Bx_', 'V_By_', 'V_Bz_']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'Raman (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
+        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_Raman_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
+
+        for i in range(len(self.h_labels)):
+            table_control.addWidget(QtGui.QLabel(self.h_labels[i]),0,i+1)
+        for i in range(len(self.v_sb_labels)):
+            table_control.addWidget(QtGui.QLabel(self.v_sb_labels[i]),i+1,0)
+        for i in range(len(self.v_tb_labels)):
+            table_control.addWidget(QtGui.QLabel(self.v_tb_labels[i]),i+len(self.v_sb_labels)+1,0)
+        for i in range(len(self.v_sb_labels)):
+            for j in range(len(self.h_labels)):
+                lsb = self.make_spin_box(self.v_sb_subscripts[i],self.h_subscripts[j], self.PCon.params.defs[self.v_sb_subscripts[i]+self.h_subscripts[j]], self.update_global_var)
+                #lsb.sb.setDisabled(True)
+                table_control.addLayout(lsb.box,i+1,j+1)
+                self.controls[self.v_sb_subscripts[i]+self.h_subscripts[j]] = (lsb.sb, self.v_sb_subscripts[i]+self.h_subscripts[j])
+
+        for i in range(len(self.v_tb_index)):
+            for j in range(len(self.h_subscripts)):
+                lpb = LabeledPushButton(self.v_tb_index[i],self.h_subscripts[j], self.update_SHUTR)
+                #if (not(self.h_subscripts[j]=='detect' or self.h_subscripts[j]=='wait5' or self.h_subscripts[j]=='wait6')):
+                #    lpb.tb.setDisabled(True)
+                table_control.addLayout(lpb.box,i+len(self.v_sb_subscripts)+1,j+1)
+                self.controls[self.v_tb_index[i]+self.h_subscripts[j]] = (lpb.tb, self.v_tb_index[i]+self.h_subscripts[j])
+
+        for i in range(len(self.v_tb_index)):
+            for j in range(len(self.h_subscripts)):
+                if (int(float(self.PCon.params.defs['SHUTR_'+self.h_subscripts[j]])) & 1<<self.SHUTR_CHAN[self.v_tb_index[i]]):
+                    self.controls[self.v_tb_index[i]+self.h_subscripts[j]][0].setChecked(True)
+
+##        test_lsb = LabeledSpinBox('F_MOT_load',self.update_global_var)
+##        test_lsb.sb.setValue(90.0)
+##
+##        table_control.addLayout(test_lsb.box, len(self.v_tb_index)+len(self.v_sb_subscripts)+1,1)
+
+        return table_control
+
+##    def test_toggle(self):
+##        self.controls['SHUTR_MOT_load'][0].setChecked(True)
+##        print "SHUTR_MOT_load checked!"
+
+    def make_spin_box(self, v_label, h_label, value, callback):
+        lsb = LabeledSpinBox(v_label+h_label, callback)
+        lsb.sb.setDecimals(3)
+        if (v_label == 'us_Time_'):
+            lsb.sb.setDecimals(1)
+            lsb.sb.setSingleStep(1)
+            lsb.sb.setRange(0,5000)
+        elif (v_label == 'F_MOT_' or v_label == 'F_Repump_'):
+            lsb.sb.setSingleStep(0.1)
+            lsb.sb.setRange(-30,100)
+        else:
+            lsb.sb.setSingleStep(0.1)
+            lsb.sb.setRange(0,4.999)
+        lsb.sb.setValue(float(value))
+
+        return lsb
+
+    def update_global_var(self,label,value):
+        self.PCon.parameter_set(label,value)
+        if label == 'us_Time_cool':
+            val = value/float(self.PCon.params.defs['RAMPTOT'])-7
+            if val < 1:
+                raise "RAMPTOT too high for the specified cooling time. Try reducing ramp steps or longer cooling time."
+            else:
+                self.PCon.parameter_set('us_RAMP_T',val)
+
+    def update_F_MOT_cool_final(self, label, value):
+        val = (value - float(self.PCon.params.defs['F_MOT_cool']))/float(self.PCon.params.defs['RAMPTOT'])
+        self.PCon.parameter_set(label,val)
+
+    def update_V_MOT_cool_final(self, label, value):
+        val = (value - float(self.PCon.params.defs['V_MOT_cool']))/float(self.PCon.params.defs['RAMPTOT'])
+        self.PCon.parameter_set(label,val)
+
+    def update_SHUTR(self, h_subscript):
+        SHUTR_value = 0
+##        print SHUTR_value
+        SW = []
+##        for key in self.controls:
+##            if (key[:3]=='SHU'):
+##                print key+':'+str(self.controls[key][1])
+        for i in range(len(self.v_tb_index)):
+            SW.append(0)
+            if self.controls[self.v_tb_index[i]+h_subscript][0].isChecked(): SW[i] = 1
+
+        for i in range(len(self.v_tb_index)):
+            SHUTR_value += SW[i]<<self.SHUTR_CHAN[self.v_tb_index[i]]
+
+        self.PCon.parameter_set('SHUTR_'+h_subscript, float(SHUTR_value))
+        #print 'SHUTR_'+h_subscript+':%s' %bin(SHUTR_value)
 
     def update_pp_filename(self):
         self.Filename_entry.setText(self.ppfile)
@@ -273,11 +494,15 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
     def update_var(self):
         self.n_index.setText('0')
+        self.button_cont.setDisabled(True)
+        self.new_scan = True
 
     def update_scan_type(self):
         self.n_index.setText('0')
+        self.new_scan = True
         if (self.scan_entry.currentText()=='Continuous'):
             self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(True)
             self.scan_range_low_sb.setDisabled(True)
             self.scan_range_high_sb.setDisabled(True)
@@ -285,6 +510,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.var_entry.setDisabled(True)
         elif (self.scan_entry.currentText()=='Frequency'):
             self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(-30,100)
@@ -298,11 +524,12 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.var_entry.setEnabled(True)
         elif (self.scan_entry.currentText()=='Time'):
             self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(0,100)
             self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(1,1000)
+            self.scan_range_high_sb.setRange(1,10000)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
             for key in sorted(self.PCon.params.defs.iterkeys()):
@@ -311,6 +538,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.var_entry.setEnabled(True)
         elif (self.scan_entry.currentText()=='Voltage'):
             self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(-0.1,5)
@@ -327,7 +555,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
     def init_scan(self, plotlength):
         self.plotdatalength = plotlength
-        self.plotdata=numpy.zeros((self.plotdatalength,2),'Float32')
+        self.plotdata=numpy.zeros((self.plotdatalength,3),'Float32')
+
+    def start_new_scan(self):
+        self.new_scan = True
+        self.run_scan()
 
     def run_scan(self):
         self.run_exp = True
@@ -336,115 +568,193 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_resume.setDisabled(True)
         self.button_pause.setDisabled(False)
         self.button_stop.setDisabled(False)
+        self.button_cont.setDisabled(True)
 
-#Determine if a certain step in the pulse sequence Load_cool_exp_check should be skipped CWC 09172012
-        if (self.Load_SW_cb.isChecked() == True):
-            self.PCon.parameter_set('LOAD_SWITCH', 1)
+        print "Starting a new scan: %i" %self.new_scan
+        if self.new_scan: #Only update the log file when starting a new scan. Parameters can not be changed if continuing a scan. CWC 09242012
+    #Determine if a certain step in the pulse sequence Load_cool_exp_check should be skipped CWC 09172012
+##            if (self.Load_SW_cb.isChecked() == True):
+##                self.PCon.parameter_set('LOAD_SWITCH', 1)
+##                self.set_stage_Disabled('Load',False)
+##            else:
+##                self.PCon.parameter_set('LOAD_SWITCH', 0)
+##                self.set_stage_Disabled('Load',True)
+##
+##            if (self.Cool_SW_cb.isChecked() == True):
+##                self.PCon.parameter_set('COOL_SWITCH', 1)
+##                self.set_stage_Disabled('PG cooling',False)
+##            else:
+##                self.PCon.parameter_set('COOL_SWITCH', 0)
+##                self.set_stage_Disabled('PG cooling',True)
+##
+##            if (self.OP_SW_cb.isChecked() == True):
+##                self.PCon.parameter_set('OP_SWITCH', 1)
+##            else:
+##                self.PCon.parameter_set('OP_SWITCH', 0)
+##
+##            if (self.Check_SW_cb.isChecked() == True):
+##                self.PCon.parameter_set('CHECK_SWITCH', 1)
+##            else:
+##                self.PCon.parameter_set('CHECK_SWITCH', 0)
+            for key in self.controls:
+                if not key[:3]=='SHU':
+                    self.update_global_var(self.controls[key][1],self.controls[key][0].value())
+            for i in range(len(self.h_subscripts)):
+                self.update_SHUTR(self.h_subscripts[i])
+
+            self.PCon.params.save_params("Params")
+            self.PCon.update_state()
+            coltree_Qt.save_state("State", self.PCon.state)
+
+            self.timestamp = time.strftime('%Y%m%d_%H%M%S')
+            if not os.path.isdir(dirname + self.timestamp + '/'):
+                os.mkdir(dirname + self.timestamp + '/')
+            shutil.copy2(str(self.ppfile), dirname + self.timestamp + '/') #copy the pp file to the data directory CWC 09242012
+            shutil.copy2('config.ddscon', dirname + self.timestamp + '/')  #copy the updated config file to the data directory CWC 09242012
+            self.filename = dirname + self.timestamp + '/' + str(self.scan_entry.currentText()) + '_scan'
+            if (self.scan_entry.currentText()!='Continuous'):
+                self.filename+= '_' + str(self.var_entry.currentText())
+            fd = file(self.filename+'.txt', "a")
+
+            self.n_reps = self.rep_sb.value()
+            self.PCon.parameter_set('datastart', 4000-self.n_reps+1) #changed CWC 09132012
+            #Log the value of the parameters
+            self.update_params()
+
+            params_to_write = 'Pulse Programmer (pp) file:'+str(self.ppfile)+'\n'
+            params_to_write+= 'Parameters: '
+            for key in sorted(self.PCon.params.defs.iterkeys()):
+                params_to_write+= str(key)+': '+ str(self.PCon.params.defs[key])+ '; '
+            params_to_write+='\n'
+
+            stateobj_to_write = 'Stateobj: '
+            for key in sorted(self.PCon.stateobj.iterkeys()):
+                if (key[:3] == 'DDS' or key[:3] == 'DAC' or key == 'SHUTR'):
+                    stateobj_to_write+=key+': '+str(self.PCon.stateobj[key][0].value())+'; '
+            stateobj_to_write+='\n'
+
+            self.PCon.data = numpy.zeros([self.n_reps,1], 'Int32')
+
+            if (self.scan_entry.currentText()=='Continuous'):
+                if self.new_scan:
+                    self.text_to_write = 'Continuous scan.\n'
+                    self.text_to_write+=params_to_write
+                    self.text_to_write+=stateobj_to_write
+                    fd.write(self.text_to_write)
+                    fd.close()
+                    self.init_scan(21)
+                    self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1, self.plotdatalength)
+    ##            self.trace1.clear()
+    ##            self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
+                #self.cont_plot()
+
+                plot_thread = PlotThread(self)
+                self.threads.append(plot_thread)
+                exp_thread = ContExpThread(self, plot_thread)
+                self.threads.append(exp_thread)
+                self.thread_count+=1
+
+                #plot_thread.start()
+                #exp_thread.start()
+
+            elif (self.scan_entry.currentText()=='Frequency' or self.scan_entry.currentText()=='Time' or self.scan_entry.currentText()=='Voltage'):
+                if self.new_scan: #Only update the log file when starting a new scan. CWC 09242012
+                    self.init_scan(self.n_points_sb.value())
+                    self.text_to_write = str(self.scan_entry.currentText()) + ' scan.\n'
+                    self.text_to_write+=params_to_write
+                    self.text_to_write+=stateobj_to_write
+                    scan_vals = numpy.linspace(self.scan_range_low_sb.value(), self.scan_range_high_sb.value(),self.n_points_sb.value())
+                    scan_vals = map(lambda x: float(round(10000*x)/10000), scan_vals)
+                    self.plotdata[:,0]=scan_vals
+                    self.ind = {}
+                    for n in range(len(scan_vals)):
+                        self.ind[scan_vals[n]]=n
+
+
+                    self.text_to_write+= 'Scan variable: ' + str(self.var_entry.currentText()) + '\n'
+                    self.text_to_write+= 'Range:' + str(self.scan_range_low_sb.value()) + ' to ' + str(self.scan_range_high_sb.value()) + '\n'
+                    self.text_to_write+= 'Number of points: ' + str(self.n_points_sb.value()) +'\n'
+                    self.text_to_write+= 'Rep. per point: '+ str(self.rep_sb.value()) +'\n'
+                    self.text_to_write+= 'Scan var. val.'+'\t'+'Meas. Avg.'+'\t'
+                    for n in range(self.rep_sb.value()):
+                        self.text_to_write += 'Rep. #'+str(n)+'\t'
+                    self.text_to_write +='\n'
+                    fd.write(self.text_to_write)
+                    fd.close()
+    ##            self.trace1.clear()
+    ##            self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'ro')
+
+                #print self.shuffle_cb.isChecked()
+                if (self.shuffle_cb.isChecked() == True):
+                    numpy.random.shuffle(scan_vals)#Shuffle the list of scanned variable values each time a scan is started, whether continuing or not. CWC 09242012
+                    #print scan_vals[0]
+
+                plot_thread = PlotThread(self)
+                self.threads.append(plot_thread)
+                exp_thread = ExpThread(self, scan_vals, plot_thread)#self) Changed the receiver for the update event from self (GUI) to plot_thread
+                self.threads.append(exp_thread)
+                self.thread_count+=1
+                #plot_thread.start()
+                #exp_thread.start()
+            else:
+                print "Unknow scan type."
+        print "Thread count: %i" %self.thread_count
+        self.threads[2*(self.thread_count-1)].start()
+        self.threads[2*(self.thread_count-1)+1].start()
+
+    def set_stage_Disabled(self):
+        widget = self.sender()
+        TF = widget.isChecked()
+        if TF:
+            SW = 1
         else:
-            self.PCon.parameter_set('LOAD_SWITCH', 0)
+            SW = 0
 
-        if (self.Cool_SW_cb.isChecked() == True):
-            self.PCon.parameter_set('COOL_SWITCH', 1)
-        else:
-            self.PCon.parameter_set('COOL_SWITCH', 0)
+        if (widget == self.Load_SW_cb):
+            h_label = 'load'
+            self.PCon.parameter_set('LOAD_SWITCH', SW)
+        elif (widget == self.Cool_SW_cb):
+            h_label = 'cool'
+            self.PCon.parameter_set('COOL_SWITCH', SW)
+        elif (widget == self.Wait2_SW_cb):
+            h_label = 'wait2'
+            self.PCon.parameter_set('WAIT2_SWITCH', SW)
+        elif (widget == self.OP_SW_cb):
+            h_label = 'op'
+            self.PCon.parameter_set('OP_SWITCH', SW)
+        elif (widget == self.Wait3_SW_cb):
+            h_label = 'wait3'
+            self.PCon.parameter_set('WAIT3_SWITCH', SW)
+        elif (widget == self.Exp_SW_cb):
+            h_label = 'exp'
+            self.PCon.parameter_set('EXP_SWITCH', SW)
+        elif (widget == self.Wait4_SW_cb):
+            h_label = 'wait4'
+            self.PCon.parameter_set('WAIT4_SWITCH', SW)
+        elif (widget == self.Check_SW_cb):
+            h_label = 'check'
+            self.PCon.parameter_set('CHECK_SWITCH', SW)
 
-        if (self.OP_SW_cb.isChecked() == True):
-            self.PCon.parameter_set('OP_SWITCH', 1)
-        else:
-            self.PCon.parameter_set('OP_SWITCH', 0)
+        for i in range(len(self.v_sb_subscripts)):
+            self.controls[self.v_sb_subscripts[i]+h_label][0].setDisabled(not TF)
+        for i in range(len(self.v_tb_index)):
+            self.controls[self.v_tb_index[i]+h_label][0].setDisabled(not TF)
 
-        if (self.Check_SW_cb.isChecked() == True):
-            self.PCon.parameter_set('CHECK_SWITCH', 1)
-        else:
-            self.PCon.parameter_set('CHECK_SWITCH', 0)
+        disable_additional_col = 0
+        if h_label == 'load':
+            h_label = 'wait1'
+            disable_additional_col += 1
+        elif h_label == 'check':
+            h_label = 'wait6'
+            disable_additional_col += 1
 
-        self.PCon.params.save_params("Params")
-        self.PCon.update_state()
-        coltree_Qt.save_state("State", self.PCon.state)
+        if disable_additional_col:
+            for i in range(len(self.v_sb_subscripts)):
+                self.controls[self.v_sb_subscripts[i]+h_label][0].setDisabled(not TF)
+            for i in range(len(self.v_tb_index)):
+                self.controls[self.v_tb_index[i]+h_label][0].setDisabled(not TF)
 
-        self.timestamp = time.strftime('%Y%m%d_%H%M%S')
-        if not os.path.isdir(dirname + self.timestamp + '/'):
-            os.mkdir(dirname + self.timestamp + '/')
-        shutil.copy2(str(self.ppfile), dirname + self.timestamp + '/')
-        shutil.copy2('config.ddscon', dirname + self.timestamp + '/')
-        self.filename = dirname + self.timestamp + '/' + str(self.scan_entry.currentText()) + '_scan'
-        if (self.scan_entry.currentText()!='Continuous'):
-            self.filename+= '_' + str(self.var_entry.currentText())
-        fd = file(self.filename+'.txt', "a")
 
-        rep_per_point = self.rep_sb.value()
-        self.PCon.parameter_set('datastart', 4000-rep_per_point+1) #changed CWC 09132012
-        #Log the value of the parameters
-        self.update_params()
-
-        params_to_write = 'Pulse Programmer (pp) file:'+str(self.ppfile)+'\n'
-        params_to_write+= 'Parameters: '
-        for key in self.PCon.params.defs:
-            params_to_write+= str(key)+': '+ str(self.PCon.params.defs[key])+ '; '
-        params_to_write+='\n'
-
-        stateobj_to_write = 'Stateobj: '
-        for key in self.PCon.stateobj:
-            if (key[:3] == 'DDS' or key[:3] == 'DAC' or key == 'SHUTR'):
-                stateobj_to_write+=key+': '+str(self.PCon.stateobj[key][0].value())+'; '
-        stateobj_to_write+='\n'
-
-        self.PCon.data = numpy.zeros([rep_per_point,1], 'Int32')
-        if (self.scan_entry.currentText()=='Continuous'):
-            self.text_to_write = 'Continuous scan.\n'
-            self.text_to_write+=params_to_write
-            self.text_to_write+=stateobj_to_write
-            fd.write(self.text_to_write)
-            fd.close()
-            self.init_scan(21)
-            self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1, self.plotdatalength)
-##            self.trace1.clear()
-##            self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
-            #self.cont_plot()
-
-            plot_thread = PlotThread(self)
-            self.threads.append(plot_thread)
-            exp_thread = ContExpThread(self, plot_thread)
-            self.threads.append(exp_thread)
-            plot_thread.start()
-            exp_thread.start()
-
-        elif (self.scan_entry.currentText()=='Frequency' or self.scan_entry.currentText()=='Time' or self.scan_entry.currentText()=='Voltage'):
-            self.init_scan(self.n_points_sb.value())
-            self.text_to_write = str(self.scan_entry.currentText()) + ' scan.\n'
-            self.text_to_write+=params_to_write
-            self.text_to_write+=stateobj_to_write
-            scan_vals = numpy.linspace(self.scan_range_low_sb.value(), self.scan_range_high_sb.value(),self.n_points_sb.value())
-            scan_vals = map(lambda x: float(round(10000*x)/10000), scan_vals)
-            self.plotdata[:,0]=scan_vals
-            self.ind = {}
-            for n in range(len(scan_vals)):
-                self.ind[scan_vals[n]]=n
-            #print self.shuffle_cb.isChecked()
-            if (self.shuffle_cb.isChecked() == True):
-                numpy.random.shuffle(scan_vals)
-                #print scan_vals[0]
-
-            self.text_to_write+= 'Scan variable: ' + str(self.var_entry.currentText()) + '\n'
-            self.text_to_write+= 'Range:' + str(self.scan_range_low_sb.value()) + ' to ' + str(self.scan_range_high_sb.value()) + '\n'
-            self.text_to_write+= 'Number of points: ' + str(self.n_points_sb.value()) +'\n'
-            self.text_to_write+= 'Rep. per point: '+ str(self.rep_sb.value()) +'\n'
-            self.text_to_write+= 'Scan var. val.'+'\t'+'Meas. Avg.'+'\t'
-            for n in range(self.rep_sb.value()):
-                self.text_to_write += 'Rep. #'+str(n)+'\t'
-            self.text_to_write +='\n'
-            fd.write(self.text_to_write)
-            fd.close()
-##            self.trace1.clear()
-##            self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'ro')
-            plot_thread = PlotThread(self)
-            self.threads.append(plot_thread)
-            exp_thread = ExpThread(self, scan_vals, plot_thread)#self) Changed the receiver for the update event from self (GUI) to plot_thread
-            self.threads.append(exp_thread)
-            plot_thread.start()
-            exp_thread.start()
-        else:
-            print "Unknow scan type."
 
     def pause_scan(self):
         self.pause = True
@@ -452,6 +762,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_resume.setDisabled(False)
         self.button_pause.setDisabled(True)
         self.button_stop.setDisabled(False)
+        self.button_cont.setDisabled(True)
 
     def resume_scan(self):
         self.pause = False
@@ -459,6 +770,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_resume.setDisabled(True)
         self.button_pause.setDisabled(False)
         self.button_stop.setDisabled(False)
+        self.button_cont.setDisabled(True)
 
     def stop_scan(self):
         self.run_exp = False
@@ -467,6 +779,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_resume.setDisabled(True)
         self.button_pause.setDisabled(True)
         self.button_stop.setDisabled(True)
+        self.button_cont.setDisabled(False)
         self.PCon.user_stop() #Added for proper stop CWC 09172012
 
         #pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
@@ -476,6 +789,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         #print 'Saving figure...'
 
         #self.fit_result()
+
+    def continue_scan(self):
+        self.new_scan = False
+        self.run_scan()
 
 ##    def cont_plot(self):
 ##        self.ContPlot = True
@@ -669,6 +986,7 @@ class ExpThread(QtCore.QThread):
         self.connect( self, QtCore.SIGNAL("Done_scanning"), receiver.stop )
 
     def run(self):
+        self.stopped = 0
         self.GUI.PCon.update_state()
         coltree_Qt.save_state("State", self.GUI.PCon.state)
         n = 0
@@ -729,6 +1047,7 @@ class ContExpThread(QtCore.QThread):
         self.connect( self, QtCore.SIGNAL("Done_scanning"), receiver.stop )
 
     def run(self):
+        self.stopped = 0
         self.GUI.PCon.update_state()
         coltree_Qt.save_state("State", self.GUI.PCon.state)
         while (self.stopped == 0 and self.GUI.run_exp ==True):
@@ -821,7 +1140,8 @@ class PlotThread(QtCore.QThread):
             self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
             self.line1.set_ydata(self.GUI.plotdata[:,1])
         else:# (self.GUI.scan_entry.currentText()=='Frequency' ):
-            self.GUI.plotdata[scan_index,1] = new_mean
+            self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+            self.GUI.plotdata[scan_index,2] = self.GUI.plotdata[scan_index,2] + self.GUI.n_reps
             self.line1.set_ydata(self.GUI.plotdata[:,1])
 
         #print "%d, %d" %(len(self.GUIplotdata[:,0]),len(self.GUIplotdata[:,1]))
@@ -921,3 +1241,32 @@ class PlotWidget(QtGui.QWidget):
     def closeEvent(self, event):
         self.plot_thread.stop()
         self.plot_thread.frame2.close()
+
+class LabeledSpinBox(QtGui.QWidget):
+    def __init__(self, label, callback):
+        super(LabeledSpinBox, self).__init__()
+        self.box = QtGui.QVBoxLayout()
+        self.sb = QtGui.QDoubleSpinBox()
+        self.box.addWidget(self.sb)
+        self.label = label
+        self.sb.valueChanged.connect(self.valChanged)
+        QtCore.QObject.connect(self,QtCore.SIGNAL("changed"),callback)
+
+    def valChanged(self):
+        self.emit(QtCore.SIGNAL("changed"),self.label, self.sb.value())
+
+class LabeledPushButton(QtGui.QWidget):
+    def __init__(self, vlabel, hlabel, callback):
+        super(LabeledPushButton, self).__init__()
+        self.box = QtGui.QVBoxLayout()
+        self.tb = QtGui.QPushButton()
+        self.tb.setCheckable(True)
+        self.box.addWidget(self.tb)
+        self.vlabel = vlabel
+        self.hlabel = hlabel
+        self.tb.toggled.connect(self.tb_toggled) #This signal is never invoked! CWC09252012
+        QtCore.QObject.connect(self,QtCore.SIGNAL("tb_toggled"),callback)
+
+    def tb_toggled(self):
+        print '%s toggled.' %(self.vlabel+self.hlabel)
+        self.emit(QtCore.SIGNAL("tb_toggled"),self.hlabel)

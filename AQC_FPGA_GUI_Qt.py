@@ -100,11 +100,14 @@ class gui(QtGui.QWidget):
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
-    # TODO: Move to fpga front panel class 
-    #'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
-    _FPGA_bitFile = 'fpgafirmware_DAC_busy_bypassed09212012.bit'
-    checkOutputs = False #True
-    
+    #only 3 pll circuits in CY22393
+    #_FPGA_PLL_baseFrequencies = ()
+    #for each output clock : (pll_index, )
+    #_FPGA_PLL_outputData = {1: ()}
+
+    _FPGA_bitFile = 'fpgafirmware.bit'#'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
+    _checkOutputs = False #True
+
     #################################################################
     # __init__
     #
@@ -285,7 +288,7 @@ class gui(QtGui.QWidget):
 
         for key in sorted(defs.iterkeys()):#defs:
             self.params.add_row(key, defs[key])
-        for i in range(len(defs), 80):
+        for i in range(len(defs), 200):
             self.params.add_row('<PARAM%d>'%(i), 0)
 
         box.addWidget(self.params.table)
@@ -327,7 +330,7 @@ class gui(QtGui.QWidget):
         box3.addWidget(Filename_label)
 
         self.Filename_entry=QtGui.QLineEdit()
-        self.Filename_entry.setText("Load_cool_exp_check_by_parts.pp")
+        self.Filename_entry.setText("Load_cool_exp_check_by_parts_table_GUI.pp")
         box3.addWidget(self.Filename_entry)
 
         button_quit= QtGui.QPushButton("Quit", self)
