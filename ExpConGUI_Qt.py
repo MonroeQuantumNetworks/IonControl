@@ -529,7 +529,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(0,100)
             self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(1,1000)
+            self.scan_range_high_sb.setRange(1,10000)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
             for key in sorted(self.PCon.params.defs.iterkeys()):
