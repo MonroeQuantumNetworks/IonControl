@@ -1,14 +1,15 @@
 #define	SHUTR_REPUMP 2
+#define SHUTR_OP_WAIT 138
 #define	SHUTR_EXP   2
 #define SHUTR_EXP_WAIT 10
 #define SHUTR_EXP_WAIT_AFTER 10
 #define DAC_ch_MOT_coil 0
-#define DAC_ch_Repump 1
+#define DAC_ch_Bz 1
 #define DAC_ch_MOT 3
 #define DAC_ch_Dipole 5
 #define DAC_ch_Bx 6
 #define DAC_ch_By 7
-#define DAC_ch_Bz 9
+#define DAC_ch_Repump 9
 #define DAC_ch_OP 13
 #define DDS_ch_MOT 0
 #define DDS_ch_REPUMP 1
@@ -198,8 +199,9 @@ OPump: NOP
 	DAC		 DAC_ch_OP, V_OP_op
 	DACUP
 	SHUTRVAR SHUTR_op
-	DELAY	 us_Time_op 	#SHUTR	 SHUTR_EXP_WAIT
-
+	DELAY	 us_Time_op 	#SHUTR	 SHUTR_OP_WAIT
+	SHUTRVAR SHUTR_wait3
+	
 wait3: NOP
 	LDWR	 WAIT3_SWITCH
 	CMP		 SWITCH
