@@ -11,16 +11,17 @@
 
 
 
-#define SHUTR_LOAD 13
-#define SHUTR_WAIT 10
-#define SHUTR_EXP_WAIT 8
-#define SHUTR_COOL 13
-#define SHUTR_OP 8
-#define SHUTR_DEPUMP 2
-#define	SHUTR_REPUMP 2
-#define SHUTR_DETECT 13
-#define	SHUTR_EXP   8
-#define SHUTR_CHECK 13
+#define SHUTR_LOAD 29
+#define SHUTR_WAIT 26 #load:26 background:18
+#define SHUTR_COOL 29 #load:29 background:21
+#define SHUTR_OP 29
+#define SHUTR_DEPUMP 18
+#define	SHUTR_REPUMP 18
+#define SHUTR_DETECT 29
+#define	SHUTR_EXP   18
+#define SHUTR_EXP_WAIT 26
+#define SHUTR_EXP_WAIT_AFTER 26
+#define SHUTR_CHECK 29
 #define DAC_ch_MOT_coil 0
 #define DAC_ch_Repump 1
 #define DAC_ch_MOT 3
@@ -29,93 +30,22 @@
 #define DAC_ch_By 7
 #define DAC_ch_Bz 9
 #define DAC_ch_OP 13
-
 #define DDS_ch_MOT 0
 #define DDS_ch_REPUMP 1
 #define DDS_ch_OP 2
 #define DDS_ch_uWave 3
 
-
-
 var dataend 	   4000
 var LOADIND        0
-#var LOADREP        8000
-#var LOADTHOLD      6
-#var ms_WAIT        1
 var us_DEPUMP      2
-#var us_REPUMP      1
-#var us_OP		   240
-#var us_CheckTime   500
-#var us_LoadDetectTime 500
 var addr		   0
-#var CHECKTHOLD     3
-#var CHECKREP       4
 var CHECKIND       0
 var CHECKCOUNT     0
 var DETECTCOUNT    0
 var LOADCOUNT      0
-#var V_MOTcoil_load 1.2
-#var V_REPUMP_load  1.5
-#var F_MOT_load	   68.14
-#var V_Dipole_load  3.2
-#var V_MOT_load	   1.6
-#var V_Bx_load	   0.0
-#var V_By_load	   0.0
-#var V_Bz_load	   0.38
-
-#var V_MOTcoil_cool 0.0
-#var V_REPUMP_cool  1.5
-#var F_MOT_cool	   68.14
-#var V_Dipole_cool  3.2
-#var V_MOT_cool	   0.0
-#var V_Bx_cool	   0.625
-#var V_By_cool	   0.55
-#var V_Bz_cool	   0.5
-
-#var V_MOTcoil_op   0.0
-#var V_REPUMP_op	   1.5
-#var F_MOT_op	   68.14
-#var V_Dipole_op    3.2
-#var V_MOT_op	   0.0
-#var V_Bx_op	   	   0.625
-#var V_By_op	       0.55
-#var V_Bz_op	       0.5
-#var V_OP_op		   1.0
-
-#var V_MOTcoil_Exp  0.0
-#var V_REPUMP_Exp   1.5
-#var F_MOT_Exp	   68.14
-#var V_Dipole_Exp   3.2
-#var V_MOT_Exp	   0.0
-#var V_Bx_Exp	   0.625
-#var V_By_Exp	   0.55
-#var V_Bz_Exp	   0.5
-
-#var V_MOTcoil_Detect  0.0
-#var V_REPUMP_Detect   1.5
-#var F_MOT_Detect	   68.14
-#var V_Dipole_Detect   3.2
-#var V_MOT_Detect	   0.0
-#var V_Bx_Detect	   0.625
-#var V_By_Detect	   0.55
-#var V_Bz_Detect	   0.5
-
-#var V_MOTcoil_Check  0.0
-#var V_REPUMP_Check   1.5
-#var F_MOT_Check	   68.14
-#var V_Dipole_Check   3.2
-#var V_MOT_Check	   0.0
-#var V_Bx_Check	   0.625
-#var V_By_Check	   0.55
-#var V_Bz_Check	   0.5
-
 var RAMPIND 	   0
-#var RAMPTOT        10
-#var us_RAMP_T      20
 var V_MOT          3.5
 var F_MOT          68.14
-#var F_INC         -0.15
-#var V_INC         -0.1
 var	SWITCH			0
 
 # Atom reuse variables
@@ -191,7 +121,10 @@ load: NOP
 	JMPZ     load
 	JMPNZ    wait
 
-wait: NOP
+wait: NOP 
+	DAC	 	 DAC_ch_MOT, V_MOT_comp 
+	DACUP 
+	DELAY	 us_MotServo_wait
 	SHUTR 	 SHUTR_WAIT
 	DDSFRQ	 DDS_ch_MOT, F_MOT_cool
 	DDSFRQ	 DDS_ch_REPUMP, F_REPUMP_cool
@@ -203,7 +136,7 @@ wait: NOP
 	DAC		 DAC_ch_By, V_By_cool
 	DAC		 DAC_ch_Bz, V_Bz_cool
 	DACUP
-	DELAY	 ms_WAIT
+	DELAY	 ms_wait
 	JMP		 ini_sub_D_cooling
 
 ini_sub_D_cooling: NOP
@@ -219,6 +152,7 @@ ini_sub_D_cooling: NOP
 	DAC		 DAC_ch_Bz, V_Bz_cool
 	DACUP
 	DDSFRQ	 DDS_ch_MOT, F_MOT_cool
+	DELAY	 us_cool_delay
 	SHUTR 	 SHUTR_COOL
 	CLRW
 	STWR     RAMPIND
@@ -251,7 +185,7 @@ OPump: NOP
 	JMPZ	 Exp
 	DDSFRQ	 DDS_ch_REPUMP, F_REPUMP_op
 	DDSFRQ	 DDS_ch_OP, F_OP_op
-	DAC		 DAC_ch_MOT_coil, V_MOT_op
+	DAC		 DAC_ch_MOT, V_MOT_op
 	DAC		 DAC_ch_Repump, V_Repump_op
 	DAC		 DAC_ch_Bx, V_Bx_op
 	DAC		 DAC_ch_By, V_By_op
@@ -260,7 +194,7 @@ OPump: NOP
 	DACUP
 	SHUTR    SHUTR_OP
 	DELAY	 us_OP
-	SHUTR	 SHUTR_EXP
+	SHUTR	 SHUTR_EXP_WAIT
 	JMP		 Exp
 
 Exp: NOP
@@ -275,8 +209,8 @@ Exp: NOP
 	DAC		 DAC_ch_Bz, V_Bz_exp
 	DACUP
     SHUTR    SHUTR_EXP
-	DELAY	 us_EXP
-	SHUTR	 SHUTR_EXP_WAIT
+	DELAY	 us_EXP 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp
+	SHUTR	 SHUTR_EXP_WAIT_AFTER
 	DAC	 	 DAC_ch_MOT, V_MOT_Detect
 	DAC		 DAC_ch_Dipole, V_Dipole_Detect
 	DAC		 DAC_ch_Bx, V_Bx_Detect
@@ -288,11 +222,15 @@ Exp: NOP
 
 	COUNT    us_MeasTime
 	STWR     DETECTCOUNT
+
 	CMP		 CHECKTHOLD
 	JMPZ	 ini_check
 	JMPNZ	 save_data
 
 save_data: NOP
+	DAC	 	DAC_ch_MOT, V_MOT_exp_end
+	DACUP
+	DELAY 	us_cool_delay
 	INC 	atomReuse		# v
 	STWR 	atomReuse		# increment and store atom reuse
 	LDWR	DETECTCOUNT

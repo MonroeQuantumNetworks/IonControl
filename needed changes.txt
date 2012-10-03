@@ -1,0 +1,6 @@
+- Check box for Atom detection
+- Clear memory every new run (pp file)
+- Only closing the current plot will close scan
+- Add current scan value indicator to ExpCon*
+- Add error bar on plots
+- Scan multiple columns

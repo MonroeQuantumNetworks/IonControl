@@ -5,46 +5,60 @@
 # March 3-23-2012
 # C. Spencer Nichols
 # 5-31-2012
-#------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Install Requirments
 
 #WINDOWS
 
 #python2.7  windows  32 bit becuase some of the packages only have 32 bit
-# download numpy at http://sourceforge.net/projects/numpy/files/NumPy/1.5.1/ (file--numpy-1.5.1-win32-superpack-python2.7.exe)
-# download gtk-all-in-one at http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.24/ (file--pygtk-all-in-one-2.24.1.win32-py2.7.msi)
-# download scipy at http://sourceforge.net/projects/scipy/files/scipy/0.9.0/ (file--scipy-0.9.0-win32-superpack-python2.7.exe)
-# download matplotlib at http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-1.1.0/ (file--matplotlib-1.1.0.win32-py2.7.exe)
-# need to instal Opal Kelly Software to have appropriate python API
+# download numpy at http://sourceforge.net/projects/numpy/files/NumPy/1.5.1/
+#   (file--numpy-1.5.1-win32-superpack-python2.7.exe)
+# download gtk-all-in-one at
+# http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.24/
+#   (file--pygtk-all-in-one-2.24.1.win32-py2.7.msi)
+# download scipy at
+# http://sourceforge.net/projects/scipy/files/scipy/0.9.0/
+#   (file--scipy-0.9.0-win32-superpack-python2.7.exe)
+# download matplotlib at
+# http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-1.1.0/
+#   (file--matplotlib-1.1.0.win32-py2.7.exe) 
+# need to instal Opal Kelly Software # to have appropriate python API
 
-#Other Requirments ---
-#Make sure the FPGA id is correct on line 719, 721 and 722.  This can be changed via the Front Panel Softwarw provided by Opal Kelly
+#Other Requirments --- #Make sure the FPGA id is correct on line 719, 721 and
+#722.  This can be changed via the Front Panel Softwarw provided by Opal Kelly
 
 #UBUNTU 10.04
-# - ubuntu comes with python 2.6 with the following packages:
-#     - os, gobject, pango, math, threading, socket, and time
-#   - if your version of ubuntu does not have these packages, they must be installed
-# - extra packages to install:
-#     - numpy and scipy
-#         - sudo apt-get install python-numpy python-scipy
-#     - gtk2.0
-#         - sudo apt-get install python-gtk2
-#     - matplotlib
-#         - sudo apt-get install python-matplotlib
+# - ubuntu comes with python 2.6 with the following packages: - os, gobject,
+# pango, math, threading, socket, and time - if your version of ubuntu does not
+# have these packages, they must be installed - extra packages to install: -
+# numpy and scipy - sudo apt-get install python-numpy python-scipy - gtk2.0 -
+# sudo apt-get install python-gtk2 - matplotlib - sudo apt-get install
+# python-matplotlib
 
 #UBUNTU 12.04
-# - ubuntu comes with python 2.7 with the following packages:
-#     - os, gobject, pango, math, threading, socket, and time
-#   - if your version of ubuntu does not have these packages, they must be installed
-# - to install the extra packages, follow the ubuntu 10.04 instructions
+# - ubuntu comes with python 2.7 with the following packages: - os, gobject,
+# pango, math, threading, socket, and time - if your version of ubuntu does not
+# have these packages, they must be installed - to install the extra packages,
+# follow the ubuntu 10.04 instructions
 
-#--------------------------------------------------------------------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 import sys
-sys.path.append('./include')  #for various systems? CWC 07112012
+import os
+import platform
+sys.path.append('./include')  #for various systems? CWC 0711201
 
-import ok, os
-import gtk, gobject, pango, math
+# Import ok driver for correct os
+operatingSystem = platform.system()
+if (operatingSystem == 'Windows'):
+    ok_path = 'Drivers/Windows/'
+elif (operatingSystem == 'Linux'):
+    ok_path = 'Drivers/Linux/'
+elif (operatingSystem == 'Darwin'):
+    ok_path = 'Drivers/Darwin/'
+sys.path.append(ok_path)
+import ok
+
+#import gtk, gobject, pango, math
 import numpy
 import threading, socket, time
 import coltree_Qt, etherplug
@@ -52,7 +66,8 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
 #from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as \
+        FigureCanvas
 from matplotlib.axes import Subplot
 from matplotlib.axes import Axes
 
@@ -80,18 +95,15 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = 'AQC_1272_PP'#'1725_Test_FPGA'##'Sandia_1725_PP'#'Spencer-FPGA'  #must match FPGA name Changed to Sandia_1725_PP CWC 07112012
+    _FPGA_name = '1725_Test_FPGA'#'AQC_1272_PP'#  1725_Test_FPGA
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
-    #only 3 pll circuits in CY22393
-    #_FPGA_PLL_baseFrequencies = ()
-    #for each output clock : (pll_index, )
-    #_FPGA_PLL_outputData = {1: ()}
-
-    _FPGA_bitFile = 'fpgafirmware_DAC_busy_bypassed09212012.bit'#'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
+    # TODO: Move to fpga front panel class 
+    #'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
+    _FPGA_bitFile ='fpgafirmware.bit' #'fpgafirmware_DAC_busy_bypassed.bit'
     _checkOutputs = False #True
-
+    
     #################################################################
     # __init__
     #
@@ -101,10 +113,11 @@ class gui(QtGui.QWidget):
         super(gui, self).__init__()
         #initialize FPGA
         self.xem = ok.FrontPanel()
-        self.xem = fpgaInit(self._FPGA_name, 0, self._FPGA_bitFile)#New CWC 07112012
+
+        #New CWC 07112012
+        self.xem = fpgaInit(self._FPGA_name, 0, self._FPGA_bitFile)
         worked = self.xem.ConfigureFPGA('./FPGA/'+self._FPGA_bitFile)
         print worked
-        #initialize AD DDS Boards New CWC 07112012
         self.boards = []
         self.boardChannelIndex = [];
         for i in range(len(self._boards)):
@@ -139,7 +152,6 @@ class gui(QtGui.QWidget):
         hbox = QtGui.QHBoxLayout()
         self.setWindowTitle(self._FPGA_name+"contnroller")
 
-        #stateframe = QtGui.QFrame()
 
         box = self.make_state_view()
         #stateframe.addWidget(box)
@@ -152,14 +164,10 @@ class gui(QtGui.QWidget):
         self.plot = FigureCanvas(self.figure)  # a gtk.DrawingArea
 
 
-        #self.ExpConGUI = ExpConGUI_Qt.ExpConGUI_Qt(self)
         # Add frames
         vbox.addLayout(box)#stateframe)
-##        vbox.pack_start(controlbox4, False, False, 1)
-##        vbox.pack_start(controlbox5, False, False, 1)
         vbox.addLayout(controlbox3)
         vbox.addWidget(self.plot)
-        #vbox.pack_start(controlbox, False, False, 1)
         vbox.addLayout(controlbox1)
         vbox.addLayout(controlbox2)
         hbox.addLayout(vbox)
@@ -167,32 +175,9 @@ class gui(QtGui.QWidget):
 
         self.setLayout(hbox)
 
-        # connect quit signals
-        #window.connect("delete_event", self.on_quit_activate, None)
-        #window.connect("destroy", self.on_quit_activate, None)
-
-        # add an idle callback
-        #gobject.timeout_add(50, self.update_state) #Changed 50 to 2000 CWC 04042012
         # Done, show it
         self.show()
         self.ExpCon()
-
-
-
-        # start network
-##        self.plug = etherplug.etherplug(self.service_netcomm, NETPORT)
-##        for i in range(len(self.boardChannelIndex)):
-##            self.plug.register_hook('FREQ%i'%i, self.stateobj['DDS%i_FRQ'%i][0].set_value)
-##            self.plug.register_hook('AMP%i'%i, self.stateobj['DDS%i_AMP'%i][0].set_value)
-##
-##        self.plug.register_hook('SHUTR', self.stateobj['SHUTR'][0].set_value)
-##        self.plug.register_hook('SETPROG', self.pp_setprog)
-##        self.plug.register_hook('PARAMETER', self.parameter_set)
-##        self.plug.register_hook('RUNIT', self.pp_run)
-##        self.plug.register_hook('NBRIGHT?', self.net_countabove)
-##        self.plug.register_hook('LASTAVG?', self.net_lastavg)
-##        self.plug.register_hook('MEMORY?', self.net_memory)
-##        self.plug.register_hook('PARAMETER?', self.parameter_read)
 
         return
 
@@ -216,17 +201,23 @@ class gui(QtGui.QWidget):
         for i in range(len(self.boardChannelIndex)):
             table_aom.addWidget(QtGui.QLabel('DDS%i'%i),i+1,0)
             # Create a freq spinbutton
-            spin = indexed_spin_button(self,.2, 3, 0, self.boards[self.boardChannelIndex[i][0]].freqLimit, .1, False, 0, self.freq_changed, i)
+            spin = indexed_spin_button(self,.2, 3, 0,
+                    self.boards[self.boardChannelIndex[i][0]].freqLimit, .1,
+                    False, 0, self.freq_changed, i)
             hid = spin.hid
             self.stateobj['DDS%i_FRQ'%i] = (spin, hid)
             table_aom.addLayout(spin.box, i+1, 1)
             # Create an amp spinbutton (DDS1)
-            spin = indexed_spin_button(self, .2, 0, 0, self.boards[self.boardChannelIndex[i][0]].ampLimit, 1, False, 0, self.amp_changed, i)
+            spin = indexed_spin_button(self, .2, 0, 0,
+                    self.boards[self.boardChannelIndex[i][0]].ampLimit, 1,
+                    False, 0, self.amp_changed, i)
             hid = spin.hid
             self.stateobj['DDS%i_AMP'%i] = (spin, hid)
             table_aom.addLayout(spin.box, i+1, 2)
             # Create a phase spinbutton (DDS1)
-            spin = indexed_spin_button(self,.2, 0, 0, self.boards[self.boardChannelIndex[i][0]].phaseLimit, 100, False, 0, self.phase_changed, i)
+            spin = indexed_spin_button(self,.2, 0, 0,
+                    self.boards[self.boardChannelIndex[i][0]].phaseLimit, 100,
+                    False, 0, self.phase_changed, i)
             hid = spin.hid
             self.stateobj['DDS%i_PHS'%i] = (spin, hid)
             table_aom.addLayout(spin.box, i+1, 3)
@@ -235,11 +226,13 @@ class gui(QtGui.QWidget):
         table_aom.addWidget(QtGui.QLabel('THRES0'),s+1,0)
         table_aom.addWidget(QtGui.QLabel('THRES1'),s+1,2)
 
-        spin, hid = self.make_spin_button(1, 0, 0, 2**12-1, 1, False, 0, self.shutter_changed, 0)
+        spin, hid = self.make_spin_button(1, 0, 0, 2**12-1, 1, False, 0,
+                self.shutter_changed, 0)
         self.stateobj['SHUTR'] = (spin, hid)
         table_aom.addWidget(spin, s, 1)
 
-        spin, hid = self.make_spin_button(.2, 1, 0, 100, 1, False, 3.5, None, 0)
+        spin, hid = self.make_spin_button(.2, 1, 0, 100, 1, False, 3.5, None,
+                0)
         self.stateobj['THRES0'] = (spin, hid)
         table_aom.addWidget(spin, s+1, 1)
 
@@ -267,7 +260,9 @@ class gui(QtGui.QWidget):
         table_dac = QtGui.QGridLayout()
         for i in range(len(self.dacChannelIndex)):
             table_dac.addWidget(QtGui.QLabel('DAC%i'%i),int(i/4),(2*i)%8)
-            spin = indexed_spin_button(self, .2, 3, 0, self.dacs[self.dacChannelIndex[0][0]].VoutLimit*2.5/2**13, .1, False, 0, self.Vout_changed, i) #4.99969482422
+            spin = indexed_spin_button(self, .2, 3, 0,
+                    self.dacs[self.dacChannelIndex[0][0]].VoutLimit*2.5/2**13,
+                    .1, False, 0, self.Vout_changed, i) #4.99969482422
             hid = spin.hid
             self.stateobj['DAC%i_Vout'%i] = (spin, hid)
             table_dac.addLayout(spin.box, int(i/4), (2*i)%8+1)
@@ -282,8 +277,9 @@ class gui(QtGui.QWidget):
 
     def make_progdef_view(self):
         box = QtGui.QVBoxLayout()
-        self.params = coltree_Qt.typical_table_Qt(self)#coltree.typical_ncol_tree([(gobject.TYPE_STRING, 'Parameter Name', 1),(gobject.TYPE_DOUBLE, 'Parameter Value', 1)])
-
+        # coltree.typical_ncol_tree([(gobject.TYPE_STRING, 'Parameter Name',
+        #   1),(gobject.TYPE_DOUBLE, 'Parameter Value', 1)])
+        self.params = coltree_Qt.typical_table_Qt(self)
         defs = coltree_Qt.read_defs_from_config('Params:tree')
 
         for key in sorted(defs.iterkeys()):#defs:
@@ -291,13 +287,10 @@ class gui(QtGui.QWidget):
         for i in range(len(defs), 200):
             self.params.add_row('<PARAM%d>'%(i), 0)
 
-##        self.params.restore_state('Params')
-
         box.addWidget(self.params.table)
         return box
 
     def make_control_view(self):
-
         box1 = QtGui.QHBoxLayout()
         box2 = QtGui.QHBoxLayout()
         box3 = QtGui.QHBoxLayout()
@@ -328,16 +321,7 @@ class gui(QtGui.QWidget):
 
         button_lauch_panel = QtGui.QPushButton("Exp. control", self)
         box3.addWidget(button_lauch_panel)
-##
-##        button_run_script = gtk.Button("Run Script")
-##        box3.pack_start(button_run_script, True, True, 0)
 
-##        Dirname_label=gtk.Label("Directory")
-##        box4.pack_start(Dirname_label,True,True,0)
-##
-##        self.Dirname_entry=gtk.Entry(max=0)
-##        box4.pack_start(self.Dirname_entry,True,True,0)
-##
         Filename_label=QtGui.QLabel("Filename")
         box3.addWidget(Filename_label)
 
@@ -357,60 +341,8 @@ class gui(QtGui.QWidget):
         button_plot_reset.clicked.connect(self.pp_plot_reset)
         button_lauch_panel.clicked.connect(self.ExpCon)
         button_quit.clicked.connect(self.on_quit_activate)
-##        button_run_script.connect("clicked",self.py_run)
         return box1,box2,box3#,box4,box5
-##        box = gtk.HBox(False, 0)
-##
-##        button_load_script = gtk.Button("Load Script")
-##        box3.pack_start(button_load_script, True, True, 0)
-##
-##        button_run_script = gtk.Button("Run Script")
-##        box3.pack_start(button_run_script, True, True, 0)
-##
-##        Dirname_label=gtk.Label("Directory")
-##        box4.pack_start(Dirname_label,True,True,0)
-##
-##        self.Dirname_entry=gtk.Entry(max=0)
-##        box4.pack_start(self.Dirname_entry,True,True,0)
-##
-##        Filename_label=gtk.Label("Filename")
-##        box5.pack_start(Filename_label,True,True,0)
-##
-##        self.Filename_entry=gtk.Entry(max=0)
-##        box5.pack_start(self.Filename_entry,True,True,0)
-##
-##
-##        # buttons to run pulse sequencer
-##        button_load = gtk.Button("Load", gtk.STOCK_OPEN)
-##        box.pack_start(button_load, True, True, 0)
-##
-##        button_save = gtk.Button("Save", gtk.STOCK_SAVE_AS)
-##        box.pack_start(button_save, True, True, 0)
-##
-##        button_run = gtk.Button("Run")
-##        box.pack_start(button_run, True, True, 0)
-##
-##        button_stop = gtk.Button("Stop")
-##        box.pack_start(button_stop, True, True, 0)
-##
-##        button_read = gtk.Button("Readout")
-##        box.pack_start(button_read, True, True, 0)
-##
-##        button_reset = gtk.Button("Reset PP")
-##        box.pack_start(button_reset, True, True, 0)
-##
-##        button_plot_reset = gtk.Button("Reset Plot")
-##        box.pack_start(button_plot_reset, True, True, 0)
-##
-##        button_run.connect("clicked", self.pp_run)
-##        button_stop.connect("clicked", self.pp_stop)
-##        button_load.connect("clicked", self.pp_load)
-##        button_save.connect("clicked", self.pp_save)
-##        button_read.connect("clicked", self.pp_readout)
-##        button_reset.connect("clicked", self.pp_reset)
-##        button_plot_reset.connect("clicked", self.pp_plot_reset)
-##
-##        return box
+
     def restore_state(self,state):
         for key in sorted(state.iterkeys()):
             self.SetOutput(key,state[key])
@@ -943,7 +875,8 @@ class gui(QtGui.QWidget):
         return self.pp_Host_stop()
 
 class indexed_spin_button(QtGui.QWidget):
-    def __init__(self,gui,climb_rate, digits, range_low, range_high, increments, wrap, value, callback, key):
+    def __init__(self,gui,climb_rate, digits, range_low, range_high,
+            increments, wrap, value, callback, key):
         super(indexed_spin_button, self).__init__()
         self.box = QtGui.QVBoxLayout()
         self.sb = QtGui.QDoubleSpinBox()
@@ -963,6 +896,7 @@ class indexed_spin_button(QtGui.QWidget):
         else:
             self.hid = None
         return
+
     def valchanged(self):
         self.emit(QtCore.SIGNAL("changed"),self.index)
 
@@ -975,7 +909,6 @@ class indexed_spin_button(QtGui.QWidget):
         return
 
 def main():
-
     app = QtGui.QApplication(sys.argv)
     ex = gui()
     sys.exit(app.exec_())
