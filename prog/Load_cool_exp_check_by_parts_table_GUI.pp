@@ -116,9 +116,6 @@ load: NOP
 	JMPNZ    wait1
 
 wait1: NOP 
-	DAC	 	 DAC_ch_MOT, V_MOT_comp 
-	DACUP 
-	DELAY	 us_MotServo_wait
 	SHUTRVAR SHUTR_wait1
 	DDSFRQ	 DDS_ch_MOT, F_MOT_cool
 	DDSFRQ	 DDS_ch_REPUMP, F_Repump_cool
@@ -223,7 +220,7 @@ Exp: NOP
 	CMP		 SWITCH
 	JMPZ	 wait4
 	DDSFRQ	 DDS_ch_MOT, F_MOT_exp
-	DDSFRQ	 DDS_ch_REPUMP, F_Repump_exp
+	DDSFRQ	 DDS_ch_REPUMP, F_Repump_exp 
 	DDSFRQ	 DDS_ch_uWave, F_uWave_exp
 	DAC	 	 DAC_ch_MOT, V_MOT_exp
 	DAC		 DAC_ch_Dipole, V_Dipole_exp
