@@ -69,10 +69,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.new_scan = True #Switch for a new scan. Log file created if True.
         self.hist_max = 30
         self.t1 = time.time()
-        self.scan_types =['Continuous','Frequency','Time','Voltage']
+        self.scan_types =['Continuous','Frequency','Time','Voltage', 'DDS Amplitude']
         self.text_to_write = ''
         self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
-                7, 'SHUTR_Raman_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+                7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
                 4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
 
         # Initialize public variables
@@ -159,9 +159,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.var_entry.setDisabled(True)
 
         self.n_index_label = QtGui.QLabel("Current point:")
-        self.n_index = QtGui.QLabel("0")
+        self.n_index = QtGui.QLabel("-")
         hbox3.addWidget(self.n_index_label)
         hbox3.addWidget(self.n_index)
+        
+        self.scanVal_label = QtGui.QLabel("Current value:")
+        self.scanVal = QtGui.QLabel("-")
+        hbox3.addWidget(self.scanVal_label)
+        hbox3.addWidget(self.scanVal)
 
         self.shuffle_label = QtGui.QLabel("Shuffle scan")
         self.shuffle_cb = QtGui.QCheckBox()
@@ -169,6 +174,13 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.shuffle_cb.setDisabled(True)
         hbox3.addWidget(self.shuffle_label)
         hbox3.addWidget(self.shuffle_cb)
+        
+        self.qubit_D_label = QtGui.QLabel("Qubit detection")
+        self.qubit_D_cb = QtGui.QCheckBox()
+        self.qubit_D_cb.setChecked(False)
+        self.qubit_D_cb.setDisabled(False)
+        hbox3.addWidget(self.qubit_D_label)
+        hbox3.addWidget(self.qubit_D_cb)
         
         self.rep_label = QtGui.QLabel("Rep. per point")
         self.rep_sb = QtGui.QSpinBox()
@@ -385,10 +397,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         table_control = QtGui.QGridLayout()
         self.h_labels = ['Load', 'Wait1', 'PG cooling', 'Wait2', 'OP', 'Wait3', 'Exp', 'Wait4', 'Detect', 'Wait5', 'Check','Wait6']
         self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
-        self.v_sb_labels = ['Duration (us)','MOT coils', 'Repump detuning', 'MOT power', 'MOT detuning', 'Dipole power', 'Bx', 'By', 'Bz']
-        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_Repump_', 'V_MOT_', 'F_MOT_', 'V_Dipole_', 'V_Bx_', 'V_By_', 'V_Bz_']
-        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'Raman (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
-        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_Raman_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
+        self.v_sb_labels = ['Duration (us)','MOT coils', 'uWave freq.', 'D1 OP power', 'MOT power', 'MOT detuning', 'Repump power', 'Bx', 'By', 'Bz']
+        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_uWave_', 'A_OP_', 'V_MOT_', 'F_MOT_', 'V_Repump_', 'V_Bx_', 'V_By_', 'V_Bz_']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
+        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
 
         for i in range(len(self.h_labels)):
             table_control.addWidget(QtGui.QLabel(self.h_labels[i]),0,i+1)
@@ -431,9 +443,13 @@ class ExpConGUI_Qt(QtGui.QWidget):
             lsb.sb.setDecimals(1)
             lsb.sb.setSingleStep(1)
             lsb.sb.setRange(0,5000)
-        elif (v_label == 'F_MOT_' or v_label == 'F_Repump_'):
+        elif (v_label == 'F_MOT_' or v_label == 'F_uWave_'):
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(-30,100)
+        elif (v_label == 'A_OP_'):
+            lsb.sb.setSingleStep(1)
+            lsb.sb.setDecimals(0)
+            lsb.sb.setRange(0,1023)            
         else:
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(0,4.999)
@@ -552,6 +568,20 @@ class ExpConGUI_Qt(QtGui.QWidget):
                 if (key[:2]=='V_' or key[:2]=='v_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
+        elif (self.scan_entry.currentText()=='DDS Amplitude'):
+            self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
+            self.shuffle_cb.setDisabled(False)
+            self.scan_range_low_sb.setDisabled(False)
+            self.scan_range_low_sb.setRange(0,1023)
+            self.scan_range_high_sb.setDisabled(False)
+            self.scan_range_high_sb.setRange(0,1023)
+            self.n_points_sb.setDisabled(False)
+            self.var_entry.clear()
+            for key in sorted(self.PCon.params.defs.iterkeys()):
+                if (key[:2]=='A_' or key[:2]=='A_'):
+                    self.var_entry.addItem(key)
+            self.var_entry.setEnabled(True)
         else:
             print "Unknow scan type."
 
@@ -645,7 +675,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1,
                             self.plotdatalength)
 
-                plot_thread = PlotThread(self)
+                plot_thread = PlotThread(self, self.thread_count, self.qubit_D_cb.isChecked())
                 self.threads.append(plot_thread)
                 exp_thread = ContExpThread(self, plot_thread)
                 self.threads.append(exp_thread)
@@ -654,7 +684,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
             elif (self.scan_entry.currentText()=='Frequency' or
                     self.scan_entry.currentText()=='Time' or
-                    self.scan_entry.currentText()=='Voltage'):
+                    self.scan_entry.currentText()=='Voltage' or 
+                    self.scan_entry.currentText()=='DDS Amplitude'):
 
                 #Only update the log file when starting a new scan. CWC 09242012
                 if self.new_scan: 
@@ -683,6 +714,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
                             str(self.n_points_sb.value()) +'\n')
                     self.text_to_write+= ('Rep. per point: '+
                             str(self.rep_sb.value()) +'\n')
+                    self.text_to_write+= ('Plotting population:'+str(self.qubit_D_cb.isChecked())+'\n')
                     self.text_to_write+= 'Scan var. val.'+'\t'+'Meas. Avg.'+'\t'
                     for n in range(self.rep_sb.value()):
                         self.text_to_write += 'Rep. #'+str(n)+'\t'
@@ -695,12 +727,12 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     # scan is started, whether continuing or not. CWC 09242012
                     numpy.random.shuffle(scan_vals)
 
-                plot_thread = PlotThread(self)
+                plot_thread = PlotThread(self, self.thread_count, self.qubit_D_cb.isChecked())
                 self.threads.append(plot_thread)
 
                 # Changed the receiver for the update event from self (GUI) to
                 # plot_thread
-                exp_thread = ScanExpThread(self, plot_thread, scan_vals,)
+                exp_thread = ScanExpThread(self, plot_thread, scan_vals)
                 self.threads.append(exp_thread)
                 self.thread_count+=1
 
@@ -961,7 +993,7 @@ class ContExpThread(ExpThread):
 class ScanExpThread(ExpThread):
     """ Class for scanning a parameter type experiment thread. This class inherits
     QtCore.QThread through ExpThread."""
-    def __init__(self, GUI, receiver, scan_vals,):
+    def __init__(self, GUI, receiver, scan_vals):
         super(ScanExpThread, self).__init__(GUI,receiver)
         self.scan_vals = scan_vals
         temp = self.GUI.PCon.parameter_read( str(
@@ -1006,6 +1038,7 @@ class ScanExpThread(ExpThread):
 
             n+=1
             self.GUI.n_index.setText(str(n))
+            self.GUI.scanVal.setText(str(current_scan_val))
         self.GUI.PCon.restore_state(self.GUI.PCon.state)
         self.emit(QtCore.SIGNAL("Done_scanning"))
         self.GUI.PCon.parameter_set(str(self.GUI.var_entry.currentText()),
@@ -1143,12 +1176,14 @@ class ScanExpThread(ExpThread):
 #        self.wait()
 
 class PlotThread(QtCore.QThread):
-    def __init__(self, GUI):
+    def __init__(self, GUI, index, qubit_D):
         super(PlotThread, self).__init__()
         #Pop up two new windows for plot and hist with control bars. See http://eli.thegreenplace.net/files/prog_code/qt_mpl_bars.py.txt CWC 09132012
         self.frame1 = PlotWidget(self)
         self.frame2 = QtGui.QWidget()
         self.GUI = GUI
+        self.index = index
+        self.qubit_D = qubit_D
         self.filename = self.GUI.filename
         self.stopped = 0
         self.t1 = time.time()
@@ -1158,7 +1193,11 @@ class PlotThread(QtCore.QThread):
         self.canvas1.setParent(self.frame1)
         self.trace1 = self.fig1.add_subplot(111)
         self.trace1.set_title(self.filename)
-        self.line1, = self.trace1.plot(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],'r')
+        self.yerr = numpy.zeros(self.GUI.n_points_sb.value())
+        if self.qubit_D:
+            self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=0,fmt='ro-')
+        else:
+            self.line1, = self.trace1.plot(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],'ro-')
         #self.canvas.mpl_connect('pick_event', self.on_pick)
         self.mpl_toolbar1 = NavigationToolbar(self.canvas1, self.frame1)
         self.canvas1.draw()
@@ -1191,14 +1230,30 @@ class PlotThread(QtCore.QThread):
     def update_plot_save_data(self, scan_index, new_mean, new_data):
 ##        while (self.stopped == 0 and self.GUI.pause == True):
 ##            time.sleep(0.02)
+        new_prob = numpy.mean(map(lambda x: int(x>float(self.GUI.PCon.params.defs['CHECKTHOLD'])), new_data))
         if (self.GUI.scan_entry.currentText()=='Continuous'):
             self.GUI.plotdata[0:self.GUI.plotdatalength-1,1] = self.GUI.plotdata[1:self.GUI.plotdatalength,1]
-            self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
-            self.line1.set_ydata(self.GUI.plotdata[:,1])
+            if self.qubit_D: 
+                self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_prob
+                self.trace1.clear()
+                self.trace1.set_title(self.filename)
+                err = numpy.sqrt(self.GUI.plotdata[:,1]*(1-self.GUI.plotdata[:,1])/self.GUI.n_reps)
+                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr = 0,yerr = err,fmt='ro-')
+            else:
+                self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
+                self.line1.set_ydata(self.GUI.plotdata[:,1])
         else:# (self.GUI.scan_entry.currentText()=='Frequency' ):
-            self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+            if self.qubit_D: 
+                self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
+                self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+                self.trace1.clear()
+                self.trace1.set_title(self.filename)
+                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=self.yerr,fmt='ro-')
+            else:
+                self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+                self.line1.set_ydata(self.GUI.plotdata[:,1])
             self.GUI.plotdata[scan_index,2] = self.GUI.plotdata[scan_index,2] + self.GUI.n_reps
-            self.line1.set_ydata(self.GUI.plotdata[:,1])
+
 
         #print "%d, %d" %(len(self.GUIplotdata[:,0]),len(self.GUIplotdata[:,1]))
         ymax = numpy.max(self.GUI.plotdata[:,1])
@@ -1269,7 +1324,8 @@ class PlotThread(QtCore.QThread):
 
     def stop(self):
         self.stopped = 1
-        self.GUI.stop_scan()
+        if self.index == self.GUI.thread_count-1:
+            self.GUI.stop_scan()
         self.fig1.savefig(self.filename+'.png')
         pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
         pp.savefig(self.fig1)
@@ -1280,7 +1336,8 @@ class PlotThread(QtCore.QThread):
 
     def __del__(self):
         self.stopped = 1
-        self.GUI.stop_scan()
+        if self.index == self.GUI.thread_count-1:
+            self.GUI.stop_scan()
         self.fig1.savefig(self.filename+'.png')
         pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
         pp.savefig(self.fig1)

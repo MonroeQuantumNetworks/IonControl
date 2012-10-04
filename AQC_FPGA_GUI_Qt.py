@@ -95,13 +95,13 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = '1725_Test_FPGA'# AQC_1272_PP 1725_Test_FPGA
+    _FPGA_name = '1725_Test_FPGA'#'AQC_1272_PP'#  1725_Test_FPGA
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
     # TODO: Move to fpga front panel class 
     #'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
-    _FPGA_bitFile = 'fpgafirmware.bit'
+    _FPGA_bitFile ='fpgafirmware.bit' #'fpgafirmware_DAC_busy_bypassed.bit'
     _checkOutputs = False #True
     
     #################################################################
