@@ -1,4 +1,5 @@
 High priority:
+- Properly handle the last point when the stop button is hit.
 - Scan multiple columns
 - Save error bar when plot is closed
 - Add plot title back to the plotted average
