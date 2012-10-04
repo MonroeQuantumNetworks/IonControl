@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
-import pango, math
+#import pango, math
 import numpy
 import threading,  time
 ##import matplotlib
@@ -22,8 +22,10 @@ from matplotlib.figure import Figure
 import matplotlib.backends.backend_pdf
 from numpy import arange, sin, pi
 #from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as \
+        FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as \
+        NavigationToolbar
 from matplotlib.axes import Subplot
 from matplotlib.axes import Axes
 from pylab import *
@@ -35,6 +37,7 @@ from PyQt4 import QtGui, QtCore
 import shutil
 
 dirname = 'C:/Data/'
+#dirname = '/Users/ahankin/Research/Data/'
 
 
 
@@ -48,51 +51,39 @@ dirname = 'C:/Data/'
 class ExpConGUI_Qt(QtGui.QWidget):
     def __init__(self,driver,file):#):#
         super(ExpConGUI_Qt, self).__init__()
-        #self.lock = threading.Lock()
         self.threads = []
         self.thread_count = 0
         self.ppfile = './prog/'+file
         self.plotdatalength = 21
         self.plotdata=numpy.zeros((self.plotdatalength,2),'Float32')
-        self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1, self.plotdatalength)
-        self.plotdata[:,1]=numpy.zeros(self.plotdatalength)#sin(self.plotdata[:,0]*2*numpy.pi/100)
+        self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1,
+                self.plotdatalength)
+        self.plotdata[:,1]=numpy.zeros(self.plotdatalength)
         self.stateobj = {}
         self.controls = {}
         self.ind = {}
         self.filename = []
         self.timestamp = time.strftime('%Y%m%d_%H%M%S')
-##        self.ContPlot = False
         self.run_exp = True
         self.pause = False
         self.new_scan = True #Switch for a new scan. Log file created if True.
-        #self.n_reps = 100
-        #self.data_start = 4000 - self.n_reps+1 #changed CWC 09122012
-        #self.us_MeasTime = 500
         self.hist_max = 30
-##        self.timer = QtCore.QTimer()
-##        self.timer.timeout.connect(self.update_plot)
         self.t1 = time.time()
-        self.scan_types =['Continuous','Frequency','Time','Voltage']
+        self.scan_types =['Continuous','Frequency','Time','Voltage', 'DDS Amplitude']
         self.text_to_write = ''
-        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_': 7, 'SHUTR_Raman_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_': 4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
-        #self.index = 0
+        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
+                7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+                4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
 
+        # Initialize public variables
+        self.data_start = 4000
+        self.reuseDataEnd = 3100
+        self.reuseDataStart = 3001
+        self.reuseBinAddr = 3000
 
-##        self.PCon = DDSdriver.DDSdriver()
-##        self.PCon.register()
-##
-##        self.PCon.set('PARAMETER','datastart',self.data_start) #set the datastart value to the tree of variable
-##        self.PCon.set('PARAMETER','us_MeasTime',self.us_MeasTime) #set the us_MeasTime value to the tree of variable
-##        self.PCon.set_setprog('C:\AQUARIUS\prog\APDcounts.pp') # Load and sets teh .pp file at the given location
-
-        self.PCon = driver#DDS_GUI_Sandia_AQC.DDS_gui()
-
-        #self.PCon.parameter_set('us_MeasTime',self.us_MeasTime)
-        #self.PCon.parameter_set('addr',0)
-        #self.PCon.parameter_set('hist_max',self.hist_max)
+        self.PCon = driver      #DDS_GUI_Sandia_AQC.DDS_gui()
         self.PCon.pp_setprog(str(self.ppfile))#DarkHist  Detect DarkHist
         self.PCon.pp_upload()
-
         self.n_reps = self.PCon.get_datapoints()
 
         vbox = QtGui.QVBoxLayout()
@@ -168,9 +159,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.var_entry.setDisabled(True)
 
         self.n_index_label = QtGui.QLabel("Current point:")
-        self.n_index = QtGui.QLabel("0")
+        self.n_index = QtGui.QLabel("-")
         hbox3.addWidget(self.n_index_label)
         hbox3.addWidget(self.n_index)
+        
+        self.scanVal_label = QtGui.QLabel("Current value:")
+        self.scanVal = QtGui.QLabel("-")
+        hbox3.addWidget(self.scanVal_label)
+        hbox3.addWidget(self.scanVal)
 
         self.shuffle_label = QtGui.QLabel("Shuffle scan")
         self.shuffle_cb = QtGui.QCheckBox()
@@ -178,7 +174,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.shuffle_cb.setDisabled(True)
         hbox3.addWidget(self.shuffle_label)
         hbox3.addWidget(self.shuffle_cb)
-
+        
+        self.qubit_D_label = QtGui.QLabel("Qubit detection")
+        self.qubit_D_cb = QtGui.QCheckBox()
+        self.qubit_D_cb.setChecked(False)
+        self.qubit_D_cb.setDisabled(False)
+        hbox3.addWidget(self.qubit_D_label)
+        hbox3.addWidget(self.qubit_D_cb)
+        
         self.rep_label = QtGui.QLabel("Rep. per point")
         self.rep_sb = QtGui.QSpinBox()
         self.rep_sb.setRange(1, 1000)
@@ -186,8 +189,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.rep_sb.setValue(self.n_reps)
         hbox3.addWidget(self.rep_label)
         hbox3.addWidget(self.rep_sb)
-        self.data_start = 4000 - self.n_reps+1; #Changed CWC 09122012
-        self.PCon.parameter_set('datastart',self.data_start)
+
+        # TODO: throw exception if reqeusted memory is too large
+        self.partitionFpgaMemory()
 
         self.Load_SW_label = QtGui.QLabel("Load atom")
         self.Load_SW_cb = QtGui.QCheckBox()
@@ -388,14 +392,15 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.setLayout(vbox)
         self.show()
 
+
     def make_table_control(self):
         table_control = QtGui.QGridLayout()
         self.h_labels = ['Load', 'Wait1', 'PG cooling', 'Wait2', 'OP', 'Wait3', 'Exp', 'Wait4', 'Detect', 'Wait5', 'Check','Wait6']
         self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
-        self.v_sb_labels = ['Duration (us)','MOT coils', 'Repump detuning', 'MOT power', 'MOT detuning', 'Dipole power', 'Bx', 'By', 'Bz']
-        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_Repump_', 'V_MOT_', 'F_MOT_', 'V_Dipole_', 'V_Bx_', 'V_By_', 'V_Bz_']
-        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'Raman (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
-        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_Raman_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
+        self.v_sb_labels = ['Duration (us)','MOT coils', 'uWave freq.', 'D1 OP power', 'MOT power', 'MOT detuning', 'Repump power', 'Bx', 'By', 'Bz']
+        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_uWave_', 'A_OP_', 'V_MOT_', 'F_MOT_', 'V_Repump_', 'V_Bx_', 'V_By_', 'V_Bz_']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
+        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
 
         for i in range(len(self.h_labels)):
             table_control.addWidget(QtGui.QLabel(self.h_labels[i]),0,i+1)
@@ -430,9 +435,6 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         return table_control
 
-##    def test_toggle(self):
-##        self.controls['SHUTR_MOT_load'][0].setChecked(True)
-##        print "SHUTR_MOT_load checked!"
 
     def make_spin_box(self, v_label, h_label, value, callback):
         lsb = LabeledSpinBox(v_label+h_label, callback)
@@ -441,15 +443,31 @@ class ExpConGUI_Qt(QtGui.QWidget):
             lsb.sb.setDecimals(1)
             lsb.sb.setSingleStep(1)
             lsb.sb.setRange(0,5000)
-        elif (v_label == 'F_MOT_' or v_label == 'F_Repump_'):
+        elif (v_label == 'F_MOT_' or v_label == 'F_uWave_'):
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(-30,100)
+        elif (v_label == 'A_OP_'):
+            lsb.sb.setSingleStep(1)
+            lsb.sb.setDecimals(0)
+            lsb.sb.setRange(0,1023)            
         else:
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(0,4.999)
         lsb.sb.setValue(float(value))
 
         return lsb
+
+    def partitionFpgaMemory(self):
+        # Set memory usage for the pp file based on use request, 
+        # TODO: exit program if requested memory space is too large
+        self.data_start = 4000 - self.n_reps+1; #Changed CWC 09122012
+        self.reuseDataEnd = self.data_start - 1
+        self.reuseDataStart = self.reuseDataEnd - self.n_reps + 1
+        self.reuseBinAddr = self.reuseDataStart - 1
+        self.PCon.parameter_set('datastart',self.data_start)
+        self.PCon.parameter_set('reuseDataEnd',self.reuseDataEnd)
+        self.PCon.parameter_set('reuseDataStart',self.reuseDataStart)
+        self.PCon.parameter_set('reuseBinAddr',self.reuseBinAddr)
 
     def update_global_var(self,label,value):
         self.PCon.parameter_set(label,value)
@@ -550,6 +568,20 @@ class ExpConGUI_Qt(QtGui.QWidget):
                 if (key[:2]=='V_' or key[:2]=='v_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
+        elif (self.scan_entry.currentText()=='DDS Amplitude'):
+            self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
+            self.shuffle_cb.setDisabled(False)
+            self.scan_range_low_sb.setDisabled(False)
+            self.scan_range_low_sb.setRange(0,1023)
+            self.scan_range_high_sb.setDisabled(False)
+            self.scan_range_high_sb.setRange(0,1023)
+            self.n_points_sb.setDisabled(False)
+            self.var_entry.clear()
+            for key in sorted(self.PCon.params.defs.iterkeys()):
+                if (key[:2]=='A_' or key[:2]=='A_'):
+                    self.var_entry.addItem(key)
+            self.var_entry.setEnabled(True)
         else:
             print "Unknow scan type."
 
@@ -571,34 +603,16 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_cont.setDisabled(True)
 
         print "Starting a new scan: %i" %self.new_scan
-        if self.new_scan: #Only update the log file when starting a new scan. Parameters can not be changed if continuing a scan. CWC 09242012
-    #Determine if a certain step in the pulse sequence Load_cool_exp_check should be skipped CWC 09172012
-##            if (self.Load_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('LOAD_SWITCH', 1)
-##                self.set_stage_Disabled('Load',False)
-##            else:
-##                self.PCon.parameter_set('LOAD_SWITCH', 0)
-##                self.set_stage_Disabled('Load',True)
-##
-##            if (self.Cool_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('COOL_SWITCH', 1)
-##                self.set_stage_Disabled('PG cooling',False)
-##            else:
-##                self.PCon.parameter_set('COOL_SWITCH', 0)
-##                self.set_stage_Disabled('PG cooling',True)
-##
-##            if (self.OP_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('OP_SWITCH', 1)
-##            else:
-##                self.PCon.parameter_set('OP_SWITCH', 0)
-##
-##            if (self.Check_SW_cb.isChecked() == True):
-##                self.PCon.parameter_set('CHECK_SWITCH', 1)
-##            else:
-##                self.PCon.parameter_set('CHECK_SWITCH', 0)
+
+        # Only update the log file when starting a new scan. Parameters can not
+        # be changed if continuing a scan. CWC 09242012
+        # Determine if a certain step in the pulse sequence Load_cool_exp_check
+        # should be skipped CWC 09172012
+        if self.new_scan:
             for key in self.controls:
                 if not key[:3]=='SHU':
-                    self.update_global_var(self.controls[key][1],self.controls[key][0].value())
+                    self.update_global_var(self.controls[key][1],
+                            self.controls[key][0].value())
             for i in range(len(self.h_subscripts)):
                 self.update_SHUTR(self.h_subscripts[i])
 
@@ -606,31 +620,46 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.PCon.update_state()
             coltree_Qt.save_state("State", self.PCon.state)
 
+            # Save data to 'this.savedir' and copy current config files
             self.timestamp = time.strftime('%Y%m%d_%H%M%S')
-            if not os.path.isdir(dirname + self.timestamp + '/'):
-                os.mkdir(dirname + self.timestamp + '/')
-            shutil.copy2(str(self.ppfile), dirname + self.timestamp + '/') #copy the pp file to the data directory CWC 09242012
-            shutil.copy2('config.ddscon', dirname + self.timestamp + '/')  #copy the updated config file to the data directory CWC 09242012
-            self.filename = dirname + self.timestamp + '/' + str(self.scan_entry.currentText()) + '_scan'
+            self.savedir = (dirname + self.timestamp + '_' +
+                    str(self.scan_entry.currentText()) +  '/')
+            if not os.path.isdir(self.savedir):
+                os.mkdir(self.savedir)
+            shutil.copy2(str(self.ppfile), self.savedir) 
+            shutil.copy2('config.ddscon', self.savedir)  
+            self.filename = (self.savedir + str(self.scan_entry.currentText())
+                    + '_scan')
             if (self.scan_entry.currentText()!='Continuous'):
-                self.filename+= '_' + str(self.var_entry.currentText())
+                self.filename += '_' + str(self.var_entry.currentText())
             fd = file(self.filename+'.txt', "a")
 
+
+            # Get number of data points entered by user and use this 
+            # to set memory usage for the pp file
+            # TODO: exit program if requested memory space is too large
+            # TODO: ask James why he didn't use this.datastart
+            #self.PCon.parameter_set('datastart', 4000-self.n_reps+1) #changed
+            #CWC 09132012
             self.n_reps = self.rep_sb.value()
-            self.PCon.parameter_set('datastart', 4000-self.n_reps+1) #changed CWC 09132012
+            self.partitionFpgaMemory()
+
+
             #Log the value of the parameters
             self.update_params()
 
             params_to_write = 'Pulse Programmer (pp) file:'+str(self.ppfile)+'\n'
             params_to_write+= 'Parameters: '
             for key in sorted(self.PCon.params.defs.iterkeys()):
-                params_to_write+= str(key)+': '+ str(self.PCon.params.defs[key])+ '; '
+                params_to_write+= (str(key) + ': ' +
+                        str(self.PCon.params.defs[key]) + '; ')
             params_to_write+='\n'
 
             stateobj_to_write = 'Stateobj: '
             for key in sorted(self.PCon.stateobj.iterkeys()):
                 if (key[:3] == 'DDS' or key[:3] == 'DAC' or key == 'SHUTR'):
-                    stateobj_to_write+=key+': '+str(self.PCon.stateobj[key][0].value())+'; '
+                    stateobj_to_write += (key + ': ' +
+                            str(self.PCon.stateobj[key][0].value()) + '; ')
             stateobj_to_write+='\n'
 
             self.PCon.data = numpy.zeros([self.n_reps,1], 'Int32')
@@ -643,59 +672,70 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     fd.write(self.text_to_write)
                     fd.close()
                     self.init_scan(21)
-                    self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1, self.plotdatalength)
-    ##            self.trace1.clear()
-    ##            self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
-                #self.cont_plot()
+                    self.plotdata[:,0]=numpy.linspace(0, self.plotdatalength-1,
+                            self.plotdatalength)
 
-                plot_thread = PlotThread(self)
+                plot_thread = PlotThread(self, self.thread_count, self.qubit_D_cb.isChecked())
                 self.threads.append(plot_thread)
                 exp_thread = ContExpThread(self, plot_thread)
                 self.threads.append(exp_thread)
                 self.thread_count+=1
 
-                #plot_thread.start()
-                #exp_thread.start()
 
-            elif (self.scan_entry.currentText()=='Frequency' or self.scan_entry.currentText()=='Time' or self.scan_entry.currentText()=='Voltage'):
-                if self.new_scan: #Only update the log file when starting a new scan. CWC 09242012
+            elif (self.scan_entry.currentText()=='Frequency' or
+                    self.scan_entry.currentText()=='Time' or
+                    self.scan_entry.currentText()=='Voltage' or 
+                    self.scan_entry.currentText()=='DDS Amplitude'):
+
+                #Only update the log file when starting a new scan. CWC 09242012
+                if self.new_scan: 
                     self.init_scan(self.n_points_sb.value())
-                    self.text_to_write = str(self.scan_entry.currentText()) + ' scan.\n'
+                    self.text_to_write = (str(self.scan_entry.currentText()) +
+                            ' scan.\n')
                     self.text_to_write+=params_to_write
                     self.text_to_write+=stateobj_to_write
-                    scan_vals = numpy.linspace(self.scan_range_low_sb.value(), self.scan_range_high_sb.value(),self.n_points_sb.value())
-                    scan_vals = map(lambda x: float(round(10000*x)/10000), scan_vals)
+                    scan_vals = numpy.linspace(self.scan_range_low_sb.value(),
+                            self.scan_range_high_sb.value(),
+                            self.n_points_sb.value())
+                    scan_vals = map(lambda x: float(round(10000*x)/10000),
+                            scan_vals)
                     self.plotdata[:,0]=scan_vals
                     self.ind = {}
                     for n in range(len(scan_vals)):
                         self.ind[scan_vals[n]]=n
 
 
-                    self.text_to_write+= 'Scan variable: ' + str(self.var_entry.currentText()) + '\n'
-                    self.text_to_write+= 'Range:' + str(self.scan_range_low_sb.value()) + ' to ' + str(self.scan_range_high_sb.value()) + '\n'
-                    self.text_to_write+= 'Number of points: ' + str(self.n_points_sb.value()) +'\n'
-                    self.text_to_write+= 'Rep. per point: '+ str(self.rep_sb.value()) +'\n'
+                    self.text_to_write+= ('Scan variable: ' +
+                            str(self.var_entry.currentText()) + '\n')
+                    self.text_to_write+= ('Range:' +
+                            str(self.scan_range_low_sb.value()) + ' to ' +
+                            str(self.scan_range_high_sb.value()) + '\n')
+                    self.text_to_write+= ('Number of points: ' +
+                            str(self.n_points_sb.value()) +'\n')
+                    self.text_to_write+= ('Rep. per point: '+
+                            str(self.rep_sb.value()) +'\n')
+                    self.text_to_write+= ('Plotting population:'+str(self.qubit_D_cb.isChecked())+'\n')
                     self.text_to_write+= 'Scan var. val.'+'\t'+'Meas. Avg.'+'\t'
                     for n in range(self.rep_sb.value()):
                         self.text_to_write += 'Rep. #'+str(n)+'\t'
                     self.text_to_write +='\n'
                     fd.write(self.text_to_write)
                     fd.close()
-    ##            self.trace1.clear()
-    ##            self.line1, = self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'ro')
 
-                #print self.shuffle_cb.isChecked()
                 if (self.shuffle_cb.isChecked() == True):
-                    numpy.random.shuffle(scan_vals)#Shuffle the list of scanned variable values each time a scan is started, whether continuing or not. CWC 09242012
-                    #print scan_vals[0]
+                    # Shuffle the list of scanned variable values each time a
+                    # scan is started, whether continuing or not. CWC 09242012
+                    numpy.random.shuffle(scan_vals)
 
-                plot_thread = PlotThread(self)
+                plot_thread = PlotThread(self, self.thread_count, self.qubit_D_cb.isChecked())
                 self.threads.append(plot_thread)
-                exp_thread = ExpThread(self, scan_vals, plot_thread)#self) Changed the receiver for the update event from self (GUI) to plot_thread
+
+                # Changed the receiver for the update event from self (GUI) to
+                # plot_thread
+                exp_thread = ScanExpThread(self, plot_thread, scan_vals)
                 self.threads.append(exp_thread)
                 self.thread_count+=1
-                #plot_thread.start()
-                #exp_thread.start()
+
             else:
                 print "Unknow scan type."
         print "Thread count: %i" %self.thread_count
@@ -782,27 +822,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_cont.setDisabled(False)
         self.PCon.user_stop() #Added for proper stop CWC 09172012
 
-        #pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
-        #pp.savefig(self.figure)
-        #self.figure.savefig(pp, format='pdf')
-        #pp.close()
-        #print 'Saving figure...'
-
-        #self.fit_result()
-
     def continue_scan(self):
         self.new_scan = False
         self.run_scan()
 
-##    def cont_plot(self):
-##        self.ContPlot = True
-##
-##        #self.timer.start(0.001)
-##        self.update_plot()
-
     def update_plot_save_data(self, scan_index, new_mean, new_data):
         if (self.scan_entry.currentText()=='Continuous'):
-            self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[1:self.plotdatalength,1]
+            self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[
+                    1:self.plotdatalength,1]
             self.plotdata[self.plotdatalength-1,1] = new_mean
             self.line1.set_ydata(self.plotdata[:,1])
         elif (self.scan_entry.currentText()=='Frequency'):
@@ -817,7 +844,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         #print "%d, %d" %(len(self.plotdata[:,0]),len(self.plotdata[:,1]))
         ymax = numpy.max(self.plotdata[:,1])
         ymin = numpy.min(self.plotdata[:,1])
-        self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01, ymax+0.1*(ymax-ymin)+0.01)
+        self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01,
+                ymax+0.1*(ymax-ymin)+0.01)
 
         self.trace2.clear()
         #self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
@@ -827,7 +855,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         if (self.scan_entry.currentText()=='Continuous'):
             self.text_to_write = str(self.plotdata[scan_index,1])+'\t'
         else:
-            self.text_to_write = str(self.plotdata[scan_index,0]) + '\t' + str(self.plotdata[scan_index,1])+'\t'
+            self.text_to_write = str(self.plotdata[scan_index,0]) + '\t' + \
+                    str(self.plotdata[scan_index,1])+'\t'
         for n in range(self.rep_sb.value()):
             self.text_to_write += str(new_data[n])+'\t'
         self.text_to_write += '\n'
@@ -835,61 +864,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         fd.seek(0,2)
         fd.write(self.text_to_write)
         fd.close()
-        #numpy.savetxt(self.filename,new_data,fmt='%i')
 
-##    def update_plot(self):
-##        if(self.ContPlot == True):
-##            #print self.PCon.pp_is_running()
-##            #t1 = time.time()
-##            self.PCon.pp_run_2()
-##            readoutOK=self.PCon.update_count()
-##            #t2 = time.time()
-##            if(readoutOK):
-##                #print self.PCon.pp_is_running()
-##                #addr = self.PCon.read_memory(13,1)
-##                #print "%d repetitions in %.6f seconds." %(addr - self.data_start-1, t2-t1)
-####            #self.index = self.index+1 and not self.PCon.pp_is_running()
-####            #print self.index
-####            self.PCon.set_runprog()                #Runs the loaded .pp file
-####
-####            #time.sleep(0.1)
-####            counts=self.PCon.read_memory()         #Extracts the data from the memory
-####            #print counts
-####            #counts1=self.PCon.read_memory()         #Extracts the data from the memory
-####            #print counts1
-##
-####            if not (numpy.size(counts)==1):
-##
-##                #t1 = time.time()
-####              pyplot implementation
-####                self.trace1.clear()
-####                self.trace2.clear()
-####                self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[1:self.plotdatalength,1]
-####                self.plotdata[self.plotdatalength-1,1] = numpy.mean(self.PCon.data[:,1])
-####                self.trace1.plot(self.plotdata[:,0],self.plotdata[:,1],'r')
-####                self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
-####                self.plot.draw()
-####              animation implementation
-##                self.plotdata[0:self.plotdatalength-1,1] = self.plotdata[1:self.plotdatalength,1]
-##                self.plotdata[self.plotdatalength-1,1] = numpy.mean(self.PCon.data[:,1])
-##                self.line1.set_ydata(self.plotdata[:,1])
-##                ymax = numpy.max(self.plotdata[:,1])
-##                ymin = numpy.min(self.plotdata[:,1])
-##                self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01, ymax+0.1*(ymax-ymin)+0.01)
-##
-##                self.trace2.clear()
-##                #self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
-##                self.update_hist(self.PCon.data[:,1])
-##                self.plot.draw()
-##                t2 = time.time()
-##                #print 'Cycle time %.6f seconds' %(t2-self.t1)
-##                self.t1 = t2
-##                #print 'Plot time %.6f seconds' %(t2-t1)
-##                #print "addr = %d" %addr
-##            threading.Timer(0.005, self.update_plot,()).start()
-##            #self.timer.singleShot(0.005,self.update_plot)
-####        else:
-####            self.stop_plot()
 
     def update_hist(self, data):
         #Animating the histogram, see http://matplotlib.sourceforge.net/examples/animation/histogram.html
@@ -949,41 +924,81 @@ class ExpConGUI_Qt(QtGui.QWidget):
     def closeEvent(self, event):
         self.PCon.ExpConGUIstarted = False
 
-##class UpdatePlotThread(QtCore.QThread):
-##    def __init__(self, GUI):
-##        super(UpdatePlotThread, self).__init__()
-##
-##    def stop(self):
-##        self.stopped = 1
-##    def run(self):
-##
-##    def customEvent(self):
-##        qApp.lock()
-##        GUI.plotdata[0:GUI.plotdatalength-1,1] = GUI.plotdata[1:GUI.plotdatalength,1]
-##        GUI.plotdata[self.plotdatalength-1,1] = numpy.mean(self.PCon.data[:,1])
-##        GUI.line1.set_ydata(GUI.plotdata[:,1])
-##        ymax = numpy.max(self.plotdata[:,1])
-##        ymin = numpy.min(self.plotdata[:,1])
-##        GUI.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01, ymax+0.1*(ymax-ymin)+0.01)
-##
-##        GUI.trace2.clear()
-##        #self.trace2.hist(self.PCon.data[:,1],arange(0,self.hist_max+1), normed = 1)
-##        GUI.update_hist(self.PCon.data[:,1])
-##        GUI.plot.draw()
-##        qApp.unlock()
-
 class ExpThread(QtCore.QThread):
-    def __init__(self, GUI, scan_vals, receiver):
+    """ Base class for experiment threads."""
+    def __init__(self,GUI,receiver):
         super(ExpThread, self).__init__()
         self.GUI = GUI
+        self.n_reps = self.GUI.n_reps
+        self.reuseDataStart = self.GUI.reuseDataStart
+        self.reuseBinAddr = self.GUI.reuseBinAddr
         self.receiver = receiver
-        self.scan_vals = scan_vals
-        temp = self.GUI.PCon.parameter_read(str(self.GUI.var_entry.currentText())).split()
-        self.init_val = float(temp[1])
         self.stopped = 0
         self.t1 = time.time()
-        self.connect( self, QtCore.SIGNAL("Done_one_point"), receiver.update_plot_save_data )
+        self.connect( self, QtCore.SIGNAL("Done_one_point"),
+                receiver.update_plot_save_data )
         self.connect( self, QtCore.SIGNAL("Done_scanning"), receiver.stop )
+
+    def __del__(self):
+        self.stopped = 1
+        self.wait()
+
+    def getAtomReuse(self):
+        # Return an array containing total atom reuse per single loading event
+        numBins = self.GUI.PCon.read_memory(self.reuseBinAddr,1)
+        atomReuseArray = self.GUI.PCon.read_memory(self.reuseDataStart,
+                self.n_reps)
+        atomReuseArray = numpy.resize(atomReuseArray,numBins)
+
+        return atomReuseArray
+
+    def run():
+        pass
+
+    def stop(self):
+        self.stopped = 1
+
+class ContExpThread(ExpThread):
+    """ Class for contiuous non-scanned experiment thread. This class inherits
+    QtCore.QThread through ExpThread."""
+    def __init__(self, GUI, receiver):
+        super(ContExpThread, self).__init__(GUI,receiver)
+
+    def run(self):
+        self.stopped = 0
+        self.GUI.PCon.update_state()
+        coltree_Qt.save_state("State", self.GUI.PCon.state)
+        while (self.stopped == 0 and self.GUI.run_exp ==True):
+            while (self.stopped == 0 and self.GUI.pause == True):
+                time.sleep(0.1)
+            self.GUI.PCon.pp_run_2()
+            readoutOK = self.GUI.PCon.update_count()
+            if (readoutOK and not self.GUI.PCon.pp_is_running()):
+                #print(numpy.mean(self.GUI.PCon.data[:,1]))
+                self.emit(QtCore.SIGNAL("Done_one_point"), 0, numpy.mean(self.GUI.PCon.data[:,1]), self.GUI.PCon.data[:,1])
+                if (time.time()-self.t1) < 0.05:
+                    time.sleep(0.03)
+                t2 = time.time()
+                print 'ContExpThread cycle time %.6f seconds' %(t2-self.t1)
+                self.t1 = t2
+
+                # Print atom reuse array
+                atomReuseArray = self.getAtomReuse()
+                print "mean reuse number %.1f" %numpy.mean(atomReuseArray)
+                print atomReuseArray
+
+        self.GUI.PCon.restore_state(self.GUI.PCon.state)
+        self.emit(QtCore.SIGNAL("Done_scanning"))
+
+class ScanExpThread(ExpThread):
+    """ Class for scanning a parameter type experiment thread. This class inherits
+    QtCore.QThread through ExpThread."""
+    def __init__(self, GUI, receiver, scan_vals):
+        super(ScanExpThread, self).__init__(GUI,receiver)
+        self.scan_vals = scan_vals
+        temp = self.GUI.PCon.parameter_read( str(
+            self.GUI.var_entry.currentText())).split()
+        self.init_val = float(temp[1])
 
     def run(self):
         self.stopped = 0
@@ -1004,7 +1019,10 @@ class ExpThread(QtCore.QThread):
 
             #print "pp readout time %3f sec" %(t4-t3)
             if (readoutOK and not self.GUI.PCon.pp_is_running()):
-                self.emit(QtCore.SIGNAL("Done_one_point"), self.GUI.ind[current_scan_val], numpy.mean(self.GUI.PCon.data[:,1]), self.GUI.PCon.data[:,1])
+                self.emit(QtCore.SIGNAL("Done_one_point"),
+                        self.GUI.ind[current_scan_val],
+                        numpy.mean(self.GUI.PCon.data[:,1]),
+                        self.GUI.PCon.data[:,1])
 ##                print self.GUI.ind[current_scan_val]
 ##                print current_scan_val
                 if (time.time()-self.t1) < 0.05:
@@ -1013,86 +1031,159 @@ class ExpThread(QtCore.QThread):
                 print 'ExpThread cycle time %.6f seconds' %(t2-self.t1)
                 self.t1 = t2
 
-                # TODO: make these memory reference relative
-                numBins = self.GUI.PCon.read_memory(2999,1)
-                atomReuseArray =  self.GUI.PCon.read_memory(3000,100)
-                atomReuseArray = numpy.resize(atomReuseArray,numBins)
+                # Calculate and print out atom reuse
+                atomReuseArray = self.getAtomReuse()
                 print "mean reuse number %.1f" %numpy.mean(atomReuseArray)
                 print atomReuseArray
-                #print numpy.std(atomReuseArray)
 
             n+=1
             self.GUI.n_index.setText(str(n))
-        self.GUI.PCon.restore_state(self.GUI.PCon.state)
-        #self.GUI.stop_scan()
-        self.emit(QtCore.SIGNAL("Done_scanning"))
-        #self.GUI.fit_result()
-        self.GUI.PCon.parameter_set(str(self.GUI.var_entry.currentText()), self.init_val)
-
-    def stop(self):
-        self.stopped = 1
-
-    def __del__(self):
-        self.stopped = 1
-        self.wait()
-
-class ContExpThread(QtCore.QThread):
-    def __init__(self, GUI, receiver):
-        super(ContExpThread, self).__init__()
-        self.GUI = GUI
-        self.receiver = receiver
-        self.stopped = 0
-        self.t1 = time.time()
-        self.connect( self, QtCore.SIGNAL("Done_one_point"), self.receiver.update_plot_save_data )
-        self.connect( self, QtCore.SIGNAL("Done_scanning"), receiver.stop )
-
-    def run(self):
-        self.stopped = 0
-        self.GUI.PCon.update_state()
-        coltree_Qt.save_state("State", self.GUI.PCon.state)
-        while (self.stopped == 0 and self.GUI.run_exp ==True):
-            while (self.stopped == 0 and self.GUI.pause == True):
-                time.sleep(0.1)
-            self.GUI.PCon.pp_run_2()
-            readoutOK = self.GUI.PCon.update_count()
-            if (readoutOK and not self.GUI.PCon.pp_is_running()):
-                #print(numpy.mean(self.GUI.PCon.data[:,1]))
-                self.emit(QtCore.SIGNAL("Done_one_point"), 0, numpy.mean(self.GUI.PCon.data[:,1]), self.GUI.PCon.data[:,1])
-                if (time.time()-self.t1) < 0.05:
-                    time.sleep(0.03)
-                t2 = time.time()
-                print 'ContExpThread cycle time %.6f seconds' %(t2-self.t1)
-                self.t1 = t2
-
-                # TODO: make these memory reference relative
-                numBins = self.GUI.PCon.read_memory(2999,1)
-                atomReuseArray =  self.GUI.PCon.read_memory(3000,100)
-                atomReuseArray = numpy.resize(atomReuseArray,numBins)
-                print "mean reuse number %.1f" %numpy.mean(atomReuseArray)
-                print atomReuseArray
-                #print numpy.std(atomReuseArray)
-
+            self.GUI.scanVal.setText(str(current_scan_val))
         self.GUI.PCon.restore_state(self.GUI.PCon.state)
         self.emit(QtCore.SIGNAL("Done_scanning"))
+        self.GUI.PCon.parameter_set(str(self.GUI.var_entry.currentText()),
+                self.init_val)
 
-
-
-#Need to return to the original configuration after scan. CWC 09052012
-
-    def stop(self):
-        self.stopped = 1
-
-    def __del__(self):
-        self.stopped = 1
-        self.wait()
+# TODO: Delete below code if the new class sturcture works fine (base class
+# ExpThread inherited by ScanExpThread and ContExpThread).
+#class ExpThread(QtCore.QThread):
+#    def __init__(self, GUI, scan_vals, receiver,):
+#        super(ExpThread, self).__init__()
+#
+#        self.GUI = GUI
+#        self.n_reps = self.GUI.n_reps
+#        self.reuseDataStart = self.GUI.reuseDataStart
+#        self.reuseBinAddr = self.GUI.reuseBinAddr
+#        self.receiver = receiver
+#        self.scan_vals = scan_vals
+#        temp = self.GUI.PCon.parameter_read( str(
+#            self.GUI.var_entry.currentText())).split()
+#        self.init_val = float(temp[1])
+#        self.stopped = 0
+#        self.t1 = time.time()
+#        self.connect( self, QtCore.SIGNAL("Done_one_point"),
+#                receiver.update_plot_save_data )
+#        self.connect( self, QtCore.SIGNAL("Done_scanning"), receiver.stop )
+#
+#    def getAtomReuse():
+#        # Return an array containing total atom reuse per single loading event
+#        numBins = self.GUI.PCon.read_memory(self.reuseBinAddr,1)
+#        atomReuseArray = self.GUI.PCon.read_memory(self.reuseDataStart,
+#                self.n_reps)
+#        atomReuseArray = numpy.resize(atomReuseArray,numBins)
+#
+#        return atomReuseArray
+#
+#    def run(self):
+#        self.stopped = 0
+#        self.GUI.PCon.update_state()
+#        coltree_Qt.save_state("State", self.GUI.PCon.state)
+#        n = 0
+#        while (self.stopped == 0 and self.GUI.run_exp ==True and n<self.GUI.n_points_sb.value()):
+#            while (self.stopped == 0 and self.GUI.pause == True):
+#                time.sleep(0.1)
+#            current_scan_val = self.scan_vals[n]
+#
+#            self.GUI.PCon.parameter_set(self.GUI.var_entry.currentText(), current_scan_val)
+#
+#            self.GUI.PCon.pp_run()
+#            t3=time.time()
+#            readoutOK = self.GUI.PCon.update_count()
+#            t4=time.time()
+#
+#            #print "pp readout time %3f sec" %(t4-t3)
+#            if (readoutOK and not self.GUI.PCon.pp_is_running()):
+#                self.emit(QtCore.SIGNAL("Done_one_point"), self.GUI.ind[current_scan_val], numpy.mean(self.GUI.PCon.data[:,1]), self.GUI.PCon.data[:,1])
+###                print self.GUI.ind[current_scan_val]
+###                print current_scan_val
+#                if (time.time()-self.t1) < 0.05:
+#                    time.sleep(0.03)
+#                t2 = time.time()
+#                print 'ExpThread cycle time %.6f seconds' %(t2-self.t1)
+#                self.t1 = t2
+#
+#                # Calculate and print out atom reuse
+#                numBins = self.GUI.PCon.read_memory(self.reuseBinAddr,1)
+#                atomReuseArray = self.GUI.PCon.read_memory(self.reuseDataStart,
+#                        self.n_reps)
+#                atomReuseArray = numpy.resize(atomReuseArray,numBins)
+#                print "mean reuse number %.1f" %numpy.mean(atomReuseArray)
+#                print atomReuseArray
+#                #print numpy.std(atomReuseArray)
+#
+#            n+=1
+#            self.GUI.n_index.setText(str(n))
+#        self.GUI.PCon.restore_state(self.GUI.PCon.state)
+#        #self.GUI.stop_scan()
+#        self.emit(QtCore.SIGNAL("Done_scanning"))
+#        #self.GUI.fit_result()
+#        self.GUI.PCon.parameter_set(str(self.GUI.var_entry.currentText()), self.init_val)
+#
+#    def stop(self):
+#        self.stopped = 1
+#
+#    def __del__(self):
+#        self.stopped = 1
+#        self.wait()
+#
+#class ContExpThread(QtCore.QThread):
+#    def __init__(self, GUI, receiver):
+#        super(ContExpThread, self).__init__()
+#        self.GUI = GUI
+#        self.receiver = receiver
+#        self.stopped = 0
+#        self.t1 = time.time()
+#        self.connect( self, QtCore.SIGNAL("Done_one_point"), self.receiver.update_plot_save_data )
+#        self.connect( self, QtCore.SIGNAL("Done_scanning"), receiver.stop )
+#
+#    def run(self):
+#        self.stopped = 0
+#        self.GUI.PCon.update_state()
+#        coltree_Qt.save_state("State", self.GUI.PCon.state)
+#        while (self.stopped == 0 and self.GUI.run_exp ==True):
+#            while (self.stopped == 0 and self.GUI.pause == True):
+#                time.sleep(0.1)
+#            self.GUI.PCon.pp_run_2()
+#            readoutOK = self.GUI.PCon.update_count()
+#            if (readoutOK and not self.GUI.PCon.pp_is_running()):
+#                #print(numpy.mean(self.GUI.PCon.data[:,1]))
+#                self.emit(QtCore.SIGNAL("Done_one_point"), 0, numpy.mean(self.GUI.PCon.data[:,1]), self.GUI.PCon.data[:,1])
+#                if (time.time()-self.t1) < 0.05:
+#                    time.sleep(0.03)
+#                t2 = time.time()
+#                print 'ContExpThread cycle time %.6f seconds' %(t2-self.t1)
+#                self.t1 = t2
+#
+#                # TODO: make these memory reference relative
+#                numBins = self.GUI.PCon.read_memory(self.reuseBinAddr,1)
+#                atomReuseArray = self.GUI.PCon.read_memory(self.reuseDataStart,
+#                        self.n_reps)
+#                atomReuseArray = numpy.resize(atomReuseArray,numBins)
+#                print "mean reuse number %.1f" %numpy.mean(atomReuseArray)
+#                print atomReuseArray
+#                #print numpy.std(atomReuseArray)
+#
+#        self.GUI.PCon.restore_state(self.GUI.PCon.state)
+#        self.emit(QtCore.SIGNAL("Done_scanning"))
+#
+##Need to return to the original configuration after scan. CWC 09052012
+#
+#    def stop(self):
+#        self.stopped = 1
+#
+#    def __del__(self):
+#        self.stopped = 1
+#        self.wait()
 
 class PlotThread(QtCore.QThread):
-    def __init__(self, GUI):
+    def __init__(self, GUI, index, qubit_D):
         super(PlotThread, self).__init__()
         #Pop up two new windows for plot and hist with control bars. See http://eli.thegreenplace.net/files/prog_code/qt_mpl_bars.py.txt CWC 09132012
         self.frame1 = PlotWidget(self)
         self.frame2 = QtGui.QWidget()
         self.GUI = GUI
+        self.index = index
+        self.qubit_D = qubit_D
         self.filename = self.GUI.filename
         self.stopped = 0
         self.t1 = time.time()
@@ -1102,7 +1193,11 @@ class PlotThread(QtCore.QThread):
         self.canvas1.setParent(self.frame1)
         self.trace1 = self.fig1.add_subplot(111)
         self.trace1.set_title(self.filename)
-        self.line1, = self.trace1.plot(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],'r')
+        self.yerr = numpy.zeros(self.GUI.n_points_sb.value())
+        if self.qubit_D:
+            self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=0,fmt='ro-')
+        else:
+            self.line1, = self.trace1.plot(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],'ro-')
         #self.canvas.mpl_connect('pick_event', self.on_pick)
         self.mpl_toolbar1 = NavigationToolbar(self.canvas1, self.frame1)
         self.canvas1.draw()
@@ -1135,14 +1230,30 @@ class PlotThread(QtCore.QThread):
     def update_plot_save_data(self, scan_index, new_mean, new_data):
 ##        while (self.stopped == 0 and self.GUI.pause == True):
 ##            time.sleep(0.02)
+        new_prob = numpy.mean(map(lambda x: int(x>float(self.GUI.PCon.params.defs['CHECKTHOLD'])), new_data))
         if (self.GUI.scan_entry.currentText()=='Continuous'):
             self.GUI.plotdata[0:self.GUI.plotdatalength-1,1] = self.GUI.plotdata[1:self.GUI.plotdatalength,1]
-            self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
-            self.line1.set_ydata(self.GUI.plotdata[:,1])
+            if self.qubit_D: 
+                self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_prob
+                self.trace1.clear()
+                self.trace1.set_title(self.filename)
+                err = numpy.sqrt(self.GUI.plotdata[:,1]*(1-self.GUI.plotdata[:,1])/self.GUI.n_reps)
+                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr = 0,yerr = err,fmt='ro-')
+            else:
+                self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
+                self.line1.set_ydata(self.GUI.plotdata[:,1])
         else:# (self.GUI.scan_entry.currentText()=='Frequency' ):
-            self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+            if self.qubit_D: 
+                self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
+                self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+                self.trace1.clear()
+                self.trace1.set_title(self.filename)
+                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=self.yerr,fmt='ro-')
+            else:
+                self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+                self.line1.set_ydata(self.GUI.plotdata[:,1])
             self.GUI.plotdata[scan_index,2] = self.GUI.plotdata[scan_index,2] + self.GUI.n_reps
-            self.line1.set_ydata(self.GUI.plotdata[:,1])
+
 
         #print "%d, %d" %(len(self.GUIplotdata[:,0]),len(self.GUIplotdata[:,1]))
         ymax = numpy.max(self.GUI.plotdata[:,1])
@@ -1213,7 +1324,8 @@ class PlotThread(QtCore.QThread):
 
     def stop(self):
         self.stopped = 1
-        self.GUI.stop_scan()
+        if self.index == self.GUI.thread_count-1:
+            self.GUI.stop_scan()
         self.fig1.savefig(self.filename+'.png')
         pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
         pp.savefig(self.fig1)
@@ -1224,7 +1336,8 @@ class PlotThread(QtCore.QThread):
 
     def __del__(self):
         self.stopped = 1
-        self.GUI.stop_scan()
+        if self.index == self.GUI.thread_count-1:
+            self.GUI.stop_scan()
         self.fig1.savefig(self.filename+'.png')
         pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
         pp.savefig(self.fig1)

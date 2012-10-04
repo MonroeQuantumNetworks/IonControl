@@ -6,15 +6,15 @@
 #define DAC_ch_MOT_coil 0
 #define DAC_ch_Bz 1
 #define DAC_ch_MOT 3
-#define DAC_ch_Dipole 5
+#define DAC_ch_Dipole 9
 #define DAC_ch_Bx 6
 #define DAC_ch_By 7
-#define DAC_ch_Repump 9
+#define DAC_ch_Repump 5
 #define DAC_ch_OP 13
 #define DDS_ch_MOT 0
-#define DDS_ch_REPUMP 1
+#define DDS_ch_uWave 1
 #define DDS_ch_OP 2
-#define DDS_ch_uWave 3
+#define DDS_ch_Repump 3
 
 var dataend 	   4000
 var LOADIND        0
@@ -31,28 +31,41 @@ var	SWITCH			0
 
 # Atom reuse variables
 var atomReuse 		0 		# keeps track of number of times atom is reused
-var reuseDataStart 	3000 	# first memory location for stored value
-var reuseDataEnd 	3099 	# largest allowed memory location
+#var reuseDataStart 	3000 	# first memory location for stored value
+#var reuseDataEnd 	3099 	# largest allowed memory location
 var reuseAddr 		0 		# keeps track of current atomReuse address
 var reuseBinNum		0		# keep track of number of atom reuse bins
-var reuseBinAddr    2999	# store reuseBinNum at this memory location
+#var reuseBinAddr    2999	# store reuseBinNum at this memory location
 
-
-	LDWR     datastart
-	STWR     addr
-	SHUTRVAR SHUTR_load
-	DDSFRQ	 DDS_ch_MOT, F_MOT_load
-	DDSFRQ	 DDS_ch_REPUMP, F_Repump_load
-	DAC      DAC_ch_MOT_coil, V_MOTcoil_load
-	DAC		 DAC_ch_Repump, V_Repump_load
-	DAC	 	 DAC_ch_MOT, V_MOT_load
-	DAC		 DAC_ch_Dipole, V_Dipole_load
-	DAC		 DAC_ch_Bx, V_Bx_load
-	DAC		 DAC_ch_By, V_By_load
-	DAC		 DAC_ch_Bz, V_Bz_load
+# TODO: initialize memory used for storing counts during detection
+	LDWR     	datastart
+	STWR     	addr
+	LDWR 		reuseDataStart 	# v
+	STWR 		reuseAddr  		# set reuseAddr to the start address
+	SHUTRVAR 	SHUTR_load
+	DDSFRQ	 	DDS_ch_MOT, F_MOT_load
+	DDSFRQ	 	DDS_ch_uWave, F_uWave_load
+	DAC      	DAC_ch_MOT_coil, V_MOTcoil_load
+	DAC		 	DAC_ch_Repump, V_Repump_load
+	DAC	 	 	DAC_ch_MOT, V_MOT_load
+	DAC		 	DAC_ch_Dipole, V_Dipole_load
+	DAC		 	DAC_ch_Bx, V_Bx_load
+	DAC		 	DAC_ch_By, V_By_load
+	DAC		 	DAC_ch_Bz, V_Bz_load
 	DACUP
-	LDWR 	 	reuseDataStart 	# v
-	STWR 	    reuseAddr  		# set reuseAddr to the start address
+
+
+# Initialize memory used for counts to 0
+ini_countsMemory: NOP
+	CLRW
+	LDINDF 		addr					# v
+	STWI    	       					# stores 0 to wherever reuseAddr is pointing
+	INC    		addr 		      		# v
+	STWR   		addr 					# increments addr
+	CMP			dataend					# v
+	JMPZ		ini_countsMemory		# loop if addr <= dataend
+	LDWR 	 	datastart 	 			# v
+	STWR 	    addr 	 				# addr = datastart
 
 # Set atom reuse memory section to 0
 ini_atomReuseMemory: NOP
@@ -79,7 +92,7 @@ ini_load: NOP
 	STWR		atomReuse				# reset atomReuse for new atom
 	SHUTRVAR	SHUTR_load
 	DDSFRQ		DDS_ch_MOT, F_MOT_load
-	DDSFRQ		DDS_ch_REPUMP, F_Repump_load
+	DDSFRQ		DDS_ch_uWave, F_uWave_load
 	DAC     	DAC_ch_MOT_coil, V_MOTcoil_load
 	DAC			DAC_ch_Repump, V_Repump_load
 	DAC	 		DAC_ch_MOT, V_MOT_load
@@ -103,12 +116,10 @@ load: NOP
 	JMPNZ    wait1
 
 wait1: NOP 
-	DAC	 	 DAC_ch_MOT, V_MOT_comp 
-	DACUP 
-	DELAY	 us_MotServo_wait
 	SHUTRVAR SHUTR_wait1
 	DDSFRQ	 DDS_ch_MOT, F_MOT_cool
-	DDSFRQ	 DDS_ch_REPUMP, F_Repump_cool
+	DDSFRQ	 DDS_ch_uWave, F_uWave_cool
+	DAC		 DAC_ch_Repump, V_Repump_cool
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_cool
 	DAC	 	 DAC_ch_MOT, V_MOT_cool
 	DAC		 DAC_ch_Dipole, V_Dipole_cool
@@ -125,6 +136,7 @@ ini_sub_D_cooling: NOP
 	JMPZ	 OPump
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_cool
 	DAC	 	 DAC_ch_MOT, V_MOT_cool
+	DAC		 DAC_ch_Repump, V_Repump_cool
 	DAC		 DAC_ch_Dipole, V_Dipole_cool
 	DAC		 DAC_ch_Bx, V_Bx_cool
 	DAC		 DAC_ch_By, V_By_cool
@@ -164,6 +176,7 @@ wait2: NOP
 	JMPZ	 OPump
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_wait2
 	DAC	 	 DAC_ch_MOT, V_MOT_wait2
+	DAC		 DAC_ch_Repump, V_Repump_wait2
 	DAC		 DAC_ch_Dipole, V_Dipole_wait2
 	DAC		 DAC_ch_Bx, V_Bx_wait2
 	DAC		 DAC_ch_By, V_By_wait2
@@ -177,9 +190,11 @@ OPump: NOP
 	LDWR	 OP_SWITCH
 	CMP		 SWITCH
 	JMPZ	 wait3
-	DDSFRQ	 DDS_ch_REPUMP, F_Repump_op
+	DDSFRQ	 DDS_ch_uWave, F_uWave_op
 	DDSFRQ	 DDS_ch_OP, F_OP_op
+	DDSAMP	 DDS_ch_OP, A_OP_op
 	DAC		 DAC_ch_MOT, V_MOT_op
+	DAC		 DAC_ch_Repump, V_Repump_op
 	DAC		 DAC_ch_Bx, V_Bx_op
 	DAC		 DAC_ch_By, V_By_op
 	DAC		 DAC_ch_Bz, V_Bz_op
@@ -195,6 +210,7 @@ wait3: NOP
 	JMPZ	 Exp
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_wait3
 	DAC	 	 DAC_ch_MOT, V_MOT_wait3
+	DAC		 DAC_ch_Repump, V_Repump_wait3
 	DAC		 DAC_ch_Dipole, V_Dipole_wait3
 	DAC		 DAC_ch_Bx, V_Bx_wait3
 	DAC		 DAC_ch_By, V_By_wait3
@@ -204,15 +220,15 @@ wait3: NOP
 	DELAY	 us_Time_wait3
 	SHUTRVAR SHUTR_wait3
 	
+#TODO: Figure out what do to do with SHUT_exp_after (place control in GUI?) 
 Exp: NOP
 	LDWR	 EXP_SWITCH
 	CMP		 SWITCH
 	JMPZ	 wait4
 	DDSFRQ	 DDS_ch_MOT, F_MOT_exp
-	DDSFRQ	 DDS_ch_REPUMP, F_Repump_exp
 	DDSFRQ	 DDS_ch_uWave, F_uWave_exp
 	DAC	 	 DAC_ch_MOT, V_MOT_exp
-	DAC		 DAC_ch_Dipole, V_Dipole_exp
+	DAC		 DAC_ch_Repump, V_Repump_exp	# DAC		 DAC_ch_Dipole, V_Dipole_exp
 	DAC		 DAC_ch_Bx, V_Bx_exp
 	DAC		 DAC_ch_By, V_By_exp
 	DAC		 DAC_ch_Bz, V_Bz_exp
@@ -227,7 +243,7 @@ wait4: NOP
 	JMPZ	 Detect
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_wait4
 	DAC	 	 DAC_ch_MOT, V_MOT_wait4
-	DAC		 DAC_ch_Dipole, V_Dipole_wait4
+	DAC		 DAC_ch_Repump, V_Repump_wait4 # DAC	 DAC_ch_Dipole, V_Dipole_wait4
 	DAC		 DAC_ch_Bx, V_Bx_wait4
 	DAC		 DAC_ch_By, V_By_wait4
 	DAC		 DAC_ch_Bz, V_Bz_wait4
@@ -238,7 +254,7 @@ wait4: NOP
 	
 Detect: NOP
 	DAC	 	 DAC_ch_MOT, V_MOT_detect
-	DAC		 DAC_ch_Dipole, V_Dipole_detect
+	DAC		 DAC_ch_Repump, V_Repump_detect	# DAC	 DAC_ch_Dipole, V_Dipole_detect
 	DAC		 DAC_ch_Bx, V_Bx_detect
 	DAC		 DAC_ch_By, V_By_detect
 	DAC		 DAC_ch_Bz, V_Bz_detect
@@ -278,13 +294,14 @@ load_decision: NOP
 
 ini_check: NOP
 
-	LDWR	 CHECK_SWITCH
+	LDWR	 CHECK_SWITCH # blah 	
 	CMP		 SWITCH
 	JMPZ	 save_data
 	CLRW
 	STWR     CHECKIND
 	SHUTRVAR SHUTR_wait5
 	DAC	 	 DAC_ch_MOT, V_MOT_check
+	DAC		 DAC_ch_Repump, V_Repump_check
 	DAC		 DAC_ch_Dipole, V_Dipole_check
 	DAC		 DAC_ch_Bx, V_Bx_check
 	DAC		 DAC_ch_By, V_By_check
