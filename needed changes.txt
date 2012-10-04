@@ -1,6 +1,8 @@
-- Check box for Atom detection
-- Clear memory every new run (pp file)
-- Only closing the current plot will close scan
-- Add current scan value indicator to ExpCon*
-- Add error bar on plots
+High priority:
 - Scan multiple columns
+- Save error bar when plot is closed
+- Add plot title back to the plotted average
+
+Low priority:
+- Use tabes to organize buttons
+- Plot hold button (plot new data or scan on same plot)

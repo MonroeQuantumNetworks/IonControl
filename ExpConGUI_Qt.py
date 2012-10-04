@@ -69,10 +69,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.new_scan = True #Switch for a new scan. Log file created if True.
         self.hist_max = 30
         self.t1 = time.time()
-        self.scan_types =['Continuous','Frequency','Time','Voltage']
+        self.scan_types =['Continuous','Frequency','Time','Voltage', 'DDS Amplitude']
         self.text_to_write = ''
         self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
-                7, 'SHUTR_Raman_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+                7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
                 4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
 
         # Initialize public variables
@@ -397,10 +397,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         table_control = QtGui.QGridLayout()
         self.h_labels = ['Load', 'Wait1', 'PG cooling', 'Wait2', 'OP', 'Wait3', 'Exp', 'Wait4', 'Detect', 'Wait5', 'Check','Wait6']
         self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
-        self.v_sb_labels = ['Duration (us)','MOT coils', 'Repump detuning', 'MOT power', 'MOT detuning', 'Dipole power', 'Bx', 'By', 'Bz']
-        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_Repump_', 'V_MOT_', 'F_MOT_', 'V_Dipole_', 'V_Bx_', 'V_By_', 'V_Bz_']
-        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'Raman (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
-        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_Raman_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
+        self.v_sb_labels = ['Duration (us)','MOT coils', 'uWave freq.', 'D1 OP power', 'MOT power', 'MOT detuning', 'Repump power', 'Bx', 'By', 'Bz']
+        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_uWave_', 'A_OP_', 'V_MOT_', 'F_MOT_', 'V_Repump_', 'V_Bx_', 'V_By_', 'V_Bz_']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
+        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
 
         for i in range(len(self.h_labels)):
             table_control.addWidget(QtGui.QLabel(self.h_labels[i]),0,i+1)
@@ -443,9 +443,13 @@ class ExpConGUI_Qt(QtGui.QWidget):
             lsb.sb.setDecimals(1)
             lsb.sb.setSingleStep(1)
             lsb.sb.setRange(0,5000)
-        elif (v_label == 'F_MOT_' or v_label == 'F_Repump_'):
+        elif (v_label == 'F_MOT_' or v_label == 'F_uWave_'):
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(-30,100)
+        elif (v_label == 'A_OP_'):
+            lsb.sb.setSingleStep(1)
+            lsb.sb.setDecimals(0)
+            lsb.sb.setRange(0,1023)            
         else:
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(0,4.999)
@@ -564,6 +568,20 @@ class ExpConGUI_Qt(QtGui.QWidget):
                 if (key[:2]=='V_' or key[:2]=='v_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
+        elif (self.scan_entry.currentText()=='DDS Amplitude'):
+            self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
+            self.shuffle_cb.setDisabled(False)
+            self.scan_range_low_sb.setDisabled(False)
+            self.scan_range_low_sb.setRange(0,1023)
+            self.scan_range_high_sb.setDisabled(False)
+            self.scan_range_high_sb.setRange(0,1023)
+            self.n_points_sb.setDisabled(False)
+            self.var_entry.clear()
+            for key in sorted(self.PCon.params.defs.iterkeys()):
+                if (key[:2]=='A_' or key[:2]=='A_'):
+                    self.var_entry.addItem(key)
+            self.var_entry.setEnabled(True)
         else:
             print "Unknow scan type."
 
@@ -666,7 +684,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
             elif (self.scan_entry.currentText()=='Frequency' or
                     self.scan_entry.currentText()=='Time' or
-                    self.scan_entry.currentText()=='Voltage'):
+                    self.scan_entry.currentText()=='Voltage' or 
+                    self.scan_entry.currentText()=='DDS Amplitude'):
 
                 #Only update the log file when starting a new scan. CWC 09242012
                 if self.new_scan: 
@@ -1217,6 +1236,7 @@ class PlotThread(QtCore.QThread):
             if self.qubit_D: 
                 self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_prob
                 self.trace1.clear()
+                self.trace1.set_title(self.filename)
                 err = numpy.sqrt(self.GUI.plotdata[:,1]*(1-self.GUI.plotdata[:,1])/self.GUI.n_reps)
                 self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr = 0,yerr = err,fmt='ro-')
             else:
@@ -1227,6 +1247,7 @@ class PlotThread(QtCore.QThread):
                 self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
                 self.trace1.clear()
+                self.trace1.set_title(self.filename)
                 self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=self.yerr,fmt='ro-')
             else:
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
