@@ -73,7 +73,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.text_to_write = ''
         self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
                 7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
-                4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
+                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
 
         # Initialize public variables
         self.data_start = 4000
@@ -277,7 +277,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         self.LOADREP_label = QtGui.QLabel("LOADREP")
         self.LOADREP_lsb = LabeledSpinBox('LOADREP',self.update_global_var)#QtGui.QSpinBox()
-        self.LOADREP_lsb.sb.setRange(0, 10000)
+        self.LOADREP_lsb.sb.setRange(0, 20000)
         self.LOADREP_lsb.sb.setSingleStep(1)
         self.LOADREP_lsb.sb.setDecimals(0)
         self.LOADREP_lsb.sb.setValue(float(self.PCon.params.defs['LOADREP']))
@@ -399,8 +399,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
         self.v_sb_labels = ['Duration (us)','MOT coils', 'uWave freq.', 'D1 OP power', 'MOT power', 'MOT detuning', 'Repump power', 'Bx', 'By', 'Bz']
         self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_uWave_', 'A_OP_', 'V_MOT_', 'F_MOT_', 'V_Repump_', 'V_Bx_', 'V_By_', 'V_Bz_']
-        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
-        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)', '459 (TTL6)', '1038 (TTL8)']
+        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_', 'SHUTR_459_', 'SHUTR_1038_']
 
         for i in range(len(self.h_labels)):
             table_control.addWidget(QtGui.QLabel(self.h_labels[i]),0,i+1)

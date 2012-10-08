@@ -11,10 +11,10 @@
 #define DAC_ch_By 7
 #define DAC_ch_Repump 5
 #define DAC_ch_OP 13
-#define DDS_ch_MOT 0
+#define DDS_ch_MOT 3
 #define DDS_ch_uWave 1
 #define DDS_ch_OP 2
-#define DDS_ch_Repump 3
+#define DDS_ch_Repump 0
 
 var dataend 	   4000
 var LOADIND        0
