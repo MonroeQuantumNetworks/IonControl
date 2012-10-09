@@ -35,6 +35,7 @@ import coltree_Qt
 
 from PyQt4 import QtGui, QtCore
 import shutil
+import visa
 
 dirname = 'C:/Data/'
 #dirname = '/Users/ahankin/Research/Data/'
@@ -69,11 +70,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.new_scan = True #Switch for a new scan. Log file created if True.
         self.hist_max = 30
         self.t1 = time.time()
-        self.scan_types =['Continuous','Frequency','Time','Voltage', 'DDS Amplitude']
+        self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude']
         self.text_to_write = ''
         self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
                 7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
-                4, 'SHUTR_MOTradial_': 2} #Define the TTL channels
+                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
 
         # Initialize public variables
         self.data_start = 4000
@@ -277,7 +278,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         self.LOADREP_label = QtGui.QLabel("LOADREP")
         self.LOADREP_lsb = LabeledSpinBox('LOADREP',self.update_global_var)#QtGui.QSpinBox()
-        self.LOADREP_lsb.sb.setRange(0, 10000)
+        self.LOADREP_lsb.sb.setRange(0, 20000)
         self.LOADREP_lsb.sb.setSingleStep(1)
         self.LOADREP_lsb.sb.setDecimals(0)
         self.LOADREP_lsb.sb.setValue(float(self.PCon.params.defs['LOADREP']))
@@ -399,8 +400,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
         self.v_sb_labels = ['Duration (us)','MOT coils', 'uWave freq.', 'D1 OP power', 'MOT power', 'MOT detuning', 'Repump power', 'Bx', 'By', 'Bz']
         self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_uWave_', 'A_OP_', 'V_MOT_', 'F_MOT_', 'V_Repump_', 'V_Bx_', 'V_By_', 'V_Bz_']
-        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)']
-        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)', '459 (TTL6)', '1038 (TTL8)']
+        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_', 'SHUTR_459_', 'SHUTR_1038_']
 
         for i in range(len(self.h_labels)):
             table_control.addWidget(QtGui.QLabel(self.h_labels[i]),0,i+1)
@@ -449,7 +450,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         elif (v_label == 'A_OP_'):
             lsb.sb.setSingleStep(1)
             lsb.sb.setDecimals(0)
-            lsb.sb.setRange(0,1023)            
+            lsb.sb.setRange(0,1023)
         else:
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(0,4.999)
@@ -458,7 +459,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         return lsb
 
     def partitionFpgaMemory(self):
-        # Set memory usage for the pp file based on use request, 
+        # Set memory usage for the pp file based on use request,
         # TODO: exit program if requested memory space is too large
         self.data_start = 4000 - self.n_reps+1; #Changed CWC 09122012
         self.reuseDataEnd = self.data_start - 1
@@ -626,8 +627,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     str(self.scan_entry.currentText()) +  '/')
             if not os.path.isdir(self.savedir):
                 os.mkdir(self.savedir)
-            shutil.copy2(str(self.ppfile), self.savedir) 
-            shutil.copy2('config.ddscon', self.savedir)  
+            shutil.copy2(str(self.ppfile), self.savedir)
+            shutil.copy2('config.ddscon', self.savedir)
             self.filename = (self.savedir + str(self.scan_entry.currentText())
                     + '_scan')
             if (self.scan_entry.currentText()!='Continuous'):
@@ -635,7 +636,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             fd = file(self.filename+'.txt', "a")
 
 
-            # Get number of data points entered by user and use this 
+            # Get number of data points entered by user and use this
             # to set memory usage for the pp file
             # TODO: exit program if requested memory space is too large
             # TODO: ask James why he didn't use this.datastart
@@ -684,11 +685,12 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
             elif (self.scan_entry.currentText()=='Frequency' or
                     self.scan_entry.currentText()=='Time' or
-                    self.scan_entry.currentText()=='Voltage' or 
-                    self.scan_entry.currentText()=='DDS Amplitude'):
+                    self.scan_entry.currentText()=='Voltage' or
+                    self.scan_entry.currentText()=='DDS Amplitude' or
+                    self.scan_entry.currentText()=='1038 Frequency'):
 
                 #Only update the log file when starting a new scan. CWC 09242012
-                if self.new_scan: 
+                if self.new_scan:
                     self.init_scan(self.n_points_sb.value())
                     self.text_to_write = (str(self.scan_entry.currentText()) +
                             ' scan.\n')
@@ -999,22 +1001,39 @@ class ScanExpThread(ExpThread):
         temp = self.GUI.PCon.parameter_read( str(
             self.GUI.var_entry.currentText())).split()
         self.init_val = float(temp[1])
+        if (self.GUI.scan_entry.currentText()=='1038 Frequency'):
+            """insantiate visa object for frequency synthesizer"""
+            try:
+                self.visa_Agilent_E4421B = visa.instrument ("GPIB::19")
+                print self.visa_Agilent_E4421B.ask("*IDN?")
+            except:
+                print "failure: GPIB::19, Agilent freq synthesizer.  check address"
 
     def run(self):
         self.stopped = 0
         self.GUI.PCon.update_state()
-        coltree_Qt.save_state("State", self.GUI.PCon.state)
+        coltree_Qt.save_state("State", self.GUI.PCon.state) #saves all initial values in value/bool table
         n = 0
         while (self.stopped == 0 and self.GUI.run_exp ==True and n<self.GUI.n_points_sb.value()):
             while (self.stopped == 0 and self.GUI.pause == True):
                 time.sleep(0.1)
-            current_scan_val = self.scan_vals[n]
+            current_scan_val = self.scan_vals[n] #get scan value from array
 
-            self.GUI.PCon.parameter_set(self.GUI.var_entry.currentText(), current_scan_val)
+            if (self.GUI.scan_entry.currentText()=='1038 Frequency'):
+                """ update synthesizer with new frequency and trigger unlock ttl on laser controler"""
+                #shutrState = self.GUI.PCon.stateobj["SHUTR"][0].value()
+                #self.GUI.PCon.stateobj["SHUTR"][0].setValue(shutrState+512)
+                #time.sleep(.0)
+                self.visa_Agilent_E4421B.write("TRIG:OUTP:POL NEG")
+                self.visa_Agilent_E4421B.write("FREQ " + str(current_scan_val)+" GHz")
+                self.visa_Agilent_E4421B.write("TRIG:OUTP:POL POS")
+                #self.GUI.PCon.stateobj["SHUTR"][0].setValue(shutrState)
+            else:
+                self.GUI.PCon.parameter_set(self.GUI.var_entry.currentText(), current_scan_val) #set the scanned var to value
 
-            self.GUI.PCon.pp_run()
+            self.GUI.PCon.pp_run()  #pp_run uploads and exec.;  pp_run_2 only exec what is already in memory
             t3=time.time()
-            readoutOK = self.GUI.PCon.update_count()
+            readoutOK = self.GUI.PCon.update_count()  # .update_count is method for read memory
             t4=time.time()
 
             #print "pp readout time %3f sec" %(t4-t3)
@@ -1022,7 +1041,7 @@ class ScanExpThread(ExpThread):
                 self.emit(QtCore.SIGNAL("Done_one_point"),
                         self.GUI.ind[current_scan_val],
                         numpy.mean(self.GUI.PCon.data[:,1]),
-                        self.GUI.PCon.data[:,1])
+                        self.GUI.PCon.data[:,1])  #update_cout() retrieved data and stores in PCon.data
 ##                print self.GUI.ind[current_scan_val]
 ##                print current_scan_val
                 if (time.time()-self.t1) < 0.05:
@@ -1039,10 +1058,10 @@ class ScanExpThread(ExpThread):
             n+=1
             self.GUI.n_index.setText(str(n))
             self.GUI.scanVal.setText(str(current_scan_val))
-        self.GUI.PCon.restore_state(self.GUI.PCon.state)
+        self.GUI.PCon.restore_state(self.GUI.PCon.state)  #finished all points, return to back to state before run
         self.emit(QtCore.SIGNAL("Done_scanning"))
         self.GUI.PCon.parameter_set(str(self.GUI.var_entry.currentText()),
-                self.init_val)
+                self.init_val)  #sets parameters in "driver"
 
 # TODO: Delete below code if the new class sturcture works fine (base class
 # ExpThread inherited by ScanExpThread and ContExpThread).
@@ -1233,7 +1252,7 @@ class PlotThread(QtCore.QThread):
         new_prob = numpy.mean(map(lambda x: int(x>float(self.GUI.PCon.params.defs['CHECKTHOLD'])), new_data))
         if (self.GUI.scan_entry.currentText()=='Continuous'):
             self.GUI.plotdata[0:self.GUI.plotdatalength-1,1] = self.GUI.plotdata[1:self.GUI.plotdatalength,1]
-            if self.qubit_D: 
+            if self.qubit_D:
                 self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_prob
                 self.trace1.clear()
                 self.trace1.set_title(self.filename)
@@ -1243,7 +1262,7 @@ class PlotThread(QtCore.QThread):
                 self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
                 self.line1.set_ydata(self.GUI.plotdata[:,1])
         else:# (self.GUI.scan_entry.currentText()=='Frequency' ):
-            if self.qubit_D: 
+            if self.qubit_D:
                 self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
                 self.trace1.clear()
