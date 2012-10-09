@@ -51,7 +51,7 @@ Params:tree:SHUTR_TEST:1:143
 Params:tree:SHUTR_check:1:143.0
 Params:tree:SHUTR_cool:1:143.0
 Params:tree:SHUTR_detect:1:141.0
-Params:tree:SHUTR_exp:1:88.0
+Params:tree:SHUTR_exp:1:472.0
 Params:tree:SHUTR_exp_after:1:152
 Params:tree:SHUTR_load:1:143.0
 Params:tree:SHUTR_op:1:190.0
@@ -202,10 +202,10 @@ State:DDS1_AMP:750.0
 State:DDS1_FRQ:7.376
 State:DDS1_PHS:0.0
 State:DDS2_AMP:1023.0
-State:DDS2_FRQ:70.1
+State:DDS2_FRQ:74.0
 State:DDS2_PHS:0.0
 State:DDS3_AMP:1023.0
-State:DDS3_FRQ:70.05
+State:DDS3_FRQ:70.0
 State:DDS3_PHS:0.0
 State:SHUTR:143.0
 State:DAC0_Vout:1.1
@@ -231,9 +231,9 @@ State:DDS1_AMP:750.0
 State:DDS1_FRQ:7.376
 State:DDS1_PHS:0.0
 State:DDS2_AMP:1023.0
-State:DDS2_FRQ:70.1
+State:DDS2_FRQ:74.0
 State:DDS2_PHS:0.0
 State:DDS3_AMP:1023.0
-State:DDS3_FRQ:70.05
+State:DDS3_FRQ:70.0
 State:DDS3_PHS:0.0
 State:SHUTR:143.0

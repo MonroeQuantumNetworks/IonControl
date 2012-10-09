@@ -35,6 +35,7 @@ import coltree_Qt
 
 from PyQt4 import QtGui, QtCore
 import shutil
+import visa
 
 dirname = 'C:/Data/'
 #dirname = '/Users/ahankin/Research/Data/'
@@ -1024,7 +1025,7 @@ class ScanExpThread(ExpThread):
                 #self.GUI.PCon.stateobj["SHUTR"][0].setValue(shutrState+512)
                 #time.sleep(.0)
                 self.visa_Agilent_E4421B.write("TRIG:OUTP:POL NEG")
-                self.visa_Agilent_E4421B.write("FREQ " + str(current_scan_val)+" MHz")
+                self.visa_Agilent_E4421B.write("FREQ " + str(current_scan_val)+" GHz")
                 self.visa_Agilent_E4421B.write("TRIG:OUTP:POL POS")
                 #self.GUI.PCon.stateobj["SHUTR"][0].setValue(shutrState)
             else:
