@@ -5,5 +5,6 @@ High priority:
 - Add plot title back to the plotted average
 
 Low priority:
+- GUI control to change 1038 freq.
 - Use tabes to organize buttons
 - Plot hold button (plot new data or scan on same plot)
