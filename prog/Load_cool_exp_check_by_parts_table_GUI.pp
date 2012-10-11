@@ -333,11 +333,28 @@ save_atomReuse: NOP
 	STWR   		reuseAddr 		# increments reuseAddr
 	CLRW 						# v
 	STWR 		atomReuse 		# atomReuse = 0
+	LDWR	 	LOSS_SWITCH 	# If LOSS_SWITCH > SWITCH, save data even though the atom is lost 	
+	CMP		 	SWITCH
+	JMPNZ	 	save_loss_data
 	LDWR 		addr
 	CMP 		dataend
 	JMPZ   		ini_load 		# addr <= dataend (load a new atom)
 	JMPNZ  		done 			# addr > dataend (you have reached end or memory, finish sequence)
 
+save_loss_data: NOP         # Enabled by "Use atom loss as signal"
+	SHUTRVAR	SHUTR_wait5
+	DAC	 		DAC_ch_MOT, V_MOT_wait5 # changed from V_MOT_exp_end CWC 09262012
+	DACUP
+	DELAY 	us_Time_wait5
+	LDWR	DETECTCOUNT
+	LDINDF  addr
+	STWI                    #stores data to wherever addr is pointing
+	INC     addr            #increments address
+	STWR    addr
+	CMP     dataend
+	JMPZ    ini_load		 # ini_load, ini_sub_D_cooling
+	JMPNZ	done
+	
 done: NOP
 	LDWR 		reuseBinNum		# v
 	LDINDF		reuseBinAddr	# v

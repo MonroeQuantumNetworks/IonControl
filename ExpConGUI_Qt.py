@@ -265,6 +265,16 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.Check_SW_cb.setChecked(False)
         hbox4.addWidget(self.Check_SW_label)
         hbox4.addWidget(self.Check_SW_cb)
+        
+        self.Loss_SW_label = QtGui.QLabel("Use atom loss as signal")
+        self.Loss_SW_cb = QtGui.QCheckBox()
+        self.Loss_SW_cb.setChecked(True)
+        self.Loss_SW_cb.stateChanged.connect(self.set_stage_Disabled)
+        if (not float(self.PCon.params.defs['LOSS_SWITCH'])==1):
+            self.Loss_SW_cb.setChecked(False)
+        self.Loss_SW_cb.setDisabled(True)
+        hbox4.addWidget(self.Loss_SW_label)
+        hbox4.addWidget(self.Loss_SW_cb)
 
         self.LOADTHOLD_label = QtGui.QLabel("LOADTHOLD")
         self.LOADTHOLD_lsb = LabeledSpinBox('LOADTHOLD',self.update_global_var)#QtGui.QSpinBox()
@@ -527,62 +537,97 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.scan_range_high_sb.setDisabled(True)
             self.n_points_sb.setDisabled(True)
             self.var_entry.setDisabled(True)
+            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setChecked(False)
         elif (self.scan_entry.currentText()=='Frequency'):
             self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(-30,100)
+            self.scan_range_low_sb.setDecimals(3)
             self.scan_range_high_sb.setDisabled(False)
             self.scan_range_high_sb.setRange(-30,100)
+            self.scan_range_high_sb.setDecimals(3)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
             for key in sorted(self.PCon.params.defs.iterkeys()):#self.PCon.params.defs:
                 if (key[:2]=='F_' or key[:2]=='f_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
+            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setChecked(False)
+        elif (self.scan_entry.currentText()=='1038 Frequency'):
+            self.PCon.params.update_defs()
+            self.button_cont.setDisabled(True)
+            self.shuffle_cb.setChecked(False)
+            self.shuffle_cb.setDisabled(True)
+            self.scan_range_low_sb.setDisabled(False)
+            self.scan_range_low_sb.setRange(1.0,2.9)
+            self.scan_range_low_sb.setDecimals(5)
+            self.scan_range_high_sb.setDisabled(False)
+            self.scan_range_high_sb.setRange(1.2,3.0)
+            self.scan_range_high_sb.setDecimals(5)
+            self.n_points_sb.setDisabled(False)
+            self.var_entry.clear()
+            self.var_entry.addItem('F_uWave_exp')
+            self.var_entry.setEnabled(False)
+            self.Loss_SW_cb.setEnabled(True)
+            self.Loss_SW_cb.setChecked(True)
         elif (self.scan_entry.currentText()=='Time'):
             self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(0,100)
+            self.scan_range_low_sb.setDecimals(2)
             self.scan_range_high_sb.setDisabled(False)
             self.scan_range_high_sb.setRange(1,10000)
+            self.scan_range_high_sb.setDecimals(2)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
             for key in sorted(self.PCon.params.defs.iterkeys()):
                 if (key[:3]=='ns_' or key[:3]=='NS_' or key[:3]=='us_' or key[:3]=='US_' or key[:3]=='ms_' or key[:3]=='MS_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
+            self.Loss_SW_cb.setEnabled(True)
+            self.Loss_SW_cb.setChecked(False)
         elif (self.scan_entry.currentText()=='Voltage'):
             self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(-0.1,5)
+            self.scan_range_low_sb.setDecimals(4)
             self.scan_range_high_sb.setDisabled(False)
             self.scan_range_high_sb.setRange(-0.1,5)
+            self.scan_range_high_sb.setDecimals(4)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
             for key in sorted(self.PCon.params.defs.iterkeys()):
                 if (key[:2]=='V_' or key[:2]=='v_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
+            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setChecked(False)
         elif (self.scan_entry.currentText()=='DDS Amplitude'):
             self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
             self.scan_range_low_sb.setRange(0,1023)
+            self.scan_range_low_sb.setDecimals(0)
             self.scan_range_high_sb.setDisabled(False)
             self.scan_range_high_sb.setRange(0,1023)
+            self.scan_range_high_sb.setDecimals(0)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
             for key in sorted(self.PCon.params.defs.iterkeys()):
                 if (key[:2]=='A_' or key[:2]=='A_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
+            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setChecked(False)
         else:
             print "Unknow scan type."
 
@@ -776,11 +821,15 @@ class ExpConGUI_Qt(QtGui.QWidget):
         elif (widget == self.Check_SW_cb):
             h_label = 'check'
             self.PCon.parameter_set('CHECK_SWITCH', SW)
+        elif (widget == self.Loss_SW_cb):
+            h_label = 'loss'
+            self.PCon.parameter_set('LOSS_SWITCH', SW)
 
-        for i in range(len(self.v_sb_subscripts)):
-            self.controls[self.v_sb_subscripts[i]+h_label][0].setDisabled(not TF)
-        for i in range(len(self.v_tb_index)):
-            self.controls[self.v_tb_index[i]+h_label][0].setDisabled(not TF)
+        if h_label != 'loss':
+            for i in range(len(self.v_sb_subscripts)):
+                self.controls[self.v_sb_subscripts[i]+h_label][0].setDisabled(not TF)
+            for i in range(len(self.v_tb_index)):
+                self.controls[self.v_tb_index[i]+h_label][0].setDisabled(not TF)
 
         disable_additional_col = 0
         if h_label == 'load':
