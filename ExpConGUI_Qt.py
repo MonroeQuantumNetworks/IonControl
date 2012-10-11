@@ -36,6 +36,7 @@ import coltree_Qt
 from PyQt4 import QtGui, QtCore
 import shutil
 import visa
+import math_box
 
 dirname = 'C:/Data/'
 #dirname = '/Users/ahankin/Research/Data/'
@@ -1132,9 +1133,11 @@ class PlotThread(QtCore.QThread):
         self.trace1.set_title(self.filename)
         self.yerr = numpy.zeros(self.GUI.n_points_sb.value())
         if self.qubit_D:
-            self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=0,fmt='ro-')
+            self.trace1.errorbar(self.GUI.plotdata[:,0],
+                    self.GUI.plotdata[:,1], xerr=0, yerr=0, fmt='ro-')
         else:
-            self.line1, = self.trace1.plot(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],'ro-')
+            self.line1, = self.trace1.plot(self.GUI.plotdata[:,0],
+                    self.GUI.plotdata[:,1], 'ro-')
         #self.canvas.mpl_connect('pick_event', self.on_pick)
         self.mpl_toolbar1 = NavigationToolbar(self.canvas1, self.frame1)
         self.canvas1.draw()
@@ -1167,38 +1170,82 @@ class PlotThread(QtCore.QThread):
     def update_plot_save_data(self, scan_index, new_mean, new_data):
 ##        while (self.stopped == 0 and self.GUI.pause == True):
 ##            time.sleep(0.02)
-        new_prob = numpy.mean(map(lambda x: int(x>float(self.GUI.PCon.params.defs['CHECKTHOLD'])), new_data))
-        if (self.GUI.scan_entry.currentText()=='Continuous'):
-            self.GUI.plotdata[0:self.GUI.plotdatalength-1,1] = self.GUI.plotdata[1:self.GUI.plotdatalength,1]
+        new_prob = numpy.mean( map( lambda x:
+            int(x>float(self.GUI.PCon.params.defs['CHECKTHOLD'])), new_data))
+
+        # If continuous scan
+        scanType = self.GUI.scan_entry.currentText()
+        scanVar  = self.GUI.var_entry.currentText()
+        if (scanType =='Continuous'):
+            self.GUI.plotdata[ 
+                    0:self.GUI.plotdatalength-1, 1] = self.GUI.plotdata[
+                    1:self.GUI.plotdatalength, 1]
+
+            # If display qubit checked
             if self.qubit_D:
                 self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_prob
                 self.trace1.clear()
                 self.trace1.set_title(self.filename)
-                err = numpy.sqrt(self.GUI.plotdata[:,1]*(1-self.GUI.plotdata[:,1])/self.GUI.n_reps)
-                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr = 0,yerr = err,fmt='ro-')
+                err = numpy.sqrt(self.GUI.plotdata[:,1] *
+                        (1-self.GUI.plotdata[:,1])/self.GUI.n_reps)
+                self.trace1.errorbar(self.GUI.plotdata[:,0],
+                        self.GUI.plotdata[:,1], xerr = 0, yerr = err,
+                        fmt='ro-')
+
+            # Else display fluorescence data
             else:
                 self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
                 self.line1.set_ydata(self.GUI.plotdata[:,1])
-        else:# (self.GUI.scan_entry.currentText()=='Frequency' ):
+
+        # if scanning parameter
+        else:
+
+            # if diplay qubit data checked
             if self.qubit_D:
-                self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
-                self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+                self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2
+                    * self.GUI.plotdata[scan_index,2]
+                    + new_prob*(1-new_prob)) /
+                    (self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
+                self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob +
+                        self.GUI.plotdata[scan_index,1] *
+                        self.GUI.plotdata[scan_index,2]) / (self.GUI.n_reps +
+                                self.GUI.plotdata[scan_index,2])
                 self.trace1.clear()
                 self.trace1.set_title(self.filename)
-                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=self.yerr,fmt='ro-')
+
+                xdata = self.GUI.plotdata[:,0]
+                ydata = self.GUI.plotdata[:,1]
+                self.trace1.errorbar(xdata, ydata, xerr=0, yerr=self.yerr,
+                        fmt='ro-')
+                if scanType == 'Frequency':
+                    if scanVar == 'F_uWave_exp':
+                        freq0 = numpy.min(ydata)
+                        offset = numpy.max(ydata)
+                        waist = 0.100   #TODO: automate fit guess
+                        p0 = [amp, freq0, waist, offset]
+                        guassFit = F_uWave_exp_fit(p0,xdata,ydata,self.yerr)
+                        guassFit.plotfit()
+
+            # Else display fluorescence data
             else:
-                self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+                self.GUI.plotdata[scan_index,1] = ( self.GUI.n_reps *
+                        new_mean+self.GUI.plotdata[scan_index,1] *
+                        self.GUI.plotdata[scan_index,2] ) / (self.GUI.n_reps +
+                                self.GUI.plotdata[scan_index,2])
                 self.line1.set_ydata(self.GUI.plotdata[:,1])
-            self.GUI.plotdata[scan_index,2] = self.GUI.plotdata[scan_index,2] + self.GUI.n_reps
+
+
+            self.GUI.plotdata[scan_index,2] = self.GUI.plotdata[
+                    scan_index,2] + self.GUI.n_reps
 
 
         #print "%d, %d" %(len(self.GUIplotdata[:,0]),len(self.GUIplotdata[:,1]))
         ymax = numpy.max(self.GUI.plotdata[:,1])
         ymin = numpy.min(self.GUI.plotdata[:,1])
-        self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01, ymax+0.1*(ymax-ymin)+0.01)
+        self.trace1.set_ylim(ymin-0.1*(ymax-ymin)-0.01,
+                ymax+0.1*(ymax-ymin)+0.01)
 
         self.trace2.clear()
-        #self.GUItrace2.hist(self.GUIPCon.data[:,1],arange(0,self.GUIhist_max+1), normed = 1)
         self.update_hist(new_data)
         self.trace2.set_title(self.filename+'_hist')
         self.canvas1.draw()
@@ -1207,7 +1254,8 @@ class PlotThread(QtCore.QThread):
         if (self.GUI.scan_entry.currentText()=='Continuous'):
             self.text_to_write = str(self.GUI.plotdata[scan_index,1])+'\t'
         else:
-            self.text_to_write = str(self.GUI.plotdata[scan_index,0]) + '\t' + str(self.GUI.plotdata[scan_index,1])+'\t'
+            self.text_to_write = (str(self.GUI.plotdata[scan_index,0]) + '\t' +
+                    str(self.GUI.plotdata[scan_index,1])+'\t')
         for n in range(self.GUI.rep_sb.value()):
             self.text_to_write += str(new_data[n])+'\t'
         self.text_to_write += '\n'
@@ -1215,11 +1263,6 @@ class PlotThread(QtCore.QThread):
         fd.seek(0,2)
         fd.write(self.text_to_write)
         fd.close()
-##        if (self.GUI.scan_entry.currentText()=='Continuous'):
-##            self.GUI.plotdata[0:self.GUI.plotdatalength-1,1] = self.GUI.plotdata[1:self.GUI.plotdatalength,1]
-##            self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_mean
-##            self.line1.set_ydata(self.GUI.plotdata[:,1])
-##            self.canvas.draw()
 
         if (time.time()-self.t1) < 0.05:
             time.sleep(0.03)

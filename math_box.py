@@ -158,21 +158,59 @@ class Rabi_sinefit(LeastSQ_fit):
         """
         return p[0] / 2 * pl.sin( pl.pi/p[1]*x + pl.pi*3/2 ) + p[2]
 
-## Uncomment to test code
-def main():
-    data = pl.zeros((3,3))
-    data = pl.loadtxt("rabiFlopData.txt")
-    x = data[:,0]
-    y = data[:,1]
-    sig = data[:,2]
-    
-    p0 = [0.8,10,0.5]
-    thefit = Rabi_sinefit(p0,x,y,sig)
-    p, perr, rchisq = thefit.getfit()
-    print p
-    print perr
-    print rchisq
-    thefit.plotfit()
+class F_uWave_exp_fit(LeastSQ_fit):
+    """
+    Fit a sine function to get the pi-pulse time.
+    """
+    def __init__(self,p0,x,y,sigma=1):
+        """ Initialize object """
+        super(F_uWave_exp_fit,self).__init__(p0,x,y,sigma)
 
-if __name__ == '__main__':
-    main()
+    def _plotsettings(self,plot_guess=True):
+        """ Properly label plot and display important fit parameters"""
+        pl.title("UWave freq. scan")
+        pl.xlabel("freq. (MHz)")
+        pl.ylabel("f=4 probability")
+        if plot_guess:
+            pl.legend(('data', 'guess', 'fit'))
+        else:
+            pl.legend(('data', 'fit'))
+
+        ax = pl.axes()
+        pl.text(0.6, 0.07,
+                ('center :  %.3f +/- %.3f\n' + 'waist: %.3f+/- %.3f\n' +
+                    'rchisquared: %.3f') %(self.p[1], self.perr[1], self.p[2],
+                        self.perr[2], self.rchisq),
+             fontsize=16,
+             horizontalalignment='left',
+             verticalalignment='center',
+             transform=ax.transAxes)
+
+    def fitfunc(self, p, x):
+        """ Return the value of the sine function for given fit parameters, p
+
+        p[0]:       amplitude
+        p[1]:       gaussian center
+        p[2]:       guassian waist
+        p[3]:       offset from 0
+        """
+        return -p[0] * pl.exp( -2*(x-p[1])**2 / (p[2]**2) ) + p[3]
+
+## Uncomment to test code
+#def main():
+#    data = pl.zeros((3,3))
+#    data = pl.loadtxt("rabiFlopData.txt")
+#    x = data[:,0]
+#    y = data[:,1]
+#    sig = data[:,2]
+#    
+#    p0 = [0.8,10,0.5]
+#    thefit = Rabi_sinefit(p0,x,y,sig)
+#    p, perr, rchisq = thefit.getfit()
+#    print p
+#    print perr
+#    print rchisq
+#    thefit.plotfit()
+#
+#if __name__ == '__main__':
+#    main()
