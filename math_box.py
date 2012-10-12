@@ -44,12 +44,13 @@ class LeastSQ_fit(object):
         """Initialization code"""
 
         # Initialize variables
-        self.p0 = p0
-        self.x = x
-        self.y = y
-        self.sigma = sigma
+        self.p0 = pl.array(p0)
+        self.x = pl.array(x)
+        self.y = pl.array(y)
+        self.sigma = pl.array(sigma)
 
         # perform least squares fit
+        self._remove_no_errorbar()
         self.p, self.perr, self.rchisq = self._fit()
 
     
@@ -68,8 +69,10 @@ class LeastSQ_fit(object):
         """ 
         Return fit parameters
         """
-
-        return self.p, self.perr, self.rchisq
+        fitx = pl.linspace( self.x.min(), self.x.max(), 500)
+        fity = self.fitfunc(self.p, fitx)
+        fity_guess = self.fitfunc(self.p0, fitx)
+        return self.p, self.perr, self.rchisq, fitx, fity, fity_guess
 
     def plotfit(self,plot_guess=False):
         """
@@ -98,6 +101,12 @@ class LeastSQ_fit(object):
         perr; and the reduece chisqaured function, rchisq. """
 
         # Perform least squares fit
+        print "x:"
+        print self.x
+        print "y:" 
+        print self.y
+        print "sigma:"
+        print self.sigma
         p,cov,info,mesg,success = leastsq( self._errfunc, self.p0[:],
                 args=(self.x,self.y,self.sigma), full_output=1 )
 
@@ -109,7 +118,8 @@ class LeastSQ_fit(object):
         # estimate error in fittied parameters (2*sigma)
         perr = pl.zeros(p.size)
         for j in range(p.size):
-            perr[j] = 2*pl.sqrt( cov[j][j] * pl.sqrt(rchisq) )
+            #perr[j] = 2*pl.sqrt( cov[j][j] * pl.sqrt(rchisq) )
+            perr[j] = 0.1
             
         return p, perr, rchisq
 
@@ -121,6 +131,15 @@ class LeastSQ_fit(object):
             pl.legend(('data', 'guess', 'fit'))
         else:
             pl.legend(('data', 'fit'))
+            
+    def _remove_no_errorbar(self):
+        """ Remove points from data set that have sigma = 0 """
+        valid_points = self.sigma != 0
+        self.x = self.x[valid_points]
+        self.y = self.y[valid_points]
+        self.sigma = self.sigma[valid_points]
+        
+         
 
 class Rabi_sinefit(LeastSQ_fit):
     """
@@ -166,7 +185,7 @@ class F_uWave_exp_fit(LeastSQ_fit):
         """ Initialize object """
         super(F_uWave_exp_fit,self).__init__(p0,x,y,sigma)
 
-    def _plotsettings(self,plot_guess=True):
+    def _plotsettings(self,plot_guess):
         """ Properly label plot and display important fit parameters"""
         pl.title("UWave freq. scan")
         pl.xlabel("freq. (MHz)")
@@ -196,21 +215,28 @@ class F_uWave_exp_fit(LeastSQ_fit):
         """
         return -p[0] * pl.exp( -2*(x-p[1])**2 / (p[2]**2) ) + p[3]
 
-## Uncomment to test code
-#def main():
+# Uncomment to test code
+def main():
 #    data = pl.zeros((3,3))
 #    data = pl.loadtxt("rabiFlopData.txt")
-#    x = data[:,0]
 #    y = data[:,1]
 #    sig = data[:,2]
-#    
-#    p0 = [0.8,10,0.5]
-#    thefit = Rabi_sinefit(p0,x,y,sig)
-#    p, perr, rchisq = thefit.getfit()
-#    print p
-#    print perr
-#    print rchisq
-#    thefit.plotfit()
-#
-#if __name__ == '__main__':
-#    main()
+    x = pl.array([7.06899977, 7.10340023,  7.13789988,  7.24139977,  7.51719999,  
+               7.6552, 7.75860023,  7.96549988])
+    y = pl.array([0.79000002,  0.86000001,  0.88999999,  0.77999997,  0.82999998,
+               0.80000001, 0.86000001,  0.89999998])
+    sig = pl.array([0.04073082,  0.0346987,   0.03128898,  0.04142463,
+                    0.03756328,  0.04, 0.0346987,   0.03])
+     
+
+    
+    p0 = [0.8,7.37,0.1,0.9]
+    thefit = F_uWave_exp_fit(p0,x,y,sig)
+    p, perr, rchisq = thefit.getfit()
+    print p
+    print perr
+    print rchisq
+    thefit.plotfit(plot_guess=True)
+
+if __name__ == '__main__':
+    main()

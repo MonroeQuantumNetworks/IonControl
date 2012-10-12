@@ -164,6 +164,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.n_index = QtGui.QLabel("-")
         hbox3.addWidget(self.n_index_label)
         hbox3.addWidget(self.n_index)
+        self.n_index
         
         self.scanVal_label = QtGui.QLabel("Current value:")
         self.scanVal = QtGui.QLabel("-")
@@ -1176,6 +1177,7 @@ class PlotThread(QtCore.QThread):
         # If continuous scan
         scanType = self.GUI.scan_entry.currentText()
         scanVar  = self.GUI.var_entry.currentText()
+        pointNumber = numpy.float(self.GUI.n_index.text())
         if (scanType =='Continuous'):
             self.GUI.plotdata[ 
                     0:self.GUI.plotdatalength-1, 1] = self.GUI.plotdata[
@@ -1219,12 +1221,20 @@ class PlotThread(QtCore.QThread):
                         fmt='ro-')
                 if scanType == 'Frequency':
                     if scanVar == 'F_uWave_exp':
-                        freq0 = numpy.min(ydata)
-                        offset = numpy.max(ydata)
-                        waist = 0.100   #TODO: automate fit guess
-                        p0 = [amp, freq0, waist, offset]
-                        guassFit = F_uWave_exp_fit(p0,xdata,ydata,self.yerr)
-                        guassFit.plotfit()
+                        print "pointNumber"
+                        print pointNumber
+                        if pointNumber > 6:
+                            #freq0 = numpy.min(ydata)
+                            freq0 = 7.37
+                            offset = numpy.max(ydata)
+                            amp = 0.5
+                            waist = 0.100   #TODO: automate fit guess
+                            p0 = [amp, freq0, waist, offset]
+                            guassFit = math_box.F_uWave_exp_fit(p0,xdata,ydata,self.yerr)
+                            p, perr, rchisq, fitx, fity, fity_guess = guassFit.getfit()
+                            print "p:"
+                            print p
+                            self.trace1.plot(fitx,fity,'r-')
 
             # Else display fluorescence data
             else:
