@@ -40,7 +40,7 @@ class LeastSQ_fit(object):
     """
 
 
-    def __init__(self,p0,x,y,sigma=1):
+    def __init__(self,p0,x,y,sigma,debug=False):
         """Initialization code"""
 
         # Initialize variables
@@ -48,11 +48,11 @@ class LeastSQ_fit(object):
         self.x = pl.array(x)
         self.y = pl.array(y)
         self.sigma = pl.array(sigma)
+        self.debug = debug
 
         # perform least squares fit
         self._remove_no_errorbar()
         self.p, self.perr, self.rchisq = self._fit()
-
     
     """ Public methods """
     def fitfunc(self,p,x):
@@ -69,9 +69,13 @@ class LeastSQ_fit(object):
         """ 
         Return fit parameters
         """
+
+
+        # build fit waveform for plotting        
         fitx = pl.linspace( self.x.min(), self.x.max(), 500)
         fity = self.fitfunc(self.p, fitx)
         fity_guess = self.fitfunc(self.p0, fitx)
+
         return self.p, self.perr, self.rchisq, fitx, fity, fity_guess
 
     def plotfit(self,plot_guess=False):
@@ -91,6 +95,25 @@ class LeastSQ_fit(object):
 
 
     """ Private methods """
+    
+    def _debug(self):
+        print
+        print "----------"
+        print "x:"
+        print self.x
+        print "y:" 
+        print self.y
+        print "sigma:"
+        print self.sigma
+        print "p"
+        print self.p
+        print "perr:"
+        print self.perr
+        print "rchisq:"
+        print self.rchisq
+        print "----------"
+        print
+    
     def _errfunc( self, p, x, y, sigma):
         """ returns the distance from the target function weighted by 1/sigma """
 
@@ -100,28 +123,30 @@ class LeastSQ_fit(object):
         """Calculate and return the fit parameters, p; their estimated errors,
         perr; and the reduece chisqaured function, rchisq. """
 
-        # Perform least squares fit
-        print "x:"
-        print self.x
-        print "y:" 
-        print self.y
-        print "sigma:"
-        print self.sigma
+        
+        
+            
+            # Perform least squares fit
         p,cov,info,mesg,success = leastsq( self._errfunc, self.p0[:],
                 args=(self.x,self.y,self.sigma), full_output=1 )
-
+        self.p = p
+    
         # Calculate the reduced chisquared
         chisq = pl.sum( info["fvec"]*info["fvec"])
         dof = pl.size(self.x) - pl.size(p)
-        rchisq = chisq / dof
+        self.rchisq = chisq / dof
         
         # estimate error in fittied parameters (2*sigma)
-        perr = pl.zeros(p.size)
+        self.perr = pl.zeros(p.size)
         for j in range(p.size):
-            #perr[j] = 2*pl.sqrt( cov[j][j] * pl.sqrt(rchisq) )
-            perr[j] = 0.1
+            self.perr[j] = 2*pl.sqrt( cov[j][j] * pl.sqrt(self.rchisq) )
+            #self.perr[j] = 0.1
             
-        return p, perr, rchisq
+        # print variable info if debuggins is requested
+        if self.debug: self._debug()
+            
+            
+        return self.p, self.perr, self.rchisq
 
     def _plotsettings(self,plot_guess):
         pl.title("insert title")
@@ -181,9 +206,9 @@ class F_uWave_exp_fit(LeastSQ_fit):
     """
     Fit a sine function to get the pi-pulse time.
     """
-    def __init__(self,p0,x,y,sigma=1):
+    def __init__(self,p0,x,y,sigma,debug=False):
         """ Initialize object """
-        super(F_uWave_exp_fit,self).__init__(p0,x,y,sigma)
+        super(F_uWave_exp_fit,self).__init__(p0,x,y,sigma,debug)
 
     def _plotsettings(self,plot_guess):
         """ Properly label plot and display important fit parameters"""
@@ -221,22 +246,29 @@ def main():
 #    data = pl.loadtxt("rabiFlopData.txt")
 #    y = data[:,1]
 #    sig = data[:,2]
-    x = pl.array([7.06899977, 7.10340023,  7.13789988,  7.24139977,  7.51719999,  
-               7.6552, 7.75860023,  7.96549988])
-    y = pl.array([0.79000002,  0.86000001,  0.88999999,  0.77999997,  0.82999998,
-               0.80000001, 0.86000001,  0.89999998])
-    sig = pl.array([0.04073082,  0.0346987,   0.03128898,  0.04142463,
-                    0.03756328,  0.04, 0.0346987,   0.03])
+    x = pl.array([7.2, 7.3, 7.35, 7.4, 7.5, 7.6])
+    y = pl.array([0.8, 0.6, 0.05, 0.1, 0.5, 0.8])
+    sig = pl.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
      
 
     
     p0 = [0.8,7.37,0.1,0.9]
-    thefit = F_uWave_exp_fit(p0,x,y,sig)
-    p, perr, rchisq = thefit.getfit()
-    print p
-    print perr
-    print rchisq
-    thefit.plotfit(plot_guess=True)
+    thefit = F_uWave_exp_fit(p0,x,y,sig, debug = True)
+    p, perr, rchisq, fitx, fity, fity_guess = thefit.getfit()
+    pl.errorbar(x,y,sig,fmt='ro')
+    pl.plot(fitx,fity,'r-')
+    
+    x = pl.array([7.2, 7.3, 7.35, 7.4, 7.45, 7.5, 7.6, 7.7])
+    y = pl.array([0.7, 0.62, 0.05, 0.1, 0.12, 0.5, 0.8, 0.9])
+    sig = pl.array([0.1, 0.1, 0.1, 0.05, 0.1, 0.1, 0.1, 0.1])
+    thefit = F_uWave_exp_fit(p0,x,y,sig, debug = True)
+    p, perr, rchisq, fitx, fity, fity_guess = thefit.getfit()
+  
+   
+    pl.errorbar(x,y,sig,fmt='go')
+    pl.plot(fitx,fity,'g-')
+    pl.show()
+    
 
 if __name__ == '__main__':
     main()

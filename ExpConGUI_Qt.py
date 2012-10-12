@@ -1230,8 +1230,9 @@ class PlotThread(QtCore.QThread):
                             amp = 0.5
                             waist = 0.100   #TODO: automate fit guess
                             p0 = [amp, freq0, waist, offset]
-                            guassFit = math_box.F_uWave_exp_fit(p0,xdata,ydata,self.yerr)
-                            p, perr, rchisq, fitx, fity, fity_guess = guassFit.getfit()
+                            guassFit = math_box.F_uWave_exp_fit(p0, 
+                                        xdata, ydata, self.yerr)
+                            p,perr,rchisq,fitx,fity,fity_guess = guassFit.getfit()
                             print "p:"
                             print p
                             self.trace1.plot(fitx,fity,'r-')
