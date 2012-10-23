@@ -70,7 +70,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.new_scan = True #Switch for a new scan. Log file created if True.
         self.hist_max = 30
         self.t1 = time.time()
-        self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude']
+        self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude', 'Ramsey Phase Scan']
         self.text_to_write = ''
         self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
                 7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
@@ -107,25 +107,41 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.Filename_entry.setText(self.ppfile)
         hbox1.addWidget(self.Filename_entry)
 
+        
         scan_label = QtGui.QLabel("Scan type")
-        hbox2.addWidget(scan_label)
         self.scan_entry = QtGui.QComboBox()
+        
+        self.btn_1038popup = QtGui.QPushButton('1038 control',self)
+        #self.connect(self.btn_1038popup, QtCore.SIGNAL("clicked()"), self.OpenPopUpWindow)
+
+        
         for n in range(len(self.scan_types)):
             self.scan_entry.addItem(self.scan_types[n])
-        hbox2.addWidget(self.scan_entry)
+        
         self.scan_entry.currentIndexChanged.connect(self.update_scan_type)
 
         var_label = QtGui.QLabel("Scan variable")
-        hbox2.addWidget(var_label)
+        
         self.var_entry = QtGui.QComboBox()
         self.PCon.params.update_defs()
         for key in self.PCon.params.defs:
             self.var_entry.addItem(key)
         #self.var_entry.set_popdown_strings()
         self.var_entry.setDisabled(True)
-        hbox2.addWidget(self.var_entry)
+        
         self.var_entry.currentIndexChanged.connect(self.update_var)
-
+        
+        #layout hbox2
+        hbox2.addStretch(.3)
+        hbox2.addWidget(self.btn_1038popup)
+        hbox2.addStretch(.3)
+        hbox2.addWidget(scan_label)
+        hbox2.addWidget(self.scan_entry)
+        hbox2.addStretch(.3)
+        hbox2.addWidget(var_label)
+        hbox2.addWidget(self.var_entry)
+        hbox2.addStretch(.3)
+        
         control_table = self.make_table_control()
 
         self.range_low_label = QtGui.QLabel("Start")
@@ -283,8 +299,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.LOADTHOLD_lsb.sb.setDecimals(0)
         self.LOADTHOLD_lsb.sb.setValue(float(self.PCon.params.defs['LOADTHOLD']))
         self.controls['LOADTHOLD']=(self.LOADTHOLD_lsb.sb, 'LOADTHOLD')
-        hbox5.addWidget(self.LOADTHOLD_label)
-        hbox5.addLayout(self.LOADTHOLD_lsb.box)
+        
 
         self.LOADREP_label = QtGui.QLabel("LOADREP")
         self.LOADREP_lsb = LabeledSpinBox('LOADREP',self.update_global_var)#QtGui.QSpinBox()
@@ -293,8 +308,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.LOADREP_lsb.sb.setDecimals(0)
         self.LOADREP_lsb.sb.setValue(float(self.PCon.params.defs['LOADREP']))
         self.controls['LOADREP']=(self.LOADREP_lsb.sb, 'LOADREP')
-        hbox5.addWidget(self.LOADREP_label)
-        hbox5.addLayout(self.LOADREP_lsb.box)
+        
 
         self.CHECKTHOLD_label = QtGui.QLabel("CHECKTHOLD")
         self.CHECKTHOLD_lsb = LabeledSpinBox('CHECKTHOLD',self.update_global_var)#QtGui.QSpinBox()
@@ -303,8 +317,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.CHECKTHOLD_lsb.sb.setDecimals(0)
         self.CHECKTHOLD_lsb.sb.setValue(float(self.PCon.params.defs['CHECKTHOLD']))
         self.controls['CHECKTHOLD']=(self.CHECKTHOLD_lsb.sb, 'CHECKTHOLD')
-        hbox5.addWidget(self.CHECKTHOLD_label)
-        hbox5.addLayout(self.CHECKTHOLD_lsb.box)
+        
 
         self.CHECKREP_label = QtGui.QLabel("CHECKREP")
         self.CHECKREP_lsb = LabeledSpinBox('CHECKREP',self.update_global_var)#QtGui.QSpinBox()
@@ -313,32 +326,49 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.CHECKREP_lsb.sb.setDecimals(0)
         self.CHECKREP_lsb.sb.setValue(float(self.PCon.params.defs['CHECKREP']))
         self.controls['CHECKREP']=(self.CHECKREP_lsb.sb, 'CHECKREP')
+
+        hbox5.addWidget(self.LOADTHOLD_label)
+        hbox5.addLayout(self.LOADTHOLD_lsb.box)
+        hbox5.addStretch(1)
+        hbox5.addWidget(self.LOADREP_label)
+        hbox5.addLayout(self.LOADREP_lsb.box)
+        hbox5.addStretch(1)
+        hbox5.addWidget(self.CHECKTHOLD_label)
+        hbox5.addLayout(self.CHECKTHOLD_lsb.box)
+        hbox5.addStretch(1)
         hbox5.addWidget(self.CHECKREP_label)
         hbox5.addLayout(self.CHECKREP_lsb.box)
+        hbox5.addStretch(5)
 
         self.F_MOT_cool_final_label = QtGui.QLabel("F_MOT_cool_final")
         self.F_MOT_cool_final_lsb = LabeledSpinBox('F_INC',self.update_F_MOT_cool_final)#QtGui.QSpinBox()
         self.F_MOT_cool_final_lsb.sb.setRange(0, 100)
         self.F_MOT_cool_final_lsb.sb.setSingleStep(0.1)
         self.F_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['F_MOT_cool'])+float(self.PCon.params.defs['F_INC'])*float(self.PCon.params.defs['RAMPTOT']))
-        hbox6.addWidget(self.F_MOT_cool_final_label)
-        hbox6.addLayout(self.F_MOT_cool_final_lsb.box)
+        
 
         self.V_MOT_cool_final_label = QtGui.QLabel("V_MOT_cool_final")
         self.V_MOT_cool_final_lsb = LabeledSpinBox('V_INC',self.update_V_MOT_cool_final)#QtGui.QSpinBox()
         self.V_MOT_cool_final_lsb.sb.setRange(0, 4.999)
         self.V_MOT_cool_final_lsb.sb.setSingleStep(0.01)
         self.V_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['V_MOT_cool'])+float(self.PCon.params.defs['V_INC'])*float(self.PCon.params.defs['RAMPTOT']))
-        hbox6.addWidget(self.V_MOT_cool_final_label)
-        hbox6.addLayout(self.V_MOT_cool_final_lsb.box)
+        
 
         self.RAMPTOT_label = QtGui.QLabel("PG cooling ramp steps")
         self.RAMPTOT_lsb = LabeledSpinBox('RAMPTOT',self.update_global_var)#QtGui.QSpinBox()
         self.RAMPTOT_lsb.sb.setRange(0, 200)
         self.RAMPTOT_lsb.sb.setValue(float(self.PCon.params.defs['RAMPTOT']))
         self.controls['RAMPTOT']=(self.RAMPTOT_lsb.sb, 'RAMPTOT')
+        
+        hbox6.addWidget(self.F_MOT_cool_final_label)
+        hbox6.addLayout(self.F_MOT_cool_final_lsb.box)
+        hbox6.addStretch(1)
+        hbox6.addWidget(self.V_MOT_cool_final_label)
+        hbox6.addLayout(self.V_MOT_cool_final_lsb.box)
+        hbox6.addStretch(1)
         hbox6.addWidget(self.RAMPTOT_label)
         hbox6.addLayout(self.RAMPTOT_lsb.box)
+        hbox6.addStretch(5)
 
 ##        self.figure = plt.figure()
 ##        self.trace1 = self.figure.add_subplot(211)
@@ -628,9 +658,31 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.var_entry.setEnabled(True)
             self.Loss_SW_cb.setEnabled(False)
             self.Loss_SW_cb.setChecked(False)
+        elif (self.scan_entry.currentText()=='Ramsey Phase Scan'):
+            self.PCon.params.update_defs()
+            self.disableAll(False)
+            for key in sorted(self.PCon.params.defs.iterkeys()):
+                if (key[:3]=='PH_'):
+                    self.var_entry.addItem(key)
+            self.scan_range_low_sb.setRange(-0.1,5)
+            self.scan_range_high_sb.setRange(0,16384)
+            self.scan_range_low_sb.setDecimals(0)
+            self.scan_range_high_sb.setDecimals(0)
+
         else:
             print "Unknow scan type."
 
+    def disableAll(self, aBool):
+        self.button_cont.setDisabled(aBool)
+        self.shuffle_cb.setDisabled(aBool)
+        self.scan_range_low_sb.setDisabled(aBool)
+        self.scan_range_high_sb.setDisabled(aBool)
+        self.n_points_sb.setDisabled(aBool)
+        self.var_entry.clear()
+        self.var_entry.setDisabled(aBool)
+        self.Loss_SW_cb.setDisabled(aBool)
+
+    
     def init_scan(self, plotlength):
         self.plotdatalength = plotlength
         self.plotdata=numpy.zeros((self.plotdatalength,3),'Float32')
@@ -732,6 +784,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     self.scan_entry.currentText()=='Time' or
                     self.scan_entry.currentText()=='Voltage' or
                     self.scan_entry.currentText()=='DDS Amplitude' or
+                    self.scan_entry.currentText()=='Ramsey Phase Scan' or
                     self.scan_entry.currentText()=='1038 Frequency'):
 
                 #Only update the log file when starting a new scan. CWC 09242012
@@ -744,8 +797,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     scan_vals = numpy.linspace(self.scan_range_low_sb.value(),
                             self.scan_range_high_sb.value(),
                             self.n_points_sb.value())
-                    scan_vals = map(lambda x: float(round(10000*x)/10000),
-                            scan_vals)
+                    if self.scan_entry.currentText()=='Ramsey Phase Scan':
+                        scan_vals = map(lambda x: int(x), scan_vals)
+                    else:
+                        scan_vals = map(lambda x: float(round(10000*x)/10000),
+                                scan_vals)
                     self.plotdata[:,0]=scan_vals
                     self.ind = {}
                     for n in range(len(scan_vals)):
@@ -974,6 +1030,12 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
     def closeEvent(self, event):
         self.PCon.ExpConGUIstarted = False
+        
+    def OpenPopUpWindow(self):
+        self.w = MyPopup()
+        self.w.setGeometry(QRect(100, 100, 400, 200))
+        self.w.show()
+
 
 class ExpThread(QtCore.QThread):
     """ Base class for experiment threads."""
@@ -1451,3 +1513,12 @@ class LabeledPushButton(QtGui.QWidget):
     def tb_toggled(self):
         print '%s toggled.' %(self.vlabel+self.hlabel)
         self.emit(QtCore.SIGNAL("tb_toggled"),self.hlabel)
+
+class MyPopup(QtGui.QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+
+    def paintEvent(self, e):
+        dc = QPainter(self)
+        dc.drawLine(0, 0, 100, 100)
+        dc.drawLine(100, 0, 0, 100)
