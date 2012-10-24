@@ -71,11 +71,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.new_scan = True #Switch for a new scan. Log file created if True.
         self.hist_max = 30
         self.t1 = time.time()
-        self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude']
+        #self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude']
         self.text_to_write = ''
-        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
-                7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
-                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
+        #self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
+        #        7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+        #        4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
 
         # Initialize public variables
         self.data_start = 4000
@@ -102,11 +102,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
 ##        window.connect("delete_event", self.on_quit_activate, None)
 ##        window.connect("destroy", self.on_quit_activate, None)
 
-        Filename_label=QtGui.QLabel("Pulse Sequence File")
-        hbox1.addWidget(Filename_label)
-        self.Filename_entry=QtGui.QLineEdit()
-        self.Filename_entry.setText(self.ppfile)
-        hbox1.addWidget(self.Filename_entry)
+        #Filename_label=QtGui.QLabel("Pulse Sequence File")
+        #hbox1.addWidget(Filename_label)
+        #self.Filename_entry=QtGui.QLineEdit()
+        #self.Filename_entry.setText(self.ppfile)
+        #hbox1.addWidget(self.Filename_entry)
 
         scan_label = QtGui.QLabel("Scan type")
         hbox2.addWidget(scan_label)
