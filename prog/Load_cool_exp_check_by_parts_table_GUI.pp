@@ -104,7 +104,7 @@ ini_load: NOP
 	JMP		 load
 
 load: NOP
-    COUNT    us_LoadDetectTime
+    COUNT    us_Time_load
 	STWR	 LOADCOUNT
 	INC		 LOADIND
 	STWR	 LOADIND

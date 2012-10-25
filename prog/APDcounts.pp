@@ -21,7 +21,6 @@ var sample 0
 init_f: NOP
 	SHUTRVAR   SHUTR_TEST
 	COUNT    us_MeasTime #SHUTR    0
-	DELAY	 ms_WAIT
 	LDINDF   addr
 	STWI                     #stores data to wherever addr is pointing
 	INC      addr            #increments address DELAY    ns_delay

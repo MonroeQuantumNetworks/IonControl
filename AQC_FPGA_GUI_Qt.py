@@ -95,7 +95,8 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = '1725_Test_FPGA'#'AQC_1272_PP'#  1725_Test_FPGA
+    _FPGA_name = '1725_Test_FPGA' #'1725_Test_FPGA'
+    #_FPGA_name = 'AQC_1272_PP'
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
@@ -193,13 +194,19 @@ class gui(QtGui.QWidget):
     def make_state_view(self):
         box = QtGui.QVBoxLayout()
 
+        ddsLabels = [' (MOT test sys)', ' (uWave)', ' (D1)', ' (MOT)']
+        dacLabels = [' (Quad Coils)', ' (Bz)', ' (broken)', ' (MOT)', ' (broken)',
+                      ' (Repump)', ' (Bx)', ' (By)', ' (N/A)', ' (Dipole)',
+                      ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)']
         table_aom = QtGui.QGridLayout()
         table_aom.addWidget(QtGui.QLabel('Frequency'),0,1)
         table_aom.addWidget(QtGui.QLabel('Amplitude'),0,2)
         table_aom.addWidget(QtGui.QLabel('Phase'),0,3)
         s = 0
         for i in range(len(self.boardChannelIndex)):
-            table_aom.addWidget(QtGui.QLabel('DDS%i'%i),i+1,0)
+
+            table_aom.addWidget(QtGui.QLabel('DDS%i'%i +ddsLabels[i]),i+1,0)
+                       
             # Create a freq spinbutton
             spin = indexed_spin_button(self,.2, 3, 0,
                     self.boards[self.boardChannelIndex[i][0]].freqLimit, .1,
@@ -240,7 +247,7 @@ class gui(QtGui.QWidget):
         self.stateobj['THRES1'] = (spin, hid)
         table_aom.addWidget(spin, s+1, 3)
 
-
+        
         table_pp = QtGui.QGridLayout()
         table_pp.addWidget(QtGui.QLabel('CMD '),0,0)
         table_pp.addWidget(QtGui.QLabel('DATA'),0,2)
@@ -259,7 +266,7 @@ class gui(QtGui.QWidget):
 
         table_dac = QtGui.QGridLayout()
         for i in range(len(self.dacChannelIndex)):
-            table_dac.addWidget(QtGui.QLabel('DAC%i'%i),int(i/4),(2*i)%8)
+            table_dac.addWidget(QtGui.QLabel('DAC%i'%i + dacLabels[i]),int(i/4),(2*i)%8)
             spin = indexed_spin_button(self, .2, 3, 0,
                     self.dacs[self.dacChannelIndex[0][0]].VoutLimit*2.5/2**13,
                     .1, False, 0, self.Vout_changed, i) #4.99969482422
@@ -371,6 +378,7 @@ class gui(QtGui.QWidget):
         sb.setRange(range_low, range_high)
         sb.setDecimals(digits)
         sb.setSingleStep(increments)
+        sb.setKeyboardTracking(False)
         #sb.set_wrap(wrap)
         if (value == None):
             value = mcxem.get_state(key)
@@ -464,7 +472,7 @@ class gui(QtGui.QWidget):
         #data = widget.index
         board = self.boardChannelIndex[int(data)][0]
         chan = self.boardChannelIndex[int(data)][1]
-        print 'board ' + str(board) + ', channel ' + str(chan)
+        #print 'board ' + str(board) + ', channel ' + str(chan)
         self.boards[board].setFrequency(freq, chan, self._checkOutputs)
         return True
 
@@ -492,7 +500,7 @@ class gui(QtGui.QWidget):
         self.xem.SetWireInValue(0x00, shutter<<12, 0xF000)    # address, value, mask
         self.xem.SetWireInValue(0x04, shutter>>4, 0x00FF)
         self.xem.UpdateWireIns()
-        self.xem.ActivateTriggerIn(0x40, 1) #Added by CWC 07132012
+        #self.xem.ActivateTriggerIn(0x40, 1) #Added by CWC 07132012
         print "Setting shutter to %d"%(shutter)
 
         return True
@@ -885,6 +893,7 @@ class indexed_spin_button(QtGui.QWidget):
         self.sb.setDecimals(digits)
         self.sb.setSingleStep(increments)
         self.index = key
+        self.sb.setKeyboardTracking(False)
         #sb.set_wrap(wrap)
 ##        if (value == None):
 ##            value = mcxem.get_state(key)
