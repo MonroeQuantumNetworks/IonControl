@@ -10,6 +10,8 @@
 #-------------------------------------------------------------------------------
 
 import os
+#from datetime import datetime
+import datetime
 #import pango, math
 import numpy
 import threading,  time
@@ -718,18 +720,32 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.PCon.update_state()
             coltree_Qt.save_state("State", self.PCon.state)
 
-            # Save data to 'this.savedir' and copy current config files
-            self.timestamp = time.strftime('%Y%m%d_%H%M%S')
-            self.savedir = (dirname + self.timestamp + '_' +
-                    str(self.scan_entry.currentText()) +  '/')
-            if not os.path.isdir(self.savedir):
-                os.mkdir(self.savedir)
-            shutil.copy2(str(self.ppfile), self.savedir)
-            shutil.copy2('config.ddscon', self.savedir)
-            self.filename = (self.savedir + str(self.scan_entry.currentText())
-                    + '_scan')
+            # Define data saving and config files save locations
+            day = str(datetime.datetime.now().day)
+            year = str(datetime.datetime.now().year)
+            month = str(datetime.datetime.now().month)
+            fnameBase = (str(self.scan_entry.currentText()))
             if (self.scan_entry.currentText()!='Continuous'):
-                self.filename += '_' + str(self.var_entry.currentText())
+                fnameBase += '__' + str(self.var_entry.currentText())
+                
+            self.timestamp = time.strftime('%Y%m%d_%H%M%S')
+            self.saveDataDir = (dirname + year + '/' + month + '/' + day + '/')
+            self.configDir = (self.saveDataDir + 'config/' 
+                    + self.timestamp + '_' + fnameBase + '/')
+            if not os.path.isdir(self.saveDataDir):
+                os.makedirs(self.saveDataDir)
+            if not os.path.isdir(self.configDir):
+                os.makedirs(self.configDir)
+            
+            shutil.copy2(str(self.ppfile), self.configDir)
+            shutil.copy2('config.ddscon', self.configDir)
+            
+            
+            
+            self.filename = (self.saveDataDir + self.timestamp + '_' +
+                    fnameBase) 
+            self.plotPicFname = (self.configDir + fnameBase)
+            
             fd = file(self.filename+'.txt', "a")
 
 
@@ -1314,6 +1330,7 @@ class PlotThread(QtCore.QThread):
         self.GUI = GUI
         self.index = index
         self.qubit_D = qubit_D
+        self.plotPicFname = self.GUI.plotPicFname
         self.filename = self.GUI.filename
         self.stopped = 0
         self.t1 = time.time()
@@ -1322,7 +1339,7 @@ class PlotThread(QtCore.QThread):
         self.canvas1 = FigureCanvas(self.fig1)
         self.canvas1.setParent(self.frame1)
         self.trace1 = self.fig1.add_subplot(111)
-        self.trace1.set_title(self.filename)
+        self.trace1.set_title(self.plotPicFname)
         self.yerr = numpy.zeros(self.GUI.n_points_sb.value())
         if self.qubit_D:
             self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=0,fmt='ro-')
@@ -1341,7 +1358,7 @@ class PlotThread(QtCore.QThread):
         self.canvas2 = FigureCanvas(self.fig2)
         self.canvas2.setParent(self.frame2)
         self.trace2 = self.fig2.add_subplot(111)
-        self.trace2.set_title(self.filename+'_hist')
+        self.trace2.set_title(self.plotPicFname+'_hist')
 
         #self.canvas.mpl_connect('pick_event', self.on_pick)
         self.mpl_toolbar2 = NavigationToolbar(self.canvas2, self.frame2)
@@ -1366,7 +1383,7 @@ class PlotThread(QtCore.QThread):
             if self.qubit_D:
                 self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_prob
                 self.trace1.clear()
-                self.trace1.set_title(self.filename)
+                self.trace1.set_title(self.plotPicFname)
                 err = numpy.sqrt(self.GUI.plotdata[:,1]*(1-self.GUI.plotdata[:,1])/self.GUI.n_reps)
                 self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr = 0,yerr = err,fmt='ro-')
             else:
@@ -1377,7 +1394,7 @@ class PlotThread(QtCore.QThread):
                 self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
                 self.trace1.clear()
-                self.trace1.set_title(self.filename)
+                self.trace1.set_title(self.plotPicFname)
                 self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=self.yerr,fmt='ro-')
             else:
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
@@ -1393,7 +1410,7 @@ class PlotThread(QtCore.QThread):
         self.trace2.clear()
         #self.GUItrace2.hist(self.GUIPCon.data[:,1],arange(0,self.GUIhist_max+1), normed = 1)
         self.update_hist(new_data)
-        self.trace2.set_title(self.filename+'_hist')
+        self.trace2.set_title(self.plotPicFname+'_hist')
         self.canvas1.draw()
         self.canvas2.draw()
 
@@ -1456,8 +1473,8 @@ class PlotThread(QtCore.QThread):
         self.stopped = 1
         if self.index == self.GUI.thread_count-1:
             self.GUI.stop_scan()
-        self.fig1.savefig(self.filename+'.png')
-        pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
+        self.fig1.savefig(self.plotPicFname+'.png')
+        pp = matplotlib.backends.backend_pdf.PdfPages(self.plotPicFname+'.pdf')
         pp.savefig(self.fig1)
         #self.fig1.savefig(pp, format='pdf')
         pp.close()
@@ -1468,8 +1485,8 @@ class PlotThread(QtCore.QThread):
         self.stopped = 1
         if self.index == self.GUI.thread_count-1:
             self.GUI.stop_scan()
-        self.fig1.savefig(self.filename+'.png')
-        pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
+        self.fig1.savefig(self.plotPicFname+'.png')
+        pp = matplotlib.backends.backend_pdf.PdfPages(self.plotPicFname+'.pdf')
         pp.savefig(self.fig1)
         #self.fig1.savefig(pp, format='pdf')
         pp.close()
