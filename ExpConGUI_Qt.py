@@ -1279,6 +1279,7 @@ class PlotThread(QtCore.QThread):
                 ydata = self.GUI.plotdata[:,1]
                 self.trace1.errorbar(xdata, ydata, xerr=0, yerr=self.yerr,
                         fmt='ro-')
+                # if scanning frequency, F_uWave_exp
                 if scanType == 'Frequency':
                     if scanVar == 'F_uWave_exp':
                         print "pointNumber"
