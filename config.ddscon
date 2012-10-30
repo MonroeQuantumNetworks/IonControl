@@ -197,7 +197,7 @@ State:DAC14_Vout:0.0
 State:DAC15_Vout:0.0
 State:DAC1_Vout:0.0
 State:DAC2_Vout:0.0
-State:DAC3_Vout:0.325
+State:DAC3_Vout:0.3
 State:DAC4_Vout:0.0
 State:DAC5_Vout:1.5
 State:DAC6_Vout:0.0
@@ -216,4 +216,4 @@ State:DDS2_PHS:0.0
 State:DDS3_AMP:1023.0
 State:DDS3_FRQ:70.0
 State:DDS3_PHS:0.0
-State:SHUTR:655.0
+State:SHUTR:143.0

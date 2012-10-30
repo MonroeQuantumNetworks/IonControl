@@ -95,8 +95,8 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = 'Opal Kelly XEM3010' #'1725_Test_FPGA'
-    #_FPGA_name = 'AQC_1272_PP'
+    #_FPGA_name = 'Opal Kelly XEM3010' #'1725_Test_FPGA'
+    _FPGA_name = '1725_Test_FPGA'
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
@@ -284,12 +284,12 @@ class gui(QtGui.QWidget):
         
         #layout for shutter control
         shutrLayout = QtGui.QGridLayout()  
-        self.shutrIndexLabels = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_', 'SHUTR_459_', 'SHUTR_1038_']
+        self.shutrIndexLabels = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_', 'SHUTR_459_', 'SHUTR_1038_', 'SHUTR_Raman_']
 
-        self.shutrLabels = ['MOT (TTL0)','Repump (TTL1)','uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT Servo (TTL4)', 'MOT Radial (TTL2)', '459 (TTL6)', '1038 (TTL8)']
+        self.shutrLabels = ['MOT (TTL0)','Repump (TTL1)','uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT Servo (TTL4)', 'MOT Radial (TTL2)', '459 (TTL6)', '1038 (TTL8)','Raman (TTL9)']
         self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
                 7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
-                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
+                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8, 'SHUTR_Raman_':9} #Define the TTL channels
         self.shutrButton = []
         #for i in range(len(self.shutrLabels)):
             #shutrLayout.addWidget(QtGui.QLabel(self.shutrLabels[i]),i,0)
