@@ -728,7 +728,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
             if (self.scan_entry.currentText()!='Continuous'):
                 fnameBase += '__' + str(self.var_entry.currentText())
                 
-            self.timestamp = time.strftime('%Y%m%d_%H%M%S')
+            self.timestamp = time.strftime('%H_%M_%S')
+            #self.timestamp = time.strftime('%Y%m%d_%H%M%S')
             self.saveDataDir = (dirname + year + '/' + month + '/' + day + '/')
             self.configDir = (self.saveDataDir + 'config/' 
                     + self.timestamp + '_' + fnameBase + '/')
