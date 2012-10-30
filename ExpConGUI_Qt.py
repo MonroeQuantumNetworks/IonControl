@@ -470,6 +470,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             for j in range(len(self.h_subscripts)):
                 if (int(float(self.PCon.params.defs['SHUTR_'+self.h_subscripts[j]])) & 1<<self.SHUTR_CHAN[self.v_tb_index[i]]):
                     self.controls[self.v_tb_index[i]+self.h_subscripts[j]][0].setChecked(True)
+                    
 
 ##        test_lsb = LabeledSpinBox('F_MOT_load',self.update_global_var)
 ##        test_lsb.sb.setValue(90.0)

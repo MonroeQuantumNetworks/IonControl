@@ -299,8 +299,11 @@ class gui(QtGui.QWidget):
             aShutrButton.setCheckable(True)
             QtCore.QObject.connect(aShutrButton, QtCore.SIGNAL("clicked()"),self.shutrButtonToggled)
             #aShutrButton.connect(self.shutrButtonToggled)
+            
+
             self.shutrButton.append(aShutrButton)
             shutrLayout.addWidget(aShutrButton,i,1)
+            
         
         
         
@@ -399,6 +402,10 @@ class gui(QtGui.QWidget):
     def restore_state(self,state):
         for key in sorted(state.iterkeys()):
             self.SetOutput(key,state[key])
+            if key == 'SHUTR':
+                for i in range(len(self.SHUTR_CHAN )):
+                    if (int(float(self.stateobj['SHUTR'][0].value())) & 1<<self.SHUTR_CHAN[self.shutrIndexLabels[i]]):
+                        self.shutrButton[i].setChecked(True) 
         return True
 
     def ExpCon(self):
