@@ -74,10 +74,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.t1 = time.time()
         self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude', 'Ramsey Phase Scan']
         self.text_to_write = ''
-        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
-                7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
-                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
-
+        #self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
+        #        7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+        #        4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
+        self.SHUTR_CHAN = driver.SHUTR_CHAN
         # Initialize public variables
         self.data_start = 4000
         self.reuseDataEnd = 3100
