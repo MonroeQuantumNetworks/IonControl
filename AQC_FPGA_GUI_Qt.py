@@ -198,9 +198,9 @@ class gui(QtGui.QWidget):
         box = QtGui.QVBoxLayout()
 
         ddsLabels = [' (MOT test sys)', ' (uWave)', ' (D1)', ' (MOT)']
-        dacLabels = [' (Quad Coils)', ' (Bz)', ' (broken)', ' (MOT)', ' (broken)',
-                      ' (Repump)', ' (Bx)', ' (By)', ' (N/A)', ' (Dipole)',
-                      ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)']
+        dacLabels = [' (Quad Coils, /2?)', ' (Bz)', ' (broken)', ' (MOT)', ' (broken)',
+                      ' (Repump)', ' (Bx)', ' (By)', ' (N/A)', 
+                      ' (N/A)',' (Dipole)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)']
         table_aom = QtGui.QGridLayout()
         table_aom.addWidget(QtGui.QLabel('Frequency'),0,1)
         table_aom.addWidget(QtGui.QLabel('Amplitude'),0,2)

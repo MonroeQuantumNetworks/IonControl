@@ -7,6 +7,9 @@
 #define DAC_ch_Bz 1
 #define DAC_ch_MOT 3
 #define DAC_ch_Dipole 9
+#define DAC_ch_Dipole_New 10
+
+
 #define DAC_ch_Bx 6
 #define DAC_ch_By 7
 #define DAC_ch_Repump 5
@@ -48,6 +51,7 @@ var reuseBinNum		0		# keep track of number of atom reuse bins
 	DAC      	DAC_ch_MOT_coil, V_MOTcoil_load
 	DAC		 	DAC_ch_Repump, V_Repump_load
 	DAC	 	 	DAC_ch_MOT, V_MOT_load
+	DAC		 	DAC_ch_Dipole_New, V_Dipole 
 	DAC		 	DAC_ch_Dipole, V_Dipole_load
 	DAC		 	DAC_ch_Bx, V_Bx_load
 	DAC		 	DAC_ch_By, V_By_load
@@ -93,6 +97,7 @@ ini_load: NOP
 	SHUTRVAR	SHUTR_load
 	DDSFRQ		DDS_ch_MOT, F_MOT_load
 	DDSFRQ		DDS_ch_uWave, F_uWave_load
+	DAC			DAC_ch_Dipole, V_Dipole
 	DAC     	DAC_ch_MOT_coil, V_MOTcoil_load
 	DAC			DAC_ch_Repump, V_Repump_load
 	DAC	 		DAC_ch_MOT, V_MOT_load
@@ -133,7 +138,7 @@ wait1: NOP
 ini_sub_D_cooling: NOP
 	LDWR	 COOL_SWITCH
 	CMP		 SWITCH
-	JMPZ	 OPump
+	JMPZ	 wait2
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_cool
 	DAC	 	 DAC_ch_MOT, V_MOT_cool
 	DAC		 DAC_ch_Repump, V_Repump_cool
@@ -183,8 +188,9 @@ wait2: NOP
 	DAC		 DAC_ch_Bz, V_Bz_wait2
 	DACUP
 	DDSFRQ	 DDS_ch_MOT, F_MOT_wait2
-	DELAY	 us_Time_wait2
 	SHUTRVAR SHUTR_wait2	
+	DELAY	 us_Time_wait2
+
 	
 OPump: NOP
 	LDWR	 OP_SWITCH
@@ -217,8 +223,9 @@ wait3: NOP
 	DAC		 DAC_ch_Bz, V_Bz_wait3
 	DACUP
 	DDSFRQ	 DDS_ch_MOT, F_MOT_wait3
+	SHUTRVAR SHUTR_wait3	
 	DELAY	 us_Time_wait3
-	SHUTRVAR SHUTR_wait3
+
 	
 #TODO: Figure out what do to do with SHUT_exp_after (place control in GUI?) 
 Exp: NOP
@@ -249,8 +256,9 @@ wait4: NOP
 	DAC		 DAC_ch_Bz, V_Bz_wait4
 	DACUP
 	DDSFRQ	 DDS_ch_MOT, F_MOT_wait4
-	DELAY	 us_Time_wait4
 	SHUTRVAR SHUTR_wait4
+	DELAY	 us_Time_wait4
+
 	
 Detect: NOP
 	DAC	 	 DAC_ch_MOT, V_MOT_detect
