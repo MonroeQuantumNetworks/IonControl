@@ -397,6 +397,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         self.button_run = QtGui.QPushButton("Run",self)
         hbox.addWidget(self.button_run)
+        
+        self.button_runContinuous = QtGui.QPushButton("Run Continuous",self)
+        self.button_runContinuous.setCheckable(True)
+        self.button_runContinuous.setStyleSheet("QPushButton#button_runContinuous:checked {color:black; background-color: green;}")
+        hbox.addWidget(self.button_runContinuous)
 
         self.button_pause = QtGui.QPushButton("Pause",self)
         self.button_pause.setDisabled(True)
@@ -415,6 +420,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         hbox.addWidget(self.button_cont)
 
         self.button_upParams.clicked.connect(self.update_params)
+        #self.button_runContinuous.clicked.connect(self.start_cont_scan)
         self.button_run.clicked.connect(self.start_new_scan)
         self.button_pause.clicked.connect(self.pause_scan)
         self.button_resume.clicked.connect(self.resume_scan)
@@ -693,7 +699,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
     def start_new_scan(self):
         self.new_scan = True
         self.run_scan()
-
+        
+    '''def start_cont_scan(self):
+        print self.button_runContinuous.isChecked()
+        if self.button_runContinuous.isChecked():
+            if self.button_run.isEnabled():
+                self.start_new_scan()'''
+           
+        
     def run_scan(self):
         self.run_exp = True
         self.pause = False
@@ -854,14 +867,19 @@ class ExpConGUI_Qt(QtGui.QWidget):
                 # Changed the receiver for the update event from self (GUI) to
                 # plot_thread
                 exp_thread = ScanExpThread(self, plot_thread, scan_vals)
+               
                 self.threads.append(exp_thread)
                 self.thread_count+=1
-
+                    
             else:
                 print "Unknow scan type."
         print "Thread count: %i" %self.thread_count
-        self.threads[2*(self.thread_count-1)].start()
-        self.threads[2*(self.thread_count-1)+1].start()
+        #execute the runs.
+        i=0
+        while i<1 or self.button_runContinuous.isChecked():
+             self.threads[2*(self.thread_count-1)].start()
+             self.threads[2*(self.thread_count-1)+1].start()
+             i+=1
 
     def set_stage_Disabled(self):
         widget = self.sender()
