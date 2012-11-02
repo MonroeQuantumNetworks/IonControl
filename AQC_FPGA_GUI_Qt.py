@@ -95,8 +95,8 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = 'Opal Kelly XEM3010' #'1725_Test_FPGA'
-    #_FPGA_name = '1725_Test_FPGA'
+#    _FPGA_name = 'Opal Kelly XEM3010' #'1725_Test_FPGA'
+    _FPGA_name = '1725_Test_FPGA'
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
@@ -587,10 +587,10 @@ class gui(QtGui.QWidget):
             self.xem.SetWireInValue(0x00, (1<<2))
             self.xem.UpdateWireIns()
             self.xem.UpdateWireOuts()
-            print hex(self.xem.GetWireOutValue(0x20))
-            print hex(self.xem.GetWireOutValue(0x21))
-            print hex(self.xem.GetWireOutValue(0x22))
-            print hex(self.xem.GetWireOutValue(0x23))
+#            print hex(self.xem.GetWireOutValue(0x20))
+#            print hex(self.xem.GetWireOutValue(0x21))
+#            print hex(self.xem.GetWireOutValue(0x22))
+#            print hex(self.xem.GetWireOutValue(0x23))
             #print 'test_o'
             #print hex(self.xem.GetWireOutValue(0x25))
         return True
