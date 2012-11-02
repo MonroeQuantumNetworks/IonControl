@@ -19,7 +19,7 @@ var sample 0
 	STWR     addr
 
 init_f: NOP
-	SHUTRVAR   SHUTR_TEST
+	SHUTRVAR   SHUTR_load
 	COUNT    us_MeasTime #SHUTR    0
 	LDINDF   addr
 	STWI                     #stores data to wherever addr is pointing

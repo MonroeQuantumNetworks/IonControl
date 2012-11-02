@@ -95,8 +95,8 @@ class gui(QtGui.QWidget):
     # user definable DDS properties - ONLY EDIT THESE VARIABLES
     #################################################################
     #New user definable properties
-    _FPGA_name = '1725_Test_FPGA' #'1725_Test_FPGA'
-    #_FPGA_name = 'AQC_1272_PP'
+#    _FPGA_name = 'Opal Kelly XEM3010' #'1725_Test_FPGA'
+    _FPGA_name = '1725_Test_FPGA'
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
@@ -190,14 +190,17 @@ class gui(QtGui.QWidget):
         self.ExpConGUI.close()
         self.on_quit_activate()
         return
+        
+
 
     def make_state_view(self):
+        hbox = QtGui.QHBoxLayout()
         box = QtGui.QVBoxLayout()
 
         ddsLabels = [' (MOT test sys)', ' (uWave)', ' (D1)', ' (MOT)']
-        dacLabels = [' (Quad Coils)', ' (Bz)', ' (broken)', ' (MOT)', ' (broken)',
-                      ' (Repump)', ' (Bx)', ' (By)', ' (N/A)', ' (Dipole)',
-                      ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)']
+        dacLabels = [' (Quad Coils, /2?)', ' (Bz)', ' (broken)', ' (MOT)', ' (broken)',
+                      ' (Repump)', ' (Bx)', ' (By)', ' (N/A)', 
+                      ' (N/A)',' (Dipole)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)', ' (N/A)']
         table_aom = QtGui.QGridLayout()
         table_aom.addWidget(QtGui.QLabel('Frequency'),0,1)
         table_aom.addWidget(QtGui.QLabel('Amplitude'),0,2)
@@ -233,10 +236,11 @@ class gui(QtGui.QWidget):
         table_aom.addWidget(QtGui.QLabel('THRES0'),s+1,0)
         table_aom.addWidget(QtGui.QLabel('THRES1'),s+1,2)
 
-        spin, hid = self.make_spin_button(1, 0, 0, 2**12-1, 1, False, 0,
+        self.spinShutr, hid = self.make_spin_button(1, 0, 0, 2**12-1, 1, False, 0,
                 self.shutter_changed, 0)
-        self.stateobj['SHUTR'] = (spin, hid)
-        table_aom.addWidget(spin, s, 1)
+        self.stateobj['SHUTR'] = (self.spinShutr, hid)
+        self.spinShutr.setDisabled(True)
+        table_aom.addWidget(self.spinShutr, s, 1)
 
         spin, hid = self.make_spin_button(.2, 1, 0, 100, 1, False, 3.5, None,
                 0)
@@ -277,11 +281,56 @@ class gui(QtGui.QWidget):
         box.addLayout(table_aom)
         box.addLayout(table_dac)
         box.addLayout(table_pp)
+        
+        #layout for shutter control
+        shutrLayout = QtGui.QGridLayout()  
+        self.shutrIndexLabels = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_', 'SHUTR_459_', 'SHUTR_1038_', 'SHUTR_Raman_']
+
+        self.shutrLabels = ['MOT (TTL0)','Repump (TTL1)','uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT Servo (TTL4)', 'MOT Radial (TTL2)', '459 (TTL6)', '1038 (TTL8)','Raman (TTL9)']
+        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
+                7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8, 'SHUTR_Raman_':9} #Define the TTL channels
+        self.shutrButton = []
+        #for i in range(len(self.shutrLabels)):
+            #shutrLayout.addWidget(QtGui.QLabel(self.shutrLabels[i]),i,0)
+        
+        for i in range(len(self.shutrLabels)):
+            aShutrButton = QtGui.QPushButton(self.shutrLabels[i],self)
+            aShutrButton.setCheckable(True)
+            QtCore.QObject.connect(aShutrButton, QtCore.SIGNAL("clicked()"),self.shutrButtonToggled)
+            #aShutrButton.connect(self.shutrButtonToggled)
+            
+
+            self.shutrButton.append(aShutrButton)
+            shutrLayout.addWidget(aShutrButton,i,1)
+            
+        
+        
+        
+        #shutrLayout.addWidget(shutrLabels[0],0,1)
+        hbox.addLayout(shutrLayout)
+        hbox.addLayout(box)
 
         state = coltree_Qt.read_state_from_config('State')
         self.restore_state(state)
-        return box
+        return hbox
+        
 
+
+    def shutrButtonToggled(self):
+        SHUTR_value = 0
+        SW = []
+
+        for i in range(len(self.shutrIndexLabels)):
+            SW.append(0)
+            if self.shutrButton[i].isChecked(): SW[i] = 1
+
+        for i in range(len(self.shutrIndexLabels)):
+            SHUTR_value += SW[i]<<self.SHUTR_CHAN[self.shutrIndexLabels[i]]
+        
+        self.spinShutr.setValue(SHUTR_value)
+
+            
     def make_progdef_view(self):
         box = QtGui.QVBoxLayout()
         # coltree.typical_ncol_tree([(gobject.TYPE_STRING, 'Parameter Name',
@@ -353,6 +402,10 @@ class gui(QtGui.QWidget):
     def restore_state(self,state):
         for key in sorted(state.iterkeys()):
             self.SetOutput(key,state[key])
+            if key == 'SHUTR':
+                for i in range(len(self.SHUTR_CHAN )):
+                    if (int(float(self.stateobj['SHUTR'][0].value())) & 1<<self.SHUTR_CHAN[self.shutrIndexLabels[i]]):
+                        self.shutrButton[i].setChecked(True) 
         return True
 
     def ExpCon(self):
@@ -501,7 +554,7 @@ class gui(QtGui.QWidget):
         self.xem.SetWireInValue(0x04, shutter>>4, 0x00FF)
         self.xem.UpdateWireIns()
         #self.xem.ActivateTriggerIn(0x40, 1) #Added by CWC 07132012
-        print "Setting shutter to %d"%(shutter)
+        #print "Setting shutter to %d"%(shutter)
 
         return True
 
@@ -534,20 +587,22 @@ class gui(QtGui.QWidget):
             self.xem.SetWireInValue(0x00, (1<<2))
             self.xem.UpdateWireIns()
             self.xem.UpdateWireOuts()
-            print hex(self.xem.GetWireOutValue(0x20))
-            print hex(self.xem.GetWireOutValue(0x21))
-            print hex(self.xem.GetWireOutValue(0x22))
-            print hex(self.xem.GetWireOutValue(0x23))
+#            print hex(self.xem.GetWireOutValue(0x20))
+#            print hex(self.xem.GetWireOutValue(0x21))
+#            print hex(self.xem.GetWireOutValue(0x22))
+#            print hex(self.xem.GetWireOutValue(0x23))
             #print 'test_o'
             #print hex(self.xem.GetWireOutValue(0x25))
         return True
 
     def pp_run_2(self):#, widget = None, data = None):
+        #same as pp_run, but does not re-upload the pp file
         self.xem.ActivateTriggerIn(0x40, 2)
         self.xem.UpdateWireOuts()
         return True
 
     def py_run(self):#, widget = None, data = None):
+        #runs a python script.
         execfile(self.pyfile)
         return True
 
@@ -916,7 +971,30 @@ class indexed_spin_button(QtGui.QWidget):
         self.sb.setValue(float(val))
         self.valchanged()
         return
+        
+        
+class LabeledPushButton(QtGui.QWidget):    
+#------------------------------------------------------------------------------
+#class for making shutter contol buttons
+#------------------------------------------------------------------------------    
+    #def __init__(self, vlabel, hlabel, callback):
+    def __init__(self):
 
+        super(LabeledPushButton, self).__init__()
+        self.box = QtGui.QVBoxLayout()
+        self.tb = QtGui.QPushButton()
+        self.tb.setCheckable(True)
+        self.box.addWidget(self.tb)
+        #self.vlabel = vlabel
+        #self.hlabel = hlabel
+        #self.tb.toggled.connect(self.tb_toggled) #This signal is never invoked! CWC09252012
+        #QtCore.QObject.connect(self,QtCore.SIGNAL("tb_toggled"),callback)
+
+    #def tb_toggled(self):
+        #print '%s toggled.' %(self.vlabel+self.hlabel)
+        #self.emit(QtCore.SIGNAL("tb_toggled"),self.hlabel)
+        
+        
 def main():
     app = QtGui.QApplication(sys.argv)
     ex = gui()

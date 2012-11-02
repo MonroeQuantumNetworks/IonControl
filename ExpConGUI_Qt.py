@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import os
+import datetime
 #import pango, math
 import numpy
 import threading,  time
@@ -72,10 +73,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.t1 = time.time()
         self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude', 'Ramsey Phase Scan']
         self.text_to_write = ''
-        self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
-                7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
-                4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
-
+        #self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
+        #        7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
+        #        4, 'SHUTR_MOTradial_': 2, 'SHUTR_459_': 6, 'SHUTR_1038_': 8} #Define the TTL channels
+        self.SHUTR_CHAN = driver.SHUTR_CHAN
         # Initialize public variables
         self.data_start = 4000
         self.reuseDataEnd = 3100
@@ -395,6 +396,12 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         self.button_run = QtGui.QPushButton("Run",self)
         hbox.addWidget(self.button_run)
+        
+		# Run continuous button
+        self.button_runContinuous = QtGui.QPushButton("Run Continuous",self)
+        self.button_runContinuous.setCheckable(True)
+        self.button_runContinuous.setStyleSheet("QPushButton#button_runContinuous:checked {color:black; background-color: green;}")
+        hbox.addWidget(self.button_runContinuous)
 
         self.button_pause = QtGui.QPushButton("Pause",self)
         self.button_pause.setDisabled(True)
@@ -413,10 +420,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
         hbox.addWidget(self.button_cont)
 
         self.button_upParams.clicked.connect(self.update_params)
+        #self.button_runContinuous.clicked.connect(self.start_cont_scan)
         self.button_run.clicked.connect(self.start_new_scan)
         self.button_pause.clicked.connect(self.pause_scan)
         self.button_resume.clicked.connect(self.resume_scan)
-        self.button_stop.clicked.connect(self.stop_scan)
+        self.button_stop.clicked.connect(self.stop_scan2)
         self.button_cont.clicked.connect(self.continue_scan)
 
         vbox.addStretch(1)
@@ -438,10 +446,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         table_control = QtGui.QGridLayout()
         self.h_labels = ['Load', 'Wait1', 'PG cooling', 'Wait2', 'OP', 'Wait3', 'Exp', 'Wait4', 'Detect', 'Wait5', 'Check','Wait6']
         self.h_subscripts = ['load', 'wait1', 'cool', 'wait2', 'op', 'wait3', 'exp', 'wait4', 'detect', 'wait5', 'check', 'wait6']
-        self.v_sb_labels = ['Duration (us)','MOT coils', 'uWave freq.', 'D1 OP power', 'MOT power', 'MOT detuning', 'Repump power', 'Bx', 'By', 'Bz']
-        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_uWave_', 'A_OP_', 'V_MOT_', 'F_MOT_', 'V_Repump_', 'V_Bx_', 'V_By_', 'V_Bz_']
-        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)', '459 (TTL6)', '1038 (TTL8)']
-        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_', 'SHUTR_459_', 'SHUTR_1038_']
+        self.v_sb_labels = ['Duration (us)','MOT coils', 'uWave freq.', 'D1 OP power', 'Dipole power', 'MOT power', 'MOT detuning', 'Repump power', 'Bx', 'By', 'Bz']
+        self.v_sb_subscripts = ['us_Time_', 'V_MOTcoil_', 'F_uWave_', 'A_OP_', 'V_Dipole_', 'V_MOT_', 'F_MOT_', 'V_Repump_', 'V_Bx_', 'V_By_', 'V_Bz_']
+        self.v_tb_labels = ['MOT (TTL0)', 'Repump (TTL1)', 'uWave (TTL7)', 'D1 (TTL5)', 'Dipole (TTL3)', 'MOT P servo (TTL4)', 'MOT radial (TTL2)', '459 (TTL6)', '1038 (TTL8)', 'Raman (TTL9)']
+        self.v_tb_index = ['SHUTR_MOT_', 'SHUTR_Repump_', 'SHUTR_uWave_', 'SHUTR_D1_', 'SHUTR_Dipole_', 'SHUTR_MOT_Servo_', 'SHUTR_MOTradial_', 'SHUTR_459_', 'SHUTR_1038_', 'SHUTR_Raman_']
 
         for i in range(len(self.h_labels)):
             table_control.addWidget(QtGui.QLabel(self.h_labels[i]),0,i+1)
@@ -468,6 +476,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             for j in range(len(self.h_subscripts)):
                 if (int(float(self.PCon.params.defs['SHUTR_'+self.h_subscripts[j]])) & 1<<self.SHUTR_CHAN[self.v_tb_index[i]]):
                     self.controls[self.v_tb_index[i]+self.h_subscripts[j]][0].setChecked(True)
+                    
 
 ##        test_lsb = LabeledSpinBox('F_MOT_load',self.update_global_var)
 ##        test_lsb.sb.setValue(90.0)
@@ -491,6 +500,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
             lsb.sb.setSingleStep(1)
             lsb.sb.setDecimals(0)
             lsb.sb.setRange(0,1023)
+        elif (v_label == 'V_Dipole_'):
+            lsb.sb.setSingleStep(0.01)
+            lsb.sb.setRange(0,2.19)
         else:
             lsb.sb.setSingleStep(0.1)
             lsb.sb.setRange(0,4.999)
@@ -690,7 +702,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
     def start_new_scan(self):
         self.new_scan = True
         self.run_scan()
-
+        
+    '''def start_cont_scan(self):
+        print self.button_runContinuous.isChecked()
+        if self.button_runContinuous.isChecked():
+            if self.button_run.isEnabled():
+                self.start_new_scan()'''
+           
+        
     def run_scan(self):
         self.run_exp = True
         self.pause = False
@@ -718,18 +737,33 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.PCon.update_state()
             coltree_Qt.save_state("State", self.PCon.state)
 
-            # Save data to 'this.savedir' and copy current config files
-            self.timestamp = time.strftime('%Y%m%d_%H%M%S')
-            self.savedir = (dirname + self.timestamp + '_' +
-                    str(self.scan_entry.currentText()) +  '/')
-            if not os.path.isdir(self.savedir):
-                os.mkdir(self.savedir)
-            shutil.copy2(str(self.ppfile), self.savedir)
-            shutil.copy2('config.ddscon', self.savedir)
-            self.filename = (self.savedir + str(self.scan_entry.currentText())
-                    + '_scan')
+            # Define data saving and config files save locations
+            day = str(datetime.datetime.now().day)
+            year = str(datetime.datetime.now().year)
+            month = str(datetime.datetime.now().month)
+            fnameBase = (str(self.scan_entry.currentText()))
             if (self.scan_entry.currentText()!='Continuous'):
-                self.filename += '_' + str(self.var_entry.currentText())
+                fnameBase += '__' + str(self.var_entry.currentText())
+                
+            self.timestamp = time.strftime('%H_%M_%S')
+            #self.timestamp = time.strftime('%Y%m%d_%H%M%S')
+            self.saveDataDir = (dirname + year + '/' + month + '/' + day + '/')
+            self.configDir = (self.saveDataDir + 'config/' 
+                    + self.timestamp + '_' + fnameBase + '/')
+            if not os.path.isdir(self.saveDataDir):
+                os.makedirs(self.saveDataDir)
+            if not os.path.isdir(self.configDir):
+                os.makedirs(self.configDir)
+            
+            shutil.copy2(str(self.ppfile), self.configDir)
+            shutil.copy2('config.ddscon', self.configDir)
+            
+            
+            
+            self.filename = (self.saveDataDir + self.timestamp + '_' +
+                    fnameBase) 
+            self.plotPicFname = (self.configDir + fnameBase)
+            
             fd = file(self.filename+'.txt', "a")
 
 
@@ -836,12 +870,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
                 # Changed the receiver for the update event from self (GUI) to
                 # plot_thread
                 exp_thread = ScanExpThread(self, plot_thread, scan_vals)
+               
                 self.threads.append(exp_thread)
                 self.thread_count+=1
-
+                    
             else:
                 print "Unknow scan type."
         print "Thread count: %i" %self.thread_count
+        #execute the runs.
         self.threads[2*(self.thread_count-1)].start()
         self.threads[2*(self.thread_count-1)+1].start()
 
@@ -919,6 +955,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_stop.setDisabled(False)
         self.button_cont.setDisabled(True)
 
+    def stop_scan2(self):    
+        self.button_runContinuous.setChecked(False)
+        self.stop_scan()
+    
     def stop_scan(self):
         self.run_exp = False
         self.pause = False
@@ -928,6 +968,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_stop.setDisabled(True)
         self.button_cont.setDisabled(False)
         self.PCon.user_stop() #Added for proper stop CWC 09172012
+        #self.button_runContinuous.setChecked(False)
 
     def continue_scan(self):
         self.new_scan = False
@@ -1055,6 +1096,7 @@ class ExpThread(QtCore.QThread):
     def __del__(self):
         self.stopped = 1
         self.wait()
+        print "delete method called ____________________"
 
     def getAtomReuse(self):
         # Return an array containing total atom reuse per single loading event
@@ -1068,8 +1110,9 @@ class ExpThread(QtCore.QThread):
     def run():
         pass
 
-    def stop(self):
-        self.stopped = 1
+#    def stop(self):
+#        self.stopped = 1
+#        print "stop method called ____________________"
 
 class ContExpThread(ExpThread):
     """ Class for contiuous non-scanned experiment thread. This class inherits
@@ -1183,6 +1226,7 @@ class PlotThread(QtCore.QThread):
         self.GUI = GUI
         self.index = index
         self.qubit_D = qubit_D
+        self.plotPicFname = self.GUI.plotPicFname
         self.filename = self.GUI.filename
         self.stopped = 0
         self.t1 = time.time()
@@ -1191,7 +1235,7 @@ class PlotThread(QtCore.QThread):
         self.canvas1 = FigureCanvas(self.fig1)
         self.canvas1.setParent(self.frame1)
         self.trace1 = self.fig1.add_subplot(111)
-        self.trace1.set_title(self.filename)
+        self.trace1.set_title(self.plotPicFname)
         self.yerr = numpy.zeros(self.GUI.n_points_sb.value())
         if self.qubit_D:
             self.trace1.errorbar(self.GUI.plotdata[:,0],
@@ -1212,7 +1256,7 @@ class PlotThread(QtCore.QThread):
         self.canvas2 = FigureCanvas(self.fig2)
         self.canvas2.setParent(self.frame2)
         self.trace2 = self.fig2.add_subplot(111)
-        self.trace2.set_title(self.filename+'_hist')
+        self.trace2.set_title(self.plotPicFname+'_hist')
 
         #self.canvas.mpl_connect('pick_event', self.on_pick)
         self.mpl_toolbar2 = NavigationToolbar(self.canvas2, self.frame2)
@@ -1247,7 +1291,7 @@ class PlotThread(QtCore.QThread):
             if self.qubit_D:
                 self.GUI.plotdata[self.GUI.plotdatalength-1,1] = new_prob
                 self.trace1.clear()
-                self.trace1.set_title(self.filename)
+                self.trace1.set_title(self.plotPicFname)
                 err = numpy.sqrt(self.GUI.plotdata[:,1] *
                         (1-self.GUI.plotdata[:,1])/self.GUI.n_reps)
                 self.trace1.errorbar(self.GUI.plotdata[:,0],
@@ -1273,7 +1317,7 @@ class PlotThread(QtCore.QThread):
                         self.GUI.plotdata[scan_index,2]) / (self.GUI.n_reps +
                                 self.GUI.plotdata[scan_index,2])
                 self.trace1.clear()
-                self.trace1.set_title(self.filename)
+                self.trace1.set_title(self.plotPicFname)
 
                 xdata = self.GUI.plotdata[:,0]
                 ydata = self.GUI.plotdata[:,1]
@@ -1319,7 +1363,7 @@ class PlotThread(QtCore.QThread):
 
         self.trace2.clear()
         self.update_hist(new_data)
-        self.trace2.set_title(self.filename+'_hist')
+        self.trace2.set_title(self.plotPicFname+'_hist')
         self.canvas1.draw()
         self.canvas2.draw()
 
@@ -1374,29 +1418,23 @@ class PlotThread(QtCore.QThread):
         self.trace2.set_xlim(left[0], right[-1])
         self.trace2.set_ylim(bottom.min(), top.max())
 
+    def stop_fromClose(self):
+        self.GUI.button_runContinuous.setChecked(False)
+        self.stop()
+
     def stop(self):
         self.stopped = 1
         if self.index == self.GUI.thread_count-1:
             self.GUI.stop_scan()
-        self.fig1.savefig(self.filename+'.png')
-        pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
+        self.fig1.savefig(self.plotPicFname+'.png')
+        pp = matplotlib.backends.backend_pdf.PdfPages(self.plotPicFname+'.pdf')
         pp.savefig(self.fig1)
         #self.fig1.savefig(pp, format='pdf')
         pp.close()
-        print 'Saving figure...'
-
-
-    def __del__(self):
-        self.stopped = 1
-        if self.index == self.GUI.thread_count-1:
-            self.GUI.stop_scan()
-        self.fig1.savefig(self.filename+'.png')
-        pp = matplotlib.backends.backend_pdf.PdfPages(self.filename+'.pdf')
-        pp.savefig(self.fig1)
-        #self.fig1.savefig(pp, format='pdf')
-        pp.close()
-        print 'Saving figure...'
-        self.wait()
+#        print 'Saving figure -stop...'
+        
+        if self.GUI.button_runContinuous.isChecked():
+            self.GUI.continue_scan()
 
 class PlotWidget(QtGui.QWidget):
     def __init__(self, plot_thread):
@@ -1404,8 +1442,9 @@ class PlotWidget(QtGui.QWidget):
         self.plot_thread = plot_thread
 
     def closeEvent(self, event):
-        self.plot_thread.stop()
+        self.plot_thread.stop_fromClose()
         self.plot_thread.frame2.close()
+        
 
 class LabeledSpinBox(QtGui.QWidget):
     def __init__(self, label, callback):
@@ -1433,7 +1472,7 @@ class LabeledPushButton(QtGui.QWidget):
         QtCore.QObject.connect(self,QtCore.SIGNAL("tb_toggled"),callback)
 
     def tb_toggled(self):
-        print '%s toggled.' %(self.vlabel+self.hlabel)
+        #print '%s toggled.' %(self.vlabel+self.hlabel)
         self.emit(QtCore.SIGNAL("tb_toggled"),self.hlabel)
 
 class MyPopup(QtGui.QWidget):
