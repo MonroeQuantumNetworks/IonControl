@@ -1,4 +1,5 @@
 import pylab as pl
+import numpy as np
 from scipy.optimize import leastsq
 
 
@@ -52,7 +53,7 @@ class LeastSQ_fit(object):
 
         # perform least squares fit
         self._remove_no_errorbar()
-        self.p, self.perr, self.rchisq = self._fit()
+        
     
     """ Public methods """
     def fitfunc(self,p,x):
@@ -173,6 +174,13 @@ class Rabi_sinefit(LeastSQ_fit):
     def __init__(self,p0,x,y,sigma=1):
         """ Initialize object """
         super(Rabi_sinefit,self).__init__(p0,x,y,sigma)
+        
+        if np.sum(sigma > 0) < 5:
+            self.p = self.p0
+            self.perr = 0
+            self.rchisq = 1
+        else:
+            self.p, self.perr, self.rchisq = self._fit()
 
     def _plotsettings(self,plot_guess):
         """ Properly label plot and display important fit parameters"""
@@ -200,7 +208,8 @@ class Rabi_sinefit(LeastSQ_fit):
         p[1]:       pi-pulse time
         p[2]:       the offset from zero for the center of the sine function
         """
-        return p[0] / 2 * pl.sin( pl.pi/p[1]*x + pl.pi*3/2 ) + p[2]
+#        return p[0] / 2 * pl.sin( pl.pi/p[1]*x + pl.pi*3/2 ) + p[2]
+        return p[0] / 2 * pl.sin( pl.pi/p[1]*x ) + p[2]
 
 class F_uWave_exp_fit(LeastSQ_fit):
     """
