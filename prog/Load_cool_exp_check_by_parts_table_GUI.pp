@@ -181,13 +181,14 @@ wait2: NOP
 	DAC	 	 	DAC_ch_MOT, V_MOT_wait2
 	DAC		 	DAC_ch_Repump, V_Repump_wait2
 	DAC		 	DAC_ch_Dipole, V_Dipole_wait2 
-	DAC		 	DAC_ch_Bx, V_Bx_wait2
-	DAC		 	DAC_ch_By, V_By_wait2
-	DAC		 	DAC_ch_Bz, V_Bz_wait2
+	DAC		 	DAC_ch_Bx, V_Bx_op
+	DAC		 	DAC_ch_By, V_By_op
+	DAC		 	DAC_ch_Bz, V_Bz_op
 	DACUP
 	DDSFRQ	 	DDS_ch_MOT, F_MOT_wait2
 	SHUTRVAR 	SHUTR_wait2	
 	DELAY	 	us_Time_wait2
+	SHUTRVAR 	SHUTR_wait
 
 	
 OPump: NOP
@@ -207,7 +208,7 @@ OPump: NOP
 	DACUP
 	SHUTRVAR 	SHUTR_op
 	DELAY	 	us_Time_op 	#SHUTR	 SHUTR_OP_WAIT
-	SHUTRVAR 	SHUTR_wait3
+	SHUTRVAR 	SHUTR_wait
 	
 wait3: NOP
 	LDWR	 WAIT3_SWITCH
@@ -217,13 +218,14 @@ wait3: NOP
 	DAC	 	 DAC_ch_MOT, V_MOT_wait3
 	DAC		 DAC_ch_Repump, V_Repump_wait3
 	DAC		 DAC_ch_Dipole, V_Dipole_wait3
-	DAC		 DAC_ch_Bx, V_Bx_wait3
-	DAC		 DAC_ch_By, V_By_wait3
-	DAC		 DAC_ch_Bz, V_Bz_wait3
+	DAC		 DAC_ch_Bx, V_Bx_op
+	DAC		 DAC_ch_By, V_By_op
+	DAC		 DAC_ch_Bz, V_Bz_op
 	DACUP
 	DDSFRQ	 DDS_ch_MOT, F_MOT_wait3
 	SHUTRVAR SHUTR_wait3	
 	DELAY	 us_Time_wait3
+	SHUTRVAR 	SHUTR_wait
 
 	
 #TODO: Figure out what do to do with SHUT_exp_after (place control in GUI?) 
@@ -236,13 +238,13 @@ Exp: NOP
 	DAC	 	 	DAC_ch_MOT, V_MOT_exp
 	DAC		 	DAC_ch_Repump, V_Repump_exp		# DAC		 DAC_ch_Dipole, V_Dipole_exp
 	DAC		 	DAC_ch_Dipole, V_Dipole_detect 	# TODO: V_Dipole_exp
-	DAC		 	DAC_ch_Bx, V_Bx_exp
-	DAC		 	DAC_ch_By, V_By_exp
-	DAC		 	DAC_ch_Bz, V_Bz_exp
+	DAC		 	DAC_ch_Bx, V_Bx_op
+	DAC		 	DAC_ch_By, V_By_op
+	DAC		 	DAC_ch_Bz, V_Bz_op
 	DACUP
     SHUTRVAR 	SHUTR_exp
 	DELAY	 	us_Time_exp 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp
-	SHUTRVAR 	SHUTR_exp_after
+	SHUTRVAR 	SHUTR_wait
 	
 wait4: NOP
 	LDWR	 	WAIT4_SWITCH
@@ -259,6 +261,7 @@ wait4: NOP
 	DDSFRQ	 	DDS_ch_MOT, F_MOT_wait4
 	SHUTRVAR 	SHUTR_wait4
 	DELAY	 	us_Time_wait4
+	SHUTRVAR 	SHUTR_wait
 
 	
 Detect: NOP
@@ -273,6 +276,7 @@ Detect: NOP
 	SHUTRVAR 	SHUTR_detect
 
 	COUNT    	us_Time_detect
+	SHUTRVAR 	SHUTR_wait
 
 	STWR     	DETECTCOUNT
 
@@ -313,6 +317,7 @@ ini_check: NOP
 	DAC		DAC_ch_Dipole, 	V_Dipole_wait5
 	DACUP
 	DELAY 	us_Time_wait5
+	SHUTRVAR 	SHUTR_wait
 	DAC	 	 DAC_ch_MOT, V_MOT_check
 	DAC		 DAC_ch_Repump, V_Repump_check
 	DAC		 DAC_ch_Dipole, V_Dipole_check

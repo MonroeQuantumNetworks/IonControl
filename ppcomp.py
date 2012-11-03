@@ -300,7 +300,7 @@ def bc_gen(code, adIndexList, adBoards):
                 if (line[3] in translatedVars.keys()):
                     #print 'translating ' + str(line[3]) + ' from ' + str(line[2]) + ' to proper frequency:'
                     bytedata = int(float(line[2])/translatedVars[line[3]] * 0x80000000)
-                    print hex(bytedata)
+                    #print hex(bytedata)
                 if (bytedata < 0):
                     bytedata = (1<<32) + bytedata
         except:
