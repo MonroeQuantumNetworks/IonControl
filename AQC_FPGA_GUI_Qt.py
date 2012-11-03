@@ -563,13 +563,13 @@ class gui(QtGui.QWidget):
         Vout = widget.value()	# frequency in MHz
         dac = self.dacChannelIndex[data][0]
         chan = self.dacChannelIndex[data][1]
-        print 'dac ' + str(dac) + ', channel ' + str(chan)
+        #print 'dac ' + str(dac) + ', channel ' + str(chan)
         #VoutData = int(Vout/2.5*2**13-1)
         self.dacs[dac].setVout(Vout, int(chan), self._checkOutputs)
         return True
 
     def SetOutput(self, name, data):
-        print "SetOutput: Setting %s value to %s" %(name, data)
+        #print "SetOutput: Setting %s value to %s" %(name, data)
         self.stateobj[name][0].setValue(float(data))
         return True
     ################################################################
@@ -681,7 +681,7 @@ class gui(QtGui.QWidget):
         self.xem.ActivateTriggerIn(0x41, 1)
         self.xem.WriteToPipeIn(0x80, databuf)
         t2 = time.time()
-        print "Upload successful in time %fs"%(t2 - t1)
+        #print "Upload successful in time %fs"%(t2 - t1)
         return True
 
     def parameter_read(self, name):

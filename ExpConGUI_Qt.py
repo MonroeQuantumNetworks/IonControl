@@ -89,6 +89,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.PCon.pp_upload()
         self.n_reps = self.PCon.get_datapoints()
 
+        self.numScans = 0
         vbox = QtGui.QVBoxLayout()
         hbox = QtGui.QHBoxLayout()
         hbox1 = QtGui.QHBoxLayout()
@@ -311,6 +312,13 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.LOADREP_lsb.sb.setValue(float(self.PCon.params.defs['LOADREP']))
         self.controls['LOADREP']=(self.LOADREP_lsb.sb, 'LOADREP')
         
+        self.QUBITTHOLD_label = QtGui.QLabel("QUBITTHOLD")
+        self.QUBITTHOLD_lsb = LabeledSpinBox('QUBITTHOLD',self.update_global_var)#QtGui.QSpinBox()
+        self.QUBITTHOLD_lsb.sb.setRange(0, 10)
+        self.QUBITTHOLD_lsb.sb.setSingleStep(1)
+        self.QUBITTHOLD_lsb.sb.setDecimals(0)
+        self.QUBITTHOLD_lsb.sb.setValue(float(self.PCon.params.defs['QUBITTHOLD']))
+        self.controls['QUBITTHOLD']=(self.QUBITTHOLD_lsb.sb, 'QUBITTHOLD')
 
         self.CHECKTHOLD_label = QtGui.QLabel("CHECKTHOLD")
         self.CHECKTHOLD_lsb = LabeledSpinBox('CHECKTHOLD',self.update_global_var)#QtGui.QSpinBox()
@@ -334,6 +342,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
         hbox5.addStretch(1)
         hbox5.addWidget(self.LOADREP_label)
         hbox5.addLayout(self.LOADREP_lsb.box)
+        hbox5.addStretch(1)
+        hbox5.addWidget(self.QUBITTHOLD_label)
+        hbox5.addLayout(self.QUBITTHOLD_lsb.box)
         hbox5.addStretch(1)
         hbox5.addWidget(self.CHECKTHOLD_label)
         hbox5.addLayout(self.CHECKTHOLD_lsb.box)
@@ -700,8 +711,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.plotdata=numpy.zeros((self.plotdatalength,3),'Float32')
 
     def start_new_scan(self):
+        self.numScans = 0;
         self.new_scan = True
         self.run_scan()
+        
         
     '''def start_cont_scan(self):
         print self.button_runContinuous.isChecked()
@@ -720,6 +733,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_cont.setDisabled(True)
 
         print "Starting a new scan: %i" %self.new_scan
+        self.numScans+=1
 
         # Only update the log file when starting a new scan. Parameters can not
         # be changed if continuing a scan. CWC 09242012
@@ -1274,7 +1288,7 @@ class PlotThread(QtCore.QThread):
     def update_plot_save_data(self, scan_index, new_mean, new_data):
 ##        while (self.stopped == 0 and self.GUI.pause == True):
 ##            time.sleep(0.02)
-        new_prob = numpy.mean(map(lambda x: int(x>float(self.GUI.PCon.params.defs['CHECKTHOLD'])), new_data))
+        new_prob = numpy.mean(map(lambda x: int(x>float(self.GUI.PCon.params.defs['QUBITTHOLD'])), new_data))
         if (self.GUI.scan_entry.currentText()=='Continuous'):
             self.GUI.plotdata[0:self.GUI.plotdatalength-1,1] = self.GUI.plotdata[1:self.GUI.plotdatalength,1]
             if self.qubit_D:
@@ -1290,9 +1304,12 @@ class PlotThread(QtCore.QThread):
             if self.qubit_D:
                 self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
+                self.yerr2 =  sqrt(  self.GUI.plotdata[:,1] * (1-self.GUI.plotdata[:,1])/ self.GUI.n_reps/self.GUI.numScans  )
+                print "yerrs = " + str(self.yerr2)
+                print "numScans = " +str(self.GUI.numScans)
                 self.trace1.clear()
                 self.trace1.set_title(self.plotPicFname)
-                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=self.yerr,fmt='ro-')
+                self.trace1.errorbar(self.GUI.plotdata[:,0],self.GUI.plotdata[:,1],xerr=0,yerr=self.yerr2,fmt='ro-')
             else:
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_mean+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
                 self.line1.set_ydata(self.GUI.plotdata[:,1])
