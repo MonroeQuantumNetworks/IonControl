@@ -218,9 +218,9 @@ wait3: NOP
 	DAC	 	 DAC_ch_MOT, V_MOT_wait3
 	DAC		 DAC_ch_Repump, V_Repump_wait3
 	DAC		 DAC_ch_Dipole, V_Dipole_wait3
-	DAC		 DAC_ch_Bx, V_Bx_op
-	DAC		 DAC_ch_By, V_By_op
-	DAC		 DAC_ch_Bz, V_Bz_op
+	DAC		 DAC_ch_Bx, V_Bx_exp
+	DAC		 DAC_ch_By, V_By_exp
+	DAC		 DAC_ch_Bz, V_Bz_exp
 	DACUP
 	DDSFRQ	 DDS_ch_MOT, F_MOT_wait3
 	SHUTRVAR SHUTR_wait3	
@@ -238,9 +238,9 @@ Exp: NOP
 	DAC	 	 	DAC_ch_MOT, V_MOT_exp
 	DAC		 	DAC_ch_Repump, V_Repump_exp		# DAC		 DAC_ch_Dipole, V_Dipole_exp
 	DAC		 	DAC_ch_Dipole, V_Dipole_detect 	# TODO: V_Dipole_exp
-	DAC		 	DAC_ch_Bx, V_Bx_op
-	DAC		 	DAC_ch_By, V_By_op
-	DAC		 	DAC_ch_Bz, V_Bz_op
+	DAC		 	DAC_ch_Bx, V_Bx_exp
+	DAC		 	DAC_ch_By, V_By_exp
+	DAC		 	DAC_ch_Bz, V_Bz_exp
 	DACUP
     SHUTRVAR 	SHUTR_exp
 	DELAY	 	us_Time_exp 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp

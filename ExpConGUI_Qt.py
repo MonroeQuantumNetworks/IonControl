@@ -1324,7 +1324,7 @@ class PlotThread(QtCore.QThread):
                 self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))
                 self.GUI.plotdata[scan_index,1] = (self.GUI.n_reps*new_prob+self.GUI.plotdata[scan_index,1]*self.GUI.plotdata[scan_index,2])/(self.GUI.n_reps+self.GUI.plotdata[scan_index,2])
                 self.yerr2 =  sqrt(  self.GUI.plotdata[:,1] * (1-self.GUI.plotdata[:,1])/ self.GUI.n_reps/self.GUI.numScans  )
-                print "yerrs = " + str(self.yerr2)
+                #print "yerrs = " + str(self.yerr2)
                 print "numScans = " +str(self.GUI.numScans)
                 self.trace1.clear()
                 self.trace1.set_title(self.plotPicFname)

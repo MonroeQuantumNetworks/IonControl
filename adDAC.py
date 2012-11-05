@@ -79,7 +79,7 @@ class adDAC:
     def _send(self, data, addr, special, cmd, check):
 #        print 'send in:'
 #        print hex(addr)
-        print bin(data)
+        #print bin(data)
 #        print hex(special)
         self._xem.SetWireInValue(0x04, (data & 0x0000FF) << 8, 0xFF00)
         self._xem.SetWireInValue(0x05, (data & 0xFFFF00) >> 8)
@@ -223,7 +223,7 @@ class adDAC:
                 #self._xem.SetWireInValue(0x03, 0x0000, 0x0200)
                 #self._xem.UpdateWireIns()
                 data =int( (0x0<<20)+(chan<<16)+(0b11<<14)+(VoutData&0x3FFF))
-                print 'data: %i'%(data)
+                #print 'data: %i'%(data)
                 self._send(data, 0, 0, 2, check)
                 #self._xem.SetWireInValue(0x03, 0x0000, 0x0200)
                 #self._xem.UpdateWireIns()
