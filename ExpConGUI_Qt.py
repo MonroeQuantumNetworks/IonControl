@@ -1296,7 +1296,7 @@ class PlotThread(QtCore.QThread):
         scanVar  = self.GUI.var_entry.currentText()
         pointNumber = numpy.float(self.GUI.n_index.text())
         if (self.GUI.scan_entry.currentText()=='Continuous'):
-			self.GUI.plotdata[ 
+            self.GUI.plotdata[ 
                     0:self.GUI.plotdatalength-1, 1] = self.GUI.plotdata[
                     1:self.GUI.plotdatalength, 1]
 
@@ -1334,23 +1334,23 @@ class PlotThread(QtCore.QThread):
                 self.trace1.errorbar(xdata, ydata, xerr=0, yerr=self.yerr2,
                         fmt='ro-')
                 # if scanning frequency, F_uWave_exp
-                if scanType == 'Frequency':
-                    if scanVar == 'F_uWave_exp':
-                        print "pointNumber"
-                        print pointNumber
-                        if pointNumber > 6:
-                            #freq0 = numpy.min(ydata)
-                            freq0 = 7.37
-                            offset = numpy.max(ydata)
-                            amp = 0.5
-                            waist = 0.100   #TODO: automate fit guess
-                            p0 = [amp, freq0, waist, offset]
-                            guassFit = math_box.F_uWave_exp_fit(p0, 
-                                        xdata, ydata, self.yerr)
-                            p,perr,rchisq,fitx,fity, = guassFit.getfit()
-                            print "p:"
-                            print p
-                            self.trace1.plot(fitx,fity,'r-')
+#                if scanType == 'Frequency':
+#                    if scanVar == 'F_uWave_exp':
+#                        print "pointNumber"
+#                        print pointNumber
+#                        if pointNumber > 6:
+#                            #freq0 = numpy.min(ydata)
+#                            freq0 = 7.37
+#                            offset = numpy.max(ydata)
+#                            amp = 0.5
+#                            waist = 0.100   #TODO: automate fit guess
+#                            p0 = [amp, freq0, waist, offset]
+#                            guassFit = math_box.F_uWave_exp_fit(p0, 
+#                                        xdata, ydata, self.yerr)
+#                            p,perr,rchisq,fitx,fity, = guassFit.getfit()
+#                            print "p:"
+#                            print p
+#                            self.trace1.plot(fitx,fity,'r-')
 
             # Else display fluorescence data
             else:
