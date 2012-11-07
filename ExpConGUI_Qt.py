@@ -737,6 +737,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.plotdata=numpy.zeros((self.plotdatalength,3),'Float32')
 
     def start_new_scan(self):
+        self.numPointsToScan = n_points_sb.value()
         self.numScans = 0;
         self.new_scan = True
         self.run_scan()
@@ -1211,7 +1212,9 @@ class ScanExpThread(ExpThread):
         self.GUI.PCon.update_state()
         coltree_Qt.save_state("State", self.GUI.PCon.state) #saves all initial values in value/bool table
         n = 0
-        while (self.stopped == 0 and self.GUI.run_exp ==True and n<self.GUI.n_points_sb.value()):
+        
+        numberScanValues = self.GUI.numPointsToScan
+        while (self.stopped == 0 and self.GUI.run_exp ==True and n<numberScanValues):
             while (self.stopped == 0 and self.GUI.pause == True):
                 time.sleep(0.1)
             current_scan_val = self.scan_vals[n] #get scan value from array

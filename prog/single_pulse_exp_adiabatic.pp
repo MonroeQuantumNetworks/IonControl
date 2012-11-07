@@ -269,7 +269,7 @@ Exp: NOP
 wait4: NOP
 	LDWR	 	WAIT4_SWITCH
 	CMP		 	SWITCH
-	JMPZ	 	ini_adiabatic_ramp_up
+	JMPZ	 	Detect
 	DAC      	DAC_ch_MOT_coil, V_MOTcoil_wait4
 	DAC	 	 	DAC_ch_MOT, V_MOT_wait4
 	DAC		 	DAC_ch_Repump, V_Repump_wait4 #DAC	 		DAC_ch_Dipole, V_Dipole_wait4
@@ -282,10 +282,25 @@ wait4: NOP
 	DELAY	 	us_Time_wait4
 	SHUTRVAR 	SHUTR_wait
 
+	
+Detect: NOP
+	DAC	 	 	DAC_ch_MOT, V_MOT_detect
+	DAC		 	DAC_ch_Repump, V_Repump_detect	# DAC	 DAC_ch_Dipole, V_Dipole_detect
+	DAC		 	DAC_ch_Bx, V_Bx_detect
+	DAC		 	DAC_ch_By, V_By_detect
+	DAC		 	DAC_ch_Bz, V_Bz_detect
+	DACUP
+	DDSFRQ	 	DDS_ch_MOT, F_MOT_detect
+	SHUTRVAR 	SHUTR_detect
+
+	COUNT    	us_Time_detect
+	SHUTRVAR 	SHUTR_wait
+	STWR     	DETECTCOUNT
+
 ini_adiabatic_ramp_up: NOP
 	LDWR	 ADI_UP_SWITCH
 	CMP		 SWITCH
-	JMPZ	 Detect
+	JMPZ	 PostDetect
 	SHUTRVAR SHUTR_wait4
 	CLRW
 	STWR     RAMPIND 	#LDWR	 V_Dipole_wait4 STWR	 V_Dipole
@@ -299,27 +314,13 @@ adiabatic_ramp_up: NOP	#Ramp MOT beam freq. and power.
 	INC		 RAMPIND
 	STWR	 RAMPIND
 	CMP	 	 R_adi_ramptot
-	JMPNZ    Detect
+	JMPNZ    PostDetect
 	DAC	 	 DAC_ch_Dipole, V_Dipole
 	DACUP
 	JMP	 	 adiabatic_ramp_up
-	
-Detect: NOP
-	DAC	 	 	DAC_ch_MOT, V_MOT_detect
-	DAC		 	DAC_ch_Repump, V_Repump_detect	# DAC	 DAC_ch_Dipole, V_Dipole_detect
-	DAC		    DAC_ch_Dipole, V_Dipole_detect
-	DAC		 	DAC_ch_Bx, V_Bx_detect
-	DAC		 	DAC_ch_By, V_By_detect
-	DAC		 	DAC_ch_Bz, V_Bz_detect
-	DACUP
-	DDSFRQ	 	DDS_ch_MOT, F_MOT_detect
-	SHUTRVAR 	SHUTR_detect
 
-	COUNT    	us_Time_detect
-	SHUTRVAR 	SHUTR_wait
-
-	STWR     	DETECTCOUNT
-
+PostDetect: NOP
+	LDWR   	 	DETECTCOUNT
 	CMP		 	DETECTTHOLD
 	JMPZ	 	ini_check
 	JMPNZ	 	save_data
