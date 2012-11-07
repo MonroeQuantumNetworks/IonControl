@@ -132,40 +132,7 @@ wait1: NOP
 	DAC		 DAC_ch_Dipole, V_Dipole_wait1
 	DACUP
 	DELAY	 us_Time_wait1
-	JMP		 ini_adiabatic_cooling
-
-ini_adiabatic_cooling: NOP
-	LDWR	 ADIABATIC_COOL_SWITCH
-	CMP		 SWITCH
-	JMPZ	 ini_sub_D_cooling
-	DAC      DAC_ch_MOT_coil, V_MOTcoil_cool
-	DAC	 	 DAC_ch_MOT, V_MOT_cool
-	DAC		 DAC_ch_Repump, V_Repump_cool
-	DAC		 DAC_ch_Bx, V_Bx_cool
-	DAC		 DAC_ch_By, V_By_cool
-	DAC		 DAC_ch_Bz, V_Bz_cool
-	DAC		 DAC_ch_Dipole, V_Dipole_wait1
-	DACUP
-	DDSFRQ	 DDS_ch_MOT, F_MOT_cool
-	SHUTRVAR SHUTR_wait1
-	CLRW
-	STWR     RAMPIND
-	LDWR	 V_Dipole_wait1
-	STWR	 V_Dipole
-	JMP	 	 sub_adiabatic_cooling
-
-sub_adiabatic_cooling: NOP	#Ramp MOT beam freq. and power.
-	LDWR	 V_Dipole
-	ADDW	 V_Dipole_inc
-	STWR	 V_Dipole
-	DELAY  	 us_adi_ramp_t
-	INC		 RAMPIND
-	STWR	 RAMPIND
-	CMP	 	 adi_ramptot
-	JMPNZ    ini_sub_D_cooling
-	DAC	 	 DAC_ch_Dipole, V_Dipole
-	DACUP
-	JMP	 	 sub_adiabatic_cooling
+	JMP		 ini_sub_D_cooling
 
 ini_sub_D_cooling: NOP
 	LDWR	 COOL_SWITCH
@@ -199,7 +166,7 @@ sub_D_cooling: NOP	#Ramp MOT beam freq. and power.
 	DELAY  	 us_RAMP_T
 	INC		 RAMPIND
 	STWR	 RAMPIND
-	CMP	 	 RAMPTOT
+	CMP	 	 R_RAMPTOT
 	JMPNZ    wait2
 	DDSFRQ	 DDS_ch_MOT, F_MOT
 	DAC	 	 DAC_ch_MOT, V_MOT
@@ -209,7 +176,7 @@ sub_D_cooling: NOP	#Ramp MOT beam freq. and power.
 wait2: NOP
 	LDWR	 	WAIT2_SWITCH
 	CMP		 	SWITCH
-	JMPZ	 	OPump
+	JMPZ	 	ini_adiabatic_ramp_down
 	DAC      	DAC_ch_MOT_coil, V_MOTcoil_wait2
 	DAC	 	 	DAC_ch_MOT, V_MOT_wait2
 	DAC		 	DAC_ch_Repump, V_Repump_wait2
@@ -223,6 +190,30 @@ wait2: NOP
 	DELAY	 	us_Time_wait2
 	SHUTRVAR 	SHUTR_wait
 
+
+ini_adiabatic_ramp_down: NOP
+	LDWR	 ADI_DOWN_SWITCH
+	CMP		 SWITCH
+	JMPZ	 OPump
+	SHUTRVAR SHUTR_wait2
+	CLRW
+	STWR     RAMPIND
+	LDWR	 V_Dipole_wait2
+	STWR	 V_Dipole
+	JMP	 	 adiabatic_ramp_down
+
+adiabatic_ramp_down: NOP	#Ramp MOT beam freq. and power.
+	LDWR	 V_Dipole
+	ADDW	 V_Dipole_inc_neg
+	STWR	 V_Dipole
+	DELAY  	 us_RAMP_adi_t
+	INC		 RAMPIND
+	STWR	 RAMPIND
+	CMP	 	 R_adi_ramptot
+	JMPNZ    OPump
+	DAC	 	 DAC_ch_Dipole, V_Dipole
+	DACUP
+	JMP	 	 adiabatic_ramp_down
 	
 OPump: NOP
 	LDWR		OP_SWITCH
@@ -232,8 +223,7 @@ OPump: NOP
 	DDSFRQ		DDS_ch_OP, 		F_OP_op
 	DDSAMP		DDS_ch_OP, 		A_OP_op
 	DAC			DAC_ch_MOT, 	V_MOT_op
-	DAC			DAC_ch_Repump, 	V_Repump_op
-	DAC 		DAC_ch_Dipole, 	V_Dipole_op
+	DAC			DAC_ch_Repump, 	V_Repump_op #DAC 		DAC_ch_Dipole, 	V_Dipole_op
 	DAC			DAC_ch_Bx, 		V_Bx_op
 	DAC			DAC_ch_By, 		V_By_op
 	DAC			DAC_ch_Bz, 		V_Bz_op
@@ -249,8 +239,7 @@ wait3: NOP
 	JMPZ	 Exp
 	DAC      DAC_ch_MOT_coil, V_MOTcoil_wait3
 	DAC	 	 DAC_ch_MOT, V_MOT_wait3
-	DAC		 DAC_ch_Repump, V_Repump_wait3
-	DAC		 DAC_ch_Dipole, V_Dipole_wait3
+	DAC		 DAC_ch_Repump, V_Repump_wait3 #DAC		 DAC_ch_Dipole, V_Dipole_wait3
 	DAC		 DAC_ch_Bx, V_Bx_exp
 	DAC		 DAC_ch_By, V_By_exp
 	DAC		 DAC_ch_Bz, V_Bz_exp
@@ -261,7 +250,6 @@ wait3: NOP
 	SHUTRVAR 	SHUTR_wait
 
 	
-#TODO: Figure out what do to do with SHUT_exp_after (place control in GUI?) 
 Exp: NOP
 	LDWR	 	EXP_SWITCH
 	CMP		 	SWITCH
@@ -269,8 +257,7 @@ Exp: NOP
 	DDSFRQ	 	DDS_ch_MOT, F_MOT_exp
 	DDSFRQ	 	DDS_ch_uWave, F_uWave_exp
 	DAC	 	 	DAC_ch_MOT, V_MOT_exp
-	DAC		 	DAC_ch_Repump, V_Repump_exp		# DAC		 DAC_ch_Dipole, V_Dipole_exp
-	DAC		 	DAC_ch_Dipole, V_Dipole_detect 	# TODO: V_Dipole_exp
+	DAC		 	DAC_ch_Repump, V_Repump_exp		#DAC		 	DAC_ch_Dipole, V_Dipole_exp 	
 	DAC		 	DAC_ch_Bx, V_Bx_exp
 	DAC		 	DAC_ch_By, V_By_exp
 	DAC		 	DAC_ch_Bz, V_Bz_exp
@@ -282,11 +269,10 @@ Exp: NOP
 wait4: NOP
 	LDWR	 	WAIT4_SWITCH
 	CMP		 	SWITCH
-	JMPZ	 	Detect
+	JMPZ	 	ini_adiabatic_ramp_up
 	DAC      	DAC_ch_MOT_coil, V_MOTcoil_wait4
 	DAC	 	 	DAC_ch_MOT, V_MOT_wait4
-	DAC		 	DAC_ch_Repump, V_Repump_wait4 # DAC	 DAC_ch_Dipole, V_Dipole_wait4
-	DAC	 		DAC_ch_Dipole, V_Dipole_wait4
+	DAC		 	DAC_ch_Repump, V_Repump_wait4 #DAC	 		DAC_ch_Dipole, V_Dipole_wait4
 	DAC		 	DAC_ch_Bx, V_Bx_wait4
 	DAC		 	DAC_ch_By, V_By_wait4
 	DAC		 	DAC_ch_Bz, V_Bz_wait4
@@ -296,6 +282,27 @@ wait4: NOP
 	DELAY	 	us_Time_wait4
 	SHUTRVAR 	SHUTR_wait
 
+ini_adiabatic_ramp_up: NOP
+	LDWR	 ADI_UP_SWITCH
+	CMP		 SWITCH
+	JMPZ	 Detect
+	SHUTRVAR SHUTR_wait4
+	CLRW
+	STWR     RAMPIND 	#LDWR	 V_Dipole_wait4 STWR	 V_Dipole
+	JMP	 	 adiabatic_ramp_up
+
+adiabatic_ramp_up: NOP	#Ramp MOT beam freq. and power.
+	LDWR	 V_Dipole
+	ADDW	 V_Dipole_inc_pos
+	STWR	 V_Dipole
+	DELAY  	 us_RAMP_adi_t
+	INC		 RAMPIND
+	STWR	 RAMPIND
+	CMP	 	 R_adi_ramptot
+	JMPNZ    Detect
+	DAC	 	 DAC_ch_Dipole, V_Dipole
+	DACUP
+	JMP	 	 adiabatic_ramp_up
 	
 Detect: NOP
 	DAC	 	 	DAC_ch_MOT, V_MOT_detect
@@ -313,7 +320,7 @@ Detect: NOP
 
 	STWR     	DETECTCOUNT
 
-	CMP		 	CHECKTHOLD
+	CMP		 	DETECTTHOLD
 	JMPZ	 	ini_check
 	JMPNZ	 	save_data
 
@@ -394,7 +401,7 @@ save_atomReuse: NOP
 
 save_loss_data: NOP         # Enabled by "Use atom loss as signal"
 	SHUTRVAR	SHUTR_wait5
-	DAC	 		DAC_ch_MOT, V_MOT_wait5 # changed from V_MOT_exp_end CWC 09262012
+	DAC	 		DAC_ch_MOT, V_MOT_wait5
 	DACUP
 	DELAY 	us_Time_wait5
 	LDWR	DETECTCOUNT

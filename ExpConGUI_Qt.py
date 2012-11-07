@@ -71,7 +71,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.new_scan = True #Switch for a new scan. Log file created if True.
         self.hist_max = 30
         self.t1 = time.time()
-        self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage', 'DDS Amplitude', 'Ramsey Phase Scan']
+        self.scan_types =['Continuous','Frequency','1038 Frequency','Time','Voltage','Ramp Total', 'DDS Amplitude', 'Ramsey Phase Scan']
         self.text_to_write = ''
         #self.SHUTR_CHAN = {'SHUTR_MOT_': 0, 'SHUTR_Repump_': 1,'SHUTR_uWave_':
         #        7, 'SHUTR_D1_': 5, 'SHUTR_Dipole_': 3, 'SHUTR_MOT_Servo_':
@@ -286,11 +286,11 @@ class ExpConGUI_Qt(QtGui.QWidget):
         
         self.Loss_SW_label = QtGui.QLabel("Use atom loss as signal")
         self.Loss_SW_cb = QtGui.QCheckBox()
-        self.Loss_SW_cb.setChecked(True)
+        #self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(False)
         self.Loss_SW_cb.stateChanged.connect(self.set_stage_Disabled)
         if (not float(self.PCon.params.defs['LOSS_SWITCH'])==1):
             self.Loss_SW_cb.setChecked(False)
-        self.Loss_SW_cb.setDisabled(True)
         hbox4.addWidget(self.Loss_SW_label)
         hbox4.addWidget(self.Loss_SW_cb)
 
@@ -313,11 +313,19 @@ class ExpConGUI_Qt(QtGui.QWidget):
         
         self.QUBITTHOLD_label = QtGui.QLabel("QUBITTHOLD")
         self.QUBITTHOLD_lsb = LabeledSpinBox('QUBITTHOLD',self.update_global_var)#QtGui.QSpinBox()
-        self.QUBITTHOLD_lsb.sb.setRange(0, 10)
+        self.QUBITTHOLD_lsb.sb.setRange(0, 30)
         self.QUBITTHOLD_lsb.sb.setSingleStep(1)
         self.QUBITTHOLD_lsb.sb.setDecimals(0)
         self.QUBITTHOLD_lsb.sb.setValue(float(self.PCon.params.defs['QUBITTHOLD']))
         self.controls['QUBITTHOLD']=(self.QUBITTHOLD_lsb.sb, 'QUBITTHOLD')
+        
+        self.DETECTTHOLD_label = QtGui.QLabel("DETECTTHOLD")
+        self.DETECTTHOLD_lsb = LabeledSpinBox('DETECTTHOLD',self.update_global_var)#QtGui.QSpinBox()
+        self.DETECTTHOLD_lsb.sb.setRange(0, 30)
+        self.DETECTTHOLD_lsb.sb.setSingleStep(1)
+        self.DETECTTHOLD_lsb.sb.setDecimals(0)
+        self.DETECTTHOLD_lsb.sb.setValue(float(self.PCon.params.defs['DETECTTHOLD']))
+        self.controls['DETECTTHOLD']=(self.DETECTTHOLD_lsb.sb, 'DETECTTHOLD')
 
         self.CHECKTHOLD_label = QtGui.QLabel("CHECKTHOLD")
         self.CHECKTHOLD_lsb = LabeledSpinBox('CHECKTHOLD',self.update_global_var)#QtGui.QSpinBox()
@@ -345,6 +353,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
         hbox5.addWidget(self.QUBITTHOLD_label)
         hbox5.addLayout(self.QUBITTHOLD_lsb.box)
         hbox5.addStretch(1)
+        hbox5.addWidget(self.DETECTTHOLD_label)
+        hbox5.addLayout(self.DETECTTHOLD_lsb.box)
+        hbox5.addStretch(1)
         hbox5.addWidget(self.CHECKTHOLD_label)
         hbox5.addLayout(self.CHECKTHOLD_lsb.box)
         hbox5.addStretch(1)
@@ -356,21 +367,21 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.F_MOT_cool_final_lsb = LabeledSpinBox('F_INC',self.update_F_MOT_cool_final)#QtGui.QSpinBox()
         self.F_MOT_cool_final_lsb.sb.setRange(0, 100)
         self.F_MOT_cool_final_lsb.sb.setSingleStep(0.1)
-        self.F_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['F_MOT_cool'])+float(self.PCon.params.defs['F_INC'])*float(self.PCon.params.defs['RAMPTOT']))
+        self.F_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['F_MOT_cool'])+float(self.PCon.params.defs['F_INC'])*float(self.PCon.params.defs['R_RAMPTOT']))
         
 
         self.V_MOT_cool_final_label = QtGui.QLabel("V_MOT_cool_final")
         self.V_MOT_cool_final_lsb = LabeledSpinBox('V_INC',self.update_V_MOT_cool_final)#QtGui.QSpinBox()
         self.V_MOT_cool_final_lsb.sb.setRange(0, 4.999)
         self.V_MOT_cool_final_lsb.sb.setSingleStep(0.01)
-        self.V_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['V_MOT_cool'])+float(self.PCon.params.defs['V_INC'])*float(self.PCon.params.defs['RAMPTOT']))
+        self.V_MOT_cool_final_lsb.sb.setValue(float(self.PCon.params.defs['V_MOT_cool'])+float(self.PCon.params.defs['V_INC'])*float(self.PCon.params.defs['R_RAMPTOT']))
         
 
         self.RAMPTOT_label = QtGui.QLabel("PG cooling ramp steps")
-        self.RAMPTOT_lsb = LabeledSpinBox('RAMPTOT',self.update_global_var)#QtGui.QSpinBox()
+        self.RAMPTOT_lsb = LabeledSpinBox('R_RAMPTOT',self.update_global_var)#QtGui.QSpinBox()
         self.RAMPTOT_lsb.sb.setRange(0, 200)
-        self.RAMPTOT_lsb.sb.setValue(float(self.PCon.params.defs['RAMPTOT']))
-        self.controls['RAMPTOT']=(self.RAMPTOT_lsb.sb, 'RAMPTOT')
+        self.RAMPTOT_lsb.sb.setValue(float(self.PCon.params.defs['R_RAMPTOT']))
+        self.controls['R_RAMPTOT']=(self.RAMPTOT_lsb.sb, 'R_RAMPTOT')
         
         hbox6.addWidget(self.F_MOT_cool_final_label)
         hbox6.addLayout(self.F_MOT_cool_final_lsb.box)
@@ -470,7 +481,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
             table_control.addWidget(QtGui.QLabel(self.v_tb_labels[i]),i+len(self.v_sb_labels)+1,0)
         for i in range(len(self.v_sb_labels)):
             for j in range(len(self.h_labels)):
-                lsb = self.make_spin_box(self.v_sb_subscripts[i],self.h_subscripts[j], self.PCon.params.defs[self.v_sb_subscripts[i]+self.h_subscripts[j]], self.update_global_var)
+                lsb = self.make_spin_box(self.v_sb_subscripts[i],self.h_subscripts[j], 
+                                         self.PCon.params.defs[self.v_sb_subscripts[i]+self.h_subscripts[j]], self.update_global_var)
                 #lsb.sb.setDisabled(True)
                 table_control.addLayout(lsb.box,i+1,j+1)
                 self.controls[self.v_sb_subscripts[i]+self.h_subscripts[j]] = (lsb.sb, self.v_sb_subscripts[i]+self.h_subscripts[j])
@@ -536,18 +548,18 @@ class ExpConGUI_Qt(QtGui.QWidget):
     def update_global_var(self,label,value):
         self.PCon.parameter_set(label,value)
         if label == 'us_Time_cool':
-            val = value/float(self.PCon.params.defs['RAMPTOT'])-7
+            val = value/float(self.PCon.params.defs['R_RAMPTOT'])-7
             if val < 1:
-                raise "RAMPTOT too high for the specified cooling time. Try reducing ramp steps or longer cooling time."
+                raise "R_RAMPTOT too high for the specified cooling time. Try reducing ramp steps or longer cooling time."
             else:
                 self.PCon.parameter_set('us_RAMP_T',val)
 
     def update_F_MOT_cool_final(self, label, value):
-        val = (value - float(self.PCon.params.defs['F_MOT_cool']))/float(self.PCon.params.defs['RAMPTOT'])
+        val = (value - float(self.PCon.params.defs['F_MOT_cool']))/float(self.PCon.params.defs['R_RAMPTOT'])
         self.PCon.parameter_set(label,val)
 
     def update_V_MOT_cool_final(self, label, value):
-        val = (value - float(self.PCon.params.defs['V_MOT_cool']))/float(self.PCon.params.defs['RAMPTOT'])
+        val = (value - float(self.PCon.params.defs['V_MOT_cool']))/float(self.PCon.params.defs['R_RAMPTOT'])
         self.PCon.parameter_set(label,val)
 
     def update_SHUTR(self, h_subscript):
@@ -582,18 +594,18 @@ class ExpConGUI_Qt(QtGui.QWidget):
     def update_scan_type(self):
         self.n_index.setText('0')
         self.new_scan = True
-        if (self.scan_entry.currentText()=='Continuous'):
-            self.PCon.params.update_defs()
+        self.PCon.params.update_defs()
+        the_iter_keys = self.PCon.params.defs.iterkeys()
+        if (self.scan_entry.currentText()=='Continuous'): 
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(True)
             self.scan_range_low_sb.setDisabled(True)
             self.scan_range_high_sb.setDisabled(True)
             self.n_points_sb.setDisabled(True)
             self.var_entry.setDisabled(True)
-            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setEnabled(True)
             self.Loss_SW_cb.setChecked(False)
         elif (self.scan_entry.currentText()=='Frequency'):
-            self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
@@ -604,14 +616,13 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.scan_range_high_sb.setDecimals(3)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
-            for key in sorted(self.PCon.params.defs.iterkeys()):#self.PCon.params.defs:
+            for key in sorted(the_iter_keys):#self.PCon.params.defs:
                 if (key[:2]=='F_' or key[:2]=='f_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setEnabled(True)
             self.Loss_SW_cb.setChecked(False)
         elif (self.scan_entry.currentText()=='1038 Frequency'):
-            self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setChecked(False)
             self.shuffle_cb.setDisabled(True)
@@ -628,25 +639,23 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.Loss_SW_cb.setEnabled(True)
             self.Loss_SW_cb.setChecked(True)
         elif (self.scan_entry.currentText()=='Time'):
-            self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(0,100)
+            self.scan_range_low_sb.setRange(0,10000)
             self.scan_range_low_sb.setDecimals(2)
             self.scan_range_high_sb.setDisabled(False)
             self.scan_range_high_sb.setRange(1,10000)
             self.scan_range_high_sb.setDecimals(2)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
-            for key in sorted(self.PCon.params.defs.iterkeys()):
+            for key in sorted(the_iter_keys):
                 if (key[:3]=='ns_' or key[:3]=='NS_' or key[:3]=='us_' or key[:3]=='US_' or key[:3]=='ms_' or key[:3]=='MS_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
             self.Loss_SW_cb.setEnabled(True)
             self.Loss_SW_cb.setChecked(False)
         elif (self.scan_entry.currentText()=='Voltage'):
-            self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
@@ -657,14 +666,32 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.scan_range_high_sb.setDecimals(4)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
-            for key in sorted(self.PCon.params.defs.iterkeys()):
+            for key in sorted(the_iter_keys):
                 if (key[:2]=='V_' or key[:2]=='v_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setEnabled(True)
             self.Loss_SW_cb.setChecked(False)
+            
+        elif (self.scan_entry.currentText()=='Ramp Total'):
+            self.button_cont.setDisabled(True)
+            self.shuffle_cb.setDisabled(False)
+            self.scan_range_low_sb.setDisabled(False)
+            self.scan_range_low_sb.setRange(0,1000)
+            self.scan_range_low_sb.setDecimals(0)
+            self.scan_range_high_sb.setDisabled(False)
+            self.scan_range_high_sb.setRange(0,1000)
+            self.scan_range_high_sb.setDecimals(0)
+            self.n_points_sb.setDisabled(False)
+            self.var_entry.clear()
+            for key in sorted(the_iter_keys):
+                if (key[:2]=='R_'):
+                    self.var_entry.addItem(key)
+            self.var_entry.setEnabled(True)
+            self.Loss_SW_cb.setEnabled(True)
+            self.Loss_SW_cb.setChecked(False)
+            
         elif (self.scan_entry.currentText()=='DDS Amplitude'):
-            self.PCon.params.update_defs()
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
@@ -675,16 +702,15 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.scan_range_high_sb.setDecimals(0)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
-            for key in sorted(self.PCon.params.defs.iterkeys()):
+            for key in sorted(the_iter_keys):
                 if (key[:2]=='A_' or key[:2]=='A_'):
                     self.var_entry.addItem(key)
             self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(False)
+            self.Loss_SW_cb.setEnabled(True)
             self.Loss_SW_cb.setChecked(False)
         elif (self.scan_entry.currentText()=='Ramsey Phase Scan'):
-            self.PCon.params.update_defs()
             self.disableAll(False)
-            for key in sorted(self.PCon.params.defs.iterkeys()):
+            for key in sorted(the_iter_keys):
                 if (key[:3]=='PH_'):
                     self.var_entry.addItem(key)
             self.scan_range_low_sb.setRange(-0.1,5)
@@ -831,6 +857,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
             elif (self.scan_entry.currentText()=='Frequency' or
                     self.scan_entry.currentText()=='Time' or
                     self.scan_entry.currentText()=='Voltage' or
+                    self.scan_entry.currentText()=='Ramp Total' or
                     self.scan_entry.currentText()=='DDS Amplitude' or
                     self.scan_entry.currentText()=='Ramsey Phase Scan' or
                     self.scan_entry.currentText()=='1038 Frequency'):
@@ -845,7 +872,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     scan_vals = numpy.linspace(self.scan_range_low_sb.value(),
                             self.scan_range_high_sb.value(),
                             self.n_points_sb.value())
-                    if self.scan_entry.currentText()=='Ramsey Phase Scan':
+                    if (self.scan_entry.currentText()=='Ramsey Phase Scan' or
+                            self.scan_entry.currentText()=='Ramp Total' or
+                            self.scan_entry.currentText()=='DDS Amplitude'):
                         scan_vals = map(lambda x: int(x), scan_vals)
                     else:
                         scan_vals = map(lambda x: float(round(10000*x)/10000),
@@ -1294,7 +1323,6 @@ class PlotThread(QtCore.QThread):
 		# If continuous scan
         scanType = self.GUI.scan_entry.currentText()
         scanVar  = self.GUI.var_entry.currentText()
-        pointNumber = numpy.float(self.GUI.n_index.text())
         if (self.GUI.scan_entry.currentText()=='Continuous'):
             self.GUI.plotdata[ 
                     0:self.GUI.plotdatalength-1, 1] = self.GUI.plotdata[
@@ -1319,6 +1347,7 @@ class PlotThread(QtCore.QThread):
         # if scanning parameter
         else:
 
+            pointNumber = numpy.float(self.GUI.n_index.text())
             # if diplay qubit data checked
             if self.qubit_D:
                 self.yerr[scan_index] = numpy.sqrt(((self.yerr[scan_index])**2*self.GUI.plotdata[scan_index,2]+new_prob*(1-new_prob))/(self.GUI.plotdata[scan_index,2]+self.GUI.n_reps))

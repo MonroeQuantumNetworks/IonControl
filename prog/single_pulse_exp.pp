@@ -6,8 +6,7 @@
 #define DAC_ch_MOT_coil 0
 #define DAC_ch_Bz 1
 #define DAC_ch_MOT 3
-#define DAC_ch_Dipole 9
-#define DAC_ch_Dipole_New 10
+#define DAC_ch_Dipole 10
 
 
 #define DAC_ch_Bx 6
@@ -52,7 +51,6 @@ var reuseBinNum		0		# keep track of number of atom reuse bins
 	DAC      	DAC_ch_MOT_coil, V_MOTcoil_load
 	DAC		 	DAC_ch_Repump, V_Repump_load
 	DAC	 	 	DAC_ch_MOT, V_MOT_load
-	DAC		 	DAC_ch_Dipole_New, V_Dipole 
 	DAC		 	DAC_ch_Dipole, V_Dipole_load
 	DAC		 	DAC_ch_Bx, V_Bx_load
 	DAC		 	DAC_ch_By, V_By_load
@@ -97,8 +95,7 @@ ini_load: NOP
 	STWR		atomReuse				# reset atomReuse for new atom
 	SHUTRVAR	SHUTR_load
 	DDSFRQ		DDS_ch_MOT, F_MOT_load
-	DDSFRQ		DDS_ch_uWave, F_uWave_load
-	DAC			DAC_ch_Dipole, V_Dipole
+	DDSFRQ		DDS_ch_uWave, F_uWave_load #DAC			DAC_ch_Dipole, V_Dipole
 	DAC     	DAC_ch_MOT_coil, V_MOTcoil_load
 	DAC			DAC_ch_Repump, V_Repump_load
 	DAC	 		DAC_ch_MOT, V_MOT_load
@@ -175,70 +172,42 @@ sub_D_cooling: NOP	#Ramp MOT beam freq. and power.
 	DACUP
 	JMP	 	 sub_D_cooling
 
-ini_adiabatic_cooling: NOP
-	LDWR	 ADIABATIC_COOL_SWITCH
-	CMP		 SWITCH
-	JMPZ	 wait2
-	DAC		 DAC_ch_Dipole_New, V_Dipole
-	DACUP
-	SHUTRVAR SHUTR_wait1
-	CLRW
-	STWR     RAMPIND
-	LDWR	 V_Dipole
-	STWR	 V_DIPOLE
-	JMP	 	 adiabatic_cooling
-
-adiabatic_cooling: NOP	#Ramp MOT beam freq. and power.
-	LDWR	 F_MOT
-	ADDW	 F_INC
-	STWR	 F_MOT
-	LDWR	 V_MOT
-	ADDW	 V_INC
-	STWR	 V_MOT
-	DELAY  	 us_RAMP_T
-	INC		 RAMPIND
-	STWR	 RAMPIND
-	CMP	 	 RAMPTOT
-	JMPNZ    wait2
-	DDSFRQ	 DDS_ch_MOT, F_MOT
-	DAC	 	 DAC_ch_MOT, V_MOT
-	DACUP
-	JMP	 	 adiabatic_cooling
-
 wait2: NOP
-	LDWR	 WAIT2_SWITCH
-	CMP		 SWITCH
-	JMPZ	 OPump
-	DAC      DAC_ch_MOT_coil, V_MOTcoil_wait2
-	DAC	 	 DAC_ch_MOT, V_MOT_wait2
-	DAC		 DAC_ch_Repump, V_Repump_wait2
-	DAC		 DAC_ch_Dipole, V_Dipole_wait2
-	DAC		 DAC_ch_Bx, V_Bx_wait2
-	DAC		 DAC_ch_By, V_By_wait2
-	DAC		 DAC_ch_Bz, V_Bz_wait2
+	LDWR	 	WAIT2_SWITCH
+	CMP		 	SWITCH
+	JMPZ	 	OPump
+	DAC      	DAC_ch_MOT_coil, V_MOTcoil_wait2
+	DAC	 	 	DAC_ch_MOT, V_MOT_wait2
+	DAC		 	DAC_ch_Repump, V_Repump_wait2
+	DAC		 	DAC_ch_Dipole, V_Dipole_wait2 
+	DAC		 	DAC_ch_Bx, V_Bx_op
+	DAC		 	DAC_ch_By, V_By_op
+	DAC		 	DAC_ch_Bz, V_Bz_op
 	DACUP
-	DDSFRQ	 DDS_ch_MOT, F_MOT_wait2
-	SHUTRVAR SHUTR_wait2	
-	DELAY	 us_Time_wait2
+	DDSFRQ	 	DDS_ch_MOT, F_MOT_wait2
+	SHUTRVAR 	SHUTR_wait2	
+	DELAY	 	us_Time_wait2
+	SHUTRVAR 	SHUTR_wait
 
 	
 OPump: NOP
-	LDWR	 OP_SWITCH
-	CMP		 SWITCH
-	JMPZ	 wait3
-	DDSFRQ	 DDS_ch_uWave, F_uWave_op
-	DDSFRQ	 DDS_ch_OP, F_OP_op
-	DDSAMP	 DDS_ch_OP, A_OP_op
-	DAC		 DAC_ch_MOT, V_MOT_op
-	DAC		 DAC_ch_Repump, V_Repump_op
-	DAC		 DAC_ch_Bx, V_Bx_op
-	DAC		 DAC_ch_By, V_By_op
-	DAC		 DAC_ch_Bz, V_Bz_op
-	DAC		 DAC_ch_OP, V_OP_op
+	LDWR		OP_SWITCH
+	CMP			SWITCH
+	JMPZ		wait3
+	DDSFRQ		DDS_ch_uWave, 	F_uWave_op
+	DDSFRQ		DDS_ch_OP, 		F_OP_op
+	DDSAMP		DDS_ch_OP, 		A_OP_op
+	DAC			DAC_ch_MOT, 	V_MOT_op
+	DAC			DAC_ch_Repump, 	V_Repump_op
+	DAC 		DAC_ch_Dipole, 	V_Dipole_op
+	DAC			DAC_ch_Bx, 		V_Bx_op
+	DAC			DAC_ch_By, 		V_By_op
+	DAC			DAC_ch_Bz, 		V_Bz_op
+	DAC			DAC_ch_OP, 		V_OP_op
 	DACUP
-	SHUTRVAR SHUTR_op
-	DELAY	 us_Time_op 	#SHUTR	 SHUTR_OP_WAIT
-	SHUTRVAR SHUTR_wait3
+	SHUTRVAR 	SHUTR_op
+	DELAY	 	us_Time_op 	#SHUTR	 SHUTR_OP_WAIT
+	SHUTRVAR 	SHUTR_wait
 	
 wait3: NOP
 	LDWR	 WAIT3_SWITCH
@@ -248,69 +217,75 @@ wait3: NOP
 	DAC	 	 DAC_ch_MOT, V_MOT_wait3
 	DAC		 DAC_ch_Repump, V_Repump_wait3
 	DAC		 DAC_ch_Dipole, V_Dipole_wait3
-	DAC		 DAC_ch_Bx, V_Bx_wait3
-	DAC		 DAC_ch_By, V_By_wait3
-	DAC		 DAC_ch_Bz, V_Bz_wait3
-	DACUP
-	DDSFRQ	 DDS_ch_MOT, F_MOT_wait3
-	SHUTRVAR SHUTR_wait3	
-	DELAY	 us_Time_wait3
-
-	
-#TODO: Figure out what do to do with SHUT_exp_after (place control in GUI?) 
-Exp: NOP
-	LDWR	 EXP_SWITCH
-	CMP		 SWITCH
-	JMPZ	 wait4
-	DDSFRQ	 DDS_ch_MOT, F_MOT_exp
-	DDSFRQ	 DDS_ch_uWave, F_uWave_exp
-	DAC	 	 DAC_ch_MOT, V_MOT_exp
-	DAC		 DAC_ch_Repump, V_Repump_exp	# DAC		 DAC_ch_Dipole, V_Dipole_exp
 	DAC		 DAC_ch_Bx, V_Bx_exp
 	DAC		 DAC_ch_By, V_By_exp
 	DAC		 DAC_ch_Bz, V_Bz_exp
 	DACUP
-    SHUTRVAR SHUTR_exp
-	DELAY	 us_Time_exp 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp
-	SHUTRVAR SHUTR_exp_after
+	DDSFRQ	 DDS_ch_MOT, F_MOT_wait3
+	SHUTRVAR SHUTR_wait3	
+	DELAY	 us_Time_wait3
+	SHUTRVAR 	SHUTR_wait
+
+	
+#TODO: Figure out what do to do with SHUT_exp_after (place control in GUI?) 
+Exp: NOP
+	LDWR	 	EXP_SWITCH
+	CMP		 	SWITCH
+	JMPZ	 	wait4
+	DDSFRQ	 	DDS_ch_MOT, F_MOT_exp
+	DDSFRQ	 	DDS_ch_uWave, F_uWave_exp
+	DAC	 	 	DAC_ch_MOT, V_MOT_exp
+	DAC		 	DAC_ch_Repump, V_Repump_exp		# DAC		 DAC_ch_Dipole, V_Dipole_exp
+	DAC		 	DAC_ch_Dipole, V_Dipole_detect 	# TODO: V_Dipole_exp
+	DAC		 	DAC_ch_Bx, V_Bx_exp
+	DAC		 	DAC_ch_By, V_By_exp
+	DAC		 	DAC_ch_Bz, V_Bz_exp
+	DACUP
+    SHUTRVAR 	SHUTR_exp
+	DELAY	 	us_Time_exp 			#DDSFRQ	 DDS_ch_MOT, F_MOT_exp
+	SHUTRVAR 	SHUTR_wait
 	
 wait4: NOP
-	LDWR	 WAIT4_SWITCH
-	CMP		 SWITCH
-	JMPZ	 Detect
-	DAC      DAC_ch_MOT_coil, V_MOTcoil_wait4
-	DAC	 	 DAC_ch_MOT, V_MOT_wait4
-	DAC		 DAC_ch_Repump, V_Repump_wait4 # DAC	 DAC_ch_Dipole, V_Dipole_wait4
-	DAC		 DAC_ch_Bx, V_Bx_wait4
-	DAC		 DAC_ch_By, V_By_wait4
-	DAC		 DAC_ch_Bz, V_Bz_wait4
+	LDWR	 	WAIT4_SWITCH
+	CMP		 	SWITCH
+	JMPZ	 	Detect
+	DAC      	DAC_ch_MOT_coil, V_MOTcoil_wait4
+	DAC	 	 	DAC_ch_MOT, V_MOT_wait4
+	DAC		 	DAC_ch_Repump, V_Repump_wait4 # DAC	 DAC_ch_Dipole, V_Dipole_wait4
+	DAC	 		DAC_ch_Dipole, V_Dipole_wait4
+	DAC		 	DAC_ch_Bx, V_Bx_wait4
+	DAC		 	DAC_ch_By, V_By_wait4
+	DAC		 	DAC_ch_Bz, V_Bz_wait4
 	DACUP
-	DDSFRQ	 DDS_ch_MOT, F_MOT_wait4
-	SHUTRVAR SHUTR_wait4
-	DELAY	 us_Time_wait4
+	DDSFRQ	 	DDS_ch_MOT, F_MOT_wait4
+	SHUTRVAR 	SHUTR_wait4
+	DELAY	 	us_Time_wait4
+	SHUTRVAR 	SHUTR_wait
 
 	
 Detect: NOP
-	DAC	 	 DAC_ch_MOT, V_MOT_detect
-	DAC		 DAC_ch_Repump, V_Repump_detect	# DAC	 DAC_ch_Dipole, V_Dipole_detect
-	DAC		 DAC_ch_Bx, V_Bx_detect
-	DAC		 DAC_ch_By, V_By_detect
-	DAC		 DAC_ch_Bz, V_Bz_detect
+	DAC	 	 	DAC_ch_MOT, V_MOT_detect
+	DAC		 	DAC_ch_Repump, V_Repump_detect	# DAC	 DAC_ch_Dipole, V_Dipole_detect
+	DAC		    DAC_ch_Dipole, V_Dipole_detect
+	DAC		 	DAC_ch_Bx, V_Bx_detect
+	DAC		 	DAC_ch_By, V_By_detect
+	DAC		 	DAC_ch_Bz, V_Bz_detect
 	DACUP
-	DDSFRQ	 DDS_ch_MOT, F_MOT_detect
-	SHUTRVAR SHUTR_detect
+	DDSFRQ	 	DDS_ch_MOT, F_MOT_detect
+	SHUTRVAR 	SHUTR_detect
 
-	COUNT    us_Time_detect
+	COUNT    	us_Time_detect
+	SHUTRVAR 	SHUTR_wait
 
-	STWR     DETECTCOUNT
+	STWR     	DETECTCOUNT
 
-	CMP		 CHECKTHOLD
-	JMPZ	 ini_check
-	JMPNZ	 save_data
+	CMP		 	CHECKTHOLD
+	JMPZ	 	ini_check
+	JMPNZ	 	save_data
 
 save_data: NOP
 	SHUTRVAR	SHUTR_wait5
-	DAC	 		DAC_ch_MOT, V_MOT_wait5 # changed from V_MOT_exp_end CWC 09262012
+	DAC		DAC_ch_Dipole, 	V_Dipole_wait5
 	DACUP
 	DELAY 	us_Time_wait5
 	INC 	atomReuse		# v
@@ -337,7 +312,11 @@ ini_check: NOP
 	JMPZ	 save_data
 	CLRW
 	STWR     CHECKIND
-	SHUTRVAR SHUTR_wait5
+	SHUTRVAR	SHUTR_wait5
+	DAC		DAC_ch_Dipole, 	V_Dipole_wait5
+	DACUP
+	DELAY 	us_Time_wait5
+	SHUTRVAR 	SHUTR_wait
 	DAC	 	 DAC_ch_MOT, V_MOT_check
 	DAC		 DAC_ch_Repump, V_Repump_check
 	DAC		 DAC_ch_Dipole, V_Dipole_check

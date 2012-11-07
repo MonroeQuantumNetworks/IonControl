@@ -382,7 +382,7 @@ class gui(QtGui.QWidget):
         box3.addWidget(Filename_label)
 
         self.Filename_entry=QtGui.QLineEdit()
-        self.Filename_entry.setText("Load_cool_exp_check_by_parts_table_GUI.pp")
+        self.Filename_entry.setText("single_pulse_exp_adiabatic.pp")
         box3.addWidget(self.Filename_entry)
 
         button_quit= QtGui.QPushButton("Quit", self)
