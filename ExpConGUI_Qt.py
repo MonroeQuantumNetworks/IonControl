@@ -642,10 +642,10 @@ class ExpConGUI_Qt(QtGui.QWidget):
             self.button_cont.setDisabled(True)
             self.shuffle_cb.setDisabled(False)
             self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(0,10000)
+            self.scan_range_low_sb.setRange(0,100000)
             self.scan_range_low_sb.setDecimals(2)
             self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(1,10000)
+            self.scan_range_high_sb.setRange(1,100000)
             self.scan_range_high_sb.setDecimals(2)
             self.n_points_sb.setDisabled(False)
             self.var_entry.clear()
@@ -737,7 +737,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.plotdata=numpy.zeros((self.plotdatalength,3),'Float32')
 
     def start_new_scan(self):
-        self.numPointsToScan = n_points_sb.value()
+        self.numPointsToScan = self.n_points_sb.value()
         self.numScans = 0;
         self.new_scan = True
         self.run_scan()
@@ -758,7 +758,8 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_pause.setDisabled(False)
         self.button_stop.setDisabled(False)
         self.button_cont.setDisabled(True)
-
+        
+        print "#########################"
         print "Starting a new scan: %i" %self.new_scan
         self.numScans+=1
 
@@ -920,7 +921,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     
             else:
                 print "Unknow scan type."
-        print "Thread count: %i" %self.thread_count
+        #print "Thread count: %i" %self.thread_count
         #execute the runs.
         self.threads[2*(self.thread_count-1)].start()
         self.threads[2*(self.thread_count-1)+1].start()
@@ -1218,7 +1219,10 @@ class ScanExpThread(ExpThread):
             while (self.stopped == 0 and self.GUI.pause == True):
                 time.sleep(0.1)
             current_scan_val = self.scan_vals[n] #get scan value from array
-
+            self.GUI.scanVal.setText(str(current_scan_val))
+            print "-----"
+            print "current point: " + str(current_scan_val)
+            
             if (self.GUI.scan_entry.currentText()=='1038 Frequency'):
                 """ update synthesizer with new frequency and trigger unlock ttl on laser controler"""
                 #shutrState = self.GUI.PCon.stateobj["SHUTR"][0].value()
@@ -1247,17 +1251,17 @@ class ScanExpThread(ExpThread):
                 if (time.time()-self.t1) < 0.05:
                     time.sleep(0.03)
                 t2 = time.time()
-                print 'ExpThread cycle time %.6f seconds' %(t2-self.t1)
+                print ' cycle time %.2f s' %(t2-self.t1)
                 self.t1 = t2
 
                 # Calculate and print out atom reuse
                 atomReuseArray = self.getAtomReuse()
-                print "mean reuse number %.1f" %numpy.mean(atomReuseArray)
+                print " mean reuse number %.1f" %numpy.mean(atomReuseArray)
                 print atomReuseArray
 
             n+=1
             self.GUI.n_index.setText(str(n))
-            self.GUI.scanVal.setText(str(current_scan_val))
+            
         self.GUI.PCon.restore_state(self.GUI.PCon.state)  #finished all points, return to back to state before run
         self.emit(QtCore.SIGNAL("Done_scanning"))
         self.GUI.PCon.parameter_set(str(self.GUI.var_entry.currentText()),
