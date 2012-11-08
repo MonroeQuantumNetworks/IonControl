@@ -463,6 +463,33 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.setLayout(vbox)
         self.show()
 
+    def __del__(self):
+        for t in self.threads:
+          running = t.running()
+          t.stop()
+          if not t.finished():
+            t.wait()
+
+    def continue_scan(self):
+        self.new_scan = False
+        self.run_scan()
+
+    def closeEvent(self, event):
+        self.PCon.ExpConGUIstarted = False
+
+    def disableAll(self, aBool):
+        self.button_cont.setDisabled(aBool)
+        self.shuffle_cb.setDisabled(aBool)
+        self.scan_range_low_sb.setDisabled(aBool)
+        self.scan_range_high_sb.setDisabled(aBool)
+        self.n_points_sb.setDisabled(aBool)
+        self.var_entry.clear()
+        self.var_entry.setDisabled(aBool)
+        self.Loss_SW_cb.setDisabled(aBool)
+    
+    def init_scan(self, plotlength):
+        self.plotdatalength = plotlength
+        self.plotdata=numpy.zeros((self.plotdatalength,3),'Float32')
 
     def make_table_control(self):
         table_control = QtGui.QGridLayout()
@@ -508,7 +535,6 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         return table_control
 
-
     def make_spin_box(self, v_label, h_label, value, callback):
         lsb = LabeledSpinBox(v_label+h_label, callback)
         lsb.sb.setDecimals(3)
@@ -533,9 +559,14 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         return lsb
 
+    def openPopUpWindow(self):
+        self.w = MyPopup()
+        self.w.setGeometry(QRect(100, 100, 400, 200))
+        self.w.show()
+
     def partitionFpgaMemory(self):
-        # Set memory usage for the pp file based on use request,
-        # TODO: exit program if requested memory space is too large
+        """ Set memory usage for the pp file based on use request,
+         TODO: exit program if requested memory space is too large"""
         self.data_start = 4000 - self.n_reps+1; #Changed CWC 09122012
         self.reuseDataEnd = self.data_start - 1
         self.reuseDataStart = self.reuseDataEnd - self.n_reps + 1
@@ -545,211 +576,22 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.PCon.parameter_set('reuseDataStart',self.reuseDataStart)
         self.PCon.parameter_set('reuseBinAddr',self.reuseBinAddr)
 
-    def update_global_var(self,label,value):
-        self.PCon.parameter_set(label,value)
-        if label == 'us_Time_cool':
-            val = value/float(self.PCon.params.defs['R_RAMPTOT'])-7
-            if val < 1:
-                raise "R_RAMPTOT too high for the specified cooling time. Try reducing ramp steps or longer cooling time."
-            else:
-                self.PCon.parameter_set('us_RAMP_T',val)
-
-    def update_F_MOT_cool_final(self, label, value):
-        val = (value - float(self.PCon.params.defs['F_MOT_cool']))/float(self.PCon.params.defs['R_RAMPTOT'])
-        self.PCon.parameter_set(label,val)
-
-    def update_V_MOT_cool_final(self, label, value):
-        val = (value - float(self.PCon.params.defs['V_MOT_cool']))/float(self.PCon.params.defs['R_RAMPTOT'])
-        self.PCon.parameter_set(label,val)
-
-    def update_SHUTR(self, h_subscript):
-        SHUTR_value = 0
-##        print SHUTR_value
-        SW = []
-##        for key in self.controls:
-##            if (key[:3]=='SHU'):
-##                print key+':'+str(self.controls[key][1])
-        for i in range(len(self.v_tb_index)):
-            SW.append(0)
-            if self.controls[self.v_tb_index[i]+h_subscript][0].isChecked(): SW[i] = 1
-
-        for i in range(len(self.v_tb_index)):
-            SHUTR_value += SW[i]<<self.SHUTR_CHAN[self.v_tb_index[i]]
-
-        self.PCon.parameter_set('SHUTR_'+h_subscript, float(SHUTR_value))
-        #print 'SHUTR_'+h_subscript+':%s' %bin(SHUTR_value)
-
-    def update_pp_filename(self):
-        self.Filename_entry.setText(self.ppfile)
-
-    def update_params(self):
-        self.PCon.params.update_defs()
-        self.PCon.pp_upload()
-
-    def update_var(self):
-        self.n_index.setText('0')
+    def pause_scan(self):
+        self.pause = True
+        self.button_run.setDisabled(False)
+        self.button_resume.setDisabled(False)
+        self.button_pause.setDisabled(True)
+        self.button_stop.setDisabled(False)
         self.button_cont.setDisabled(True)
-        self.new_scan = True
 
-    def update_scan_type(self):
-        self.n_index.setText('0')
-        self.new_scan = True
-        self.PCon.params.update_defs()
-        the_iter_keys = self.PCon.params.defs.iterkeys()
-        if (self.scan_entry.currentText()=='Continuous'): 
-            self.button_cont.setDisabled(True)
-            self.shuffle_cb.setDisabled(True)
-            self.scan_range_low_sb.setDisabled(True)
-            self.scan_range_high_sb.setDisabled(True)
-            self.n_points_sb.setDisabled(True)
-            self.var_entry.setDisabled(True)
-            self.Loss_SW_cb.setEnabled(True)
-            self.Loss_SW_cb.setChecked(False)
-        elif (self.scan_entry.currentText()=='Frequency'):
-            self.button_cont.setDisabled(True)
-            self.shuffle_cb.setDisabled(False)
-            self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(-30,100)
-            self.scan_range_low_sb.setDecimals(3)
-            self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(-30,100)
-            self.scan_range_high_sb.setDecimals(3)
-            self.n_points_sb.setDisabled(False)
-            self.var_entry.clear()
-            for key in sorted(the_iter_keys):#self.PCon.params.defs:
-                if (key[:2]=='F_' or key[:2]=='f_'):
-                    self.var_entry.addItem(key)
-            self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(True)
-            self.Loss_SW_cb.setChecked(False)
-        elif (self.scan_entry.currentText()=='1038 Frequency'):
-            self.button_cont.setDisabled(True)
-            self.shuffle_cb.setChecked(False)
-            self.shuffle_cb.setDisabled(True)
-            self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(1.0,2.9)
-            self.scan_range_low_sb.setDecimals(5)
-            self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(1.2,3.0)
-            self.scan_range_high_sb.setDecimals(5)
-            self.n_points_sb.setDisabled(False)
-            self.var_entry.clear()
-            self.var_entry.addItem('F_uWave_exp')
-            self.var_entry.setEnabled(False)
-            self.Loss_SW_cb.setEnabled(True)
-            self.Loss_SW_cb.setChecked(True)
-        elif (self.scan_entry.currentText()=='Time'):
-            self.button_cont.setDisabled(True)
-            self.shuffle_cb.setDisabled(False)
-            self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(0,10000)
-            self.scan_range_low_sb.setDecimals(2)
-            self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(1,10000)
-            self.scan_range_high_sb.setDecimals(2)
-            self.n_points_sb.setDisabled(False)
-            self.var_entry.clear()
-            for key in sorted(the_iter_keys):
-                if (key[:3]=='ns_' or key[:3]=='NS_' or key[:3]=='us_' or key[:3]=='US_' or key[:3]=='ms_' or key[:3]=='MS_'):
-                    self.var_entry.addItem(key)
-            self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(True)
-            self.Loss_SW_cb.setChecked(False)
-        elif (self.scan_entry.currentText()=='Voltage'):
-            self.button_cont.setDisabled(True)
-            self.shuffle_cb.setDisabled(False)
-            self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(-0.1,5)
-            self.scan_range_low_sb.setDecimals(4)
-            self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(-0.1,5)
-            self.scan_range_high_sb.setDecimals(4)
-            self.n_points_sb.setDisabled(False)
-            self.var_entry.clear()
-            for key in sorted(the_iter_keys):
-                if (key[:2]=='V_' or key[:2]=='v_'):
-                    self.var_entry.addItem(key)
-            self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(True)
-            self.Loss_SW_cb.setChecked(False)
-            
-        elif (self.scan_entry.currentText()=='Ramp Total'):
-            self.button_cont.setDisabled(True)
-            self.shuffle_cb.setDisabled(False)
-            self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(0,1000)
-            self.scan_range_low_sb.setDecimals(0)
-            self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(0,1000)
-            self.scan_range_high_sb.setDecimals(0)
-            self.n_points_sb.setDisabled(False)
-            self.var_entry.clear()
-            for key in sorted(the_iter_keys):
-                if (key[:2]=='R_'):
-                    self.var_entry.addItem(key)
-            self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(True)
-            self.Loss_SW_cb.setChecked(False)
-            
-        elif (self.scan_entry.currentText()=='DDS Amplitude'):
-            self.button_cont.setDisabled(True)
-            self.shuffle_cb.setDisabled(False)
-            self.scan_range_low_sb.setDisabled(False)
-            self.scan_range_low_sb.setRange(0,1023)
-            self.scan_range_low_sb.setDecimals(0)
-            self.scan_range_high_sb.setDisabled(False)
-            self.scan_range_high_sb.setRange(0,1023)
-            self.scan_range_high_sb.setDecimals(0)
-            self.n_points_sb.setDisabled(False)
-            self.var_entry.clear()
-            for key in sorted(the_iter_keys):
-                if (key[:2]=='A_' or key[:2]=='A_'):
-                    self.var_entry.addItem(key)
-            self.var_entry.setEnabled(True)
-            self.Loss_SW_cb.setEnabled(True)
-            self.Loss_SW_cb.setChecked(False)
-        elif (self.scan_entry.currentText()=='Ramsey Phase Scan'):
-            self.disableAll(False)
-            for key in sorted(the_iter_keys):
-                if (key[:3]=='PH_'):
-                    self.var_entry.addItem(key)
-            self.scan_range_low_sb.setRange(-0.1,5)
-            self.scan_range_high_sb.setRange(0,16384)
-            self.scan_range_low_sb.setDecimals(0)
-            self.scan_range_high_sb.setDecimals(0)
+    def resume_scan(self):
+        self.pause = False
+        self.button_run.setDisabled(True)
+        self.button_resume.setDisabled(True)
+        self.button_pause.setDisabled(False)
+        self.button_stop.setDisabled(False)
+        self.button_cont.setDisabled(True)
 
-        else:
-            print "Unknow scan type."
-
-    def disableAll(self, aBool):
-        self.button_cont.setDisabled(aBool)
-        self.shuffle_cb.setDisabled(aBool)
-        self.scan_range_low_sb.setDisabled(aBool)
-        self.scan_range_high_sb.setDisabled(aBool)
-        self.n_points_sb.setDisabled(aBool)
-        self.var_entry.clear()
-        self.var_entry.setDisabled(aBool)
-        self.Loss_SW_cb.setDisabled(aBool)
-
-    
-    def init_scan(self, plotlength):
-        self.plotdatalength = plotlength
-        self.plotdata=numpy.zeros((self.plotdatalength,3),'Float32')
-
-    def start_new_scan(self):
-        self.numPointsToScan = n_points_sb.value()
-        self.numScans = 0;
-        self.new_scan = True
-        self.run_scan()
-        
-        
-    '''def start_cont_scan(self):
-        print self.button_runContinuous.isChecked()
-        if self.button_runContinuous.isChecked():
-            if self.button_run.isEnabled():
-                self.start_new_scan()'''
-           
-        
     def run_scan(self):
         self.run_exp = True
         self.pause = False
@@ -759,6 +601,7 @@ class ExpConGUI_Qt(QtGui.QWidget):
         self.button_stop.setDisabled(False)
         self.button_cont.setDisabled(True)
 
+        print "##########################"
         print "Starting a new scan: %i" %self.new_scan
         self.numScans+=1
 
@@ -920,10 +763,35 @@ class ExpConGUI_Qt(QtGui.QWidget):
                     
             else:
                 print "Unknow scan type."
-        print "Thread count: %i" %self.thread_count
+        #print "Thread count: %i" %self.thread_count
         #execute the runs.
         self.threads[2*(self.thread_count-1)].start()
         self.threads[2*(self.thread_count-1)+1].start()
+
+    def start_new_scan(self):
+        self.numPointsToScan = self.n_points_sb.value()
+        self.numScans = 0;
+        self.new_scan = True
+        self.run_scan()
+
+    def stop_plot(self, widget, data = None):
+        self.ContPlot = False
+        self.timer.stop()
+        self.PCon.user_stop()
+
+    def stop_scan(self):
+        self.run_exp = False
+        self.pause = False
+        self.button_run.setDisabled(False)
+        self.button_resume.setDisabled(True)
+        self.button_pause.setDisabled(True)
+        self.button_stop.setDisabled(True)
+        self.button_cont.setDisabled(False)
+        self.PCon.user_stop() #Added for proper stop CWC 09172012
+
+    def stop_scan2(self):    
+        self.button_runContinuous.setChecked(False)
+        self.stop_scan()
 
     def set_stage_Disabled(self):
         widget = self.sender()
@@ -981,42 +849,212 @@ class ExpConGUI_Qt(QtGui.QWidget):
             for i in range(len(self.v_tb_index)):
                 self.controls[self.v_tb_index[i]+h_label][0].setDisabled(not TF)
 
-
-
-    def pause_scan(self):
-        self.pause = True
-        self.button_run.setDisabled(False)
-        self.button_resume.setDisabled(False)
-        self.button_pause.setDisabled(True)
-        self.button_stop.setDisabled(False)
+    def update_1038freq_scan(self):
         self.button_cont.setDisabled(True)
+        self.shuffle_cb.setChecked(False)
+        self.shuffle_cb.setDisabled(True)
+        self.scan_range_low_sb.setDisabled(False)
+        self.scan_range_low_sb.setRange(1.0,2.9)
+        self.scan_range_low_sb.setDecimals(5)
+        self.scan_range_high_sb.setDisabled(False)
+        self.scan_range_high_sb.setRange(1.2,3.0)
+        self.scan_range_high_sb.setDecimals(5)
+        self.n_points_sb.setDisabled(False)
+        self.var_entry.clear()
+        self.var_entry.addItem('F_uWave_exp')
+        self.var_entry.setEnabled(False)
+        self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(True)
 
-    def resume_scan(self):
-        self.pause = False
-        self.button_run.setDisabled(True)
-        self.button_resume.setDisabled(True)
-        self.button_pause.setDisabled(False)
-        self.button_stop.setDisabled(False)
+    def update_continuous_scan(self):
         self.button_cont.setDisabled(True)
+        self.shuffle_cb.setDisabled(True)
+        self.scan_range_low_sb.setDisabled(True)
+        self.scan_range_high_sb.setDisabled(True)
+        self.n_points_sb.setDisabled(True)
+        self.var_entry.setDisabled(True)
+        self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(False)
 
-    def stop_scan2(self):    
-        self.button_runContinuous.setChecked(False)
-        self.stop_scan()
-    
-    def stop_scan(self):
-        self.run_exp = False
-        self.pause = False
-        self.button_run.setDisabled(False)
-        self.button_resume.setDisabled(True)
-        self.button_pause.setDisabled(True)
-        self.button_stop.setDisabled(True)
-        self.button_cont.setDisabled(False)
-        self.PCon.user_stop() #Added for proper stop CWC 09172012
-        #self.button_runContinuous.setChecked(False)
+    def update_ddsamplitude_scan(self):
+        the_iter_keys = self.PCon.params.defs.iterkeys()
+        self.button_cont.setDisabled(True)
+        self.shuffle_cb.setDisabled(False)
+        self.scan_range_low_sb.setDisabled(False)
+        self.scan_range_low_sb.setRange(0,1023)
+        self.scan_range_low_sb.setDecimals(0)
+        self.scan_range_high_sb.setDisabled(False)
+        self.scan_range_high_sb.setRange(0,1023)
+        self.scan_range_high_sb.setDecimals(0)
+        self.n_points_sb.setDisabled(False)
+        self.var_entry.clear()
+        for key in sorted(the_iter_keys):
+            if (key[:2]=='A_' or key[:2]=='A_'):
+                self.var_entry.addItem(key)
+        self.var_entry.setEnabled(True)
+        self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(False)
 
-    def continue_scan(self):
-        self.new_scan = False
-        self.run_scan()
+    def update_global_var(self,label,value):
+        self.PCon.parameter_set(label,value)
+        if label == 'us_Time_cool':
+            val = value/float(self.PCon.params.defs['R_RAMPTOT'])-7
+            if val < 1:
+                raise "R_RAMPTOT too high for the specified cooling time. Try reducing ramp steps or longer cooling time."
+            else:
+                self.PCon.parameter_set('us_RAMP_T',val)
+
+    def update_F_MOT_cool_final(self, label, value):
+        val = (value - float(self.PCon.params.defs['F_MOT_cool']))/float(self.PCon.params.defs['R_RAMPTOT'])
+        self.PCon.parameter_set(label,val)
+
+    def update_frequency_scan(self):
+        the_iter_keys = self.PCon.params.defs.iterkeys()
+        self.button_cont.setDisabled(True)
+        self.shuffle_cb.setDisabled(False)
+        self.scan_range_low_sb.setDisabled(False)
+        self.scan_range_low_sb.setRange(-30,100)
+        self.scan_range_low_sb.setDecimals(3)
+        self.scan_range_high_sb.setDisabled(False)
+        self.scan_range_high_sb.setRange(-30,100)
+        self.scan_range_high_sb.setDecimals(3)
+        self.n_points_sb.setDisabled(False)
+        self.var_entry.clear()
+        for key in sorted(the_iter_keys):#self.PCon.params.defs:
+            if (key[:2]=='F_' or key[:2]=='f_'):
+                self.var_entry.addItem(key)
+        self.var_entry.setEnabled(True)
+        self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(False)
+
+    def update_params(self):
+        self.PCon.params.update_defs()
+        self.PCon.pp_upload()
+
+    def update_pp_filename(self):
+        self.Filename_entry.setText(self.ppfile)
+
+    def update_ramptotal_scan(self):
+        the_iter_keys = self.PCon.params.defs.iterkeys()
+        self.button_cont.setDisabled(True)
+        self.shuffle_cb.setDisabled(False)
+        self.scan_range_low_sb.setDisabled(False)
+        self.scan_range_low_sb.setRange(0,1000)
+        self.scan_range_low_sb.setDecimals(0)
+        self.scan_range_high_sb.setDisabled(False)
+        self.scan_range_high_sb.setRange(0,1000)
+        self.scan_range_high_sb.setDecimals(0)
+        self.n_points_sb.setDisabled(False)
+        self.var_entry.clear()
+        for key in sorted(the_iter_keys):
+            if (key[:2]=='R_'):
+                self.var_entry.addItem(key)
+        self.var_entry.setEnabled(True)
+        self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(False)
+
+    def update_ramseyphase_scan(self):
+        the_iter_keys = self.PCon.params.defs.iterkeys()
+        self.disableAll(False)
+        for key in sorted(the_iter_keys):
+            if (key[:3]=='PH_'):
+                self.var_entry.addItem(key)
+        self.scan_range_low_sb.setRange(-0.1,5)
+        self.scan_range_high_sb.setRange(0,16384)
+        self.scan_range_low_sb.setDecimals(0)
+        self.scan_range_high_sb.setDecimals(0)
+
+    def update_scan_type(self):
+        self.n_index.setText('0')
+        self.new_scan = True
+        self.PCon.params.update_defs()
+
+        init_scan_settings = {   
+                self.scan_types[0]  :   self.update_continuous_scan(),
+                self.scan_types[1]  :   self.update_frequency_scan(),
+                self.scan_types[2]  :   self.update_1038freq_scan(),
+                self.scan_types[3]  :   self.update_time_scan(),
+                self.scan_types[4]  :   self.update_voltage_scan(),
+                self.scan_types[5]  :   self.update_ramptotal_scan(),
+                self.scan_types[6]  :   self.update_ddsamplitude_scan(),
+                self.scan_types[7]  :   self.update_ramseyphase_scan()
+                }
+        init_scan_settings.setdefault(update_unknown_scan())
+
+        scantype = self.scan_entry.currentText()
+        init_scan_settings.get(scantype)
+
+    def update_SHUTR(self, h_subscript):
+        SHUTR_value = 0
+##        print SHUTR_value
+        SW = []
+##        for key in self.controls:
+##            if (key[:3]=='SHU'):
+##                print key+':'+str(self.controls[key][1])
+        for i in range(len(self.v_tb_index)):
+            SW.append(0)
+            if self.controls[self.v_tb_index[i]+h_subscript][0].isChecked(): SW[i] = 1
+
+        for i in range(len(self.v_tb_index)):
+            SHUTR_value += SW[i]<<self.SHUTR_CHAN[self.v_tb_index[i]]
+
+        self.PCon.parameter_set('SHUTR_'+h_subscript, float(SHUTR_value))
+        #print 'SHUTR_'+h_subscript+':%s' %bin(SHUTR_value)
+
+    def update_time_scan(self):
+        the_iter_keys = self.PCon.params.defs.iterkeys()
+        self.button_cont.setDisabled(True)
+        self.shuffle_cb.setDisabled(False)
+        self.scan_range_low_sb.setDisabled(False)
+        self.scan_range_low_sb.setRange(0,100000)
+        self.scan_range_low_sb.setDecimals(2)
+        self.scan_range_high_sb.setDisabled(False)
+        self.scan_range_high_sb.setRange(1,100000)
+        self.scan_range_high_sb.setDecimals(2)
+        self.n_points_sb.setDisabled(False)
+        self.var_entry.clear()
+        for key in sorted(the_iter_keys):
+            if (    key[:3]=='ns_' or 
+                    key[:3]=='NS_' or 
+                    key[:3]=='us_' or 
+                    key[:3]=='US_' or 
+                    key[:3]=='ms_' or 
+                    key[:3]=='MS_'):
+                self.var_entry.addItem(key)
+        self.var_entry.setEnabled(True)
+        self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(False)
+
+    def update_unknown_scan(self):
+        print "Unknown scan type."
+
+    def update_V_MOT_cool_final(self, label, value):
+        val = (value - float(self.PCon.params.defs['V_MOT_cool']))/float(self.PCon.params.defs['R_RAMPTOT'])
+        self.PCon.parameter_set(label,val)
+
+    def update_var(self):
+        self.n_index.setText('0')
+        self.button_cont.setDisabled(True)
+        self.new_scan = True
+
+    def update_voltage_scan(self):
+        the_iter_keys = self.PCon.params.defs.iterkeys()
+        self.button_cont.setDisabled(True)
+        self.shuffle_cb.setDisabled(False)
+        self.scan_range_low_sb.setDisabled(False)
+        self.scan_range_low_sb.setRange(-0.1,5)
+        self.scan_range_low_sb.setDecimals(4)
+        self.scan_range_high_sb.setDisabled(False)
+        self.scan_range_high_sb.setRange(-0.1,5)
+        self.scan_range_high_sb.setDecimals(4)
+        self.n_points_sb.setDisabled(False)
+        self.var_entry.clear()
+        for key in sorted(the_iter_keys):
+            if (key[:2]=='V_' or key[:2]=='v_'):
+                self.var_entry.addItem(key)
+        self.var_entry.setEnabled(True)
+        self.Loss_SW_cb.setEnabled(True)
+        self.Loss_SW_cb.setChecked(False)
 
     def update_plot_save_data(self, scan_index, new_mean, new_data):
         if (self.scan_entry.currentText()=='Continuous'):
@@ -1057,9 +1095,9 @@ class ExpConGUI_Qt(QtGui.QWidget):
         fd.write(self.text_to_write)
         fd.close()
 
-
     def update_hist(self, data):
-        #Animating the histogram, see http://matplotlib.sourceforge.net/examples/animation/histogram.html
+        """Animating the histogram, see
+        http://matplotlib.sourceforge.net/examples/animation/histogram.html"""
         n, bins = numpy.histogram(data, arange(0,self.hist_max+1), normed = True)
 
         # get the corners of the rectangles for the histogram
@@ -1089,38 +1127,6 @@ class ExpConGUI_Qt(QtGui.QWidget):
 
         self.trace2.set_xlim(left[0], right[-1])
         self.trace2.set_ylim(bottom.min(), top.max())
-
-##    def fit_result(self):
-##        if (self.scan_entry.currentText()=='Frequency'):
-##            popt, pcov = curve_fit(Sinc, x, yn)
-
-    def Sinc(f,f0,Omega0,a,b,c):
-        return np.square(Omega0)/(np.square(Omega0)+2*np.pi*np.square(f-f0))*np.square(np.sin(np.sqrt(np.square(Omega0)+np.square(f-f0))/2*b))+c
-
-    def stop_plot(self, widget, data = None):
-        self.ContPlot = False
-        self.timer.stop()
-        self.PCon.user_stop()
-
-
-    def KeepPlotting(self):
-        return self.ContPlot
-
-    def __del__(self):
-        for t in self.threads:
-          running = t.running()
-          t.stop()
-          if not t.finished():
-            t.wait()
-
-    def closeEvent(self, event):
-        self.PCon.ExpConGUIstarted = False
-        
-    def OpenPopUpWindow(self):
-        self.w = MyPopup()
-        self.w.setGeometry(QRect(100, 100, 400, 200))
-        self.w.show()
-
 
 class ExpThread(QtCore.QThread):
     """ Base class for experiment threads."""
@@ -1214,13 +1220,19 @@ class ScanExpThread(ExpThread):
         n = 0
         
         numberScanValues = self.GUI.numPointsToScan
-        while (self.stopped == 0 and self.GUI.run_exp ==True and n<numberScanValues):
+        while ( self.stopped == 0 and 
+                self.GUI.run_exp ==True and
+                n < numberScanValues):
             while (self.stopped == 0 and self.GUI.pause == True):
                 time.sleep(0.1)
             current_scan_val = self.scan_vals[n] #get scan value from array
+            self.GUI.scanVal.setText(str(current_scan_val))
+            print "------"
+            print "current point: " + str(current_scan_val)
 
             if (self.GUI.scan_entry.currentText()=='1038 Frequency'):
-                """ update synthesizer with new frequency and trigger unlock ttl on laser controler"""
+                """ update synthesizer with new frequency and trigger unlock
+                ttl on laser controler"""
                 #shutrState = self.GUI.PCon.stateobj["SHUTR"][0].value()
                 #self.GUI.PCon.stateobj["SHUTR"][0].setValue(shutrState+512)
                 #time.sleep(.0)
@@ -1229,11 +1241,17 @@ class ScanExpThread(ExpThread):
                 self.visa_Agilent_E4421B.write("TRIG:OUTP:POL POS")
                 #self.GUI.PCon.stateobj["SHUTR"][0].setValue(shutrState)
             else:
-                self.GUI.PCon.parameter_set(self.GUI.var_entry.currentText(), current_scan_val) #set the scanned var to value
+                # set the scanned var to value
+                self.GUI.PCon.parameter_set(self.GUI.var_entry.currentText(),
+                        current_scan_val)
 
-            self.GUI.PCon.pp_run()  #pp_run uploads and exec.;  pp_run_2 only exec what is already in memory
+            # pp_run uploads and exec.;  pp_run_2 only exec what is already in
+            # memory
+            self.GUI.PCon.pp_run()
             t3=time.time()
-            readoutOK = self.GUI.PCon.update_count()  # .update_count is method for read memory
+
+            # .update_count is method for read memory
+            readoutOK = self.GUI.PCon.update_count()
             t4=time.time()
 
             #print "pp readout time %3f sec" %(t4-t3)
@@ -1247,18 +1265,19 @@ class ScanExpThread(ExpThread):
                 if (time.time()-self.t1) < 0.05:
                     time.sleep(0.03)
                 t2 = time.time()
-                print 'ExpThread cycle time %.6f seconds' %(t2-self.t1)
+                print ' cycle time %.2f s' %(t2-self.t1)
                 self.t1 = t2
 
                 # Calculate and print out atom reuse
                 atomReuseArray = self.getAtomReuse()
-                print "mean reuse number %.1f" %numpy.mean(atomReuseArray)
+                print " mean reuse number %.1f" %numpy.mean(atomReuseArray)
                 print atomReuseArray
 
             n+=1
             self.GUI.n_index.setText(str(n))
-            self.GUI.scanVal.setText(str(current_scan_val))
-        self.GUI.PCon.restore_state(self.GUI.PCon.state)  #finished all points, return to back to state before run
+
+        # finished all points, return to back to state before run
+        self.GUI.PCon.restore_state(self.GUI.PCon.state)
         self.emit(QtCore.SIGNAL("Done_scanning"))
         self.GUI.PCon.parameter_set(str(self.GUI.var_entry.currentText()),
                 self.init_val)  #sets parameters in "driver"
@@ -1486,7 +1505,6 @@ class PlotWidget(QtGui.QWidget):
     def closeEvent(self, event):
         self.plot_thread.stop_fromClose()
         self.plot_thread.frame2.close()
-        
 
 class LabeledSpinBox(QtGui.QWidget):
     def __init__(self, label, callback):
