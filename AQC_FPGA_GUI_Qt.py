@@ -43,7 +43,6 @@
 
 #------------------------------------------------------------------------------
 import sys
-import os
 import platform
 sys.path.append('./include')  #for various systems? CWC 0711201
 
@@ -60,8 +59,8 @@ import ok
 
 #import gtk, gobject, pango, math
 import numpy
-import threading, socket, time
-import coltree_Qt, etherplug
+import threading, time # socket
+import coltree_Qt   #, etherplug
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
@@ -71,7 +70,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as \
 from matplotlib.axes import Subplot
 from matplotlib.axes import Axes
 
-from ppcomp import *
+import ppcomp 
 from adBoard import *
 from fpgaInit import * #new modules  CWC 07112012
 
@@ -96,13 +95,13 @@ class gui(QtGui.QWidget):
     #################################################################
     #New user definable properties
 #    _FPGA_name = 'Opal Kelly XEM3010' #'1725_Test_FPGA'
-    _FPGA_name = '1725_Test_FPGA'
+    _FPGA_name = 'Opal Kelly XEM6010'
     _boards = ['ad9959']#,'ad9958', 'ad9958')# Modified for 1 DDS CWC 07122012
     _dacs = ['ad5390'] # Adding 1 DAC CWC 08132012
 
     # TODO: Move to fpga front panel class 
     #'fpgafirmware_DAC_busy_bypassed.bit'  #place bitfile in ./FPGA
-    _FPGA_bitFile ='fpgafirmware.bit' #'fpgafirmware_DAC_busy_bypassed.bit'
+    _FPGA_bitFile ='fpgafirmware_XEM6010.bit' #'fpgafirmware_DAC_busy_bypassed.bit'
     _checkOutputs = False #True
     
     #################################################################
@@ -116,7 +115,7 @@ class gui(QtGui.QWidget):
         self.xem = ok.FrontPanel()
 
         #New CWC 07112012
-        self.xem = fpgaInit(self._FPGA_name, 0, self._FPGA_bitFile)
+        self.xem = fpgaInit(self._FPGA_name, 0, self._FPGA_bitFile, configurePLL=False)
         worked = self.xem.ConfigureFPGA('./FPGA/'+self._FPGA_bitFile)
         print worked
         self.boards = []
@@ -666,7 +665,7 @@ class gui(QtGui.QWidget):
 ##        for key in self.params.defs:
 ##            parameters.update({key : self.params.get_data(key, 1)})
 
-        code = pp2bytecode(self.codefile, self.boardChannelIndex, self.boards, parameters)
+        code = ppcomp.pp2bytecode(self.codefile, self.boardChannelIndex, self.boards, parameters)
 
         databuf = ''
         for op, arg in code:
@@ -679,7 +678,8 @@ class gui(QtGui.QWidget):
         self.xem.SetWireInValue(0x00, 0, 0x0FFF)	# start addr at zero
         self.xem.UpdateWireIns()
         self.xem.ActivateTriggerIn(0x41, 1)
-        self.xem.WriteToPipeIn(0x80, databuf)
+        print "Databuf length" ,len(databuf)
+        self.xem.WriteToPipeIn(0x80, bytearray(databuf) )
         t2 = time.time()
         #print "Upload successful in time %fs"%(t2 - t1)
         return True

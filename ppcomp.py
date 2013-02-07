@@ -8,9 +8,16 @@
 #
 
 import os, sys, string, re, math
+import magnitude
 
 #TIMESTEP= 16e-9
-TIMESTEP = 20.8333333333e-9
+TIMESTEP = 20.8333333333e-9  # in seconds
+FREQSTEP = 1e9/2**48  # in Hz
+CURRSTEP = 1                 # in A
+VOLTSTEP = 10/2**16          # in V
+
+class ppexception(Exception):
+    pass
 
 # Code definitions
 OPS = {'NOP'    : 0x00,
@@ -46,11 +53,30 @@ OPS = {'NOP'    : 0x00,
        'JMPNZ1'	: 0x26,
        'CLRW1'	: 0x27,
        'SHUTRVAR':0x28,
+       'SHUTTERMASK' : 0x30,
+       'ASYNCSHUTTER' : 0x31,
+       'COUNTERMASK' : 0x32,
+       'TRIGGER' : 0x33,
+       'UPDATE' : 0x34,
+       'WAIT' : 0x35,
+       'DDSFREQFINE' : 0x36,
+       'LDCOUNT' : 0x37,
        'END'    : 0xFF }
 
 debug = False
 
-def pp2bytecode(pp_file, adIndexList, adBoards, parameters = None):
+
+class Dimensions:
+    time = (0, 1, 0, 0, 0, 0, 0, 0, 0)
+    frequency = (0, -1, 0, 0, 0, 0, 0, 0, 0)
+    voltage = (2, -3, 0, 1, -1, 0, 0, 0, 0)
+    current = (0, 0, 0, 0, 1, 0, 0, 0, 0)
+
+class Variable:
+    pass
+
+# main compiler routine, called from outside
+def pp2bytecode(pp_file, adIndexList, adBoards, parameters = dict()):
     globals().update(parameters)
     units = {'cycles2ns': 1e-9/TIMESTEP, 'cycles2us': 1e-6/TIMESTEP, 'cycles2ms': 1e-3/TIMESTEP}
     globals().update(units)
@@ -63,7 +89,7 @@ def pp2bytecode(pp_file, adIndexList, adBoards, parameters = None):
         pp_filename = pp_file
 
     # parse defs, ops, and make variable registers
-    code = parse_code(pp_filename, pp_dir,0, adIndexList, adBoards)
+    code, variabledict = parse_code(pp_filename, pp_dir,0, adIndexList, adBoards)
 
     # then make global registers for parameters so that ops can use them.
     # parameters that start with "F_" are assumed to be frequency, those
@@ -92,12 +118,19 @@ def pp2bytecode(pp_file, adIndexList, adBoards, parameters = None):
         else:
             data = float(value)
             #print "No unit specified for parameter", key ,", assuming \"int\""
-        code.append((len(code), 'NOP', data, key, 'globalparam'))
+        address = len(code)
+        code.append((address, 'NOP', data, key, 'globalparam'))
+        var = Variable()
+        var.name = key
+        var.address = address
+        var.type = 0
+        var.origin = 'globalparam'
+        variabledict.update({ key: var})
         if debug:
             print key, ":", value, "-->", data
 
     bytecode = bc_gen(code, adIndexList, adBoards)
-    return bytecode
+    return (bytecode,variabledict)
 
 
 
@@ -119,10 +152,10 @@ def parse_code(pp_filename, pp_dir, first_addr, adIndexList, adBoards):
         first_var_addr = 0
 
     # next, make variable registers
-    code_varsonly = parse_vars(source,defs,first_var_addr,pp_filename)
+    code_varsonly, variabledict = parse_vars(source,defs,first_var_addr,pp_filename)
     code.extend(code_varsonly)
 
-    return code
+    return (code, variabledict)
 
 
 
@@ -142,7 +175,7 @@ def parse_defs(source, current_file):
             if (defs.has_key(label)):
                 print "Error parsing defs in file '%s': attempted to redefine'%s' to '%s' from '%s'" %(current_file,label, value, defs[label]) #correct float to value CWC 08162012
                 #sys.exit(1)
-                raise "Redefining variable"
+                raise ppexception("Redefining variable")
 
             else:
                 defs[label] = float(value)
@@ -210,28 +243,47 @@ def parse_ops(source, defs, pp_dir,first_addr,current_file, adIndexList, adBoard
         else:
             print "Error processing line '%s' in file '%s' (unknown opcode?)" %(line, current_file)
                 #sys.exit(1)#exit the program after error CWC 08172012
-            raise "Error parsing ops."
+            raise ppexception("Error parsing ops.")
 
         code.append((len(code)+addr_offset, op, data, label, current_file))
 
     return code
 
 
+def convertTime( mag ):
+    return int(round(mag.toval('s')/TIMESTEP)) 
 
+def convertFrequency( mag ):
+    return int(round(mag.toval('Hz')/FREQSTEP)) 
+
+def convertCurrent( mag ):
+    return int(round(mag.toval('A')/CURRSTEP)) 
+
+def convertVoltage( mag ):
+    return int(round(mag.toval('V')/VOLTSTEP)) 
+
+def convertParameter( mag ):
+    return { Dimensions.time: convertTime,
+      Dimensions.frequency: convertFrequency,
+      Dimensions.current: convertCurrent,
+      Dimensions.voltage: convertVoltage }[tuple(mag.dimension())](mag)
 
 
 def parse_vars(source,defs,first_var_addr,current_file):
     code = []
+    variabledict = dict()
     for line in source:
         if (line[0:3] != 'var'):
                 continue
 
         # is it a valid variable declaration?
         #m = re.match('var\s+(\w+)[ =]+(\w+)[^#\n\r]*', line)        #csn
-        m = re.match('var\s+(\w+)\s+([^#\n\r]*)', line)
+        #m = re.match('var\s+(\w+)\s+([^#\n\r]*)', line) #
+        m = re.match('var\s+(\w+)\s+(\w*)\s+([^#\n\r]*)', line) #
         if m:
             label = m.group(1)
             data = m.group(2).strip()
+            print m.groups()
 
             try:
                 data = str(eval(data,globals(),defs))
@@ -267,19 +319,25 @@ def parse_vars(source,defs,first_var_addr,current_file):
             else:
                 data = int(round(float(data.strip())))
                 #print "No unit specified for variable",label,", assuming \"int\""
-
-            code.append((len(code)+first_var_addr, 'NOP', data, label, current_file))
-
+                
+            address = len(code)+first_var_addr
+            code.append((address, 'NOP', data, label, current_file))
+            var = Variable()
+            var.name = label
+            var.address = address
+            var.type = 0
+            var.origin = current_file
+            variabledict.update({ label: var})
         else:
             print "Error processing line '%s' in file '%s': Buffer overflow" %(line, current_file)
             #sys.exit(1) #exit the program after error CWC 08172012
-            raise "Unidentified input"
+            raise ppexception("Unidentified input")
 
-    return code
-
-
+    return (code, variabledict)
 
 
+
+# code is (address, operation, data, label or variablename, currentfile)
 def bc_gen(code, adIndexList, adBoards):
     if debug:
         print "\nCode ---> ByteCode:"
@@ -329,7 +387,7 @@ def bc_gen(code, adIndexList, adBoards):
             else:
                 print "Error assembling bytecode from file '%s': Unknown variable: '%s'. \n"%(line[4],line[2]) # raise
                 #sys.exit(1) #exit the program after error CWC 08172012
-                raise "Unknown variable"
+                raise ppexception("Unknown variable")
         bytecode.append((byteop, bytedata))
         if debug:
         #print hex(index), (hex(byteop), hex(bytedata))
@@ -339,8 +397,27 @@ def bc_gen(code, adIndexList, adBoards):
 
     return bytecode
 
+def codeToBinary( code ):
+    databuf = ''
+    for op, arg in code:
+        memword = '%c%c'%((arg&0xFF), (arg>>8)&0xFF) + '%c%c'%((arg>>16)&0xFF, op + (arg>>24))
+        #print '%x, %x, %x, %x' %(ord(memword[0]), ord(memword[1]), ord(memword[2]), ord(memword[3]))
+        databuf = databuf + memword
+    return databuf
+
+
 
 #parameters2 = {'THREE': 3, 'FIVE': 5, 'F_BlueHi': 1, 'A_BlueHi': 1, 'F_IRon': 2, 'us_MeasTime': 3, 'us_RedTime': 5, 'ms_ReadoutDly': 8, 'F_RedOn': 13, 'A_RedOn': 21, 'F_BlueOn': 34, 'A_BlueOn': 55, 'SCloops': 89, 'F_RedPL': 144, 'A_RedPL': 233, 'F_Sec': 377, 'A_SCool': 610, 'F_RedCenter': 42, 'us_RamseyDly': 42, 'Ph_Ramsey':3, 'us_PiTime':42}
 #pp2bytecode(sys.argv[1], parameters2)
 
-
+if __name__ == "__main__":
+    debug = True
+    code, variabledict = pp2bytecode(r"C:\Users\plmaunz\Documents\prog\Bluetest-Peter.pp", [], [])
+    print code
+    for name, var in variabledict.iteritems():
+        print name, var.__dict__
+    code = codeToBinary( code )
+    with open('bytecode','wb') as of:
+        of.write( code )
+    
+    print convertParameter( magnitude.mg(250,'MHz') )
