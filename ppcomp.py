@@ -249,26 +249,6 @@ def parse_ops(source, defs, pp_dir,first_addr,current_file, adIndexList, adBoard
 
     return code
 
-
-def convertTime( mag ):
-    return int(round(mag.toval('s')/TIMESTEP)) 
-
-def convertFrequency( mag ):
-    return int(round(mag.toval('Hz')/FREQSTEP)) 
-
-def convertCurrent( mag ):
-    return int(round(mag.toval('A')/CURRSTEP)) 
-
-def convertVoltage( mag ):
-    return int(round(mag.toval('V')/VOLTSTEP)) 
-
-def convertParameter( mag ):
-    return { Dimensions.time: convertTime,
-      Dimensions.frequency: convertFrequency,
-      Dimensions.current: convertCurrent,
-      Dimensions.voltage: convertVoltage }[tuple(mag.dimension())](mag)
-
-
 def parse_vars(source,defs,first_var_addr,current_file):
     code = []
     variabledict = dict()
@@ -283,7 +263,7 @@ def parse_vars(source,defs,first_var_addr,current_file):
         if m:
             label = m.group(1)
             data = m.group(2).strip()
-            print m.groups()
+            vartype = m.group(3).strip()
 
             try:
                 data = str(eval(data,globals(),defs))
@@ -325,7 +305,7 @@ def parse_vars(source,defs,first_var_addr,current_file):
             var = Variable()
             var.name = label
             var.address = address
-            var.type = 0
+            var.type = vartype
             var.origin = current_file
             variabledict.update({ label: var})
         else:
@@ -405,19 +385,52 @@ def codeToBinary( code ):
         databuf = databuf + memword
     return databuf
 
+def convertTime( mag ):
+    return int(round(mag.toval('s')/TIMESTEP)) 
+
+def convertFrequency( mag ):
+    return int(round(mag.toval('Hz')/FREQSTEP)) 
+
+def convertCurrent( mag ):
+    return int(round(mag.toval('A')/CURRSTEP)) 
+
+def convertVoltage( mag ):
+    return int(round(mag.toval('V')/VOLTSTEP)) 
+
+def convertParameter( mag ):
+    if isinstance(mag, magnitude.Magnitude):
+        return { Dimensions.time: convertTime,
+          Dimensions.frequency: convertFrequency,
+          Dimensions.current: convertCurrent,
+          Dimensions.voltage: convertVoltage }[tuple(mag.dimension())](mag)
+    else:
+        return mag
+
+def updateVariables( code, variabledict, variables ):
+    for name, value in variables.iteritems():
+        if name in variabledict:
+            address = variabledict[name].address
+            code[address] = (code[address][0], convertParameter(value))
+        else:
+            print "variable", name, "not found in dictionary."
+    return code
 
 
 #parameters2 = {'THREE': 3, 'FIVE': 5, 'F_BlueHi': 1, 'A_BlueHi': 1, 'F_IRon': 2, 'us_MeasTime': 3, 'us_RedTime': 5, 'ms_ReadoutDly': 8, 'F_RedOn': 13, 'A_RedOn': 21, 'F_BlueOn': 34, 'A_BlueOn': 55, 'SCloops': 89, 'F_RedPL': 144, 'A_RedPL': 233, 'F_Sec': 377, 'A_SCool': 610, 'F_RedCenter': 42, 'us_RamseyDly': 42, 'Ph_Ramsey':3, 'us_PiTime':42}
 #pp2bytecode(sys.argv[1], parameters2)
 
 if __name__ == "__main__":
+    print "Start"
     debug = True
     code, variabledict = pp2bytecode(r"C:\Users\plmaunz\Documents\prog\Bluetest-Peter.pp", [], [])
     print code
     for name, var in variabledict.iteritems():
         print name, var.__dict__
-    code = codeToBinary( code )
+    binarycode = codeToBinary( code )
     with open('bytecode','wb') as of:
-        of.write( code )
+        of.write( binarycode )
     
     print convertParameter( magnitude.mg(250,'MHz') )
+    code = updateVariables( code, variabledict, {'MeasTime':magnitude.mg(10,'ms')} )
+    
+    print code
