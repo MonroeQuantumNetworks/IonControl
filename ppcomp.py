@@ -59,7 +59,7 @@ OPS = {'NOP'    : 0x00,
        'TRIGGER' : 0x33,
        'UPDATE' : 0x34,
        'WAIT' : 0x35,
-       'DDSFREQFINE' : 0x36,
+       'DDSFRQFINE' : 0x36,
        'LDCOUNT' : 0x37,
        'END'    : 0xFF }
 
@@ -259,54 +259,58 @@ def parse_vars(source,defs,first_var_addr,current_file):
         # is it a valid variable declaration?
         #m = re.match('var\s+(\w+)[ =]+(\w+)[^#\n\r]*', line)        #csn
         #m = re.match('var\s+(\w+)\s+([^#\n\r]*)', line) #
-        m = re.match('var\s+(\w+)\s+(\w*)\s+([^#\n\r]*)', line) #
+        #syntax is var name value [, unit, type]
+        m = re.match('var\s+(\w+)\s+([^#,\n\r]+)(?:,([^#,\n\r]+)){0,1}(?:,([^#,\n\r]+)){0,1}(?:#([^\n\r]+)){0,1}', line) #
         if m:
-            label = m.group(1)
-            data = m.group(2).strip()
-            vartype = m.group(3).strip()
+            var = Variable()
+            label, data, unit, var.type, var.comment = [ x if x is None else x.strip() for x in m.groups()]
+            var.name = label
+            var.origin = current_file
 
             try:
                 data = str(eval(data,globals(),defs))
             except Exception, e:
                 print "Evaluation error in file '%s' on line: '%s'" %(current_file, data)
+                
+            if unit is not None:
+                data = magnitude.mg( float(data), unit )
+            else:
+                data = float(data)
 
             if (defs.has_key(label)):
                 print "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(current_file,label,data,defs[label])
                 sys.exit(1)#exit the program after error CWC 08172012
             else:
-                defs[label] = float(data) #add the variable to the dictionary of definitions CWC 08172012
+                defs[label] = data #add the variable to the dictionary of definitions CWC 08172012
 
 
             # determine units
             if ((label[:2] == "F_" or label[:2] == "f_") and label[-3:] != "INC"):
-                data = float(data.strip())
+                data = float(data)
             elif (label[:3] == "PH_" or label[:3] == "ph_" or label[:3] == "Ph"):
-                data = int(round(float(data.strip())/360*(2**14)))
+                data = int(round(float(data)/360*(2**14)))
             elif (label[:3] == "NS_" or label[:3] == "ns_"):
-                data = int(round(float(data.strip())*1e-9/TIMESTEP))
+                data = int(round(float(data)*1e-9/TIMESTEP))
             elif (label[:3] == "US_" or label[:3] == "us_"):
-                data = int(round(float(data.strip())*1e-6/TIMESTEP))
+                data = int(round(float(data)*1e-6/TIMESTEP))
             elif (label[:3] == "MS_" or label[:3] == "ms_"):
-                data = int(round(float(data.strip())*1e-3/TIMESTEP))
+                data = int(round(float(data)*1e-3/TIMESTEP))
             elif (label[:4] == "INT_" or label[:4] == "int_" or label[:4] == "Int"):
-                data = int(round(float(data.strip())))
+                data = int(round(float(data)))
             elif (label[:2] == "A_" or label[:2] == "a_"):
-                data = int(round(float(data.strip())))
+                data = int(round(float(data)))
             elif (label[:2] == "V_" or label[:2] == "v_"): #added variables for DAC Vout CWC 08162012
-                data = int(float(data.strip())/2.5*2**13)
+                data = int(float(data)/2.5*2**13)
             elif (label[-3:] == "INC" and (label[:2] == "F_" or label[:2] == "f_")):
-                data = int(float(data.strip())/250*0x80000000)
+                data = int(float(data)/250*0x80000000)
             else:
-                data = int(round(float(data.strip())))
+                data = int(round(float(data)))
                 #print "No unit specified for variable",label,", assuming \"int\""
                 
             address = len(code)+first_var_addr
             code.append((address, 'NOP', data, label, current_file))
-            var = Variable()
-            var.name = label
             var.address = address
-            var.type = vartype
-            var.origin = current_file
+            var.index = len(variabledict)
             variabledict.update({ label: var})
         else:
             print "Error processing line '%s' in file '%s': Buffer overflow" %(line, current_file)
@@ -420,9 +424,15 @@ def updateVariables( code, variabledict, variables ):
 #pp2bytecode(sys.argv[1], parameters2)
 
 if __name__ == "__main__":
+    class Board:
+        channelLimit = 1    
+        halfClockLimit = 500000000
+        
     print "Start"
     debug = True
-    code, variabledict = pp2bytecode(r"C:\Users\plmaunz\Documents\prog\Bluetest-Peter.pp", [], [])
+    adIndex = [(x,0) for x in range(6) ]
+    adBoards = [ Board() ]*6
+    code, variabledict = pp2bytecode(r"prog\Ions\Bluetest.pp", adIndex, adBoards)
     print code
     for name, var in variabledict.iteritems():
         print name, var.__dict__
@@ -433,4 +443,5 @@ if __name__ == "__main__":
     print convertParameter( magnitude.mg(250,'MHz') )
     code = updateVariables( code, variabledict, {'MeasTime':magnitude.mg(10,'ms')} )
     
-    print code
+    for line, (cmd, val) in enumerate(code):
+        print hex(line), hex(cmd), hex(val)
