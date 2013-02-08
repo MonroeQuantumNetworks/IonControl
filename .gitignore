@@ -1,3 +1,7 @@
+# PyDev
+.project
+.pydevproject
+
 # Compiled files
 *.pyc
 

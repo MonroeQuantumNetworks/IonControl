@@ -69,7 +69,8 @@ class Dimensions:
     dimensionless = (0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 class Variable:
-    pass
+    def __repr__(self):
+        return str(self.__dict__)
 
 encodings = { 'AD9912_FRQ': (5e8/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (5e8/2**48, 'Hz', Dimensions.frequency, 0xffff ),
@@ -85,254 +86,164 @@ class PulseProgram:
     def __init__(self):
         self.variabledict = dict()       # keeps information on all variables to easily change them later
         self.labeldict = dict()          # keep information on all labels
-        self.source = ''                 # this is the source code
+        self.source = dict()             # dictionary of source code files (stored as strings)
         self.code = []                   # this is a list of lines
         self.bytecode = []               # list of op, argument tuples
         self.binarycode = bytearray()    # binarycode to be uploaded
         
     def loadSource(self, pp_file):
+        """ Load the source pp_file
+        #include files are loaded recursively
+        all code lines are added to self.sourcelines
+        for each source file the contents are added to the dictionary self.source
+        """
         self.pp_dir, self.pp_filename = os.path.split(pp_file)
         self.sourcelines = []
         self.insertSource(self.pp_filename)
-        self.source = '\n'.join(self.sourcelines)
 
-    insertPattern = re.compile('#insert\s+([\w.-_]+)',re.IGNORECASE)   
+    insertPattern = re.compile('#insert\s+([\w.-_]+)',re.IGNORECASE)
+    codelinePattern = re.compile('(#define|\s*[^#\s]+)',re.IGNORECASE)
     def insertSource(self, pp_file):
+        """ read a source file pp_file
+        calls itself recursively to for #insert
+        adds the contents of this file to the dictionary self.source
+        """
+        mylines = []
         with open(os.path.join(self.pp_dir,pp_file)) as f:
-            for line in f:
-                m = self.insertPattern.match(line)
+            for line, text in enumerate(f):
+                m = self.insertPattern.match(text)
                 if m:
                     filename = m.group(1)
                     print "inserting code from ",filename,"..."
                     self.insertSource(filename)
                 else:
-                    self.sourcelines.append(line)
-                
+                    mylines.append( text )
+                    if self.codelinePattern.match(text):
+                        self.sourcelines.append((text, line+1, pp_file))
         
-        
-
-    # main compiler routine, called from outside
-    def pp2bytecode(self, adIndexList, adBoards, parameters = dict()):
-        globals().update(parameters)
-        units = {'cycles2ns': 1e-9/TIMESTEP, 'cycles2us': 1e-6/TIMESTEP, 'cycles2ms': 1e-3/TIMESTEP}
-        globals().update(units)
-    
-        # initialize the datastructures
-        self.variabledict = dict()
-        self.labeldict = dict()
-        self.bytecode = []
-        self.binarycode = bytearray()
-        self.defines = dict()
-        
-        # parse defs, ops, and make variable registers
-        code = parse_code(self.pp_filename, self.pp_dir, 0, adIndexList, adBoards)
-    
-        # then make global registers for parameters so that ops can use them.
-        # parameters that start with "F_" are assumed to be frequency, those
-        # that start with "PH_" are phase, and the rest are int.
-        if debug:
-            print "\nGlobal parameters:"
-        for key,value in parameters.iteritems():
-            if ((key[:2] == "F_" or key[:2] == "f_") and key[-3:] != "INC"):
-                data = float(value)#int(round(float(value))) changed to allow sub-MHz resolution for the frequency CWC 08162012
-            elif (key[:3] == "PH_" or key[:3] == "Ph_" or key[:3] == "ph_"):
-                data = int(round(float(value)/360*(2**14)))
-            elif (key[:3] == "NS_" or key[:3] == "ns_"):
-                data = int(round(float(value)*1e-9/TIMESTEP))
-            elif (key[:3] == "US_" or key[:3] == "us_"):
-                data = int(round(float(value)*1e-6/TIMESTEP))
-            elif (key[:3] == "MS_" or key[:3] == "ms_"):
-                data = int(round(float(value)*1e-3/TIMESTEP))
-            elif (key[:4] == "INT_" or key[:4] == "int_" or key[:4] == "Int_"):
-                data = int(round(float(value)))
-            elif (key[:2] == "A_" or key[:2] == "a_"):
-                data = int(round(float(value)))
-            elif (key[:2] == "V_" or key[:2] == "v_"): #added variables for DAC Vout CWC 08162012
-                data = int(float(value)/2.5*2**13)
-            elif (key[-3:] == "INC" and (key[:2] == "F_" or key[:2] == "f_")):
-                    data = int(float(value)/250*0x80000000)
-            else:
-                data = float(value)
-                #print "No unit specified for parameter", key ,", assuming \"int\""
-            address = len(code)
-            code.append((address, 'NOP', data, key, 'globalparam'))
-            var = Variable()
-            var.name = key
-            var.address = address
-            var.type = 0
-            var.origin = 'globalparam'
-            variabledict.update({ key: var})
-            if debug:
-                print key, ":", value, "-->", data
-    
-        for line in code:
-            print line
-        bytecode = bc_gen(code, adIndexList, adBoards)
-        return bytecode
-
-
-
-    def parse_code(self, pp_filename, pp_dir, first_addr, adIndexList, adBoards):
-        f = open(pp_dir+pp_filename)
-        source = f.readlines()
-        f.close()
-    
-        # first, parse defenitions
-        defs = parse_defs(source, pp_filename)
-        #print defs
-    
-        # then, parse ops and take care of #insert instructions by recursively
-        # calling parse_code from inside parse_ops(...)
-        code = parse_ops(source,defs,pp_dir,first_addr,pp_filename, adIndexList, adBoards)
-        if (code != []):
-            first_var_addr = code[len(code)-1][0]+1
-        else:
-            first_var_addr = 0
-    
-        # next, make variable registers
-        code_varsonly, variabledict = parse_vars(source,defs,first_var_addr,pp_filename)
-        code.extend(code_varsonly)
-    
-        return (code, variabledict)
-
+        self.source[pp_file] = '\n'.join(mylines)                              
 
 
     definePattern = re.compile('#define\s+(\w+)\s+(\w+)[^#\n\r]*')     #csn
-    def parse_defs(self,source, current_file):
-        self.defines = {}
-    
-        for line in self.source:
-            # is it a definition?
-            m = self.definePattern.match(line)     #csn   
-            if m:
-                label, value = m.groups() #change lab to label for readability CWC 08162012
-                if (self.defines.has_key(label)):
-                    #print "Error parsing defs in file '%s': attempted to redefine'%s' to '%s' from '%s'" %(current_file,label, value, defs[label]) #correct float to value CWC 08162012
-                    #sys.exit(1)
-                    raise ppexception("Redefining variable")    
-                else:
-                    self.defines[label] = float(value)
-        return self.defines
+    def addDefine(self, m, lineno, sourcename):
+        """ add the define to the self.defines dictionary
+        """
+        label, value = m.groups() #change lab to label for readability CWC 08162012
+        if label in self.defines:
+            print "Error parsing defs in file '{0}': attempted to redefine'{1}' to '{2}' from '{3}'".format(sourcename, label, value, self.defines[label]) #correct float to value CWC 08162012
+            raise ppexception("Redefining variable")    
+        else:
+            self.defines[label] = float(value)
 
-
-
-    def parse_ops(source, defs, pp_dir,first_addr,current_file, adIndexList, adBoards):
-        code = []
-        addr_offset = first_addr
-    
-        for line in source:
-            # process #insert instruction, if present
-            m = re.match('#insert\s+([\w.-_]+)',line)
-            if not m:
-                 m = re.match('#INSERT\s+([\w.-_]+)',line)
-            if m:
-                print "inserting code from ",m.group(1),"..."
-                insert_this_code = parse_code(m.group(1), pp_dir, len(code)+addr_offset, adIndexList, adBoards)
-                if (insert_this_code != None):
-                    code.extend(insert_this_code)
-                continue
-    
-            # filter out irrelevant or commented lines (or variable declarations CWC 08162012)
-            if (line[0]=='#') or (len(line.strip())<2 or (line[0:3] == 'var')):
-                continue
-    
-            # extract any JMP label, if present
-            m = re.match('(\w+):\s+(.*)',line)
-            if m:
-                label = m.group(1)
-                line = "%s " % m.group(2) #so the operation after ":" still gets parsed CWC 08162012
-            else:
-                label = None #The label for non-jump label line is NONE CWC 08172012
-    
-            # search OPS list for a match to the current line
-            data = ''
-            for op in OPS.keys():
-                m = re.match('\s*%s\s+([^#\n\r]*)' % op, line)
-                if not m:
-                    m = re.match('\s*%s\s+([^#\n\r]*)' % op.lower(), line)
-                if m:
-                    args = m.group(1)
-                    arglist = map(lambda x: x.strip(), args.split(','))
-                    for i in range(len(arglist)):
-                        if defs.has_key(arglist[i]):
-                            arglist[i] = defs[arglist[i]] #substitute the defined variable directly with the corresponding value CWC 08172012
-                        # Delay parsing until all code is known
-                    #check for dds commands so CHAN commands can be inserted
-                    if (op[:3] == 'DDS'):
-                        board = adIndexList[int(arglist[0])][0]
-                        chan = adIndexList[int(arglist[0])][1]
-                        if (adBoards[board].channelLimit != 1):
-                            #boards with more than one channel require an extra channel selection command
-                            chanData = adBoards[board].addCMD(chan)
-                            chanData = (int(board) << 16) + chanData
-                            code.append((len(code)+addr_offset, 'DDSCHN', chanData, label, current_file))
-                    if (len(arglist) == 1):
-                        data = arglist[0]
-                    else:
-                        data = arglist
-                    break
-            else:
-                print "Error processing line '%s' in file '%s' (unknown opcode?)" %(line, current_file)
-                    #sys.exit(1)#exit the program after error CWC 08172012
-                raise ppexception("Error parsing ops.")
-    
-            code.append((len(code)+addr_offset, op, data, label, current_file))
-    
-        return code
-
+    labelPattern = re.compile('(\w+):\s+([^#\n\r]*)')
+    opPattern = re.compile('\s*(\w+)(?:\s+([^#\n\r]*)){0,1}',re.IGNORECASE)
     varPattern = re.compile('var\s+(\w+)\s+([^#,\n\r]+)(?:,([^#,\n\r]+)){0,1}(?:,([^#,\n\r]+)){0,1}(?:,([^#,\n\r]+)){0,1}(?:#([^\n\r]+)){0,1}') #
-    def parse_vars(self,first_var_addr,current_file):
-        code = []
-        variabledict = dict()
-        for line in source:
-            #syntax is var name value [, type, encoding, unit]
-            m = self.varPattern.match(line) #
+    def parse(self, adIndexList, adBoards):
+        """ parse the code
+        """
+        self.code = []
+        self.variabledict = dict()
+        self.defines = dict()
+        addr_offset = 0
+    
+        for text, lineno, sourcename in self.sourcelines:    
+            m = self.varPattern.match(text)
             if m:
-                var = Variable()
-                label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
-                var.name = label
-                var.origin = current_file
-    
-                try:
-                    data = str(eval(data,globals(),defs))
-                except Exception, e:
-                    print "Evaluation error in file '%s' on line: '%s'" %(current_file, data)
-    
-                if unit is not None:
-                    data = convertParameter( magnitude.mg( float(data), unit ), var )
-                    print data, hex(data)
-                else:
-                    data = int(round(float(data)))
-                    print data, hex(data)
-    
-                if label in self.defines:
-                    print "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(current_file,label,data,defs[label])
-                    raise ppexception("variable redifinition")
-                else:
-                    defs[label] = data #add the variable to the dictionary of definitions CWC 08172012
-    
-                address = len(code)+first_var_addr
-                code.append((address, 'NOP', data, label, current_file))
-                var.address = address
-                var.index = len(variabledict)
-                variabledict.update({ label: var})
+                self.addVariable(m,lineno,sourcename)
             else:
-                print "Error processing line '%s' in file '%s': Buffer overflow" %(line, current_file)
-                #sys.exit(1) #exit the program after error CWC 08172012
-                raise ppexception("Unidentified input")
-    
-        return (code, variabledict)
+                m = self.definePattern.match(text)
+                if m:
+                    self.addDefine(m,lineno,sourcename)
+                else:
+                    # extract any JMP label, if present
+                    m = self.labelPattern.match(text)
+                    if m:
+                        label, text = m.groups() #so the operation after ":" still gets parsed CWC 08162012
+                    else:
+                        label = None #The label for non-jump label line is NONE CWC 08172012
+            
+                    # search OPS list for a match to the current line
+                    m = self.opPattern.match(text)
+                    if m:
+                        op, args = m.groups()
+                        op = op.upper()
+                        # split and remove whitespace 
+                        arglist = [0] if args is None else [ 0 if x is None else x.strip() for x in args.split(',')]
+                        #substitute the defined variable directly with the corresponding value CWC 08172012
+                        arglist = [ self.defines[x] if x in self.defines else x for x in arglist ] 
+                        #check for dds commands so CHAN commands can be inserted
+                        if (op[:3] == 'DDS'):
+                            board = adIndexList[int(arglist[0])][0]
+                            chan = adIndexList[int(arglist[0])][1]
+                            if (adBoards[board].channelLimit != 1):
+                                #boards with more than one channel require an extra channel selection command
+                                chanData = adBoards[board].addCMD(chan)
+                                chanData = (int(board) << 16) + chanData
+                                self.code.append((len(self.code)+addr_offset, 'DDSCHN', chanData, label, sourcename))
+                        data = arglist if len(arglist)>1 else arglist[0]
 
+                        self.addLabel( label, len(self.code))
+                        self.code.append((len(self.code)+addr_offset, op, data, label, sourcename))
+                    else:
+                        print "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno)
+                        raise ppexception("Error parsing ops.")
+        self.appendVariableCode()
+        return self.code
 
+    def addLabel(self,label,address):
+        if label is not None:
+            if label in self.defines:
+                raise ppexception("Redefining label: {0}".format(label))
+            else:
+                self.defines[label] = address
+                
+    def appendVariableCode(self):
+        """ append all variables to the instruction part of the code
+        """
+        for name, var in self.variabledict.iteritems():
+            address = len(self.code)
+            self.code.append((address, 'NOP', var.data, None, var.origin ))
+            var.address = address        
+
+    def addVariable(self, m, lineno, sourcename):
+        """ add a variable to the self.variablesdict
+        """
+        var = Variable()
+        label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
+        var.name = label
+        var.origin = sourcename
+
+        try:
+            data = str(eval(data,globals(),self.defines))
+        except Exception:
+            print "Evaluation error in file '{0}' on line: '{1}'".format(sourcename, data)
+
+        if unit is not None:
+            data = self.convertParameter( magnitude.mg( float(data), unit ), var )
+            print data, hex(data)
+        else:
+            data = int(round(float(data)))
+            print data, hex(data)
+
+        if label in self.defines:
+            print "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(sourcename,label,data,self.defines[label])
+            raise ppexception("variable redifinition")
+        else:
+            self.defines[label] = label # add the variable to the dictionary of definitions to prevent identifiers and variables from having the same name
+                                        # however, we do not want it replaced with a number but keep the name for the last stage of compilation
+            pass
+        var.index = len(self.variabledict)
+        var.data = data
+        self.variabledict.update({ label: var})
 
     # code is (address, operation, data, label or variablename, currentfile)
-    def bc_gen(self):
+    def generateBytecode(self):
+        """ generate bytecode from code
+        """
         if debug:
             print "\nCode ---> ByteCode:"
         self.bytecode = []
         for index, line in enumerate(self.code):
-            if debug:
-                print line[0],  ": ", line[1:]
             bytedata = 0
             byteop = OPS[line[1]]
             try:
@@ -341,6 +252,8 @@ class PulseProgram:
                 if (data == ''):
                     #found empty data
                     bytedata = 0
+                elif isinstance(data,(int,long)):
+                    bytedata = data
                 elif isinstance(data,basestring): # now we are dealing with a variable and need its address
                     bytedata = self.variabledict[line[2]].address
                 elif isinstance(data,list): # list is what we have for DDS, will have 8bit channel and 16bit address
@@ -352,14 +265,16 @@ class PulseProgram:
                 print "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) # raise
                 #sys.exit(1) #exit the program after error CWC 08172012
                 raise ppexception("Unknown variable")
-            bytecode.append((byteop, bytedata))
+            self.bytecode.append((byteop, bytedata))
             if debug:
                 print line[0],  ": ", line[1:], "--->", (hex(byteop), hex(bytedata))
     
-        return bytecode
+        return self.bytecode 
 
 
     def codeToBinary(self):
+        """ convert bytecode to binary
+        """
         self.binarycode = bytearray()
         for op, arg in self.code:
             if debug:
@@ -367,11 +282,10 @@ class PulseProgram:
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
 
-    def convertDimension(self, mag, variable ):
-        step, unit, dimension, mask = encodings[variable.encoding]
-        return int(round(mag.toval(unit)/step)) & mask
-
     def convertParameter(self, mag, variable=None ):
+        """ convert a dimensioned parameter to the binary value
+        expected by the hardware. The conversion is determined by the variable encoding
+        """
         if isinstance(mag, magnitude.Magnitude):
             if tuple(mag.dimension())==Dimensions.time:
                 return int(round(mag.toval('s')/TIMESTEP)) 
@@ -382,13 +296,18 @@ class PulseProgram:
             return mag
 
     def updateVariables(self, variables ):
+        """ update the variable values in the bytecode
+        """
         for name, value in variables.iteritems():
             if name in self.variabledict:
-                address = self.variabledict[name].address
-                self.code[address] = (code[address][0], convertParameter(value, variabledict[name]))
+                var = self.variabledict[name]
+                address = var.address
+                var.data = self.convertParameter(value, var)
+                self.bytecode[address] = (self.code[address][0], var.data )
+                self.variabledict[name] = var
             else:
                 print "variable", name, "not found in dictionary."
-        return code
+        return self.bytecode
 
 
 
@@ -396,21 +315,30 @@ if __name__ == "__main__":
     class Board:
         channelLimit = 1    
         halfClockLimit = 500000000
-        
-    print "Start"
-    debug = True
     adIndex = [(x,0) for x in range(6) ]
     adBoards = [ Board() ]*6
-    code, variabledict = pp2bytecode(r"prog\Ions\Bluetest.pp", adIndex, adBoards)
-    print code
-    for name, var in variabledict.iteritems():
-        print name, var.__dict__
-    binarycode = codeToBinary( code )
-    with open('bytecode','wb') as of:
-        of.write( binarycode )
+        
+    debug = True
+    pp = PulseProgram()
+    pp.loadSource(r"prog\Ions\Bluetest.pp")
+    #pp.loadSource(r"prog\single_pulse_exp_adiabatic.pp")
     
-    print hex( convertParameter( magnitude.mg(250,'MHz'), variabledict['coolingFreq'] ) )
-    code = updateVariables( code, variabledict, {'coolingTime':magnitude.mg(10,'ms')} )
+    for line in pp.sourcelines:
+        print line
     
-    for line, (cmd, val) in enumerate(code):
-        print hex(line), hex(cmd), hex(val)
+    pp.parse(adIndex, adBoards )
+    for line in pp.code:
+        print line
+
+    for define in pp.defines:
+        print define        
+        
+    pp.generateBytecode()
+    pp.updateVariables({'coolingFreq': magnitude.mg(125,'MHz')})
+    
+    for op, val in pp.bytecode:
+        print hex(op), hex(val)
+        
+#    for var in pp.variabledict.iteritems():
+#        print var
+    
