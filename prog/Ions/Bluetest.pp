@@ -10,19 +10,21 @@
 #define IRDDS	   4
 #define COOLDDS    3
 
-var datastart 3900, , address   # serves as tooltip
-var dataend 4000, ,  address
-var addr 0,     ,  address
-var sample 0 , ,   address
-var delay 0
-var coolingFreq     210, MHz, parameter
-var coolingOnMask     1,    , mask 
-var coolingOn         1,    , shutter coolingMask
-var coolingOffMask    1,    , mask
-var coolingOff        0,    , shutter 
-var coolingTime       1,  ms, parameter
-var experiments     350,    , parameter
-var epsilon         100,  ns, parameter
+# var syntax:
+# var name value, type, unit, encoding
+var datastart 3900, address   # serves as tooltip
+var dataend 4000, address
+var addr 0, address
+var sample 0, address
+var delay 0, address
+var coolingFreq     250, parameter, MHz, AD9912_FRQ
+var coolingOnMask     1, mask
+var coolingOn         1, shutter coolingOnMask
+var coolingOffMask    1, mask
+var coolingOff        0, shutter coolingOffMask
+var coolingTime       1, parameter, ms
+var experiments     350, parameter
+var epsilon         100, parameter, ns
 
 	LDWR     datastart
 	STWR     addr	
@@ -31,10 +33,11 @@ var epsilon         100,  ns, parameter
 cooling: NOP
 	DDSFRQ COOLDDS, coolingFreq
 	DDSFRQFINE COOLDDS, coolingFreq
-	SHUTTERMASK coolingMask
+	SHUTTERMASK coolingOnMask
 	ASYNCSHUTTER coolingOn
 	WAIT
 	UPDATE coolingTime
+	SHUTTERMASK coolingOffMask
 	ASYNCSHUTTER coolingOff
 	WAIT
 	UPDATE epsilon
