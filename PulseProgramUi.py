@@ -9,8 +9,13 @@ import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import PulseProgram
 import VariableTableModel
+import ShutterTableModel
+import TriggerTableModel
+import os
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
+
+recentFiles = dict()
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def __init__(self):
@@ -18,9 +23,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
         self.sourceCodeEdits = dict()
-        self.recentFiles = set()
     
-    def setupUi(self,parent):
+    def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
         self.okButton.clicked.connect( self.onOk )
         self.loadButton.clicked.connect( self.onLoad )
@@ -29,6 +33,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
+        self.experimentname = experimentname
         
     def onVariableSelectionChanged(self):
         visibledict = dict()
@@ -40,11 +45,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
     
     def onLoad(self):
-        fname = QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file')
-        if fname!="":
-            self.pulseProgram.loadSource(str(fname))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file'))
+        if path!="":
+            self.pulseProgram.loadSource(path)
             self.updateDisplay()
-            self.recentFiles.add(fname)
+            filename = os.path.basename(path)
+            recentFiles[filename]=path
+            self.filenameComboBox.clear()
+            self.filenameComboBox.addItems([x for x in recentFiles])
+            self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
     
     def onSave(self):
         self.onApply()
@@ -65,15 +74,56 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.sourceTabs.addTab( textEdit, name )
         self.variableTableModel = VariableTableModel.VariableTableModel( self.pulseProgram.variabledict )
         self.variableView.setModel(self.variableTableModel)
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.pulseProgram.variabledict )
+        self.shutterTableView.setModel(self.shutterTableModel)
+        self.shutterTableView.resizeColumnsToContents()
+        self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
+        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.pulseProgram.variabledict )
+        self.triggerTableView.setModel(self.triggerTableModel)
+        self.triggerTableView.resizeColumnsToContents()
+        self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
+        
+    def onActivated(self, index):
+        if index==self.myindex:
+            print "Activated", self.experimentname
+            self.filenameComboBox.clear()
+            self.filenameComboBox.addItems([x for x in recentFiles])
+            self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
+        else:
+            print "Deactivated", self.experimentname
     
+class PulseProgramSetUi(QtGui.QWidget):
+    def __init__(self):
+        self.pulseProgramSet = dict()
+    
+    def setupUi(self,parent):
+        self.horizontalLayout = QtGui.QHBoxLayout(parent)
+        self.tabWidget = QtGui.QTabWidget(parent)
+        self.horizontalLayout.addWidget(self.tabWidget)
 
+    def addExperiment(self, experiment):
+        if not experiment in self.pulseProgramSet:
+            programUi = PulseProgramUi()
+            programUi.setupUi(experiment,programUi)
+            programUi.myindex = self.tabWidget.addTab(programUi,experiment)
+            self.pulseProgramSet[experiment] = programUi
+            self.tabWidget.currentChanged.connect( programUi.onActivated )
+
+            
+    def getPulseProgram(self, experiment):
+        return self.pulseProgramSet[experiment]
+        
+        
+    
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
     widget = QtGui.QWidget()
-    ui = PulseProgramUi()
+    ui = PulseProgramSetUi()
     ui.setupUi(widget)
+    ui.addExperiment("Sequence")
+    ui.addExperiment("Doppler Recooling")
     MainWindow.setCentralWidget(widget)
     MainWindow.show()
     sys.exit(app.exec_())

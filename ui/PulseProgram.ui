@@ -24,7 +24,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QComboBox" name="comboBox_2">
+          <widget class="QComboBox" name="filenameComboBox">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -50,8 +50,8 @@
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
-         <widget class="QTableView" name="digitalView"/>
-         <widget class="QTableView" name="triggerView"/>
+         <widget class="QTableView" name="shutterTableView"/>
+         <widget class="QTableView" name="triggerTableView"/>
          <widget class="QTabWidget" name="sourceTabs">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">

@@ -17,6 +17,7 @@ import re, os
 import magnitude
 import struct
 import math
+import collections
 
 # add deg to magnitude
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
@@ -102,7 +103,7 @@ class PulseProgram:
     def __init__(self):
         self.variabledict = dict()       # keeps information on all variables to easily change them later
         self.labeldict = dict()          # keep information on all labels
-        self.source = dict()             # dictionary of source code files (stored as strings)
+        self.source = collections.OrderedDict()             # dictionary of source code files (stored as strings)
         self.code = []                   # this is a list of lines
         self.bytecode = []               # list of op, argument tuples
         self.binarycode = bytearray()    # binarycode to be uploaded

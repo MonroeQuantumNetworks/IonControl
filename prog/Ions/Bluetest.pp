@@ -22,9 +22,11 @@ var coolingOnMask     1, mask
 var coolingOn         1, shutter coolingOnMask
 var coolingOffMask    1, mask
 var coolingOff        0, shutter coolingOffMask
+var fixedValue       0, shutter
 var coolingTime       1, parameter, ms
 var experiments     350, parameter
 var epsilon         100, parameter, ns
+var ddsApplyTrigger 3,trigger
 
 	LDWR     datastart
 	STWR     addr	
