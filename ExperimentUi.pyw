@@ -27,6 +27,7 @@ import testExperiment
 #import testQwt
 import configshelve
 import FromFile
+import PulseProgramUi
 
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
@@ -56,6 +57,9 @@ class WidgetContainerUi(WidgetContainerForm):
         super(WidgetContainerUi,self).setupUi(parent)
         self.parent = parent
         self.tabList = list()
+        # initialize PulseProgramUi
+        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi()
+        self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
         for widget,name in [ #(CounterWidget.CounterWidget(), "Simple Counter"), 
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
@@ -64,6 +68,8 @@ class WidgetContainerUi(WidgetContainerForm):
                              (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
+            if hasattr(widget,'setPulseProgramUi'):
+                widget.setPulseProgramUi( self.pulseProgramDialog )
             self.tabWidget.addTab(widget, name)
             self.tabList.append(widget)
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
@@ -78,6 +84,7 @@ class WidgetContainerUi(WidgetContainerForm):
         self.actionSettings.triggered.connect(self.onSettings)
         self.actionExit.triggered.connect(self.onClose)
         self.actionContinue.triggered.connect(self.onContinue)
+        self.actionPulses.triggered.connect(self.onPulses)
         self.currentTab = self.tabList[0]
         self.currentTab.activate()
         if 'MainWindow.State' in self.config:
@@ -122,6 +129,9 @@ class WidgetContainerUi(WidgetContainerForm):
             self.settingsDialog = SettingsDialog.SettingsDialog(self.parent)
             self.settingsDialog.setupUi(self)
         self.settingsDialog.show()
+        
+    def onPulses(self):
+        self.pulseProgramDialog.show()
         
     def onSettingsApply(self):
         self.settings = self.settingsDialog.settings

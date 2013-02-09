@@ -94,6 +94,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
 class PulseProgramSetUi(QtGui.QWidget):
     def __init__(self):
+        super(PulseProgramSetUi,self).__init__()
         self.pulseProgramSet = dict()
     
     def setupUi(self,parent):
@@ -119,11 +120,10 @@ if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    widget = QtGui.QWidget()
     ui = PulseProgramSetUi()
-    ui.setupUi(widget)
+    ui.setupUi(ui)
     ui.addExperiment("Sequence")
     ui.addExperiment("Doppler Recooling")
-    MainWindow.setCentralWidget(widget)
+    MainWindow.setCentralWidget(ui)
     MainWindow.show()
     sys.exit(app.exec_())

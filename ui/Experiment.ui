@@ -49,6 +49,7 @@
    <addaction name="actionClear"/>
    <addaction name="separator"/>
    <addaction name="actionSettings"/>
+   <addaction name="actionPulses"/>
    <addaction name="actionExit"/>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -206,6 +207,15 @@
    </property>
    <property name="toolTip">
     <string>Continue</string>
+   </property>
+  </action>
+  <action name="actionPulses">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/colorize.png</normaloff>:/kde/icons/colorize.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pulses</string>
    </property>
   </action>
  </widget>
