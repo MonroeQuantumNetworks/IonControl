@@ -3,7 +3,7 @@
 #   PMTtest.pp -- Jan 17 2008
 #  tests if talking to PMT.
 
-
+#insert extras.pp
 
 #define REDDDS	   0
 #define BLUEDDS	   1  #Changed Craig Nov 15 2010 for new AOM
