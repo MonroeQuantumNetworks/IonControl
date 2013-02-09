@@ -18,6 +18,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
         self.sourceCodeEdits = dict()
+        self.recentFiles = set()
     
     def setupUi(self,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -43,6 +44,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if fname!="":
             self.pulseProgram.loadSource(str(fname))
             self.updateDisplay()
+            self.recentFiles.add(fname)
     
     def onSave(self):
         self.onApply()
