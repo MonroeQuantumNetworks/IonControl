@@ -28,6 +28,8 @@ import testExperiment
 import configshelve
 import FromFile
 import PulseProgramUi
+import ShutterUi
+import MainWindowWidget
 
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
@@ -65,7 +67,7 @@ class WidgetContainerUi(WidgetContainerForm):
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
-                             (testExperiment.test(),"test"),
+                             (testExperiment.test(),"test")
                              ]:
             widget.setupUi( widget, self.config )
             if hasattr(widget,'setPulseProgramUi'):
@@ -74,6 +76,16 @@ class WidgetContainerUi(WidgetContainerForm):
             self.tabList.append(widget)
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
+               
+        self.shutterUi = ShutterUi.ShutterUi()
+        self.shutterUi.setupUi(self.shutterUi)
+        self.shutterDockWidget.setWidget( self.shutterUi )
+
+        self.triggerUi = ShutterUi.ShutterUi()
+        self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
+        self.triggerUi.setupUi(self.triggerUi)
+        self.triggerDockWidget.setWidget( self.triggerUi )
+
                
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
@@ -122,7 +134,8 @@ class WidgetContainerUi(WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        self.menuView.addAction(self.dockWidgetConsole.toggleViewAction())
+        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget]:
+            self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
         if not hasattr(self, 'settingsDialog'):
