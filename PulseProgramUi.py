@@ -92,7 +92,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         else:
             print "Deactivated", self.experimentname
     
-class PulseProgramSetUi(QtGui.QWidget):
+class PulseProgramSetUi(QtGui.QDialog):
     def __init__(self):
         super(PulseProgramSetUi,self).__init__()
         self.pulseProgramSet = dict()
@@ -114,7 +114,27 @@ class PulseProgramSetUi(QtGui.QWidget):
     def getPulseProgram(self, experiment):
         return self.pulseProgramSet[experiment]
         
+    def accept(self):
+        print "accept"
+        self.lastPos = self.pos()
+        self.lastSize = self.size()
+        self.hide()
+        self.recipient.onSettingsApply()        
         
+    def reject(self):
+        print "reject"
+        self.lastPos = self.pos()
+        self.lastSize = self.size()
+        self.hide()
+        
+    def show(self):
+        print "show"
+        if hasattr(self, 'lastPos'):
+            self.move(self.lastPos)
+        if hasattr(self,'lastSize'):
+            self.resize( self.lastSize)
+        QtGui.QDialog.show(self)
+
     
 if __name__ == "__main__":
     import sys
