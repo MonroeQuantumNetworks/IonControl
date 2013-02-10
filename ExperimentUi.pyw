@@ -29,7 +29,7 @@ import configshelve
 import FromFile
 import PulseProgramUi
 import ShutterUi
-import MainWindowWidget
+import DDSUi
 
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
@@ -86,6 +86,9 @@ class WidgetContainerUi(WidgetContainerForm):
         self.triggerUi.setupUi(self.triggerUi)
         self.triggerDockWidget.setWidget( self.triggerUi )
 
+        self.DDSUi = DDSUi.DDSUi()
+        self.DDSUi.setupUi(self.DDSUi)
+        self.DDSDockWidget.setWidget( self.DDSUi )
                
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
@@ -134,7 +137,7 @@ class WidgetContainerUi(WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget]:
+        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget]:
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
