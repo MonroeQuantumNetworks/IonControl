@@ -19,8 +19,8 @@ import os.path
 sys.path.append(os.path.abspath(r'modules'))
 sys.path.append(os.path.abspath(r'ui'))
 
-import CounterWidget
-import TDCWidget
+#import CounterWidget
+#import TDCWidget
 #import FastTDCWidget
 import SettingsDialog
 import testExperiment
@@ -39,6 +39,7 @@ class Logger(QtCore.QObject):
     def __init__(self):
         QtCore.QObject.__init__(self)
         self.terminal = sys.stdout
+        self.terminal
     
     def write(self, message):
         self.terminal.write(message)
@@ -60,11 +61,11 @@ class WidgetContainerUi(WidgetContainerForm):
         self.parent = parent
         self.tabList = list()
         # initialize PulseProgramUi
-        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi()
+        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config)
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
-        for widget,name in [ (CounterWidget.CounterWidget(), "Simple Counter"), 
-                             (TDCWidget.TDCWidget(),"Time to digital converter" ),
+        for widget,name in [ #(CounterWidget.CounterWidget(), "Simple Counter"), 
+                             #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
                              (testExperiment.test(),"test")
@@ -164,6 +165,7 @@ class WidgetContainerUi(WidgetContainerForm):
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription        
         self.parent.close()
+        self.pulseProgramDialog.close()
 
     def onMessageWrite(self,message):
         cursor = self.textEditConsole.textCursor()

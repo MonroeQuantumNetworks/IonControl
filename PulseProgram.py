@@ -340,7 +340,7 @@ class PulseProgram:
             except KeyError:
                 print "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) # raise
                 #sys.exit(1) #exit the program after error CWC 08172012
-                raise ppexception("Unknown variable")
+                raise ppexception("{0}: Unknown variable {1}".format(line[4],data))
             self.bytecode.append((byteop, bytedata))
             if debug:
                 print line[0],  ": ", line[1:], "--->", (hex(byteop), hex(bytedata))

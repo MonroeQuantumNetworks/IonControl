@@ -4,36 +4,57 @@ Created on Thu Feb 07 22:55:28 2013
 
 @author: pmaunz
 """
-
+import sys, os
+sys.path.append(os.path.abspath(r'ui'))
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import PulseProgram
 import VariableTableModel
 import ShutterTableModel
 import TriggerTableModel
-import os
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
-recentFiles = dict()
+class ConfiguredParams:
+    lastFilename = None
+    recentFiles = dict()
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
-    def __init__(self):
+    def __init__(self,config):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
         self.sourceCodeEdits = dict()
+        self.config = config
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
-        self.okButton.clicked.connect( self.onOk )
+        #self.okButton.clicked.connect( self.onOk )
         self.loadButton.clicked.connect( self.onLoad )
         self.saveButton.clicked.connect( self.onSave )
-        self.applyButton.clicked.connect( self.onApply )
+        #self.applyButton.clicked.connect( self.onApply )
         self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
+        self.filenameComboBox.currentIndexChanged[QtCore.QString].connect( self.onFilenameChange )
         self.experimentname = experimentname
+        self.configname = 'PulseProgramUi.'+self.experimentname
+        if self.configname not in self.config:
+            self.config[self.configname] = ConfiguredParams()
+        self.configParams = self.config[self.configname] 
+        if hasattr(self.configParams,'recentFiles'):
+            self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
+        if self.configParams.lastFilename is not None:
+            self.loadFile( self.configParams.lastFilename )
+        if hasattr(self.configParams,'splitterHorizontal'):
+            self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
+        if hasattr(self.configParams,'splitterVertical'):
+            self.splitterVertical.restoreState(self.configParams.splitterVertical)
+
+    def onFilenameChange(self, name ):
+        name = str(name)
+        print "Loading: ", self.configParams.recentFiles[name]
+        self.loadFile(self.configParams.recentFiles[name])
         
     def onVariableSelectionChanged(self):
         visibledict = dict()
@@ -47,14 +68,22 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onLoad(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file'))
         if path!="":
-            self.pulseProgram.loadSource(path)
-            self.updateDisplay()
-            filename = os.path.basename(path)
-            recentFiles[filename]=path
-            self.filenameComboBox.clear()
-            self.filenameComboBox.addItems([x for x in recentFiles])
-            self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
+            self.loadFile(path)
     
+    def loadFile(self, path):
+        self.configParams.lastFilename = path
+        try:
+            self.pulseProgram.loadSource(path)
+        except PulseProgram.ppexception:
+            # compilation failed
+            pass
+        self.updateDisplay()
+        filename = os.path.basename(path)
+        if filename not in self.configParams.recentFiles:
+            self.filenameComboBox.addItem(filename)
+        self.configParams.recentFiles[filename]=path
+        self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
+
     def onSave(self):
         self.onApply()
         self.pulseProgram.saveSource()
@@ -91,11 +120,26 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
         else:
             print "Deactivated", self.experimentname
+            
+    def onAccept(self):
+        pass
+    
+    def onReject(self):
+        pass
+        
+    def close(self):
+        self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
+        self.configParams.splitterVertical = self.splitterVertical.saveState()
+        self.config[self.configname] = self.configParams
     
 class PulseProgramSetUi(QtGui.QDialog):
-    def __init__(self):
+    class Parameters:
+        pass
+    def __init__(self,config):
         super(PulseProgramSetUi,self).__init__()
-        self.pulseProgramSet = dict()
+        self.config = config
+        self.pulseProgramSet = dict()        # ExperimentName -> PulseProgramUi
+        self.lastExperimentFile = dict()     # ExperimentName -> last pp file used for this experiment
     
     def setupUi(self,parent):
         self.horizontalLayout = QtGui.QHBoxLayout(parent)
@@ -104,46 +148,52 @@ class PulseProgramSetUi(QtGui.QDialog):
 
     def addExperiment(self, experiment):
         if not experiment in self.pulseProgramSet:
-            programUi = PulseProgramUi()
+            programUi = PulseProgramUi(self.config)
             programUi.setupUi(experiment,programUi)
             programUi.myindex = self.tabWidget.addTab(programUi,experiment)
             self.pulseProgramSet[experiment] = programUi
             self.tabWidget.currentChanged.connect( programUi.onActivated )
-
             
     def getPulseProgram(self, experiment):
         return self.pulseProgramSet[experiment]
         
     def accept(self):
-        print "accept"
-        self.lastPos = self.pos()
-        self.lastSize = self.size()
+        self.config['PulseProgramSetUi.pos'] = self.pos()
+        self.config['PulseProgramSetUi.size'] = self.size()
         self.hide()
-        self.recipient.onSettingsApply()        
+        self.recipient.onSettingsApply()  
+        for page in self.pulseProgramSet.values():
+            page.onAccept()
         
     def reject(self):
-        print "reject"
-        self.lastPos = self.pos()
-        self.lastSize = self.size()
+        self.config['PulseProgramSetUi.pos'] = self.pos()
+        self.config['PulseProgramSetUi.size'] = self.size()
         self.hide()
+        for page in self.pulseProgramSet.values():
+            page.onAccept()
         
     def show(self):
-        print "show"
-        if hasattr(self, 'lastPos'):
-            self.move(self.lastPos)
-        if hasattr(self,'lastSize'):
-            self.resize( self.lastSize)
+        if 'PulseProgramSetUi.pos' in self.config:
+            self.move(self.config['PulseProgramSetUi.pos'])
+        if 'PulseProgramSetUi.size' in self.config:
+            self.resize(self.config['PulseProgramSetUi.size'])
         QtGui.QDialog.show(self)
+        
+    def close(self):
+        for page in self.pulseProgramSet.values():
+            page.close()
 
     
 if __name__ == "__main__":
     import sys
+    config = dict()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    ui = PulseProgramSetUi()
+    ui = PulseProgramSetUi(config)
     ui.setupUi(ui)
     ui.addExperiment("Sequence")
     ui.addExperiment("Doppler Recooling")
     MainWindow.setCentralWidget(ui)
     MainWindow.show()
     sys.exit(app.exec_())
+    print config

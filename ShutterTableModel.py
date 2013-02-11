@@ -20,11 +20,12 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         self.maskdict = dict()
         self.variablelist = []
         for name, var in self.variabledict.iteritems():
-            m = re.match("\s*shutter(?:\s+(\w+)){0,1}",var.type)
-            if m:
-                self.variablelist.append(var)
-                if m.group(1) is not None and m.group(1) in self.variabledict:
-                    self.maskdict[name] = self.variabledict[m.group(1)]
+            if var.type is not None:
+                m = re.match("\s*shutter(?:\s+(\w+)){0,1}",var.type)
+                if m:
+                    self.variablelist.append(var)
+                    if m.group(1) is not None and m.group(1) in self.variabledict:
+                        self.maskdict[name] = self.variabledict[m.group(1)]
         self.variablelist = sorted(self.variablelist, key=attrgetter('index')) 
         print self.variablelist 
 
