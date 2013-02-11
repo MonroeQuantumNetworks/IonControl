@@ -19,8 +19,8 @@ import os.path
 sys.path.append(os.path.abspath(r'modules'))
 sys.path.append(os.path.abspath(r'ui'))
 
-#import CounterWidget
-#import TDCWidget
+import CounterWidget
+import TDCWidget
 #import FastTDCWidget
 import SettingsDialog
 import testExperiment
@@ -63,8 +63,8 @@ class WidgetContainerUi(WidgetContainerForm):
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi()
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
-        for widget,name in [ #(CounterWidget.CounterWidget(), "Simple Counter"), 
-                             #(TDCWidget.TDCWidget(),"Time to digital converter" ),
+        for widget,name in [ (CounterWidget.CounterWidget(), "Simple Counter"), 
+                             (TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
                              (testExperiment.test(),"test")
