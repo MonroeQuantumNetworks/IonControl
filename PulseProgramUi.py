@@ -53,8 +53,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def onFilenameChange(self, name ):
         name = str(name)
-        print "Loading: ", self.configParams.recentFiles[name]
-        self.loadFile(self.configParams.recentFiles[name])
+        if name in self.configParams.recentFiles:
+            print "Loading: ", self.configParams.recentFiles[name]
+            self.loadFile(self.configParams.recentFiles[name])
         
     def onVariableSelectionChanged(self):
         visibledict = dict()

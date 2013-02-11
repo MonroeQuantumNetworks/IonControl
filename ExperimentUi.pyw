@@ -63,6 +63,9 @@ class WidgetContainerUi(WidgetContainerForm):
         # initialize PulseProgramUi
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config)
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
+
+        self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
+        self.settingsDialog.setupUi(self)
         
         for widget,name in [ #(CounterWidget.CounterWidget(), "Simple Counter"), 
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
@@ -142,9 +145,6 @@ class WidgetContainerUi(WidgetContainerForm):
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
-        if not hasattr(self, 'settingsDialog'):
-            self.settingsDialog = SettingsDialog.SettingsDialog(self.parent)
-            self.settingsDialog.setupUi(self)
         self.settingsDialog.show()
         
     def onPulses(self):
@@ -166,6 +166,7 @@ class WidgetContainerUi(WidgetContainerForm):
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription        
         self.parent.close()
         self.pulseProgramDialog.close()
+        self.settingsDialog.close()
 
     def onMessageWrite(self,message):
         cursor = self.textEditConsole.textCursor()
