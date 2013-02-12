@@ -4,21 +4,24 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore
 from operator import attrgetter
 import functools
-import re
 import magnitude
+import sys, os.path
+sys.path.append(os.path.abspath(r'modules'))
+import Expression
 
 class VariableTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, variabledict, parent=None, *args): 
-        """ datain: a list where each item is a row
-        
+    def __init__(self, variabledict, parameterdict, parent=None, *args): 
+        """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
+            parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variabledict = variabledict.copy()
         self.variablelist = sorted([ x for x in self.variabledict.values() if x.type=='parameter' ], key=attrgetter('index')) 
-        print self.variablelist 
+        #print self.variablelist 
+        self.expression = Expression.Expression()
 
     def setVisible(self, visibledict ):
         print self.rowCount()
@@ -35,31 +38,33 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         return len(self.variablelist) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 3
+        return 4
  
     def data(self, index, role): 
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,0): self.variablelist[index.row()].name,
-                     (QtCore.Qt.DisplayRole,1): str(self.variablelist[index.row()].value),
-                     (QtCore.Qt.DisplayRole,2): str(self.variablelist[index.row()].encoding),
-                     (QtCore.Qt.EditRole,1): str(self.variablelist[index.row()].value),
-                     (QtCore.Qt.EditRole,2): str(self.variablelist[index.row()].encoding),
+            var = self.variablelist[index.row()]
+            return { (QtCore.Qt.DisplayRole,0): var.name,
+                     (QtCore.Qt.DisplayRole,1): str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                     (QtCore.Qt.DisplayRole,2): str(var.encoding),
+                     (QtCore.Qt.DisplayRole,3): str(var.value),
+                     (QtCore.Qt.EditRole,1): str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                     (QtCore.Qt.EditRole,2): str(var.encoding),
                      }.get((role,index.column()))
         return None
         
     def setDataValue(self, index, value):
-        m = re.match("\s*([-+0-9.]+)\s*(\w*)\s*",str(value.toString()))
-        if m:
-            value, unit = m.groups()
-            print value, unit
-            mag = magnitude.mg( float(value), unit )
-            if mag.dimensionless():
-                mag.output_prec(0)
-            self.variablelist[index.row()].value = mag
-            print self.variablelist[index.row()].value
+        try:
+            strvalue = str(value.toString())
+            result = self.expression.evaluate(strvalue)           
+            if result.dimensionless():
+                result.output_prec(0)
+            var = self.variablelist[index.row()]
+            var.value = result
+            var.strvalue = strvalue
             return True    
-        print "No match for", str(value.toString())
-        return False
+        except Exception as e:
+            print e, "No match for", str(value.toString())
+            return False
         
     def setDataEncoding(self,index, value):
         value = str(value.toString())
@@ -74,7 +79,8 @@ class VariableTableModel(QtCore.QAbstractTableModel):
     def flags(self, index ):
         return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
                  1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+                 2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+                 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
                  }.get(index.column(),QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
     def headerData(self, section, orientation, role ):
@@ -84,5 +90,6 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                     0: 'variable',
                     1: 'value',
                     2: 'encoding',
+                    3: 'evaluated'
                     }.get(section)
         return None #QtCore.QVariant()

@@ -20,12 +20,13 @@ class ConfiguredParams:
     recentFiles = dict()
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
-    def __init__(self,config):
+    def __init__(self,config,parameterdict):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
         self.sourceCodeEdits = dict()
         self.config = config
+        self.parameterdict = parameterdict
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -101,7 +102,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
-        self.variableTableModel = VariableTableModel.VariableTableModel( self.pulseProgram.variabledict )
+        self.variableTableModel = VariableTableModel.VariableTableModel( self.pulseProgram.variabledict, self.parameterdict )
         self.variableView.setModel(self.variableTableModel)
         self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.pulseProgram.variabledict )
         self.shutterTableView.setModel(self.shutterTableModel)
@@ -146,9 +147,9 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.tabWidget = QtGui.QTabWidget(parent)
         self.horizontalLayout.addWidget(self.tabWidget)
 
-    def addExperiment(self, experiment):
+    def addExperiment(self, experiment, parameterdict=dict()):
         if not experiment in self.pulseProgramSet:
-            programUi = PulseProgramUi(self.config)
+            programUi = PulseProgramUi(self.config, parameterdict)
             programUi.setupUi(experiment,programUi)
             programUi.myindex = self.tabWidget.addTab(programUi,experiment)
             self.pulseProgramSet[experiment] = programUi
