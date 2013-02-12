@@ -19,7 +19,7 @@ import os.path
 sys.path.append(os.path.abspath(r'modules'))
 sys.path.append(os.path.abspath(r'ui'))
 
-#import CounterWidget
+import CounterWidget
 #import TDCWidget
 #import FastTDCWidget
 import SettingsDialog
@@ -66,8 +66,10 @@ class WidgetContainerUi(WidgetContainerForm):
 
         self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
         self.settingsDialog.setupUi(self)
+
+        self.settings = self.settingsDialog.settings        
         
-        for widget,name in [ #(CounterWidget.CounterWidget(), "Simple Counter"), 
+        for widget,name in [ (CounterWidget.CounterWidget(self.settings), "Simple Counter"), 
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
@@ -150,8 +152,8 @@ class WidgetContainerUi(WidgetContainerForm):
     def onPulses(self):
         self.pulseProgramDialog.show()
         
-    def onSettingsApply(self):
-        self.settings = self.settingsDialog.settings
+    def onSettingsApply(self,settings):
+        self.settings = settings
         print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):

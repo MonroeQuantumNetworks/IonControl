@@ -112,16 +112,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-        
-    def onActivated(self, index):
-        if index==self.myindex:
-            print "Activated", self.experimentname
-            self.filenameComboBox.clear()
-            self.filenameComboBox.addItems([x for x in recentFiles])
-            self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
-        else:
-            print "Deactivated", self.experimentname
-            
+                    
     def onAccept(self):
         pass
     
@@ -132,6 +123,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
+        
+    def getPulseProgramBinary(self,parameters=dict()):
+        # need to update variables self.pulseProgram.updateVariables( self.)
+        return self.pulseProgram.toBinary()
     
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:

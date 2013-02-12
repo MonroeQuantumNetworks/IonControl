@@ -75,11 +75,12 @@ class FPGAUtilit:
         self.modules = dict()
 
     def listBoards(self):
-        self.moduleCount = self.xem.GetDeviceCount()
+        xem = ok.FrontPanel()
+        self.moduleCount = xem.GetDeviceCount()
         self.modules = dict()
         for i in range(self.moduleCount):
             desc = DeviceDescription()
-            desc.serial = self.xem.GetDeviceListSerial(i)
+            desc.serial = xem.GetDeviceListSerial(i)
             tmp = ok.FrontPanel()
             tmp.OpenBySerial(desc.serial)
             desc.identifier = tmp.GetDeviceID()
@@ -89,6 +90,7 @@ class FPGAUtilit:
             desc.modelName = ModelStrings.get(desc.model,'Unknown')
             tmp = None
             self.modules[desc.identifier] = desc
+        del(xem)
         return self.modules
         
     def renameBoard(self,serial,newname):
@@ -108,7 +110,15 @@ class FPGAUtilit:
         tmp.ConfigureFPGA(bitfile)
         tmp = None
         
-        
+    def openByName(self,name):
+        self.xem = ok.FrontPanel()
+        check( self.xem.OpenBySerial( self.modules[name].serial ), "OpenByName {0}".format(name) )
+        return self.xem
+
+    def openBySerial(self,serial):
+        self.xem = ok.FrontPanel()
+        check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
+        return self.xem
     
 if __name__ == "__main__":
     fpga = FPGAUtilit()

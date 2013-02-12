@@ -15,6 +15,7 @@ class Settings:
     def __init__(self):
         self.deviceSerial = None
         self.deviceDescription = None
+        self.xem = None
 
 SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialog.ui')
 
@@ -65,12 +66,14 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.settings.deviceDescription = str(description)
         self.settings.deviceInfo = self.deviceMap[str(description)]
         self.identifierEdit.setText( description )
+        if self.settings.deviceSerial not in [None,'',0]:
+            self.settings.xem = self.fpga.openBySerial(self.settings.deviceSerial)
         
     def accept(self):
         print "accept"
         self.lastPos = self.pos()
         self.hide()
-        self.recipient.onSettingsApply()        
+        self.recipient.onSettingsApply(self.settings)        
         
     def reject(self):
         print "reject"
@@ -103,8 +106,6 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         if bitfile!="":
             self.fpga.uploadBitfile(self.settings.deviceSerial,self.bitfileCache[bitfile])
 
-    def progressCallback(length,count,arg):
-        print length, count
             
 if __name__ == "__main__":
     import sys
