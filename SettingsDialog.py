@@ -25,7 +25,7 @@ class SettingsDialogConfig:
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def __init__(self,config,parent=0):
         SettingsDialogBase.__init__(self,parent)    
-        SettingsDialogForm.__init__(self)
+        SettingsDialogForm.__init__(self,parent)
         self.config = config
         self.deviceMap = dict()
         self.settings = Settings()
@@ -112,10 +112,11 @@ if __name__ == "__main__":
         def onSettingsApply():
             pass
         
+    config = dict()
     recipient = Recipient()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    ui = SettingsDialog(MainWindow)
+    ui = SettingsDialog(config)
     ui.setupUi(recipient)
     MainWindow.setCentralWidget(ui)
     MainWindow.show()

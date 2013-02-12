@@ -4,12 +4,75 @@
 
 import ok, sys
 
+
+ModelStrings = {
+		0: 'Unknown',
+		1: 'XEM3001v1',
+		2: 'XEM3001v2',
+		3: 'XEM3010',
+		4: 'XEM3005',
+		5: 'XEM3001CL',
+		6: 'XEM3020',
+		7: 'XEM3050',
+		8: 'XEM9002',
+		9: 'XEM3001RB',
+		10: 'XEM5010',
+		11: 'XEM6110LX45',
+		15: 'XEM6110LX150',
+		12: 'XEM6001',
+		13: 'XEM6010LX45',
+		14: 'XEM6010LX150',
+		16: 'XEM6006LX9',
+		17: 'XEM6006LX16',
+		18: 'XEM6006LX25',
+		19: 'XEM5010LX110',
+		20: 'ZEM4310',
+		21: 'XEM6310LX45',
+		22: 'XEM6310LX150',
+		23: 'XEM6110v2LX45',
+		24: 'XEM6110v2LX150'
+}
+
+ErrorMessages = {
+	 0: 'NoError',
+	-1: 'Failed',
+	-2: 'Timeout',
+	-3: 'DoneNotHigh',
+	-4: 'TransferError',
+	-5: 'CommunicationError',
+	-6: 'InvalidBitstream',
+	-7: 'FileError',
+	-8: 'DeviceNotOpen',
+	-9: 'InvalidEndpoint',
+	-10: 'InvalidBlockSize',
+	-11: 'I2CRestrictedAddress',
+	-12: 'I2CBitError',
+	-13: 'I2CNack',
+	-14: 'I2CUnknownStatus',
+	-15: 'UnsupportedFeature',
+	-16: 'FIFOUnderflow',
+	-17: 'FIFOOverflow',
+	-18: 'DataAlignmentError',
+	-19: 'InvalidResetProfile',
+	-20: 'InvalidParameter'
+}
+
+
 class DeviceDescription:
     pass
 
+class FPGAException(Exception):
+    pass
+        
+def check(number, command):
+    if number not in [0,None]:
+        print 
+        raise FPGAException("OpalKelly exception '{0}' in command {1}".format(ErrorMessages.get(number,number),command))
+
+
 class FPGAUtilit:
     def __init__(self):
-        self.xem = ok.FrontPanel()
+        self.modules = dict()
 
     def listBoards(self):
         self.moduleCount = self.xem.GetDeviceCount()
@@ -23,7 +86,7 @@ class FPGAUtilit:
             desc.major = tmp.GetDeviceMajorVersion()
             desc.minor = tmp.GetDeviceMinorVersion()
             desc.model = tmp.GetBoardModel()
-            desc.modelName = tmp.GetBoardModelString(desc.model)
+            desc.modelName = ModelStrings.get(desc.model,'Unknown')
             tmp = None
             self.modules[desc.identifier] = desc
         return self.modules
@@ -31,8 +94,13 @@ class FPGAUtilit:
     def renameBoard(self,serial,newname):
         tmp = ok.FrontPanel()
         tmp.OpenBySerial(serial)
+        oldname = tmp.GetDeviceID()
         tmp.SetDeviceId( newname )
-        tmp = None
+        tmp.OpenBySerial(serial)
+        newname = tmp.GetDeviceID()
+        if newname!=oldname:
+            self.modules[newname] = self.modules.pop(oldname)
+        
         
     def uploadBitfile(self,serial,bitfile,progressCallback=None):
         tmp = ok.FrontPanel()
@@ -41,59 +109,6 @@ class FPGAUtilit:
         tmp = None
         
         
-
-def fpgaInit(name, pllFreqs, bitFile, configurePLL=True ):
-    xem = ok.FrontPanel()
-    module_count = xem.GetDeviceCount()
-
-    print "Opal Kelly Frontpanel",ok.__version__
-    print "Found %d modules"%(module_count)
-    if (module_count == 0): 
-        print "No XEMs found!"
-        sys.exit(1)
-    id = ''
-
-    for i in range(module_count):
-        serial = xem.GetDeviceListSerial(i)
-        tmp = ok.FrontPanel()
-        tmp.OpenBySerial(serial)
-        id = tmp.GetDeviceID()
-        print id
-        tmp = None
-        if (id == name):
-            break
-    if (id  != name):
-        print "Didn't find " + name + " in module list!"
-        sys.exit(1)
-
-    xem.OpenBySerial(serial)
-    print "Found device called %s"%(xem.GetDeviceID())
-
-    if configurePLL:
-        print "Loading PLL config"
-        pll = ok.PLL22393()
-        xem.GetEepromPLL22393Configuration(pll)
-        pll.SetPLLParameters(0, 240, 48, True)
-        pll.SetPLLParameters(1, 240, 48, False)
-        pll.SetPLLParameters(2, 240, 48, False)  #change 200 to 240 CWC 05212012
-        for i in range(5):
-            pll.SetOutputSource(i, pll.ClkSrc_PLL0_0)
-            pll.SetOutputDivider(i, 2)
-            pll.SetOutputEnable(i, (i == 0))
-    
-        print "Ref is at %gMHz, PLL is at %gMHz"%(pll.GetReference(), pll.GetPLLFrequency(0))
-        for i in range(5):
-            if (pll.IsOutputEnabled(i)):
-                print "Clock %d at %gMHz"%(i, pll.GetOutputFrequency(i))
-    
-        print "Programming PLL"
-        # xem.SetEepromPLL22393Configuration(pll)
-        xem.SetPLL22393Configuration(pll)
-
-    print "Programming FPGA"
-    xem.ConfigureFPGA('./FPGA/' + bitFile)
-    return xem
-    
     
 if __name__ == "__main__":
     fpga = FPGAUtilit()
