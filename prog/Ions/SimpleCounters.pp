@@ -18,7 +18,7 @@ var coolingOn         1, shutter coolingOnMask
 var coolingCounter    0, counter
 var coolingOffMask    1, mask
 var coolingOff        0, shutter coolingOffMask
-var coolingOffCounter 0, 
+var coolingOffCounter 0, counter
 var coolingTime       1, parameter, ms
 var experiments     350, parameter
 var epsilon         100, parameter, ns
@@ -44,5 +44,5 @@ cooling: NOP
 	UPDATE epsilon
 
 	DEC
-	JMP cooling	
+	#JMP cooling	
 	END

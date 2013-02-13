@@ -30,6 +30,7 @@ import FromFile
 import PulseProgramUi
 import ShutterUi
 import DDSUi
+import PulserHardware
 
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
@@ -66,8 +67,9 @@ class WidgetContainerUi(WidgetContainerForm):
 
         self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
         self.settingsDialog.setupUi(self)
-
         self.settings = self.settingsDialog.settings        
+        self.pulserHardware = PulserHardware.PulserHardware(self.settingsDialog.settings.xem)
+
         
         for widget,name in [ (CounterWidget.CounterWidget(self.settings), "Simple Counter"), 
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
@@ -83,11 +85,11 @@ class WidgetContainerUi(WidgetContainerForm):
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
                
-        self.shutterUi = ShutterUi.ShutterUi()
+        self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter')
         self.shutterUi.setupUi(self.shutterUi)
         self.shutterDockWidget.setWidget( self.shutterUi )
 
-        self.triggerUi = ShutterUi.ShutterUi()
+        self.triggerUi = ShutterUi.ShutterUi(self.pulserHardware, 'trigger')
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
         self.triggerDockWidget.setWidget( self.triggerUi )
@@ -154,6 +156,7 @@ class WidgetContainerUi(WidgetContainerForm):
         
     def onSettingsApply(self,settings):
         self.settings = settings
+        self.pulserHardware = PulserHardware.PulserHardware(self.settings.xem)
         print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):

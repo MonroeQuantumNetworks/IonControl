@@ -101,8 +101,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         
     def getVariables(self):
         returndict = dict()
-        for name, var in self.maskdict.iteritems():
-            returndict[name] = var.data
-        for var in self.variablelist:
+        print "Maskdict: ", self.maskdict
+        for var in self.maskdict.values() + self.variablelist:
             returndict[var.name] = var.data
         return returndict

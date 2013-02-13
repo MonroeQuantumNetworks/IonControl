@@ -9,17 +9,21 @@ from PyQt4 import QtCore, QtGui
 class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
     onColor =  QtGui.QColor(QtCore.Qt.green)
     offColor =  QtGui.QColor(QtCore.Qt.red)
-    def __init__(self, shutterdict, shuttervalues, parent=None, *args): 
+    def __init__(self, shutterdict, pulserHardware, outputname, size=32, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.shutterdict = shutterdict
         self.shutterNameDict = dict((value, key) for key, value in shutterdict.iteritems())
-        self.shuttervalues = shuttervalues
-        
+        self.pulserHardware = pulserHardware
+        self.outputname = outputname
+        self.size = size
+        self.shutter = getattr(self.pulserHardware,self.outputname)
+#        size = 8
+#        [bool(235 & (1 << size - i - 1)) for i in xrange(size)]
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.shuttervalues) 
+        return self.size
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
@@ -47,7 +51,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
     def data(self, index, role): 
         if index.isValid():
             return { (QtCore.Qt.DisplayRole,0): self.shutterdict.get(index.row(),None),
-                     (QtCore.Qt.BackgroundColorRole,1): self.onColor if self.shuttervalues[index.row()] else self.offColor,
+                     (QtCore.Qt.BackgroundColorRole,1): self.onColor if self.shutter & (1<<index.row()) else self.offColor,
                      (QtCore.Qt.EditRole,0): self.shutterdict.get(index.row(),''),
                      }.get((role,index.column()),None)
         return None
@@ -67,5 +71,6 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
 
     def onClicked(self,index):
         if index.column()==1:
-            self.shuttervalues[index.row()] = not self.shuttervalues[index.row()] 
+            self.shutter ^= 1<<index.row()
+        setattr(self.pulserHardware,self.outputname,self.shutter)
         self.dataChanged.emit(index,index)

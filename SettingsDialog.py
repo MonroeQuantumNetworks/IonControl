@@ -61,13 +61,14 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         print self.deviceMap
         
     def onIndexChanged(self,description):
-        print "New instrument", description, self.deviceMap[str(description)]
-        self.settings.deviceSerial = self.deviceMap[str(description)].serial
-        self.settings.deviceDescription = str(description)
-        self.settings.deviceInfo = self.deviceMap[str(description)]
-        self.identifierEdit.setText( description )
-        if self.settings.deviceSerial not in [None,'',0]:
-            self.settings.xem = self.fpga.openBySerial(self.settings.deviceSerial)
+        if description!='':
+            print "New instrument", description, self.deviceMap[str(description)]
+            self.settings.deviceSerial = self.deviceMap[str(description)].serial
+            self.settings.deviceDescription = str(description)
+            self.settings.deviceInfo = self.deviceMap[str(description)]
+            self.identifierEdit.setText( description )
+            if self.settings.deviceSerial not in [None,'',0]:
+                self.settings.xem = self.fpga.openBySerial(self.settings.deviceSerial)
         
     def accept(self):
         print "accept"
@@ -88,7 +89,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def apply(self,button):
         print button.text(), "button pressed"
         if str(button.text())=="Apply":
-            self.recipient.onSettingsApply()
+            self.recipient.onSettingsApply(self.settings)
             
     def close(self):
         self.config['SettingsDialog.Config'] = self.configSettings
@@ -103,8 +104,10 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             
     def onUploadBitfile(self):
         bitfile = str(self.comboBoxBitfiles.currentText())
+        print "Uloading file '{0}'".format(bitfile),
         if bitfile!="":
-            self.fpga.uploadBitfile(self.settings.deviceSerial,self.bitfileCache[bitfile])
+            self.fpga.openBySerial( self.settings.deviceSerial )
+            self.fpga.uploadBitfile(self.bitfileCache[bitfile])
 
             
 if __name__ == "__main__":

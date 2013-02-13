@@ -73,25 +73,36 @@ def check(number, command):
 class FPGAUtilit:
     def __init__(self):
         self.modules = dict()
+        self.openModule = None
+        self.xem = None
 
     def listBoards(self):
         xem = ok.FrontPanel()
         self.moduleCount = xem.GetDeviceCount()
         self.modules = dict()
         for i in range(self.moduleCount):
-            desc = DeviceDescription()
-            desc.serial = xem.GetDeviceListSerial(i)
+            serial = xem.GetDeviceListSerial(i)
             tmp = ok.FrontPanel()
-            tmp.OpenBySerial(desc.serial)
-            desc.identifier = tmp.GetDeviceID()
-            desc.major = tmp.GetDeviceMajorVersion()
-            desc.minor = tmp.GetDeviceMinorVersion()
-            desc.model = tmp.GetBoardModel()
-            desc.modelName = ModelStrings.get(desc.model,'Unknown')
+            check( tmp.OpenBySerial( serial ), "OpenBySerial" )
+            desc = self.getDeviceDescription(tmp)
             tmp = None
             self.modules[desc.identifier] = desc
         del(xem)
+        if self.openModule is not None:
+            self.modules[self.openModule.identifier] = self.openModule
         return self.modules
+        
+    def getDeviceDescription(self,xem):
+        """Get informaion from an open device
+        """
+        desc = DeviceDescription()
+        desc.serial = xem.GetSerialNumber()
+        desc.identifier = xem.GetDeviceID()
+        desc.major = xem.GetDeviceMajorVersion()
+        desc.minor = xem.GetDeviceMinorVersion()
+        desc.model = xem.GetBoardModel()
+        desc.modelName = ModelStrings.get(desc.model,'Unknown')
+        return desc
         
     def renameBoard(self,serial,newname):
         tmp = ok.FrontPanel()
@@ -103,12 +114,9 @@ class FPGAUtilit:
         if newname!=oldname:
             self.modules[newname] = self.modules.pop(oldname)
         
-        
-    def uploadBitfile(self,serial,bitfile,progressCallback=None):
-        tmp = ok.FrontPanel()
-        tmp.OpenBySerial(serial)
-        tmp.ConfigureFPGA(bitfile)
-        tmp = None
+    def uploadBitfile(self,bitfile):
+        if self.xem is not None and self.xem.IsOpen():
+            check( self.xem.ConfigureFPGA(bitfile), "Configure bitfile {0}".format(bitfile))
         
     def openByName(self,name):
         self.xem = ok.FrontPanel()
@@ -116,8 +124,11 @@ class FPGAUtilit:
         return self.xem
 
     def openBySerial(self,serial):
-        self.xem = ok.FrontPanel()
-        check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
+        print "Open Serial",serial
+        if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:
+            self.xem = ok.FrontPanel()
+            check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
+            self.openModule = self.getDeviceDescription(self.xem)
         return self.xem
     
 if __name__ == "__main__":

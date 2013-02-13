@@ -17,6 +17,7 @@ sys.path.append(os.path.abspath(r'modules'))
 import enum
 import CountrateConversion
 import PulserHardware
+import time
 
 MessageQueue = Queue.Queue()
 
@@ -36,48 +37,47 @@ class Worker(QtCore.QThread):
     notifierfloat = QtCore.pyqtSignal(float)
     notifierint = QtCore.pyqtSignal(int)
     
-    def __init__(self, settings, pulseProgramUi, initial_tick=0, parent = None):
+    def __init__(self, pulserHardware, pulseProgramUi, initial_tick=0, parent = None):
         QtCore.QThread.__init__(self, parent)
         self.exiting = False
-        self.xem = settings.xem
+        self.pulserHardware = pulserHardware
+        self.pulseProgramUi = pulseProgramUi
         self.Mutex = QtCore.QMutex()
         self.activated = False
         self.tick = initial_tick
         
     def __enter__(self):
         self.integration_time = 100.0;
-        
         return self
         
     def __exit__(self, type, value, traceback):
-        if hasattr(self, 'Connection'):
-            self.Connection.close()
         self.wait()
 
     def run(self):
         try:
             self.tick_counter = 0
             print "Starting"
+            self.pulserHardware.ppStart()
             with self:
                 while not self.exiting:
                     if not MessageQueue.empty():
                         task = MessageQueue.get()
                         print "setting counter_mask", task.counter_mask
                         self.tick_counter = self.min_counter(task.counter_mask)
-                        command = struct.pack('>BBBI', 0x10, task.counter_mask, 0x11, task.counter_interval ) 
-                        print hexprint(command)
-                        self.Connection.write(command)
-    
-                    data = self.Connection.read(5)
-                    if len(data)==5:
-                        result = struct.unpack(">Lb", data)
-                        counter = result[0]>>24
-                        if (counter==self.tick_counter):
-                            self.tick += 1
-                        self.data.emit( counter, self.tick, result[0] & 0xffffff )
-                    else:
-                        pass
+                    self.pulserHardware.ppReadData()
+                    time.sleep(0.1)
+                    #data = self.Connection.read(5)
+#                    if len(data)==5:
+#                        result = struct.unpack(">Lb", data)
+#                        counter = result[0]>>24
+#                        if (counter==self.tick_counter):
+#                            self.tick += 1
+#                        self.data.emit( counter, self.tick, result[0] & 0xffffff )
+#                    else:
+#                        pass
                         #print self.Connection.getStatus(), len(data)
+            self.pulserHardware.ppStop()
+            print "PP Stopped"
         except Exception as err:
             print err
 
@@ -112,6 +112,35 @@ class CounterWidget(CounterForm, CounterBase):
         self.unit = CountrateConversion.DisplayUnit()
         self.deviceSettings = settings
         self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
+
+    def setupUi(self, MainWindow, config):
+        self.config = config        
+        self.curves = [None]*4
+        super(CounterWidget,self).setupUi(MainWindow)
+        
+        self.MaxElements = self.config.get('counter.MaxElements', default=self.MaxElements )
+        self.counter_mask = self.config.get('counter.counter_mask', default=1 )
+        self.unit.unit = self.config.get('counter.DisplayUnit',1)
+        self.DisplayUnit.setCurrentIndex(self.unit.unit)
+        
+        self.remember_points_box.setValue(self.MaxElements)
+        self.remember_points_box.valueChanged.connect(self.on_update_displaysettings)        
+        
+        self.counter_enable_box_1.stateChanged.connect( partial(self.on_counter_update,0) )
+        self.counter_enable_box_2.stateChanged.connect( partial(self.on_counter_update,1) )
+        self.counter_enable_box_3.stateChanged.connect( partial(self.on_counter_update,2) )
+        self.counter_enable_box_4.stateChanged.connect( partial(self.on_counter_update,3) )
+
+        self.counter_enable_box_1.setChecked( self.counter_mask & 0x01 == 0x01 )
+        self.counter_enable_box_2.setChecked( self.counter_mask & 0x02 == 0x02 )
+        self.counter_enable_box_3.setChecked( self.counter_mask & 0x04 == 0x04 )
+        self.counter_enable_box_4.setChecked( self.counter_mask & 0x08 == 0x08 )
+
+        self.curves = list()
+        for mypen in curvecolors:
+            #self.curves.append(self.plotview.plot(pen=mypen))
+            self.curves.append(None)
+        self.DisplayUnit.currentIndexChanged[int].connect(self.onUnitChange)
 
     def setPulseProgramUi(self,pulseProgramSetUi):
         self.pulseProgramUi = pulseProgramSetUi.addExperiment('Simple Counter')
@@ -192,39 +221,6 @@ class CounterWidget(CounterForm, CounterBase):
             return 1<<index
         return 0
         
-    def setupUi(self, MainWindow, config):
-        self.config = config        
-        self.curves = [None]*4
-        super(CounterWidget,self).setupUi(MainWindow)
-        
-        self.integration_time = self.config.get('counter.integration_time', default=self.integration_time )
-        self.MaxElements = self.config.get('counter.MaxElements', default=self.MaxElements )
-        self.counter_mask = self.config.get('counter.counter_mask', default=1 )
-        self.unit.unit = self.config.get('counter.DisplayUnit',1)
-        self.DisplayUnit.setCurrentIndex(self.unit.unit)
-        
-        self.time_box.setValue(self.integration_time)
-        self.time_box.valueChanged.connect(self.on_update)
-
-        self.remember_points_box.setValue(self.MaxElements)
-        self.remember_points_box.valueChanged.connect(self.on_update_displaysettings)        
-        
-        self.counter_enable_box_1.stateChanged.connect( partial(self.on_counter_update,0) )
-        self.counter_enable_box_2.stateChanged.connect( partial(self.on_counter_update,1) )
-        self.counter_enable_box_3.stateChanged.connect( partial(self.on_counter_update,2) )
-        self.counter_enable_box_4.stateChanged.connect( partial(self.on_counter_update,3) )
-
-        self.counter_enable_box_1.setChecked( self.counter_mask & 0x01 == 0x01 )
-        self.counter_enable_box_2.setChecked( self.counter_mask & 0x02 == 0x02 )
-        self.counter_enable_box_3.setChecked( self.counter_mask & 0x04 == 0x04 )
-        self.counter_enable_box_4.setChecked( self.counter_mask & 0x08 == 0x08 )
-
-        self.curves = list()
-        for mypen in curvecolors:
-            #self.curves.append(self.plotview.plot(pen=mypen))
-            self.curves.append(None)
-        self.DisplayUnit.currentIndexChanged[int].connect(self.onUnitChange)
-
     def onUnitChange(self,unit):
         self.unit.unit = unit
 
@@ -234,7 +230,7 @@ class CounterWidget(CounterForm, CounterBase):
         if self.deviceSettings is not None:
             try:
                 self.deviceSettings.xem
-                self.worker = Worker(self.deviceSettings,self.pulseProgramUi,self.initial_tick)
+                self.worker = Worker(self.pulserHardware,self.pulseProgramUi,self.initial_tick)
                 self.worker.data.connect(self.onData)
                 self.worker.start()
                 self.startData()
@@ -242,6 +238,7 @@ class CounterWidget(CounterForm, CounterBase):
                 self.state = self.OpStates.running
                 self.on_counter_update(0, 0)
                 print "counter activated"
+                self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             except Exception as ex:
                 self.StatusMessage.emit( ex.message )
     
@@ -258,5 +255,6 @@ class CounterWidget(CounterForm, CounterBase):
     def updateSettings(self,settings,active=False):
         self.deviceSettings = settings
         self.deactivate()
+        self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
         self.activate()
         

@@ -83,7 +83,7 @@ encodings = { 'AD9912_FRQ': (5e8/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = False
+debug = True
 
 def variableValueDict( variabledict ):
     returndict = dict()
@@ -142,6 +142,7 @@ class PulseProgram:
     def updateVariables(self, variables ):
         """ update the variable values in the bytecode
         """
+        print "update variables:",variables
         for name, value in variables.iteritems():
             if name in self.variabledict:
                 var = self.variabledict[name]
