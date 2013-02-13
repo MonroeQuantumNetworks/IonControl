@@ -7,7 +7,7 @@
 #modified on 6/5/2012 by C. Spencer Nichols
 #
 
-import sys, re, os
+import re, os
 import magnitude
 import struct
 
@@ -59,6 +59,8 @@ OPS = {'NOP'    : 0x00,
        'WAIT' : 0x35,
        'DDSFRQFINE' : 0x36,
        'LDCOUNT' : 0x37,
+       'WRITEPIPE' : 0x38,
+       'READPIPE' : 0x39,
        'END'    : 0xFF }
 
 class Dimensions:

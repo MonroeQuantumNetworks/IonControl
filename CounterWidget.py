@@ -8,8 +8,6 @@ Created on Sat Dec 22 17:25:13 2012
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import numpy
-import crcmod
-import ftd2xx
 import struct
 import Queue
 from functools import partial
@@ -18,6 +16,7 @@ import os.path
 sys.path.append(os.path.abspath(r'modules'))
 import enum
 import CountrateConversion
+import PulserHardware
 
 MessageQueue = Queue.Queue()
 
@@ -37,26 +36,17 @@ class Worker(QtCore.QThread):
     notifierfloat = QtCore.pyqtSignal(float)
     notifierint = QtCore.pyqtSignal(int)
     
-    def __init__(self, serial, initial_tick=0, parent = None):
+    def __init__(self, settings, pulseProgramUi, initial_tick=0, parent = None):
         QtCore.QThread.__init__(self, parent)
         self.exiting = False
-        self.crc8 = crcmod.mkCrcFun(0x107, initCrc=0, xorOut=0x00)
-        self.serial = serial
+        self.xem = settings.xem
         self.Mutex = QtCore.QMutex()
         self.activated = False
         self.tick = initial_tick
         
     def __enter__(self):
-        self.Connection = ftd2xx.openEx(self.serial);
-        self.Connection.setBaudRate(3000000)
-        self.Connection.setDataCharacteristics(8,0,0)
-        self.Connection.setFlowControl(0,0,0)
-        self.Connection.setTimeouts(100,100)
-        self.Connection.resetDevice()
-        self.Connection.purge()
         self.integration_time = 100.0;
-        command = struct.pack('>BBBBBI', 0x14, 0x00, 0x10, 1, 0x11, int(self.integration_time*50000 )  )
-        self.Connection.write(command)
+        
         return self
         
     def __exit__(self, type, value, traceback):
@@ -112,7 +102,7 @@ class CounterWidget(CounterForm, CounterBase):
     ClearStatusMessage = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
     
-    def __init__(self,parent=None):
+    def __init__(self,settings,parent=None):
         CounterBase.__init__(self,parent)
         CounterForm.__init__(self)
         self.MaxElements = 400;
@@ -120,6 +110,12 @@ class CounterWidget(CounterForm, CounterBase):
         self.state = self.OpStates.idle
         self.initial_tick = 0
         self.unit = CountrateConversion.DisplayUnit()
+        self.deviceSettings = settings
+        self.pulserHardware = PulserHardware(self.deviceSettings.xem)
+
+    def setPulseProgramUi(self,pulseProgramUi):
+        self.pulseProgramUi = pulseProgramUi
+        self.pulseProgramUi.addExperiment('Simple Counter')
     
     def onSave(self):
         print "CounterWidget Save not implemented"
@@ -205,7 +201,6 @@ class CounterWidget(CounterForm, CounterBase):
         self.integration_time = self.config.get('counter.integration_time', default=self.integration_time )
         self.MaxElements = self.config.get('counter.MaxElements', default=self.MaxElements )
         self.counter_mask = self.config.get('counter.counter_mask', default=1 )
-        self.deviceSerial = self.config.get('counter.deviceSerial' )
         self.unit.unit = self.config.get('counter.DisplayUnit',1)
         self.DisplayUnit.setCurrentIndex(self.unit.unit)
         
@@ -237,9 +232,10 @@ class CounterWidget(CounterForm, CounterBase):
 
     def activate(self):
         self.activated = False
-        if self.deviceSerial is not None:
+        if self.deviceSettings is not None:
             try:
-                self.worker = Worker(self.deviceSerial,self.initial_tick)
+                self.deviceSettings.xem
+                self.worker = Worker(self.deviceSettings,self.pulseProgramUi,self.initial_tick)
                 self.worker.data.connect(self.onData)
                 self.worker.start()
                 self.startData()
@@ -261,8 +257,7 @@ class CounterWidget(CounterForm, CounterBase):
         self.config['counter.DisplayUnit'] = self.unit.unit
 
     def updateSettings(self,settings,active=False):
-        if settings.deviceSerial != self.deviceSerial:
-            self.deviceSerial = settings.deviceSerial
-            self.deactivate()
-            self.activate()
+        self.deviceSettings = settings
+        self.deactivate()
+        self.activate()
         

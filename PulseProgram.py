@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Feb 07 11:35:43 2013
-
-@author: plmaunz
-"""
-
 #
 # File: ppcomp_Jan2008.py
 # based on ppcomp2.py
@@ -12,19 +5,19 @@ Created on Thu Feb 07 11:35:43 2013
 # read in menomic pulse program and translate into bytecode
 # modified on 6/5/2012 by C. Spencer Nichols
 # rewritten Peter Maunz
-
+  
 import re, os
 import magnitude
 import struct
 import math
 import collections
-
+  
 # add deg to magnitude
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
-
+  
 class ppexception(Exception):
     pass
-
+  
 # Code definitions
 OPS = {'NOP'    : 0x00,
        'DDSFRQ' : 0x01,
@@ -67,6 +60,8 @@ OPS = {'NOP'    : 0x00,
        'WAIT' : 0x35,
        'DDSFRQFINE' : 0x36,
        'LDCOUNT' : 0x37,
+       'WRITEPIPE' : 0x38,
+       'READPIPE' : 0x39,
        'END'    : 0xFF }
 
 class Dimensions:
