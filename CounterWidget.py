@@ -111,11 +111,10 @@ class CounterWidget(CounterForm, CounterBase):
         self.initial_tick = 0
         self.unit = CountrateConversion.DisplayUnit()
         self.deviceSettings = settings
-        self.pulserHardware = PulserHardware(self.deviceSettings.xem)
+        self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
 
-    def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi
-        self.pulseProgramUi.addExperiment('Simple Counter')
+    def setPulseProgramUi(self,pulseProgramSetUi):
+        self.pulseProgramUi = pulseProgramSetUi.addExperiment('Simple Counter')
     
     def onSave(self):
         print "CounterWidget Save not implemented"

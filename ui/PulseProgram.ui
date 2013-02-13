@@ -67,6 +67,7 @@
          </property>
          <widget class="QTableView" name="shutterTableView"/>
          <widget class="QTableView" name="triggerTableView"/>
+         <widget class="QTableView" name="counterTableView"/>
          <widget class="QTabWidget" name="sourceTabs">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">

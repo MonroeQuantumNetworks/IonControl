@@ -98,3 +98,11 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
             newState = -oldState
         self.setState(index,newState)
         print index.row(), index.column()
+        
+    def getVariables(self):
+        returndict = dict()
+        for name, var in self.maskdict.iteritems():
+            returndict[name] = var.data
+        for var in self.variablelist:
+            returndict[var.name] = var.data
+        return returndict

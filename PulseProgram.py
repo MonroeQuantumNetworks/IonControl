@@ -85,6 +85,11 @@ encodings = { 'AD9912_FRQ': (5e8/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
 
 debug = False
 
+def variableValueDict( variabledict ):
+    returndict = dict()
+    for name, var in variabledict.iteritems():
+        returndict[name] = var.value
+    return returndict
 
 class PulseProgram:    
     """ Encapsulates a PulseProgrammer Program
@@ -141,7 +146,7 @@ class PulseProgram:
             if name in self.variabledict:
                 var = self.variabledict[name]
                 address = var.address
-                var.data = self.convertParameter(value, var)
+                var.data = self.convertParameter(value, var.encoding )
                 self.bytecode[address] = (self.bytecode[address][0], var.data )
                 self.variabledict[name] = var
             else:
@@ -288,7 +293,7 @@ class PulseProgram:
 
         if unit is not None:
             var.value = magnitude.mg( float(data), unit )
-            data = self.convertParameter( var.value, var )
+            data = self.convertParameter( var.value, var.encoding )
             print data, hex(data)
         else:
             var.value = magnitude.mg( float(data), '' )
@@ -343,7 +348,7 @@ class PulseProgram:
         return self.bytecode 
 
 
-    def convertParameter(self, mag, variable=None ):
+    def convertParameter(self, mag, encoding=None ):
         """ convert a dimensioned parameter to the binary value
         expected by the hardware. The conversion is determined by the variable encoding
         """
@@ -351,7 +356,7 @@ class PulseProgram:
             if tuple(mag.dimension())==Dimensions.time:
                 return int((mag/self.timestep).round()) 
             else:
-                step, unit, dimension, mask = encodings[variable.encoding]
+                step, unit, dimension, mask = encodings[encoding]
                 return int(round(mag.toval(unit)/step)) & mask
         else:
             return mag
@@ -359,6 +364,8 @@ class PulseProgram:
     def compileCode(self):
         self.parse()
         self.toBytecode()
+        
+
 
 if __name__ == "__main__":
     debug = True

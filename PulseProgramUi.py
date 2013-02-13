@@ -12,6 +12,7 @@ import PulseProgram
 import VariableTableModel
 import ShutterTableModel
 import TriggerTableModel
+import CounterTableModel
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -113,6 +114,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
+        self.counterTableModel = CounterTableModel.CounterTableModel( self.pulseProgram.variabledict )
+        self.counterTableView.setModel(self.counterTableModel)
+        self.counterTableView.resizeColumnsToContents()
+        self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
                     
     def onAccept(self):
         pass
@@ -127,6 +132,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
+        substitutes = dict()
+        for model in [self.variableTableModel, self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
+            substitutes.update( model.getVariables() )
+        self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
     
 class PulseProgramSetUi(QtGui.QDialog):
@@ -149,7 +158,7 @@ class PulseProgramSetUi(QtGui.QDialog):
             programUi.setupUi(experiment,programUi)
             programUi.myindex = self.tabWidget.addTab(programUi,experiment)
             self.pulseProgramSet[experiment] = programUi
-            self.tabWidget.currentChanged.connect( programUi.onActivated )
+        return self.pulseProgramSet[experiment]
             
     def getPulseProgram(self, experiment):
         return self.pulseProgramSet[experiment]

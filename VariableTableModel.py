@@ -18,10 +18,14 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = variabledict.copy()
+        self.variabledict = dict()
+        for name,var in variabledict.copy().iteritems():
+            if var.type in ['parameter','address',None]:
+                self.variabledict[name] = var
         self.variablelist = sorted([ x for x in self.variabledict.values() if x.type=='parameter' ], key=attrgetter('index')) 
         #print self.variablelist 
         self.expression = Expression.Expression()
+        self.parameterdict = parameterdict
 
     def setVisible(self, visibledict ):
         print self.rowCount()
@@ -55,7 +59,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
     def setDataValue(self, index, value):
         try:
             strvalue = str(value.toString())
-            result = self.expression.evaluate(strvalue)           
+            result = self.expression.evaluate(strvalue,self.parameterdict)           
             if result.dimensionless():
                 result.output_prec(0)
             var = self.variablelist[index.row()]
@@ -93,3 +97,10 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                     3: 'evaluated'
                     }.get(section)
         return None #QtCore.QVariant()
+        
+    def getVariables(self):
+        myvariables = dict()
+        for name,var in self.variabledict.iteritems():
+            myvariables[name] = var.value
+        return myvariables
+ 
