@@ -39,13 +39,26 @@ class PulserHardware(object):
         
     def ppUpload(self,binarycode):
         with QtCore.QMutexLocker(self.Mutex):
+            print "starting PP upload"
             check( self.xem.SetWireInValue(0x00, 0, 0x0FFF), "ppUpload write start address" )	# start addr at zero
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
             print "Databuf length" ,len(binarycode)
-            check( self.xem.WriteToPipeIn(0x80, bytearray(binarycode) ), "ppUpload write data" )
-            print "uploaded pp file"
+            num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
+            print "uploaded pp file {0} bytes".format(num)
+            num, data = self.ppDownload(0,300)
+            print "Read {0} bytes back. ".format(num),data==binarycode
+            with open('binary_back','wb') as f:
+                f.write(data)
             return True
+            
+    def ppDownload(self,startaddress,length):
+        self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)	# start addr at 3900
+        self.xem.UpdateWireIns()
+        self.xem.ActivateTriggerIn(0x41, 1)
+        data = bytearray('\000'*length)
+        num = self.xem.ReadFromPipeOut(0xA0, data)
+        return num, data
         
     def ppIsRunning(self):
         with QtCore.QMutexLocker(self.Mutex):

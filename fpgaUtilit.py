@@ -65,8 +65,7 @@ class FPGAException(Exception):
     pass
         
 def check(number, command):
-    if number not in [0,None]:
-        print 
+    if number<0:
         raise FPGAException("OpalKelly exception '{0}' in command {1}".format(ErrorMessages.get(number,number),command))
 
 

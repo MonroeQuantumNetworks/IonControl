@@ -240,6 +240,7 @@ class CounterWidget(CounterForm, CounterBase):
                 print "counter activated"
                 self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             except Exception as ex:
+                print ex
                 self.StatusMessage.emit( ex.message )
     
     def deactivate(self):
