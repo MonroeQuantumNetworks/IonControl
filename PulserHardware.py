@@ -46,16 +46,16 @@ class PulserHardware(object):
             print "Databuf length" ,len(binarycode)
             num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
             print "uploaded pp file {0} bytes".format(num)
-            num, data = self.ppDownload(0,300)
+            num, data = self.ppDownload(0,num)
             print "Read {0} bytes back. ".format(num),data==binarycode
-            with open('binary_back','wb') as f:
+            with open(r'debug\binary_back','wb') as f:
                 f.write(data)
             return True
             
     def ppDownload(self,startaddress,length):
         self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)	# start addr at 3900
         self.xem.UpdateWireIns()
-        self.xem.ActivateTriggerIn(0x41, 1)
+        self.xem.ActivateTriggerIn(0x41, 0)
         data = bytearray('\000'*length)
         num = self.xem.ReadFromPipeOut(0xA0, data)
         return num, data
@@ -94,17 +94,60 @@ class PulserHardware(object):
             self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
             return True
 
-    def ppReadData(self):
+
+    def ppReadData(self,minbytes,timeout=0.5):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.UpdateWireOuts()
-            byteswaiting = self.xem.GetWireOutValue(25)   # pipe_out_available
-            print byteswaiting
+            byteswaiting = self.xem.GetWireOutValue(0x25) & 0x7ff  # pipe_out_available
+            tries = 0
+            while byteswaiting<minbytes and tries<10:
+                time.sleep(timeout/10)
+                tries +=1
+                byteswaiting = self.xem.GetWireOutValue(0x25) & 0x7ff  # pipe_out_available
+            print hex(byteswaiting)
+            data = bytearray('\x00'*byteswaiting)
+            self.xem.ReadFromPipeOut(0xa2, data)
+            print "Read {0} bytes".format(len(data))
+            return data
+            
+    def ppReadLog(self):
+        with QtCore.QMutexLocker(self.Mutex):
+ 		#Commented CWC 04032012
+            data = bytearray('\x00'*32)
+            self.xem.ReadFromPipeOut(0xA1, data)
+            with open(r'debug\log','wb') as f:
+                f.write(data)
+
+#            if ((data[:2] != '\xED\xFE') or (data[-2:] != '\xED\x0F')):
+#                print "Bad data string: ", map(ord, data)
+#                return True
+
+#            data = map(ord, data[2:-2])
+#
+#            #Decode
+#            active =  bool(data[1] & 0x80)
+
         
 
 if __name__ == "__main__":
-    xem = ok.FrontPanel()
-    check( xem.OpenBySerial('12230003NX'), 'OpenBySerial' )
+    import fpgaUtilit
+    import time
+    fpga = fpgaUtilit.FPGAUtilit()
+    xem = fpga.openBySerial('12230003NX')
+    hw = PulserHardware( xem )
+    fpga.uploadBitfile(r'FPGA_Ions\fpgafirmware.bit')
     #fpgaUtilit.check( xem.ConfigureFPGA(r'FPGA_Ions\fpgafirmware.bit'), 'ConfigureFPGA' )
-    hw = PulserHardware(xem)
+    #hw = PulserHardware(xem)
     hw.shutter = 0xfffffffe
-    
+
+    hw.ppUpload( bytearray(b'\x03\x00\x00\x07\x00\x00\x00\x38\x00\x00\x00\x13\x8f\x00\x00\x00') )
+    hw.ppStart()
+    for i in range(20):
+        hw.ppReadData(100,0.1)
+    #print xem.ActivateTriggerIn(0x41, 0 )
+
+    #hw.ppReadLog()
+    #check( xem.SetWireInValue(0x00, 7, 0x0FFF), "ppUpload write start address" )	# start addr at zero
+    #xem.UpdateWireIns()
+    #check( xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
+     

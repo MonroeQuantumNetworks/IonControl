@@ -1,6 +1,7 @@
 # PyDev
 .project
 .pydevproject
+debug/
 
 # Compiled files
 *.pyc
