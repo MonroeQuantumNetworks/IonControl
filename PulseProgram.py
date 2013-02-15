@@ -62,6 +62,7 @@ OPS = {'NOP'    : 0x00,
        'LDCOUNT' : 0x37,
        'WRITEPIPE' : 0x38,
        'READPIPE' : 0x39,
+       'LDTDCCOUNT' : 0x3a,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -114,7 +115,7 @@ class PulseProgram:
         self.adIndexList = [(x,0) for x in range(6) ]
         self.adBoards = [ Board() ]*6
         
-        self.timestep = magnitude.mg(20.8333333333,'ns')
+        self.timestep = magnitude.mg(20.0,'ns')
 
     def setHardware(self, adIndexList, adBoards, timestep ):
         self.adIndexList = adIndexList

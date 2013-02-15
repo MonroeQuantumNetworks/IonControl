@@ -103,16 +103,16 @@ class PulserHardware(object):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-            byteswaiting = wirevalue & 0xffc
-            empty = wirevalue & 0x8000
+            #print hex(wirevalue)
+            byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
             tries = 0
-            while byteswaiting<minbytes and (minbytes<=4 and not empty) and tries<10:
+            while byteswaiting<minbytes and tries<10:
                 time.sleep(timeout/10)
                 tries +=1
                 self.xem.UpdateWireOuts()
                 wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-                byteswaiting = wirevalue & 0xffc
-                empty = wirevalue & 0x8000
+                #print hex(wirevalue)
+                byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
             data = bytearray('\x00'*byteswaiting)
             self.xem.ReadFromPipeOut(0xa2, data)
             return data
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         for i in sliceview(data,4):
             (num,) = struct.unpack('I',i)
             print hex(num)
-    #hw.ppStop()
+     #hw.ppStop()
     #hw.ppReadLog()
     xem.UpdateWireOuts()
     print "DataOutPipe",hex(xem.GetWireOutValue(0x20))
