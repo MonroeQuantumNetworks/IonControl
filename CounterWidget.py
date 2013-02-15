@@ -9,7 +9,6 @@ import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import numpy
 import struct
-import Queue
 from functools import partial
 import sys
 import os.path
@@ -17,9 +16,6 @@ sys.path.append(os.path.abspath(r'modules'))
 import enum
 import CountrateConversion
 import PulserHardware
-import time
-
-MessageQueue = Queue.Queue()
 
 step = 0.3
 
@@ -51,33 +47,40 @@ class Worker(QtCore.QThread):
         return self
         
     def __exit__(self, type, value, traceback):
-        self.wait()
+        pass
+#        self.wait()
+        
+    def onReload(self):
+        with QtCore.QMutexLocker(self.Mutex):
+            if self.running:
+                self.pulserHardware.ppStop()
+                self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+                self.pulserHardware.ppStart()
+                
 
     def run(self):
         try:
-            self.tick_counter = 0
-            print "Starting"
-            self.pulserHardware.ppStart()
+            with QtCore.QMutexLocker(self.Mutex):
+                self.tick_counter = 0
+                self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+                print "Starting"
+                self.pulserHardware.ppStart()
+                self.running = True
             with self:
                 while not self.exiting:
-                    if not MessageQueue.empty():
-                        task = MessageQueue.get()
-                        print "setting counter_mask", task.counter_mask
-                        self.tick_counter = self.min_counter(task.counter_mask)
-                    self.pulserHardware.ppReadData()
-                    time.sleep(0.1)
-                    #data = self.Connection.read(5)
-#                    if len(data)==5:
-#                        result = struct.unpack(">Lb", data)
-#                        counter = result[0]>>24
-#                        if (counter==self.tick_counter):
-#                            self.tick += 1
-#                        self.data.emit( counter, self.tick, result[0] & 0xffffff )
-#                    else:
-#                        pass
-                        #print self.Connection.getStatus(), len(data)
-            self.pulserHardware.ppStop()
-            print "PP Stopped"
+                    with QtCore.QMutexLocker(self.Mutex):
+                        data = self.pulserHardware.ppReadData(4,0.1)
+                    for s in PulserHardware.sliceview(data,4):
+                        (token,) = struct.unpack('I',s)
+                        count = token & 0xffffff
+                        tokentype = (token >> 28)
+                        counter = (token>>24) & 0xf
+                        if (counter==self.tick_counter):
+                            self.tick += 1
+                        self.data.emit( counter, self.tick, count )
+            with QtCore.QMutexLocker(self.Mutex):
+                self.pulserHardware.ppStop()
+                print "PP Stopped"
         except Exception as err:
             print err
 
@@ -174,7 +177,6 @@ class CounterWidget(CounterForm, CounterBase):
         interval = self.time_box.value()
         task.counter_interval = int( interval* 50000)
         self.integration_time = interval;
-        MessageQueue.put(task)
         print "task", self.counter_mask, int( interval* 50000)
         self.config['counter.integration_time'] = self.integration_time
         self.config['counter.counter_mask'] = self.counter_mask
@@ -238,7 +240,6 @@ class CounterWidget(CounterForm, CounterBase):
                 self.state = self.OpStates.running
                 self.on_counter_update(0, 0)
                 print "counter activated"
-                self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             except Exception as ex:
                 print ex
                 self.StatusMessage.emit( ex.message )
@@ -259,3 +260,6 @@ class CounterWidget(CounterForm, CounterBase):
         self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
         self.activate()
         
+    def onReload(self):
+        if self.activated:
+            self.worker.onReload()

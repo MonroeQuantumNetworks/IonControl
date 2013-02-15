@@ -134,56 +134,40 @@ def sliceview(view,length):
     return tuple(buffer(view, i, length) for i in range(0, len(view), length))    
 
 if __name__ == "__main__":
-    import sys
     import fpgaUtilit
+    import PulseProgram
+    
+    printdata = True
+    
+    pp = PulseProgram.PulseProgram()
+    pp.loadSource(r'prog\Ions\test.pp')
     fpga = fpgaUtilit.FPGAUtilit()
     xem = fpga.openBySerial('12230003NX')
-    hw = PulserHardware( xem )
-    hw.ppStop()
-    fpga.uploadBitfile(r'FPGA_Ions\fpgafirmware.bit')
-    #fpgaUtilit.check( xem.ConfigureFPGA(r'FPGA_Ions\fpgafirmware.bit'), 'ConfigureFPGA' )
-    #hw = PulserHardware(xem)
-    hw.shutter = 0xfffffffe
-    xem.ResetFPGA()
-#    hw.ppUpload( bytearray(b'\x06\x00\x00\x07'+b'\x08\x00\x00\x08'+b'\x00\x00\x00\x38'+b'\x00\x00\x00\x07'+
-#                           b'\x08\x00\x00\x0a'+b'\x00\x00\x00\x00'+b'\xff\xff\x0f\x00'+b'\x00\x00\x00\x00'+
-#                           b'\x00\x00\x00\x00') )
-    check( xem.ActivateTriggerIn(0x41, 0), "ppUpload trigger" )
-    writeData = bytearray()
-    for i in range(100):
-        chunk = struct.pack('I',i )
-        writeData += chunk
-#    hw.ppUpload( bytearray(b'\x0f\x00\x00\x07'+b'\x0e\x00\x00\x0f'+b'\x0e\x00\x00\x0a'+b'\x00\x00\x00\x39'+
-#                           b'\x0e\x00\x00\x00'+b'\x00\x00\x00\x38'+b'\x00\x00\x00\x00'+b'\x00\x00\x00\x13'+
-#                           b'\x00\x00\x00\x00'+b'\x00\x00\x00\x00'+b'\x00\x00\x00\x00'+b'\x00\x00\x00\x00'+
-#                           b'\xff\xff\x00\x00'+b'\x00\x00\x00\x00'+b'\x00\x00\x00\x00'+b'\xff\xff\x08\x00'))
-    hw.ppUpload( bytearray(b'\x0c\x00\x00\x32'+b'\x0f\x00\x00\x34'+b'\x0d\x00\x00\x32'+b'\x00\x00\x00\x35'+
-                           b'\x0f\x00\x00\x34'+b'\x00\x00\x00\x00'+b'\x00\x00\x00\x38'+b'\x0d\x00\x00\x00'+
-                           b'\x0c\x00\x00\x00'+b'\x00\x00\x00\xff'+b'\x00\x00\x00\x00'+b'\x00\x00\x00\x00'+
-                           b'\xff\xff\x00\x00'+b'\x00\x00\x00\x00'+b'\x00\x00\x00\x00'+b'\xff\xff\xff\x08'))
+    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware-100.bit')
+    hw = PulserHardware(xem)
+    hw.ppUpload( pp.toBinary() )
     xem.UpdateWireOuts()
     print "DataOutPipe", hex(xem.GetWireOutValue(0x20))
-    print hw.ppWriteData(writeData)
     xem.UpdateWireOuts()
     print "DataOutPipe",hex(xem.GetWireOutValue(0x20))
     hw.ppStart()
-    while True:#for j in range(60):
+    Finished = False
+    while not Finished:#for j in range(60):
         data = hw.ppReadData(1000,0.1)
-        #print "read {0} bytes".format(len(data))
-        #print "slices:", len(sliceview(data,4))
-        for i in sliceview(data,4):
-            (num,) = struct.unpack('I',i)
-            print hex(num)
-     #hw.ppStop()
-    #hw.ppReadLog()
+        if printdata:
+            for i in sliceview(data,4):
+                (num,) = struct.unpack('I',i)
+                Finished |= (num==0xffffffff)
+                print hex(num)
+        else:
+            for i in sliceview(data,4):
+                (num,) = struct.unpack('I',i)
+                Finished |= (num==0xffffffff)
+            if len(data)>0:
+                print "read {0} bytes".format(len(data))
+            else:
+                print ".",
+            
     xem.UpdateWireOuts()
     print "DataOutPipe",hex(xem.GetWireOutValue(0x20))
-    print "byteswaiting" , xem.GetWireOutValue(0x25) & 0xffc  # pipe_out_available
-        
-    #print xem.ActivateTriggerIn(0x41, 0 )
-
-    #hw.ppReadLog()
-    #check( xem.SetWireInValue(0x00, 7, 0x0FFF), "ppUpload write start address" )	# start addr at zero
-    #xem.UpdateWireIns()
-    #check( xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
-     
+    print "byteswaiting" , xem.GetWireOutValue(0x25) & 0xfff  # pipe_out_available

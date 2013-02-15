@@ -15,11 +15,11 @@ var startup           0, shutter startupMask
 var startupTime       1, parameter, ms
 var coolingOnMask     1, mask
 var coolingOn         1, shutter coolingOnMask
-var coolingCounter    0, counter
+var coolingCounter    1, counter
 var coolingOffMask    1, mask
 var coolingOff        0, shutter coolingOffMask
 var coolingOffCounter 0, counter
-var coolingTime       1, parameter, ms
+var coolingTime       100, parameter, ms
 var experiments     350, parameter
 var epsilon         100, parameter, ns
 var ddsApplyTrigger   3,trigger
@@ -44,5 +44,5 @@ cooling: NOP
 	UPDATE epsilon
 
 	DEC
-	#JMP cooling	
+	JMP cooling	
 	END

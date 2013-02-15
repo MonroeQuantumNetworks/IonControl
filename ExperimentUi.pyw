@@ -108,6 +108,7 @@ class WidgetContainerUi(WidgetContainerForm):
         self.actionExit.triggered.connect(self.onClose)
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
+        self.actionReload.triggered.connect(self.onReload)
         self.currentTab = self.tabList[0]
         self.currentTab.activate()
         if 'MainWindow.State' in self.config:
@@ -133,7 +134,11 @@ class WidgetContainerUi(WidgetContainerForm):
         if hasattr(self.currentTab,'onContinue'):
             self.currentTab.onStop()
         else:
-            self.statusbar.showMessage("continue not implemented")        
+            self.statusbar.showMessage("continue not implemented")    
+            
+    def onReload(self):
+        print "OnReload"
+        self.currentTab.onReload()
     
     def onCurrentChanged(self, index):
         self.currentTab.deactivate()
@@ -168,10 +173,13 @@ class WidgetContainerUi(WidgetContainerForm):
         for tab in self.tabList:
             tab.onClose()
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
-        self.config['Settings.deviceDescription'] = self.settings.deviceDescription        
+        self.config['Settings.deviceDescription'] = self.settings.deviceDescription
+        self.currentTab.deactivate()
         self.parent.close()
         self.pulseProgramDialog.close()
+        self.pulseProgramDialog.done(0)
         self.settingsDialog.close()
+        self.settingsDialog.done(0)
 
     def onMessageWrite(self,message):
         cursor = self.textEditConsole.textCursor()
@@ -179,6 +187,10 @@ class WidgetContainerUi(WidgetContainerForm):
         cursor.insertText(message)
         self.textEditConsole.setTextCursor(cursor)
         self.textEditConsole.ensureCursorVisible()
+        
+    def quit(self):
+        print "quit"
+        super(WidgetContainerUi,self).quit()
 
 if __name__ == "__main__":
     import sys

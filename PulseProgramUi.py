@@ -137,7 +137,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             substitutes.update( model.getVariables() )
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
-    
+        
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
         pass
@@ -188,6 +188,7 @@ class PulseProgramSetUi(QtGui.QDialog):
     def close(self):
         for page in self.pulseProgramSet.values():
             page.close()
+        self.reject()
 
     
 if __name__ == "__main__":

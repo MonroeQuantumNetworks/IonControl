@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="kde">
+    <file>icons/configure.png</file>
+    <file>icons/reload.png</file>
     <file>icons/colorize.png</file>
     <file>icons/fileopen.png</file>
     <file>icons/filesaveas.png</file>

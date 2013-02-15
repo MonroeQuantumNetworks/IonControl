@@ -154,6 +154,9 @@ class PulseProgram:
             else:
                 print "variable", name, "not found in dictionary."
         return self.bytecode
+        
+    def variable(self, variablename ):
+        return self.variabledict.get(variablename)
 
     def loadFromMemory(self):
         """Similar to loadSource
