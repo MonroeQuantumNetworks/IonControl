@@ -49,7 +49,7 @@ class Logger(QtCore.QObject):
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
 
-class WidgetContainerUi(WidgetContainerForm):
+class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     def __init__(self,config):
         self.config = config
         super(WidgetContainerUi, self).__init__()
@@ -188,20 +188,19 @@ class WidgetContainerUi(WidgetContainerForm):
         self.textEditConsole.setTextCursor(cursor)
         self.textEditConsole.ensureCursorVisible()
         
-    def quit(self):
-        print "quit"
-        super(WidgetContainerUi,self).quit()
+    def closeEvent(self,e):
+        self.onClose()
 
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
-    MainWindow = QtGui.QMainWindow()
+    #MainWindow = QtGui.QMainWindow()
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
     with configshelve.configshelve("experiment-gui") as config:
         ui = WidgetContainerUi(config)
-        ui.setupUi(MainWindow)
+        ui.setupUi(ui)
         logger.textWritten.connect(ui.onMessageWrite)
-        MainWindow.show()
+        ui.show()
         sys.exit(app.exec_())
