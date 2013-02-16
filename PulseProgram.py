@@ -63,6 +63,9 @@ OPS = {'NOP'    : 0x00,
        'WRITEPIPE' : 0x38,
        'READPIPE' : 0x39,
        'LDTDCCOUNT' : 0x3a,
+       'CMPEQUAL' : 0x3b,
+       'JMPCMP' : 0x3c,
+       'JMPNCMP': 0x3d,
        'END'    : 0xFF }
 
 class Dimensions:

@@ -33,11 +33,17 @@ class PulserHardware(object):
         
     @property
     def trigger(self):
-        return 0
+        return self._trigger
             
     @trigger.setter
     def trigger(self,value):
-        print "Trigger out not implemented"
+        with QtCore.QMutexLocker(self.Mutex):
+            print "setShutter"
+            check( self.xem.SetWireInValue(0x08, value, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.SetWireInValue(0x09, value>>16, 0xFFFF)	, 'SetWireInValue' )
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
+            check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
+            self._trigger = value
         
     def ppUpload(self,binarycode,startaddress=0):
         with QtCore.QMutexLocker(self.Mutex):
