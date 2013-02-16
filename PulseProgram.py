@@ -163,7 +163,7 @@ class PulseProgram:
         return self.bytecode
         
     def variable(self, variablename ):
-        return self.variabledict.get(variablename)
+        return self.variabledict.get(variablename).value
 
     def variableUpdateCode(self, variablename, value ):
         """returns the code to update the variable directly on the fpga

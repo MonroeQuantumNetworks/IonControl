@@ -43,7 +43,6 @@ class Worker(QtCore.QThread):
         self.tick = initial_tick
         
     def __enter__(self):
-        self.integration_time = 100.0;
         return self
         
     def __exit__(self, type, value, traceback):
@@ -56,7 +55,6 @@ class Worker(QtCore.QThread):
                 self.pulserHardware.ppStop()
                 self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
                 self.pulserHardware.ppStart()
-                
 
     def run(self):
         try:
@@ -109,7 +107,6 @@ class CounterWidget(CounterForm, CounterBase):
         CounterBase.__init__(self,parent)
         CounterForm.__init__(self)
         self.MaxElements = 400;
-        self.integration_time = 100.0;
         self.state = self.OpStates.idle
         self.initial_tick = 0
         self.unit = CountrateConversion.DisplayUnit()
@@ -127,12 +124,12 @@ class CounterWidget(CounterForm, CounterBase):
         self.DisplayUnit.setCurrentIndex(self.unit.unit)
         
         self.remember_points_box.setValue(self.MaxElements)
-        self.remember_points_box.valueChanged.connect(self.on_update_displaysettings)        
+        self.remember_points_box.valueChanged.connect(self.onUpdateDisplaysettings)        
         
-        self.counter_enable_box_1.stateChanged.connect( partial(self.on_counter_update,0) )
-        self.counter_enable_box_2.stateChanged.connect( partial(self.on_counter_update,1) )
-        self.counter_enable_box_3.stateChanged.connect( partial(self.on_counter_update,2) )
-        self.counter_enable_box_4.stateChanged.connect( partial(self.on_counter_update,3) )
+        self.counter_enable_box_1.stateChanged.connect( partial(self.onCounterUpdate,0) )
+        self.counter_enable_box_2.stateChanged.connect( partial(self.onCounterUpdate,1) )
+        self.counter_enable_box_3.stateChanged.connect( partial(self.onCounterUpdate,2) )
+        self.counter_enable_box_4.stateChanged.connect( partial(self.onCounterUpdate,3) )
 
         self.counter_enable_box_1.setChecked( self.counter_mask & 0x01 == 0x01 )
         self.counter_enable_box_2.setChecked( self.counter_mask & 0x02 == 0x02 )
@@ -149,46 +146,59 @@ class CounterWidget(CounterForm, CounterBase):
         self.pulseProgramUi = pulseProgramSetUi.addExperiment('Simple Counter')
     
     def onSave(self):
+        """ Main program save button
+        """
         print "CounterWidget Save not implemented"
     
     def onStart(self):
+        """ Main program Start button
+        """
         print "CounterWidget Start not implemented"
     
     def onPause(self):
+        """ Main program Pause button
+        """
         if self.state == self.OpStates.paused:
             self.state = self.OpStates.running
         elif self.state == self.OpStates.running:
             self.state = self.OpStates.paused
-        self.on_update()
     
     def onStop(self):
+        """ Main program Stop button
+        """
         print "CounterWidget Stop not implemented"
         
+    def onClear(self):
+        """ Main program Clear button
+        """
+        for i,x in enumerate(self.xData):
+            self.xData[i] = numpy.array([])
+        for i,y in enumerate(self.yData):
+            self.yData[i] = numpy.array([])
+        
+    def onReload(self):
+        """ Main program reload button
+        """
+        if self.activated:
+            self.worker.onReload()
+            
     def startData(self):
+        """ Initialize local data
+        """
         if not hasattr(self, 'xData'):
             self.xData = [numpy.array([])]*4 
         if not hasattr(self, 'yData'):
             self.yData = [numpy.array([])]*4 
         #self.max_tick = 0
  
-    def on_update(self):
-        task = Task()
-        task.counter_mask = 0 if self.state == self.OpStates.paused else self.counter_mask 
-        interval = self.time_box.value()
-        task.counter_interval = int( interval* 50000)
-        self.integration_time = interval;
-        print "task", self.counter_mask, int( interval* 50000)
-        self.config['counter.integration_time'] = self.integration_time
-        self.config['counter.counter_mask'] = self.counter_mask
-
-    def on_update_displaysettings(self):
+    def onUpdateDisplaysettings(self):
         self.MaxElements = self.remember_points_box.value()
         self.config['counter.MaxElements'] = self.MaxElements
         
     def onData(self, counter, x, y ):
         if counter<4:
             self.initial_tick = x   
-            y = self.unit.convert(y,self.integration_time) 
+            y = self.unit.convert(y,self.pulseProgramUi.pulseProgram.variable("coolingTime").ounit('ms').toval()) 
             Start = max( 1+len(self.xData[counter])-self.MaxElements, 0)
             self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
             self.xData[counter] = numpy.append(self.xData[counter][Start:], x)
@@ -197,21 +207,16 @@ class CounterWidget(CounterForm, CounterBase):
             else:
                 print "ignoring result for counter", counter
                 
-    def onClear(self):
-        for i,x in enumerate(self.xData):
-            self.xData[i] = numpy.array([])
-        for i,y in enumerate(self.yData):
-            self.yData[i] = numpy.array([])
-                
-    def on_counter_update(self, index, i):
+    def onCounterUpdate(self, index, i):
+        """ called when the counter enable check boxes change state
+        """
         print "i is", i, "index is", index
         self.counter_mask = 0
         self.counter_mask = ( self.counterPlotUpdate(0,self.counter_enable_box_1.isChecked()) |
                               self.counterPlotUpdate(1,self.counter_enable_box_2.isChecked()) |
                               self.counterPlotUpdate(2,self.counter_enable_box_3.isChecked()) |
                               self.counterPlotUpdate(3,self.counter_enable_box_4.isChecked()) )
-        self.on_update()
-        print "counter_mask", self.counter_mask    
+        self.config['counter.counter_mask'] = self.counter_mask
 
     def counterPlotUpdate(self, index, show ):
         if show and self.curves[index] is None:
@@ -226,19 +231,18 @@ class CounterWidget(CounterForm, CounterBase):
     def onUnitChange(self,unit):
         self.unit.unit = unit
 
-
     def activate(self):
         self.activated = False
         if self.deviceSettings is not None:
             try:
                 self.deviceSettings.xem
+                self.onCounterUpdate(0, 0)
                 self.worker = Worker(self.pulserHardware,self.pulseProgramUi,self.initial_tick)
                 self.worker.data.connect(self.onData)
                 self.worker.start()
                 self.startData()
                 self.activated = True
                 self.state = self.OpStates.running
-                self.on_counter_update(0, 0)
                 print "counter activated"
             except Exception as ex:
                 print ex
@@ -255,11 +259,10 @@ class CounterWidget(CounterForm, CounterBase):
         self.config['counter.DisplayUnit'] = self.unit.unit
 
     def updateSettings(self,settings,active=False):
+        """ Main program settings have changed
+        """
         self.deviceSettings = settings
         self.deactivate()
         self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
         self.activate()
         
-    def onReload(self):
-        if self.activated:
-            self.worker.onReload()

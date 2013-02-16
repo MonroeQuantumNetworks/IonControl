@@ -11,6 +11,7 @@ var counteron 0x0, counter
 var counteroff 0, counter
 var end 0xffffffff
 var temp 0x1234
+var integrationTime 500, parameter, ms
 
 here: NOP
 	SHUTTERMASK mask
@@ -26,7 +27,7 @@ here: NOP
 	ASYNCSHUTTER three
 	COUNTERMASK counteron
 	WAIT
-	UPDATE longdelay
+	UPDATE integrationTime
 	ASYNCSHUTTER four
 	CounterMASK counteroff
 	WAIT
