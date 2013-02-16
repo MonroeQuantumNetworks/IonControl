@@ -7,9 +7,10 @@ var two 2, shutter
 var three 3, shutter
 var four 4, shutter
 var five 5, shutter
-var counteron 0x0101, counter
+var counteron 0x0, counter
 var counteroff 0, counter
 var end 0xffffffff
+var temp 0x1234
 
 here: NOP
 	SHUTTERMASK mask
@@ -34,6 +35,18 @@ here: NOP
 	WAIT
 	UPDATE longdelay
 	WAIT
-	LDWR end
+	
+	# if nothin else to do jump to the end
+	JMPPIPEEMPTY endlabel
+	READPIPEINDF
+	NOP
+	READPIPE
+	NOP
+	WRITEPIPE 
+	NOP
+	WRITEPIPEINDF
+	JMP here
+	
+endlabel: LDWR end
 	WRITEPIPE
 	END

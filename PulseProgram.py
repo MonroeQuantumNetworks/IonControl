@@ -66,6 +66,10 @@ OPS = {'NOP'    : 0x00,
        'CMPEQUAL' : 0x3b,
        'JMPCMP' : 0x3c,
        'JMPNCMP': 0x3d,
+       'JMPPIPEAVAIL': 0x3e,
+       'JMPPIPEEMPTY': 0x3f,
+       'READPIPEINDF': 0x40,
+       'WRITEPIPEINDF': 0x41,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -161,6 +165,14 @@ class PulseProgram:
     def variable(self, variablename ):
         return self.variabledict.get(variablename)
 
+    def variableUpdateCode(self, variablename, value ):
+        """returns the code to update the variable directly on the fpga
+        consists of variablelocation and variablevalue
+        """
+        var = self.variabledict[variablename]
+        data = self.convertParameter(value, var.encoding )
+        return bytearray( struct.pack('II', (var.address, data)))
+            
     def loadFromMemory(self):
         """Similar to loadSource
         only this routine loads from self.source
@@ -274,6 +286,7 @@ class PulseProgram:
                 raise ppexception("Redefining label: {0}".format(label))
             else:
                 self.defines[label] = address
+                self.labeldict[label] = address
                 
     def appendVariableCode(self):
         """ append all variables to the instruction part of the code
@@ -330,6 +343,8 @@ class PulseProgram:
         for index, line in enumerate(self.code):
             bytedata = 0
             byteop = OPS[line[1]]
+            if debug:
+                print line[0],  ": ", line[1:], 
             try:
                 data = line[2]
                 #attempt to locate commands with constant data
@@ -339,7 +354,7 @@ class PulseProgram:
                 elif isinstance(data,(int,long)):
                     bytedata = data
                 elif isinstance(data,basestring): # now we are dealing with a variable and need its address
-                    bytedata = self.variabledict[line[2]].address
+                    bytedata = self.variabledict[line[2]].address if line[2] in self.variabledict else self.labeldict[line[2]]
                 elif isinstance(data,list): # list is what we have for DDS, will have 8bit channel and 16bit address
                     channel, data = line[2]
                     if isinstance(data,basestring):
@@ -347,11 +362,12 @@ class PulseProgram:
                     bytedata = (int(channel) << 16) + int(data) & 0xffff
             except KeyError:
                 print "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) # raise
-                #sys.exit(1) #exit the program after error CWC 08172012
+                #print self.labeldict
+                #print self.variabledict
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data))
             self.bytecode.append((byteop, bytedata))
             if debug:
-                print line[0],  ": ", line[1:], "--->", (hex(byteop), hex(bytedata))
+                print "--->", (hex(byteop), hex(bytedata))
     
         return self.bytecode 
 

@@ -149,13 +149,14 @@ if __name__ == "__main__":
     pp.loadSource(r'prog\Ions\test.pp')
     fpga = fpgaUtilit.FPGAUtilit()
     xem = fpga.openBySerial('12230003NX')
-    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware-100.bit')
+    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
     hw = PulserHardware(xem)
     hw.ppUpload( pp.toBinary() )
     xem.UpdateWireOuts()
-    print "DataOutPipe", hex(xem.GetWireOutValue(0x20))
+    print "DataOutPipe", hex(xem.GetWireOutValue(0x25))
+    hw.ppWriteData( bytearray('\x12\x34\x00\x00\x21\x22\x23\x24'))
     xem.UpdateWireOuts()
-    print "DataOutPipe",hex(xem.GetWireOutValue(0x20))
+    print "DataOutPipe",hex(xem.GetWireOutValue(0x25))
     hw.ppStart()
     Finished = False
     while not Finished:#for j in range(60):
@@ -164,7 +165,7 @@ if __name__ == "__main__":
             for i in sliceview(data,4):
                 (num,) = struct.unpack('I',i)
                 Finished |= (num==0xffffffff)
-                print hex(num)
+                print "data", hex(num)
         else:
             for i in sliceview(data,4):
                 (num,) = struct.unpack('I',i)
@@ -175,5 +176,5 @@ if __name__ == "__main__":
                 print ".",
             
     xem.UpdateWireOuts()
-    print "DataOutPipe",hex(xem.GetWireOutValue(0x20))
+    print "DataOutPipe",hex(xem.GetWireOutValue(0x25))
     print "byteswaiting" , xem.GetWireOutValue(0x25) & 0xfff  # pipe_out_available
