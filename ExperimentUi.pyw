@@ -20,6 +20,7 @@ sys.path.append(os.path.abspath(r'modules'))
 sys.path.append(os.path.abspath(r'ui'))
 
 import CounterWidget
+import ScanExperiment
 #import TDCWidget
 #import FastTDCWidget
 import SettingsDialog
@@ -33,7 +34,9 @@ import DDSUi
 import PulserHardware
 
 import PyQt4.uic
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui 
+
+printconfiguration = False
 
 class Logger(QtCore.QObject):    
     textWritten = QtCore.pyqtSignal(str)
@@ -64,14 +67,14 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         # initialize PulseProgramUi
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config)
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
-
+        
         self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
         self.settingsDialog.setupUi(self)
         self.settings = self.settingsDialog.settings        
         self.pulserHardware = PulserHardware.PulserHardware(self.settingsDialog.settings.xem)
 
-        
         for widget,name in [ (CounterWidget.CounterWidget(self.settings), "Simple Counter"), 
+                             (ScanExperiment.ScanExperiment(self.settings), "Scanning"),
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
@@ -199,6 +202,9 @@ if __name__ == "__main__":
     sys.stdout = logger
     sys.stderr = logger
     with configshelve.configshelve("experiment-gui") as config:
+        if printconfiguration:
+            for name, item in config.iteritems():
+                print name, item
         ui = WidgetContainerUi(config)
         ui.setupUi(ui)
         logger.textWritten.connect(ui.onMessageWrite)

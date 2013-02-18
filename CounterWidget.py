@@ -235,7 +235,7 @@ class CounterWidget(CounterForm, CounterBase):
         self.activated = False
         if self.deviceSettings is not None:
             try:
-                self.deviceSettings.xem
+                #self.deviceSettings.xem
                 self.onCounterUpdate(0, 0)
                 self.worker = Worker(self.pulserHardware,self.pulseProgramUi,self.initial_tick)
                 self.worker.data.connect(self.onData)

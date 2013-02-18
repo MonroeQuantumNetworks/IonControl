@@ -3,6 +3,8 @@
 # simple sequence with one cooling interval during which countrates can be measured
 # repeated in infinite loop
 #
+# A Pulse Programmer file for the ScanParameter experiment has to fulfill the following conditions
+# 
 #define COOLDDS 0
 
 # var syntax:
@@ -21,15 +23,32 @@ var coolingOff        0, shutter coolingOffMask
 var coolingOffCounter 0, counter
 var coolingTime       100, parameter, ms
 var experiments     350, parameter
+var experimentsleft 350
 var epsilon         100, parameter, ns
 var ddsApplyTrigger   3,trigger
+var endLabel 0xffffffff
 
+# Preparation
 	SHUTTERMASK startupMask
 	ASYNCSHUTTER startup
 	UPDATE startupTime
 	DDSFRQ COOLDDS, coolingFreq
 	DDSFRQFINE COOLDDS, coolingFreq
 	TRIGGER ddsApplyTrigger
+
+scanloop: NOP
+	# Read the scan parameter from the input data if there is nothing else jump to stop
+	# the parameters are echoed to the output stream as separators
+	JMPPIPEEMPTY endlabel
+	READPIPEINDF
+	WRITEPIPEINDF 
+	READPIPE
+	WRITEPIPE
+	STWI
+	# reload the number of experiments
+	LDWR experiments
+	STWR experimentsleft
+	
 cooling: NOP
 	SHUTTERMASK coolingOnMask
 	ASYNCSHUTTER coolingOn
@@ -42,8 +61,11 @@ cooling: NOP
 	COUNTERMASK coolingOffCounter
 	WAIT
 	UPDATE epsilon
-
-	READPIPE
-	CMPEQUAL 
-	JMP cooling	
+	DEC experimentsleft
+	STWR experimentsleft
+	JMPNZ cooling
+	JMP scanloop
+	
+endlabel: LDWR endLabel
+	WRITEPIPE
 	END

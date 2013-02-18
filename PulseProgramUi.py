@@ -38,7 +38,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
-        self.filenameComboBox.currentIndexChanged[QtCore.QString].connect( self.onFilenameChange )
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
         if self.configname not in self.config:
@@ -47,11 +46,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
         if self.configParams.lastFilename is not None:
+            print self.configname, self.configParams.lastFilename
             self.loadFile( self.configParams.lastFilename )
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
             self.splitterVertical.restoreState(self.configParams.splitterVertical)
+        self.filenameComboBox.currentIndexChanged[QtCore.QString].connect( self.onFilenameChange )
 
     def onFilenameChange(self, name ):
         name = str(name)
@@ -99,6 +100,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
     def updateDisplay(self):
         self.sourceTabs.clear()
+        self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
             textEdit = QtGui.QTextEdit()
             textEdit.setPlainText(text)
@@ -129,6 +131,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
+        print self.configname, self.configParams.lastFilename
         
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)

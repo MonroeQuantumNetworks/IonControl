@@ -172,7 +172,11 @@ class PulseProgram:
         var = self.variabledict[variablename]
         data = self.convertParameter(value, var.encoding )
         return bytearray( struct.pack('II', (var.address, data)))
-            
+        
+    def variableScanCode(self, variablename, values):
+        var = self.variabledict[variablename]
+        return [item for sublist in [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] for item in sublist]
+                   
     def loadFromMemory(self):
         """Similar to loadSource
         only this routine loads from self.source

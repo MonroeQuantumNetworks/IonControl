@@ -105,24 +105,22 @@ class PulserHardware(object):
             return True
 
 
-    def ppReadData(self,minbytes=4,timeout=0.5):
+    def ppReadData(self,minbytes=4,timeout=0.5,retryevery=0.05):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-            #print hex(wirevalue)
             byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
-            tries = 0
-            while byteswaiting<minbytes and tries<10:
-                time.sleep(timeout/10)
-                tries +=1
+            totaltime = 0
+            while byteswaiting<minbytes and totaltime<timeout:
+                time.sleep(retryevery)
+                totaltime += retryevery
                 self.xem.UpdateWireOuts()
                 wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-                #print hex(wirevalue)
                 byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
             data = bytearray('\x00'*byteswaiting)
             self.xem.ReadFromPipeOut(0xa2, data)
             return data
-            
+                        
     def ppWriteData(self,data):
         with QtCore.QMutexLocker(self.Mutex):
             return self.xem.WriteToPipeIn(0x81,data)
