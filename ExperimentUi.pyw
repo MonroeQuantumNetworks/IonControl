@@ -112,7 +112,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
-        self.currentTab = self.tabList[0]
+        self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
+        self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
@@ -177,6 +178,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             tab.onClose()
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription
+        self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
+        print "tabWidget.currentIndex()", self.config['MainWindow.currentIndex']
         self.currentTab.deactivate()
         self.parent.close()
         self.pulseProgramDialog.close()

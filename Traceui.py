@@ -83,7 +83,7 @@ class PlottedTrace(object):
     def replot(self):
         if hasattr(self,'curve') and self.curve is not None:
             self.curve.setData( self.trace.x, self.trace.y )
-        if hasattr(self,'errorBarItem'):
+        if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
             self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
 
 

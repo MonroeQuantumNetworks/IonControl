@@ -48,6 +48,12 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         print value
         return value
         
+    def setText(self,string):
+        self.lineEdit().setText( string )
+        
+    def setValue(self,value):
+        self.lineEdit().setText( str(value) )
+        
 if __name__ == "__main__":
     debug = True
     TestWidget, TestBase = PyQt4.uic.loadUiType('MagnitudeSpinBoxTest.ui')

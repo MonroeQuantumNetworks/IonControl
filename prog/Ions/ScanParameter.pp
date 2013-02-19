@@ -22,28 +22,32 @@ var coolingOffMask    1, mask
 var coolingOff        0, shutter coolingOffMask
 var coolingOffCounter 0, counter
 var coolingTime       100, parameter, ms
-var experiments     350, parameter
-var experimentsleft 350
-var epsilon         100, parameter, ns
+var experiments   10, parameter
+var experimentsleft 10
+var epsilon         400, parameter, ns
 var ddsApplyTrigger   3,trigger
 var endLabel 0xffffffff
 
 # Preparation
 	SHUTTERMASK startupMask
 	ASYNCSHUTTER startup
-	UPDATE startupTime
 	DDSFRQ COOLDDS, coolingFreq
 	DDSFRQFINE COOLDDS, coolingFreq
 	TRIGGER ddsApplyTrigger
+	UPDATE startupTime
 
 scanloop: NOP
 	# Read the scan parameter from the input data if there is nothing else jump to stop
 	# the parameters are echoed to the output stream as separators
 	JMPPIPEEMPTY endlabel
 	READPIPEINDF
+	NOP
 	WRITEPIPEINDF 
+	NOP
 	READPIPE
+	NOP
 	WRITEPIPE
+	NOP
 	STWI
 	# reload the number of experiments
 	LDWR experiments

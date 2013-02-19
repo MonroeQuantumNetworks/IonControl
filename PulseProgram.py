@@ -191,7 +191,7 @@ class PulseProgram:
         self.binarycode = bytearray()
         for op, arg in self.bytecode:
             if debug:
-                print hex(op), hex(arg), hex(int((op<<24) + arg))
+                print hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
 

@@ -101,17 +101,10 @@
  <customwidgets>
   <customwidget>
    <class>MagnitudeSpinBox</class>
-   <extends>QDoubleSpinBox</extends>
+   <extends>QAbstractSpinBox</extends>
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
- <tabstops>
-  <tabstop>comboBoxParameter</tabstop>
-  <tabstop>minimumBox</tabstop>
-  <tabstop>maximumBox</tabstop>
-  <tabstop>stepsBox</tabstop>
-  <tabstop>scanTypeCombo</tabstop>
- </tabstops>
  <resources/>
  <connections/>
 </ui>

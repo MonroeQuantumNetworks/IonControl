@@ -60,7 +60,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         try:
             strvalue = str(value.toString())
             result = self.expression.evaluate(strvalue,self.parameterdict)           
-            if result.dimensionless():
+            if isinstance(result, magnitude.Magnitude) and result.dimensionless():
                 result.output_prec(0)
             var = self.variablelist[index.row()]
             var.value = result

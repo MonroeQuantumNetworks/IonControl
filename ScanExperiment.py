@@ -25,8 +25,8 @@ ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperimen
 
 class Data:
     def __init__(self):
-        self.count = [numpy.array([])]*8
-        self.timestamp = [numpy.array([])]*8
+        self.count = [list()]*8
+        self.timestamp = [list()]*8
         self.timestampZero = [0]*8
         self.scanvalue = None
 
@@ -83,19 +83,26 @@ class Worker(QtCore.QThread):
                 self.timestampOffset = 0
                 while not self.exiting:
                     with QtCore.QMutexLocker(self.Mutex):
-                        data = self.pulserHardware.ppReadData(4,0.2)
+                        data = self.pulserHardware.ppReadData(4,1.0)
+                    #print len(data)
                     for s in PulserHardware.sliceview(data,4):
                         (token,) = struct.unpack('I',s)
+                        print hex(token)
                         if state == self.analyzingState.scanparameter:
                             if self.data.scanvalue is None:
                                 self.data.scanvalue = token
                             else:
-                                #self.dataAvailable.emit( self.data )
+                                self.dataAvailable.emit( self.data )
+                                print "emit"
                                 self.data = Data()
                                 self.data.scanvalue = token
+                            state = self.analyzingState.normal
                         elif token & 0xff000000 == 0xff000000:
                             if token == 0xffffffff:    # end of run
-                                self.exiting = True
+                                #self.exiting = True
+                                self.dataAvailable.emit( self.data )
+                                print "emit"
+                                self.data = Data()
                             elif token == 0xff000000:
                                 self.timestampOffset += 1<<28
                             elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
@@ -111,8 +118,9 @@ class Worker(QtCore.QThread):
                                 self.data.timestamp[channel].append(0)
                             elif key==3:
                                 self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timstampZero[channel])
-                    #self.dataAvailable.emit( self.data )
-                    self.data = Data()
+                if self.data.scanvalue is not None:
+                    self.dataAvailable.emit( self.data )
+                self.data = Data()
             with QtCore.QMutexLocker(self.Mutex):
                 self.pulserHardware.ppStop()
                 print "PP Stopped"
@@ -131,7 +139,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
         self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
-
+        self.currentTrace = None
+        self.currentIndex = 0
+        self.activated = False
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -146,7 +156,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
-        self.scanParametersWidget = ScanParameters.ScanParameters()
+        self.scanParametersWidget = ScanParameters.ScanParameters(config,"ScanExperiment")
         self.scanParametersWidget.setupUi(self.scanParametersWidget)
         self.scanParametersUi.setWidget(self.scanParametersWidget )
         self.dockWidgetList.append(self.scanParametersUi)
@@ -169,38 +179,47 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # get parameter to scan and scanrange
         self.scan = self.scanParametersWidget.getScan()
         self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
-        
-        self.currentTrace = Trace.Trace()
-        self.currentTrace.x = numpy.array(self.scan.list)
-        self.currentTrace.y = numpy.array([])
-        self.currentTrace.name = self.scan.name
-        self.currentTrace.vars.comment = ""
-        self.traceui.addTrace(Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList),pen=-1)
-        
         self.worker.startScan(self.scan.code)
+        self.currentIndex = 0
+        self.currentTrace = None
     
     def onPause(self):
         self.StatusMessage.emit("test Pause not implemented")
     
     def onStop(self):
-        self.StatusMessage.emit("test Stop not implemented")
+        self.worker.stopScan()
         
     def startData(self):
         """ Initialize necessary data structures
         """
         pass
     
-    def onData( data ):
+    def onData(self, data ):
         """ Called by worker with new data
         """
-        pass
+        print "onData", len(data.count[0])
+        mean = numpy.mean( data.count[0] )
+        x = self.scan.list[self.currentIndex].ounit('ms').toval()
+        if self.currentTrace is None:
+            self.currentTrace = Trace.Trace()
+            self.currentTrace.x = numpy.array([x])
+            self.currentTrace.y = numpy.array([mean])
+            self.currentTrace.name = self.scan.name
+            self.currentTrace.vars.comment = ""
+            self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
+            self.traceui.addTrace(self.plottedTrace,pen=-1)
+        else:
+            self.currentTrace.x = numpy.append(self.currentTrace.x, x)
+            self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
+            self.plottedTrace.replot()
+        self.currentIndex += 1
+            
         
     def activate(self):
         MainWindowWidget.MainWindowWidget.activate(self)
-        self.activated = False
-        if self.deviceSettings is not None:
+        if (self.deviceSettings is not None) and (not self.activated):
             try:
-                print "Scan activated"
+                print "Scan activated", self.activated
                 self.startData()
                 self.worker = Worker(self.pulserHardware,self.pulseProgramUi)
                 self.worker.dataAvailable.connect(self.onData)
@@ -213,6 +232,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def deactivate(self):
         MainWindowWidget.MainWindowWidget.deactivate(self)
         if self.activated and hasattr( self, 'worker'):
+            print "Scan deactivated"
             self.worker.finish()
             self.worker.wait()
             self.activated = False
@@ -220,6 +240,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 
     def onClose(self):
         self.config['ScanExperiment.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
+        self.scanParametersWidget.onClose()
 
     def updateSettings(self,settings,active=False):
         """ Main program settings have changed
