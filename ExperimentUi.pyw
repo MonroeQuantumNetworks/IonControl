@@ -97,7 +97,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerUi.setupUi(self.triggerUi)
         self.triggerDockWidget.setWidget( self.triggerUi )
 
-        self.DDSUi = DDSUi.DDSUi()
+        self.DDSUi = DDSUi.DDSUi(self.config, self.pulserHardware.xem )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
                

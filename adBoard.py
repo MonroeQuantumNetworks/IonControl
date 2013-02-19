@@ -10,6 +10,9 @@
 
 import sys, time, ok
 
+class adBoardException(Exception):
+    pass
+
 class adBoard:
     """public data
             - amplitude  - integer
@@ -47,33 +50,39 @@ class adBoard:
     #if adding a new board type, be sure to include it here
     #################################################################
 
-    _adTypes = ('ad9958', 'ad9959', 'ad9910', 'ad9858')
+    _adTypes = ('ad9958', 'ad9959', 'ad9910', 'ad9858', 'ad9912' )
     #maximum frequency, phasem and amplitude tuning words allowed by each board
     _freqMax = {'ad9958' : 250, #each board has 32 bits of frequency precision
                 'ad9959' : 250, #but different output maxima
                 'ad9910' : 400,
-                'ad9858' : 400}
+                'ad9858' : 400,
+                'ad9912' : 400}
     _halfClockMax = {'ad9958' : 250,
                      'ad9959' : 250,
                      'ad9910' : 500,
-                     'ad9858' : 500}
+                     'ad9858' : 500,
+                     'ad9912' : 500 }
     _phaseMax = {'ad9958' : 16383, #14 bits
                  'ad9959' : 16383, #14 bits
                  'ad9910' : 65535, #16 bits
-                 'ad9858' : 16383} #14 bits
+                 'ad9858' : 16383,
+                 'ad9912' : 16383 } #14 bits
     _ampMax = {'ad9958' : 1023,  #10 bits
                'ad9959' : 1023,  #10 bits
                'ad9910' : 16383, #14 bits
-               'ad9858' : 63}    #the max ad9858 amplitude is determined by any
+               'ad9858' : 63,
+               'ad9912' : 1023 }    #the max ad9858 amplitude is determined by any
                                 #attenuators attached to that particular board
     _boardChannels = {'ad9958' : 2,
                       'ad9959' : 4,
                       'ad9910' : 1,
-                      'ad9858' : 1}
+                      'ad9858' : 1,
+                      'ad9912' : 1 }
     _boardIDs = {'ad9958' : 0,
                  'ad9959' : 1,
                  'ad9910' : 2,
-                 'ad9858' : 3}
+                 'ad9858' : 3,
+                 'ad9912' : 4}
     _xem = ok.FrontPanel()
 
     #################################################################
@@ -114,7 +123,7 @@ class adBoard:
         self._xem.SetWireInValue(0x00, (self.boardIndex<<2))
         self._xem.UpdateWireIns()
         self._xem.ActivateTriggerIn(0x42, 0)
-        time.sleep(0.2)
+        #time.sleep(0.2)
 
     def _checkID(self):
         self._xem.SetWireInValue(0x00, (self.boardIndex<<2))
@@ -178,6 +187,9 @@ class adBoard:
         print 'the AD9858 board is not supported yet . . . :('
         sys.exit(1)
         return
+        
+    def _ad9912Init(self, check):
+        pass
 
     #################################################################
     #more private variables
@@ -186,7 +198,8 @@ class adBoard:
     _initialize = {'ad9958' : _ad9958Init,
                    'ad9959' : _ad9959Init,
                    'ad9910' : _ad9910Init,
-                   'ad9858' : _ad9858Init}
+                   'ad9858' : _ad9858Init,
+                   'ad9912' : _ad9912Init}
     #################################################################
     #public variables
     #################################################################
@@ -202,8 +215,7 @@ class adBoard:
     def __init__(self, xemObject, adType, index):
         #check if board is valid
         if (adType not in self._adTypes):
-            print 'ERROR: ' + adType + ' is not a valid board'
-            sys.exit(1)
+            raise adBoardException('ERROR: ' + adType + ' is not a valid board')
         #make public variables
         self._xem = xemObject
         self.board = adType

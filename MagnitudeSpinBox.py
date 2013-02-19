@@ -11,6 +11,7 @@ import magnitude
 import sys
 import os.path
 sys.path.append(os.path.abspath(r'..\modules'))
+sys.path.append(os.path.abspath(r'..\ui'))
 import Expression
 
 debug = False
