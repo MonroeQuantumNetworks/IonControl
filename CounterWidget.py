@@ -60,7 +60,9 @@ class Worker(QtCore.QThread):
         try:
             with QtCore.QMutexLocker(self.Mutex):
                 self.tick_counter = 0
-                self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+                binary = self.pulseProgramUi.getPulseProgramBinary()
+                print "binary size", len(binary)
+                self.pulserHardware.ppUpload(binary)
                 print "Starting"
                 self.pulserHardware.ppStart()
                 self.running = True

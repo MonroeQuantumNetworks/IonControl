@@ -22,6 +22,7 @@ SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialo
 class SettingsDialogConfig:
     autoUpload = False
     lastInstrument = None
+    lastBitfile = None
 
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def __init__(self,config,parent=0):
@@ -36,17 +37,27 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         super(SettingsDialog,self).setupUi(self)
         self.recipient = recipient
         self.pushButtonScan.clicked.connect( self.scanInstruments )
-        self.comboBoxInstruments.currentIndexChanged[str].connect( self.onIndexChanged )
         self.renameButton.clicked.connect( self.onBoardRename )
         self.uploadButton.clicked.connect( self.onUploadBitfile )
         self.toolButtonOpenBitfile.clicked.connect( self.onLoadBitfile )
+        self.comboBoxInstruments.currentIndexChanged[str].connect( self.onIndexChanged )
         self.scanInstruments()
         self.configSettings = self.config.get('SettingsDialog.Config',SettingsDialogConfig() )
-        self.bitfileCache = self.config.get('SettingsDialog.bitfileCache',dict())
+        self.bitfileCache = self.config.get('SettingsDialog.bitfileCache',dict() )
         self.checkBoxAutoUpload.setChecked( self.configSettings.autoUpload )
+        self.checkBoxAutoUpload.stateChanged.connect( self.onAutoUploadChanged )
+        print "bitfileCacheLength" , len(self.bitfileCache)
+        for item in self.bitfileCache:
+            self.comboBoxBitfiles.addItem(item)
         if self.configSettings.lastInstrument in self.deviceMap:
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
+            if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
+                self.onUploadBitfile()
                 
+    def onAutoUploadChanged(self, state):
+        self.configSettings.autoUpload = state==QtCore.Qt.Checked
+        print self.configSettings.__dict__
+        print self.bitfileCache
         
     def onBoardRename(self):
         newIdentifier = str(self.identifierEdit.text())
@@ -93,6 +104,9 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             
     def close(self):
         self.config['SettingsDialog.Config'] = self.configSettings
+        self.config['SettingsDialog.bitfileCache'] = self.bitfileCache
+        print self.configSettings.__dict__
+        print len(self.bitfileCache), self.bitfileCache
         
     def onLoadBitfile(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open bitfile'))
@@ -101,6 +115,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
                 self.bitfileCache[path]=path
                 self.comboBoxBitfiles.addItem(path)
             self.comboBoxBitfiles.setCurrentIndex(self.comboBoxBitfiles.findText(path))
+            self.configSettings.lastBitfile = path
             
     def onUploadBitfile(self):
         bitfile = str(self.comboBoxBitfiles.currentText())
@@ -108,6 +123,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         if bitfile!="":
             self.fpga.openBySerial( self.settings.deviceSerial )
             self.fpga.uploadBitfile(self.bitfileCache[bitfile])
+            self.configSettings.lastInstrument = self.settings.deviceDescription
 
             
 if __name__ == "__main__":

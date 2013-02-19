@@ -53,6 +53,7 @@ class PulserHardware(object):
             check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
             print "Databuf length" ,len(binarycode)
             num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
+            check(num, 'Write to program pipe' )
             print "uploaded pp file {0} bytes".format(num)
             num, data = self.ppDownload(0,num)
             print "Read {0} bytes back. ".format(num),data==binarycode

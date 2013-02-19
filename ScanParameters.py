@@ -28,7 +28,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         Scan.start = self.minimumBox.value()
         Scan.stop = self.maximumBox.value()
         Scan.steps = self.stepsBox.value()
-        Scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.scanTypeCombo.currentIndex]
+        Scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.scanTypeCombo.currentIndex()]
         Scan.list = ScanList.scanList( Scan.start, Scan.stop, Scan.steps, Scan.type )
         return Scan
         
