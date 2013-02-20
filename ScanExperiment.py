@@ -89,13 +89,13 @@ class Worker(QtCore.QThread):
                     #print len(data)
                     for s in PulserHardware.sliceview(data,4):
                         (token,) = struct.unpack('I',s)
-                        print hex(token)
+                        #print hex(token)
                         if state == self.analyzingState.scanparameter:
                             if self.data.scanvalue is None:
                                 self.data.scanvalue = token
                             else:
                                 self.dataAvailable.emit( self.data )
-                                print "emit"
+                                #print "emit"
                                 self.data = Data()
                                 self.data.scanvalue = token
                             state = self.analyzingState.normal
@@ -103,7 +103,7 @@ class Worker(QtCore.QThread):
                             if token == 0xffffffff:    # end of run
                                 #self.exiting = True
                                 self.dataAvailable.emit( self.data )
-                                print "emit"
+                                #print "emit"
                                 self.data = Data()
                             elif token == 0xff000000:
                                 self.timestampOffset += 1<<28
