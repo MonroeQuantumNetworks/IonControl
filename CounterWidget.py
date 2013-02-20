@@ -6,15 +6,12 @@ Created on Sat Dec 22 17:25:13 2012
 """
 
 import PyQt4.uic
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore
 import numpy
 import struct
 from functools import partial
-import sys
-import os.path
-sys.path.append(os.path.abspath(r'modules'))
-import enum
-import CountrateConversion
+from modules import enum
+from modules import CountrateConversion
 import PulserHardware
 
 step = 0.3

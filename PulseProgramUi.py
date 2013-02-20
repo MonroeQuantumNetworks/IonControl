@@ -4,8 +4,6 @@ Created on Thu Feb 07 22:55:28 2013
 
 @author: pmaunz
 """
-import sys, os
-sys.path.append(os.path.abspath(r'ui'))
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import PulseProgram
@@ -13,6 +11,7 @@ import VariableTableModel
 import ShutterTableModel
 import TriggerTableModel
 import CounterTableModel
+import os.path
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 

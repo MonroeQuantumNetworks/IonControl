@@ -5,8 +5,6 @@ Created on Sat Dec 22 17:37:41 2012
 @author: pmaunz
 """
 
-import sys
-import os.path
 #import sip
 #sip.setapi("QString",2)
 #sip.setapi("QVariant",2)
@@ -16,17 +14,13 @@ import os.path
 #sip.setapi("QTime",2)
 #sip.setapi("QUrl",2)
 
-sys.path.append(os.path.abspath(r'modules'))
-sys.path.append(os.path.abspath(r'ui'))
-
 import CounterWidget
 import ScanExperiment
 #import TDCWidget
 #import FastTDCWidget
 import SettingsDialog
 import testExperiment
-#import testQwt
-import configshelve
+from modules import configshelve
 import FromFile
 import PulseProgramUi
 import ShutterUi

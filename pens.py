@@ -4,12 +4,9 @@ Created on Fri Dec 28 16:17:51 2012
 
 @author: pmaunz
 """
-import sys, os
-sys.path.append(os.path.abspath(r'ui'))
-
 import pyqtgraph
 from PyQt4 import QtCore, QtGui
-import Experiment_rc
+from ui import Experiment_rc
 
 penList = [ (pyqtgraph.mkPen('y', width=2, style=QtCore.Qt.SolidLine),),
             (pyqtgraph.mkPen('y', width=2, style=QtCore.Qt.SolidLine),'s',pyqtgraph.mkPen('y', width=2, style=QtCore.Qt.SolidLine),QtGui.QColor(0,0,0,0)),

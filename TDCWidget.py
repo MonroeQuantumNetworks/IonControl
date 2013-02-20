@@ -5,18 +5,15 @@ Created on Sat Dec 22 17:25:13 2012
 @author: pmaunz
 """
 
-import sys
-import os.path
-sys.path.append(os.path.abspath(r'modules'))
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import Trace
 import Traceui
 import pens
 import numpy
-import timestamper
+from modules import timestamper
 import struct
-import enum
+from modules import enum
 import DataDirectory
 from MainWindowWidget import MainWindowWidget
 

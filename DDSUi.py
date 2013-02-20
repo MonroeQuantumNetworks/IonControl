@@ -1,12 +1,7 @@
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 import PyQt4.uic
 import functools
-import sys, os
-sys.path.append(os.path.abspath(r'modules'))
-sys.path.append(os.path.abspath(r'ui'))
-print sys.path
-import Expression
-import configshelve
+from modules import configshelve
 import Ad9912
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')

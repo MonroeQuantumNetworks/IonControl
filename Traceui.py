@@ -4,13 +4,8 @@ Created on Fri Dec 28 18:40:30 2012
 
 @author: pmaunz
 """
-import sys
-import os.path
-sys.path.append(os.path.abspath(r'..\local_modules'))
-sys.path.append(os.path.abspath(r'..\timestamper'))
-import enum
+from modules import enum
 import PyQt4.uic
-from PyQt4 import QtGui
 import TraceTableView
 import pens
 import pyqtgraph
@@ -85,7 +80,6 @@ class PlottedTrace(object):
             self.curve.setData( self.trace.x, self.trace.y )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
             self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
-
 
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\Traceui.ui')

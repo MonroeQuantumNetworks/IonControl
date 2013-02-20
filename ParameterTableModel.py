@@ -5,9 +5,7 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore
-import sys, os.path
-sys.path.append(os.path.abspath(r'modules'))
-import Expression
+from modules import Expression
 
 class Parameter:
     def __init__(self,name, value, strvalue=None):

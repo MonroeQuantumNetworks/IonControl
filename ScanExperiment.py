@@ -8,7 +8,6 @@ Created on Sat Dec 22 17:25:13 2012
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import Trace
-import random
 import numpy
 import pens
 import Traceui
@@ -17,9 +16,7 @@ import struct
 import MainWindowWidget
 import FitUi
 import ScanParameters
-import sys, os
-sys.path.append(os.path.abspath(r'modules'))
-import enum
+from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
 import pyqtgraph
         

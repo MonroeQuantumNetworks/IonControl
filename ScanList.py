@@ -4,9 +4,7 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import sys, os.path
-sys.path.append(os.path.abspath(r'modules'))
-import enum
+from modules import enum
 import numpy
 import random
 

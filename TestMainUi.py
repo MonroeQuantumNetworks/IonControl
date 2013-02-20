@@ -5,16 +5,10 @@ Created on Sat Dec 22 17:37:41 2012
 @author: pmaunz
 """
 
-import sys
-import os.path
-sys.path.append(os.path.abspath(r'modules'))
-sys.path.append(os.path.abspath(r'ui'))
-
 import PyQt4.uic
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtGui
 
 TestMainForm, TestMainBase = PyQt4.uic.loadUiType(r'ui\TestMain.ui')
-
 
 class TestMainUi(TestMainBase,TestMainForm):
     def __init__(self):

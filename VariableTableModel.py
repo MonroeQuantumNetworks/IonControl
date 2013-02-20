@@ -8,9 +8,7 @@ from PyQt4 import QtCore
 from operator import attrgetter
 import functools
 import magnitude
-import sys, os.path
-sys.path.append(os.path.abspath(r'modules'))
-import Expression
+from modules import Expression
 
 class VariableTableModel(QtCore.QAbstractTableModel):
     def __init__(self, variabledict, parameterdict, parent=None, *args): 

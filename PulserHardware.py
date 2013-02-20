@@ -2,7 +2,6 @@
 """
 Encapsulation of the Pulse Programmer Hardware 
 """
-import ok
 from fpgaUtilit import check
 from PyQt4 import QtCore 
 import time

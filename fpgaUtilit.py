@@ -2,7 +2,7 @@
 #3-31-2012
 #This code initializes the connection with the FPGA
 
-import ok, sys
+import ok
 
 
 ModelStrings = {

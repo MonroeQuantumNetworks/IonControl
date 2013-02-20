@@ -8,8 +8,6 @@ Created on Sat Dec 22 22:34:06 2012
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import fpgaUtilit
-import sys, os.path
-sys.path.append(os.path.abspath(r'ui'))
 
 class Settings:
     def __init__(self):

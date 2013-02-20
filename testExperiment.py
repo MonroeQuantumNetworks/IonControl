@@ -14,7 +14,6 @@ import pens
 import Traceui
 import pyqtgraph
 import MainWindowWidget
-import Trace
 import FitUi
         
 testForm, testBase = PyQt4.uic.loadUiType(r'ui\testExperiment.ui')

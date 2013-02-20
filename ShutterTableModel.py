@@ -8,7 +8,6 @@ from PyQt4 import QtCore, QtGui
 from operator import attrgetter
 import functools
 import re
-import magnitude
 
 class ShutterTableModel(QtCore.QAbstractTableModel):
     def __init__(self, variabledict, parent=None, *args): 

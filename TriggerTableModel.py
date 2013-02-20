@@ -7,8 +7,6 @@ Created on Fri Feb 08 22:02:08 2013
 from PyQt4 import QtCore, QtGui
 from operator import attrgetter
 import functools
-import re
-import magnitude
 
 class TriggerTableModel(QtCore.QAbstractTableModel):
     def __init__(self, variabledict, parent=None, *args): 

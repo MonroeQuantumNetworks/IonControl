@@ -5,14 +5,9 @@ Created on Sat Feb 09 17:28:11 2013
 @author: pmaunz
 """
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 import PyQt4.uic
-import magnitude
-import sys
-import os.path
-sys.path.append(os.path.abspath(r'..\modules'))
-sys.path.append(os.path.abspath(r'..\ui'))
-import Expression
+from modules import Expression
 
 debug = False
 
