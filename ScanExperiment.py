@@ -20,6 +20,8 @@ import ScanParameters
 import sys, os
 sys.path.append(os.path.abspath(r'modules'))
 import enum
+from pyqtgraph.dockarea import DockArea, Dock
+import pyqtgraph
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -142,11 +144,29 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.currentTrace = None
         self.currentIndex = 0
         self.activated = False
+        self.histogramPlot = None
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
         self.config = config
-        self.graphicsView = self.graphicsLayout.graphicsView
+        self.area = DockArea()
+        self.setCentralWidget(self.area)
+        # initialize all the plot windows we want
+        self.mainDock = Dock("Scan data")
+        self.histogramDock = Dock("Histogram")
+        self.averageDock = Dock("average")
+        self.area.addDock(self.mainDock,'left')
+        self.area.addDock(self.histogramDock,'right')
+        self.area.addDock(self.averageDock,'bottom',self.histogramDock)
+        self.graphicsView = pyqtgraph.PlotWidget() # self.graphicsLayout.graphicsView
+        self.mainDock.addWidget(self.graphicsView)
+        self.histogramView = pyqtgraph.PlotWidget()
+        self.histogramDock.addWidget( self.histogramView)
+        self.averageView = pyqtgraph.PlotWidget()       
+        self.averageDock.addWidget( self.averageView )
+        if 'ScanExperiment.pyqtgraph-dokareastate' in self.config:
+            self.area.restoreState(self.config['ScanExperiment.pyqtgraph-dokareastate'])
+        
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons)
         self.traceui.setupUi(self.traceui)
@@ -213,7 +233,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
             self.plottedTrace.replot()
         self.currentIndex += 1
-            
+        self.showHistogram(data)
+        
+    def showHistogram(self, data):
+        y, x = numpy.histogram( data.count[0] , range=(0,50), bins=50)
+        print x, y
+        if self.histogramPlot is None:
+            self.histogramCurve = pyqtgraph.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+            self.histogramView.addItem(self.histogramCurve)
+            #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
+        else:
+            self.histogramPlot.setData( x,y )
+        
         
     def activate(self):
         MainWindowWidget.MainWindowWidget.activate(self)
@@ -240,6 +271,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 
     def onClose(self):
         self.config['ScanExperiment.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
+        self.config['ScanExperiment.pyqtgraph-dokareastate'] = self.area.saveState()
         self.scanParametersWidget.onClose()
 
     def updateSettings(self,settings,active=False):

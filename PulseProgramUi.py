@@ -31,10 +31,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
-        #self.okButton.clicked.connect( self.onOk )
-        self.loadButton.clicked.connect( self.onLoad )
-        self.saveButton.clicked.connect( self.onSave )
-        #self.applyButton.clicked.connect( self.onApply )
+        self.actionOpen.triggered.connect( self.onLoad )
+        self.actionSave.triggered.connect( self.onSave )
+        self.loadButton.setDefaultAction( self.actionOpen )
+        self.saveButton.setDefaultAction( self.actionSave )
         self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
