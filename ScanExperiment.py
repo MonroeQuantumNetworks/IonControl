@@ -68,6 +68,7 @@ class Worker(QtCore.QThread):
     def finish(self):
         with QtCore.QMutexLocker(self.Mutex):
             self.exiting = True
+            self.pulserHardware.interruptRead()
 
     analyzingState = enum.enum('normal','scanparameter')
     def run(self):

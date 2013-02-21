@@ -4,10 +4,12 @@ Encapsulation of the Pulse Programmer Hardware
 """
 from fpgaUtilit import check
 from PyQt4 import QtCore 
-import time
 import struct
+from Queue import Queue, Empty
 
 class PulserHardware(object):
+    sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
+
     def __init__(self,xem):
         self._shutter = 0
         self._trigger = 0
@@ -104,24 +106,32 @@ class PulserHardware(object):
             self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
             return True
 
+    def interruptRead(self):
+        self.sleepQueue.put(False)
 
     def ppReadData(self,minbytes=4,timeout=0.5,retryevery=0.05):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-            byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
-            #if byteswaiting>0: print "byteswaiting", byteswaiting
-            totaltime = 0
-            while byteswaiting<minbytes and totaltime<timeout:
-                time.sleep(retryevery)
-                totaltime += retryevery
+        byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
+        #if byteswaiting>0: print "byteswaiting", byteswaiting
+        totaltime = 0
+        while byteswaiting<minbytes and totaltime<timeout:
+            try: 
+                self.sleepQueue.get(True, 10)
+                totaltime = timeout     # we were interrupted
+            except Empty:         
+                pass                    # expiration is the normal case
+            totaltime += retryevery
+            with QtCore.QMutexLocker(self.Mutex):
                 self.xem.UpdateWireOuts()
                 wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-                byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
-                #if byteswaiting>0: print "byteswaiting", byteswaiting
-            data = bytearray('\x00'*byteswaiting)
+            byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
+            #if byteswaiting>0: print "byteswaiting", byteswaiting
+        data = bytearray('\x00'*byteswaiting)
+        with QtCore.QMutexLocker(self.Mutex):
             self.xem.ReadFromPipeOut(0xa2, data)
-            return data
+        return data
                         
     def ppWriteData(self,data):
         if isinstance(data,bytearray):
