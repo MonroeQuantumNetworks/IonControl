@@ -114,7 +114,7 @@ class PulserHardware(object):
         totaltime = 0
         while byteswaiting<minbytes and totaltime<timeout:
             try: 
-                self.sleepQueue.get(True, 10)
+                self.sleepQueue.get(True, retryevery)
                 totaltime = timeout     # we were interrupted
             except Empty:         
                 pass                    # expiration is the normal case

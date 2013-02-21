@@ -83,15 +83,15 @@ class Variable:
     def __repr__(self):
         return str(self.__dict__)
 
-encodings = { 'AD9912_FRQ': (5e8/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
-              'AD9912_FRQFINE': (5e8/2**48, 'Hz', Dimensions.frequency, 0xffff ),
+encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
+              'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
               'AD9912_PHASE': (360/2**14, '', Dimensions.dimensionless, 0xfff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = False
+debug = True
 
 def variableValueDict( variabledict ):
     returndict = dict()
@@ -348,7 +348,7 @@ class PulseProgram:
             bytedata = 0
             byteop = OPS[line[1]]
             if debug:
-                print line[0],  ": ", line[1:], 
+                print hex(line[0]),  ": ", line[1:], 
             try:
                 data = line[2]
                 #attempt to locate commands with constant data
@@ -363,7 +363,7 @@ class PulseProgram:
                     channel, data = line[2]
                     if isinstance(data,basestring):
                         data = self.variabledict[data].address
-                    bytedata = (int(channel) << 16) + int(data) & 0xffff
+                    bytedata = ((int(channel) & 0xf) << 16) | (int(data) & 0x0fff)
             except KeyError:
                 print "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) # raise
                 #print self.labeldict

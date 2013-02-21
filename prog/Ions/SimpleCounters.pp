@@ -10,6 +10,7 @@
 var datastart 3900, address   # serves as tooltip
 var dataend 4000, address
 var coolingFreq     250, parameter, MHz, AD9912_FRQ
+var coolingFreqFine 250, ,MHz, AD9912_FRQFINE
 var startupMask       0, mask
 var startup           0, shutter startupMask
 var startupTime       1, parameter, ms
@@ -28,7 +29,7 @@ var ddsApplyTrigger   3,trigger
 	ASYNCSHUTTER startup
 	UPDATE startupTime
 	DDSFRQ COOLDDS, coolingFreq
-	DDSFRQFINE COOLDDS, coolingFreq
+	DDSFRQFINE COOLDDS, coolingFreqFine
 	TRIGGER ddsApplyTrigger
 cooling: NOP
 	SHUTTERMASK coolingOnMask
