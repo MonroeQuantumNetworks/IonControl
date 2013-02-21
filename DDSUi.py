@@ -55,7 +55,7 @@ class DDSUi(DDSForm, DDSBase):
         self.config['DDSUi.Names'] = self.names
         
     def onApply(self):
-        pass
+        self.ad9912.update(0x3f)
         
 if __name__ == "__main__":
     import sys

@@ -33,14 +33,19 @@ class Ad9912:
         self.sendCommand(channel, 2, intAmplitude & 0x3ff )
         
     def sendCommand(self, channel, cmd, data):
-        check( self.xem.SetWireIn(0x00, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
-        check( self.xem.SetWireIn(0x01, data & 0xffff ), "Ad9912" )
-        check( self.xem.SetWireIn(0x02, (data >> 16) &0xffff ), "Ad9912" )
+        print "Ad9912.sendCommand", hex(channel), hex(cmd), hex(data)
+        check( self.xem.SetWireInValue(0x00, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
+        check( self.xem.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
+        check( self.xem.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" )
+        self.xem.UpdateWireIns()
+        check( self.xem.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
         self.xem.UpdateWireIns()
         
     def update(self, channelmask):
-        check( self.xem.SetWireIn(0x08, channelmask & 0x3f) )
-        self.xem.ActivateTriggerOut(0x41,2)
+        print "Apply DDS settings"
+        check( self.xem.SetWireInValue(0x08, channelmask & 0x3f), "Ad9912 apply" )
+        self.xem.UpdateWireIns()
+        self.xem.ActivateTriggerIn(0x41,2)
         
 if __name__ == "__main__":
     import magnitude

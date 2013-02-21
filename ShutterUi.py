@@ -29,6 +29,17 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.shutterTableView.resizeRowsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
 
+class TriggerUi(ShutterUi):
+    def __init__(self,pulserHardware,outputname,parent=None):
+        super(TriggerUi,self).__init__(pulserHardware,outputname,parent)
+        
+    def setupUi(self,parent):
+        super(TriggerUi,self).setupUi(parent)
+        self.applyButton.clicked.connect( self.onApply )
+        
+    def onApply(self):
+        print "apply triggers"
+        self.pulserHardware.xem.ActivateTriggerIn(0x41,2)
         
 if __name__ == "__main__":
     import sys

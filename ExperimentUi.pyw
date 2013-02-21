@@ -86,7 +86,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.shutterUi.setupUi(self.shutterUi)
         self.shutterDockWidget.setWidget( self.shutterUi )
 
-        self.triggerUi = ShutterUi.ShutterUi(self.pulserHardware, 'trigger')
+        self.triggerUi = ShutterUi.TriggerUi(self.pulserHardware, 'trigger')
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
         self.triggerDockWidget.setWidget( self.triggerUi )
@@ -180,6 +180,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.done(0)
         self.settingsDialog.close()
         self.settingsDialog.done(0)
+        self.DDSUi.closeEvent(None)
 
     def onMessageWrite(self,message):
         cursor = self.textEditConsole.textCursor()
