@@ -44,7 +44,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.bitfileCache = self.config.get('SettingsDialog.bitfileCache',dict() )
         self.checkBoxAutoUpload.setChecked( self.configSettings.autoUpload )
         self.checkBoxAutoUpload.stateChanged.connect( self.onAutoUploadChanged )
-        print "bitfileCacheLength" , len(self.bitfileCache)
+        #print "bitfileCacheLength" , len(self.bitfileCache)
         for item in self.bitfileCache:
             self.comboBoxBitfiles.addItem(item)
         if self.configSettings.lastInstrument in self.deviceMap:
@@ -54,8 +54,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
                 
     def onAutoUploadChanged(self, state):
         self.configSettings.autoUpload = state==QtCore.Qt.Checked
-        print self.configSettings.__dict__
-        print self.bitfileCache
+        #print self.configSettings.__dict__
+        #print self.bitfileCache
         
     def onBoardRename(self):
         newIdentifier = str(self.identifierEdit.text())
@@ -96,15 +96,15 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         QtGui.QDialog.show(self)
         
     def apply(self,button):
-        print button.text(), "button pressed"
+        #print button.text(), "button pressed"
         if str(button.text())=="Apply":
             self.recipient.onSettingsApply(self.settings)
             
     def close(self):
         self.config['SettingsDialog.Config'] = self.configSettings
         self.config['SettingsDialog.bitfileCache'] = self.bitfileCache
-        print self.configSettings.__dict__
-        print len(self.bitfileCache), self.bitfileCache
+        #print self.configSettings.__dict__
+        #print len(self.bitfileCache), self.bitfileCache
         
     def onLoadBitfile(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open bitfile'))
@@ -117,7 +117,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             
     def onUploadBitfile(self):
         bitfile = str(self.comboBoxBitfiles.currentText())
-        print "Uloading file '{0}'".format(bitfile),
+        print "Uploading file '{0}'".format(bitfile),
         if bitfile!="":
             self.fpga.openBySerial( self.settings.deviceSerial )
             self.fpga.uploadBitfile(self.bitfileCache[bitfile])

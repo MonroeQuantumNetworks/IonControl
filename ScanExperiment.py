@@ -66,9 +66,8 @@ class Worker(QtCore.QThread):
                 self.running = False
 
     def finish(self):
-        with QtCore.QMutexLocker(self.Mutex):
-            self.exiting = True
-            self.pulserHardware.interruptRead()
+        self.exiting = True
+        self.pulserHardware.interruptRead()
 
     analyzingState = enum.enum('normal','scanparameter')
     def run(self):
@@ -261,7 +260,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def deactivate(self):
         MainWindowWidget.MainWindowWidget.deactivate(self)
         if self.activated and hasattr( self, 'worker'):
-            print "Scan deactivated"
+            print "Scan deactivated",
             self.worker.finish()
             self.worker.wait()
             self.activated = False

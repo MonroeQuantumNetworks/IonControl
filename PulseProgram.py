@@ -91,7 +91,7 @@ encodings = { 'AD9912_FRQ': (5e8/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = True
+debug = False
 
 def variableValueDict( variabledict ):
     returndict = dict()
@@ -319,12 +319,12 @@ class PulseProgram:
         if unit is not None:
             var.value = magnitude.mg( float(data), unit )
             data = self.convertParameter( var.value, var.encoding )
-            print data, hex(data)
+            #print data, hex(data)
         else:
             var.value = magnitude.mg( float(data), '' )
             var.value.output_prec(0)   # without dimension the parameter has to be int. Thus, we do not want decimal places :)
             data = int(round(float(data)))
-            print data, hex(data)
+            #print data, hex(data)
 
         if label in self.defines:
             print "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(sourcename,label,data,self.defines[label])

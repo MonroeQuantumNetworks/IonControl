@@ -111,6 +111,7 @@ class CounterWidget(CounterForm, CounterBase):
         self.unit = CountrateConversion.DisplayUnit()
         self.deviceSettings = settings
         self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
+        self.activated = False
 
     def setupUi(self, MainWindow, config):
         self.config = config        
@@ -209,7 +210,7 @@ class CounterWidget(CounterForm, CounterBase):
     def onCounterUpdate(self, index, i):
         """ called when the counter enable check boxes change state
         """
-        print "i is", i, "index is", index
+        # print "i is", i, "index is", index
         self.counter_mask = 0
         self.counter_mask = ( self.counterPlotUpdate(0,self.counter_enable_box_1.isChecked()) |
                               self.counterPlotUpdate(1,self.counter_enable_box_2.isChecked()) |
@@ -231,7 +232,6 @@ class CounterWidget(CounterForm, CounterBase):
         self.unit.unit = unit
 
     def activate(self):
-        self.activated = False
         if self.deviceSettings is not None:
             try:
                 #self.deviceSettings.xem
@@ -261,7 +261,10 @@ class CounterWidget(CounterForm, CounterBase):
         """ Main program settings have changed
         """
         self.deviceSettings = settings
-        self.deactivate()
-        self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
-        self.activate()
+        if active:
+            self.deactivate()
+            self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
+            self.activate()
+        else:
+            self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
         

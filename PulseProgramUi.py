@@ -45,7 +45,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
         if self.configParams.lastFilename is not None:
-            print self.configname, self.configParams.lastFilename
+            #print self.configname, self.configParams.lastFilename
             self.loadFile( self.configParams.lastFilename )
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
@@ -130,7 +130,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
-        print self.configname, self.configParams.lastFilename
+        #print self.configname, self.configParams.lastFilename
         
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)

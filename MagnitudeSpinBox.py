@@ -17,8 +17,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.expression = Expression.Expression()
         
     def validate(self, inputstring, pos):
-        print "validate"
-#        m = re.match("\s*([-+0-9.]+)\s*(\w*)\s*",str(inputstring))
+        #print "validate"
         try:
             self.expression.evaluate(str(inputstring))
             return (QtGui.QValidator.Acceptable,pos)
