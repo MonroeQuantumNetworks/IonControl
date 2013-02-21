@@ -32,6 +32,7 @@ class DDSUi(DDSForm, DDSBase):
             box.setText(self.names[channel])
             box.textChanged.connect( functools.partial(self.onName, box,channel) )
         self.applyButton.clicked.connect( self.onApply )
+        self.resetButton.clicked.connect( self.onReset )
 
     def onFrequency(self, box, channel):
         self.ad9912.setFrequency(channel, box.value() )
@@ -56,6 +57,9 @@ class DDSUi(DDSForm, DDSBase):
         
     def onApply(self):
         self.ad9912.update(0x3f)
+        
+    def onReset(self):
+        self.ad9912.reset(0x3f)
         
 if __name__ == "__main__":
     import sys
