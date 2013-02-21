@@ -35,7 +35,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         print inputstring
         
     def stepEnabled(self):
-        print "stepEnabled"
+        #print "stepEnabled"
         return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
         
     def value(self):

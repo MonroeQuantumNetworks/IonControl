@@ -59,5 +59,4 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         
     def onClose(self):
         self.config[self.configname] = self.settings
-        print "ScanParameter Settings", self.settings
         

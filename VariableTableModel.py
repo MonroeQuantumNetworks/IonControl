@@ -26,12 +26,12 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         self.parameterdict = parameterdict
 
     def setVisible(self, visibledict ):
-        print self.rowCount()
+        #print self.rowCount()
         self.beginRemoveRows(QtCore.QModelIndex(),0,self.rowCount()-1)
         self.variablelist = []
         self.endRemoveRows()
         variablelist = sorted([ x for x in self.variabledict.values() if x.type in visibledict and visibledict[x.type] ], key=attrgetter('index'))
-        print variablelist, len(variablelist)
+        #print variablelist, len(variablelist)
         self.beginInsertRows(QtCore.QModelIndex(),0,len(variablelist)-1)
         self.variablelist = variablelist
         self.endInsertRows()

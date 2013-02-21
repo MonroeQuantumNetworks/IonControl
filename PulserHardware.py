@@ -26,7 +26,6 @@ class PulserHardware(object):
     @shutter.setter
     def shutter(self, value):
         with QtCore.QMutexLocker(self.Mutex):
-            print "setShutter"
             check( self.xem.SetWireInValue(0x06, value, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
@@ -39,7 +38,6 @@ class PulserHardware(object):
     @trigger.setter
     def trigger(self,value):
         with QtCore.QMutexLocker(self.Mutex):
-            print "setShutter"
             check( self.xem.SetWireInValue(0x08, value, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.SetWireInValue(0x09, value>>16, 0xFFFF)	, 'SetWireInValue' )
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
@@ -48,18 +46,16 @@ class PulserHardware(object):
         
     def ppUpload(self,binarycode,startaddress=0):
         with QtCore.QMutexLocker(self.Mutex):
-            print "starting PP upload"
+            print "starting PP upload",
             check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )	# start addr at zero
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
-            print "Databuf length" ,len(binarycode)
+            print len(binarycode), "bytes,",
             num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
             check(num, 'Write to program pipe' )
-            print "uploaded pp file {0} bytes".format(num)
+            print "uploaded pp file {0} bytes".format(num),
             num, data = self.ppDownload(0,num)
-            print "Read {0} bytes back. ".format(num),data==binarycode
-            with open(r'debug\binary_back','wb') as f:
-                f.write(data)
+            print "Verified {0} bytes. ".format(num),data==binarycode
             return True
             
     def ppDownload(self,startaddress,length):

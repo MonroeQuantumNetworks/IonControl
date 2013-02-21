@@ -30,8 +30,6 @@ import PulserHardware
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
 
-printconfiguration = False
-
 class Logger(QtCore.QObject):    
     textWritten = QtCore.pyqtSignal(str)
     def __init__(self):
@@ -160,7 +158,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     def onSettingsApply(self,settings):
         self.settings = settings
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.xem)
-        print self.settings.deviceSerial, self.settings.deviceDescription
+        #print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):
                 tab.updateSettings(self.settings,active=(tab == self.currentTab))
@@ -173,7 +171,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
-        print "tabWidget.currentIndex()", self.config['MainWindow.currentIndex']
+        #print "tabWidget.currentIndex()", self.config['MainWindow.currentIndex']
         self.currentTab.deactivate()
         self.parent.close()
         self.pulseProgramDialog.close()
@@ -200,9 +198,6 @@ if __name__ == "__main__":
     sys.stdout = logger
     sys.stderr = logger
     with configshelve.configshelve("experiment-gui") as config:
-        if printconfiguration:
-            for name, item in config.iteritems():
-                print name, item
         ui = WidgetContainerUi(config)
         ui.setupUi(ui)
         logger.textWritten.connect(ui.onMessageWrite)
