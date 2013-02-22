@@ -148,6 +148,7 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.config = config
         self.pulseProgramSet = dict()        # ExperimentName -> PulseProgramUi
         self.lastExperimentFile = dict()     # ExperimentName -> last pp file used for this experiment
+        self.isShown = False
     
     def setupUi(self,parent):
         self.horizontalLayout = QtGui.QHBoxLayout(parent)
@@ -186,11 +187,13 @@ class PulseProgramSetUi(QtGui.QDialog):
         if 'PulseProgramSetUi.size' in self.config:
             self.resize(self.config['PulseProgramSetUi.size'])
         QtGui.QDialog.show(self)
+        self.isShown = True
         
     def close(self):
-        for page in self.pulseProgramSet.values():
-            page.close()
-        self.reject()
+        if self.isShown:
+            for page in self.pulseProgramSet.values():
+                page.close()
+            self.reject()
 
     
 if __name__ == "__main__":

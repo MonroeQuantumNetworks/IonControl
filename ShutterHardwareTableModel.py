@@ -37,15 +37,15 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
                 print "cannot have the same name twice"
                 return False
             else:
-                old = self.shutterdict.get(index.column())
+                old = self.shutterdict.get(index.row())
                 if old in self.shutterNameDict:
-                    self.shutterNameDict.popitem(self.shutterdict[index.column()])                    
+                    self.shutterNameDict.pop(self.shutterdict[index.row()])                    
                 if value != '':
-                    self.shutterNameDict[value] = index.column()
-                    self.shutterdict[index.column()] = value
+                    self.shutterNameDict[value] = index.row()
+                    self.shutterdict[index.row()] = value
                 else:
                     if index.column() in self.shutterdict:
-                        self.shutterdict.popitem(self.shutterdict[index.column()])
+                        self.shutterdict.pop(self.shutterdict[index.row()])
         return False
         
     def data(self, index, role): 

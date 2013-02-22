@@ -80,11 +80,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
                
-        self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter')
+        self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter', self.config)
         self.shutterUi.setupUi(self.shutterUi)
         self.shutterDockWidget.setWidget( self.shutterUi )
 
-        self.triggerUi = ShutterUi.TriggerUi(self.pulserHardware, 'trigger')
+        self.triggerUi = ShutterUi.TriggerUi(self.pulserHardware, 'trigger', self.config)
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
         self.triggerDockWidget.setWidget( self.triggerUi )
@@ -110,6 +110,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
+        #if 'MainWindow.pos' in self.config:
+        #    self.move(self.config['MainWindow.pos'])
+        if 'MainWindow.size' in self.config:
+            self.resize(self.config['MainWindow.size'])
+
         
     def onClear(self):
         self.currentTab.onClear()
@@ -171,6 +176,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
+        self.config['MainWindow.pos'] = self.pos()
+        self.config['MainWindow.size'] = self.size()
+
         #print "tabWidget.currentIndex()", self.config['MainWindow.currentIndex']
         self.currentTab.deactivate()
         self.parent.close()
@@ -179,6 +187,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog.close()
         self.settingsDialog.done(0)
         self.DDSUi.closeEvent(None)
+        self.shutterUi.close()
+        self.triggerUi.close()
 
     def onMessageWrite(self,message):
         cursor = self.textEditConsole.textCursor()
