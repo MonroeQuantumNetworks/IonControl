@@ -35,8 +35,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         super(PulseProgramUi,self).setupUi(parent)
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
+        self.actionReset.triggered.connect(self.onReset)
         self.loadButton.setDefaultAction( self.actionOpen )
         self.saveButton.setDefaultAction( self.actionSave )
+        self.resetButton.setDefaultAction( self.actionReset )
         self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
@@ -77,11 +79,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file'))
         if path!="":
             self.loadFile(path)
+            
+    def onReset(self):
+        if self.configParams.lastFilename is not None:
+            self.variabledict = self.pulseProgram.variabledict.copy()
+            self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
-        if self.variabledict is not None and self.lastFilename is not None:
-            key = self.configParams.lastFilename
-            self.datashelf[key] = self.variabledict
+        if self.variabledict is not None and self.configParams.lastFilename is not None:
+            self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
         try:

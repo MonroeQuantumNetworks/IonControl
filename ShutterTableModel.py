@@ -70,11 +70,15 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
                  0: QtGui.QColor(QtCore.Qt.white),
                  1: QtGui.QColor(QtCore.Qt.green) }[self.currentState(index)]
         return color
+        
+    def displayToolTip(self, index):
+        return "ToolTip"
   
     def data(self, index, role): 
         if index.isValid():
             return { #(QtCore.Qt.DisplayRole): functools.partial( self.displayData, index),
                      (QtCore.Qt.BackgroundColorRole): functools.partial( self.displayDataColor, index),
+                     #(QtCore.Qt.ToolTipRole): functools.partial( self.displayToolTip, index )
                      }.get(role,lambda : None)()
         return None
         
