@@ -22,6 +22,27 @@ class configshelve:
     def __exit__(self, type, value, tb):
         self.config.close()
         
+    def __iter__(self):
+        return self.config.__iter__()
+        
+    def __setitem__(self, key, value):
+        self.config.__setitem__(key, value)
+        
+    def __getitem__(self, key):
+        return self.config.__getitem__(key)
+        
+    def next(self):
+        return self.config.next()
+        
+    def open(self):
+        print "configshelve open", self.configfile
+        self.config = shelve.open(self.configfile)
+        return self.config
+        
+    def close(self):
+        print "configshelve close", self.configfile
+        self.config.close()
+        
 if __name__ == "__main__":
     with configshelve("test") as d:
         if 'Peter' in d:

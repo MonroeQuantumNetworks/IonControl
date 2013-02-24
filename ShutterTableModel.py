@@ -15,7 +15,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = variabledict.copy()
+        self.variabledict = variabledict
         self.maskdict = dict()
         self.variablelist = []
         for name, var in self.variabledict.iteritems():

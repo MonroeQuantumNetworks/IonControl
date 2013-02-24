@@ -17,7 +17,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variabledict = dict()
-        for name,var in variabledict.copy().iteritems():
+        for name,var in variabledict.iteritems():
             if var.type in ['parameter','address',None]:
                 self.variabledict[name] = var
         self.variablelist = sorted([ x for x in self.variabledict.values() if x.type=='parameter' ], key=attrgetter('index')) 

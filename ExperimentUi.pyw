@@ -169,27 +169,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
                 tab.updateSettings(self.settings,active=(tab == self.currentTab))
                 
     def onClose(self):
-        print "onClose"
-        self.config['MainWindow.State'] = self.parent.saveState()
-        for tab in self.tabList:
-            tab.onClose()
-        self.config['Settings.deviceSerial'] = self.settings.deviceSerial
-        self.config['Settings.deviceDescription'] = self.settings.deviceDescription
-        self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
-        self.config['MainWindow.pos'] = self.pos()
-        self.config['MainWindow.size'] = self.size()
-
-        #print "tabWidget.currentIndex()", self.config['MainWindow.currentIndex']
-        self.currentTab.deactivate()
         self.parent.close()
-        self.pulseProgramDialog.close()
-        self.pulseProgramDialog.done(0)
-        self.settingsDialog.close()
-        self.settingsDialog.done(0)
-        self.DDSUi.closeEvent(None)
-        self.shutterUi.close()
-        self.triggerUi.close()
-
+        
     def onMessageWrite(self,message):
         cursor = self.textEditConsole.textCursor()
         cursor.movePosition(QtGui.QTextCursor.End)
@@ -198,7 +179,23 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.textEditConsole.ensureCursorVisible()
         
     def closeEvent(self,e):
-        self.onClose()
+        print "closeEvent"
+        self.config['MainWindow.State'] = self.parent.saveState()
+        for tab in self.tabList:
+            tab.onClose()
+        self.config['Settings.deviceSerial'] = self.settings.deviceSerial
+        self.config['Settings.deviceDescription'] = self.settings.deviceDescription
+        self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
+        self.config['MainWindow.pos'] = self.pos()
+        self.config['MainWindow.size'] = self.size()
+        self.currentTab.deactivate()
+        self.pulseProgramDialog.close()
+        self.pulseProgramDialog.done(0)
+        self.settingsDialog.close()
+        self.settingsDialog.done(0)
+        self.DDSUi.closeEvent(None)
+        self.shutterUi.close()
+        self.triggerUi.close()
 
 if __name__ == "__main__":
     import sys
