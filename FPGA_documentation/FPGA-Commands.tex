@@ -1,0 +1,78 @@
+\documentclass[12pt]{article}
+
+\begin{document}
+\section{The Pulse Programmer}
+\subsection{Overview}
+
+\subsection{Registers}
+The state machine has the following registers:
+
+\begin{tabular}{r l}
+W & Main work register \\
+W1 & auxilliary work register \\
+PC & code address \\
+INDF & indirect memory address \\
+shutter\_mask & mask for shutter values \\
+shutter\_reg & shutter value buffer \\
+counter\_reg & counter gate buffer \\
+\end{tabular}
+
+
+\subsection{Commands}
+
+\begin{description}
+\item[NOP] No operation
+\item[DDSFRQ channel, {\it variable}] write frequency (32 most significant bits) from variable to DDS channel
+\item[DDSFRQFINE channel, {\it variable}] write frequency (16 least significant bits) from variable to DDS channel
+\item[DDSAMP channel, {\it variable}] write amplitude from variable to DDS channel
+\item[DDSPHS channel, {\it variable}] write phase from variable to DDS channel
+\item[DDSCHN]
+\item[SHUTTER] 
+\item[COUNT]
+\item[COUNT1]
+\item[COUNTBOTH]
+\item[DELAY]
+\item[LDWR {\it variable}] load value from variable into W register
+\item[LDWR1]
+\item[LDWI] load value from the address pointed to by INDF into W register
+\item[STWR {\it variable}] store value in W register into variable
+\item[STWR1]
+\item[STWI] store value from W registerinto address pointed to by INDF
+\item[LDINDF {\it variable}] load the contents of {\it variable} into the INDF register
+\item[ANDW {\it variable}] W = W \& {\it variable}
+\item[ADDW {\it variable}] W = W +  {\it variable}
+\item[INC {\it variable}] W = {\it variable} + 1
+\item[DEC {\it variable}] W = {\it variable} - 1 
+\item[CLRW] W = 0
+\item[CLRW1] W1 = 0
+\item[CMP {\it variable}] Set W to 0 if W <= {\it variable} 
+\item[CMP1 ]
+\item[JMP {\it label}] Jump to {\it label}
+\item[JMPZ {\it label}] Jump to {\it label} if W = 0
+\item[JMPZ1 {\it label}] Jump to {\it label} if W1 = 0
+\item[JMPNZ {\it label}] Jump to {\it label} if W != 0
+\item[JMPNZ1 {\it label}] Jump to {\it label} if W1 != 0
+\item[SHUTTERMASK {\it variable}] Set internal register shutter\_mask to {\it variable}
+\item[ASYNCSHUTTER {\it variable}] Update internal shutter register, bits set in shutter\_mask are updated with the bits from {\it variable}
+\item[COUTERMASK {\it variable}] Set the internal register with gate signals for the 8 counters and timestampers. Bits 7:0 gate counters 7:0, bits 15:8 gate timestamping on channels 7:0.
+\item[TRIGGER {\it variable}] Set internal trigger register
+\item[UPDATE  {\it variable}] Update shutters, counter gates, triggers and start the delay counter with the value in {\it variable}
+\item[WAIT] wait until the delay counter expires
+\item[LDCOUNT {\it counterchannel}] load the last counter value from {\it counterchannel} into W register
+\item[WRITEPIPE] write the value in W into the pipe to the host computer
+\item[READPIPE] read a value from the pipe from the host computer into the W register. If there is no new data in the pipe, the last value in the pipe is used.
+\item[LDTDCCOUNT] load the value from the global tdc counter into W
+\item[CMPEQUAL {\it variable}] compare W and {\it variable} and set the internal compare bit to true if W={\it variable}
+\item[JMPCMP {\it label}] Jump to label if the internal compare bit is set
+\item[JMPNCMP {\it label}] Jump to label if the internal compare bit is not set
+\item[JMPPIPEAVAIL  {\it label}] Jump to label if the pipe from the host computer has data
+\item[JMPPIPEEMPTY {\it label}] Jump to label if the pipe from the host computer is empty
+\item[READPIPEINDF] Read the value from the pipe from the host computer in the INDF register
+\item[WRITEPIPEINDF] Write the value from the INDF register into the pipe to the host comuter
+\item[STOP] Stop execution
+\item
+
+\end{description}
+
+
+\end{document}
