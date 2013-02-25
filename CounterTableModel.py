@@ -56,7 +56,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return str(16-section)
+                return str(15-section)
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.variablelist[section].name
         return None #QtCore.QVariant()

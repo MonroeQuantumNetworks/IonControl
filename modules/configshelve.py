@@ -31,16 +31,19 @@ class configshelve:
     def __getitem__(self, key):
         return self.config.__getitem__(key)
         
+    def get(self, key, default=None):
+        return self.config.get(key,default)
+        
     def next(self):
         return self.config.next()
         
     def open(self):
-        print "configshelve open", self.configfile
+        #print "configshelve open", self.configfile
         self.config = shelve.open(self.configfile)
         return self.config
         
     def close(self):
-        print "configshelve close", self.configfile
+        #print "configshelve close", self.configfile
         self.config.close()
         
 if __name__ == "__main__":

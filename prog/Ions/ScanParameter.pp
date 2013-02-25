@@ -12,8 +12,8 @@
 var datastart 3900, address   # serves as tooltip
 var dataend 4000, address
 var coolingFreq     250, parameter, MHz, AD9912_FRQ
-var startupMask       0, mask
-var startup           0, shutter startupMask
+var startupMask       1, mask
+var startup          1, shutter startupMask
 var startupTime       1, parameter, ms
 var coolingOnMask     1, mask
 var coolingOn         1, shutter coolingOnMask

@@ -56,7 +56,7 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return str(32-section)
+                return str(31-section)
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.variablelist[section].name
         return None #QtCore.QVariant()

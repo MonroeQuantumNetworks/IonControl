@@ -16,6 +16,7 @@ class DDSUi(DDSForm, DDSBase):
         self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
         self.names = self.config.get('DDSUi.Names',['']*6)
         self.ad9912 = Ad9912.Ad9912(xem)
+        self.writeOnStartup = self.config.get('DDSUi.WriteOnStartup',False)
         
     def setupUi(self,parent):
         DDSForm.setupUi(self,parent)
@@ -33,6 +34,11 @@ class DDSUi(DDSForm, DDSBase):
             box.textChanged.connect( functools.partial(self.onName, box,channel) )
         self.applyButton.clicked.connect( self.onApply )
         self.resetButton.clicked.connect( self.onReset )
+        self.writeAllButton.clicked.connect( self.onWriteAll )
+        self.checkBoxWriteOnStartup.setChecked(self.writeOnStartup)
+        if self.writeOnStartup:
+            self.onWriteAll()
+            self.onApply()
 
     def onFrequency(self, box, channel):
         self.ad9912.setFrequency(channel, box.value() )
@@ -49,11 +55,20 @@ class DDSUi(DDSForm, DDSBase):
     def onName(self, box, channel, text):
         self.names[channel] = str(text)
         
+    def onWriteAll(self):
+        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5]):
+            self.onFrequency( box, channel )
+        for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5]):
+            self.onPhase( box, channel )
+        for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]):
+            self.onAmplitude( box, channel )
+        
     def closeEvent(self, e):
         self.config['DDSUi.Frequency'] = self.frequency
         self.config['DDSUi.Phase'] = self.phase
         self.config['DDSUi.Amplitude'] = self.amplitude
         self.config['DDSUi.Names'] = self.names
+        self.config['DDSUi.WriteOnStartup'] = self.checkBoxWriteOnStartup.isChecked()
         
     def onApply(self):
         self.ad9912.update(0x3f)

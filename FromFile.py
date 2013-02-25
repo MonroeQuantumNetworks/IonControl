@@ -89,7 +89,7 @@ class FromFile(testForm, MainWindowWidget.MainWindowWidget):
             trace.filename = str(fname)
             self.conf.directory, trace.name = os.path.split(str(fname))
             trace.readTrace(fname)
-            self.traceui.addTrace(Traceui.PlottedTrace(trace,self.graphicsView,pens.penList,-1))
+            self.traceui.addTrace(Traceui.PlottedTrace(trace,self.graphicsView,pens.penList,-1),-1)
     
     def onPause(self):
         self.StatusMessage.emit("From File Pause not implemented")

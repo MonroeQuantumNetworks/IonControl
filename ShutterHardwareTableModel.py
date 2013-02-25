@@ -19,7 +19,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         self.pulserHardware = pulserHardware
         self.outputname = outputname
         self.size = size
-        self.shutter = getattr(self.pulserHardware,self.outputname)
+        self._shutter = getattr(self.pulserHardware,self.outputname)
 #        size = 8
 #        [bool(235 & (1 << size - i - 1)) for i in xrange(size)]
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -44,14 +44,14 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
                     self.shutterNameDict[value] = index.row()
                     self.shutterdict[index.row()] = value
                 else:
-                    if index.column() in self.shutterdict:
+                    if index.row() in self.shutterdict:
                         self.shutterdict.pop(self.shutterdict[index.row()])
         return False
         
     def data(self, index, role): 
         if index.isValid():
             return { (QtCore.Qt.DisplayRole,0): self.shutterdict.get(index.row(),None),
-                     (QtCore.Qt.BackgroundColorRole,1): self.onColor if self.shutter & (1<<index.row()) else self.offColor,
+                     (QtCore.Qt.BackgroundColorRole,1): self.onColor if self._shutter & (1<<index.row()) else self.offColor,
                      (QtCore.Qt.EditRole,0): self.shutterdict.get(index.row(),''),
                      }.get((role,index.column()),None)
         return None
@@ -71,6 +71,16 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
 
     def onClicked(self,index):
         if index.column()==1:
-            self.shutter ^= 1<<index.row()
-        setattr(self.pulserHardware,self.outputname,self.shutter)
+            self._shutter ^= 1<<index.row()
+        setattr(self.pulserHardware,self.outputname,self._shutter)
         self.dataChanged.emit(index,index)
+        
+    @property
+    def shutter(self):
+        return self._shutter  #
+         
+    @shutter.setter
+    def shutter(self, value):
+        self._shutter = value
+        setattr(self.pulserHardware,self.outputname,self._shutter)
+        self.dataChanged.emit(self.createIndex(0,1),self.createIndex(self.size,1))
