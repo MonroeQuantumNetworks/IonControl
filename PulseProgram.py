@@ -194,6 +194,13 @@ class PulseProgram:
                 print hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
+        
+    def currentVariablesText(self, comment=""):
+        lines = list()
+        for name, var in self.variabledict.iteritems():
+            lines.append("{0} {1} {2}".format(comment,name,var.value))
+        return '\n'.join(lines)
+           
 
 # routines below here should not be needed by the user   
 

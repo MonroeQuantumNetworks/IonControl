@@ -210,6 +210,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.worker.startScan(self.scan.code)
         self.currentIndex = 0
         if self.currentTrace is not None:
+            self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
             self.currentTrace = None
     
@@ -247,6 +248,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.currentIndex += 1
         self.showHistogram(data)
         if data.final:
+            self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
         
     def showHistogram(self, data):

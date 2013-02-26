@@ -19,6 +19,7 @@ class Trace:
         self.curve = None
         self.vars = Empty()
         self.vars.comment = ""
+        self.header = None
         self.curvePen = 0
         
     def resave(self):
@@ -36,6 +37,8 @@ class Trace:
         print >>outfile, "#", datetime.datetime.now()
         for var in self.vars.__dict__.keys():
             print >>outfile, "#", var, self.vars.__dict__[var]
+        if self.header is not None:
+            print >>outfile, self.header
 
     def saveTrace(self,filename):
         of = open(filename,'w')
