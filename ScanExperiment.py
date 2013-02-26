@@ -19,6 +19,8 @@ import ScanParameters
 from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
 import pyqtgraph
+import ScanExperimentSettings
+from modules import DataDirectory
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -28,6 +30,7 @@ class Data:
         self.timestamp = [list()]*8
         self.timestampZero = [0]*8
         self.scanvalue = None
+        self.final = False
 
 class Worker(QtCore.QThread):
     dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
@@ -99,6 +102,7 @@ class Worker(QtCore.QThread):
                         elif token & 0xff000000 == 0xff000000:
                             if token == 0xffffffff:    # end of run
                                 #self.exiting = True
+                                self.data.final = True
                                 self.dataAvailable.emit( self.data )
                                 #print "emit"
                                 self.data = Data()
@@ -141,7 +145,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.currentTrace = None
         self.currentIndex = 0
         self.activated = False
-        self.histogramPlot = None
+        self.histogramCurve = None
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -176,7 +180,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanParametersWidget = ScanParameters.ScanParameters(config,"ScanExperiment")
         self.scanParametersWidget.setupUi(self.scanParametersWidget)
         self.scanParametersUi.setWidget(self.scanParametersWidget )
+        self.scanSettingsWidget = ScanExperimentSettings.ScanExperimentSettings(config,"ScanExperiment")
+        self.scanSettingsWidget.setupUi(self.scanSettingsWidget)
+        self.scanSettingsUi.setWidget(self.scanSettingsWidget)
         self.dockWidgetList.append(self.scanParametersUi)
+        self.dockWidgetList.append(self.scanSettingsUi)
         if 'ScanExperiment.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['ScanExperiment.MainWindow.State'])
 
@@ -193,12 +201,17 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onStart(self):
         self.state = self.OpStates.running
+        scanSettings = self.scanSettingsWidget.settings
+        directory = DataDirectory.DataDirectory( scanSettings.project )
+        self.tracefilename, components = directory.sequencefile( scanSettings.filename )
         # get parameter to scan and scanrange
         self.scan = self.scanParametersWidget.getScan()
         self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
         self.worker.startScan(self.scan.code)
         self.currentIndex = 0
-        self.currentTrace = None
+        if self.currentTrace is not None:
+            self.currentTrace.resave()
+            self.currentTrace = None
     
     def onPause(self):
         self.StatusMessage.emit("test Pause not implemented")
@@ -223,6 +236,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.y = numpy.array([mean])
             self.currentTrace.name = self.scan.name
             self.currentTrace.vars.comment = ""
+            self.currentTrace.filename = self.tracefilename
+            print "Filename:" , self.tracefilename
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
@@ -231,16 +246,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTrace.replot()
         self.currentIndex += 1
         self.showHistogram(data)
+        if data.final:
+            self.currentTrace.resave()
         
     def showHistogram(self, data):
-        y, x = numpy.histogram( data.count[0] , range=(0,50), bins=50)
-        print x, y
-        if self.histogramPlot is None:
+        settings = self.scanSettingsWidget.settings
+        y, x = numpy.histogram( data.count[0] , range=(0,settings.histogramBins), bins=settings.histogramBins)
+        #print x, y
+        if self.histogramCurve is None:
             self.histogramCurve = pyqtgraph.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
             self.histogramView.addItem(self.histogramCurve)
             #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
         else:
-            self.histogramPlot.setData( x,y )
+            self.histogramCurve.setData( x,y )
         
         
     def activate(self):
@@ -270,6 +288,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config['ScanExperiment.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.config['ScanExperiment.pyqtgraph-dokareastate'] = self.area.saveState()
         self.scanParametersWidget.onClose()
+        self.scanSettingsWidget.onClose()
 
     def updateSettings(self,settings,active=False):
         """ Main program settings have changed

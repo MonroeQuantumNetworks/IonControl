@@ -13,7 +13,7 @@ def kHz(count,time_ms):
     return count/time_ms
     
 def Hz(count,time_ms):
-    return count*1000/time_ms
+    return count*1000./time_ms
     
 def MHz(count,time_ms):
     return count/1000./time_ms

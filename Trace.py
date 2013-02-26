@@ -38,7 +38,12 @@ class Trace:
             print >>outfile, "#", var, self.vars.__dict__[var]
 
     def saveTrace(self,filename):
-        pass
+        of = open(filename,'w')
+        self.saveTraceHeader(of)
+        print >>of, "# x y error"
+        for x,db in zip(self.x, self.y):
+            print >>of, x, db
+        of.close()
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback
