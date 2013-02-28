@@ -43,9 +43,14 @@ class Trace:
     def saveTrace(self,filename):
         of = open(filename,'w')
         self.saveTraceHeader(of)
-        print >>of, "# x y error"
-        for x,db in zip(self.x, self.y):
-            print >>of, x, db
+        if hasattr(self, 'height'):
+            print >>of, "# x y error"
+            for x,db,error in zip(self.x, self.y, self.height):
+                print >>of, x, db, error
+        else:
+            print >>of, "# x y "
+            for x,db in zip(self.x, self.y):
+                print >>of, x, db
         of.close()
     
     def setPlotfunction(self, callback):
