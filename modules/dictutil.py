@@ -6,7 +6,10 @@ Created on Sat Feb 23 15:19:22 2013
 """
 
 def subdict( fulldict, keys ):
-    return dict((name,fulldict[name]) for name in keys if name in fulldict)
+    if keys is not None:
+        return dict((name,fulldict[name]) for name in keys if name in fulldict)
+    else:
+        return dict()
     
     
 if __name__=="__main__":
