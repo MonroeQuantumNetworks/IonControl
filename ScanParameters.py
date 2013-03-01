@@ -37,7 +37,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.stepsBox.setValue(self.settings.steps)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.repeatCheckBox.setChecked( self.settings.repeat )
-        self.stepInPlaceCheckBox.setCheck( self.settings.stepInPlace )
+        self.stepInPlaceCheckBox.setChecked( self.settings.stepInPlace )
 
     def setVariables(self, variabledict):
         self.variabledict = variabledict
