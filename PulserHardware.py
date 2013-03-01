@@ -6,9 +6,11 @@ from fpgaUtilit import check
 from PyQt4 import QtCore 
 import struct
 from Queue import Queue, Empty
+import magnitude
 
 class PulserHardware(object):
     sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
+    timestep = magnitude.mg(20,'ns')
 
     def __init__(self,xem):
         self._shutter = 0
