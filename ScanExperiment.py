@@ -63,6 +63,10 @@ class Worker(QtCore.QThread):
             self.pulserHardware.ppStart()
             self.running = True
             
+    def addData(self, scandata):
+        with QtCore.QMutexLocker(self.Mutex):
+            self.pulserHardware.ppWriteData(scandata)        
+            
     def stopScan(self):
         with QtCore.QMutexLocker(self.Mutex):
             if self.running:
@@ -218,8 +222,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.tracefilename, components = directory.sequencefile( self.scanSettings.filename )
         # get parameter to scan and scanrange
         self.scan = self.scanParametersWidget.getScan()
-        self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
-        self.worker.startScan(self.scan.code)
+        if self.scan.stepInPlace:
+            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]])
+            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]]*2)
+        else:
+            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
+            mycode = self.scan.code
+        self.worker.startScan(mycode)
         self.currentIndex = 0
         if self.currentTrace is not None:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
@@ -242,7 +251,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """
         print "onData", len(data.count[self.scanSettings.counter])
         mean = numpy.mean( data.count[self.scanSettings.counter] )
-        x = self.scan.list[self.currentIndex].ounit('ms').toval()
+        if self.scan.stepInPlace:
+            x = self.currentIndex
+        else:
+            x = self.scan.list[self.currentIndex].ounit(self.scan.minimum.out_unit).toval()
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
@@ -254,8 +266,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
-            self.currentTrace.x = numpy.append(self.currentTrace.x, x)
-            self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
+            if self.scan.stepInPlace and len(self.currentTrace.x)>=self.scan.steps:
+                self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
+                self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
+            else:
+                self.currentTrace.x = numpy.append(self.currentTrace.x, x)
+                self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
             self.plottedTrace.replot()
         self.currentIndex += 1
         self.showHistogram(data)
@@ -264,6 +280,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.final:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
+            if self.scan.repeat:
+                self.onStart()
+        else:
+            if self.scan.stepInPlace:
+                self.worker.addData(self.scan.code)
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings

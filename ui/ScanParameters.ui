@@ -7,27 +7,33 @@
     <x>0</x>
     <y>0</y>
     <width>195</width>
-    <height>239</height>
+    <height>206</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="1">
-    <widget class="MagnitudeSpinBox" name="minimumBox">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-       <horstretch>1</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="frame">
-      <bool>true</bool>
-     </property>
-     <property name="buttonSymbols">
-      <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
+   <item row="0" column="0" colspan="2">
+    <widget class="QComboBox" name="comboBoxParameter"/>
+   </item>
+   <item row="4" column="0" colspan="2">
+    <widget class="QComboBox" name="scanTypeCombo">
+     <item>
+      <property name="text">
+       <string>Linear up</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Linear down</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Randomized</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item row="2" column="1">
@@ -51,7 +57,7 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="1">
+   <item row="6" column="1">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -64,35 +70,6 @@
      </property>
     </spacer>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Number Steps</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QComboBox" name="comboBoxParameter"/>
-   </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QComboBox" name="scanTypeCombo">
-     <item>
-      <property name="text">
-       <string>Linear up</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Linear down</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Randomized</string>
-      </property>
-     </item>
-    </widget>
-   </item>
    <item row="3" column="1">
     <widget class="QSpinBox" name="stepsBox">
      <property name="minimum">
@@ -100,6 +77,43 @@
      </property>
      <property name="maximum">
       <number>10000</number>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Number Steps</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="MagnitudeSpinBox" name="minimumBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="frame">
+      <bool>true</bool>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::NoButtons</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QCheckBox" name="repeatCheckBox">
+     <property name="text">
+      <string>Repeat</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QCheckBox" name="stepInPlaceCheckBox">
+     <property name="text">
+      <string>Step in place</string>
      </property>
     </widget>
    </item>
