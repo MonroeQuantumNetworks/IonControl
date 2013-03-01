@@ -21,6 +21,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 import pyqtgraph
 import ScanExperimentSettings
 from modules import DataDirectory
+import TimestampSettings
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -61,6 +62,10 @@ class Worker(QtCore.QThread):
             print "Starting"
             self.pulserHardware.ppStart()
             self.running = True
+            
+    def addData(self, scandata):
+        with QtCore.QMutexLocker(self.Mutex):
+            self.pulserHardware.ppWriteData(scandata)        
             
     def stopScan(self):
         with QtCore.QMutexLocker(self.Mutex):
@@ -146,6 +151,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.currentIndex = 0
         self.activated = False
         self.histogramCurve = None
+        self.timestampCurve = None
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -156,18 +162,24 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.mainDock = Dock("Scan data")
         self.histogramDock = Dock("Histogram")
         self.averageDock = Dock("average")
+        self.timestampDock = Dock("timestamps")
         self.area.addDock(self.mainDock,'left')
         self.area.addDock(self.histogramDock,'right')
         self.area.addDock(self.averageDock,'bottom',self.histogramDock)
+        self.area.addDock(self.timestampDock,'bottom',self.averageDock)
         self.graphicsView = pyqtgraph.PlotWidget() # self.graphicsLayout.graphicsView
         self.mainDock.addWidget(self.graphicsView)
         self.histogramView = pyqtgraph.PlotWidget()
         self.histogramDock.addWidget( self.histogramView)
         self.averageView = pyqtgraph.PlotWidget()       
         self.averageDock.addWidget( self.averageView )
-        if 'ScanExperiment.pyqtgraph-dokareastate' in self.config:
-            self.area.restoreState(self.config['ScanExperiment.pyqtgraph-dokareastate'])
-        
+        self.timestampView = pyqtgraph.PlotWidget()
+        self.timestampDock.addWidget( self.timestampView )
+        try:
+            if 'ScanExperiment.pyqtgraph-dokareastate' in self.config:
+                self.area.restoreState(self.config['ScanExperiment.pyqtgraph-dokareastate'])
+        except:
+            pass # Ignore errors on restoring the state. This might happen after a new dock is added
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons)
         self.traceui.setupUi(self.traceui)
@@ -183,8 +195,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanSettingsWidget = ScanExperimentSettings.ScanExperimentSettings(config,"ScanExperiment")
         self.scanSettingsWidget.setupUi(self.scanSettingsWidget)
         self.scanSettingsUi.setWidget(self.scanSettingsWidget)
+        self.timestampSettingsWidget = TimestampSettings.TimestampSettings(config,"ScanExperiment")
+        self.timestampSettingsWidget.setupUi(self.timestampSettingsWidget)
+        self.timestampSettingsUi.setWidget(self.timestampSettingsWidget)
         self.dockWidgetList.append(self.scanParametersUi)
         self.dockWidgetList.append(self.scanSettingsUi)
+        self.dockWidgetList.append(self.timestampSettingsUi)
         if 'ScanExperiment.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['ScanExperiment.MainWindow.State'])
 
@@ -201,13 +217,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onStart(self):
         self.state = self.OpStates.running
-        scanSettings = self.scanSettingsWidget.settings
-        directory = DataDirectory.DataDirectory( scanSettings.project )
-        self.tracefilename, components = directory.sequencefile( scanSettings.filename )
+        self.scanSettings = self.scanSettingsWidget.settings
+        directory = DataDirectory.DataDirectory( self.scanSettings.project )
+        self.tracefilename, components = directory.sequencefile( self.scanSettings.filename )
         # get parameter to scan and scanrange
         self.scan = self.scanParametersWidget.getScan()
-        self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
-        self.worker.startScan(self.scan.code)
+        if self.scan.stepInPlace:
+            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]])
+            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]]*2)
+        else:
+            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
+            mycode = self.scan.code
+        self.worker.startScan(mycode)
         self.currentIndex = 0
         if self.currentTrace is not None:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
@@ -228,9 +249,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", len(data.count[0])
-        mean = numpy.mean( data.count[0] )
-        x = self.scan.list[self.currentIndex].ounit('ms').toval()
+        print "onData", len(data.count[self.scanSettings.counter])
+        mean = numpy.mean( data.count[self.scanSettings.counter] )
+        if self.scan.stepInPlace:
+            x = self.currentIndex
+        else:
+            x = self.scan.list[self.currentIndex].ounit(self.scan.minimum.out_unit).toval()
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
@@ -242,25 +266,57 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
-            self.currentTrace.x = numpy.append(self.currentTrace.x, x)
-            self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
+            if self.scan.stepInPlace and len(self.currentTrace.x)>=self.scan.steps:
+                self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
+                self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
+            else:
+                self.currentTrace.x = numpy.append(self.currentTrace.x, x)
+                self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
             self.plottedTrace.replot()
         self.currentIndex += 1
         self.showHistogram(data)
+        if self.timestampSettingsWidget.settings.enabled: 
+            self.showTimestamps(data)
         if data.final:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
+            if self.scan.repeat:
+                self.onStart()
+        else:
+            if self.scan.stepInPlace:
+                self.worker.addData(self.scan.code)
+        
+    def showTimestamps(self,data):
+        settings = self.timestampSettingsWidget.settings
+        y, x = numpy.histogram( data.timestamp[settings.counter]*self.pulserHardware.timestep, 
+                                range=(settings.roiStart,settings.roiStart+settings.roiWidth),
+                                bins=int((settings.roiWidth/settings.binwidth).toval()))
+        if settings.integrate and hasattr(self,'timestampx') and numpy.array_equal(self.timestampx,x):
+            self.timestampy += y
+        else:
+            self.timestampx, self.timestampy = x, y
+        if self.timestampCurve is None:
+            self.timestampCurve = pyqtgraph.PlotCurveItem(self.timestampx, self.timestampy, stepMode=True)
+            self.timestampView.addItem(self.timestampCurve)
+            #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
+        else:
+            self.timestampCurve.setData( self.timestampx, self.timestampy )
+                                
         
     def showHistogram(self, data):
         settings = self.scanSettingsWidget.settings
-        y, x = numpy.histogram( data.count[0] , range=(0,settings.histogramBins), bins=settings.histogramBins)
+        y, x = numpy.histogram( data.count[settings.counter] , range=(0,settings.histogramBins), bins=settings.histogramBins)
+        if settings.integrate and hasattr(self,'histx') and numpy.array_equal(self.histx,x):
+            self.histy += y
+        else:
+            self.histx, self.histy = x, y
         #print x, y
         if self.histogramCurve is None:
-            self.histogramCurve = pyqtgraph.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+            self.histogramCurve = pyqtgraph.PlotCurveItem(self.histx, self.histy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
             self.histogramView.addItem(self.histogramCurve)
             #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
         else:
-            self.histogramCurve.setData( x,y )
+            self.histogramCurve.setData( self.histx, self.histy )
         
         
     def activate(self):
@@ -291,6 +347,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config['ScanExperiment.pyqtgraph-dokareastate'] = self.area.saveState()
         self.scanParametersWidget.onClose()
         self.scanSettingsWidget.onClose()
+        self.timestampSettingsWidget.onClose()
 
     def updateSettings(self,settings,active=False):
         """ Main program settings have changed

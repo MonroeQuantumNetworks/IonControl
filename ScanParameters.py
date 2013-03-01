@@ -19,6 +19,8 @@ class Settings:
     maximum = "10 ms"
     steps = 10
     scantype = 0
+    repeat = False
+    stepInPlace = False
 
 class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
     def __init__(self,config,parentname,parent=0):
@@ -34,6 +36,8 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.maximumBox.setValue(self.settings.maximum)
         self.stepsBox.setValue(self.settings.steps)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
+        self.repeatCheckBox.setChecked( self.settings.repeat )
+        self.stepInPlaceCheckBox.setChecked( self.settings.stepInPlace )
 
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -55,6 +59,10 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.settings.maximum = self.maximumBox.value()
         self.settings.steps = self.stepsBox.value()
         self.settings.scantype = self.scanTypeCombo.currentIndex()
+        self.settings.repeat = self.repeatCheckBox.isChecked()
+        self.settings.stepInPlace = self.stepInPlaceCeckBox.isChecked()
+        Scan.repeat = self.settings.repeat
+        Scan.stepInPlace = self.settings.stepInPlace
         return Scan
         
     def onClose(self):

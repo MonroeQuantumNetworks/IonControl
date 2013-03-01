@@ -16,6 +16,8 @@ class Settings:
     project = ""
     histogramBins = 50
     filename = "Data.dat"
+    integrate = False
+    counter = 0
 
 class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsBase ):
     def __init__(self,config,parentname,parent=0):
@@ -33,6 +35,13 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.filenameEdit.setText( self.settings.filename )
         self.filenameEdit.editingFinished.connect(self.onFilenameEditingFinished)
+        self.integrateHistogramButton.setChecked( self.settings.integrate )
+        self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
+        self.counterSpinBox.setValue( self.settings.counter )
+        self.counterSpinBox.valueChanged.connect( self.onCounterChanged )
+
+    def onIntegrateHistogramClicked(self):
+        self.settings.integrate = self.integrateHistogramButton.isChecked()
 
     def onFilenameEditingFinished(self):
         self.settings.filename = str(self.filenameEdit.text())
@@ -42,6 +51,9 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         
     def onHistogramBinsChanged(self, bins):
         self.settings.histogramBins = bins
+        
+    def onCounterChanged(self, value):
+        self.settings.counter = value
     
     def onClose(self):
         self.config[self.configname] = self.settings

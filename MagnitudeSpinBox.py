@@ -5,16 +5,20 @@ Created on Sat Feb 09 17:28:11 2013
 @author: pmaunz
 """
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 from modules import Expression
+import magnitude
 
 debug = False
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
+    valueChanged = QtCore.pyqtSignal(object)
+    
     def __init__(self,parent=0):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.expression = Expression.Expression()
+        self.editingFinished.connect( self.onEditingFinished )
         
     def validate(self, inputstring, pos):
         #print "validate"
@@ -48,6 +52,9 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def setValue(self,value):
         self.lineEdit().setText( str(value) )
+        
+    def onEditingFinished(self):
+        self.valueChanged.emit( self.value() )
         
 if __name__ == "__main__":
     debug = True
