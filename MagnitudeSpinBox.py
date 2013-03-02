@@ -40,6 +40,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             newvalue.output_prec( value.oprec )
             self.setValue( newvalue )
             lineEdit.setCursorPosition(pos)
+            self.valueChanged.emit( newvalue )
         except Exception:
             pass
             #print e

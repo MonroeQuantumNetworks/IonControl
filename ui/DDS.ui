@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>345</width>
+    <width>263</width>
     <height>532</height>
    </rect>
   </property>
@@ -16,91 +16,8 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>Channel</string>
-       </property>
-       <property name="textInteractionFlags">
-        <set>Qt::LinksAccessibleByMouse</set>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Frequency</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Phase</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Amplitude</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="MagnitudeSpinBox" name="frequencyBox0">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-         <horstretch>2</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="buttonSymbols">
-        <enum>QAbstractSpinBox::NoButtons</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="MagnitudeSpinBox" name="phaseBox0">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-         <horstretch>2</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="buttonSymbols">
-        <enum>QAbstractSpinBox::NoButtons</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QSpinBox" name="amplitudeBox0">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="MagnitudeSpinBox" name="frequencyBox1">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="buttonSymbols">
-        <enum>QAbstractSpinBox::NoButtons</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="MagnitudeSpinBox" name="phaseBox1">
+     <item row="9" column="0">
+      <widget class="MagnitudeSpinBox" name="frequencyBox3">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -122,6 +39,19 @@
        </property>
        <property name="maximum">
         <number>1023</number>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="MagnitudeSpinBox" name="phaseBox1">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
        </property>
       </widget>
      </item>
@@ -151,8 +81,28 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="2">
-      <widget class="QSpinBox" name="amplitudeBox2">
+     <item row="5" column="0">
+      <widget class="MagnitudeSpinBox" name="frequencyBox1">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Amplitude</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QSpinBox" name="amplitudeBox0">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -164,16 +114,66 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="0">
-      <widget class="MagnitudeSpinBox" name="frequencyBox3">
+     <item row="1" column="1">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Phase</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Frequency</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Channel</string>
+       </property>
+       <property name="textInteractionFlags">
+        <set>Qt::LinksAccessibleByMouse</set>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="MagnitudeSpinBox" name="phaseBox0">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
+         <horstretch>2</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="MagnitudeSpinBox" name="frequencyBox0">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>2</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="QSpinBox" name="amplitudeBox2">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximum">
+        <number>1023</number>
        </property>
       </widget>
      </item>
@@ -347,7 +347,14 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1" colspan="2">
+     <item row="14" column="0">
+      <widget class="QCheckBox" name="autoApplyBox">
+       <property name="text">
+        <string>Apply directly</string>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="1" colspan="2">
       <widget class="QCheckBox" name="checkBoxWriteOnStartup">
        <property name="text">
         <string>Write on startup</string>
