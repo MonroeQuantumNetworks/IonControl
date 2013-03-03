@@ -142,7 +142,9 @@ class PulserHardware(object):
             print "ppWriteData length",len(code)
             with QtCore.QMutexLocker(self.Mutex):
                 return self.xem.WriteToPipeIn(0x81,code)
-
+                
+    def ppResetWriteFifo(self):
+        self.xem.ActivateTriggerIn(0x41, 3)
             
     def ppReadLog(self):
         with QtCore.QMutexLocker(self.Mutex):

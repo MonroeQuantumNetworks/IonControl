@@ -60,7 +60,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.settings.steps = self.stepsBox.value()
         self.settings.scantype = self.scanTypeCombo.currentIndex()
         self.settings.repeat = self.repeatCheckBox.isChecked()
-        self.settings.stepInPlace = self.stepInPlaceCeckBox.isChecked()
+        self.settings.stepInPlace = self.stepInPlaceCheckBox.isChecked()
         Scan.repeat = self.settings.repeat
         Scan.stepInPlace = self.settings.stepInPlace
         return Scan
