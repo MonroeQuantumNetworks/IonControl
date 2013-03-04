@@ -49,28 +49,28 @@ class DDSUi(DDSForm, DDSBase):
     def onFrequency(self, box, channel, value):
         self.ad9912.setFrequency(channel, box.value() )
         self.frequency[channel] = box.value()
-        if self.autoApply: self.onApply
+        if self.autoApply: self.onApply()
         
     def onPhase(self, box, channel, value):
         self.ad9912.setPhase(channel, box.value())
         self.phase[channel] = box.value()
-        if self.autoApply: self.onApply
+        if self.autoApply: self.onApply()
     
     def onAmplitude(self, box, channel, value):
         self.ad9912.setAmplitude(channel, box.value())
         self.amplitude[channel] = box.value()
-        if self.autoApply: self.onApply
+        if self.autoApply: self.onApply()
     
     def onName(self, box, channel, text):
         self.names[channel] = str(text)
         
     def onWriteAll(self):
         for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5]):
-            self.onFrequency( box, channel )
+            self.onFrequency( box, channel, box.value() )
         for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5]):
-            self.onPhase( box, channel )
+            self.onPhase( box, channel, box.value() )
         for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]):
-            self.onAmplitude( box, channel )
+            self.onAmplitude( box, channel, box.value() )
         if self.autoApply: self.onApply
         
     def closeEvent(self, e):
