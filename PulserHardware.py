@@ -7,9 +7,114 @@ from PyQt4 import QtCore
 import struct
 from Queue import Queue, Empty
 import magnitude
+from modules import enum
+
+class Data:
+    def __init__(self):
+        self.count = [list()]*8
+        self.timestamp = [list()]*8
+        self.timestampZero = [0]*8
+        self.scanvalue = None
+        self.final = False
+
+class DedicatedData:
+    data = [None]*12
+    def count(self):
+        return self.data[0:8]
+        
+    def analog(self):
+        return self.data[8:12]
+        
+    def integration(self):
+        return self.data[12]
+
+
+class PipeReader(QtCore.QThread):
+    timestep = magnitude.mg(20,'ns')
+    
+    def __init__(self, pulserHardware, dedicateCounterQueue, resultsQueue, parent = None):
+        QtCore.QThread.__init__(self, parent)
+        self.exiting = False
+        self.pulserHardware = pulserHardware
+        self.Mutex = pulserHardware.Mutex          # the mutex is to protect the ok library
+        self.activated = False
+        self.running = False
+        
+    def __enter__(self):
+        return self
+        
+    def __exit__(self, type, value, traceback):
+        pass        
+    
+    analyzingState = enum.enum('normal','scanparameter')
+    def run(self):
+        """ run is responsible for reading the data back from the FPGA
+        next experiment marker is 0xffff0xxx where xxx is the address of the overwritten parameter
+        end marker is 0xffffffff
+        """
+        try:
+            with self:
+                state = self.analyzingState.normal
+                self.data = Data()
+                self.dedicatedData = DedicatedData()
+                self.timestampOffset = 0
+                while not self.exiting:
+                    with QtCore.QMutexLocker(self.Mutex):
+                        data = self.pulserHardware.ppReadData(4,1.0)
+                    #print len(data)
+                    for s in PulserHardware.sliceview(data,4):
+                        (token,) = struct.unpack('I',s)
+                        #print hex(token)
+                        if state == self.analyzingState.scanparameter:
+                            if self.data.scanvalue is None:
+                                self.data.scanvalue = token
+                            else:
+                                self.pulserHardware.ppQueue.put( self.data )
+                                #print "emit"
+                                self.data = Data()
+                                self.data.scanvalue = token
+                            state = self.analyzingState.normal
+                        elif token & 0xf0000000 == 0xe0000000: # dedicated results
+                            channel = (token >>24) & 0xf
+                            if self.dedicatedData.data[channel] is None:
+                                self.dedicatedData.count[channel] = token & 0xffffff
+                            else:
+                                self.pulserHardware.dedicatedQueue.put( self.dedicatedData )
+                                self.dedicatedData = DedicatedData()
+                        elif token & 0xff000000 == 0xff000000:
+                            if token == 0xffffffff:    # end of run
+                                #self.exiting = True
+                                self.data.final = True
+                                self.pulserHardware.ppQueue.put( self.data )
+                                #print "emit"
+                                self.data = Data()
+                            elif token == 0xff000000:
+                                self.timestampOffset += 1<<28
+                            elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
+                                state = self.analyzingState.scanparameter
+                        else:
+                            key = token >> 28
+                            channel = (token >>24) & 0xf
+                            value = token & 0xffffff
+                            if key==1:   # count
+                                self.data.count[channel].append(value)
+                            elif key==2:  # timestamp
+                                self.data.timstampZero[channel] = self.timestampOffset + value
+                                self.data.timestamp[channel].append(0)
+                            elif key==3:
+                                self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timstampZero[channel])
+                if self.data.scanvalue is not None:
+                    self.pulserHardware.ppQueue.put( self.data )
+                self.data = Data()
+        except Exception as err:
+            print "Scan Experiment worker exception:", err
+
 
 class PulserHardware(object):
     sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
+    dedicatedQueue = Queue()
+    ppQueue = Queue()
+    
     timestep = magnitude.mg(20,'ns')
 
     def __init__(self,xem):
@@ -17,6 +122,8 @@ class PulserHardware(object):
         self._trigger = 0
         self.xem = xem
         self.Mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+        self._adcCounterMask = 0
+        self._integrationTime = magnitude.mg(100,'ms')
         
     def setHardware(self,xem):
         self.xem = xem
@@ -45,7 +152,41 @@ class PulserHardware(object):
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
             check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
             self._trigger = value
+            
+    @property
+    def counterMask(self):
+        return self._adcCounterMask & 0xff
         
+    @counterMask.setter
+    def counterMask(self, value):
+        with QtCore.QMutexLocker(self.Mutex):
+            self._adcCounterMask = (self._adcCounterMask & 0xf00) | (value & 0xff)
+            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+
+    @property
+    def adcMask(self):
+        return (self._adcCounterMask >> 8) & 0xff
+        
+    @adcMask.setter
+    def adcMask(self, value):
+        with QtCore.QMutexLocker(self.Mutex):
+            self._adcCounterMask = ((value<<8) & 0xf00) | (self._adcCounterMask & 0xff)
+            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+        
+    @property
+    def integrationTime(self):
+        return self._integrationTime
+        
+    @integrationTime.setter
+    def integrationTime(self, value):
+        with QtCore.QMutexLocker(self.Mutex):
+            check( self.xem.SetWireInValue(0x0b, value >> 16, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.SetWireInValue(0x0c, value, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+            self._integrationTime = value
+
     def ppUpload(self,binarycode,startaddress=0):
         with QtCore.QMutexLocker(self.Mutex):
             print "starting PP upload",

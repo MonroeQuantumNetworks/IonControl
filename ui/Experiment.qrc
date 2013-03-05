@@ -23,6 +23,7 @@
     <file>icons/player_stop.png</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/gnome-power-statistics.png</file>
     <file>icons/document-open-2.png</file>
     <file>icons/document-open-5.png</file>
     <file>icons/document-open-7.png</file>

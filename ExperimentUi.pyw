@@ -26,6 +26,7 @@ import PulseProgramUi
 import ShutterUi
 import DDSUi
 import PulserHardware
+import DedicatedCounters
 
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
@@ -104,6 +105,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
+        self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
@@ -114,7 +116,12 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         #    self.move(self.config['MainWindow.pos'])
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
+            
+        self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulserHardware)
+        self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
 
+    def showDedicatedCounters(self):
+        self.dedicatedCountersWindow.show()
         
     def onClear(self):
         self.currentTab.onClear()
