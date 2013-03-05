@@ -66,8 +66,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settings = self.settingsDialog.settings        
         self.pulserHardware = PulserHardware.PulserHardware(self.settingsDialog.settings.xem)
 
-        for widget,name in [ (CounterWidget.CounterWidget(self.settings), "Simple Counter"), 
-                             (ScanExperiment.ScanExperiment(self.settings), "Scanning"),
+        for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
+                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware), "Scanning"),
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
@@ -187,6 +187,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def closeEvent(self,e):
         print "closeEvent"
+        self.pulserHardware.stopPipeReader()
         self.config['MainWindow.State'] = self.parent.saveState()
         for tab in self.tabList:
             tab.onClose()

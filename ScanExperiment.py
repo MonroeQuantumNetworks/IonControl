@@ -30,11 +30,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     ClearStatusMessage = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
 
-    def __init__(self,settings,parent=None):
+    def __init__(self,settings,pulserHardware,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
-        self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
+        self.pulserHardware = pulserHardware
         self.currentTrace = None
         self.currentIndex = 0
         self.activated = False
@@ -246,8 +246,4 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Main program settings have changed
         """
         self.deviceSettings = settings
-        if active:
-            self.deactivate()
-            self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
-            self.activate()
         

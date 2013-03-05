@@ -8,6 +8,7 @@ import struct
 from Queue import Queue, Empty
 import magnitude
 from modules import enum
+import traceback
 
 class Data:
     def __init__(self):
@@ -27,7 +28,6 @@ class DedicatedData:
         
     def integration(self):
         return self.data[12]
-
 
 class PipeReader(QtCore.QThread):
     timestep = magnitude.mg(20,'ns')
@@ -55,6 +55,7 @@ class PipeReader(QtCore.QThread):
         next experiment marker is 0xffff0xxx where xxx is the address of the overwritten parameter
         end marker is 0xffffffff
         """
+        print "PipeReader running"
         try:
             with self:
                 state = self.analyzingState.normal
@@ -65,7 +66,7 @@ class PipeReader(QtCore.QThread):
                     with QtCore.QMutexLocker(self.Mutex):
                         data = self.pulserHardware.ppReadData(4,1.0)
                     #print len(data)
-                    for s in PulserHardware.sliceview(data,4):
+                    for s in sliceview(data,4):
                         (token,) = struct.unpack('I',s)
                         #print hex(token)
                         if state == self.analyzingState.scanparameter:
@@ -73,7 +74,7 @@ class PipeReader(QtCore.QThread):
                                 self.data.scanvalue = token
                             else:
                                 self.pulserHardware.dataAvailable.emit( self.data )
-                                #print "emit"
+                                print "emit dataAvailable"
                                 self.data = Data()
                                 self.data.scanvalue = token
                             state = self.analyzingState.normal
@@ -83,13 +84,14 @@ class PipeReader(QtCore.QThread):
                                 self.dedicatedData.count[channel] = token & 0xffffff
                             else:
                                 self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
+                                print "emit dedicatedDataAvailable"
                                 self.dedicatedData = DedicatedData()
                         elif token & 0xff000000 == 0xff000000:
                             if token == 0xffffffff:    # end of run
                                 #self.exiting = True
                                 self.data.final = True
                                 self.pulserHardware.dataAvailable.emit( self.data )
-                                #print "emit"
+                                print "emit dataAvailable"
                                 self.data = Data()
                             elif token == 0xff000000:
                                 self.timestampOffset += 1<<28
@@ -108,9 +110,10 @@ class PipeReader(QtCore.QThread):
                                 self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timstampZero[channel])
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
+                    print "emit dataAvailable"
                 self.data = Data()
         except Exception as err:
-            print "Scan Experiment worker exception:", err
+            print "PipeReader worker exception:", err
 
 
 class PulserHardware(QtCore.QObject):
@@ -122,6 +125,8 @@ class PulserHardware(QtCore.QObject):
     timestep = magnitude.mg(20,'ns')
 
     def __init__(self,xem):
+        print "PulserHardware __init__" 
+        traceback.print_stack()
         super(PulserHardware,self).__init__()
         self._shutter = 0
         self._trigger = 0
@@ -130,6 +135,7 @@ class PulserHardware(QtCore.QObject):
         self._adcCounterMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
         self.pipeReader = PipeReader(self)
+        self.pipeReader.start()
 
     def stopPipeReader(self):
         self.pipeReader.finish()

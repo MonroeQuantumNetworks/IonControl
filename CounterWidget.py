@@ -102,7 +102,7 @@ class CounterWidget(CounterForm, CounterBase):
     ClearStatusMessage = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
     
-    def __init__(self,settings,parent=None):
+    def __init__(self,settings,pulserHardware,parent=None):
         CounterBase.__init__(self,parent)
         CounterForm.__init__(self)
         self.MaxElements = 400;
@@ -110,7 +110,7 @@ class CounterWidget(CounterForm, CounterBase):
         self.initial_tick = 0
         self.unit = CountrateConversion.DisplayUnit()
         self.deviceSettings = settings
-        self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
+        self.pulserHardware = pulserHardware
         self.activated = False
 
     def setupUi(self, MainWindow, config):
@@ -179,8 +179,10 @@ class CounterWidget(CounterForm, CounterBase):
     def onReload(self):
         """ Main program reload button
         """
-        if self.activated:
-            self.worker.onReload()
+        if self.running:
+            self.pulserHardware.ppStop()
+            self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+            self.pulserHardware.ppStart()
             
     def startData(self):
         """ Initialize local data
@@ -261,10 +263,4 @@ class CounterWidget(CounterForm, CounterBase):
         """ Main program settings have changed
         """
         self.deviceSettings = settings
-        if active:
-            self.deactivate()
-            self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
-            self.activate()
-        else:
-            self.pulserHardware = PulserHardware.PulserHardware(self.deviceSettings.xem)
-        
+       
