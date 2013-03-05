@@ -69,7 +69,7 @@ class PipeReader(QtCore.QThread):
                             if self.data.scanvalue is None:
                                 self.data.scanvalue = token
                             else:
-                                self.pulserHardware.ppQueue.put( self.data )
+                                self.pulserHardware.dataAvailable.emit( self.data )
                                 #print "emit"
                                 self.data = Data()
                                 self.data.scanvalue = token
@@ -79,13 +79,13 @@ class PipeReader(QtCore.QThread):
                             if self.dedicatedData.data[channel] is None:
                                 self.dedicatedData.count[channel] = token & 0xffffff
                             else:
-                                self.pulserHardware.dedicatedQueue.put( self.dedicatedData )
+                                self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
                                 self.dedicatedData = DedicatedData()
                         elif token & 0xff000000 == 0xff000000:
                             if token == 0xffffffff:    # end of run
                                 #self.exiting = True
                                 self.data.final = True
-                                self.pulserHardware.ppQueue.put( self.data )
+                                self.pulserHardware.dataAvailable.emit( self.data )
                                 #print "emit"
                                 self.data = Data()
                             elif token == 0xff000000:
@@ -104,20 +104,22 @@ class PipeReader(QtCore.QThread):
                             elif key==3:
                                 self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timstampZero[channel])
                 if self.data.scanvalue is not None:
-                    self.pulserHardware.ppQueue.put( self.data )
+                    self.pulserHardware.dataAvailable.emit( self.data )
                 self.data = Data()
         except Exception as err:
             print "Scan Experiment worker exception:", err
 
 
-class PulserHardware(object):
+class PulserHardware(QtCore.QObject):
     sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
-    dedicatedQueue = Queue()
-    ppQueue = Queue()
+
+    dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
+    dedicatedDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     
     timestep = magnitude.mg(20,'ns')
 
     def __init__(self,xem):
+        super(PulserHardware,self).__init__()
         self._shutter = 0
         self._trigger = 0
         self.xem = xem

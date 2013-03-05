@@ -203,6 +203,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi.closeEvent(None)
         self.shutterUi.close()
         self.triggerUi.close()
+        self.dedicatedCountersWindow.onClose()
 
 if __name__ == "__main__":
     import sys

@@ -31,10 +31,37 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSave"/>
+   <addaction name="actionClear"/>
+   <addaction name="actionPause"/>
   </widget>
   <action name="actionSave">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
+   </property>
    <property name="text">
     <string>Save</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear</string>
+   </property>
+  </action>
+  <action name="actionPause">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/player_pause.png</normaloff>:/kde/icons/player_pause.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause</string>
    </property>
   </action>
  </widget>
@@ -45,6 +72,8 @@
    <header>CoordinatePlotWidget</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="Experiment.qrc"/>
+ </resources>
  <connections/>
 </ui>
