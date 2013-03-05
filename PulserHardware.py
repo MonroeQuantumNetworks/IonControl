@@ -32,7 +32,7 @@ class DedicatedData:
 class PipeReader(QtCore.QThread):
     timestep = magnitude.mg(20,'ns')
     
-    def __init__(self, pulserHardware, dedicateCounterQueue, resultsQueue, parent = None):
+    def __init__(self, pulserHardware, parent = None):
         QtCore.QThread.__init__(self, parent)
         self.exiting = False
         self.pulserHardware = pulserHardware
@@ -45,6 +45,9 @@ class PipeReader(QtCore.QThread):
         
     def __exit__(self, type, value, traceback):
         pass        
+    
+    def finish(self):
+        self.exiting = True
     
     analyzingState = enum.enum('normal','scanparameter')
     def run(self):
@@ -126,6 +129,11 @@ class PulserHardware(QtCore.QObject):
         self.Mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
         self._adcCounterMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
+        self.pipeReader = PipeReader(self)
+
+    def stopPipeReader(self):
+        self.pipeReader.finish()
+        self.pipeReader.wait()
         
     def setHardware(self,xem):
         self.xem = xem
@@ -287,10 +295,12 @@ class PulserHardware(QtCore.QObject):
                 return self.xem.WriteToPipeIn(0x81,code)
                 
     def ppClearWriteFifo(self):
-        self.xem.ActivateTriggerIn(0x41, 3)
+        with QtCore.QMutexLocker(self.Mutex):
+            self.xem.ActivateTriggerIn(0x41, 3)
 
     def ppClearReadFifo(self):
-        self.xem.ActivateTriggerIn(0x41, 4)
+        with QtCore.QMutexLocker(self.Mutex):
+            self.xem.ActivateTriggerIn(0x41, 4)
             
     def ppReadLog(self):
         with QtCore.QMutexLocker(self.Mutex):

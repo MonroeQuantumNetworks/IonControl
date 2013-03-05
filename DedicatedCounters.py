@@ -27,7 +27,6 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.actionSave.triggered.connect( self.onSave )
         self.actionClear.triggered.connect( self.onClear )
         self.actionPause.triggered.connect( self.onPause )
-        self.pulserHardware.dedicatedDataAvailable.connect( self.onData )
     
     def onClose(self):
         self.config['DedicatedCounter.Settings'] = self.settings
@@ -35,6 +34,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()
         self.config['DedicatedCounter.size'] = self.size()
+        self.pulserHardware.dedicatedDataAvailable.disconnect( self.onData )
         self.hide()
         
     def show(self):
@@ -43,6 +43,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         if 'DedicatedCounter.size' in self.config:
             self.resize(self.config['DedicatedCounter.size'])
         super(DedicatedCounters,self).show()
+        self.pulserHardware.dedicatedDataAvailable.connect( self.onData )
         
     def onSave(self):
         pass
