@@ -145,6 +145,9 @@ class PulserHardware(object):
                 
     def ppClearWriteFifo(self):
         self.xem.ActivateTriggerIn(0x41, 3)
+
+    def ppClearReadFifo(self):
+        self.xem.ActivateTriggerIn(0x41, 4)
             
     def ppReadLog(self):
         with QtCore.QMutexLocker(self.Mutex):
