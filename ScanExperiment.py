@@ -254,7 +254,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.scan.stepInPlace:
             x = self.currentIndex
         else:
-            x = self.scan.list[self.currentIndex].ounit(self.scan.minimum.out_unit).toval()
+            x = self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
@@ -264,6 +264,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.filename = self.tracefilename
             print "Filename:" , self.tracefilename
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
+            self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
             if self.scan.stepInPlace and len(self.currentTrace.x)>=self.scan.steps:
@@ -275,7 +276,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTrace.replot()
         self.currentIndex += 1
         self.showHistogram(data)
-        if self.timestampSettingsWidget.settings.enabled: 
+        if self.timestampSettingsWidget.settings.enable: 
             self.showTimestamps(data)
         if data.final:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
