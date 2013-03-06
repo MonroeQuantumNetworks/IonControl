@@ -44,6 +44,12 @@ cooling: NOP
 	WAIT
 	UPDATE epsilon
 
+	# write the record separator
+	WRITEPIPEINDF 
+	NOP
+	WRITEPIPE
+	NOP
+
 	READPIPE
 	CMPEQUAL 
 	JMP cooling	

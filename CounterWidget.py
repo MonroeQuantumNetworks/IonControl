@@ -25,76 +25,6 @@ def hexprint(st):
     return ":".join("{0:0>2x}".format(ord(ch)) for ch in st)
     
     
-class Worker(QtCore.QThread):
-    data = QtCore.pyqtSignal( int, float, float )
-    notifierfloat = QtCore.pyqtSignal(float)
-    notifierint = QtCore.pyqtSignal(int)
-    
-    def __init__(self, pulserHardware, pulseProgramUi, initial_tick=0, parent = None):
-        QtCore.QThread.__init__(self, parent)
-        self.exiting = False
-        self.pulserHardware = pulserHardware
-        self.pulseProgramUi = pulseProgramUi
-        self.Mutex = QtCore.QMutex()
-        self.activated = False
-        self.tick = initial_tick
-        
-    def __enter__(self):
-        return self
-        
-    def __exit__(self, type, value, traceback):
-        pass
-#        self.wait()
-        
-    def onReload(self):
-        with QtCore.QMutexLocker(self.Mutex):
-            if self.running:
-                self.pulserHardware.ppStop()
-                self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
-                self.pulserHardware.ppStart()
-
-    def run(self):
-        try:
-            with QtCore.QMutexLocker(self.Mutex):
-                self.tick_counter = 0
-                binary = self.pulseProgramUi.getPulseProgramBinary()
-                print "binary size", len(binary)
-                self.pulserHardware.ppUpload(binary)
-                print "Starting"
-                self.pulserHardware.ppStart()
-                self.running = True
-            with self:
-                while not self.exiting:
-                    with QtCore.QMutexLocker(self.Mutex):
-                        data = self.pulserHardware.ppReadData(4,0.1)
-                    for s in PulserHardware.sliceview(data,4):
-                        (token,) = struct.unpack('I',s)
-                        count = token & 0xffffff
-                        tokentype = (token >> 28)
-                        counter = (token>>24) & 0xf
-                        if (counter==self.tick_counter):
-                            self.tick += 1
-                        self.data.emit( counter, self.tick, count )
-            with QtCore.QMutexLocker(self.Mutex):
-                self.pulserHardware.ppStop()
-                print "PP Stopped"
-        except Exception as err:
-            print err
-
-    def min_counter(self,mask):
-        cmin = 3
-        if (mask & 0x04 == 0x04):
-            cmin = 2
-        if (mask & 0x02 == 0x02):
-            cmin = 1
-        if (mask & 0x01 == 0x01):
-            cmin = 0
-        return cmin
-             
-    def stop(self):
-        with QtCore.QMutexLocker(self.Mutex):
-            self.exiting = True
-
 CounterForm, CounterBase = PyQt4.uic.loadUiType(r'ui\CounterWidget.ui')
            
 class CounterWidget(CounterForm, CounterBase):
@@ -197,17 +127,18 @@ class CounterWidget(CounterForm, CounterBase):
         self.MaxElements = self.remember_points_box.value()
         self.config['counter.MaxElements'] = self.MaxElements
         
-    def onData(self, counter, x, y ):
-        if counter<4:
-            self.initial_tick = x   
-            y = self.unit.convert(y,self.pulseProgramUi.pulseProgram.variable("coolingTime").ounit('ms').toval()) 
-            Start = max( 1+len(self.xData[counter])-self.MaxElements, 0)
-            self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
-            self.xData[counter] = numpy.append(self.xData[counter][Start:], x)
-            if self.curves[counter] is not None:
-                self.curves[counter].setData(self.xData[counter],self.yData[counter])
-            else:
-                print "ignoring result for counter", counter
+    def onData(self, data ):
+        counter = 0
+        self.initial_tick += 1   
+        print data.count[0]
+        y = self.unit.convert(data.count[counter][0],self.pulseProgramUi.pulseProgram.variable("coolingTime").ounit('ms').toval()) 
+        Start = max( 1+len(self.xData[counter])-self.MaxElements, 0)
+        self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
+        self.xData[counter] = numpy.append(self.xData[counter][Start:], self.initial_tick)
+        if self.curves[counter] is not None:
+            self.curves[counter].setData(self.xData[counter],self.yData[counter])
+        else:
+            print "ignoring result for counter", counter
                 
     def onCounterUpdate(self, index, i):
         """ called when the counter enable check boxes change state
@@ -238,10 +169,16 @@ class CounterWidget(CounterForm, CounterBase):
             try:
                 #self.deviceSettings.xem
                 self.onCounterUpdate(0, 0)
-                self.worker = Worker(self.pulserHardware,self.pulseProgramUi,self.initial_tick)
-                self.worker.data.connect(self.onData)
-                self.worker.start()
                 self.startData()
+                self.pulserHardware.dataAvailable.connect(self.onData)
+                self.tick_counter = 0
+                binary = self.pulseProgramUi.getPulseProgramBinary()
+                print "binary size", len(binary)
+                self.pulserHardware.ppUpload(binary)
+                print "Starting"
+                self.pulserHardware.ppStart()
+                self.running = True
+
                 self.activated = True
                 self.state = self.OpStates.running
                 print "counter activated"
@@ -251,8 +188,9 @@ class CounterWidget(CounterForm, CounterBase):
     
     def deactivate(self):
         if self.activated and hasattr( self, 'worker'):
-            self.worker.stop()
-            self.worker.wait()
+            self.pulserHardware.ppStop()
+            print "PP Stopped"
+            self.pulserHardware.dataAvailable.disconnect(self.onData)
             self.activated = False
             self.state = self.OpStates.idle
         
