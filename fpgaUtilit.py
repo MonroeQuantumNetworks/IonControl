@@ -3,7 +3,7 @@
 #This code initializes the connection with the FPGA
 
 import ok
-
+from PyQt4 import QtCore
 
 ModelStrings = {
 		0: 'Unknown',
@@ -74,61 +74,68 @@ class FPGAUtilit:
         self.modules = dict()
         self.openModule = None
         self.xem = None
+        self.Mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
     def listBoards(self):
-        xem = ok.FrontPanel()
-        self.moduleCount = xem.GetDeviceCount()
-        self.modules = dict()
-        for i in range(self.moduleCount):
-            serial = xem.GetDeviceListSerial(i)
-            tmp = ok.FrontPanel()
-            check( tmp.OpenBySerial( serial ), "OpenBySerial" )
-            desc = self.getDeviceDescription(tmp)
-            tmp = None
-            self.modules[desc.identifier] = desc
-        del(xem)
-        if self.openModule is not None:
-            self.modules[self.openModule.identifier] = self.openModule
-        return self.modules
+        with QtCore.QMutexLocker(self.Mutex):
+            xem = ok.FrontPanel()
+            self.moduleCount = xem.GetDeviceCount()
+            self.modules = dict()
+            for i in range(self.moduleCount):
+                serial = xem.GetDeviceListSerial(i)
+                tmp = ok.FrontPanel()
+                check( tmp.OpenBySerial( serial ), "OpenBySerial" )
+                desc = self.getDeviceDescription(tmp)
+                tmp = None
+                self.modules[desc.identifier] = desc
+            del(xem)
+            if self.openModule is not None:
+                self.modules[self.openModule.identifier] = self.openModule
+            return self.modules
         
     def getDeviceDescription(self,xem):
         """Get informaion from an open device
         """
-        desc = DeviceDescription()
-        desc.serial = xem.GetSerialNumber()
-        desc.identifier = xem.GetDeviceID()
-        desc.major = xem.GetDeviceMajorVersion()
-        desc.minor = xem.GetDeviceMinorVersion()
-        desc.model = xem.GetBoardModel()
-        desc.modelName = ModelStrings.get(desc.model,'Unknown')
-        return desc
+        with QtCore.QMutexLocker(self.Mutex):
+            desc = DeviceDescription()
+            desc.serial = xem.GetSerialNumber()
+            desc.identifier = xem.GetDeviceID()
+            desc.major = xem.GetDeviceMajorVersion()
+            desc.minor = xem.GetDeviceMinorVersion()
+            desc.model = xem.GetBoardModel()
+            desc.modelName = ModelStrings.get(desc.model,'Unknown')
+            return desc
         
     def renameBoard(self,serial,newname):
-        tmp = ok.FrontPanel()
-        tmp.OpenBySerial(serial)
-        oldname = tmp.GetDeviceID()
-        tmp.SetDeviceId( newname )
-        tmp.OpenBySerial(serial)
-        newname = tmp.GetDeviceID()
-        if newname!=oldname:
-            self.modules[newname] = self.modules.pop(oldname)
-        
+        with QtCore.QMutexLocker(self.Mutex):
+            tmp = ok.FrontPanel()
+            tmp.OpenBySerial(serial)
+            oldname = tmp.GetDeviceID()
+            tmp.SetDeviceId( newname )
+            tmp.OpenBySerial(serial)
+            newname = tmp.GetDeviceID()
+            if newname!=oldname:
+                self.modules[newname] = self.modules.pop(oldname)
+            
     def uploadBitfile(self,bitfile):
-        if self.xem is not None and self.xem.IsOpen():
-            check( self.xem.ConfigureFPGA(bitfile), "Configure bitfile {0}".format(bitfile))
+        with QtCore.QMutexLocker(self.Mutex):
+            if self.xem is not None and self.xem.IsOpen():
+                check( self.xem.ConfigureFPGA(bitfile), "Configure bitfile {0}".format(bitfile))
         
     def openByName(self,name):
-        self.xem = ok.FrontPanel()
-        check( self.xem.OpenBySerial( self.modules[name].serial ), "OpenByName {0}".format(name) )
-        return self.xem
+        with QtCore.QMutexLocker(self.Mutex):
+            self.xem = ok.FrontPanel()
+            check( self.xem.OpenBySerial( self.modules[name].serial ), "OpenByName {0}".format(name) )
+            return self.xem
 
     def openBySerial(self,serial):
-        print "Open Serial",serial
-        if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:
-            self.xem = ok.FrontPanel()
-            check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
-            self.openModule = self.getDeviceDescription(self.xem)
-        return self.xem
+        with QtCore.QMutexLocker(self.Mutex):
+            print "Open Serial",serial
+            if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:
+                self.xem = ok.FrontPanel()
+                check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
+                self.openModule = self.getDeviceDescription(self.xem)
+            return self.xem
     
 if __name__ == "__main__":
     fpga = FPGAUtilit()

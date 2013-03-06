@@ -117,6 +117,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
             mycode = self.scan.code
+        self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
         self.pulserHardware.ppWriteData(mycode)
         print "Starting"
@@ -134,6 +135,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onStop(self):
         if self.running:
             self.pulserHardware.ppStop()
+            self.pulserHardware.ppClearWriteFifo()
+            self.pulserHardware.ppFlushData()
             self.running = False
         
     def startData(self):
@@ -144,7 +147,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", len(data.count[self.scanSettings.counter])
+        print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
         mean = numpy.mean( data.count[self.scanSettings.counter] )
         if self.scan.stepInPlace:
             x = self.currentIndex
@@ -159,7 +162,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.filename = self.tracefilename
             print "Filename:" , self.tracefilename
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
-            self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
+            if not self.scan.stepInPlace:
+                self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
             if self.scan.stepInPlace and len(self.currentTrace.x)>=self.scan.steps:
@@ -180,7 +184,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.onStart()
         else:
             if self.scan.stepInPlace:
-                self.pulserHardware.ppWriteData(scandata)        
+                self.pulserHardware.ppWriteData(self.scan.code)        
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings
@@ -219,7 +223,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         MainWindowWidget.MainWindowWidget.activate(self)
         if (self.deviceSettings is not None) and (not self.activated):
             try:
-                print "Scan activated", self.activated
+                print "Scan activated"
                 self.startData()
                 self.pulserHardware.dataAvailable.connect(self.onData)
                 self.activated = True

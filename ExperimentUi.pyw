@@ -64,7 +64,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
         self.settingsDialog.setupUi(self)
         self.settings = self.settingsDialog.settings        
-        self.pulserHardware = PulserHardware.PulserHardware(self.settingsDialog.settings.xem)
+        self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
         for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
                              (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware), "Scanning"),
@@ -169,7 +169,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def onSettingsApply(self,settings):
         self.settings = settings
-        self.pulserHardware = PulserHardware.PulserHardware(self.settings.xem)
+        self.pulserHardware.updateSettings(self.settings.fpga)
         #print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):

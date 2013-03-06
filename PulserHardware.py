@@ -48,6 +48,9 @@ class PipeReader(QtCore.QThread):
     
     def finish(self):
         self.exiting = True
+        
+    def flushData(self):
+        self.data = Data()
     
     analyzingState = enum.enum('normal','scanparameter')
     def run(self):
@@ -74,7 +77,7 @@ class PipeReader(QtCore.QThread):
                                 self.data.scanvalue = token
                             else:
                                 self.pulserHardware.dataAvailable.emit( self.data )
-                                print "emit dataAvailable"
+                                #print "emit dataAvailable"
                                 self.data = Data()
                                 self.data.scanvalue = token
                             state = self.analyzingState.normal
@@ -84,14 +87,14 @@ class PipeReader(QtCore.QThread):
                                 self.dedicatedData.count[channel] = token & 0xffffff
                             else:
                                 self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
-                                print "emit dedicatedDataAvailable"
+                                #print "emit dedicatedDataAvailable"
                                 self.dedicatedData = DedicatedData()
                         elif token & 0xff000000 == 0xff000000:
                             if token == 0xffffffff:    # end of run
                                 #self.exiting = True
                                 self.data.final = True
                                 self.pulserHardware.dataAvailable.emit( self.data )
-                                print "emit dataAvailable"
+                                #print "emit dataAvailable"
                                 self.data = Data()
                             elif token == 0xff000000:
                                 self.timestampOffset += 1<<28
@@ -103,14 +106,15 @@ class PipeReader(QtCore.QThread):
                             value = token & 0xffffff
                             if key==1:   # count
                                 self.data.count[channel].append(value)
+                                #print "append", channel
                             elif key==2:  # timestamp
-                                self.data.timstampZero[channel] = self.timestampOffset + value
+                                self.data.timestampZero[channel] = self.timestampOffset + value
                                 self.data.timestamp[channel].append(0)
                             elif key==3:
-                                self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timstampZero[channel])
+                                self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
-                    print "emit dataAvailable"
+                    #print "emit dataAvailable"
                 self.data = Data()
         except Exception as err:
             print "PipeReader worker exception:", err
@@ -124,18 +128,27 @@ class PulserHardware(QtCore.QObject):
     
     timestep = magnitude.mg(20,'ns')
 
-    def __init__(self,xem):
-        print "PulserHardware __init__" 
-        traceback.print_stack()
+    def __init__(self,fpgaUtilit):
+        #print "PulserHardware __init__" 
+        #traceback.print_stack()
         super(PulserHardware,self).__init__()
         self._shutter = 0
         self._trigger = 0
-        self.xem = xem
-        self.Mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+        self.fpga = fpgaUtilit
+        self.xem = self.fpga.xem
+        self.Mutex = self.fpga.Mutex
         self._adcCounterMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
         self.pipeReader = PipeReader(self)
         self.pipeReader.start()
+
+    def updateSettings(self,fpgaUtilit):
+        self.stopPipeReader()
+        self.fpga = fpgaUtilit
+        self.xem = self.fpga.xem
+        self.Mutex = self.fpga.Mutex
+        self.pipeReader = PipeReader(self)
+        self.pipeReader.start()        
 
     def stopPipeReader(self):
         self.pipeReader.finish()
@@ -303,6 +316,9 @@ class PulserHardware(QtCore.QObject):
     def ppClearWriteFifo(self):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.ActivateTriggerIn(0x41, 3)
+            
+    def ppFlushData(self):
+        self.pipeReader.flushData()
 
     def ppClearReadFifo(self):
         with QtCore.QMutexLocker(self.Mutex):
@@ -329,7 +345,7 @@ if __name__ == "__main__":
     pp = PulseProgram.PulseProgram()
     pp.loadSource(r'prog\Ions\test.pp')
     fpga = fpgaUtilit.FPGAUtilit()
-    xem = fpga.openBySerial('12230003NX')
+    xem = fpga.openBySerial('12320003V5')
     fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
     hw = PulserHardware(xem)
     hw.ppUpload( pp.toBinary() )

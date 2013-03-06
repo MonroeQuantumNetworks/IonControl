@@ -128,17 +128,20 @@ class CounterWidget(CounterForm, CounterBase):
         self.config['counter.MaxElements'] = self.MaxElements
         
     def onData(self, data ):
-        counter = 0
-        self.initial_tick += 1   
-        print data.count[0]
-        y = self.unit.convert(data.count[counter][0],self.pulseProgramUi.pulseProgram.variable("coolingTime").ounit('ms').toval()) 
-        Start = max( 1+len(self.xData[counter])-self.MaxElements, 0)
-        self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
-        self.xData[counter] = numpy.append(self.xData[counter][Start:], self.initial_tick)
-        if self.curves[counter] is not None:
-            self.curves[counter].setData(self.xData[counter],self.yData[counter])
+        if len(data.count[0])>0:
+            counter = 0
+            self.initial_tick += 1   
+            print data.count[0]
+            y = self.unit.convert(data.count[counter][0],self.pulseProgramUi.pulseProgram.variable("coolingTime").ounit('ms').toval()) 
+            Start = max( 1+len(self.xData[counter])-self.MaxElements, 0)
+            self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
+            self.xData[counter] = numpy.append(self.xData[counter][Start:], self.initial_tick)
+            if self.curves[counter] is not None:
+                self.curves[counter].setData(self.xData[counter],self.yData[counter])
+            else:
+                print "ignoring result for counter", counter
         else:
-            print "ignoring result for counter", counter
+            print data.count[0]
                 
     def onCounterUpdate(self, index, i):
         """ called when the counter enable check boxes change state
@@ -187,7 +190,7 @@ class CounterWidget(CounterForm, CounterBase):
                 self.StatusMessage.emit( ex.message )
     
     def deactivate(self):
-        if self.activated and hasattr( self, 'worker'):
+        if self.activated:
             self.pulserHardware.ppStop()
             print "PP Stopped"
             self.pulserHardware.dataAvailable.disconnect(self.onData)

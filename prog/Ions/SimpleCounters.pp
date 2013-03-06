@@ -46,8 +46,10 @@ cooling: NOP
 
 	# write the record separator
 	WRITEPIPEINDF 
+	LDWR epsilon
 	NOP
 	WRITEPIPE
+	NOP
 	NOP
 
 	READPIPE
