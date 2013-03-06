@@ -39,6 +39,8 @@ class PipeReader(QtCore.QThread):
         self.Mutex = pulserHardware.Mutex          # the mutex is to protect the ok library
         self.activated = False
         self.running = False
+        self.dataMutex = QtCore.QMutex()           # protects the thread data
+
         
     def __enter__(self):
         return self
@@ -50,7 +52,9 @@ class PipeReader(QtCore.QThread):
         self.exiting = True
         
     def flushData(self):
-        self.data = Data()
+        with QtCore.QMutexLocker(self.dataMutex):
+            self.data = Data()
+        print "flushData"
     
     analyzingState = enum.enum('normal','scanparameter')
     def run(self):
@@ -62,56 +66,57 @@ class PipeReader(QtCore.QThread):
         try:
             with self:
                 state = self.analyzingState.normal
-                self.data = Data()
-                self.dedicatedData = DedicatedData()
+                with QtCore.QMutexLocker(self.dataMutex):
+                    self.data = Data()
+                    self.dedicatedData = DedicatedData()
                 self.timestampOffset = 0
                 while not self.exiting:
-                    with QtCore.QMutexLocker(self.Mutex):
-                        data = self.pulserHardware.ppReadData(4,1.0)
+                    data = self.pulserHardware.ppReadData(4,1.0)
                     #print len(data)
-                    for s in sliceview(data,4):
-                        (token,) = struct.unpack('I',s)
-                        #print hex(token)
-                        if state == self.analyzingState.scanparameter:
-                            if self.data.scanvalue is None:
-                                self.data.scanvalue = token
+                    with QtCore.QMutexLocker(self.dataMutex):
+                        for s in sliceview(data,4):
+                            (token,) = struct.unpack('I',s)
+                            #print hex(token)
+                            if state == self.analyzingState.scanparameter:
+                                if self.data.scanvalue is None:
+                                    self.data.scanvalue = token
+                                else:
+                                    self.pulserHardware.dataAvailable.emit( self.data )
+                                    #print "emit dataAvailable"
+                                    self.data = Data()
+                                    self.data.scanvalue = token
+                                state = self.analyzingState.normal
+                            elif token & 0xf0000000 == 0xe0000000: # dedicated results
+                                channel = (token >>24) & 0xf
+                                if self.dedicatedData.data[channel] is None:
+                                    self.dedicatedData.count[channel] = token & 0xffffff
+                                else:
+                                    self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
+                                    #print "emit dedicatedDataAvailable"
+                                    self.dedicatedData = DedicatedData()
+                            elif token & 0xff000000 == 0xff000000:
+                                if token == 0xffffffff:    # end of run
+                                    #self.exiting = True
+                                    self.data.final = True
+                                    self.pulserHardware.dataAvailable.emit( self.data )
+                                    #print "emit dataAvailable"
+                                    self.data = Data()
+                                elif token == 0xff000000:
+                                    self.timestampOffset += 1<<28
+                                elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
+                                    state = self.analyzingState.scanparameter
                             else:
-                                self.pulserHardware.dataAvailable.emit( self.data )
-                                #print "emit dataAvailable"
-                                self.data = Data()
-                                self.data.scanvalue = token
-                            state = self.analyzingState.normal
-                        elif token & 0xf0000000 == 0xe0000000: # dedicated results
-                            channel = (token >>24) & 0xf
-                            if self.dedicatedData.data[channel] is None:
-                                self.dedicatedData.count[channel] = token & 0xffffff
-                            else:
-                                self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
-                                #print "emit dedicatedDataAvailable"
-                                self.dedicatedData = DedicatedData()
-                        elif token & 0xff000000 == 0xff000000:
-                            if token == 0xffffffff:    # end of run
-                                #self.exiting = True
-                                self.data.final = True
-                                self.pulserHardware.dataAvailable.emit( self.data )
-                                #print "emit dataAvailable"
-                                self.data = Data()
-                            elif token == 0xff000000:
-                                self.timestampOffset += 1<<28
-                            elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
-                                state = self.analyzingState.scanparameter
-                        else:
-                            key = token >> 28
-                            channel = (token >>24) & 0xf
-                            value = token & 0xffffff
-                            if key==1:   # count
-                                self.data.count[channel].append(value)
-                                #print "append", channel
-                            elif key==2:  # timestamp
-                                self.data.timestampZero[channel] = self.timestampOffset + value
-                                self.data.timestamp[channel].append(0)
-                            elif key==3:
-                                self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
+                                key = token >> 28
+                                channel = (token >>24) & 0xf
+                                value = token & 0xffffff
+                                if key==1:   # count
+                                    self.data.count[channel].append(value)
+                                    #print "append", channel
+                                elif key==2:  # timestamp
+                                    self.data.timestampZero[channel] = self.timestampOffset + value
+                                    self.data.timestamp[channel].append(0)
+                                elif key==3:
+                                    self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
                     #print "emit dataAvailable"
@@ -152,6 +157,7 @@ class PulserHardware(QtCore.QObject):
 
     def stopPipeReader(self):
         self.pipeReader.finish()
+        self.interruptRead()
         self.pipeReader.wait()
         
     def setHardware(self,xem):
@@ -277,7 +283,7 @@ class PulserHardware(QtCore.QObject):
     def interruptRead(self):
         self.sleepQueue.put(False)
 
-    def ppReadData(self,minbytes=4,timeout=0.5,retryevery=0.05):
+    def ppReadData(self,minbytes=4,timeout=0.5,retryevery=0.1):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available

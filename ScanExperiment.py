@@ -11,8 +11,6 @@ import Trace
 import numpy
 import pens
 import Traceui
-import PulserHardware
-import struct
 import MainWindowWidget
 import FitUi
 import ScanParameters
@@ -22,6 +20,7 @@ import pyqtgraph
 import ScanExperimentSettings
 from modules import DataDirectory
 import TimestampSettings
+import time
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -105,6 +104,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.StatusMessage.emit("test Save not implemented")
     
     def onStart(self):
+        start = time.time()
         self.state = self.OpStates.running
         self.scanSettings = self.scanSettingsWidget.settings
         directory = DataDirectory.DataDirectory( self.scanSettings.project )
@@ -117,6 +117,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
             mycode = self.scan.code
+        self.pulserHardware.ppFlushData()
         self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
         self.pulserHardware.ppWriteData(mycode)
@@ -128,6 +129,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
             self.currentTrace = None
+        print "elapsed time", time.time()-start
     
     def onPause(self):
         self.StatusMessage.emit("test Pause not implemented")
@@ -225,6 +227,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             try:
                 print "Scan activated"
                 self.startData()
+                self.pulserHardware.ppFlushData()
                 self.pulserHardware.dataAvailable.connect(self.onData)
                 self.activated = True
             except Exception as ex:
