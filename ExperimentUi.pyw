@@ -122,6 +122,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()
+        self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
+        self.dedicatedCountersWindow.raise_()
         
     def onClear(self):
         self.currentTab.onClear()
@@ -166,6 +168,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def onPulses(self):
         self.pulseProgramDialog.show()
+        self.pulseProgramDialog.setWindowState(QtCore.Qt.WindowActive)
+        self.pulseProgramDialog.raise_()
         
     def onSettingsApply(self,settings):
         self.settings = settings

@@ -10,6 +10,7 @@ from modules import enum
 import magnitude
 import DedicatedCountersSettings
 import numpy
+import DedicatedDisplay
        
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -45,6 +46,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.settingsDock.setWidget( self.settingsUi )
         self.settingsUi.valueChanged.connect( self.onSettingsChanged )
         self.settings = self.settingsUi.settings
+        self.displayUi = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUi.setupUi(self.displayUi)
+        self.displayDock.setWidget( self.displayUi )
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
         
@@ -104,6 +108,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
     def onData(self, data):
         self.tick += 1
+        self.displayUi.values = data.data
         if data.data[12] is not None:
             self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
         for counter in range(8):
