@@ -18,7 +18,9 @@ class Data:
         self.final = False
 
 class DedicatedData:
-    data = [None]*13
+    def __init__(self):
+        self.data = [None]*13
+        
     def count(self):
         return self.data[0:8]
         
