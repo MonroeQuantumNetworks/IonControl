@@ -177,6 +177,8 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.horizontalLayout = QtGui.QHBoxLayout(parent)
         self.tabWidget = QtGui.QTabWidget(parent)
         self.horizontalLayout.addWidget(self.tabWidget)
+        self.setWindowTitle('Pulse Program')
+        self.setWindowFlags(QtCore.Qt.WindowMinMaxButtonsHint)
 
     def addExperiment(self, experiment, parameterdict=dict()):
         if not experiment in self.pulseProgramSet:
@@ -218,6 +220,15 @@ class PulseProgramSetUi(QtGui.QDialog):
                 page.close()
             self.reject()
 
+#    def resizeEvent(self, event):
+#        self.config['PulseProgramSetUi.size'] = event.size()
+#        super(PulseProgramSetUi,self).resizeEvent(event)
+#    
+#    def moveEvent(self,event):
+#        super(PulseProgramSetUi,self).moveEvent(event)
+#        self.config['PulseProgramSetUi.pos'] = self.pos()
+        
+        
     
 if __name__ == "__main__":
     import sys

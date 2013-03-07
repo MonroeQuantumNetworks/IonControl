@@ -26,6 +26,7 @@ import PulseProgramUi
 import ShutterUi
 import DDSUi
 import PulserHardware
+import DedicatedCounters
 
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
@@ -63,10 +64,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
         self.settingsDialog.setupUi(self)
         self.settings = self.settingsDialog.settings        
-        self.pulserHardware = PulserHardware.PulserHardware(self.settingsDialog.settings.xem)
+        self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
-        for widget,name in [ (CounterWidget.CounterWidget(self.settings), "Simple Counter"), 
-                             (ScanExperiment.ScanExperiment(self.settings), "Scanning"),
+        for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
+                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware), "Scanning"),
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
@@ -104,6 +105,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
+        self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
@@ -114,7 +116,14 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         #    self.move(self.config['MainWindow.pos'])
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
+            
+        self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulserHardware)
+        self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
 
+    def showDedicatedCounters(self):
+        self.dedicatedCountersWindow.show()
+        self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
+        self.dedicatedCountersWindow.raise_()
         
     def onClear(self):
         self.currentTab.onClear()
@@ -159,10 +168,12 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def onPulses(self):
         self.pulseProgramDialog.show()
+        self.pulseProgramDialog.setWindowState(QtCore.Qt.WindowActive)
+        self.pulseProgramDialog.raise_()
         
     def onSettingsApply(self,settings):
         self.settings = settings
-        self.pulserHardware = PulserHardware.PulserHardware(self.settings.xem)
+        self.pulserHardware.updateSettings(self.settings.fpga)
         #print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):
@@ -180,6 +191,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def closeEvent(self,e):
         print "closeEvent"
+        self.pulserHardware.stopPipeReader()
         self.config['MainWindow.State'] = self.parent.saveState()
         for tab in self.tabList:
             tab.onClose()
@@ -196,6 +208,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi.closeEvent(None)
         self.shutterUi.close()
         self.triggerUi.close()
+        self.dedicatedCountersWindow.onClose()
+        self.dedicatedCountersWindow.close()
 
 if __name__ == "__main__":
     import sys

@@ -13,7 +13,7 @@ class Settings:
     def __init__(self):
         self.deviceSerial = None
         self.deviceDescription = None
-        self.xem = None
+        self.fpga = None
 
 SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialog.ui')
 
@@ -77,7 +77,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.settings.deviceInfo = self.deviceMap[str(description)]
             self.identifierEdit.setText( description )
             if self.settings.deviceSerial not in [None,'',0]:
-                self.settings.xem = self.fpga.openBySerial(self.settings.deviceSerial)
+                self.fpga.openBySerial(self.settings.deviceSerial)
+                self.settings.fpga = self.fpga
         
     def accept(self):
         print "accept"
