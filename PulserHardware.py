@@ -8,7 +8,6 @@ import struct
 from Queue import Queue, Empty
 import magnitude
 from modules import enum
-import traceback
 
 class Data:
     def __init__(self):
@@ -19,7 +18,7 @@ class Data:
         self.final = False
 
 class DedicatedData:
-    data = [None]*12
+    data = [None]*13
     def count(self):
         return self.data[0:8]
         
@@ -88,12 +87,11 @@ class PipeReader(QtCore.QThread):
                                 state = self.analyzingState.normal
                             elif token & 0xf0000000 == 0xe0000000: # dedicated results
                                 channel = (token >>24) & 0xf
-                                if self.dedicatedData.data[channel] is None:
-                                    self.dedicatedData.count[channel] = token & 0xffffff
-                                else:
+                                if self.dedicatedData.data[channel] is not None:
                                     self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
                                     #print "emit dedicatedDataAvailable"
                                     self.dedicatedData = DedicatedData()
+                                self.dedicatedData.data[channel] = token & 0xffffff
                             elif token & 0xff000000 == 0xff000000:
                                 if token == 0xffffffff:    # end of run
                                     #self.exiting = True
@@ -198,6 +196,7 @@ class PulserHardware(QtCore.QObject):
             self._adcCounterMask = (self._adcCounterMask & 0xf00) | (value & 0xff)
             check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+            print "set counterMask", hex(self._adcCounterMask)
 
     @property
     def adcMask(self):
@@ -216,12 +215,14 @@ class PulserHardware(QtCore.QObject):
         
     @integrationTime.setter
     def integrationTime(self, value):
+        self.integrationTimeBinary = int( (value/self.timestep).toval() )
         with QtCore.QMutexLocker(self.Mutex):
-            check( self.xem.SetWireInValue(0x0b, value >> 16, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x0c, value, 0xFFFF) , 'SetWireInValue' )	
+            print "set dedicated integration time" , value, self.integrationTimeBinary
+            check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.SetWireInValue(0x0c, self.integrationTimeBinary, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
             self._integrationTime = value
-
+            
     def ppUpload(self,binarycode,startaddress=0):
         with QtCore.QMutexLocker(self.Mutex):
             print "starting PP upload",

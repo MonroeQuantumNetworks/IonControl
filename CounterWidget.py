@@ -131,7 +131,7 @@ class CounterWidget(CounterForm, CounterBase):
         if len(data.count[0])>0:
             counter = 0
             self.initial_tick += 1   
-            print data.count[0]
+            #print data.count[0]
             y = self.unit.convert(data.count[counter][0],self.pulseProgramUi.pulseProgram.variable("coolingTime").ounit('ms').toval()) 
             Start = max( 1+len(self.xData[counter])-self.MaxElements, 0)
             self.yData[counter] = numpy.append(self.yData[counter][Start:], y)

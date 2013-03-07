@@ -32,7 +32,18 @@
    </attribute>
    <addaction name="actionSave"/>
    <addaction name="actionClear"/>
+   <addaction name="actionStart"/>
+   <addaction name="actionStop"/>
    <addaction name="actionPause"/>
+  </widget>
+  <widget class="QDockWidget" name="settingsDock">
+   <property name="windowTitle">
+    <string>Settings</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents"/>
   </widget>
   <action name="actionSave">
    <property name="icon">
@@ -62,6 +73,24 @@
    </property>
    <property name="text">
     <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/player_play.png</normaloff>:/kde/icons/player_play.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/player_stop.png</normaloff>:/kde/icons/player_stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stop</string>
    </property>
   </action>
  </widget>
