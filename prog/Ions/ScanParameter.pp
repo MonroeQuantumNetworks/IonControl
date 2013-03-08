@@ -6,7 +6,7 @@
 # A Pulse Programmer file for the ScanParameter experiment has to fulfill the following conditions
 # 
 #define COOLDDS 0
-#define TickleDDS 3
+#define TickleDDS 5
 
 # var syntax:
 # var name value, type, unit, encoding
