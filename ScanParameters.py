@@ -21,6 +21,7 @@ class Settings:
     scantype = 0
     repeat = False
     stepInPlace = False
+    rewriteDDS = False
 
 class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
     def __init__(self,config,parentname,parent=0):
@@ -38,6 +39,8 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.repeatCheckBox.setChecked( self.settings.repeat )
         self.stepInPlaceCheckBox.setChecked( self.settings.stepInPlace )
+        self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
+        self.progressBar.setVisible( False )
 
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -61,8 +64,10 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.settings.scantype = self.scanTypeCombo.currentIndex()
         self.settings.repeat = self.repeatCheckBox.isChecked()
         self.settings.stepInPlace = self.stepInPlaceCheckBox.isChecked()
+        self.settings.rewriteDDS = self.rewriteDDSCheckBox.isChecked()
         Scan.repeat = self.settings.repeat
         Scan.stepInPlace = self.settings.stepInPlace
+        Scan.rewriteDDS = self.settings.rewriteDDS
         return Scan
         
     def onClose(self):

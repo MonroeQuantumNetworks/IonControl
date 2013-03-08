@@ -57,6 +57,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         super(WidgetContainerUi,self).setupUi(parent)
         self.parent = parent
         self.tabList = list()
+        self.tabDict = dict()
         # initialize PulseProgramUi
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config)
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
@@ -78,6 +79,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
                 widget.setPulseProgramUi( self.pulseProgramDialog )
             self.tabWidget.addTab(widget, name)
             self.tabList.append(widget)
+            self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
                
@@ -93,6 +95,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulserHardware.xem )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
+        self.tabDict['Scanning'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
                
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)

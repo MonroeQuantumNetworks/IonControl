@@ -27,6 +27,7 @@ ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperimen
 class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
+    NeedsDDSRewrite = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
 
     def __init__(self,settings,pulserHardware,parent=None):
@@ -129,6 +130,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
             self.currentTrace = None
+        self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
+        self.scanParametersWidget.progressBar.setValue(0)
+        self.scanParametersWidget.progressBar.setVisible( True )
         print "elapsed time", time.time()-start
     
     def onPause(self):
@@ -140,6 +144,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
             self.running = False
+            if self.scan.rewriteDDS:
+                self.NeedsDDSRewrite.emit()
+        self.scanParametersWidget.progressBar.setVisible( False )
         
     def startData(self):
         """ Initialize necessary data structures
@@ -184,9 +191,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.resave()
             if self.scan.repeat:
                 self.onStart()
+            else:
+                self.onStop()
         else:
             if self.scan.stepInPlace:
-                self.pulserHardware.ppWriteData(self.scan.code)        
+                self.pulserHardware.ppWriteData(self.scan.code)     
+        self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings
