@@ -19,6 +19,7 @@ class Settings:
     roiStart =  magnitude.mg(0,'us')
     roiWidth =  magnitude.mg(1,'ms')
     integrate = False
+    channel = 0
     
 class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
     def __init__(self,config,parentname,parent=0):
@@ -40,6 +41,8 @@ class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
         self.roiWidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiWidth') )
         self.enableCheckBox.stateChanged.connect( self.onStateChanged )
         self.integrateButton.clicked.connect( self.onIntegrateClicked )
+        self.channelSpinBox.setValue( self.settings.channel )
+        self.channelSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'channel') )
 
     def onValueChanged(self, param, value):
         print "ValueChanged", param, value
