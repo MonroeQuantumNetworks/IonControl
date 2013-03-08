@@ -225,6 +225,9 @@ class PulserHardware(QtCore.QObject):
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
             self._integrationTime = value
             
+    def getIntegrationTimeBinary(self, value):
+        return int( (value/self.timestep).toval() ) & 0xffffffff
+            
     def ppUpload(self,binarycode,startaddress=0):
         with QtCore.QMutexLocker(self.Mutex):
             print "starting PP upload",
