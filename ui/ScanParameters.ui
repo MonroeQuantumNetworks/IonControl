@@ -61,25 +61,6 @@
    <item row="0" column="0" colspan="2">
     <widget class="QComboBox" name="comboBoxParameter"/>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QComboBox" name="scanTypeCombo">
-     <item>
-      <property name="text">
-       <string>Linear up</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Linear down</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Randomized</string>
-      </property>
-     </item>
-    </widget>
-   </item>
    <item row="2" column="1">
     <widget class="MagnitudeSpinBox" name="maximumBox">
      <property name="buttonSymbols">
@@ -141,6 +122,32 @@
        <string>Step in place</string>
       </property>
      </item>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QComboBox" name="scanTypeCombo">
+     <item>
+      <property name="text">
+       <string>Linear up</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Linear down</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Randomized</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Direction</string>
+     </property>
     </widget>
    </item>
   </layout>
