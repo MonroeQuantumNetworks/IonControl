@@ -53,8 +53,8 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.graphicsView = self.graphicsLayout.graphicsView
         
     def onSettingsChanged(self):
+        self.integrationTimeLookup[ self.pulserHardware.getIntegrationTimeBinary(self.settings.integrationTime) & 0xffffff] = self.settings.integrationTime
         self.pulserHardware.integrationTime = self.settings.integrationTime
-        self.integrationTimeLookup[ self.pulserHardware.integrationTimeBinary & 0xffffff] = self.settings.integrationTime
         self.settings = self.settingsUi.settings
         if self.state==self.OpStates.running:
             self.pulserHardware.counterMask = self.settings.counterMask
@@ -110,7 +110,10 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.tick += 1
         self.displayUi.values = data.data
         if data.data[12] is not None:
-            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
+            if data.data[12] in self.integrationTimeLookup:
+                self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
+            else:
+                self.dataIntegrationTime = self.settings.integrationTime
         for counter in range(8):
             if data.data[counter] is not None:
                 y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval()) 
