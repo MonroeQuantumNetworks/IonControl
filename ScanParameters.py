@@ -9,6 +9,7 @@ import PyQt4.uic
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanParameters.ui')
 
 import ScanList
+from modules import enum
 
 class Scan:
     pass
@@ -19,11 +20,11 @@ class Settings:
     maximum = "10 ms"
     steps = 10
     scantype = 0
-    repeat = False
-    stepInPlace = False
+    scanMode = 0
     rewriteDDS = False
 
 class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
+    ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace')
     def __init__(self,config,parentname,parent=0):
         ScanExperimentForm.__init__(self,parent)
         ScanExperimentBase.__init__(self)
@@ -37,10 +38,9 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.maximumBox.setValue(self.settings.maximum)
         self.stepsBox.setValue(self.settings.steps)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
-        self.repeatCheckBox.setChecked( self.settings.repeat )
-        self.stepInPlaceCheckBox.setChecked( self.settings.stepInPlace )
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
         self.progressBar.setVisible( False )
+        self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
 
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -62,12 +62,10 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.settings.maximum = self.maximumBox.value()
         self.settings.steps = self.stepsBox.value()
         self.settings.scantype = self.scanTypeCombo.currentIndex()
-        self.settings.repeat = self.repeatCheckBox.isChecked()
-        self.settings.stepInPlace = self.stepInPlaceCheckBox.isChecked()
         self.settings.rewriteDDS = self.rewriteDDSCheckBox.isChecked()
-        Scan.repeat = self.settings.repeat
-        Scan.stepInPlace = self.settings.stepInPlace
+        self.settings.scanMode = self.scanModeComboBox.currentIndex()
         Scan.rewriteDDS = self.settings.rewriteDDS
+        Scan.scanMode = self.settings.scanMode
         return Scan
         
     def onClose(self):
