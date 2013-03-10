@@ -5,7 +5,7 @@ Created on Sat Feb 16 16:56:57 2013
 @author: pmaunz
 """
 import PyQt4.uic
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 from modules import enum
 import magnitude
 import DedicatedCountersSettings
@@ -46,9 +46,25 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.settingsDock.setWidget( self.settingsUi )
         self.settingsUi.valueChanged.connect( self.onSettingsChanged )
         self.settings = self.settingsUi.settings
+        # Display Channels 0-3
         self.displayUi = DedicatedDisplay.DedicatedDisplay(self.config)
         self.displayUi.setupUi(self.displayUi)
+        self.displayDock = QtGui.QDockWidget("Channel 0-3")       
         self.displayDock.setWidget( self.displayUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
+        # Display Channel 4-7
+        self.displayUi2 = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUi2.setupUi(self.displayUi2)
+        self.displayDock2 = QtGui.QDockWidget("Channel 4-7")
+        self.displayDock2.setWidget(self.displayUi2)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock2)
+        # Display ADC 0-3
+        self.displayUiADC = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUiADC.setupUi(self.displayUiADC)
+        self.displayDockADC = QtGui.QDockWidget("Analog Channels")
+        self.displayDockADC.setWidget(self.displayUiADC)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDockADC)
+        
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
         
