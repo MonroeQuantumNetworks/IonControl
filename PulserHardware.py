@@ -375,7 +375,7 @@ if __name__ == "__main__":
     #pp.loadSource(r'prog\Ions\ScanParameter.pp')
     fpga = fpgaUtilit.FPGAUtilit()
     xem = fpga.openBySerial('12320003V5')
-    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware_ram.bit')
+    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
     hw = PulserHardware(fpga,startReader=False)
     data = bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
     length = len(data)
@@ -383,8 +383,7 @@ if __name__ == "__main__":
     print length
     backdata = bytearray([0]*length )
     hw.ppReadRam( backdata, 0 )
-    print 'data', "'{0}'".format(data)
-    print 'backdata', "'{0}'".format(backdata)
+    print "data readback comparison, matches", data[0:len(backdata)] == backdata
     hw.ppUpload( pp.toBinary() )
     xem.UpdateWireOuts()
     print "DataOutPipe", hex(xem.GetWireOutValue(0x25))

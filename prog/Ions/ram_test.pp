@@ -12,10 +12,10 @@ var counteroff 0, counter
 var end 0xffffffff
 var temp 0x1234
 var integrationTime 500, parameter, ms
-var ramaddr 0, address
+var ramaddr 8, address
 
 
-#	SETRAMADDR ramaddr
+	SETRAMADDR ramaddr
 	UPDATE integrationTime
 	WAIT
 	JMPRAMINVALID endlabel
