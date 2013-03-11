@@ -23,9 +23,9 @@ var coolingCounter    1, counter
 var coolingOffMask    1, mask
 var coolingOff        0, shutter coolingOffMask
 var coolingOffCounter 0, counter
-var coolingTime       100, parameter, ms
-var experiments   350, parameter
-var experimentsleft 350
+var coolingTime       10, parameter, ms
+var experiments   10, parameter
+var experimentsleft 10
 var epsilon         400, parameter, ns
 var ddsApplyTrigger   3,trigger
 var endLabel 0xffffffff

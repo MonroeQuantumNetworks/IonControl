@@ -70,6 +70,11 @@ OPS = {'NOP'    : 0x00,
        'JMPPIPEEMPTY': 0x3f,
        'READPIPEINDF': 0x40,
        'WRITEPIPEINDF': 0x41,
+       'SETRAMADDR': 0x42,
+       'RAMREADINDF' : 0x43,
+       'RAMREAD' : 0x44,
+       'JMPRAMVALID' : 0x45,
+       'JMPRAMINVALID' : 0x46,
        'END'    : 0xFF }
 
 class Dimensions:

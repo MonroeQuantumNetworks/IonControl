@@ -14,7 +14,6 @@ class Settings:
         self.deviceSerial = None
         self.deviceDescription = None
         self.fpga = None
-        self.xem = None
 
 SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialog.ui')
 

@@ -8,6 +8,7 @@ import struct
 from Queue import Queue, Empty
 import magnitude
 from modules import enum
+import math
 
 class Data:
     def __init__(self):
@@ -133,7 +134,7 @@ class PulserHardware(QtCore.QObject):
     
     timestep = magnitude.mg(20,'ns')
 
-    def __init__(self,fpgaUtilit):
+    def __init__(self,fpgaUtilit,startReader=True):
         #print "PulserHardware __init__" 
         #traceback.print_stack()
         super(PulserHardware,self).__init__()
@@ -145,7 +146,8 @@ class PulserHardware(QtCore.QObject):
         self._adcCounterMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
         self.pipeReader = PipeReader(self)
-        self.pipeReader.start()
+        if startReader:
+            self.pipeReader.start()
 
     def updateSettings(self,fpgaUtilit):
         self.stopPipeReader()
@@ -325,6 +327,20 @@ class PulserHardware(QtCore.QObject):
             with QtCore.QMutexLocker(self.Mutex):
                 return self.xem.WriteToPipeIn(0x81,code)
                 
+    def ppWriteRam(self,data,address):
+        appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
+        data += bytearray([0]*appendlength)
+        with QtCore.QMutexLocker(self.Mutex):
+            self.xem.ActivateTriggerIn( 0x41, 4 )    
+            self.xem.ActivateTriggerIn( 0x41, 5 )    
+            return self.xem.WriteToPipeIn( 0x82, data )
+
+    def ppReadRam(self,data,address):
+        with QtCore.QMutexLocker(self.Mutex):
+            self.xem.ActivateTriggerIn( 0x41, 4 )    
+            self.xem.ActivateTriggerIn( 0x41, 5 )    
+            self.xem.ReadFromPipeOut( 0xa3, data )
+                
     def ppClearWriteFifo(self):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.ActivateTriggerIn(0x41, 3)
@@ -355,11 +371,20 @@ if __name__ == "__main__":
     printdata = True
     
     pp = PulseProgram.PulseProgram()
-    pp.loadSource(r'prog\Ions\test.pp')
+    pp.loadSource(r'prog\Ions\ram_test.pp')
+    #pp.loadSource(r'prog\Ions\ScanParameter.pp')
     fpga = fpgaUtilit.FPGAUtilit()
     xem = fpga.openBySerial('12320003V5')
-    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
-    hw = PulserHardware(xem)
+    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware_ram.bit')
+    hw = PulserHardware(fpga,startReader=False)
+    data = bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
+    length = len(data)
+    hw.ppWriteRam( data,0 )
+    print length
+    backdata = bytearray([0]*length )
+    hw.ppReadRam( backdata, 0 )
+    print 'data', "'{0}'".format(data)
+    print 'backdata', "'{0}'".format(backdata)
     hw.ppUpload( pp.toBinary() )
     xem.UpdateWireOuts()
     print "DataOutPipe", hex(xem.GetWireOutValue(0x25))
@@ -369,7 +394,7 @@ if __name__ == "__main__":
     hw.ppStart()
     Finished = False
     while not Finished:#for j in range(60):
-        data = hw.ppReadData(1000,0.1)
+        data = hw.ppReadData(4,1.0)
         if printdata:
             for i in sliceview(data,4):
                 (num,) = struct.unpack('I',i)
