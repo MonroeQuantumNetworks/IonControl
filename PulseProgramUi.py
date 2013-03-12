@@ -51,7 +51,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
             self.splitterVertical.restoreState(self.configParams.splitterVertical)
-        self.filenameComboBox.currentIndexChanged[QtCore.QString].connect( self.onFilenameChange )
+        self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
 
     def onFilenameChange(self, name ):
         name = str(name)
