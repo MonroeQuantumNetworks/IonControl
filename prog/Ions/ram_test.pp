@@ -25,6 +25,12 @@ var ramaddr 8, address
 	RAMREAD
 	WRITEPIPE
 	NOP
+	RAMREAD
+	WRITEPIPE
+	NOP
+	RAMREAD
+	WRITEPIPE
+	NOP
 	
 endlabel: LDWR end
 	WRITEPIPE

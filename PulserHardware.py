@@ -332,13 +332,25 @@ class PulserHardware(QtCore.QObject):
         data += bytearray([0]*appendlength)
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.ActivateTriggerIn( 0x41, 4 )    
-            self.xem.ActivateTriggerIn( 0x41, 5 )    
+            self.xem.ActivateTriggerIn( 0x41, 5 )
+            if address!=0:
+                self.xem.SetWireInValue( 0x01, address & 0xffff )
+                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+                self.xem.UpdateWireIns()
+                self.xem.ActivateTriggerIn( 0x41, 6 )
+                self.xem.ActivateTriggerIn( 0x41, 7 )
             return self.xem.WriteToPipeIn( 0x82, data )
 
     def ppReadRam(self,data,address):
         with QtCore.QMutexLocker(self.Mutex):
             self.xem.ActivateTriggerIn( 0x41, 4 )    
             self.xem.ActivateTriggerIn( 0x41, 5 )    
+            if address!=0:
+                self.xem.SetWireInValue( 0x01, address & 0xffff )
+                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+                self.xem.UpdateWireIns()
+                self.xem.ActivateTriggerIn( 0x41, 7 )
+                self.xem.ActivateTriggerIn( 0x41, 6 )
             self.xem.ReadFromPipeOut( 0xa3, data )
                 
     def ppClearWriteFifo(self):
@@ -379,7 +391,7 @@ if __name__ == "__main__":
     hw = PulserHardware(fpga,startReader=False)
     data = bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
     length = len(data)
-    hw.ppWriteRam( data,0 )
+    hw.ppWriteRam( data, 0 )
     print length
     backdata = bytearray([0]*length )
     hw.ppReadRam( backdata, 0 )
