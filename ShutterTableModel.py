@@ -15,7 +15,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = variabledict.copy()
+        self.variabledict = variabledict
         self.maskdict = dict()
         self.variablelist = []
         for name, var in self.variabledict.iteritems():
@@ -70,11 +70,15 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
                  0: QtGui.QColor(QtCore.Qt.white),
                  1: QtGui.QColor(QtCore.Qt.green) }[self.currentState(index)]
         return color
+        
+    def displayToolTip(self, index):
+        return "ToolTip"
   
     def data(self, index, role): 
         if index.isValid():
             return { #(QtCore.Qt.DisplayRole): functools.partial( self.displayData, index),
                      (QtCore.Qt.BackgroundColorRole): functools.partial( self.displayDataColor, index),
+                     #(QtCore.Qt.ToolTipRole): functools.partial( self.displayToolTip, index )
                      }.get(role,lambda : None)()
         return None
         
@@ -84,7 +88,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return str(32-section)
+                return str(31-section)
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.variablelist[section].name
         return None #QtCore.QVariant()

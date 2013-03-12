@@ -19,6 +19,7 @@ class Trace:
         self.curve = None
         self.vars = Empty()
         self.vars.comment = ""
+        self.header = None
         self.curvePen = 0
         
     def resave(self):
@@ -36,9 +37,21 @@ class Trace:
         print >>outfile, "#", datetime.datetime.now()
         for var in self.vars.__dict__.keys():
             print >>outfile, "#", var, self.vars.__dict__[var]
+        if self.header is not None:
+            print >>outfile, self.header
 
     def saveTrace(self,filename):
-        pass
+        of = open(filename,'w')
+        self.saveTraceHeader(of)
+        if hasattr(self, 'height'):
+            print >>of, "# x y error"
+            for x,db,error in zip(self.x, self.y, self.height):
+                print >>of, x, db, error
+        else:
+            print >>of, "# x y "
+            for x,db in zip(self.x, self.y):
+                print >>of, x, db
+        of.close()
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback

@@ -70,6 +70,11 @@ OPS = {'NOP'    : 0x00,
        'JMPPIPEEMPTY': 0x3f,
        'READPIPEINDF': 0x40,
        'WRITEPIPEINDF': 0x41,
+       'SETRAMADDR': 0x42,
+       'RAMREADINDF' : 0x43,
+       'RAMREAD' : 0x44,
+       'JMPRAMVALID' : 0x45,
+       'JMPRAMINVALID' : 0x46,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -91,7 +96,7 @@ encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = True
+debug = False
 
 def variableValueDict( variabledict ):
     returndict = dict()
@@ -150,7 +155,7 @@ class PulseProgram:
     def updateVariables(self, variables ):
         """ update the variable values in the bytecode
         """
-        print "update variables:",variables
+        #print "update variables:",variables
         for name, value in variables.iteritems():
             if name in self.variabledict:
                 var = self.variabledict[name]
@@ -194,6 +199,13 @@ class PulseProgram:
                 print hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
+        
+    def currentVariablesText(self, comment=""):
+        lines = list()
+        for name, var in self.variabledict.iteritems():
+            lines.append("{0} {1} {2}".format(comment,name,var.value))
+        return '\n'.join(lines)
+           
 
 # routines below here should not be needed by the user   
 

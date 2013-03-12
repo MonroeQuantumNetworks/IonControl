@@ -7,12 +7,17 @@ Created on Thu Jan 03 07:11:22 2013
 
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
-    reverse = dict((value, key) for key, value in enums.iteritems())
+    reverse, forward = dict((value, key) for key, value in enums.iteritems()), enums.copy()
     enums['reverse_mapping'] = reverse
+    enums['mapping'] = forward
     return type('Enum', (), enums)
     
 if __name__ == "__main__":
     Numbers = enum('ZERO', 'ONE', 'TWO')
     state = Numbers.ZERO
     print state
-    print Numbers.reverse_mapping[(state+1)%len(enums)]
+    print state == 0
+    state = 1
+    print state == Numbers.ONE
+    print Numbers.mapping
+    #print Numbers.reverse_mapping[(state+1)%len(enums)]

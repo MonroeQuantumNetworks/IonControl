@@ -12,6 +12,8 @@ import ShutterTableModel
 import TriggerTableModel
 import CounterTableModel
 import os.path
+from modules import configshelve
+from modules import dictutil
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -27,18 +29,23 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.sourceCodeEdits = dict()
         self.config = config
         self.parameterdict = parameterdict
+        self.variabledict = None
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
+        self.actionReset.triggered.connect(self.onReset)
         self.loadButton.setDefaultAction( self.actionOpen )
         self.saveButton.setDefaultAction( self.actionSave )
+        self.resetButton.setDefaultAction( self.actionReset )
         self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
+        self.datashelf = configshelve.configshelve(self.configname)
+        self.datashelf.open()
         if self.configname not in self.config:
             self.config[self.configname] = ConfiguredParams()
         self.configParams = self.config[self.configname] 
@@ -72,14 +79,25 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file'))
         if path!="":
             self.loadFile(path)
+            
+    def onReset(self):
+        if self.configParams.lastFilename is not None:
+            self.variabledict = self.pulseProgram.variabledict.copy()
+            self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
+        if self.variabledict is not None and self.configParams.lastFilename is not None:
+            self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.configParams.lastFilename = path
+        key = self.configParams.lastFilename
         try:
             self.pulseProgram.loadSource(path)
         except PulseProgram.ppexception:
             # compilation failed
             pass
+        self.variabledict = self.pulseProgram.variabledict.copy()
+        if key in self.datashelf:
+            self.variabledict.update( dictutil.subdict(self.datashelf[key], self.variabledict.keys() ) )
         self.updateDisplay()
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
@@ -105,17 +123,17 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
-        self.variableTableModel = VariableTableModel.VariableTableModel( self.pulseProgram.variabledict, self.parameterdict )
+        self.variableTableModel = VariableTableModel.VariableTableModel( self.variabledict, self.parameterdict )
         self.variableView.setModel(self.variableTableModel)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.pulseProgram.variabledict )
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.variabledict )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
-        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.pulseProgram.variabledict )
+        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.variabledict )
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-        self.counterTableModel = CounterTableModel.CounterTableModel( self.pulseProgram.variabledict )
+        self.counterTableModel = CounterTableModel.CounterTableModel( self.variabledict )
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
@@ -127,10 +145,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
         
     def close(self):
-        self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
-        self.configParams.splitterVertical = self.splitterVertical.saveState()
-        self.config[self.configname] = self.configParams
-        #print self.configname, self.configParams.lastFilename
+        if not hasattr(self, 'closed'):
+            self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
+            self.configParams.splitterVertical = self.splitterVertical.saveState()
+            self.config[self.configname] = self.configParams
+            self.datashelf[self.configParams.lastFilename] = self.variabledict
+            self.datashelf.close()
+            self.closed = True
+        else:
+            print "called close again on", self.configname
         
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
@@ -148,11 +171,14 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.config = config
         self.pulseProgramSet = dict()        # ExperimentName -> PulseProgramUi
         self.lastExperimentFile = dict()     # ExperimentName -> last pp file used for this experiment
+        self.isShown = False
     
     def setupUi(self,parent):
         self.horizontalLayout = QtGui.QHBoxLayout(parent)
         self.tabWidget = QtGui.QTabWidget(parent)
         self.horizontalLayout.addWidget(self.tabWidget)
+        self.setWindowTitle('Pulse Program')
+        self.setWindowFlags(QtCore.Qt.WindowMinMaxButtonsHint)
 
     def addExperiment(self, experiment, parameterdict=dict()):
         if not experiment in self.pulseProgramSet:
@@ -186,12 +212,23 @@ class PulseProgramSetUi(QtGui.QDialog):
         if 'PulseProgramSetUi.size' in self.config:
             self.resize(self.config['PulseProgramSetUi.size'])
         QtGui.QDialog.show(self)
+        self.isShown = True
         
     def close(self):
-        for page in self.pulseProgramSet.values():
-            page.close()
-        self.reject()
+        if self.isShown:
+            for page in self.pulseProgramSet.values():
+                page.close()
+            self.reject()
 
+#    def resizeEvent(self, event):
+#        self.config['PulseProgramSetUi.size'] = event.size()
+#        super(PulseProgramSetUi,self).resizeEvent(event)
+#    
+#    def moveEvent(self,event):
+#        super(PulseProgramSetUi,self).moveEvent(event)
+#        self.config['PulseProgramSetUi.pos'] = self.pos()
+        
+        
     
 if __name__ == "__main__":
     import sys

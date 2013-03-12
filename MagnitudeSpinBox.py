@@ -5,16 +5,20 @@ Created on Sat Feb 09 17:28:11 2013
 @author: pmaunz
 """
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 from modules import Expression
+from modules import MagnitudeParser
 
 debug = False
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
+    valueChanged = QtCore.pyqtSignal(object)
+    
     def __init__(self,parent=0):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.expression = Expression.Expression()
+        self.editingFinished.connect( self.onEditingFinished )
         
     def validate(self, inputstring, pos):
         #print "validate"
@@ -26,7 +30,21 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             return (QtGui.QValidator.Intermediate,pos)
         
     def stepBy(self, steps ):
-        print steps
+        try:
+            lineEdit = self.lineEdit()
+            #print steps, lineEdit.cursorPosition()
+            value, delta, pos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
+            #print value, delta
+            newvalue = value + (steps * delta)
+            newvalue.ounit( value.out_unit )
+            newvalue.output_prec( value.oprec )
+            self.setValue( newvalue )
+            lineEdit.setCursorPosition(pos)
+            self.valueChanged.emit( newvalue )
+        except Exception:
+            pass
+            #print e
+            
         
     def interpretText(self):
         print "interpret text"
@@ -49,9 +67,12 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     def setValue(self,value):
         self.lineEdit().setText( str(value) )
         
+    def onEditingFinished(self):
+        self.valueChanged.emit( self.value() )
+        
 if __name__ == "__main__":
     debug = True
-    TestWidget, TestBase = PyQt4.uic.loadUiType('MagnitudeSpinBoxTest.ui')
+    TestWidget, TestBase = PyQt4.uic.loadUiType(r'ui\MagnitudeSpinBoxTest.ui')
 
     class TestUi(TestWidget,TestBase):
         def __init__(self):

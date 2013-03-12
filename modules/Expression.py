@@ -164,7 +164,7 @@ if __name__ == "__main__":
     test( "round(PI^2)", round(math.pi**2) )
     test( "6.02E23 * 8.048", 6.02E23 * 8.048 )
     test( "e / 3", math.e / 3 )
-    test( "sin(PI/2)", math.sin(math.pi/2) )
+    test( "sin(pi/2)", math.sin(math.pi/2) )
     test( "trunc(E)", int(math.e) )
     test( "trunc(-E)", int(-math.e) )
     test( "round(E)", round(math.e) )
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     test( "sgn(0.1)", 1 )
     test( "2*(3+5)", 16 )
     test( "2*(alpha+beta)", 14, {'alpha':5,'beta':2} )
-    test( "2 * 2 MHz" , magnitude.mg(4,'MHz') )
+    test( "-4 MHz" , magnitude.mg(-4,'MHz') )
     test( "2 * sqrt ( 4s / 1 s)",4 )
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
 
