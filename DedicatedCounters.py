@@ -49,19 +49,22 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         # Display Channels 0-3
         self.displayUi = DedicatedDisplay.DedicatedDisplay(self.config)
         self.displayUi.setupUi(self.displayUi)
-        self.displayDock = QtGui.QDockWidget("Channel 0-3")       
+        self.displayDock = QtGui.QDockWidget("Channel 0-3")
+        self.displayDock.setObjectName("Channel 0-3")
         self.displayDock.setWidget( self.displayUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
         # Display Channel 4-7
         self.displayUi2 = DedicatedDisplay.DedicatedDisplay(self.config)
         self.displayUi2.setupUi(self.displayUi2)
         self.displayDock2 = QtGui.QDockWidget("Channel 4-7")
+        self.displayDock2.setObjectName("Channel 4-7")
         self.displayDock2.setWidget(self.displayUi2)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock2)
         # Display ADC 0-3
         self.displayUiADC = DedicatedDisplay.DedicatedDisplay(self.config)
         self.displayUiADC.setupUi(self.displayUiADC)
         self.displayDockADC = QtGui.QDockWidget("Analog Channels")
+        self.displayDockADC.setObjectName("Analog Channels")
         self.displayDockADC.setWidget(self.displayUiADC)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDockADC)
         

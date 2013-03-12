@@ -16,6 +16,7 @@ Created on Sat Dec 22 17:37:41 2012
 
 import CounterWidget
 import ScanExperiment
+import ExternalScanExperiment
 #import TDCWidget
 #import FastTDCWidget
 import SettingsDialog
@@ -69,6 +70,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
 
         for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
                              (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware), "Scanning"),
+                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware),"External Scan"),
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 

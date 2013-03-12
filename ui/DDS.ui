@@ -423,6 +423,37 @@
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>channelEdit0</tabstop>
+  <tabstop>frequencyBox0</tabstop>
+  <tabstop>phaseBox0</tabstop>
+  <tabstop>amplitudeBox0</tabstop>
+  <tabstop>channelEdit1</tabstop>
+  <tabstop>frequencyBox1</tabstop>
+  <tabstop>phaseBox1</tabstop>
+  <tabstop>amplitudeBox1</tabstop>
+  <tabstop>channelEdit2</tabstop>
+  <tabstop>frequencyBox2</tabstop>
+  <tabstop>phaseBox2</tabstop>
+  <tabstop>amplitudeBox2</tabstop>
+  <tabstop>channelEdit3</tabstop>
+  <tabstop>frequencyBox3</tabstop>
+  <tabstop>phaseBox3</tabstop>
+  <tabstop>amplitudeBox3</tabstop>
+  <tabstop>channelEdit4</tabstop>
+  <tabstop>frequencyBox4</tabstop>
+  <tabstop>phaseBox4</tabstop>
+  <tabstop>amplitudeBox4</tabstop>
+  <tabstop>channelEdit5</tabstop>
+  <tabstop>frequencyBox5</tabstop>
+  <tabstop>phaseBox5</tabstop>
+  <tabstop>amplitudeBox5</tabstop>
+  <tabstop>autoApplyBox</tabstop>
+  <tabstop>checkBoxWriteOnStartup</tabstop>
+  <tabstop>writeAllButton</tabstop>
+  <tabstop>resetButton</tabstop>
+  <tabstop>applyButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

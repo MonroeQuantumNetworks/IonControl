@@ -49,6 +49,10 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
                 self.comboBoxParameter.addItem(var.name)
         if self.settings.parameter is not None:
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.parameter) )
+            
+    def setScanNames(self, scannames):
+        for name in scannames:
+            self.comboBoxParameter.addItem(name)
                 
     def getScan(self):
         Scan.name = str(self.comboBoxParameter.currentText())
