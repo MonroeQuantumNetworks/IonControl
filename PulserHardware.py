@@ -389,12 +389,12 @@ if __name__ == "__main__":
     xem = fpga.openBySerial('12320003V5')
     fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
     hw = PulserHardware(fpga,startReader=False)
-    data = bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
+    data = bytearray( [0]*20 ) #bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
     length = len(data)
-    hw.ppWriteRam( data, 0 )
+    hw.ppWriteRam( data, 4 )
     print length
     backdata = bytearray([0]*length )
-    hw.ppReadRam( backdata, 0 )
+    hw.ppReadRam( backdata, 4 )
     print "data readback comparison, matches", data[0:len(backdata)] == backdata
     hw.ppUpload( pp.toBinary() )
     xem.UpdateWireOuts()

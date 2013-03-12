@@ -11,8 +11,8 @@ var counteron 0x0, counter
 var counteroff 0, counter
 var end 0xffffffff
 var temp 0x1234
-var integrationTime 500, parameter, ms
-var ramaddr 8, address
+var integrationTime 5, parameter, ms
+var ramaddr 0, address
 
 
 	SETRAMADDR ramaddr
