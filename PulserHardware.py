@@ -334,6 +334,7 @@ class PulserHardware(QtCore.QObject):
             self.xem.ActivateTriggerIn( 0x41, 4 )    
             self.xem.ActivateTriggerIn( 0x41, 5 )
             if address!=0:
+                print "set write address"
                 self.xem.SetWireInValue( 0x01, address & 0xffff )
                 self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
                 self.xem.UpdateWireIns()
@@ -346,6 +347,7 @@ class PulserHardware(QtCore.QObject):
             self.xem.ActivateTriggerIn( 0x41, 4 )    
             self.xem.ActivateTriggerIn( 0x41, 5 )    
             if address!=0:
+                print "set read address"
                 self.xem.SetWireInValue( 0x01, address & 0xffff )
                 self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
                 self.xem.UpdateWireIns()
@@ -389,12 +391,12 @@ if __name__ == "__main__":
     xem = fpga.openBySerial('12320003V5')
     fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
     hw = PulserHardware(fpga,startReader=False)
-    data = bytearray( [0]*20 ) #bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
+    data = bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
     length = len(data)
-    hw.ppWriteRam( data, 4 )
+    hw.ppWriteRam( data, 8 )
     print length
     backdata = bytearray([0]*length )
-    hw.ppReadRam( backdata, 4 )
+    hw.ppReadRam( backdata, 8 )
     print "data readback comparison, matches", data[0:len(backdata)] == backdata
     hw.ppUpload( pp.toBinary() )
     xem.UpdateWireOuts()
