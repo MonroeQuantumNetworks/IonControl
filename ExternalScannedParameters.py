@@ -5,7 +5,7 @@ Created on Tue Mar 12 15:22:09 2013
 @author: wolverine
 """
 
-import visa
+#import visa
 from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import magnitude

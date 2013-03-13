@@ -12,7 +12,7 @@ from modules import MagnitudeParser
 import sip
 
 debug = False
-api2 = sip.getapi("QValidator")==2
+api2 = sip.getapi("QString")==2
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
@@ -26,10 +26,17 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         #print "validate"
         try:
             self.expression.evaluate(str(inputstring))
-            return (QtGui.QValidator.Acceptable,inputstring,pos)
+            if api2:
+                return (QtGui.QValidator.Acceptable,inputstring,pos)
+            else:
+                return (QtGui.QValidator.Acceptable,pos)                
         except Exception as e:
             print e
-            return (QtGui.QValidator.Intermediate,inputstring,pos)
+            if api2:
+                return (QtGui.QValidator.Intermediate,inputstring,pos)
+            else:
+                return (QtGui.QValidator.Intermediate,pos)
+                
         
     def stepBy(self, steps ):
         try:

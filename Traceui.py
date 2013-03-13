@@ -40,7 +40,7 @@ class PlottedTrace(object):
                 
     def plotFitfunction(self,penindex):
         if hasattr(self.trace,'fitfunction'):
-            self.fitx = numpy.linspace(numpy.min(self.trace.x),numpy.max(self.trace.x),100)
+            self.fitx = numpy.linspace(numpy.min(self.trace.x),numpy.max(self.trace.x),300)
             self.fity = self.trace.fitfunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  

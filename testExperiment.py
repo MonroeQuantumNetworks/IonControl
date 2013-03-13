@@ -37,7 +37,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
-        self.fitWidget = FitUi.FitUi(self.traceui)
+        self.fitWidget = FitUi.FitUi(self.traceui,self.config,"testExperiment")
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
