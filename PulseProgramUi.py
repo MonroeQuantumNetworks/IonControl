@@ -188,6 +188,10 @@ class PulseProgramSetUi(QtGui.QDialog):
             self.pulseProgramSet[experiment] = programUi
         return self.pulseProgramSet[experiment]
             
+    def setCurrentTab(self, name):
+        if name in self.pulseProgramSet:
+            self.tabWidget.setCurrentWidget( self.pulseProgramSet[name] )        
+            
     def getPulseProgram(self, experiment):
         return self.pulseProgramSet[experiment]
         

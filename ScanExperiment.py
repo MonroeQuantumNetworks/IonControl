@@ -29,6 +29,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
+    experimentName = 'Scan Sequence'
 
     def __init__(self,settings,pulserHardware,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
@@ -94,7 +95,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             QtGui.QMainWindow.restoreState(self,self.config['ScanExperiment.MainWindow.State'])
 
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment('Scan Sequence')
+        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
         self.scanParametersWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
 
     def onClear(self):

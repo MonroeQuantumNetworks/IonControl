@@ -28,6 +28,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
+    experimentName = 'External Scan'
 
     def __init__(self,settings,pulserHardware,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
@@ -56,7 +57,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         self.scanParametersDock.setObjectName("ExternalScanParametersDock")
         self.scanParametersDock.setWidget(self.scanParametersWidget)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.scanParametersDock)
-        self.scanSettingsWidget = ScanExperimentSettings.ScanExperimentSettings(config,"ScanExperiment")
+        self.scanSettingsWidget = ScanExperimentSettings.ScanExperimentSettings(config,"ExternalScanExperiment")
         self.scanSettingsWidget.setupUi(self.scanSettingsWidget)
         self.scanSettingsDock = QtGui.QDockWidget("Settings")
         self.scanSettingsDock.setObjectName("ExternalScanSettingsDock")
@@ -69,7 +70,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
             
 
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment('External Scan')
+        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
         self.scanParametersWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
 
     def onClear(self):

@@ -175,6 +175,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.show()
         self.pulseProgramDialog.setWindowState(QtCore.Qt.WindowActive)
         self.pulseProgramDialog.raise_()
+        if hasattr(self.currentTab,'experimentName'):
+            self.pulseProgramDialog.setCurrentTab(self.currentTab.experimentName)
         
     def onSettingsApply(self,settings):
         self.settings = settings
