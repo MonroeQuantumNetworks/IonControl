@@ -9,8 +9,10 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 from modules import Expression
 from modules import MagnitudeParser
+import sip
 
 debug = False
+api2 = sip.getapi("QValidator")==2
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
@@ -24,10 +26,10 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         #print "validate"
         try:
             self.expression.evaluate(str(inputstring))
-            return (QtGui.QValidator.Acceptable,pos)
+            return (QtGui.QValidator.Acceptable,inputstring,pos)
         except Exception as e:
             print e
-            return (QtGui.QValidator.Intermediate,pos)
+            return (QtGui.QValidator.Intermediate,inputstring,pos)
         
     def stepBy(self, steps ):
         try:

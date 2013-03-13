@@ -35,6 +35,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         self.settings = settings
         self.pulserHardware = pulserHardware
         self.activated = False
+        self.currentTrace = None
 
     def setupUi(self,MainWindow,config):
         ExternalScanForm.setupUi(self,MainWindow)
@@ -68,8 +69,8 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
             
 
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi
-        self.pulseProgramUi.addExperiment('External Scan')
+        self.pulseProgramUi = pulseProgramUi.addExperiment('External Scan')
+        self.scanParametersWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
 
     def onClear(self):
         self.dockWidget.setShown(True)
@@ -85,7 +86,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         directory = DataDirectory.DataDirectory( self.scanSettings.project )
         self.tracefilename, components = directory.sequencefile( self.scanSettings.filename )
         self.scan = self.scanParametersWidget.getScan()
-        self.externalParameter = ExternalScannedParameters.ExternalScannedParameters(self.scan.name)()
+        self.externalParameter = ExternalScannedParameters.ExternalScannedParameters[self.scan.name]()
         self.externalParameter.saveValue()
         self.externalParameterIndex = 0
         self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
@@ -122,7 +123,6 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         if (self.pulserHardware is not None) and (not self.activated):
             try:
                 print "Scan activated"
-                self.startData()
                 self.pulserHardware.ppFlushData()
                 self.pulserHardware.dataAvailable.connect(self.onData)
                 self.activated = True
@@ -143,7 +143,8 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         """
         print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
         mean = numpy.mean( data.count[self.scanSettings.counter] )
-        x = self.externalParameter.getcurrentExternalValue() #self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
+        x = self.externalParameter.currentExternalValue() #self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
+        print "data", x, mean 
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
@@ -167,7 +168,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         if self.externalParameterIndex<len(self.scan.list):
             self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
             self.pulserHardware.ppStart()
-            
+            print "External Value:" , self.scan.list[self.externalParameterIndex]
         else:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
