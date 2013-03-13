@@ -29,7 +29,7 @@ class DDSUi(DDSForm, DDSBase):
             box.valueChanged.connect( functools.partial(self.onPhase, box,channel))
         for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]):
             box.setValue( self.amplitude[channel] )
-            box.valueChanged.connect( functools.partial(self.onAmplitude, box,channel))
+            box.editingFinished.connect( functools.partial(self.onAmplitude, box,channel))
         for channel, box in enumerate([self.channelEdit0, self.channelEdit1, self.channelEdit2, self.channelEdit3, self.channelEdit4, self.channelEdit5]):
             box.setText(self.names[channel])
             box.textChanged.connect( functools.partial(self.onName, box,channel) )
@@ -56,7 +56,7 @@ class DDSUi(DDSForm, DDSBase):
         self.phase[channel] = box.value()
         if self.autoApply: self.onApply()
     
-    def onAmplitude(self, box, channel, value):
+    def onAmplitude(self, box, channel):
         self.ad9912.setAmplitude(channel, box.value())
         self.amplitude[channel] = box.value()
         if self.autoApply: self.onApply()
