@@ -78,7 +78,7 @@ class PipeReader(QtCore.QThread):
                     with QtCore.QMutexLocker(self.dataMutex):
                         for s in sliceview(data,4):
                             (token,) = struct.unpack('I',s)
-                            print hex(token)
+                            #print hex(token)
                             if state == self.analyzingState.scanparameter:
                                 if self.data.scanvalue is None:
                                     self.data.scanvalue = token

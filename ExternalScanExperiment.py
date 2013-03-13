@@ -100,7 +100,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             self.currentTrace.resave()
             self.currentTrace = None
-        self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
+        self.scanParametersWidget.progressBar.setRange(0,float(len(self.scan.list)))
         self.scanParametersWidget.progressBar.setValue(0)
         self.scanParametersWidget.progressBar.setVisible( True )
         print "elapsed time", time.time()-start
@@ -177,7 +177,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
                 self.onStart()
             else:
                 self.onStop()
-        self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+        self.scanParametersWidget.progressBar.setValue(float(self.externalParameterIndex))
 
            
     def onClose(self):
