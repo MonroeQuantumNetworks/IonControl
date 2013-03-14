@@ -65,6 +65,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
         self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
         self.settingsDialog.setupUi(self)
+
         self.settings = self.settingsDialog.settings        
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
