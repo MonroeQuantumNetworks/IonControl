@@ -70,6 +70,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
+        if 'DedicatedCounter.MainWindow.State' in self.config:
+            QtGui.QMainWindow.restoreState(self,self.config['DedicatedCounter.MainWindow.State'])
+
         
     def onSettingsChanged(self):
         self.integrationTimeLookup[ self.pulserHardware.getIntegrationTimeBinary(self.settings.integrationTime) & 0xffffff] = self.settings.integrationTime
@@ -87,7 +90,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 self.curves[index] = None
                 
     def onClose(self):
-        self.config['DedicatedCounter.Settings'] = self.settings            
+        self.config['DedicatedCounter.Settings'] = self.settings
+        self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
+      
         
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()

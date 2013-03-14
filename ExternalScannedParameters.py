@@ -5,10 +5,15 @@ Created on Tue Mar 12 15:22:09 2013
 @author: wolverine
 """
 
-import visa
+
 from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import magnitude
+
+try:
+    import visa
+except:
+    print "visa loading failed. Prceeding without."
 
 class ExternalParameter:
 
