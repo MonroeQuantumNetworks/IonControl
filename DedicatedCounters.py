@@ -11,6 +11,7 @@ import magnitude
 import DedicatedCountersSettings
 import numpy
 import DedicatedDisplay
+import AnalogInputCalibration
        
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -33,6 +34,11 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.integrationTime = 0
         self.integrationTimeLookup = dict()
         self.tick = 0
+        self.analogCalbrations = [
+            AnalogInputCalibration.PowerDetectorCalibration(-36.47,60.7152,-1.79545,0.6,2),
+            AnalogInputCalibration.AnalogInputCalibration(),
+            AnalogInputCalibration.AnalogInputCalibration(),
+            AnalogInputCalibration.AnalogInputCalibration() ]
 
     def setupUi(self, parent):
         DedicatedCountersForm.setupUi(self,parent)
@@ -132,7 +138,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
     def onData(self, data):
         self.tick += 1
-        self.displayUi.values = data.data
+        self.displayUi.values = data.data[0:4]
+        self.displayUi2.values = data.data[4:8]
+        self.displayUiADC.values = self.convertAnalog(data.data[8:12])
         if data.data[12] is not None:
             if data.data[12] in self.integrationTimeLookup:
                 self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
@@ -147,3 +155,8 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 if self.curves[counter] is not None:
                     self.curves[counter].setData(self.xData[counter],self.yData[counter])
  
+    def convertAnalog(self,data):
+        converted = list()
+        for channel, cal in enumerate(self.analogCalbrations):
+            converted.append( cal.convertMagnitude(data[channel]) )
+        return converted

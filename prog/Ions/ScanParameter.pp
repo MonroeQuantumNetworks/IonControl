@@ -5,14 +5,14 @@
 #
 # A Pulse Programmer file for the ScanParameter experiment has to fulfill the following conditions
 # 
-#define COOLDDS 0
-#define TickleDDS 3
+#define COOLDDS 4
+#define TickleDDS 5
 
 # var syntax:
 # var name value, type, unit, encoding
 var datastart 3900, address   # serves as tooltip
 var dataend 4000, address
-var coolingFreq     250, parameter, MHz, AD9912_FRQ
+var coolingFreq     118, parameter, MHz, AD9912_FRQ
 var tickleFreq          15, parameter, MHz, AD9912_FRQ
 var startupMask      0x4000001, mask
 var startup           0x4000001, shutter startupMask
@@ -26,7 +26,7 @@ var coolingOffCounter 0, counter
 var coolingTime       10, parameter, ms
 var experiments   10, parameter
 var experimentsleft 10
-var epsilon         400, parameter, ns
+var epsilon         2, parameter, us
 var ddsApplyTrigger   3,trigger
 var endLabel 0xffffffff
 
@@ -35,6 +35,7 @@ var endLabel 0xffffffff
 	ASYNCSHUTTER startup
 	DDSFRQ COOLDDS, coolingFreq
 	DDSFRQFINE COOLDDS, coolingFreq
+	DDSFRQ TickleDDS, tickleFreq
 	TRIGGER ddsApplyTrigger
 	UPDATE startupTime
 
@@ -55,6 +56,7 @@ scanloop: NOP
 	LDWR experiments
 	STWR experimentsleft
 
+	DDSFRQ COOLDDS, coolingFreq 
 	DDSFRQ TickleDDS, tickleFreq
 	TRIGGER ddsApplyTrigger
 	

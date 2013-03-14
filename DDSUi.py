@@ -70,7 +70,7 @@ class DDSUi(DDSForm, DDSBase):
         for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5]):
             self.onPhase( box, channel, box.value() )
         for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]):
-            self.onAmplitude( box, channel, box.value() )
+            self.onAmplitude( box, channel )
         if self.autoApply: self.onApply
         
     def closeEvent(self, e):

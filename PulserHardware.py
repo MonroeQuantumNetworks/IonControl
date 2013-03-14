@@ -211,7 +211,8 @@ class PulserHardware(QtCore.QObject):
         with QtCore.QMutexLocker(self.Mutex):
             self._adcCounterMask = ((value<<8) & 0xf00) | (self._adcCounterMask & 0xff)
             check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )  
+            print "set adc mask", hex(self._adcCounterMask)
         
     @property
     def integrationTime(self):
