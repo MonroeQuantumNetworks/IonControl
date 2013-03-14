@@ -36,6 +36,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="openFileButton">
+       <property name="text">
+        <string>Open</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
+       </property>
+       <property name="shortcut">
+        <string>Ctrl+S</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="removeButton">
        <property name="icon">
         <iconset resource="Experiment.qrc">

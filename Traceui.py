@@ -10,6 +10,9 @@ import TraceTableView
 import pens
 import pyqtgraph
 import numpy
+from PyQt4 import QtGui
+import Trace
+import os.path
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
@@ -89,12 +92,20 @@ def unique(seq):
     seen = set()
     return [ x for x in seq if x not in seen and not seen.add(x)]
 
+class Settings:
+    def __init__(self):
+        self.lastDir = os.path.expanduser('~')
+        self.plotstyle = 0
+
 class Traceui(TraceuiForm, TraceuiBase):
-    def __init__(self, penicons, parent=None):
+    def __init__(self, penicons, config, parentname, graphicsView, parent=None):
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
         self.penicons = penicons
-        self.plotstyle = 0
+        self.config = config
+        self.configname = "Traceui."+parentname
+        self.settings = self.config.get(self.configname+".settings",Settings())
+        self.graphicsView = graphicsView
 
     def setupUi(self,MainWindow):
         TraceuiForm.setupUi(self,MainWindow)
@@ -109,9 +120,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceTableView.clicked.connect(self.onClicked)
         self.comboBoxStyle.currentIndexChanged[int].connect( self.setPlotStyle )
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
+        self.openFileButton.clicked.connect(self.onOpenFile)
 
     def setPlotStyle(self,value):
-        self.plotstyle = value
+        self.settings.plotstyle = value
         
     def onClicked(self,index):
         if index.column() in [1,3]:
@@ -125,7 +137,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         
     def onApplyStyle(self):
         for index in unique([ i.row() for i in self.traceTableView.selectedIndexes() ]):
-            self.TraceList[index].plot(-2,self.plotstyle)
+            self.TraceList[index].plot(-2,self.settings.plotstyle)
     
     def onRemove(self):
         for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]),reverse=True):
@@ -139,7 +151,7 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     def addTrace(self,trace,pen):
         self.model.addTrace(trace)
-        trace.plot(pen,self.plotstyle)
+        trace.plot(pen,self.settings.plotstyle)
         self.traceTableView.resizeColumnsToContents()
         
     def selectedTraces(self):
@@ -147,3 +159,16 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     def selectedPlottedTraces(self):
         return [self.TraceList[index] for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]))]
+
+    def onOpenFile(self):
+        fnames = QtGui.QFileDialog.getOpenFileNames(self, 'Open files', self.settings.lastDir)
+        for fname in fnames:
+            trace = Trace.Trace()
+            trace.filename = str(fname)
+            self.settings.lastDir, trace.name = os.path.split(str(fname))
+            trace.loadTrace(fname)
+            self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1),-1)
+
+    def onClose(self):
+        print "{0}.settings".format(self.configname), self.settings
+        self.config[self.configname+".settings"] = self.settings

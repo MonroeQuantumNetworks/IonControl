@@ -43,7 +43,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         self.config = config
         self.graphicsView = self.graphicsLayout.graphicsView
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons)
+        self.traceui = Traceui.Traceui(self.penicons,config,self.experimentName,self.graphicsView)
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
@@ -184,3 +184,4 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         self.config['ExternalScanExperiment.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.scanParametersWidget.onClose()
         self.scanSettingsWidget.onClose()
+        self.traceui.onClose()

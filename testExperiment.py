@@ -33,7 +33,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.config = config
         self.graphicsView = self.graphicsLayout.graphicsView
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons)
+        self.traceui = Traceui.Traceui(self.penicons,self.config,"testExperiment",self.graphicsView)
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
@@ -84,3 +84,4 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         
     def onClose(self):
         self.config['testWidget.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
+        self.traceui.onClose()

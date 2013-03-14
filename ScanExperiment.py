@@ -71,7 +71,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         except:
             pass # Ignore errors on restoring the state. This might happen after a new dock is added
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons)
+        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.graphicsView)
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
@@ -261,6 +261,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanParametersWidget.onClose()
         self.scanSettingsWidget.onClose()
         self.timestampSettingsWidget.onClose()
+        self.traceui.onClose()
 
     def updateSettings(self,settings,active=False):
         """ Main program settings have changed
