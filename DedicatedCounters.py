@@ -78,6 +78,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.graphicsView = self.graphicsLayout.graphicsView
         if 'DedicatedCounter.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['DedicatedCounter.MainWindow.State'])
+        self.onSettingsChanged()
 
         
     def onSettingsChanged(self):
@@ -141,11 +142,10 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.displayUi.values = data.data[0:4]
         self.displayUi2.values = data.data[4:8]
         self.displayUiADC.values = self.convertAnalog(data.data[8:12])
-        if data.data[12] is not None:
-            if data.data[12] in self.integrationTimeLookup:
-                self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
-            else:
-                self.dataIntegrationTime = self.settings.integrationTime
+        if data.data[12] is not None and data.data[12] in self.integrationTimeLookup:
+            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
+        else:
+            self.dataIntegrationTime = self.settings.integrationTime
         for counter in range(8):
             if data.data[counter] is not None:
                 y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval()) 

@@ -38,6 +38,8 @@ class PowerDetectorCalibration:
         self.maximum = maximum        
         
     def convert(self, binary):
+        if binary is None:
+            return None
         volt = binary * referenceVoltage / 0x3fffff
         if volt < self.minimum or volt > self.maximum:
             return "oor"
@@ -45,6 +47,8 @@ class PowerDetectorCalibration:
         return dBm
         
     def convertMagnitude(self, binary):
+        if binary is None:
+            return None
         volt = binary * referenceVoltage / 0x3fffff
         if volt < self.minimum or volt > self.maximum:
             return "oor"
