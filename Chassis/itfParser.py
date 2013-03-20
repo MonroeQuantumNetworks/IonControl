@@ -36,6 +36,12 @@ class itfParser(fileParser):
                 self.tableHeader = strip.split('\t')
                 self._dataOffset = self.fileObj.tell()
                 break
+            
+    ## clear old header information.
+    # Called by open to reset the object state
+    def _clearHeader(self):
+        super(itfParser,self)._clearHeader()
+        self.tableHeader = list()  
         
     ## This function will read a line from the itf file and returns
     #  the data as a dictionary.

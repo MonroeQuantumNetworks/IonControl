@@ -42,10 +42,20 @@ class fileParser(object):
     #  @param self The object pointer.
     #  @param filePath This is the path to the file.
     def open(self, filePath):
+        self._clearHeader()    # get reid of old outdated header information
         self.fileObj= open(filePath, 'a+')
         firstChar = self.fileObj.read(1) #read the 1st character
         self.empty = not firstChar #set the empty variable.
         self.fileObj.seek(0) #go back to the begining of the file.
+        self._clearHeader()   #and clear the old header information
+        
+    ## clear old header information.
+    # Called by open to reset the object state
+    def _clearHeader(self):
+        self.comments = list()
+        self.meta = dict()
+        self._dataOffset = -1
+        self.empty = True
 
     def _parseHeader(self):
         

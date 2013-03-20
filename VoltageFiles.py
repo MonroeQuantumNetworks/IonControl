@@ -37,30 +37,63 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         self.config = config
         self.configname = 'VoltageFiles.Files'
         self.files = self.config.get(self.configname,Files())
+        self.lastDir = "."
 
     def setupUi(self, parent):
         VoltageFilesForm.setupUi(self,parent)
         self.mappingCombo.addItems( self.files.mappingHistory.keys() )
-        if self.files.mappingFile is not None:
-            self.mappingCombo.setCurrentIndex( self.mappingCombo.findText(self.files.mappingFile))
-        self.definitionCombo.addItems( self.files.definitionHistory.keys() )
-        if self.files.definitionFile is not None:
-            self.definitionCombo.setCurrentIndex( self.definitionCombo.findText(self.files.definitionFile))
-        self.globalCombo.addItems( self.files.globalHistory.keys() )
-        if self.files.globalFile is not None:
-            self.globalCombo.setCurrentIndex( self.globalCombo.findText(self.files.globalFile))
-        self.localCombo.addItems( self.files.localHistory.keys() )
-        if self.files.localFile is not None:
-            self.localCombo.setCurrentIndex( self.localCombo.findText(self.files.localFile))
         self.loadMappingButton.clicked.connect( self.onLoadMapping )
         self.loadDefinitionButton.clicked.connect( self.onLoadDefinition )
         self.loadGlobalButton.clicked.connect( self.onLoadGlobal )
         self.loadLocalButton.clicked.connect( self.onLoadLocal )
+        if self.files.mappingFile is not None:
+            filedir, filename = os.path.split(self.files.mappingFile)
+            self.mappingCombo.setCurrentIndex( self.mappingCombo.findText(filename))
+            self.onMappingChanged(filename)
+        self.definitionCombo.addItems( self.files.definitionHistory.keys() )
+        if self.files.definitionFile is not None:
+            filedir, filename = os.path.split(self.files.definitionFile)
+            self.definitionCombo.setCurrentIndex( self.definitionCombo.findText(filename))
+            self.onDefinitionChanged(filename)
+        self.globalCombo.addItems( self.files.globalHistory.keys() )
+        if self.files.globalFile is not None:
+            filedir, filename = os.path.split(self.files.globalFile)
+            self.globalCombo.setCurrentIndex( self.globalCombo.findText(filename))
+            self.onGlobalChanged(filename)
+        self.localCombo.addItems( self.files.localHistory.keys() )
+        if self.files.localFile is not None:
+            filedir, filename = os.path.split(self.files.localFile)
+            self.localCombo.setCurrentIndex( self.localCombo.findText(filename))
+            self.onLocalChanged(filename)
+        self.mappingCombo.currentIndexChanged['QString'].connect( self.onMappingChanged )
+        self.definitionCombo.currentIndexChanged['QString'].connect( self.onDefinitionChanged )
+        self.globalCombo.currentIndexChanged['QString'].connect( self.onGlobalChanged )
+        self.localCombo.currentIndexChanged['QString'].connect( self.onLocalChanged )
+        
+    def onMappingChanged(self,value):
+        self.files.mappingFile = self.files.mappingHistory[str(value)]
+        self.loadMapping.emit(self.files.mappingFile)
+        print "onMappingChanged",self.files.mappingFile
+        
+    def onDefinitionChanged(self,value):
+        self.files.definitionFile = self.files.definitionHistory[str(value)]
+        self.loadDefinition.emit(self.files.definitionFile)
+        print "onDefinitionChanged",self.files.definitionFile
+        
+    def onGlobalChanged(self,value):
+        self.files.globalFile = self.files.globalHistory[str(value)]
+        self.loadGlobalAdjust.emit(self.files.globalFile)
+        print "onGlobalChanged",self.files.globalFile
+        
+    def onLocalChanged(self,value):
+        pass
 
     def onLoadMapping(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open mapping file:"))
+        print "onLoadMapping"
+        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open mapping file:", self.lastDir ))
         if path!="":
             filedir, filename = os.path.split(path)
+            self.lastDir = filedir
             if filename not in self.files.mappingHistory:
                 self.mappingCombo.addItem(filename)
             self.files.mappingHistory[filename] = path
@@ -69,9 +102,10 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             self.loadMapping.emit(path)
             
     def onLoadDefinition(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open definition file:"))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open definition file:", self.lastDir))
         if path!="":
             filedir, filename = os.path.split(path)
+            self.lastDir = filedir
             if filename not in self.files.definitionHistory:
                 self.definitionCombo.addItem(filename)
             self.files.definitionHistory[filename] = path
@@ -80,9 +114,10 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             self.loadDefinition.emit(path)
 
     def onLoadGlobal(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open global adjust file:"))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open global adjust file:", self.lastDir))
         if path!="":
             filedir, filename = os.path.split(path)
+            self.lastDir = filedir
             if filename not in self.files.globalHistory:
                 self.globalCombo.addItem(filename)
             self.files.globalHistory[filename] = path
@@ -91,9 +126,10 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             self.loadGlobalAdjust.emit(path)
 
     def onLoadLocal(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open local adjust file:"))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open local adjust file:", self.lastDir))
         if path!="":
             filedir, filename = os.path.split(path)
+            self.lastDir = filedir
             if filename not in self.files.localHistory:
                 self.localCombo.addItem(filename)
             self.files.localHistory[filename] = path

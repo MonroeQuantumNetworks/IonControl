@@ -8,6 +8,7 @@ import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import os.path
 import functools
+import magnitude
        
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
     
@@ -42,7 +43,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.globalGainBox.valueChanged.connect( functools.partial(self.onValueChanged,"globalGain") )
         
     def onValueChanged(self, attribute, value):
-        setattr(self.adjust,attribute,value) 
+        setattr(self.adjust,attribute,value.toval() if isinstance( value, magnitude.Magnitude) else value) 
         self.updateOutput.emit(self.adjust)
     
     def onClose(self):

@@ -17,4 +17,5 @@ for i in range(itf.getNumLines()):
     print "data", data
     print type(data)
     chassis.writeAoBuffer(data)
+print itf.meta    
 chassis.close()
