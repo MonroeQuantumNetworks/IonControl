@@ -21,4 +21,7 @@ class eMapParser(fileParser):
             electrodes.append(dataList[0])
             aoNums.append(dataList[1])
             dsubNums.append(dataList[2])
+        print "electrodes", electrodes
+        print "aoNums", aoNums
+        print "dsubNums", dsubNums
         return electrodes, aoNums, dsubNums

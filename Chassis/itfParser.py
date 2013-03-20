@@ -82,8 +82,8 @@ class itfParser(fileParser):
         eMap = eMapParser()
         eMap.open(eMapFilePath)
         elect, aoNums, dNums = eMap.read()
-        for i, d in enumerate(elect):
-            elect[i]=int(d)
+        #for i, d in enumerate(elect):
+        #    elect[i]=int(d)
         for i, d in enumerate(aoNums):
             aoNums[i]=int(d)
         eMap.close()
@@ -109,9 +109,9 @@ class itfParser(fileParser):
         for i, j in enumerate(aoNums):
             eIndex = aoNums.index(i)
             e = elect[eIndex] 
-            eString = 'e{0:02d}'.format(e)
+            eString = e #'e{0:02d}'.format(e)
             eData = data.get(eString)
-            # print "aoNum: {0} electrode: {1} data: {2}".format(i, eString,eData) 
+            #print "aoNum: {0} electrode: {1} data: {2}".format(i, eString,eData) 
             listData.append(eData)
         floatData  = float64(listData) 
         return floatData
@@ -147,7 +147,7 @@ class itfParser(fileParser):
         for i, j in enumerate(aoNums):
             eIndex = aoNums.index(i)
             e = elect[eIndex]
-            eString = 'e{0:02d}'.format(e)
+            eString = e #'e{0:02d}'.format(e)
             eData = data.get(eString)
             if i>0:
                 appendData = append(appendData, eData)

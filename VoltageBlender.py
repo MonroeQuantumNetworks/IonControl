@@ -6,15 +6,15 @@ Created on Tue Mar 19 23:14:52 2013
 """
 from Chassis.itfParser import itfParser
 from Chassis.WaveformChassis import WaveformChassis
-from DAQmxUtility import Mode
+from Chassis.DAQmxUtility import Mode
 import math
 class VoltageBlender(object):
     def __init__(self):
         self.chassis = WaveformChassis()
         self.itf = itfParser()
         self.chassis.mode = Mode.Static
-        self.chassis.initFromFile(r'Chassis\\config\\chassis.cfg')
-        self.lines = list()
+        self.chassis.initFromFile(r'Chassis\config\old_chassis.cfg')
+        self.lines = list()  # a list of lines with numpy arrays
     
     def loadMapping(self,path):
         self.itf.eMapFilePath = path
@@ -38,15 +38,10 @@ class VoltageBlender(object):
         self.chassis.writeAoBuffer(line)
             
     def adjustLine(self, line, globalGain):
-        for ident in line.keys():
-            line[ident] = line[ident]*globalGain
+        line = line*globalGain
             
-    def blendLines(self,floor,ceil,convexc,lineGain):
-        blended = dict()
-        ceildict = self.lines[ceil]
-        for ident, value in self.lines[floor].iteritems():
-            blended[ident] = (value*(1-convexc) + ceildict[ident]*convexc)*lineGain
-        return blended
+    def blendLines(self,left,right,convexc,lineGain):
+        return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
             
     def close(self):
         self.chassis.close()

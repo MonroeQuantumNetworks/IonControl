@@ -50,15 +50,11 @@ class fileParser(object):
     def _parseHeader(self):
         
         found = False
-        while found==False:
+        while not found:
             tempOffset = self.fileObj.tell()
             line = self.fileObj.readline()
 
-            # find comments
-            if len(line)==0:
-                pass
-            
-            elif line[0] == '#':
+            if line[0] == '#':
                 strip = line.rstrip()
                 self.comments.append(strip) 
 
