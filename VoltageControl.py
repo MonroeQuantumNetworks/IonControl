@@ -48,7 +48,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         if hasattr(self.settings,'state'):
             self.restoreState( self.settings.state )
         self.voltageTableModel = VoltageTableModel.VoltageTableModel(self.voltageBlender)
-        self.tableView.setModel(self.voltageTableModel)
+        self.tableView.setModel( self.voltageTableModel )
         self.tableView.resizeColumnsToContents()
         self.tableView.resizeRowsToContents()
         self.voltageBlender.dataChanged.connect( self.voltageTableModel.onDataChanged )

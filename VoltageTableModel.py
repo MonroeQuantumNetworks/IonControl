@@ -26,24 +26,19 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         self.dataChanged.emit(self.index(x1,y1),self.index(x2,y2))
         print "VoltageTableModel dataChanged", x1,y1,x2,y2
  
-    def displayDataColor(self,index):
-        color = { -1: QtGui.QColor(QtCore.Qt.red),
-                 0: QtGui.QColor(QtCore.Qt.white),
-                 1: QtGui.QColor(QtCore.Qt.green) }[self.currentState(index)]
-        return color
         
     def displayToolTip(self, index):
         return "ToolTip"
   
     def data(self, index, role): 
+        if role!=QtCore.Qt.DisplayRole:
+            return None
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,0): self.blender.electrodes[index.row()] if self.blender.electrodes is not None else None,
-                     (QtCore.Qt.DisplayRole,1): self.blender.outputVoltage[index.row()] if self.blender.outputVoltage is not None else None,
-                     (QtCore.Qt.DisplayRole,2): self.blender.aoNums[index.row()] if self.blender.aoNums is not None else None,
-                     (QtCore.Qt.DisplayRole,3): self.blender.dsubNums[index.row()] if self.blender.dsubNums is not None else None,
-                     #(QtCore.Qt.BackgroundColorRole): functools.partial( self.displayDataColor, index),
-                     #(QtCore.Qt.ToolTipRole): functools.partial( self.displayToolTip, index )
-                     }.get((role,index.column),lambda : None)()
+            return { 0: str(self.blender.electrodes[index.row()]) if self.blender.electrodes is not None else None,
+                     1: str(self.blender.outputVoltage[index.row()]) if self.blender.outputVoltage is not None else None,
+                     2: self.blender.aoNums[index.row()] if self.blender.aoNums is not None else None,
+                     3: self.blender.dsubNums[index.row()] if self.blender.dsubNums is not None else None,
+                     }.get(index.column(),lambda : None)
         return None
         
     def headerData(self, section, orientation, role ):
@@ -54,3 +49,5 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
                 return section
         return None #QtCore.QVariant()
 
+    def flags(self, index ):
+        return QtCore.Qt.ItemIsEnabled 
