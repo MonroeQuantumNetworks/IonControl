@@ -28,6 +28,7 @@ import ShutterUi
 import DDSUi
 import PulserHardware
 import DedicatedCounters
+import VoltageControl
 
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
@@ -111,6 +112,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
+        self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
@@ -125,11 +127,19 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             
         self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulserHardware)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
+        
+        self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
+        self.voltageControlWindow.setupUi(self.voltageControlWindow)
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()
         self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
         self.dedicatedCountersWindow.raise_()
+
+    def onVoltageControl(self):
+        self.voltageControlWindow.show()
+        self.voltageControlWindow.setWindowState(QtCore.Qt.WindowActive)
+        self.voltageControlWindow.raise_()
         
     def onClear(self):
         self.currentTab.onClear()
@@ -218,6 +228,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerUi.close()
         self.dedicatedCountersWindow.onClose()
         self.dedicatedCountersWindow.close()
+        self.voltageControlWindow.onClose()
+        self.voltageControlWindow.close()
+        
 
 if __name__ == "__main__":
     import sys

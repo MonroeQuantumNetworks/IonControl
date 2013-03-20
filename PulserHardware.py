@@ -141,8 +141,8 @@ class PulserHardware(QtCore.QObject):
         self._shutter = 0
         self._trigger = 0
         self.fpga = fpgaUtilit
-        self.xem = self.fpga.xem
-        self.Mutex = self.fpga.Mutex
+        self.xem = self.fpga.xem if self.fpga is not None else None
+        self.Mutex = self.fpga.Mutex if self.fpga is not None else None
         self._adcCounterMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
         self.pipeReader = PipeReader(self)
