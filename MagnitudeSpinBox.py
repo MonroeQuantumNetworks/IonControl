@@ -2,6 +2,10 @@
 """
 Created on Sat Feb 09 17:28:11 2013
 
+A QSpinBox for Physical quantities. It accepts for example "10 MHz"
+Features are: up-down arrows will increase/decrease the digit left to the cursor position
+
+
 @author: pmaunz
 """
 

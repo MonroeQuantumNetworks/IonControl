@@ -2,6 +2,8 @@
 """
 Created on Sat Dec 22 17:37:41 2012
 
+This is the main gui program for the ExperimentalUi
+
 @author: pmaunz
 """
 
@@ -28,8 +30,14 @@ import ShutterUi
 import DDSUi
 import PulserHardware
 import DedicatedCounters
-import VoltageControl
 
+try:
+    import VoltageControl
+    HasVoltageControl = True
+except Exception as e:
+    print "Loading Voltage Control failed with exception:", e
+    HasVoltageControl = False
+    
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
 
@@ -128,8 +136,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulserHardware)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
-        self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
-        self.voltageControlWindow.setupUi(self.voltageControlWindow)
+        if HasVoltageControl:
+            self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
+            self.voltageControlWindow.setupUi(self.voltageControlWindow)
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()
