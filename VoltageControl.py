@@ -11,6 +11,7 @@ import os.path
 from VoltageFiles import VoltageFiles
 from VoltageAdjust import VoltageAdjust
 from VoltageGlobalAdjust import VoltageGlobalAdjust
+import VoltageBlender
        
 VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
 
@@ -25,6 +26,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.config = config
         self.configname = 'VoltageControl.Settings'
         self.settings = self.config.get(self.configname,Settings())
+        self.voltageBlender = VoltageBlender.VoltageBlender()
 
     def setupUi(self, parent):
         VoltageControlForm.setupUi(self,parent)
@@ -39,6 +41,10 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.globalAdjustDock.setWidget( self.globalAdjustUi )
         if hasattr(self.settings,'state'):
             self.restoreState( self.settings.state )
+        self.voltageFilesUi.loadDefinition.connect( self.voltageBlender.loadVoltage )
+        self.voltageFilesUi.loadGlobalAdjust.connect( self.voltageBlender.loadGlobalAdjust )
+        self.voltageFilesUi.loadMapping.connect( self.voltageBlender.loadMapping )
+        self.globalAdjustUi.updateOutput.connect( self.voltageBlender.setAdjust )
     
     def onClose(self):
         self.settings.state = self.saveState()
