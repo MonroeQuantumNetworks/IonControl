@@ -55,7 +55,10 @@ class fileParser(object):
             line = self.fileObj.readline()
 
             # find comments
-            if line[0] == '#':
+            if len(line)==0:
+                pass
+            
+            elif line[0] == '#':
                 strip = line.rstrip()
                 self.comments.append(strip) 
 
