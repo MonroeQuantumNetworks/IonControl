@@ -9,9 +9,13 @@ from Chassis.WaveformChassis import WaveformChassis
 from Chassis.DAQmxUtility import Mode
 import math
 import numpy
+from PyQt4 import QtCore
 
-class VoltageBlender(object):
+class VoltageBlender(QtCore.QObject):
+    dataChanged = QtCore.pyqtSignal(int,int,int,int)
+    
     def __init__(self):
+        super(VoltageBlender,self).__init__()
         self.chassis = WaveformChassis()
         self.itf = itfParser()
         self.chassis.mode = Mode.Static
@@ -24,10 +28,23 @@ class VoltageBlender(object):
         self.lineno = 0
         self.mappingpath = None
         self.adjust = dict()
+        self.outputVoltage = None
+        self.electrodes = None
+        self.aoNums = None
+        self.dsubNums = None
+        
+    def currentData(self):
+        return self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
     
     def loadMapping(self,path):
         self.itf.eMapFilePath = path
         self.mappingpath = path
+        self.electrodes, self.aoNums, self.dsubNums = self.itf._getEmapData()
+        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
+        print "VoltageBlender emit"
+        print "electrodes", self.electrodes
+        print "aoNums", self.aoNums
+        print "dsubNums", self.dsubNums
     
     def loadVoltage(self,path):
         self.itf.open(path)
@@ -68,6 +85,9 @@ class VoltageBlender(object):
         line = self.adjustLine( line )
         print "writeAoBuffer", line
         self.chassis.writeAoBuffer(line)
+        self.outputVoltage = line
+        self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
+        print "VoltageBlender emit"
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
