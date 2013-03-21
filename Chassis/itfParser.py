@@ -117,7 +117,7 @@ class itfParser(fileParser):
             e = elect[eIndex] 
             eString = e #'e{0:02d}'.format(e)
             eData = data.get(eString)
-            #print "aoNum: {0} electrode: {1} data: {2}".format(i, eString,eData) 
+            # print "aoNum: {0} electrode: {1} data: {2}".format(i, eString,eData)
             listData.append(eData)
         floatData  = float64(listData) 
         return floatData
