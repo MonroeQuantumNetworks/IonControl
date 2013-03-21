@@ -1,4 +1,5 @@
-#TrapElectrode	AO_Number	dsub_number
+#TrapElectrode	AO_Number	dsub_number 
+#be careful! AO numbers have to be 0..47 in this order with all present
 Q32	0	8
 Q39	1	7
 Q38	2	6
@@ -37,6 +38,7 @@ Q35	34	40
 Q24	35	39
 Q33	36	38
 L1	37	36
+dummy	38	18
 Y02	39	34
 L4	40	51
 Q27	41	50
@@ -46,4 +48,3 @@ T01	44	47
 L3	45	46
 Q17	46	45
 L2	47	44
-dummy	38	01

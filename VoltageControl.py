@@ -52,6 +52,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.tableView.resizeColumnsToContents()
         self.tableView.resizeRowsToContents()
         self.voltageBlender.dataChanged.connect( self.voltageTableModel.onDataChanged )
+        self.tableView.setSortingEnabled(True)
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
