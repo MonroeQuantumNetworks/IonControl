@@ -69,7 +69,7 @@ class FromFile(testForm, MainWindowWidget.MainWindowWidget):
         self.config = config
         self.graphicsView = self.graphicsLayout.graphicsView
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons)
+        self.traceui = Traceui.Traceui(self.penicons,self.config,"FromFile",self.graphicsView)
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
@@ -107,3 +107,4 @@ class FromFile(testForm, MainWindowWidget.MainWindowWidget):
         
     def onClose(self):
         self.config['FromFile.configuration'] = self.conf
+        self.traceui.onClose()

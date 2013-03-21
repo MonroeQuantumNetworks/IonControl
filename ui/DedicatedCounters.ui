@@ -45,15 +45,6 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents"/>
   </widget>
-  <widget class="QDockWidget" name="displayDock">
-   <property name="windowTitle">
-    <string>Display</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2"/>
-  </widget>
   <action name="actionSave">
    <property name="icon">
     <iconset resource="Experiment.qrc">

@@ -5,6 +5,9 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore, QtGui
+import sip
+api2 = sip.getapi("QVariant")==2
+
 
 class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
     onColor =  QtGui.QColor(QtCore.Qt.green)
@@ -29,7 +32,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         return 2
  
     def setData(self,index,value,role):
-        value = str(value.toString())
+        value = str(value if api2 else str(value.toString()))
         if index.column()==0 and role==QtCore.Qt.EditRole:
             if value in self.shutterNameDict and index.column()==self.shutterNameDict[value]: # no change
                 return True

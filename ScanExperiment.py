@@ -29,6 +29,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
+    experimentName = 'Scan Sequence'
 
     def __init__(self,settings,pulserHardware,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
@@ -70,11 +71,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         except:
             pass # Ignore errors on restoring the state. This might happen after a new dock is added
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons)
+        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.graphicsView)
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
-        self.fitWidget = FitUi.FitUi(self.traceui)
+        self.fitWidget = FitUi.FitUi(self.traceui,self.config,"ScanExperiment")
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
@@ -94,7 +95,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             QtGui.QMainWindow.restoreState(self,self.config['ScanExperiment.MainWindow.State'])
 
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment('Scan Sequence')
+        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
         self.scanParametersWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
 
     def onClear(self):
@@ -260,6 +261,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanParametersWidget.onClose()
         self.scanSettingsWidget.onClose()
         self.timestampSettingsWidget.onClose()
+        self.traceui.onClose()
 
     def updateSettings(self,settings,active=False):
         """ Main program settings have changed

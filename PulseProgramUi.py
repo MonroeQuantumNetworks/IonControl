@@ -58,7 +58,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
             self.splitterVertical.restoreState(self.configParams.splitterVertical)
-        self.filenameComboBox.currentIndexChanged[QtCore.QString].connect( self.onFilenameChange )
+        self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
 
     def onFilenameChange(self, name ):
         name = str(name)
@@ -187,6 +187,10 @@ class PulseProgramSetUi(QtGui.QDialog):
             programUi.myindex = self.tabWidget.addTab(programUi,experiment)
             self.pulseProgramSet[experiment] = programUi
         return self.pulseProgramSet[experiment]
+            
+    def setCurrentTab(self, name):
+        if name in self.pulseProgramSet:
+            self.tabWidget.setCurrentWidget( self.pulseProgramSet[name] )        
             
     def getPulseProgram(self, experiment):
         return self.pulseProgramSet[experiment]

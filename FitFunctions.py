@@ -10,13 +10,13 @@ from scipy.optimize import leastsq
 
 class FitFunction(object):
     def __init__(self):
-        pass
+        self.epsfcn=0.0
 
     def leastsq(self, x, y, parameters=None):
         if parameters is None:
             parameters = self.parameters
         print parameters
-        self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x))
+        self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn)
         return self.parameters
 
 class CosFit(FitFunction):
@@ -24,8 +24,8 @@ class CosFit(FitFunction):
         FitFunction.__init__(self)
         self.functionString =  'A*cos(2*pi*k*x+theta)'
         self.parameterNames = [ 'A', 'k', 'theta' ]
-        self.parameters = [0]*3
-        self.startParameters = [0]*3
+        self.parameters = [1,1,0]
+        self.startParameters = [1,1,0]
         self.name = "Cos"
         
     def residuals(self,p, y, x):
@@ -35,6 +35,64 @@ class CosFit(FitFunction):
     def value(self,x,p=None):
         A,k,theta = self.parameters if p is None else p
         return A*numpy.cos(2*numpy.pi*k*x+theta)
+        
+class GaussianFit(FitFunction):
+    def __init__(self):
+        FitFunction.__init__(self)
+        self.functionString =  'A*exp(-(x-x0)**2/s**2)+O'
+        self.parameterNames = [ 'A', 'x0', 's', 'O' ]
+        self.parameters = [0]*4
+        self.startParameters = [1,0,1,0]
+        self.name = "Gaussian"
+        
+    def residuals(self,p, y, x):
+        A,x0,s,O = p
+        return y-(A*numpy.exp(-numpy.square((x-x0)/s))+O)
+        
+    def value(self,x,p=None):
+        A,x0,s,O = self.parameters if p is None else p
+        return A*numpy.exp(-numpy.square((x-x0)/s))+O
+
+
+class LorentzianFit(FitFunction):
+    def __init__(self):
+        FitFunction.__init__(self)
+        self.functionString =  'A*s**2*1/(s**2+(x-x0)**2)+O'
+        self.parameterNames = [ 'A', 's', 'x0', 'O' ]
+        self.parameters = [0]*4
+        self.startParameters = [1,1,0,0]
+        self.name = "Lorentzian"
+        
+    def residuals(self,p, y, x):
+        A,s,x0,O = p
+        s2 = numpy.square(s)
+        return y-(A*s2/(s2+numpy.square(x-x0))+O)
+        
+    def value(self,x,p=None):
+        A,s,x0,O  = self.parameters if p is None else p
+        s2 = numpy.square(s)
+        return A*s2/(s2+numpy.square(x-x0))+O
+        
+class TruncatedLorentzianFit(FitFunction):
+    def __init__(self):
+        FitFunction.__init__(self)
+        self.functionString =  'A*s**2*1/(s**2+(x-x0)**2)+O'
+        self.parameterNames = [ 'A', 's', 'x0', 'O' ]
+        self.parameters = [0]*4
+        self.startParameters = [1,1,0,0]
+        self.name = " Truncated Lorentzian"
+        self.epsfcn=10.0
+        
+    def residuals(self,p, y, x):
+        A,s,x0,O = p
+        s2 = numpy.square(s)
+        return y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O)
+        
+    def value(self,x,p=None):
+        A,s,x0,O  = self.parameters if p is None else p
+        s2 = numpy.square(s)
+        return (A*s2/(s2+numpy.square(x-x0)))*(1-numpy.sign(x-x0))/2+O
+        
         
         
 if __name__ == "__main__":

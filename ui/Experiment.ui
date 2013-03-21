@@ -50,6 +50,7 @@
    <addaction name="separator"/>
    <addaction name="actionDedicatedCounters"/>
    <addaction name="actionPulses"/>
+   <addaction name="actionVoltageControl"/>
    <addaction name="actionReload"/>
    <addaction name="actionSettings"/>
    <addaction name="separator"/>
@@ -267,6 +268,15 @@
    </property>
    <property name="text">
     <string>DedicatedCounters</string>
+   </property>
+  </action>
+  <action name="actionVoltageControl">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</iconset>
+   </property>
+   <property name="text">
+    <string>VoltageControl</string>
    </property>
   </action>
  </widget>

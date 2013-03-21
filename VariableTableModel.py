@@ -9,6 +9,9 @@ from operator import attrgetter
 import functools
 import magnitude
 from modules import Expression
+import sip
+
+api2 = sip.getapi("QVariant")==2
 
 class VariableTableModel(QtCore.QAbstractTableModel):
     def __init__(self, variabledict, parameterdict, parent=None, *args): 
@@ -56,7 +59,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         
     def setDataValue(self, index, value):
         try:
-            strvalue = str(value.toString())
+            strvalue = str(value if api2 else str(value.toString()))
             result = self.expression.evaluate(strvalue,self.parameterdict)           
             if isinstance(result, magnitude.Magnitude) and result.dimensionless():
                 result.output_prec(0)

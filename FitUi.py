@@ -13,18 +13,21 @@ import pyqtgraph
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
-fitFunctionList = [ FitFunctions.CosFit ]
+fitFunctionList = [  FitFunctions.GaussianFit, FitFunctions.CosFit, FitFunctions.LorentzianFit,
+                   FitFunctions.TruncatedLorentzianFit ]
 
 class FitFunctionUi(object):
     def __init__(self,fitfunction):
         self.fitfunction = fitfunction
-        self.startParameters = [0]* len(fitfunction.parameters)
+        self.startParameters = fitfunction.startParameters
         self.fittedParametersUi = [None]* len(fitfunction.parameters)
             
 class FitUi(fitForm, QtGui.QWidget):
-    def __init__(self,traceui,parent=None):
+    def __init__(self,traceui,config,parentname,parent=None):
         QtGui.QWidget.__init__(self,parent)
         fitForm.__init__(self)
+        self.config = config
+        self.parentname = parentname
         self.fitFunctions = list()
         self.traceui = traceui
         for fitclass in fitFunctionList:
@@ -42,11 +45,13 @@ class FitUi(fitForm, QtGui.QWidget):
             label = QtGui.QLabel(fitfunction.fitfunction.functionString,fitfunction.page)
             fitfunction.gridLayout.addWidget(label, 0, 0, 1, 3)
             self.comboBox.addItem(fitfunction.fitfunction.name)
+            print fitfunction.fitfunction.startParameters
             for line, paramname in enumerate(fitfunction.fitfunction.parameterNames):
                 label = QtGui.QLabel(paramname,fitfunction.page)
                 label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
                 fitfunction.gridLayout.addWidget(label, line+1, 0, 1, 1)
                 doubleSpinBox = pyqtgraph.SpinBox(fitfunction.page,dec=True)
+                doubleSpinBox.setValue(fitfunction.fitfunction.startParameters[line])
                 fitfunction.gridLayout.addWidget(doubleSpinBox, line+1, 1, 1, 1)
                 doubleSpinBox.valueChanged.connect( functools.partial( self.setParameter, fitfunction, line ) )
                 doubleSpinBox = pyqtgraph.SpinBox(fitfunction.page,dec=True)
@@ -54,6 +59,7 @@ class FitUi(fitForm, QtGui.QWidget):
                 fitfunction.fittedParametersUi[line] = doubleSpinBox
             self.stackedWidget.addWidget(fitfunction.page)
         self.pushButton.clicked.connect( self.onFit )
+        self.plotButton.clicked.connect( self.onPlot )
         
     def onFit(self):
         index = self.stackedWidget.currentIndex()
@@ -67,6 +73,12 @@ class FitUi(fitForm, QtGui.QWidget):
             for i,p in enumerate(params):
                 functionui.fittedParametersUi[i].setValue(p)
             
-            
+    def onPlot(self):
+        index = self.stackedWidget.currentIndex()
+        functionui = self.fitFunctions[index]
+        for plot in self.traceui.selectedPlottedTraces():
+            functionui.fitfunction.parameters = functionui.startParameters
+            plot.trace.fitfunction = functionui.fitfunction
+            plot.plot(-2)
             
         

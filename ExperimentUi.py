@@ -2,6 +2,8 @@
 """
 Created on Sat Dec 22 17:37:41 2012
 
+This is the main gui program for the ExperimentalUi
+
 @author: pmaunz
 """
 
@@ -16,6 +18,7 @@ Created on Sat Dec 22 17:37:41 2012
 
 import CounterWidget
 import ScanExperiment
+import ExternalScanExperiment
 #import TDCWidget
 #import FastTDCWidget
 import SettingsDialog
@@ -28,6 +31,13 @@ import DDSUi
 import PulserHardware
 import DedicatedCounters
 
+try:
+    import VoltageControl
+    HasVoltageControl = True
+except Exception as e:
+    print "Loading Voltage Control failed with exception:", e
+    HasVoltageControl = False
+    
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
 
@@ -64,11 +74,13 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
         self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
         self.settingsDialog.setupUi(self)
+
         self.settings = self.settingsDialog.settings        
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
         for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
                              (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware), "Scanning"),
+                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware),"External Scan"),
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
@@ -108,6 +120,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
+        self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
@@ -122,11 +135,20 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             
         self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulserHardware)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
+        
+        if HasVoltageControl:
+            self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
+            self.voltageControlWindow.setupUi(self.voltageControlWindow)
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()
         self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
         self.dedicatedCountersWindow.raise_()
+
+    def onVoltageControl(self):
+        self.voltageControlWindow.show()
+        self.voltageControlWindow.setWindowState(QtCore.Qt.WindowActive)
+        self.voltageControlWindow.raise_()
         
     def onClear(self):
         self.currentTab.onClear()
@@ -173,6 +195,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.show()
         self.pulseProgramDialog.setWindowState(QtCore.Qt.WindowActive)
         self.pulseProgramDialog.raise_()
+        if hasattr(self.currentTab,'experimentName'):
+            self.pulseProgramDialog.setCurrentTab(self.currentTab.experimentName)
         
     def onSettingsApply(self,settings):
         self.settings = settings
@@ -213,6 +237,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerUi.close()
         self.dedicatedCountersWindow.onClose()
         self.dedicatedCountersWindow.close()
+        self.voltageControlWindow.onClose()
+        self.voltageControlWindow.close()
+        
 
 if __name__ == "__main__":
     import sys

@@ -53,5 +53,23 @@ class Trace:
                 print >>of, x, db
         of.close()
     
+    def loadTrace(self,filename):
+        infile = open(filename,'r')
+        self.x = []
+        self.y = []
+        with infile:
+            for line in infile:
+                line = line.lstrip()
+                if line[0]=='#':
+                    a = line.split(None,2)
+                    if len(a)>2:
+                        self.vars.__dict__[a[1]] = a[2]  
+                else:
+                    a = line.split(None,2)
+                    if len(a)>1:
+                        self.x.append(float(a[0]))
+                        self.y.append(float(a[1]))
+    
+    
     def setPlotfunction(self, callback):
         self.plotfunction = callback

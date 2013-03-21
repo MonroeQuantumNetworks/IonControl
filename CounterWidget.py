@@ -31,6 +31,7 @@ class CounterWidget(CounterForm, CounterBase):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused')
+    experimentName = 'Simple Counter'
     
     def __init__(self,settings,pulserHardware,parent=None):
         CounterBase.__init__(self,parent)
@@ -73,7 +74,7 @@ class CounterWidget(CounterForm, CounterBase):
         self.DisplayUnit.currentIndexChanged[int].connect(self.onUnitChange)
 
     def setPulseProgramUi(self,pulseProgramSetUi):
-        self.pulseProgramUi = pulseProgramSetUi.addExperiment('Simple Counter')
+        self.pulseProgramUi = pulseProgramSetUi.addExperiment(self.experimentName)
     
     def onSave(self):
         """ Main program save button

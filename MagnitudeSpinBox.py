@@ -2,6 +2,10 @@
 """
 Created on Sat Feb 09 17:28:11 2013
 
+A QSpinBox for Physical quantities. It accepts for example "10 MHz"
+Features are: up-down arrows will increase/decrease the digit left to the cursor position
+
+
 @author: pmaunz
 """
 
@@ -9,8 +13,10 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 from modules import Expression
 from modules import MagnitudeParser
+import sip
 
 debug = False
+api2 = sip.getapi("QString")==2
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
@@ -24,10 +30,17 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         #print "validate"
         try:
             self.expression.evaluate(str(inputstring))
-            return (QtGui.QValidator.Acceptable,pos)
+            if api2:
+                return (QtGui.QValidator.Acceptable,inputstring,pos)
+            else:
+                return (QtGui.QValidator.Acceptable,pos)                
         except Exception as e:
             print e
-            return (QtGui.QValidator.Intermediate,pos)
+            if api2:
+                return (QtGui.QValidator.Intermediate,inputstring,pos)
+            else:
+                return (QtGui.QValidator.Intermediate,pos)
+                
         
     def stepBy(self, steps ):
         try:

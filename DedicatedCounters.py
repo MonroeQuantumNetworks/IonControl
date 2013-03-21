@@ -5,12 +5,13 @@ Created on Sat Feb 16 16:56:57 2013
 @author: pmaunz
 """
 import PyQt4.uic
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 from modules import enum
 import magnitude
 import DedicatedCountersSettings
 import numpy
 import DedicatedDisplay
+import AnalogInputCalibration
        
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -33,6 +34,11 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.integrationTime = 0
         self.integrationTimeLookup = dict()
         self.tick = 0
+        self.analogCalbrations = [
+            AnalogInputCalibration.PowerDetectorCalibration(-36.47,60.7152,-1.79545,0.6,2),
+            AnalogInputCalibration.AnalogInputCalibration(),
+            AnalogInputCalibration.AnalogInputCalibration(),
+            AnalogInputCalibration.AnalogInputCalibration() ]
 
     def setupUi(self, parent):
         DedicatedCountersForm.setupUi(self,parent)
@@ -46,11 +52,34 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.settingsDock.setWidget( self.settingsUi )
         self.settingsUi.valueChanged.connect( self.onSettingsChanged )
         self.settings = self.settingsUi.settings
+        # Display Channels 0-3
         self.displayUi = DedicatedDisplay.DedicatedDisplay(self.config)
         self.displayUi.setupUi(self.displayUi)
+        self.displayDock = QtGui.QDockWidget("Channel 0-3")
+        self.displayDock.setObjectName("Channel 0-3")
         self.displayDock.setWidget( self.displayUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
+        # Display Channel 4-7
+        self.displayUi2 = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUi2.setupUi(self.displayUi2)
+        self.displayDock2 = QtGui.QDockWidget("Channel 4-7")
+        self.displayDock2.setObjectName("Channel 4-7")
+        self.displayDock2.setWidget(self.displayUi2)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock2)
+        # Display ADC 0-3
+        self.displayUiADC = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUiADC.setupUi(self.displayUiADC)
+        self.displayDockADC = QtGui.QDockWidget("Analog Channels")
+        self.displayDockADC.setObjectName("Analog Channels")
+        self.displayDockADC.setWidget(self.displayUiADC)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDockADC)
+        
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
+        if 'DedicatedCounter.MainWindow.State' in self.config:
+            QtGui.QMainWindow.restoreState(self,self.config['DedicatedCounter.MainWindow.State'])
+        self.onSettingsChanged()
+
         
     def onSettingsChanged(self):
         self.integrationTimeLookup[ self.pulserHardware.getIntegrationTimeBinary(self.settings.integrationTime) & 0xffffff] = self.settings.integrationTime
@@ -68,7 +97,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 self.curves[index] = None
                 
     def onClose(self):
-        self.config['DedicatedCounter.Settings'] = self.settings            
+        self.config['DedicatedCounter.Settings'] = self.settings
+        self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
+      
         
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()
@@ -108,12 +139,13 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
     def onData(self, data):
         self.tick += 1
-        self.displayUi.values = data.data
-        if data.data[12] is not None:
-            if data.data[12] in self.integrationTimeLookup:
-                self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
-            else:
-                self.dataIntegrationTime = self.settings.integrationTime
+        self.displayUi.values = data.data[0:4]
+        self.displayUi2.values = data.data[4:8]
+        self.displayUiADC.values = self.convertAnalog(data.data[8:12])
+        if data.data[12] is not None and data.data[12] in self.integrationTimeLookup:
+            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
+        else:
+            self.dataIntegrationTime = self.settings.integrationTime
         for counter in range(8):
             if data.data[counter] is not None:
                 y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval()) 
@@ -123,3 +155,8 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 if self.curves[counter] is not None:
                     self.curves[counter].setData(self.xData[counter],self.yData[counter])
  
+    def convertAnalog(self,data):
+        converted = list()
+        for channel, cal in enumerate(self.analogCalbrations):
+            converted.append( cal.convertMagnitude(data[channel]) )
+        return converted
