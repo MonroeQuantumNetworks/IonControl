@@ -58,6 +58,7 @@ class VoltageBlender(QtCore.QObject):
                 if math.isnan(value): line[index]=0
             self.lines.append( line )
         self.tableHeader = self.itf.tableHeader
+        self.itf.close()
 
     def loadGlobalAdjust(self,path):
         self.adjustLines = list()
@@ -75,6 +76,7 @@ class VoltageBlender(QtCore.QObject):
                     self.adjustDict[name] = int(value)
             except ValueError:
                 pass   # if it's not an int we will ignore it here
+        itf.close()
     
     def setAdjust(self, adjust):
         self.adjust = adjust
