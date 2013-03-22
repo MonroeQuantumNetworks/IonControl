@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Voltage Control</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="Experiment.qrc">
+    <normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -59,6 +63,8 @@
    <widget class="QWidget" name="dockWidgetContents_3"/>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="Experiment.qrc"/>
+ </resources>
  <connections/>
 </ui>
