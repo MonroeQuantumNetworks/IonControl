@@ -49,26 +49,33 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         if self.files.mappingFile is not None:
             filedir, filename = os.path.split(self.files.mappingFile)
             self.mappingCombo.setCurrentIndex( self.mappingCombo.findText(filename))
-            self.onMappingChanged(filename)
         self.definitionCombo.addItems( self.files.definitionHistory.keys() )
         if self.files.definitionFile is not None:
             filedir, filename = os.path.split(self.files.definitionFile)
             self.definitionCombo.setCurrentIndex( self.definitionCombo.findText(filename))
-            self.onDefinitionChanged(filename)
         self.globalCombo.addItems( self.files.globalHistory.keys() )
         if self.files.globalFile is not None:
             filedir, filename = os.path.split(self.files.globalFile)
             self.globalCombo.setCurrentIndex( self.globalCombo.findText(filename))
-            self.onGlobalChanged(filename)
         self.localCombo.addItems( self.files.localHistory.keys() )
         if self.files.localFile is not None:
             filedir, filename = os.path.split(self.files.localFile)
             self.localCombo.setCurrentIndex( self.localCombo.findText(filename))
-            self.onLocalChanged(filename)
         self.mappingCombo.currentIndexChanged['QString'].connect( self.onMappingChanged )
         self.definitionCombo.currentIndexChanged['QString'].connect( self.onDefinitionChanged )
         self.globalCombo.currentIndexChanged['QString'].connect( self.onGlobalChanged )
         self.localCombo.currentIndexChanged['QString'].connect( self.onLocalChanged )
+        
+    def reloadAll(self):
+        if self.files.mappingFile:
+            self.loadMapping.emit(self.files.mappingFile)
+        if self.files.definitionFile:
+            self.loadDefinition.emit(self.files.definitionFile)
+        if self.files.globalFile:
+            self.loadGlobalAdjust.emit(self.files.globalFile)
+        if self.files.localFile:
+            self.loadLocalAdjust.emit(self.files.localFile)
+            
         
     def onMappingChanged(self,value):
         self.files.mappingFile = self.files.mappingHistory[str(value)]

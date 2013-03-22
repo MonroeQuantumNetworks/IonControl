@@ -32,8 +32,6 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     def setupUi(self, parent):
         VoltageControlForm.setupUi(self,parent)
         self.voltageFilesUi = VoltageFiles(self.config)
-        self.voltageFilesUi.loadDefinition.connect( self.voltageBlender.loadVoltage )
-        self.voltageFilesUi.loadMapping.connect( self.voltageBlender.loadMapping )
         self.voltageFilesUi.setupUi( self.voltageFilesUi )
         self.voltageFilesDock.setWidget( self.voltageFilesUi )
         self.adjustUi = VoltageAdjust(self.config)
@@ -44,15 +42,18 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.globalAdjustUi.setupUi( self.globalAdjustUi )
         self.globalAdjustUi.updateOutput.connect( self.voltageBlender.setAdjust )
         self.globalAdjustDock.setWidget( self.globalAdjustUi )
-        self.voltageFilesUi.loadGlobalAdjust.connect( self.onLoadGlobalAdjust )
         if hasattr(self.settings,'state'):
             self.restoreState( self.settings.state )
+        self.voltageFilesUi.loadMapping.connect( self.voltageBlender.loadMapping )
+        self.voltageFilesUi.loadDefinition.connect( self.voltageBlender.loadVoltage )
+        self.voltageFilesUi.loadGlobalAdjust.connect( self.onLoadGlobalAdjust )
         self.voltageTableModel = VoltageTableModel.VoltageTableModel(self.voltageBlender)
         self.tableView.setModel( self.voltageTableModel )
         self.tableView.resizeColumnsToContents()
         self.tableView.resizeRowsToContents()
         self.voltageBlender.dataChanged.connect( self.voltageTableModel.onDataChanged )
         self.tableView.setSortingEnabled(True)
+        self.voltageFilesUi.reloadAll()
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
