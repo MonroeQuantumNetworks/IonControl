@@ -15,11 +15,12 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.blender = voltageBlender
-        self.orderLookup = range(len(self.blender.electrodes))
+        self.orderLookup = None
         #self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
         #arrange the ones in the voltage file first and in the same order
-        self.orderAsVoltageFile()
+        #self.orderAsVoltageFile()
         self.lastElectrodeOrder = 0
+        self.lastLength = 0
         
     def sort(self, column, order ):
         if column==0:
@@ -39,23 +40,32 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         self.dataChanged.emit(self.index(0,0),self.index(len(self.blender.electrodes) -1,3))
         
     def orderAsVoltageFile(self):
-        self.orderLookup = list()
-        allindices = [False]*len(self.blender.electrodes)
-        for name in self.blender.tableHeader:
-            index = self.blender.electrodes.index(name)
-            self.orderLookup.append( index )
-            allindices[index] = True
-        for index, included in enumerate(allindices):
-            if not included:
+        if self.blender.electrodes:
+            self.orderLookup = list()
+            allindices = [False]*len(self.blender.electrodes)
+            for name in self.blender.tableHeader:
+                index = self.blender.electrodes.index(name)
                 self.orderLookup.append( index )
+                allindices[index] = True
+            for index, included in enumerate(allindices):
+                if not included:
+                    self.orderLookup.append( index )
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.blender.electrodes) 
+        return len(self.blender.electrodes) if self.blender.electrodes is not None else 0
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 4
  
     def onDataChanged(self,x1,y1,x2,y2):
+        #print "VoltageTableModel.onDataChanged" , x1,y1,x2,y2
+        newLength = len(self.blender.electrodes)
+        if newLength>self.lastLength:
+            self.beginInsertRows(QtCore.QModelIndex(),self.lastLength,newLength-1)
+            self.endInsertRows()
+            self.lastLength = newLength
+        if self.orderLookup is None:
+            self.orderLookup = range(newLength)
         self.dataChanged.emit(self.index(0,y1),self.index(len(self.blender.electrodes) -1,y2))
         
     def displayToolTip(self, index):
@@ -65,6 +75,7 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         if role!=QtCore.Qt.DisplayRole:
             return None
         if index.isValid():
+            #print len(self.orderLookup), index.row()
             return { 0: str(self.blender.electrodes[self.orderLookup[index.row()]]) if self.blender.electrodes is not None else None,
                      1: str(self.blender.outputVoltage[self.orderLookup[index.row()]]) if self.blender.outputVoltage is not None else None,
                      2: self.blender.aoNums[self.orderLookup[index.row()]] if self.blender.aoNums is not None else None,

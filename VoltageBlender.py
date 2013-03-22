@@ -42,10 +42,10 @@ class VoltageBlender(QtCore.QObject):
         self.mappingpath = path
         self.electrodes, self.aoNums, self.dsubNums = self.itf._getEmapData()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
-        print "VoltageBlender emit"
-        print "electrodes", self.electrodes
-        print "aoNums", self.aoNums
-        print "dsubNums", self.dsubNums
+        #print "VoltageBlender emit"
+        #print "electrodes", self.electrodes
+        #print "aoNums", self.aoNums
+        #print "dsubNums", self.dsubNums
     
     def loadVoltage(self,path):
         self.itf.open(path)
@@ -59,6 +59,7 @@ class VoltageBlender(QtCore.QObject):
             self.lines.append( line )
         self.tableHeader = self.itf.tableHeader
         self.itf.close()
+        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
 
     def loadGlobalAdjust(self,path):
         self.adjustLines = list()
@@ -77,6 +78,7 @@ class VoltageBlender(QtCore.QObject):
             except ValueError:
                 pass   # if it's not an int we will ignore it here
         itf.close()
+        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
     
     def setAdjust(self, adjust):
         self.adjust = adjust
@@ -94,7 +96,7 @@ class VoltageBlender(QtCore.QObject):
         self.chassis.writeAoBuffer(line)
         self.outputVoltage = line
         self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
-        print "VoltageBlender emit"
+        #print "VoltageBlender emit"
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))

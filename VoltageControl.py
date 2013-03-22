@@ -59,7 +59,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
     
     def onLoadGlobalAdjust(self, path):
-        print "onLoadGlobalAdjust", path
+        #print "onLoadGlobalAdjust", path
         self.voltageBlender.loadGlobalAdjust(str(path) )
         self.globalAdjustUi.setupGlobalAdjust( self.voltageBlender.adjustDict )
     

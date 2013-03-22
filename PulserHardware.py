@@ -92,7 +92,7 @@ class PipeReader(QtCore.QThread):
                                 channel = (token >>24) & 0xf
                                 if self.dedicatedData.data[channel] is not None:
                                     self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
-                                    #print "emit dedicatedDataAvailable"
+                                    #print "emit dedicatedDataAvailable", channel, self.dedicatedData.data
                                     self.dedicatedData = DedicatedData()
                                 self.dedicatedData.data[channel] = token & 0xffffff
                             elif token & 0xff000000 == 0xff000000:
