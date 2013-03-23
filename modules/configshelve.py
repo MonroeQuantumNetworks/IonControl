@@ -50,5 +50,9 @@ if __name__ == "__main__":
     with configshelve("test") as d:
         if 'Peter' in d:
             print d['Peter']
+        mydict = { 'first':'Peter','last':'Maunz' }
+        if 'dict' in d:
+            print d['dict']
         d['Peter'] = 'Maunz'
+        d['dict'] = mydict
         

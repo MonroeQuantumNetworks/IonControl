@@ -61,7 +61,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     def onLoadGlobalAdjust(self, path):
         #print "onLoadGlobalAdjust", path
         self.voltageBlender.loadGlobalAdjust(str(path) )
-        self.globalAdjustUi.setupGlobalAdjust( self.voltageBlender.adjustDict )
+        self.globalAdjustUi.setupGlobalAdjust( str(path), self.voltageBlender.adjustDict )
     
     def onClose(self):
         self.settings.state = self.saveState()
