@@ -33,6 +33,11 @@
     <file>icons/document-revert-5.png</file>
   </qresource>
   <qresource prefix="penicon">
+    <file>icons/0-191-255.png</file>
+    <file>icons/0-255-200.png</file>
+    <file>icons/144-0-255.png</file>
+    <file>icons/247-153-0.png</file>
+    <file>icons/255-0-157.png</file>
     <file>icons/black.png</file>
     <file>icons/black.png</file>
     <file>icons/blue.png</file>

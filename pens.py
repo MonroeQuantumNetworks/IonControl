@@ -35,17 +35,17 @@ class penicons:
         return self.icons
         
     def loadicons(self):
-          self.icons = [ QtGui.QIcon(), QtGui.QIcon(":/penicon/icons/yellow.png"),
+          self.icons = [ QtGui.QIcon(), QtGui.QIcon(":/penicon/icons/247-153-0.png"),
             QtGui.QIcon(":/penicon/icons/red.png"),
             QtGui.QIcon(":/penicon/icons/green.png"),
             QtGui.QIcon(":/penicon/icons/blue.png"),
             QtGui.QIcon(":/penicon/icons/cyan.png"),
             QtGui.QIcon(":/penicon/icons/magenta.png"),
             QtGui.QIcon(":/penicon/icons/white.png"),
-            QtGui.QIcon(":/penicon/icons/yellow.png"),
-            QtGui.QIcon(":/penicon/icons/yellow.png"),
-            QtGui.QIcon(":/penicon/icons/yellow.png"),
-            QtGui.QIcon(":/penicon/icons/yellow.png"),
+            QtGui.QIcon(":/penicon/icons/0-255-200.png"),
+            QtGui.QIcon(":/penicon/icons/0-191-255.png"),
+            QtGui.QIcon(":/penicon/icons/144-0-255.png"),
+            QtGui.QIcon(":/penicon/icons/255-0-157.png"),
             QtGui.QIcon(":/penicon/icons/yellow-dash.png"),
             QtGui.QIcon(":/penicon/icons/red-dash.png"),
             QtGui.QIcon(":/penicon/icons/green-dash.png"),

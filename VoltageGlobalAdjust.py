@@ -30,6 +30,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.globalAdjustDict = dict()
         self.adjust = dict()
         self.adjust["__GAIN__"] = 1.0
+        self.myWidgetList = list()
 
     def setupUi(self, parent):
         VoltageGlobalAdjustForm.setupUi(self,parent)
@@ -38,18 +39,23 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.setupGlobalAdjust(dict())
         
     def setupGlobalAdjust(self, adjustDict):
+        for widget in self.myWidgetList:
+            self.gridLayout.removeWidget(widget)                    
         self.globalAdjustDict = adjustDict
         for index, name in enumerate(self.globalAdjustDict.keys()):
             label = QtGui.QLabel(self)
             label.setText(name)
             self.gridLayout.addWidget( label, 2+index, 1, 1, 1 )
+            self.myWidgetList.append( label )
             Box = MagnitudeSpinBox(self)
             Box.setValue( 0 )
             Box.valueChanged.connect( functools.partial(self.onValueChanged, name) )
             self.gridLayout.addWidget( Box, 2+index, 2, 1, 1 )
+            self.myWidgetList.append( Box )
             self.adjust[name] = Box.value()
         spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.gridLayout.addItem(spacerItem, len(self.globalAdjustDict)+2, 1, 1, 1)
+        self.myWidgetList.append(spacerItem)
         self.updateOutput.emit(self.adjust)
 
         
