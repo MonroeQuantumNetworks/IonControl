@@ -33,17 +33,23 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.adjust["__GAIN__"] = 1.0
         self.myWidgetList = list()
         self.adjustHistoryShelve = configshelve.configshelve('VoltageGlobalAdjust')
+        self.adjustHistoryShelve.open()
         self.adjustHistoryName = None
+        self.spacerItem = None
 
     def setupUi(self, parent):
         VoltageGlobalAdjustForm.setupUi(self,parent)
         self.gainBox.setValue(self.settings.gain)
         self.gainBox.valueChanged.connect( functools.partial(self.onValueChanged, "__GAIN__") )
-        self.setupGlobalAdjust(dict())
+        self.setupGlobalAdjust('none',dict())
         
     def setupGlobalAdjust(self, name, adjustDict):
         for widget in self.myWidgetList:
             self.gridLayout.removeWidget(widget)
+        if self.spacerItem:
+            self.gridLayout.removeItem( self.spacerItem )
+        else:
+            self.spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         if self.adjustHistoryName:
             self.adjustHistoryShelve[self.adjustHistoryName] = self.adjust
         oldadjust = self.adjustHistoryShelve.get(name,dict())
@@ -61,9 +67,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
             self.gridLayout.addWidget( Box, 2+index, 2, 1, 1 )
             self.myWidgetList.append( Box )
             self.adjust[name] = Box.value()
-        spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem, len(self.globalAdjustDict)+2, 1, 1, 1)
-        self.myWidgetList.append(spacerItem)
+        self.gridLayout.addItem(self.spacerItem, len(self.globalAdjustDict)+2, 1, 1, 1)
         self.updateOutput.emit(self.adjust)
         
     def onValueChanged(self, attribute, value):
@@ -72,7 +76,8 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     
     def onClose(self):
         self.config[self.configname] = self.settings
-        if self.adjustHistoryName:
-            self.adjustHistoryShelve[self.adjustHistoryName] = self.adjust
-        self.adjustHistoryShelve.close()
+        if self.adjustHistoryShelve.isOpen:
+            if self.adjustHistoryName:
+                self.adjustHistoryShelve[self.adjustHistoryName] = self.adjust
+            self.adjustHistoryShelve.close()
         

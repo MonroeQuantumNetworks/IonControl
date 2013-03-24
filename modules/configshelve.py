@@ -14,13 +14,16 @@ class configshelve:
         if not os.path.exists(configdir):
             os.makedirs(configdir)
         self.configfile = os.path.join(configdir,name+".config")
+        self.isOpen = False
 
     def __enter__(self):
         self.config = shelve.open(self.configfile)
+        self.isOpen = True
         return self.config
         
     def __exit__(self, type, value, tb):
         self.config.close()
+        self.isOpen = False
         
     def __iter__(self):
         return self.config.__iter__()
@@ -40,11 +43,13 @@ class configshelve:
     def open(self):
         #print "configshelve open", self.configfile
         self.config = shelve.open(self.configfile)
+        self.isOpen = True
         return self.config
         
     def close(self):
         #print "configshelve close", self.configfile
         self.config.close()
+        self.isOpen = False
         
 if __name__ == "__main__":
     with configshelve("test") as d:

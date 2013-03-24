@@ -170,5 +170,5 @@ class Traceui(TraceuiForm, TraceuiBase):
             self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1),-1)
 
     def onClose(self):
-        print "{0}.settings".format(self.configname), self.settings
+        #print "{0}.settings".format(self.configname), self.settings
         self.config[self.configname+".settings"] = self.settings

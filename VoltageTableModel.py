@@ -23,21 +23,22 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         self.lastLength = 0
         
     def sort(self, column, order ):
-        if column==0:
-            self.lastElectrodeOrder = (self.lastElectrodeOrder +1 )% 4
-            if self.lastElectrodeOrder==0:
-                self.orderLookup = range(len(self.blender.electrodes))
-            elif self.lastElectrodeOrder==1:
-                self.orderAsVoltageFile()
-            elif self.lastElectrodeOrder in [2,3]:
-                d = enumerate(self.blender.electrodes)
-                d = sorted( d, key=operator.itemgetter(1), reverse=True if self.lastElectrodeOrder==3 else False )
+        if (self.blender.electrodes):
+            if column==0:
+                self.lastElectrodeOrder = (self.lastElectrodeOrder +1 )% 4
+                if self.lastElectrodeOrder==0:
+                    self.orderLookup = range(len(self.blender.electrodes))
+                elif self.lastElectrodeOrder==1:
+                    self.orderAsVoltageFile()
+                elif self.lastElectrodeOrder in [2,3]:
+                    d = enumerate(self.blender.electrodes)
+                    d = sorted( d, key=operator.itemgetter(1), reverse=True if self.lastElectrodeOrder==3 else False )
+                    self.orderLookup = [operator.itemgetter(0)(t) for t in d]
+            else:
+                d = enumerate({ 0:self.blender.electrodes, 1:self.blender.outputVoltage, 2:self.blender.aoNums, 3:[int(val) for val in self.blender.dsubNums]}[column])
+                d = sorted( d, key=operator.itemgetter(1), reverse=True if order==QtCore.Qt.DescendingOrder else False )
                 self.orderLookup = [operator.itemgetter(0)(t) for t in d]
-        else:
-            d = enumerate({ 0:self.blender.electrodes, 1:self.blender.outputVoltage, 2:self.blender.aoNums, 3:[int(val) for val in self.blender.dsubNums]}[column])
-            d = sorted( d, key=operator.itemgetter(1), reverse=True if order==QtCore.Qt.DescendingOrder else False )
-            self.orderLookup = [operator.itemgetter(0)(t) for t in d]
-        self.dataChanged.emit(self.index(0,0),self.index(len(self.blender.electrodes) -1,3))
+            self.dataChanged.emit(self.index(0,0),self.index(len(self.blender.electrodes) -1,3))
         
     def orderAsVoltageFile(self):
         if self.blender.electrodes:
