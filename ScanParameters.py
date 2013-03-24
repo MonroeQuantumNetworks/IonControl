@@ -41,7 +41,6 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         ScanExperimentBase.__init__(self)
         self.config = config
         self.configname = 'ScanParameters.'+parentname
-        self.setSettings( self.config.get(self.configname,Settings()) )
         # History and Dictionary
         self.settingsDict = dict()
         self.settingsHistory = list()
@@ -55,6 +54,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
+        self.setSettings( self.config.get(self.configname,Settings()) )
         #self.commitButton.clicked.connect( self.onCommit )
         #self.lineEdit.editingFinished.connect( self.onEditingFinished )
 
