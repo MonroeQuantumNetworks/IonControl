@@ -21,6 +21,7 @@ import ScanExperimentSettings
 from modules import DataDirectory
 import TimestampSettings
 import time
+import CoordinatePlotWidget
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -57,7 +58,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.area.addDock(self.histogramDock,'right')
         self.area.addDock(self.averageDock,'bottom',self.histogramDock)
         self.area.addDock(self.timestampDock,'bottom',self.averageDock)
-        self.graphicsView = pyqtgraph.PlotWidget() # self.graphicsLayout.graphicsView
+        self.graphicsView = CoordinatePlotWidget.CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
         self.mainDock.addWidget(self.graphicsView)
         self.histogramView = pyqtgraph.PlotWidget()
         self.histogramDock.addWidget( self.histogramView)
