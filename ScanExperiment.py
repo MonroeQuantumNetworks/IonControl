@@ -58,8 +58,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.area.addDock(self.histogramDock,'right')
         self.area.addDock(self.averageDock,'bottom',self.histogramDock)
         self.area.addDock(self.timestampDock,'bottom',self.averageDock)
-        self.graphicsView = CoordinatePlotWidget.CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
-        self.mainDock.addWidget(self.graphicsView)
+        self.graphicsWidget = CoordinatePlotWidget.CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
+        self.mainDock.addWidget(self.graphicsWidget)
+        self.graphicsView = self.graphicsWidget.graphicsView
         self.histogramView = pyqtgraph.PlotWidget()
         self.histogramDock.addWidget( self.histogramView)
         self.averageView = pyqtgraph.PlotWidget()       
