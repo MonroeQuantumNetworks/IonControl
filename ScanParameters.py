@@ -6,6 +6,8 @@ Created on Sat Feb 16 16:56:57 2013
 """
 import PyQt4.uic
 import copy
+import functools
+from PyQt4 import QtCore
        
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanParameters.ui')
 
@@ -24,6 +26,7 @@ class Settings:
         self.scantype = 0
         self.scanMode = 0
         self.rewriteDDS = False
+        self.filename = '' 
         
     def __eq__(self, other):
         return ( self.parameter == other.parameter and
@@ -32,7 +35,8 @@ class Settings:
                 self.steps == other.steps and
                 self.scantype == other.scantype and
                 self.scanMode == other.scanMode and 
-                self.rewriteDDS == other.rewriteDDS)
+                self.rewriteDDS == other.rewriteDDS and
+                self.filename == other.filename )
 
 class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
     ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace')
@@ -42,7 +46,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.config = config
         self.configname = 'ScanParameters.'+parentname
         # History and Dictionary
-        self.settingsDict = dict()
+        self.settingsDict = self.config.get(self.configname+'.dict',dict())
         self.settingsHistory = list()
         self.settingsHistoryPointer = None
         self.historyFinalState = None
@@ -55,9 +59,49 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.redoButton.clicked.connect( self.onRedo )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
         self.setSettings( self.config.get(self.configname,Settings()) )
-        #self.commitButton.clicked.connect( self.onCommit )
-        #self.lineEdit.editingFinished.connect( self.onEditingFinished )
+        for name in self.settingsDict:
+            self.comboBox.addItem(name)
+        # update connections
+        self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )        
+        self.minimumBox.valueChanged.connect( functools.partial(self.onValueChanged,'minimum') )
+        self.maximumBox.valueChanged.connect( functools.partial(self.onValueChanged,'maximum') )
+        self.stepsBox.valueChanged.connect( functools.partial(self.onValueChanged,'steps') )
+        self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
+        self.rewriteDDSCheckBox.stateChanged.connect( self.onStateChanged )
+        self.scanModeComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanMode') )
+        self.filenameEdit.editingFinished.connect( self.onNewFilename )
+        
+    def onNewFilename(self):
+        self.settings.filename = str(self.filenameEdit.text())
+        
+    def beginChange(self):
+        self.tempSettings = copy.copy( self.settings )
 
+    def commitChange(self): 
+        pass
+        #if self.tempSettings!=self.settings:
+        #    self.comboBox.setEditText('')
+        
+    def onStateChanged(self, state):
+        self.beginChange()
+        self.settings.rewriteDDS = (state == QtCore.Qt.Checked) 
+        self.commitChange()
+        
+    def onCurrentTextChanged(self, text):
+        self.beginChange()
+        self.settings.parameter = str(text)
+        self.commitChange()
+    
+    def onCurrentIndexChanged(self, attribute, index):
+        self.beginChange()
+        setattr( self.settings, attribute, index )
+        self.commitChange()
+    
+    def onValueChanged(self, attribute, value):
+        self.beginChange()
+        setattr( self.settings, attribute, value )
+        self.commitChange()
+        
     def setVariables(self, variabledict):
         self.variabledict = variabledict
         for name, var in variabledict.iteritems():
@@ -67,30 +111,29 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.parameter) )
             
     def setScanNames(self, scannames):
+        self.comboBoxParameter.clear()
         for name in scannames:
             self.comboBoxParameter.addItem(name)
+        self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.parameter))
+        print self.configname,"activating", self.settings.parameter
                 
     def getScan(self):
-        Scan.name = str(self.comboBoxParameter.currentText())
-        Scan.start = self.minimumBox.value()
-        Scan.stop = self.maximumBox.value()
-        Scan.steps = self.stepsBox.value()
-        Scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.scanTypeCombo.currentIndex()]
-        Scan.list = ScanList.scanList( Scan.start, Scan.stop, Scan.steps, Scan.type )
-        self.settings.parameter = Scan.name
-        self.settings.minimum = self.minimumBox.value()
-        self.settings.maximum = self.maximumBox.value()
-        self.settings.steps = self.stepsBox.value()
-        self.settings.scantype = self.scanTypeCombo.currentIndex()
-        self.settings.rewriteDDS = self.rewriteDDSCheckBox.isChecked()
-        self.settings.scanMode = self.scanModeComboBox.currentIndex()
-        Scan.rewriteDDS = self.settings.rewriteDDS
-        Scan.scanMode = self.settings.scanMode
+        scan = Scan()
+        scan.name = self.settings.parameter
+        scan.start = self.settings.minimum
+        scan.stop = self.settings.maximum
+        scan.steps = self.settings.steps
+        scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
+        scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps, scan.type )
+        scan.rewriteDDS = self.settings.rewriteDDS
+        scan.scanMode = self.settings.scanMode
+        scan.filename = self.settings.filename
         self.onCommit()
-        return Scan
+        return scan
         
     def onClose(self):
         self.config[self.configname] = self.settings
+        self.config[self.configname+'.dict'] = self.settingsDict
                
     # History stuff
     def setSettings(self, settings):
@@ -102,6 +145,8 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
         self.progressBar.setVisible( False )
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
+        self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(settings.parameter))
+        self.filenameEdit.setText( getattr(self.settings,'filename','') )
     
     def onRedo(self):
         if self.settingsHistoryPointer<len(self.settingsHistory):
@@ -125,17 +170,16 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
             if name not in self.settingsDict:
                 if self.comboBox.findText(name)==-1:
                     self.comboBox.addItem(name)
-                print "adding to combo", name
+                print self.configname, "adding to combo", name
             self.settingsDict[name] = copy.copy(self.settings)
     
     def onLoad(self,name):
         name = str(name)
-        print "onLoad", name
+        print self.configname, "onLoad", name
         if name !='' and name in self.settingsDict:
             self.setSettings(self.settingsDict[name])
-            print "restore", self.settingsDict[name].text
         else:
-            print self.settingsDict
+            print self.configname, self.settingsDict
 
    
     def onCommit(self):

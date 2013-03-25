@@ -7,11 +7,12 @@ Created on Sun Dec 23 19:27:39 2012
 
 import numpy
 import datetime
+import os.path
 
 class Empty:
     pass
 
-class Trace:
+class Trace(object):
     def __init__(self):
         self.x = numpy.array([])
         self.y = numpy.array([])
@@ -21,6 +22,17 @@ class Trace:
         self.vars.comment = ""
         self.header = None
         self.curvePen = 0
+        self._filename = None
+        
+    @property
+    def filename(self):        
+        return self._filename
+        
+    @filename.setter
+    def filename(self, filename):
+        self._filename = filename        
+        self.filepath, self.fileleaf = os.path.split(filename)
+        print "Trace filename", self.filename, self.filepath, self.fileleaf           
         
     def resave(self):
         if hasattr(self, 'filename' ):
@@ -51,6 +63,7 @@ class Trace:
             print >>of, "# x y "
             for x,db in zip(self.x, self.y):
                 print >>of, x, db
+        self.filename = filename
         of.close()
     
     def loadTrace(self,filename):
@@ -69,7 +82,7 @@ class Trace:
                     if len(a)>1:
                         self.x.append(float(a[0]))
                         self.y.append(float(a[1]))
-    
+        self.filename = filename
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback

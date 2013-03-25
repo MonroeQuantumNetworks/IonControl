@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>238</width>
-    <height>325</height>
+    <width>240</width>
+    <height>360</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -72,6 +72,82 @@
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout">
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="stepsBox">
+          <property name="minimum">
+           <number>2</number>
+          </property>
+          <property name="maximum">
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Direction</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Number Steps</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="MagnitudeSpinBox" name="maximumBox">
+          <property name="buttonSymbols">
+           <enum>QAbstractSpinBox::NoButtons</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QComboBox" name="scanTypeCombo">
+          <item>
+           <property name="text">
+            <string>Linear up</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Linear down</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Randomized</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QComboBox" name="scanModeComboBox">
+          <item>
+           <property name="text">
+            <string>Single Scan</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Repeated Scan</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Step in place</string>
+           </property>
+          </item>
+         </widget>
+        </item>
         <item row="0" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
@@ -102,80 +178,14 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="MagnitudeSpinBox" name="maximumBox">
-          <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
-          </property>
-         </widget>
+        <item row="5" column="1">
+         <widget class="QLineEdit" name="filenameEdit"/>
         </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_3">
+        <item row="5" column="0">
+         <widget class="QCheckBox" name="checkBox">
           <property name="text">
-           <string>Number Steps</string>
+           <string>Filename</string>
           </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QSpinBox" name="stepsBox">
-          <property name="minimum">
-           <number>2</number>
-          </property>
-          <property name="maximum">
-           <number>10000</number>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_5">
-          <property name="text">
-           <string>Direction</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QComboBox" name="scanTypeCombo">
-          <item>
-           <property name="text">
-            <string>Linear up</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Linear down</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Randomized</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Mode</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QComboBox" name="scanModeComboBox">
-          <item>
-           <property name="text">
-            <string>Single Scan</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Repeated Scan</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Step in place</string>
-           </property>
-          </item>
          </widget>
         </item>
        </layout>

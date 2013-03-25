@@ -70,7 +70,7 @@ class TraceTableModel(QtCore.QAbstractTableModel):
         if index.isValid():
             return { (QtCore.Qt.DisplayRole,2): self.TraceList[index.row()].trace.name,
                      (QtCore.Qt.DisplayRole,3): self.TraceList[index.row()].trace.vars.comment,
-                     (QtCore.Qt.DisplayRole,4): str(numpy.max(self.TraceList[index.row()].trace.y)) if len(self.TraceList[index.row()].trace.y)>0 else "",
+                     (QtCore.Qt.DisplayRole,4): getattr( self.TraceList[index.row()].trace, 'fileleaf', None ),
                      (QtCore.Qt.CheckStateRole,0): self.TraceList[index.row()].curvePen>0,
                      (QtCore.Qt.DecorationRole,1): QtGui.QIcon(self.penicons[self.TraceList[index.row()].curvePen]) if hasattr(self.TraceList[index.row()], 'curve') and self.TraceList[index.row()].curve is not None else None,
                      (QtCore.Qt.BackgroundColorRole,1): QtGui.QColor(QtCore.Qt.white) if not (hasattr(self.TraceList[index.row()], 'curve') and self.TraceList[index.row()].curve is not None) else None,
@@ -116,7 +116,7 @@ class TraceTableModel(QtCore.QAbstractTableModel):
                     1: 'Plot   ',
                     2: 'Name',
                     3: 'Comment',
-                    4: 'Max'
+                    4: 'Filename'
                     }.get(section)
         return None #QtCore.QVariant()
     
