@@ -166,7 +166,7 @@ class Traceui(TraceuiForm, TraceuiBase):
             trace = Trace.Trace()
             trace.filename = str(fname)
             self.settings.lastDir, trace.name = os.path.split(str(fname))
-            trace.loadTrace(fname)
+            trace.loadTrace(str(fname))
             self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1),-1)
 
     def onClose(self):

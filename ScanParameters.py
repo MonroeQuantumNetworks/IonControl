@@ -60,7 +60,10 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
-        self.setSettings( self.config.get(self.configname,Settings()) )
+        try:
+            self.setSettings( self.config.get(self.configname,Settings()) )
+        except AttributeError as e:
+            print "Ignoring exception",e
         for name in self.settingsDict:
             self.comboBox.addItem(name)
         # update connections
