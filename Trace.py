@@ -7,11 +7,12 @@ Created on Sun Dec 23 19:27:39 2012
 
 import numpy
 import datetime
+import os.path
 
 class Empty:
     pass
 
-class Trace:
+class Trace(object):
     def __init__(self):
         self.x = numpy.array([])
         self.y = numpy.array([])
@@ -21,10 +22,30 @@ class Trace:
         self.vars.comment = ""
         self.header = None
         self.curvePen = 0
+        self._filename = None
+        self.filenameCallback = None   # function to result in filename for save
+        self.dataChangedCallback = None # used to update the gui table
+        
+    @property
+    def filename(self):        
+        return self._filename
+        
+    @filename.setter
+    def filename(self, filename):
+        self._filename = filename    
+        if filename:
+            self.filepath, self.fileleaf = os.path.split(filename)
+        else:
+            self.filepath, self.fileleaf = None, None
+        print "Trace filename", self.filename, self.filepath, self.fileleaf
+        if self.dataChangedCallback:
+            self.dataChangedCallback()                            
         
     def resave(self):
-        if hasattr(self, 'filename' ):
+        if hasattr(self, 'filename' ) and self.filename and self.filename!='':
             self.saveTrace(self.filename)
+        elif self.filenameCallback:
+            self.saveTrace(self.filenameCallback())
     
     def plot(self,penindex):
         if hasattr( self, 'plotfunction' ):
@@ -41,17 +62,19 @@ class Trace:
             print >>outfile, self.header
 
     def saveTrace(self,filename):
-        of = open(filename,'w')
-        self.saveTraceHeader(of)
-        if hasattr(self, 'height'):
-            print >>of, "# x y error"
-            for x,db,error in zip(self.x, self.y, self.height):
-                print >>of, x, db, error
-        else:
-            print >>of, "# x y "
-            for x,db in zip(self.x, self.y):
-                print >>of, x, db
-        of.close()
+        if filename!='':
+            of = open(filename,'w')
+            self.saveTraceHeader(of)
+            if hasattr(self, 'height'):
+                print >>of, "# x y error"
+                for x,db,error in zip(self.x, self.y, self.height):
+                    print >>of, x, db, error
+            else:
+                print >>of, "# x y "
+                for x,db in zip(self.x, self.y):
+                    print >>of, x, db
+            self.filename = filename
+            of.close()
     
     def loadTrace(self,filename):
         infile = open(filename,'r')
@@ -69,7 +92,7 @@ class Trace:
                     if len(a)>1:
                         self.x.append(float(a[0]))
                         self.y.append(float(a[1]))
-    
+        self.filename = filename
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback

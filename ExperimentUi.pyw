@@ -31,12 +31,7 @@ import DDSUi
 import PulserHardware
 import DedicatedCounters
 
-try:
-    import VoltageControl
-    HasVoltageControl = True
-except Exception as e:
-    print "Loading Voltage Control failed with exception:", e
-    HasVoltageControl = False
+import VoltageControl
     
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
@@ -136,9 +131,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulserHardware)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
-        if HasVoltageControl:
-            self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
-            self.voltageControlWindow.setupUi(self.voltageControlWindow)
+        self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
+        self.voltageControlWindow.setupUi(self.voltageControlWindow)
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()

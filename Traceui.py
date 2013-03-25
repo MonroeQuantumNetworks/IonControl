@@ -6,7 +6,7 @@ Created on Fri Dec 28 18:40:30 2012
 """
 from modules import enum
 import PyQt4.uic
-import TraceTableView
+import TraceTableModel
 import pens
 import pyqtgraph
 import numpy
@@ -110,9 +110,9 @@ class Traceui(TraceuiForm, TraceuiBase):
     def setupUi(self,MainWindow):
         TraceuiForm.setupUi(self,MainWindow)
         self.TraceList = list()
-        self.model = TraceTableView.TraceTableModel(self.TraceList,self.penicons)    
+        self.model = TraceTableModel.TraceTableModel(self.TraceList,self.penicons)    
         self.traceTableView.setModel(self.model)
-        self.traceTableView.setItemDelegateForColumn(1,TraceTableView.TraceComboDelegate(self.penicons))
+        self.traceTableView.setItemDelegateForColumn(1,TraceTableModel.TraceComboDelegate(self.penicons))
         
         self.clearButton.clicked.connect(self.onClear )
         self.saveButton.clicked.connect(self.onSave )
@@ -170,5 +170,5 @@ class Traceui(TraceuiForm, TraceuiBase):
             self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1),-1)
 
     def onClose(self):
-        print "{0}.settings".format(self.configname), self.settings
+        #print "{0}.settings".format(self.configname), self.settings
         self.config[self.configname+".settings"] = self.settings

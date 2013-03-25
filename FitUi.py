@@ -45,7 +45,7 @@ class FitUi(fitForm, QtGui.QWidget):
             label = QtGui.QLabel(fitfunction.fitfunction.functionString,fitfunction.page)
             fitfunction.gridLayout.addWidget(label, 0, 0, 1, 3)
             self.comboBox.addItem(fitfunction.fitfunction.name)
-            print fitfunction.fitfunction.startParameters
+            #print fitfunction.fitfunction.startParameters
             for line, paramname in enumerate(fitfunction.fitfunction.parameterNames):
                 label = QtGui.QLabel(paramname,fitfunction.page)
                 label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
