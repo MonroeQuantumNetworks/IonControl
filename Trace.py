@@ -24,6 +24,7 @@ class Trace(object):
         self.curvePen = 0
         self._filename = None
         self.filenameCallback = None   # function to result in filename for save
+        self.dataChangedCallback = None # used to update the gui table
         
     @property
     def filename(self):        
@@ -36,7 +37,9 @@ class Trace(object):
             self.filepath, self.fileleaf = os.path.split(filename)
         else:
             self.filepath, self.fileleaf = None, None
-        print "Trace filename", self.filename, self.filepath, self.fileleaf                               
+        print "Trace filename", self.filename, self.filepath, self.fileleaf
+        if self.dataChangedCallback:
+            self.dataChangedCallback()                            
         
     def resave(self):
         if hasattr(self, 'filename' ) and self.filename and self.filename!='':

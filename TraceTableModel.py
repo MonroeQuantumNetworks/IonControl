@@ -43,10 +43,11 @@ class TraceTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.TraceList = TraceList
         self.penicons = penicons
-
+        
     def addTrace(self,trace):
         self.beginInsertRows(QtCore.QModelIndex(),len(self.TraceList),len(self.TraceList))
         self.TraceList.append(trace)
+        trace.trace.dataChangedCallback = functools.partial( self.updateTrace, len(self.TraceList)-1 )
         self.endInsertRows()
         return len(self.TraceList)-1
         

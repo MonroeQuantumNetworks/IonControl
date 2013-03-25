@@ -162,7 +162,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             filename, components = directory.sequencefile( pattern )
             return filename
         else:
-            path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file'),directory.path())
+            path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
             return path
             
     def onData(self, data ):
