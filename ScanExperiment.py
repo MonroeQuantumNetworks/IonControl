@@ -22,6 +22,7 @@ from modules import DataDirectory
 import TimestampSettings
 import time
 import CoordinatePlotWidget
+import functools
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -111,8 +112,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         start = time.time()
         self.state = self.OpStates.running
         self.scanSettings = self.scanSettingsWidget.settings
-        directory = DataDirectory.DataDirectory( self.scanSettings.project )
-        self.tracefilename, components = directory.sequencefile( self.scanSettings.filename )
         # get parameter to scan and scanrange
         self.scan = self.scanParametersWidget.getScan()
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
@@ -131,7 +130,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.currentIndex = 0
         if self.currentTrace is not None:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-            self.currentTrace.resave()
+            if self.scan.autoSave:
+                self.currentTrace.resave()
             self.currentTrace = None
         self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
         self.scanParametersWidget.progressBar.setValue(0)
@@ -156,6 +156,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """
         pass
     
+    def traceFilename(self, pattern):
+        directory = DataDirectory.DataDirectory( self.scanSettings.project )
+        if pattern and pattern!='':
+            filename, components = directory.sequencefile( pattern )
+            return filename
+        else:
+            path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file'),directory.path())
+            return path
+            
     def onData(self, data ):
         """ Called by worker with new data
         """
@@ -171,8 +180,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.y = numpy.array([mean])
             self.currentTrace.name = self.scan.name
             self.currentTrace.vars.comment = ""
-            self.currentTrace.filename = self.tracefilename
-            print "Filename:" , self.tracefilename
+            self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             if not self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
@@ -191,7 +199,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.showTimestamps(data)
         if data.final:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-            self.currentTrace.resave()
+            if self.scan.autoSave:
+                self.currentTrace.resave()
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
                 self.onStart()
             else:

@@ -26,7 +26,8 @@ class Settings:
         self.scantype = 0
         self.scanMode = 0
         self.rewriteDDS = False
-        self.filename = '' 
+        self.filename = ''
+        self.autoSave = False
         
     def __eq__(self, other):
         return ( self.parameter == other.parameter and
@@ -36,7 +37,8 @@ class Settings:
                 self.scantype == other.scantype and
                 self.scanMode == other.scanMode and 
                 self.rewriteDDS == other.rewriteDDS and
-                self.filename == other.filename )
+                self.filename == other.filename and
+                self.autoSave == other.autoSave )
 
 class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
     ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace')
@@ -67,7 +69,8 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.maximumBox.valueChanged.connect( functools.partial(self.onValueChanged,'maximum') )
         self.stepsBox.valueChanged.connect( functools.partial(self.onValueChanged,'steps') )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
-        self.rewriteDDSCheckBox.stateChanged.connect( self.onStateChanged )
+        self.rewriteDDSCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'rewriteDDS') )
+        self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
         self.scanModeComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanMode') )
         self.filenameEdit.editingFinished.connect( self.onNewFilename )
         
@@ -82,9 +85,9 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         #if self.tempSettings!=self.settings:
         #    self.comboBox.setEditText('')
         
-    def onStateChanged(self, state):
+    def onStateChanged(self, attribute, state):
         self.beginChange()
-        self.settings.rewriteDDS = (state == QtCore.Qt.Checked) 
+        setattr( self.settings, attribute, (state == QtCore.Qt.Checked)  )
         self.commitChange()
         
     def onCurrentTextChanged(self, text):
@@ -127,7 +130,8 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps, scan.type )
         scan.rewriteDDS = self.settings.rewriteDDS
         scan.scanMode = self.settings.scanMode
-        scan.filename = self.settings.filename
+        scan.filename = getattr(self.settings,'filename','')
+        scan.autoSave = getattr(self.settings,'autoSave',False)
         self.onCommit()
         return scan
         

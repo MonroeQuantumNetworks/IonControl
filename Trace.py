@@ -23,6 +23,7 @@ class Trace(object):
         self.header = None
         self.curvePen = 0
         self._filename = None
+        self.filenameCallback = None   # function to result in filename for save
         
     @property
     def filename(self):        
@@ -30,13 +31,18 @@ class Trace(object):
         
     @filename.setter
     def filename(self, filename):
-        self._filename = filename        
-        self.filepath, self.fileleaf = os.path.split(filename)
-        print "Trace filename", self.filename, self.filepath, self.fileleaf           
+        self._filename = filename    
+        if filename:
+            self.filepath, self.fileleaf = os.path.split(filename)
+        else:
+            self.filepath, self.fileleaf = None, None
+        print "Trace filename", self.filename, self.filepath, self.fileleaf                               
         
     def resave(self):
-        if hasattr(self, 'filename' ):
+        if hasattr(self, 'filename' ) and self.filename and self.filename!='':
             self.saveTrace(self.filename)
+        elif self.filenameCallback:
+            self.saveTrace(self.filenameCallback())
     
     def plot(self,penindex):
         if hasattr( self, 'plotfunction' ):
@@ -53,18 +59,19 @@ class Trace(object):
             print >>outfile, self.header
 
     def saveTrace(self,filename):
-        of = open(filename,'w')
-        self.saveTraceHeader(of)
-        if hasattr(self, 'height'):
-            print >>of, "# x y error"
-            for x,db,error in zip(self.x, self.y, self.height):
-                print >>of, x, db, error
-        else:
-            print >>of, "# x y "
-            for x,db in zip(self.x, self.y):
-                print >>of, x, db
-        self.filename = filename
-        of.close()
+        if filename!='':
+            of = open(filename,'w')
+            self.saveTraceHeader(of)
+            if hasattr(self, 'height'):
+                print >>of, "# x y error"
+                for x,db,error in zip(self.x, self.y, self.height):
+                    print >>of, x, db, error
+            else:
+                print >>of, "# x y "
+                for x,db in zip(self.x, self.y):
+                    print >>of, x, db
+            self.filename = filename
+            of.close()
     
     def loadTrace(self,filename):
         infile = open(filename,'r')

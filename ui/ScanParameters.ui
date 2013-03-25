@@ -182,7 +182,10 @@
          <widget class="QLineEdit" name="filenameEdit"/>
         </item>
         <item row="5" column="0">
-         <widget class="QCheckBox" name="checkBox">
+         <widget class="QCheckBox" name="autoSaveCheckBox">
+          <property name="toolTip">
+           <string>Checkbox: automatically save file</string>
+          </property>
           <property name="text">
            <string>Filename</string>
           </property>
