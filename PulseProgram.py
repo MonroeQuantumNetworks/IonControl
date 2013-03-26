@@ -160,6 +160,7 @@ class PulseProgram:
             if name in self.variabledict:
                 var = self.variabledict[name]
                 address = var.address
+                var.value = value
                 var.data = self.convertParameter(value, var.encoding )
                 self.bytecode[address] = (self.bytecode[address][0], var.data )
                 self.variabledict[name] = var
