@@ -15,7 +15,22 @@ import ScanList
 from modules import enum
 
 class Scan:
-    pass
+    def __init__(self):
+        self.name = None
+        self.start = None
+        self.stop = None
+        self.steps = None
+        self.type = None
+        self.rewriteDDS = None
+        self.scanMode = None
+        self.filename = None
+        self.autoSave = None
+        
+    def __repr__(self):
+        r = "Scanning parameter: {0}\nScanning From: {1}\nScanning To: {2}\n".format(self.name,self.start,self.stop)
+        r+= "Scanning Steps: {0}\nScanning type: {1}\nScanning rewriteDDS: {2}\n".format(self.steps,self.type,self.rewriteDDS)
+        r+= "Scanning mode: {0}".format(self.scanMode)
+        return r
 
 class Settings:
     def __init__(self):

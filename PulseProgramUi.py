@@ -30,6 +30,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config = config
         self.parameterdict = parameterdict
         self.variabledict = None
+        self.variableTableModel = None
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -115,7 +116,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.pulseProgram.loadFromMemory()
         self.updateDisplay()
     
-    def updateDisplay(self):
+    def updateDisplay(self):   # why does this not update the display?
         self.sourceTabs.clear()
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():

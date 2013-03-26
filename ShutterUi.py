@@ -44,7 +44,13 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.config[self.configname+".dict"] = self.shutterdict
         self.config[self.configname+".SetAtStartup"] = self.checkBoxSetAtStartup.isChecked()
         self.datashelve['Value'] = self.shutterTableModel.shutter
-        self.datashelve.close()       
+        self.datashelve.close()
+        
+    def __repr__(self):
+        r = "{0}\n".format(self.__class__)
+        for key in ['outputname', 'shutterdict', 'configname']:
+            r += "{0}: {1}\n".format(key, getattr(self,key))
+        return r
 
 class TriggerUi(ShutterUi):
     def __init__(self,pulserHardware,outputname,parent=None):

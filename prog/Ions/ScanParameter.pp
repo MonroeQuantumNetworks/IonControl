@@ -29,6 +29,7 @@ var experimentsleft 10
 var epsilon         2, parameter, us
 var ddsApplyTrigger   3,trigger
 var endLabel 0xffffffff
+var dummy3 42, parameter, MHz, AD9912_FRQ
 
 # Preparation
 	SHUTTERMASK startupMask

@@ -23,6 +23,7 @@ import TimestampSettings
 import time
 import CoordinatePlotWidget
 import functools
+from modules import stringutilit
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -198,17 +199,23 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.timestampSettingsWidget.settings.enable: 
             self.showTimestamps(data)
         if data.final:
-            self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-            if self.scan.autoSave:
-                self.currentTrace.resave()
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
-                self.onStart()
-            else:
-                self.onStop()
+            self.finalizeData()
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.pulserHardware.ppWriteData(self.scan.code)     
         self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+
+    def finalizeData(self):
+        pulseProgramHeader = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
+        scanHeader = stringutilit.commentarize( repr(self.scan) )
+        self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+        if self.scan.autoSave:
+            self.currentTrace.resave()
+        if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+            self.onStart()
+        else:
+            self.onStop()
+        
 
         
     def showTimestamps(self,data):

@@ -93,6 +93,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter', self.config)
         self.shutterUi.setupUi(self.shutterUi)
         self.shutterDockWidget.setWidget( self.shutterUi )
+        print "ShutterUi representation:", repr(self.shutterUi)
 
         self.triggerUi = ShutterUi.TriggerUi(self.pulserHardware, 'trigger', self.config)
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
