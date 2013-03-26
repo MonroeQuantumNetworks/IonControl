@@ -5,8 +5,15 @@ Created on Tue Mar 19 23:14:52 2013
 @author: pmaunz
 """
 from Chassis.itfParser import itfParser
-from Chassis.WaveformChassis import WaveformChassis
-from Chassis.DAQmxUtility import Mode
+
+try:
+    from Chassis.WaveformChassis import WaveformChassis
+    from Chassis.DAQmxUtility import Mode
+    HardwareDriverLoaded = True
+except ImportError as e:
+    print "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e)
+    HardwareDriverLoaded = False
+    
 import math
 import numpy
 from PyQt4 import QtCore
@@ -16,10 +23,11 @@ class VoltageBlender(QtCore.QObject):
     
     def __init__(self):
         super(VoltageBlender,self).__init__()
-        self.chassis = WaveformChassis()
+        if HardwareDriverLoaded:
+            self.chassis = WaveformChassis()
+            self.chassis.mode = Mode.Static
+            self.chassis.initFromFile(r'Chassis\config\old_chassis.cfg')
         self.itf = itfParser()
-        self.chassis.mode = Mode.Static
-        self.chassis.initFromFile(r'Chassis\config\old_chassis.cfg')
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = dict()  # names of the lines presented as possible adjusts
         self.adjustLines = []
@@ -93,7 +101,10 @@ class VoltageBlender(QtCore.QObject):
         self.lineno = lineno
         line = self.adjustLine( line )
         print "writeAoBuffer", line
-        self.chassis.writeAoBuffer(line)
+        if HardwareDriverLoaded:
+            self.chassis.writeAoBuffer(line)
+        else:
+            print "Hardware Driver not loaded, cannot write voltages"
         self.outputVoltage = line
         self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         #print "VoltageBlender emit"
@@ -113,6 +124,7 @@ class VoltageBlender(QtCore.QObject):
         return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
             
     def close(self):
-        self.chassis.close()
+        if HardwareDriverLoaded:
+            self.chassis.close()
 
     

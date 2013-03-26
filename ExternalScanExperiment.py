@@ -68,6 +68,14 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
             print "restoreState"
         self.scanParametersWidget.setScanNames(ExternalScannedParameters.ExternalScannedParameters.keys())
             
+    def traceFilename(self, pattern):
+        directory = DataDirectory.DataDirectory( self.scanSettings.project )
+        if pattern and pattern!='':
+            filename, components = directory.sequencefile( pattern )
+            return filename
+        else:
+            path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
+            return path
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
@@ -84,8 +92,6 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         start = time.time()
         self.state = self.OpStates.running
         self.scanSettings = self.scanSettingsWidget.settings
-        directory = DataDirectory.DataDirectory( self.scanSettings.project )
-        self.tracefilename, components = directory.sequencefile( self.scanSettings.filename )
         self.scan = self.scanParametersWidget.getScan()
         self.externalParameter = ExternalScannedParameters.ExternalScannedParameters[self.scan.name]()
         self.externalParameter.saveValue()
@@ -98,7 +104,8 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         self.currentIndex = 0
         if self.currentTrace is not None:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-            self.currentTrace.resave()
+            if self.scan.autoSave:
+                self.currentTrace.resave()
             self.currentTrace = None
         self.scanParametersWidget.progressBar.setRange(0,float(len(self.scan.list)))
         self.scanParametersWidget.progressBar.setValue(0)
@@ -152,8 +159,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
             self.currentTrace.y = numpy.array([mean])
             self.currentTrace.name = self.scan.name
             self.currentTrace.vars.comment = ""
-            self.currentTrace.filename = self.tracefilename
-            print "Filename:" , self.tracefilename
+            self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             if not self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
@@ -172,7 +178,8 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
             print "External Value:" , self.scan.list[self.externalParameterIndex]
         else:
             self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-            self.currentTrace.resave()
+            if self.scan.autoSave:
+                self.currentTrace.resave()
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
                 self.onStart()
             else:
