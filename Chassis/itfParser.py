@@ -20,9 +20,20 @@ class itfParser(fileParser):
         #  If this variable is populated then this file path
         #  will be used when a eMapReadLine() method is called.
         self.eMapFilePath = ''
-
-
+        self.elect = []
+        self.aoNums = []
+        self.dNums = []
+        self.eMapFileCached = None
         super(itfParser, self).__init__(fileObj, filePath)
+        
+    @property
+    def eMapFilePath(self):
+        return self._eMapFilePath
+        
+    @eMapFilePath.setter
+    def eMapFilePath(self, path):
+        self._eMapFilePath = path
+        self.eMapFileCached = None
 
     def _parseHeader(self):
         super(itfParser, self)._parseHeader()
@@ -81,19 +92,27 @@ class itfParser(fileParser):
         return dataDict
 
     def _getEmapData(self, eMapFilePath=None):
-        from eMapParser import eMapParser
         if not eMapFilePath:
             eMapFilePath = self.eMapFilePath
+        if self.eMapFileCached is not None and self.eMapFileCached==eMapFilePath:
+            return self.elect, self.aoNums, self.dNums
+        from eMapParser import eMapParser
         #print eMapFilePath
         eMap = eMapParser()
         eMap.open(eMapFilePath)
-        elect, aoNums, dNums = eMap.read()
+        self.elect, self.aoNums, self.dNums = eMap.read()
         #for i, d in enumerate(elect):
         #    elect[i]=int(d)
-        for i, d in enumerate(aoNums):
-            aoNums[i]=int(d)
+        for i, d in enumerate(self.aoNums):
+            self.aoNums[i]=int(d)
         eMap.close()
-        return elect, aoNums, dNums
+        # we need to have the lists sorted by increasing aoNumber
+        # we do not want to have to expect the map file is in this order
+        zipped = zip(self.aoNums,self.elect,self.dNums)
+        zipped.sort()
+        self.aoNums, self.elect, self.dNums = zip(*zipped)
+        self.eMapFileCached = eMapFilePath
+        return self.elect, self.aoNums, self.dNums
 
     ## This function reads a line from the itf file and uses an 
     #  electrode map file to sort the data by the electrode order
@@ -117,7 +136,7 @@ class itfParser(fileParser):
             e = elect[eIndex] 
             eString = e #'e{0:02d}'.format(e)
             eData = data.get(eString)
-            #print "aoNum: {0} electrode: {1} data: {2}".format(i, eString,eData) 
+            # print "aoNum: {0} electrode: {1} data: {2}".format(i, eString,eData)
             listData.append(eData)
         floatData  = float64(listData) 
         return floatData

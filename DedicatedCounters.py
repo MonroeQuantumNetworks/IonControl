@@ -25,6 +25,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     def __init__(self,config,pulserHardware,parent=0):
         DedicatedCountersForm.__init__(self,parent)
         DedicatedCountersBase.__init__(self)
+        self.dataSlotConnected = False
         self.config = config
         self.settings = self.config.get('DedicatedCounter.Settings',Settings())
         self.pulserHardware = pulserHardware
@@ -113,7 +114,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         if 'DedicatedCounter.size' in self.config:
             self.resize(self.config['DedicatedCounter.size'])
         super(DedicatedCounters,self).show()
-        self.pulserHardware.dedicatedDataAvailable.connect( self.onData )
+        if not self.dataSlotConnected:
+            self.pulserHardware.dedicatedDataAvailable.connect( self.onData )
+            self.dataSlotConnected = True
         
     def onStart(self):
         self.pulserHardware.counterMask = self.settings.counterMask
@@ -139,6 +142,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
     def onData(self, data):
         self.tick += 1
+        #print self.tick, data.data
         self.displayUi.values = data.data[0:4]
         self.displayUi2.values = data.data[4:8]
         self.displayUiADC.values = self.convertAnalog(data.data[8:12])

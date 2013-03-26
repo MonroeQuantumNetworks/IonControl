@@ -51,7 +51,7 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
-        self.scanParametersWidget = ScanParameters.ScanParameters(config,"ScanExperiment")
+        self.scanParametersWidget = ScanParameters.ScanParameters(config,"ExternalScanExperiment")
         self.scanParametersWidget.setupUi(self.scanParametersWidget)
         self.scanParametersDock = QtGui.QDockWidget("Scan Parameters")
         self.scanParametersDock.setObjectName("ExternalScanParametersDock")

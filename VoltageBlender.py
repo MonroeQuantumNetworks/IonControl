@@ -32,6 +32,7 @@ class VoltageBlender(QtCore.QObject):
         self.electrodes = None
         self.aoNums = None
         self.dsubNums = None
+        self.tableHeader = list()
         
     def currentData(self):
         return self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
@@ -41,18 +42,24 @@ class VoltageBlender(QtCore.QObject):
         self.mappingpath = path
         self.electrodes, self.aoNums, self.dsubNums = self.itf._getEmapData()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
-        print "VoltageBlender emit"
-        print "electrodes", self.electrodes
-        print "aoNums", self.aoNums
-        print "dsubNums", self.dsubNums
+        #print "VoltageBlender emit"
+        #print "electrodes", self.electrodes
+        #print "aoNums", self.aoNums
+        #print "dsubNums", self.dsubNums
     
     def loadVoltage(self,path):
         self.itf.open(path)
+        print "Number of lines in file", self.itf.getNumLines()
+        self.lines = list()
         for i in range(self.itf.getNumLines()):
             line = self.itf.eMapReadLine() 
+            print "line",i,line
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
             self.lines.append( line )
+        self.tableHeader = self.itf.tableHeader
+        self.itf.close()
+        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
 
     def loadGlobalAdjust(self,path):
         self.adjustLines = list()
@@ -70,6 +77,8 @@ class VoltageBlender(QtCore.QObject):
                     self.adjustDict[name] = int(value)
             except ValueError:
                 pass   # if it's not an int we will ignore it here
+        itf.close()
+        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
     
     def setAdjust(self, adjust):
         self.adjust = adjust
@@ -87,7 +96,7 @@ class VoltageBlender(QtCore.QObject):
         self.chassis.writeAoBuffer(line)
         self.outputVoltage = line
         self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
-        print "VoltageBlender emit"
+        #print "VoltageBlender emit"
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
