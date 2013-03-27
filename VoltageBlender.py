@@ -20,6 +20,7 @@ from PyQt4 import QtCore
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
+    dataError = QtCore.pyqtSignal(object)
     
     def __init__(self):
         super(VoltageBlender,self).__init__()
@@ -101,13 +102,15 @@ class VoltageBlender(QtCore.QObject):
         self.lineno = lineno
         line = self.adjustLine( line )
         print "writeAoBuffer", line
-        if HardwareDriverLoaded:
-            self.chassis.writeAoBuffer(line)
-        else:
-            print "Hardware Driver not loaded, cannot write voltages"
-        self.outputVoltage = line
-        self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
-        #print "VoltageBlender emit"
+        try:
+            if HardwareDriverLoaded:
+                self.chassis.writeAoBuffer(line)
+            else:
+                print "Hardware Driver not loaded, cannot write voltages"
+            self.outputVoltage = line
+            self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
+        except PyDAQmx.DAQmxFunctions.DAQError as e:
+            self.dataError.emit()
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
