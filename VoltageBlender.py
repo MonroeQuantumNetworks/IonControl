@@ -71,6 +71,7 @@ class VoltageBlender(QtCore.QObject):
 
     def loadGlobalAdjust(self,path):
         self.adjustLines = list()
+        self.adjustDict = dict()
         itf = itfParser()
         itf.eMapFilePath = self.mappingpath
         itf.open(path)
