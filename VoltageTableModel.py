@@ -21,6 +21,8 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         #self.orderAsVoltageFile()
         self.lastElectrodeOrder = 0
         self.lastLength = 0
+        self.voltagesOutOfRange = list()
+        self.allVoltagesOkay = False
         
     def sort(self, column, order ):
         if (self.blender.electrodes):
@@ -67,21 +69,30 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
             self.lastLength = newLength
         if self.orderLookup is None:
             self.orderLookup = range(newLength)
+        self.voltagesOutOfRange = [False]*newLength
+        self.allVoltagesOkay = True
         self.dataChanged.emit(self.index(0,y1),self.index(len(self.blender.electrodes) -1,y2))
+        
+    def onDataError(self, boolarray):
+        self.voltagesOutOfRange = boolarray
+        self.allVoltagesOkay = False
+        self.dataChanged.emit(self.index(1,0),self.index(1,len(self.blender.electrodes) -1))
         
     def displayToolTip(self, index):
         return "ToolTip"
   
     def data(self, index, role): 
-        if role!=QtCore.Qt.DisplayRole:
-            return None
         if index.isValid():
-            #print len(self.orderLookup), index.row()
-            return { 0: str(self.blender.electrodes[self.orderLookup[index.row()]]) if self.blender.electrodes is not None else None,
-                     1: str(self.blender.outputVoltage[self.orderLookup[index.row()]]) if self.blender.outputVoltage is not None else None,
-                     2: self.blender.aoNums[self.orderLookup[index.row()]] if self.blender.aoNums is not None else None,
-                     3: self.blender.dsubNums[self.orderLookup[index.row()]] if self.blender.dsubNums is not None else None,
-                     }.get(index.column(),lambda : None)
+            if role==QtCore.Qt.DisplayRole:
+                return { 0: str(self.blender.electrodes[self.orderLookup[index.row()]]) if self.blender.electrodes is not None else None,
+                         1: str(self.blender.outputVoltage[self.orderLookup[index.row()]]) if self.blender.outputVoltage is not None else None,
+                         2: self.blender.aoNums[self.orderLookup[index.row()]] if self.blender.aoNums is not None else None,
+                         3: self.blender.dsubNums[self.orderLookup[index.row()]] if self.blender.dsubNums is not None else None,
+                         }.get(index.column(),None)
+            elif role==QtCore.Qt.BackgroundColorRole:
+                return { 0:  QtGui.QColor(QtCore.Qt.white) if self.allVoltagesOkay else QtGui.QColor(QtCore.Qt.red),
+                         1:  QtGui.QColor(QtCore.Qt.red) if self.voltagesOutOfRange[self.orderLookup[index.row()]] else QtGui.QColor(QtCore.Qt.white)
+                         }.get(index.column(),None)
         return None
         
     def headerData(self, section, orientation, role ):

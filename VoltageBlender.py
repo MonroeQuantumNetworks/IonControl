@@ -9,6 +9,7 @@ from Chassis.itfParser import itfParser
 try:
     from Chassis.WaveformChassis import WaveformChassis
     from Chassis.DAQmxUtility import Mode
+    import PyDAQmx.DAQmxFunctions
     HardwareDriverLoaded = True
 except ImportError as e:
     print "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e)
@@ -110,7 +111,10 @@ class VoltageBlender(QtCore.QObject):
             self.outputVoltage = line
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         except PyDAQmx.DAQmxFunctions.DAQError as e:
-            self.dataError.emit()
+            print e
+            outOfRange = line>10
+            outOfRange |= line<-10
+            self.dataError.emit(outOfRange.tolist())
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
