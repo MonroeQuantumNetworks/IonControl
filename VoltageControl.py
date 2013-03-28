@@ -52,6 +52,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.tableView.resizeColumnsToContents()
         self.tableView.resizeRowsToContents()
         self.voltageBlender.dataChanged.connect( self.voltageTableModel.onDataChanged )
+        self.voltageBlender.dataError.connect( self.voltageTableModel.onDataError )
         self.tableView.setSortingEnabled(True)
         self.voltageFilesUi.reloadAll()
     
