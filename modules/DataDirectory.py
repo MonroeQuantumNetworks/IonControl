@@ -19,7 +19,8 @@ class DataDirectory:
         self.project = project
     
     def path(self, current=datetime.date.today()):
-        basedir = os.path.join(os.path.expanduser("~\\Documents\\"),self.project)
+        #basedir = os.path.join(os.path.expanduser("~\\Documents\\"),self.project)
+        basedir = os.path.join(r"C:\Users\Public\Documents",self.project)
         yeardir = os.path.join(basedir,str(current.year))
         monthdir = os.path.join(yeardir,"{0}_{1:02d}".format(current.year,current.month))
         daydir = os.path.join(monthdir,"{0}_{1:02d}_{2:02d}".format(current.year,current.month,current.day))

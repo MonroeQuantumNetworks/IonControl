@@ -9,6 +9,7 @@ from Chassis.itfParser import itfParser
 try:
     from Chassis.WaveformChassis import WaveformChassis
     from Chassis.DAQmxUtility import Mode
+    import PyDAQmx.DAQmxFunctions
     HardwareDriverLoaded = True
 except ImportError as e:
     print "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e)
@@ -20,6 +21,7 @@ from PyQt4 import QtCore
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
+    dataError = QtCore.pyqtSignal(object)
     
     def __init__(self):
         super(VoltageBlender,self).__init__()
@@ -101,13 +103,18 @@ class VoltageBlender(QtCore.QObject):
         self.lineno = lineno
         line = self.adjustLine( line )
         print "writeAoBuffer", line
-        if HardwareDriverLoaded:
-            self.chassis.writeAoBuffer(line)
-        else:
-            print "Hardware Driver not loaded, cannot write voltages"
-        self.outputVoltage = line
-        self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
-        #print "VoltageBlender emit"
+        try:
+            if HardwareDriverLoaded:
+                self.chassis.writeAoBuffer(line)
+            else:
+                print "Hardware Driver not loaded, cannot write voltages"
+            self.outputVoltage = line
+            self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
+        except PyDAQmx.DAQmxFunctions.DAQError as e:
+            print e
+            outOfRange = line>10
+            outOfRange |= line<-10
+            self.dataError.emit(outOfRange.tolist())
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
