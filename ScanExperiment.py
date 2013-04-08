@@ -213,10 +213,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings
-        print settings.roiWidth, settings.binwidth, settings.roiStart
-        y, x = numpy.histogram( [ timestamp * self.pulserHardware.timestep for timestamp in data.timestamp[settings.channel]], 
-                                range=(settings.roiStart,settings.roiStart+settings.roiWidth),
-                                bins=int((settings.roiWidth/settings.binwidth).toval()))
+        bins = int( (settings.roiWidth/settings.binwidth).toval() )
+        myrange = (settings.roiStart.toval('ms'),(settings.roiStart+settings.roiWidth).toval('ms'))
+        y, x = numpy.histogram( [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]], 
+                                range=myrange,
+                                bins=bins)
+        print x,y
         if settings.integrate and hasattr(self,'timestampx') and numpy.array_equal(self.timestampx,x):
             self.timestampy += y
         else:
@@ -227,6 +229,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
         else:
             self.timestampCurve.setData( self.timestampx, self.timestampy )
+        print self.timestampx, self.timestampy
                                 
         
     def showHistogram(self, data):

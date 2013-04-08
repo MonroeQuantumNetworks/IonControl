@@ -19,6 +19,7 @@ import time
 import ExternalScannedParameters
 from modules import enum
 from modules import DataDirectory
+import functools
 
         
 ExternalScanForm, ExternalScanBase = PyQt4.uic.loadUiType(r'ui\ExternalScanExperiment.ui')
