@@ -40,7 +40,7 @@ class LaserVCOScan:
         self.savedValue = float(self.powersupply.ask("volt?"))
         self.lastValue = self.savedValue
         self.stepsize = 0.01
-        self.AOMFreq = 110.7e-3
+        self.AOMFreq = 110.0e-3
     
     def saveValue(self):
         self.savedValue = float(self.powersupply.ask("volt?"))
@@ -62,10 +62,13 @@ class LaserVCOScan:
         return self.lastValue
     
     def currentExternalValue(self):
-        self.lastExternalValue = self.wavemeter.get_frequency(4)
-        while self.lastExternalValue <=0:
-            self.lastExternalValue = self.wavemeter.get_frequency(4)    
+#        self.lastExternalValue = self.wavemeter.get_frequency(4)
+#        while self.lastExternalValue <=0:
+        self.lastExternalValue = self.wavemeter.get_frequency(4)    
         self.detuning=(self.lastExternalValue*2-2*self.AOMFreq)-755222.766
+        while numpy.abs(self.detuning)>=1:
+            self.lastExternalValue = self.wavemeter.get_frequency(4)    
+            self.detuning=(self.lastExternalValue*2-2*self.AOMFreq)-755222.766
         return self.detuning
 
         
