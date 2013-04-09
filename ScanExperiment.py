@@ -222,6 +222,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         settings = self.timestampSettingsWidget.settings
         bins = int( (settings.roiWidth/settings.binwidth).toval() )
         myrange = (settings.roiStart.toval('ms'),(settings.roiStart+settings.roiWidth).toval('ms'))
+        print settings.channel, len(data.timestamp[settings.channel]), data.timestamp[settings.channel]
+        print [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]]
         y, x = numpy.histogram( [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]], 
                                 range=myrange,
                                 bins=bins)
@@ -231,7 +233,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             self.timestampx, self.timestampy = x, y
         if self.timestampCurve is None:
-            self.timestampCurve = pyqtgraph.PlotCurveItem(self.timestampx, self.timestampy, stepMode=True)
+            self.timestampCurve = pyqtgraph.PlotCurveItem(self.timestampx, self.timestampy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
             self.timestampView.addItem(self.timestampCurve)
             #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
         else:

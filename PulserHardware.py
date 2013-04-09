@@ -114,10 +114,9 @@ class PipeReader(QtCore.QThread):
                                     self.data.count[channel].append(value)
                                     #print "append", channel
                                 elif key==2:  # timestamp
-                                    self.data.timestampZero[channel] = self.timestampOffset + value
-                                    self.data.timestamp[channel].append(0)
-                                elif key==3:
                                     self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
+                                elif key==3:  # timestamp gate start
+                                    self.data.timestampZero[channel] = self.timestampOffset + value
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
                     #print "emit dataAvailable"
