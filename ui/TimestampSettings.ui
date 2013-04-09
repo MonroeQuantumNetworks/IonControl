@@ -7,13 +7,32 @@
     <x>0</x>
     <y>0</y>
     <width>164</width>
-    <height>198</height>
+    <height>243</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="5" column="0" colspan="2">
+    <widget class="QComboBox" name="integrateCombo">
+     <item>
+      <property name="text">
+       <string>Integrate all</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Integrate each run</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>One trace per point</string>
+      </property>
+     </item>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QCheckBox" name="enableCheckBox">
      <property name="text">
@@ -92,16 +111,6 @@
     <widget class="QSpinBox" name="channelSpinBox">
      <property name="maximum">
       <number>7</number>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="QPushButton" name="integrateButton">
-     <property name="text">
-      <string>Integrate timestamps</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
      </property>
     </widget>
    </item>

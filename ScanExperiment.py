@@ -45,6 +45,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramCurve = None
         self.timestampCurve = None
         self.running = False
+        self.currentTimestampTrace = None
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -80,6 +81,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
+        # traceui for timestamps
+        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.timestampView)
+        self.timestampTraceui.setupUi(self.timestampTraceui)
+        self.timestampDockWidget.setWidget( self.timestampTraceui )
+        self.dockWidgetList.append(self.timestampDockWidget)       
         self.fitWidget = FitUi.FitUi(self.traceui,self.config,"ScanExperiment")
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
@@ -138,6 +144,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
         self.scanParametersWidget.progressBar.setValue(0)
         self.scanParametersWidget.progressBar.setVisible( True )
+        self.timestampsNewRun = True
         print "elapsed time", time.time()-start
     
     def onPause(self):
@@ -217,8 +224,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             self.onStop()
         
-
-        
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings
         bins = int( (settings.roiWidth/settings.binwidth).toval() )
@@ -226,18 +231,23 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         y, x = numpy.histogram( [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]], 
                                 range=myrange,
                                 bins=bins)
-        if settings.integrate and hasattr(self,'timestampx') and numpy.array_equal(self.timestampx,x):
-            self.timestampy += y
-        else:
-            self.timestampx, self.timestampy = x, y
-        if self.timestampCurve is None:
-            #self.timestampCurve = pyqtgraph.PlotCurveItem(self.timestampx[0:-1], self.timestampy, pen='r')
-            self.timestampCurve = self.timestampWidget.graphicsView.plot(self.timestampx[0:-1], self.timestampy, pen='r')
-            self.timestampView.addItem(self.timestampCurve)
-        else:
-            self.timestampCurve.setData( self.timestampx[0:-1], self.timestampy )
-            print len(self.timestampx), len( self.timestampy)
+        x = x[0:-1]
                                 
+        if self.currentTimestampTrace and numpy.array_equal(self.currentTimestampTrace.x,x) and (
+            settings.integrate == self.timestampSettingsWidget.integrationMode.IntegrateAll or 
+                (settings.integrate == self.timestampSettingsWidget.integrationMode.IntegrateRun and not self.timestampsNewRun) ) :
+            self.currentTimestampTrace.y += y
+            self.plottedTimestampTrace.replot()
+        else:    
+            self.currentTimestampTrace = Trace.Trace()
+            self.currentTimestampTrace.x = x
+            self.currentTimestampTrace.y = y
+            self.currentTimestampTrace.name = self.scan.name
+            self.currentTimestampTrace.vars.comment = ""
+            self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
+            self.plottedTimestampTrace = Traceui.PlottedTrace(self.currentTimestampTrace,self.timestampView,pens.penList)
+            self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
+        self.timestampsNewRun = False                       
         
     def showHistogram(self, data):
         settings = self.scanSettingsWidget.settings

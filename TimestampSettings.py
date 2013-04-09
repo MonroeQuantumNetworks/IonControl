@@ -12,16 +12,19 @@ from PyQt4 import QtCore
        
 TimestampSettingsForm, TimestampSettingsBase = PyQt4.uic.loadUiType(r'ui\TimestampSettings.ui')
 
+from modules import enum
 
 class Settings:
     enable = False
     binwidth =  magnitude.mg(1,'us')
     roiStart =  magnitude.mg(0,'us')
     roiWidth =  magnitude.mg(1,'ms')
-    integrate = False
+    integrate = 0
     channel = 0
     
 class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
+    integrationMode = enum.enum('IntegrateAll','IntegrateRun','NoIntegration')    
+    
     def __init__(self,config,parentname,parent=0):
         TimestampSettingsForm.__init__(self,parent)
         TimestampSettingsBase.__init__(self)
@@ -34,13 +37,13 @@ class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
         self.enableCheckBox.setChecked(self.settings.enable)
         self.binwidthSpinBox.setValue(self.settings.binwidth)
         self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
-        self.integrateButton.setChecked(self.settings.integrate)
         self.roiStartSpinBox.setValue(self.settings.roiStart)
         self.roiStartSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiStart') )
         self.roiWidthSpinBox.setValue(self.settings.roiWidth)
         self.roiWidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiWidth') )
         self.enableCheckBox.stateChanged.connect( self.onStateChanged )
-        self.integrateButton.clicked.connect( self.onIntegrateClicked )
+        self.integrateCombo.setCurrentIndex( self.settings.integrate )
+        self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
         self.channelSpinBox.setValue( self.settings.channel )
         self.channelSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'channel') )
 
@@ -51,8 +54,8 @@ class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
     def onStateChanged(self, state):
         self.settings.enable = state == QtCore.Qt.Checked
         
-    def onIntegrateClicked(self):
-        self.settings.integrate = self.integrateButton.isChecked()
+    def onIntegrationChanged(self, value):
+        self.settings.integrate = value
         
     def onClose(self):
         self.config[self.configname] = self.settings

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>854</width>
     <height>732</height>
    </rect>
   </property>
@@ -84,6 +84,15 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_5"/>
+  </widget>
+  <widget class="QDockWidget" name="timestampDockWidget">
+   <property name="windowTitle">
+    <string>Timestamp traces</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_6"/>
   </widget>
   <action name="actionExpand">
    <property name="text">
