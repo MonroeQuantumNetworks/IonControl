@@ -67,8 +67,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramDock.addWidget( self.histogramView)
         self.averageView = pyqtgraph.PlotWidget()       
         self.averageDock.addWidget( self.averageView )
-        self.timestampView = pyqtgraph.PlotWidget()
-        self.timestampDock.addWidget( self.timestampView )
+        self.timestampWidget = CoordinatePlotWidget.CoordinatePlotWidget(self) # pyqtgraph.PlotWidget()
+        self.timestampDock.addWidget( self.timestampWidget )
+        self.timestampView = self.timestampWidget.graphicsView
         try:
             if 'ScanExperiment.pyqtgraph-dokareastate' in self.config:
                 self.area.restoreState(self.config['ScanExperiment.pyqtgraph-dokareastate'])
@@ -222,23 +223,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         settings = self.timestampSettingsWidget.settings
         bins = int( (settings.roiWidth/settings.binwidth).toval() )
         myrange = (settings.roiStart.toval('ms'),(settings.roiStart+settings.roiWidth).toval('ms'))
-        print settings.channel, len(data.timestamp[settings.channel]), data.timestamp[settings.channel]
-        print [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]]
         y, x = numpy.histogram( [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]], 
                                 range=myrange,
                                 bins=bins)
-        print x,y
         if settings.integrate and hasattr(self,'timestampx') and numpy.array_equal(self.timestampx,x):
             self.timestampy += y
         else:
             self.timestampx, self.timestampy = x, y
         if self.timestampCurve is None:
-            self.timestampCurve = pyqtgraph.PlotCurveItem(self.timestampx, self.timestampy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+            #self.timestampCurve = pyqtgraph.PlotCurveItem(self.timestampx[0:-1], self.timestampy, pen='r')
+            self.timestampCurve = self.timestampWidget.graphicsView.plot(self.timestampx[0:-1], self.timestampy, pen='r')
             self.timestampView.addItem(self.timestampCurve)
-            #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
         else:
-            self.timestampCurve.setData( self.timestampx, self.timestampy )
-        print self.timestampx, self.timestampy
+            self.timestampCurve.setData( self.timestampx[0:-1], self.timestampy )
+            print len(self.timestampx), len( self.timestampy)
                                 
         
     def showHistogram(self, data):
@@ -248,11 +246,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.histy += y
         else:
             self.histx, self.histy = x, y
-        #print x, y
         if self.histogramCurve is None:
             self.histogramCurve = pyqtgraph.PlotCurveItem(self.histx, self.histy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
             self.histogramView.addItem(self.histogramCurve)
-            #self.histogramPlot = self.histogramView.plot(x, y, stepMode=True, fillLevel=0 )
         else:
             self.histogramCurve.setData( self.histx, self.histy )
         
