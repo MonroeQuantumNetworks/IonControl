@@ -4,8 +4,8 @@
 #  tests if talking to PMT.
 
 #define DDS729	   0
-#define DDSDoppler 1
-#define PMTChannel 0
+#define DDSDoppler 4
+#define PMTChannel 1
 
 # 397 beam frequencies and amplitudes
 var F_Red_Doppler 120, parameter, MHz, AD9912_FRQ
