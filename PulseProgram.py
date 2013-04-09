@@ -96,7 +96,7 @@ encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = False
+debug = True
 
 def variableValueDict( variabledict ):
     returndict = dict()
@@ -316,6 +316,8 @@ class PulseProgram:
     def addVariable(self, m, lineno, sourcename):
         """ add a variable to the self.variablesdict
         """
+        if debug:
+            print "Variable", m, lineno, sourcename
         var = Variable()
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
@@ -358,10 +360,10 @@ class PulseProgram:
             print "\nCode ---> ByteCode:"
         self.bytecode = []
         for index, line in enumerate(self.code):
-            bytedata = 0
-            byteop = OPS[line[1]]
             if debug:
                 print hex(line[0]),  ": ", line[1:], 
+            bytedata = 0
+            byteop = OPS[line[1]]
             try:
                 data = line[2]
                 #attempt to locate commands with constant data
