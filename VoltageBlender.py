@@ -59,11 +59,11 @@ class VoltageBlender(QtCore.QObject):
     
     def loadVoltage(self,path):
         self.itf.open(path)
-        print "Number of lines in file", self.itf.getNumLines()
+        #print "Number of lines in file", self.itf.getNumLines()
         self.lines = list()
         for i in range(self.itf.getNumLines()):
             line = self.itf.eMapReadLine() 
-            print "line",i,line
+            #print "line",i,line
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
             self.lines.append( line )
@@ -103,7 +103,7 @@ class VoltageBlender(QtCore.QObject):
         self.globalGain = globalGain
         self.lineno = lineno
         line = self.adjustLine( line )
-        print "writeAoBuffer", line
+        #print "writeAoBuffer", line
         try:
             if HardwareDriverLoaded:
                 self.chassis.writeAoBuffer(line)
@@ -124,11 +124,11 @@ class VoltageBlender(QtCore.QObject):
                 offset = offset + self.adjustLines[self.adjustDict[name]] * value
         if "__GAIN__" in self.adjust:
             offset *= self.adjust["__GAIN__"]
-        print "adjustLine", self.globalGain, self.adjust
+        #print "adjustLine", self.globalGain, self.adjust
         return (line+offset)*self.globalGain
             
     def blendLines(self,left,right,convexc,lineGain):
-        print "blendlines", left, right, convexc, lineGain
+        #print "blendlines", left, right, convexc, lineGain
         return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
             
     def close(self):

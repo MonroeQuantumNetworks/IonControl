@@ -54,7 +54,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         oldadjust = self.adjustHistoryShelve.get(name,dict())
         self.adjustHistoryName = name
         self.globalAdjustDict = adjustDict
-        print self.globalAdjustDict
+        #print self.globalAdjustDict
         self.adjust = dict()
         for index, name in enumerate(self.globalAdjustDict.keys()):
             if index<len(self.myLabelList):
@@ -70,7 +70,6 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
                 self.myBoxList[index].setValue( oldadjust.get(name,0) )
                 self.myBoxList[index].valueChanged.connect( functools.partial(self.onValueChanged, name) )
                 self.myBoxList[index].show()
-                print "reusing box", index
                 self.adjust[name] = self.myBoxList[index].value()
             else:
                 Box = MagnitudeSpinBox(self)
@@ -78,12 +77,10 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
                 Box.valueChanged.connect( functools.partial(self.onValueChanged, name) )
                 self.gridLayout.addWidget( Box, 2+index, 2, 1, 1 )
                 self.myBoxList.append( Box )
-                print "adding box", index
                 self.adjust[name] = Box.value()
         for index in range( len(self.globalAdjustDict.keys()), len(self.myLabelList)):
             self.myLabelList[index].hide()
             self.myBoxList[index].hide()
-            print "hiding index", index
         self.gridLayout.addItem(self.spacerItem, len(self.globalAdjustDict)+2, 1, 1, 1)
         self.updateOutput.emit(self.adjust)
         
