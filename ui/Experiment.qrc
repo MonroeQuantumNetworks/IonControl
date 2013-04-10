@@ -23,6 +23,8 @@
     <file>icons/player_stop.png</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/edit-clear-locationbar-ltr.png</file>
+    <file>icons/edit-clear-locationbar-rtl.png</file>
     <file>icons/edit-redo-8.png</file>
     <file>icons/edit-undo-8.png</file>
     <file>icons/pictogram-din-w008-electricisty.png</file>

@@ -96,7 +96,7 @@ encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = True
+debug = False
 
 def variableValueDict( variabledict ):
     returndict = dict()

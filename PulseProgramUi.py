@@ -18,8 +18,9 @@ from modules import dictutil
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
 class ConfiguredParams:
-    lastFilename = None
-    recentFiles = dict()
+    def __init__(self):
+        self.lastFilename = None
+        self.recentFiles = dict()
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal()    
@@ -47,21 +48,19 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
+        self.configParams =  self.config.get(self.configname, ConfiguredParams())
         self.datashelf = configshelve.configshelve(self.configname)
         self.datashelf.open()
-        if self.configname not in self.config:
-            self.config[self.configname] = ConfiguredParams()
-        self.configParams = self.config[self.configname] 
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
         if self.configParams.lastFilename is not None:
-            #print self.configname, self.configParams.lastFilename
             self.loadFile( self.configParams.lastFilename )
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
             self.splitterVertical.restoreState(self.configParams.splitterVertical)
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
+        self.removeCurrent.clicked.connect( self.onRemoveCurrent )
 
     def onFilenameChange(self, name ):
         name = str(name)
@@ -108,6 +107,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.recentFiles[filename]=path
         self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
 
+    def onRemoveCurrent(self):
+        text = str(self.filenameComboBox.currentText())
+        if text in self.configParams.recentFiles:
+            self.configParams.recentFiles.pop(text)
+        self.filenameComboBox.removeItem(self.filenameComboBox.currentIndex())
+
     def onSave(self):
         self.onApply()
         self.pulseProgram.saveSource()
@@ -149,16 +154,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
         
     def close(self):
-        if not hasattr(self, 'closed'):
-            self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
-            self.configParams.splitterVertical = self.splitterVertical.saveState()
-            self.config[self.configname] = self.configParams
-            self.datashelf[self.configParams.lastFilename] = self.variabledict
-            self.datashelf.close()
-            self.closed = True
-        else:
-            print "called close again on", self.configname
-        
+        self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
+        self.configParams.splitterVertical = self.splitterVertical.saveState()
+        self.config[self.configname] = self.configParams
+        self.datashelf[self.configParams.lastFilename] = self.variabledict
+        self.datashelf.close()
+       
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
         substitutes = dict()
@@ -170,6 +171,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
         pass
+    
     def __init__(self,config):
         super(PulseProgramSetUi,self).__init__()
         self.config = config

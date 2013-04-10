@@ -37,6 +37,20 @@
           </widget>
          </item>
          <item>
+          <widget class="QToolButton" name="removeCurrent">
+           <property name="toolTip">
+            <string>remove Current entry from Combo Box</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="Experiment.qrc">
+             <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QToolButton" name="loadButton">
            <property name="text">
             <string>...</string>
