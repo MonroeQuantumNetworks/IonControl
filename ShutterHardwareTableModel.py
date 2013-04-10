@@ -36,7 +36,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         if index.column()==0 and role==QtCore.Qt.EditRole:
             if value in self.shutterNameDict and index.column()==self.shutterNameDict[value]: # no change
                 return True
-            elif value in self.shutterNameDict: # douplicate
+            elif value in self.shutterNameDict: # duplicate
                 print "cannot have the same name twice"
                 return False
             else:
@@ -48,7 +48,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
                     self.shutterdict[index.row()] = value
                 else:
                     if index.row() in self.shutterdict:
-                        self.shutterdict.pop(self.shutterdict[index.row()])
+                        self.shutterdict.pop(index.row())
         return False
         
     def data(self, index, role): 
