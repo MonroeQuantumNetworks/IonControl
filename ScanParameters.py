@@ -125,7 +125,8 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
-        for name, var in variabledict.iteritems():
+        self.comboBoxParameter.clear()
+        for name, var in iter(sorted(variabledict.iteritems())):
             if var.type == "parameter":
                 self.comboBoxParameter.addItem(var.name)
         if self.settings.parameter is not None:

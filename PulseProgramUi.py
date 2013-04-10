@@ -22,6 +22,8 @@ class ConfiguredParams:
     recentFiles = dict()
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
+    pulseProgramChanged = QtCore.pyqtSignal()    
+    
     def __init__(self,config,parameterdict):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
@@ -138,6 +140,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
+        self.pulseProgramChanged.emit()
                     
     def onAccept(self):
         pass

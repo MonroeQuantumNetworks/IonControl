@@ -108,6 +108,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
         self.scanParametersWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
+        self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
+        
+    def updatePulseProgram(self):
+        self.scanParametersWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
 
     def onClear(self):
         self.dockWidget.setShown(True)
