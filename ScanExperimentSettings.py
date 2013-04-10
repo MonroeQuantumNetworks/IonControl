@@ -17,12 +17,19 @@ class Scan:
     pass
 
 class Settings:
-    project = ""
-    histogramBins = 50
-    integrate = False
-    counter = 0
-    evaluationIndex = 0
-    evaluationAlgorithm = None
+    def __init__(self):
+        self.project = ""
+        self.histogramBins = 50
+        self.integrate = False
+        self.counter = 0
+        self.evalName = 'Mean'
+        
+    def upgrade(self):
+        self.__dict__.setdefault( 'project', '')
+        self.__dict__.setdefault( 'histogramBins', 50)
+        self.__dict__.setdefault( 'integrate', False)
+        self.__dict__.setdefault( 'counter', 0)
+        self.__dict__.setdefault( 'evalName', 'Mean')
 
 class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsBase ):
     def __init__(self,config,parentname,parent=0):
@@ -30,21 +37,27 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         ScanExperimentSettingsBase.__init__(self)
         self.config = config
         self.configname = 'ScanExperimentSettings.'+parentname
-        self.settings = self.config.get(self.configname,Settings())
+        self._settings = self.config.get(self.configname,Settings())
+        self._settings.upgrade()
+
+    @property
+    def settings(self):
+        self._settings.evalAlgo = self.algorithms.get( self._settings.evalName )
+        return self._settings
 
     def setupUi(self, parent):
         ScanExperimentSettingsForm.setupUi(self,parent)
-        self.projectEdit.setText(self.settings.project)
+        self.projectEdit.setText(self._settings.project)
         self.projectEdit.editingFinished.connect(self.onProjectEditingFinished)
-        self.histogramBinsBox.setValue(self.settings.histogramBins)
+        self.histogramBinsBox.setValue(self._settings.histogramBins)
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
-        self.integrateHistogramButton.setChecked( self.settings.integrate )
+        self.integrateHistogramButton.setChecked( self._settings.integrate )
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
-        self.counterSpinBox.setValue( self.settings.counter )
+        self.counterSpinBox.setValue( self._settings.counter )
         self.counterSpinBox.valueChanged.connect( self.onCounterChanged )
         self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
-        self.evalMethodCombo.setCurrentIndex( self.settings.evaluationIndex )
-        self.evalMethodCombo.currentIndexChanged[int].connect( self.onCurrentIndexChanged )
+        self.evalMethodCombo.setCurrentIndex( self.evalMethodCombo.findText(self._settings.evalName) )
+        self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onCurrentIndexChanged )
         self.algorithms = dict()
         for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
             self.algorithms[name] = algo()
@@ -66,22 +79,21 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         self.algorithms[algo].parameters[name] = value
 
     def onIntegrateHistogramClicked(self):
-        self.settings.integrate = self.integrateHistogramButton.isChecked()
+        self._settings.integrate = self.integrateHistogramButton.isChecked()
 
     def onProjectEditingFinished(self):
-        self.settings.project = str(self.projectEdit.text())
+        self._settings.project = str(self.projectEdit.text())
         
     def onHistogramBinsChanged(self, bins):
-        self.settings.histogramBins = bins
+        self._settings.histogramBins = bins
         
     def onCounterChanged(self, value):
-        self.settings.counter = value
+        self._settings.counter = value
     
     def onClose(self):
-        self.config[self.configname] = self.settings
+        self.config[self.configname] = self._settings
         
-    def onCurrentIndexChanged(self, index):
-        self.settings.evaluationIndex = index
-        self.settings.evaluationAlgorithm = CountEvaluation.EvaluationAlgorithms.get( str(self.evalMethodCombo.currentText()), 'Mean' )
-        self.evalStackedWidget.setCurrentIndex(index)
+    def onCurrentIndexChanged(self, name):
+        self._settings.evalName = str(name)
+        self.evalStackedWidget.setCurrentIndex(self.evalMethodCombo.currentIndex())
         

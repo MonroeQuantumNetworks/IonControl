@@ -182,7 +182,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Called by worker with new data
         """
         print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
-        mean = numpy.mean( data.count[self.scanSettings.counter] )
+        mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        #mean = numpy.mean( data.count[self.scanSettings.counter] )
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
         else:

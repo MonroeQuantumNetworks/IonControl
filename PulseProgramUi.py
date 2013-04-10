@@ -21,6 +21,10 @@ class ConfiguredParams:
     def __init__(self):
         self.lastFilename = None
         self.recentFiles = dict()
+        
+    def upgrade(self):
+        self.__dict__.setdefault('lastFilename',None)
+        self.__dict__.setdefault('recentFiles',dict())
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal()    
@@ -49,6 +53,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
+        self.configParams.upgrade()
         self.datashelf = configshelve.configshelve(self.configname)
         self.datashelf.open()
         if hasattr(self.configParams,'recentFiles'):
