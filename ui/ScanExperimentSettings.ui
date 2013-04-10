@@ -14,24 +14,47 @@
    <string>Experiment Settings</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_4">
+   <item row="1" column="1" colspan="2">
+    <widget class="QSpinBox" name="histogramBinsBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="3">
+    <widget class="QStackedWidget" name="evalStackedWidget">
+     <property name="currentIndex">
+      <number>-1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="3">
+    <widget class="QPushButton" name="integrateHistogramButton">
      <property name="text">
-      <string>Eval Counter</string>
+      <string>Integrate Histogram</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="3" column="1" colspan="2">
-    <widget class="QSpinBox" name="counterSpinBox">
-     <property name="maximum">
-      <number>7</number>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1" colspan="2">
+   <item row="4" column="1" colspan="2">
     <widget class="QComboBox" name="evalMethodCombo"/>
    </item>
-   <item row="5" column="0">
+   <item row="0" column="1" colspan="2">
+    <widget class="QLineEdit" name="projectEdit">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
     <widget class="QLabel" name="label_5">
      <property name="text">
       <string>Eval Method</string>
@@ -45,69 +68,24 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1" colspan="2">
-    <widget class="QLineEdit" name="filenameEdit"/>
-   </item>
-   <item row="2" column="1" colspan="2">
-    <widget class="QSpinBox" name="histogramBinsBox">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-       <horstretch>1</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Eval Counter</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Histogram bins</string>
+   <item row="2" column="1" colspan="2">
+    <widget class="QSpinBox" name="counterSpinBox">
+     <property name="maximum">
+      <number>7</number>
      </property>
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="label_3">
+    <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Filename</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1" colspan="2">
-    <widget class="QLineEdit" name="projectEdit">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-       <horstretch>1</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="1">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>13</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="6" column="0" colspan="3">
-    <widget class="QStackedWidget" name="evalStackedWidget">
-     <widget class="QWidget" name="page"/>
-     <widget class="QWidget" name="page_2"/>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="3">
-    <widget class="QPushButton" name="integrateHistogramButton">
-     <property name="text">
-      <string>Integrate Histogram</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
+      <string>Histogram bins</string>
      </property>
     </widget>
    </item>
