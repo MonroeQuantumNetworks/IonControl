@@ -34,7 +34,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     OpStates = enum.enum('idle','running','paused')
     experimentName = 'Scan Sequence'
 
-    def __init__(self,settings,pulserHardware,parent=None):
+    def __init__(self,settings,pulserHardware,experimentName,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
@@ -46,6 +46,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampCurve = None
         self.running = False
         self.currentTimestampTrace = None
+        self.experimentName = experimentName
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -72,8 +73,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampDock.addWidget( self.timestampWidget )
         self.timestampView = self.timestampWidget.graphicsView
         try:
-            if 'ScanExperiment.pyqtgraph-dokareastate' in self.config:
-                self.area.restoreState(self.config['ScanExperiment.pyqtgraph-dokareastate'])
+            if self.experimentName+'.pyqtgraph-dokareastate' in self.config:
+                self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dokareastate'])
         except:
             pass # Ignore errors on restoring the state. This might happen after a new dock is added
         self.penicons = pens.penicons().penicons()
@@ -86,24 +87,24 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampTraceui.setupUi(self.timestampTraceui)
         self.timestampDockWidget.setWidget( self.timestampTraceui )
         self.dockWidgetList.append(self.timestampDockWidget)       
-        self.fitWidget = FitUi.FitUi(self.traceui,self.config,"ScanExperiment")
+        self.fitWidget = FitUi.FitUi(self.traceui,self.config,self.experimentName)
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
-        self.scanParametersWidget = ScanParameters.ScanParameters(config,"ScanExperiment")
+        self.scanParametersWidget = ScanParameters.ScanParameters(config,self.experimentName)
         self.scanParametersWidget.setupUi(self.scanParametersWidget)
         self.scanParametersUi.setWidget(self.scanParametersWidget )
-        self.scanSettingsWidget = ScanExperimentSettings.ScanExperimentSettings(config,"ScanExperiment")
+        self.scanSettingsWidget = ScanExperimentSettings.ScanExperimentSettings(config,self.experimentName)
         self.scanSettingsWidget.setupUi(self.scanSettingsWidget)
         self.scanSettingsUi.setWidget(self.scanSettingsWidget)
-        self.timestampSettingsWidget = TimestampSettings.TimestampSettings(config,"ScanExperiment")
+        self.timestampSettingsWidget = TimestampSettings.TimestampSettings(config,self.experimentName)
         self.timestampSettingsWidget.setupUi(self.timestampSettingsWidget)
         self.timestampSettingsUi.setWidget(self.timestampSettingsWidget)
         self.dockWidgetList.append(self.scanParametersUi)
         self.dockWidgetList.append(self.scanSettingsUi)
         self.dockWidgetList.append(self.timestampSettingsUi)
-        if 'ScanExperiment.MainWindow.State' in self.config:
-            QtGui.QMainWindow.restoreState(self,self.config['ScanExperiment.MainWindow.State'])
+        if self.experimentName+'.MainWindow.State' in self.config:
+            QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
@@ -284,8 +285,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.state = self.OpStates.idle
                 
     def onClose(self):
-        self.config['ScanExperiment.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-        self.config['ScanExperiment.pyqtgraph-dokareastate'] = self.area.saveState()
+        self.config[self.experimentName+'.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
+        self.config[self.experimentName+'.pyqtgraph-dokareastate'] = self.area.saveState()
         self.scanParametersWidget.onClose()
         self.scanSettingsWidget.onClose()
         self.timestampSettingsWidget.onClose()

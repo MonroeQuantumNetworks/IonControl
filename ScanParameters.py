@@ -168,7 +168,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
         self.progressBar.setVisible( False )
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
-        self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(settings.parameter))
+        if settings.parameter: self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(settings.parameter))
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
     
     def onRedo(self):
