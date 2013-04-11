@@ -242,13 +242,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
     parser.add_argument('--config-dir', type=str, default="~\\AppData\\Local\\python-control\\", help='name of directory for configuration files')
     args = parser.parse_args()
-    argsdict = vars(args)
-    print argsdict
     app = QtGui.QApplication(sys.argv)
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
-    with configshelve.configshelve("experiment-gui",argsdict['config_dir']) as config:
+    with configshelve.configshelve("experiment-gui",args.config_dir) as config:
         ui = WidgetContainerUi(config)
         ui.setupUi(ui)
         logger.textWritten.connect(ui.onMessageWrite)
