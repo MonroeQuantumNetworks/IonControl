@@ -9,8 +9,8 @@ import os
 import shelve
 
 class configshelve:
-    def __init__(self,name):
-        configdir = os.path.expanduser("~\\AppData\\Local\\python-control\\")
+    def __init__(self,name,directory="~\\AppData\\Local\\python-control\\"):
+        configdir = os.path.expanduser(directory)
         if not os.path.exists(configdir):
             os.makedirs(configdir)
         self.configfile = os.path.join(configdir,name+".config")

@@ -20,8 +20,6 @@ import CounterWidget
 import ScanExperiment
 import ExternalScanExperiment
 import NewExternalScanExperiment
-#import TDCWidget
-#import FastTDCWidget
 import SettingsDialog
 import testExperiment
 from modules import configshelve
@@ -36,6 +34,7 @@ import VoltageControl
     
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
+import argparse
 
 class Logger(QtCore.QObject):    
     textWritten = QtCore.pyqtSignal(str)
@@ -240,12 +239,16 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
 
 if __name__ == "__main__":
     import sys
+    parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
+    parser.add_argument('--config-dir', type=str, default="~\\AppData\\Local\\python-control\\", help='name of directory for configuration files')
+    args = parser.parse_args()
+    argsdict = vars(args)
+    print argsdict
     app = QtGui.QApplication(sys.argv)
-    #MainWindow = QtGui.QMainWindow()
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
-    with configshelve.configshelve("experiment-gui") as config:
+    with configshelve.configshelve("experiment-gui",argsdict['config_dir']) as config:
         ui = WidgetContainerUi(config)
         ui.setupUi(ui)
         logger.textWritten.connect(ui.onMessageWrite)
