@@ -19,7 +19,7 @@ var startup           0x4000001, shutter startupMask
 var startupTime       1, parameter, ms
 var coolingOnMask     1, mask
 var coolingOn         1, shutter coolingOnMask
-var coolingCounter    1, counter
+var coolingCounter    2, counter
 var coolingOffMask    1, mask
 var coolingOff        0, shutter coolingOffMask
 var coolingOffCounter 0, counter
@@ -27,7 +27,7 @@ var coolingTime       10, parameter, ms
 var experiments   10, parameter
 var experimentsleft 10
 var epsilon         2, parameter, us
-var ddsApplyTrigger   3,trigger
+var ddsApplyTrigger   0x3f,trigger
 var endLabel 0xffffffff
 var dummy3 42, parameter, MHz, AD9912_FRQ
 
