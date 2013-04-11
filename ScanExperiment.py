@@ -163,12 +163,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
         self.scanParametersWidget.progressBar.setVisible( False )
-        
-    def startData(self):
-        """ Initialize necessary data structures
-        """
-        pass
-    
+
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory( self.scanSettings.project )
         if pattern and pattern!='':
@@ -273,7 +268,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if (self.deviceSettings is not None) and (not self.activated):
             try:
                 print "Scan activated"
-                self.startData()
                 self.pulserHardware.ppFlushData()
                 self.pulserHardware.dataAvailable.connect(self.onData)
                 self.activated = True

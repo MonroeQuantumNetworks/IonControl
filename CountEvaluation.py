@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 09 13:34:39 2013
-
-@author: wolverine
+Algorithms to evaluate the observed counts from a sequence of experiments:
+This is used for simple averaging but also for different state detection algorithms
 """
-
 import numpy
 import math
 
 class MeanEvaluation:
+    """
+    returns mean and shot noise error
+    """
     def __init__(self):
         self.parameters = dict()
         self.name = "Mean"
@@ -20,6 +21,11 @@ class MeanEvaluation:
         return mean, stderror
 
 class ThresholdEvaluation:
+    """
+    simple threshold state detection: if more than threshold counts are observed 
+    the ion is considered bright. For threshold photons or less it is considered
+    dark.
+    """
     def __init__(self):
         self.parameters = { 'threshold':1 }
         self.name = "Threshold"
