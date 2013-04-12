@@ -55,8 +55,8 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.dataError.connect( self.voltageTableModel.onDataError )
         self.tableView.setSortingEnabled(True)
         self.voltageFilesUi.reloadAll()
-        adjust = self.adjustUi.adjust
-        self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
+#        adjust = self.adjustUi.adjust
+#        self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )

@@ -55,7 +55,7 @@ class NewExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
+        print "NewExternalScan onData", len(data.count[self.scanSettings.counter]), data.scanvalue
         mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
