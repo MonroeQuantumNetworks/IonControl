@@ -9,6 +9,7 @@ Created on Tue Mar 12 15:22:09 2013
 from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import magnitude
+import time
 
 try:
     import visa
@@ -32,6 +33,42 @@ class ExternalParameter:
     def currentExternalValue(self):
         pass
     
+
+class LaserSynthesizerScan:
+    def __init__(self):
+        self.synthesizer = visa.instrument("GPIB0::23::INSTR") #open visa session
+        self.savedValue = 3098000
+        self.lastValue = self.savedValue
+        self.stepsize = 1000
+        self.delay = 0.1
+    
+    def saveValue(self):
+        #self.savedValue = float(self.synthesizer.ask("volt?"))
+        #self.lastValue = self.savedValue
+        pass
+    
+    def restoreValue(self):
+        self.setValue( self.savedValue )        
+    
+    def setValue(self,value):
+        print "SetValue", value      
+        if isinstance(value,magnitude.Magnitude):
+            myvalue = round(value.ounit("kHz").toval())
+        else:
+            myvalue = round(value)
+        for v in numpy.linspace(self.lastValue, myvalue, int(round(abs(self.lastValue-myvalue)/self.stepsize)+1) ):
+            command = "P{0:0>8.0f}Z0K0L0O1".format(v)
+            self.synthesizer.write(command)#set voltage
+            self.lastValue = v
+            time.sleep(self.delay)
+            print "Set frequency to", self.lastValue, command
+            
+    def currentValue(self):
+        return self.lastValue/1000.
+    
+    def currentExternalValue(self):
+        return self.lastValue/1000.
+   
     
 class LaserVCOScan:
     def __init__(self):
@@ -78,4 +115,4 @@ class LaserVCOScan:
         return self.detuning
 
         
-ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan }
+ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 'Laser Synthesizer Scan': LaserSynthesizerScan }

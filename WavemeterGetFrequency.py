@@ -17,6 +17,7 @@ class WavemeterGetFrequency(object):
         self.nMaxAttempts = 100
         self.connection = httplib.HTTPConnection(self.address, timeout = 5)
         #self.connection.set_debuglevel(5)
+        #print "Initialize WavemeterGetFrequency" 
         
     def __del__(self):
         self.connection.close()

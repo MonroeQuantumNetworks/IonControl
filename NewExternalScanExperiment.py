@@ -51,6 +51,10 @@ class NewExternalScanExperiment( ScanExperiment.ScanExperiment ):
         self.timestampsNewRun = True
         print "elapsed time", time.time()-start
 
+    def onStop(self):
+        super(NewExternalScanExperiment,self).onStop()
+        self.externalParameter.restoreValue()
+
 
     def onData(self, data ):
         """ Called by worker with new data
