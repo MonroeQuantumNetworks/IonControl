@@ -74,6 +74,7 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
             gridLayout.addItem(spacerItem, len(parameters), 0, 1, 1)
             algoWidget.setLayout(gridLayout)
             self.evalStackedWidget.addWidget( algoWidget )
+        self.evalStackedWidget.setCurrentIndex( self.evalMethodCombo.findText(self._settings.evalName) )
 
     def onParamValueChanged(self, algo, name, value):
         self.algorithms[algo].parameters[name] = value
