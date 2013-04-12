@@ -52,6 +52,11 @@ class PlottedTrace(object):
             self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, height=self.trace.height,
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
+        elif hasattr(self.trace,'top') and hasattr(self.trace,'bottom'):
+            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom,
+                                                       pen=self.penList[penindex][0])
+            self.graphicsView.addItem(self.errorBarItem)
+            
 
     def plotLines(self,penindex):
         self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=self.penList[penindex][0])

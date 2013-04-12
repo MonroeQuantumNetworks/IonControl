@@ -15,7 +15,9 @@ import Traceui
 import pyqtgraph
 import MainWindowWidget
 import FitUi
-        
+import functools
+from modules import DataDirectory
+
 testForm, testBase = PyQt4.uic.loadUiType(r'ui\testExperiment.ui')
 
 class test(testForm, MainWindowWidget.MainWindowWidget):
@@ -61,11 +63,14 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         phase = random.uniform(0,2*numpy.pi)
         trace.x = numpy.arange(0,5,5/200.)
         trace.y = numpy.sin( numpy.arange(0,5,5/200.) + phase)
-        trace.height = 0.2
         for index, elem in enumerate(trace.y):
             trace.y[index] = random.gauss(elem,0.1)
+        trace.top = numpy.array([0.1]*len(trace.y))
+        trace.bottom = numpy.array([0.1]*len(trace.y))
+        #trace.height = numpy.array([0.2]*len(trace.x))
         trace.name = "test trace"
         trace.vars.comment = "My Comment"
+        trace.filenameCallback = functools.partial( self.traceFilename, '' )
         self.traceui.addTrace(Traceui.PlottedTrace(trace,self.graphicsView,pens.penList),pen=-1)
     
     def onPause(self):
@@ -85,3 +90,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def onClose(self):
         self.config['testWidget.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.traceui.onClose()
+
+    def traceFilename(self, pattern):
+        path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file'))
+        return path

@@ -64,34 +64,35 @@ class Trace(object):
     def saveTrace(self,filename):
         if filename!='':
             of = open(filename,'w')
+            columnlist = [self.x,self.y]
+            columnspec = ['x', 'y']
+            for column in ['height', 'top', 'bottom']:
+                if hasattr(self, column):
+                    columnlist.append( getattr(self,column) )
+                    columnspec.append( column )
+            self.vars.columnspec = ",".join(columnspec)
             self.saveTraceHeader(of)
-            if hasattr(self, 'height'):
-                print >>of, "# x y error"
-                for x,db,error in zip(self.x, self.y, self.height):
-                    print >>of, x, db, error
-            else:
-                print >>of, "# x y "
-                for x,db in zip(self.x, self.y):
-                    print >>of, x, db
+            for l in zip(*columnlist):
+                print >>of, " ".join(map(str,l))
             self.filename = filename
             of.close()
     
     def loadTrace(self,filename):
         infile = open(filename,'r')
-        self.x = []
-        self.y = []
+        data = []
+        self.vars.columnspec = "x,y"
         with infile:
             for line in infile:
-                line = line.lstrip()
+                line = line.strip()
                 if line[0]=='#':
                     a = line.split(None,2)
                     if len(a)>2:
                         self.vars.__dict__[a[1]] = a[2]  
                 else:
-                    a = line.split(None,2)
-                    if len(a)>1:
-                        self.x.append(float(a[0]))
-                        self.y.append(float(a[1]))
+                    data.append( map(float,line.split()) )
+        columnspec =  self.vars.columnspec.split(',')
+        for attr,d in zip( columnspec, zip(*data) ):
+            setattr( self, attr, numpy.array(d) )
         self.filename = filename
     
     def setPlotfunction(self, callback):
