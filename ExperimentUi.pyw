@@ -18,7 +18,6 @@ This is the main gui program for the ExperimentalUi
 
 import CounterWidget
 import ScanExperiment
-import ExternalScanExperiment
 import NewExternalScanExperiment
 import SettingsDialog
 import testExperiment
@@ -75,7 +74,6 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
 
         for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
                              (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scanning"),
-                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware),"External Scan"),
                              (NewExternalScanExperiment.NewExternalScanExperiment(self.settings,self.pulserHardware,"NewExternalScan"), "New External Scan"),
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
