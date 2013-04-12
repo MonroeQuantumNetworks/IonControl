@@ -56,12 +56,15 @@ class Trace(object):
         
     def saveTraceHeader(self,outfile):
         print >>outfile, "#", datetime.datetime.now()
-        for var in self.vars.__dict__.keys():
-            print >>outfile, "#", var, self.vars.__dict__[var]
+        for var, value in self.vars.__dict__.iteritems():
+            print >>outfile, "#", var, value
         if self.header is not None:
             print >>outfile, self.header
 
     def saveTrace(self,filename):
+        if hasattr(self,'fitfunction'):
+            print 'fitfunction saved'
+            self.vars.fitfunction = self.fitfunction
         if filename!='':
             of = open(filename,'w')
             columnlist = [self.x,self.y]

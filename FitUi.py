@@ -30,7 +30,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.parentname = parentname
         self.fitFunctions = list()
         self.traceui = traceui
-        for fitclass in fitFunctionList:
+        for fitclass in FitFunctions.fitFunctionMap.values():
             self.fitFunctions.append( FitFunctionUi(fitclass()) )
             
     def setParameter(self,fitfunction,index,value):
