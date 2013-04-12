@@ -16,9 +16,9 @@ import Traceui
 import pens
 import ExternalScannedParameters
 
-class NewExternalScanExperiment( ScanExperiment.ScanExperiment ):
+class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def setupUi(self,MainWindow,config):
-        super(NewExternalScanExperiment,self).setupUi(MainWindow,config)
+        super(ExternalScanExperiment,self).setupUi(MainWindow,config)
         self.scanParametersWidget.setScanNames(ExternalScannedParameters.ExternalScannedParameters.keys())
         
     def setPulseProgramUi(self,pulseProgramUi):

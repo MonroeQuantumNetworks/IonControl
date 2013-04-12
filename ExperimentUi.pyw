@@ -18,7 +18,7 @@ This is the main gui program for the ExperimentalUi
 
 import CounterWidget
 import ScanExperiment
-import NewExternalScanExperiment
+import ExternalScanExperiment
 import SettingsDialog
 import testExperiment
 from modules import configshelve
@@ -73,12 +73,12 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
         for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
-                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scanning"),
-                             (NewExternalScanExperiment.NewExternalScanExperiment(self.settings,self.pulserHardware,"NewExternalScan"), "New External Scan"),
+                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
+                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware,"ExternalScan"), "External Scan"),
                              #(TDCWidget.TDCWidget(),"Time to digital converter" ),
                              #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
-                             (testExperiment.test(),"test")
+                             (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
             if hasattr(widget,'setPulseProgramUi'):
@@ -102,7 +102,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulserHardware.xem )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
-        self.tabDict['Scanning'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
+        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
                
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
