@@ -100,7 +100,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     def onClose(self):
         self.config['DedicatedCounter.Settings'] = self.settings
         self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-      
+        self.settingsUi.onClose()
         
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()
