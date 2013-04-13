@@ -35,17 +35,15 @@ class ExternalParameter:
     
 
 class LaserSynthesizerScan:
-    def __init__(self):
-        self.synthesizer = visa.instrument("GPIB0::23::INSTR") #open visa session
+    def __init__(self, instrument="GPIB0::23::INSTR"):
+        self.synthesizer = visa.instrument(instrument) #open visa session
         self.savedValue = 3098000
         self.lastValue = self.savedValue
         self.stepsize = 1000
         self.delay = 0.1
     
     def saveValue(self):
-        #self.savedValue = float(self.synthesizer.ask("volt?"))
-        #self.lastValue = self.savedValue
-        pass
+        self.savedValue = self.lastValue
     
     def restoreValue(self):
         self.setValue( self.savedValue )        
@@ -78,8 +76,8 @@ class LaserSynthesizerScan:
    
     
 class LaserVCOScan:
-    def __init__(self):
-        self.powersupply = visa.instrument("power_supply_next_to_397_box")#open visa session
+    def __init__(self,instrument="power_supply_next_to_397_box"):
+        self.powersupply = visa.instrument(instrument)#open visa session
         self.wavemeter = WavemeterGetFrequency()
         self.savedValue = float(self.powersupply.ask("volt?"))
         print "LaserVCOScan savedValue", self.savedValue
@@ -126,5 +124,38 @@ class LaserVCOScan:
             counter += 1
         return self.detuning
 
+class DummyParameter:
+    def __init__(self,instrument=''):
+        print "Opening DummyInstrument", instrument
+        self.Integer = 5
+        self.Float = 3.14
+        self.String = 'Hallo Welt'
+        self.Boolean = True
+    
+    def saveValue(self):
+        print "Dummy.saveValue"
+    
+    def restoreValue(self):
+        print "Dummy.restoreValue"
+    
+    def setValue(self,value):
+        print "Dummy.setValue", value
+    
+    def currentExternalValue(self):
+        return 0
         
-ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 'Laser Synthesizer Scan': LaserSynthesizerScan }
+    def paramDef(self):
+        return [{'name': 'Integer', 'type': 'int', 'value': self.Integer},
+        {'name': 'Float', 'type': 'float', 'value': self.Float, 'step': 0.1},
+        {'name': 'String', 'type': 'str', 'value': self.String},
+        {'name': 'Boolean', 'type': 'bool', 'value': self.Boolean, 'tip': "This is a checkbox"}]
+        
+    def update(self,param, changes):
+        for param, change, data in changes:
+            setattr( self, param.name(), data)
+
+        
+ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 
+                              'Laser Synthesizer Scan': LaserSynthesizerScan,
+                              'Dummy': DummyParameter }
+
