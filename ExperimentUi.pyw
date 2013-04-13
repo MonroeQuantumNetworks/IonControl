@@ -104,7 +104,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
-        self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi()
+        self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalScannedParametersSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalScannedParametersSelectionDock.setObjectName("_ExternalScannedParametersSelectionDock")
@@ -251,6 +251,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.close()
         self.voltageControlWindow.onClose()
         self.voltageControlWindow.close()
+        self.ExternalParametersSelectionUi.onClose()
         
 
 if __name__ == "__main__":

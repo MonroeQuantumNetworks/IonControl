@@ -20,9 +20,11 @@ class ConfigUi(ConfigForm,ConfigBase):
         self.param = None
         self.treeWidget = None
     
-    def setupUi(self,MainWindow):
+    def setupUi(self,MainWindow,default):
         ConfigForm.setupUi(self,MainWindow)
         self.verticalLayout.addStretch()
+        self.instrumentLineEdit.setText(default[0])
+        self.enableCheckBox.setChecked(default[1])
         
     def update(self,parameter):
         if parameter:
