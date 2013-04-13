@@ -17,9 +17,9 @@ class ConfigUi(ConfigForm,ConfigBase):
     def __init__(self, paramname, parent=None):
         ConfigBase.__init__(self,parent)
         ConfigForm.__init__(self)
-        self.count = 0
-        self.mydict = { 'Integer': 10, 'Float': 3.14, 'String' : 'Lore Ypsum', 'Boolean': False }
         self.paramname = paramname
+        self.param = None
+        self.treeWidget = None
     
     def setupUi(self,MainWindow):
         ConfigForm.setupUi(self,MainWindow)
@@ -27,11 +27,17 @@ class ConfigUi(ConfigForm,ConfigBase):
         
     def update(self,parameter):
         if parameter:
-            self.p = Parameter.create(name='params', type='group', children=parameter.paramDef())
-            self.t = ParameterTree()
-            self.t.setParameters(self.p, showTop=False)
-            self.verticalLayout.insertWidget(1,self.t)
-            self.p.sigTreeStateChanged.connect(parameter.update)
+            if not self.treeWidget:
+                self.param = Parameter.create(name='params', type='group', children=parameter.paramDef())
+                self.treeWidget = ParameterTree()
+                self.treeWidget.setParameters(self.param, showTop=False)
+                self.verticalLayout.insertWidget(1,self.treeWidget)
+                self.param.sigTreeStateChanged.connect(parameter.update)
+            else:
+                self.treeWidget.setVisible(True)
+        else:
+            if self.treeWidget:
+                self.treeWidget.setVisible(False)
 
 if __name__ == "__main__":
     import sys

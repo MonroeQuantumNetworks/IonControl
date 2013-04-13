@@ -28,6 +28,8 @@ import ShutterUi
 import DDSUi
 import PulserHardware
 import DedicatedCounters
+import ExternalScannedParametersSelection
+import ExternalScannedParametersUi
 
 import VoltageControl
     
@@ -103,6 +105,20 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
+        
+        self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi()
+        self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
+        self.ExternalScannedParametersSelectionDock = QtGui.QDockWidget("Params Selection")
+        self.ExternalScannedParametersSelectionDock.setObjectName("_ExternalScannedParametersSelectionDock")
+        self.ExternalScannedParametersSelectionDock.setWidget(self.ExternalParametersSelectionUi)
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersSelectionDock)
+
+        self.ExternalParametersUi = ExternalScannedParametersUi.ControlUi()
+        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParameters, self.ExternalParametersUi )
+        self.ExternalScannedParametersDock = QtGui.QDockWidget("Params Control")
+        self.ExternalScannedParametersDock.setWidget(self.ExternalParametersUi)
+        self.ExternalScannedParametersDock.setObjectName("_ExternalScannedParametersDock")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersDock)
                
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
@@ -179,7 +195,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget]:
+        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
+                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock]:
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
