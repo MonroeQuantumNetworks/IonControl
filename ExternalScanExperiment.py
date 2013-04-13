@@ -25,14 +25,16 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
         
+    def updateEnabledParameters(self, enabledParameters ):
+        self.enabledParameters = enabledParameters
+        
     def onStart(self):
         if not self.running:
-            self.running = True
             self.start = time.time()
             self.state = self.OpStates.running
             self.scanSettings = self.scanSettingsWidget.settings
             self.scan = self.scanParametersWidget.getScan()
-            self.externalParameter = ExternalScannedParameters.ExternalScannedParameters[self.scan.name]()
+            self.externalParameter = self.enabledParameters[self.scan.name]
             self.externalParameter.saveValue()
             self.externalParameterIndex = 0
                     
@@ -40,6 +42,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             QtCore.QTimer.singleShot(100,self.startBottomHalf)
+            self.running = True
         
     def startBottomHalf(self):
         if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):

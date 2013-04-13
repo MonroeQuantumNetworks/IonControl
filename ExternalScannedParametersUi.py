@@ -6,7 +6,8 @@ Created on Fri Apr 12 23:45:54 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
+import functools
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParameterUi.ui')
 
@@ -20,12 +21,15 @@ class ControlUi(UiForm,UiBase):
         self.spacerItem = None
         self.myLabelList = list()
         self.myBoxList = list()
+        self.targetValue = dict()
     
     def setupUi(self,EnabledParameters,MainWindow):
         UiForm.setupUi(self,MainWindow)
         self.setupParameters(EnabledParameters)
         
     def setupParameters(self,EnabledParameters):
+        print "ControlUi.setupParameters"
+        self.targetValue = dict()
         self.enabledParameters = EnabledParameters
         if self.spacerItem:
             self.gridLayout.removeItem( self.spacerItem )
@@ -39,20 +43,34 @@ class ControlUi(UiForm,UiBase):
                 label = QtGui.QLabel(self)
                 label.setText(name)
                 self.myLabelList.append(label)
-                self.gridLayout.addWidget( label, 1+index, 1, 1, 1 )
+                self.gridLayout.addWidget( label, 1+index, 0, 1, 1 )
             parameter = self.enabledParameters.get(name)
+            self.targetValue[name] = parameter.currentValue()
             if index<len(self.myBoxList):
                 self.myBoxList[index].valueChanged.disconnect()
                 self.myBoxList[index].setValue( parameter.currentValue() )
-                self.myBoxList[index].valueChanged.connect( parameter.setValue )
+                self.myBoxList[index].valueChanged.connect( functools.partial(self.setValue, name) )
                 self.myBoxList[index].show()
             else:
-                Box = MagnitudeSpinBox(self)
+                Box = MagnitudeSpinBox.MagnitudeSpinBox(self)
                 Box.setValue( parameter.currentValue()  )
-                Box.valueChanged.connect( parameter.setValue )
-                self.gridLayout.addWidget( Box, 1+index, 2, 1, 1 )
+                Box.valueChanged.connect( functools.partial(self.setValue, name) )
+                self.gridLayout.addWidget( Box, 1+index, 1, 1, 1 )
                 self.myBoxList.append( Box )
         for index in range( len(self.enabledParameters), len(self.myLabelList)):
             self.myLabelList[index].hide()
             self.myBoxList[index].hide()
         self.gridLayout.addItem(self.spacerItem, len(self.enabledParameters)+1, 1, 1, 1)
+        
+    def setValue(self, name, value):
+        print "setValue", value
+        self.targetValue[name] = value
+        self.setValueFollowup(name)
+    
+    def setValueFollowup(self, name):
+        print "setValueFollowup", self.enabledParameters[name].currentValue()
+        delay = int( 1000* self.enabledParameters[name].__dict__.get('delay',0.1) )
+        if not self.enabledParameters[name].setValue( self.targetValue[name] ):
+            QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,name) )
+
+    

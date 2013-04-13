@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>287</width>
     <height>300</height>
    </rect>
   </property>
@@ -24,9 +24,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="instrumentLineEdit"/>
-     </item>
-     <item>
       <widget class="QCheckBox" name="enableCheckBox">
        <property name="text">
         <string>Enable</string>
@@ -35,7 +32,15 @@
      </item>
     </layout>
    </item>
+   <item>
+    <widget class="QLineEdit" name="instrumentLineEdit"/>
+   </item>
   </layout>
+  <zorder>enableCheckBox</zorder>
+  <zorder>instrumentLineEdit</zorder>
+  <zorder>label</zorder>
+  <zorder>label</zorder>
+  <zorder>instrumentLineEdit</zorder>
  </widget>
  <resources/>
  <connections/>

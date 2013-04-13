@@ -6,10 +6,9 @@ Created on Fri Apr 12 20:15:47 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 
-import pyqtgraph.parametertree.parameterTypes as pTypes
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+from pyqtgraph.parametertree import Parameter, ParameterTree
 
 ConfigForm, ConfigBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParametersConfig.ui')
 
@@ -31,7 +30,7 @@ class ConfigUi(ConfigForm,ConfigBase):
                 self.param = Parameter.create(name='params', type='group', children=parameter.paramDef())
                 self.treeWidget = ParameterTree()
                 self.treeWidget.setParameters(self.param, showTop=False)
-                self.verticalLayout.insertWidget(1,self.treeWidget)
+                self.verticalLayout.insertWidget(2,self.treeWidget)
                 self.param.sigTreeStateChanged.connect(parameter.update)
             else:
                 self.treeWidget.setVisible(True)

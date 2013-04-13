@@ -77,8 +77,6 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
                              (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
                              (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware,"ExternalScan"), "External Scan"),
-                             #(TDCWidget.TDCWidget(),"Time to digital converter" ),
-                             #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
                              (FromFile.FromFile(),"From File"), 
                              (testExperiment.test(),"test"),
                              ]:
@@ -119,6 +117,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalScannedParametersDock.setWidget(self.ExternalParametersUi)
         self.ExternalScannedParametersDock.setObjectName("_ExternalScannedParametersDock")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersDock)
+        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
+               
+        self.ExternalParametersSelectionUi.selectionChanged.connect( self.tabDict["External Scan"].updateEnabledParameters )               
                
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)

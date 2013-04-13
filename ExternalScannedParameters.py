@@ -16,37 +16,44 @@ try:
 except:
     print "visa loading failed. Prceeding without."
 
-class ExternalParameter:
-
+class ExternalParameterBase:
     def __init__(self):
-        pass
+        self.delay = 0.1
+        self.jump = False
+        self.stepsize = 1
+        self.value = 0
     
     def saveValue(self):
-        pass
+        self.savedValue = self.value
     
     def restoreValue(self):
-        pass
+        self.setValue(self.savedValue)
     
     def setValue(self,value):
         pass
     
+    def currentValue(self):
+        return self.value
+    
     def currentExternalValue(self):
-        pass
+        return self.value
+
+    def paramDef(self):
+        return [{'name': 'stepsize', 'type': 'float', 'value': self.stepsize},
+        {'name': 'delay', 'type': 'float', 'value': self.delay, 'step': 0.1},
+        {'name': 'jump', 'type': 'bool', 'value': self.jump, 'tip': "This is a checkbox"}]
+        
+    def update(self,param, changes):
+        for param, change, data in changes:
+            print self, "update", param.name(), data
+            setattr( self, param.name(), data)
     
 
-class LaserSynthesizerScan:
+class LaserSynthesizerScan(ExternalParameterBase):
     def __init__(self, instrument="GPIB0::23::INSTR"):
+        ExternalParameterBase.__init__(self)
         self.synthesizer = visa.instrument(instrument) #open visa session
-        self.savedValue = 3098000
-        self.lastValue = self.savedValue
         self.stepsize = 1000
-        self.delay = 0.1
-    
-    def saveValue(self):
-        self.savedValue = self.lastValue
-    
-    def restoreValue(self):
-        self.setValue( self.savedValue )        
     
     def setValue(self,value):
         """
@@ -73,26 +80,19 @@ class LaserSynthesizerScan:
     
     def currentExternalValue(self):
         return self.lastValue/1000.
-   
+
     
-class LaserVCOScan:
+class LaserVCOScan(ExternalParameterBase):
     def __init__(self,instrument="power_supply_next_to_397_box"):
+        ExternalParameterBase.__init__(self)
         self.powersupply = visa.instrument(instrument)#open visa session
         self.wavemeter = WavemeterGetFrequency()
         self.savedValue = float(self.powersupply.ask("volt?"))
         print "LaserVCOScan savedValue", self.savedValue
-        self.lastValue = self.savedValue
+        self.value = self.savedValue
         self.stepsize = 0.01
         self.AOMFreq = 110.0e-3
     
-    def saveValue(self):
-        self.savedValue = float(self.powersupply.ask("volt?"))
-        print "LaserVCOScan savedValue", self.savedValue
-        self.lastValue = self.savedValue
-   
-    def restoreValue(self):
-        self.setValue( self.savedValue )        
-              
     def setValue(self,value):
         """
         Move one steps towards the target, return current value
@@ -124,36 +124,30 @@ class LaserVCOScan:
             counter += 1
         return self.detuning
 
-class DummyParameter:
+    def paramDef(self):
+        return super(LaserVCOScan,self).paramDef().append({'name': 'AOMFreq', 'type': 'float', 'value': self.AOMFreq})
+
+class DummyParameter(ExternalParameterBase):
     def __init__(self,instrument=''):
+        ExternalParameterBase.__init__(self)
         print "Opening DummyInstrument", instrument
-        self.Integer = 5
-        self.Float = 3.14
-        self.String = 'Hallo Welt'
-        self.Boolean = True
-    
-    def saveValue(self):
-        print "Dummy.saveValue"
-    
-    def restoreValue(self):
-        print "Dummy.restoreValue"
+        self.savedValue = self.value
     
     def setValue(self,value):
-        print "Dummy.setValue", value
+        """
+        Move one steps towards the target, return current value
+        """
+        if isinstance(value,magnitude.Magnitude):
+            myvalue = round(value.ounit("kHz").toval())
+        else:
+            myvalue = round(value)
+        if abs(myvalue-self.value)<self.stepsize or self.jump:
+            self.value = myvalue 
+            return True
+        else:
+            self.value = ( self.value + math.copysign(self.stepsize, myvalue-self.value) )
+            return False
     
-    def currentExternalValue(self):
-        return 0
-        
-    def paramDef(self):
-        return [{'name': 'Integer', 'type': 'int', 'value': self.Integer},
-        {'name': 'Float', 'type': 'float', 'value': self.Float, 'step': 0.1},
-        {'name': 'String', 'type': 'str', 'value': self.String},
-        {'name': 'Boolean', 'type': 'bool', 'value': self.Boolean, 'tip': "This is a checkbox"}]
-        
-    def update(self,param, changes):
-        for param, change, data in changes:
-            setattr( self, param.name(), data)
-
         
 ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 
                               'Laser Synthesizer Scan': LaserSynthesizerScan,
