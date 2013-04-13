@@ -9,7 +9,7 @@ Created on Tue Mar 12 15:22:09 2013
 from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import magnitude
-import time
+import math
 
 try:
     import visa
@@ -51,18 +51,25 @@ class LaserSynthesizerScan:
         self.setValue( self.savedValue )        
     
     def setValue(self,value):
-        print "SetValue", value      
+        """
+        Move one steps towards the target, return current value
+        """
         if isinstance(value,magnitude.Magnitude):
             myvalue = round(value.ounit("kHz").toval())
         else:
             myvalue = round(value)
-        for v in numpy.linspace(self.lastValue, myvalue, int(round(abs(self.lastValue-myvalue)/self.stepsize)+1) ):
-            command = "P{0:0>8.0f}Z0K0L0O1".format(v)
-            self.synthesizer.write(command)#set voltage
-            self.lastValue = v
-            time.sleep(self.delay)
-            print "Set frequency to", self.lastValue, command
+        if abs(myvalue-self.lastValue)<self.stepsize:
+            self._setValue_( myvalue )
+            return True
+        else:
+            self._setValue_( self.lastValue + math.copysign(self.stepsize, myvalue-self.lastValue) )
+            return False
             
+    def _setValue_(self, v):
+        command = "P{0:0>8.0f}Z0K0L0O1".format(v)
+        self.synthesizer.write(command)#set voltage
+        self.lastValue = v
+        
     def currentValue(self):
         return self.lastValue/1000.
     
@@ -87,16 +94,21 @@ class LaserVCOScan:
    
     def restoreValue(self):
         self.setValue( self.savedValue )        
-    
+              
     def setValue(self,value):
+        """
+        Move one steps towards the target, return current value
+        """
         if isinstance(value,magnitude.Magnitude):
-            myvalue = value.ounit("V").toval()
+            myvalue = round(value.ounit("V").toval())
         else:
-            myvalue = value
-        for v in numpy.linspace(self.lastValue, myvalue, int(round(abs(self.lastValue-myvalue)/self.stepsize)) ):
-            self.powersupply.write("volt " + str(v))#set voltage
-            self.lastValue = v
-            print "Powersupply write", v
+            myvalue = round(value)
+        if abs(myvalue-self.lastValue)<self.stepsize:
+            self.powersupply.write("volt " + str(myvalue))
+            return True
+        else:
+            self.powersupply.write("volt " + str( self.lastValue + math.copysign(self.stepsize, myvalue-self.lastValue) ))
+            return False
             
     def currentValue(self):
         return self.lastValue
