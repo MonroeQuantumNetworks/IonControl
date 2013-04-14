@@ -3,6 +3,9 @@
 Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
+
+DedicatedCounters reads and displays the counts from the simple counters and ADCs.
+
 """
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
