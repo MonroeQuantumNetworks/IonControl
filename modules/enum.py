@@ -2,6 +2,9 @@
 """
 Created on Thu Jan 03 07:11:22 2013
 
+enum like class in python
+see stackoverflow
+
 @author: plmaunz
 """
 

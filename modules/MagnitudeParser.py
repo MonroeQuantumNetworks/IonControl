@@ -2,6 +2,8 @@
 """
 Created on Sun Feb 24 16:41:05 2013
 
+Parser for magnitude expressions. Can parse arithmetic expressions with values including standard si units.
+
 @author: pmaunz
 """
 
