@@ -18,38 +18,66 @@ except:
 
 class ExternalParameterBase:
     def __init__(self):
-        self.delay = 0.1
-        self.jump = False
-        self.stepsize = 1
-        self.value = 0
+        self.delay = 0.1    # s delay between subsequent updates
+        self.jump = False   # if True go to the target value in one jump
+        self.stepsize = 1   # the max step taken towards the tarhet value if jump is False
+        self.value = 0      # the current value
     
     def saveValue(self):
+        """
+        save current value
+        """
         self.savedValue = self.value
     
     def restoreValue(self):
-        self.setValue(self.savedValue)
+        """
+        restore the value saved previously, this routine only goes stepsize towards this value
+        if the stored value is reached returns True, otherwise False. Needs to be called repeatedly
+        until it returns True in order to restore the saved value.
+        """
+        return self.setValue(self.savedValue)
     
     def setValue(self,value):
+        """
+        go stepsize towards the value. This function returns True if the value is reached. Otherwise
+        it should return False. The user should call repeatedly until the intended value is reached
+        and True is returned.
+        """
         pass
     
     def currentValue(self):
+        """
+        returns current value
+        """
         return self.value
     
     def currentExternalValue(self):
+        """
+        if the value is determined externally, return the external value, otherwise return value
+        """
         return self.value
 
     def paramDef(self):
+        """
+        return the parameter definition used by pyqtgraph parametertree to show the gui
+        """
         return [{'name': 'stepsize', 'type': 'float', 'value': self.stepsize},
         {'name': 'delay', 'type': 'float', 'value': self.delay, 'step': 0.1},
         {'name': 'jump', 'type': 'bool', 'value': self.jump, 'tip': "This is a checkbox"}]
         
     def update(self,param, changes):
+        """
+        update the parameter, called by the signal of pyqtgraph parametertree
+        """
         for param, change, data in changes:
             print self, "update", param.name(), data
             setattr( self, param.name(), data)
     
 
 class LaserSynthesizerScan(ExternalParameterBase):
+    """
+    Scan the laser frequency by scanning a synthesizer HP8672A. (The laser is locked to a sideband)
+    """
     def __init__(self, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self)
         self.synthesizer = visa.instrument(instrument) #open visa session
@@ -83,6 +111,10 @@ class LaserSynthesizerScan(ExternalParameterBase):
 
     
 class LaserVCOScan(ExternalParameterBase):
+    """
+    Scan a laser by changing the voltage on a HP power supply. The frequency is controlled via
+    a VCO. The laser frequency is determined by reading the wavemeter.
+    """
     def __init__(self,instrument="power_supply_next_to_397_box"):
         ExternalParameterBase.__init__(self)
         self.powersupply = visa.instrument(instrument)#open visa session
@@ -128,6 +160,9 @@ class LaserVCOScan(ExternalParameterBase):
         return super(LaserVCOScan,self).paramDef().append({'name': 'AOMFreq', 'type': 'float', 'value': self.AOMFreq})
 
 class DummyParameter(ExternalParameterBase):
+    """
+    DummyParameter, used to debug this part of the software.
+    """
     def __init__(self,instrument=''):
         ExternalParameterBase.__init__(self)
         print "Opening DummyInstrument", instrument
