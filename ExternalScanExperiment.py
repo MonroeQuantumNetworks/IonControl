@@ -16,8 +16,14 @@ import Traceui
 import pens
 import ExternalScannedParameters
 from PyQt4 import QtCore
+from modules import enum
 
 class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
+    Status = enum.enum('Idle','Starting','Running','Stopping')
+    def __init__(self,settings,pulserHardware,experimentName,parent=None):
+        super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,parent)
+        self.status = self.Status.Idle        
+        
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
         self.scanParametersWidget.setScanNames(ExternalScannedParameters.ExternalScannedParameters.keys())
@@ -29,7 +35,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         self.enabledParameters = enabledParameters
         
     def onStart(self):
-        if not self.running:
+        if self.status in [self.status.Idle, self.Status.Stopping]:
             self.start = time.time()
             self.state = self.OpStates.running
             self.scanSettings = self.scanSettingsWidget.settings
@@ -42,30 +48,40 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             QtCore.QTimer.singleShot(100,self.startBottomHalf)
-            self.running = True
+            self.status = self.Status.Starting
         
     def startBottomHalf(self):
-        if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
-            """We are done adjusting"""
-            self.pulserHardware.ppStart()
-            self.currentIndex = 0
-            if self.currentTrace is not None:
-                self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-                if self.scan.autoSave:
-                    self.currentTrace.resave()
-                self.currentTrace = None
-            self.scanParametersWidget.progressBar.setRange(0,float(len(self.scan.list)))
-            self.scanParametersWidget.progressBar.setValue(0)
-            self.scanParametersWidget.progressBar.setVisible( True )
-            self.timestampsNewRun = True
-            print "elapsed time", time.time()-self.start
-        else:
-            QtCore.QTimer.singleShot(100,self.startBottomHalf)
+        if self.status == self.Status.Starting:
+            if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
+                """We are done adjusting"""
+                self.pulserHardware.ppStart()
+                self.currentIndex = 0
+                if self.currentTrace is not None:
+                    self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
+                    if self.scan.autoSave:
+                        self.currentTrace.resave()
+                    self.currentTrace = None
+                self.scanParametersWidget.progressBar.setRange(0,float(len(self.scan.list)))
+                self.scanParametersWidget.progressBar.setValue(0)
+                self.scanParametersWidget.progressBar.setVisible( True )
+                self.timestampsNewRun = True
+                print "elapsed time", time.time()-self.start
+                self.status = self.Status.Running
+            else:
+                QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
     def onStop(self):
-        super(ExternalScanExperiment,self).onStop()
-        self.externalParameter.restoreValue()
-
+        if self.status in [self.Status.Starting, self.Status.Running]:
+            super(ExternalScanExperiment,self).onStop()
+            self.status = self.Status.Stopping
+            self.stopBottomHalf()
+                    
+    def stopBottomHalf(self):
+        if self.status==self.Status.Stopping:
+            if not self.externalParameter.restoreValue():
+                QtCore.QTimer.singleShot(100,self.stopBottomHalf)
+            else:
+                self.status = self.Status.Idle
 
     def onData(self, data ):
         """ Called by worker with new data
