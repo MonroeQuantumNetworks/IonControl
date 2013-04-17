@@ -91,23 +91,23 @@ class LaserSynthesizerScan(ExternalParameterBase):
             myvalue = round(value.ounit("kHz").toval())
         else:
             myvalue = round(value)
-        if abs(myvalue-self.lastValue)<self.stepsize:
+        if abs(myvalue-self.value)<self.stepsize:
             self._setValue_( myvalue )
             return True
         else:
-            self._setValue_( self.lastValue + math.copysign(self.stepsize, myvalue-self.lastValue) )
+            self._setValue_( self.value + math.copysign(self.stepsize, myvalue-self.value) )
             return False
             
     def _setValue_(self, v):
         command = "P{0:0>8.0f}Z0K0L0O1".format(v)
         self.synthesizer.write(command)#set voltage
-        self.lastValue = v
+        self.value = v
         
     def currentValue(self):
-        return self.lastValue/1000.
+        return self.value/1000.
     
     def currentExternalValue(self):
-        return self.lastValue/1000.
+        return self.value/1000.
 
     
 class LaserVCOScan(ExternalParameterBase):
@@ -133,15 +133,15 @@ class LaserVCOScan(ExternalParameterBase):
             myvalue = round(value.ounit("V").toval())
         else:
             myvalue = round(value)
-        if abs(myvalue-self.lastValue)<self.stepsize:
+        if abs(myvalue-self.value)<self.stepsize:
             self.powersupply.write("volt " + str(myvalue))
             return True
         else:
-            self.powersupply.write("volt " + str( self.lastValue + math.copysign(self.stepsize, myvalue-self.lastValue) ))
+            self.powersupply.write("volt " + str( self.value + math.copysign(self.stepsize, myvalue-self.value) ))
             return False
             
     def currentValue(self):
-        return self.lastValue
+        return self.value
     
     def currentExternalValue(self):
 #        self.lastExternalValue = self.wavemeter.get_frequency(4)
