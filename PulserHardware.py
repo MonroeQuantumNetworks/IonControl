@@ -9,6 +9,7 @@ from Queue import Queue, Empty
 import magnitude
 from modules import enum
 import math
+import traceback
 
 class Data:
     def __init__(self):
@@ -123,6 +124,7 @@ class PipeReader(QtCore.QThread):
                 self.data = Data()
         except Exception as err:
             print "PipeReader worker exception:", err
+            traceback.print_exc()
 
 
 class PulserHardware(QtCore.QObject):
