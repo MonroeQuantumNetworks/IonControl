@@ -18,6 +18,7 @@ except ImportError as e:
 import math
 import numpy
 from PyQt4 import QtCore
+import socket
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
@@ -28,7 +29,8 @@ class VoltageBlender(QtCore.QObject):
         if HardwareDriverLoaded:
             self.chassis = WaveformChassis()
             self.chassis.mode = Mode.Static
-            self.chassis.initFromFile(r'Chassis\config\old_chassis.cfg')
+            self.hostname = socket.gethostname()
+            self.chassis.initFromFile("Chassis\\config\\"+self.hostname+'.cfg')
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = dict()  # names of the lines presented as possible adjusts
