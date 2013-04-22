@@ -102,8 +102,10 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             filedir, filename = os.path.split(path)
             self.lastDir = filedir
             if filename not in self.files.mappingHistory:
+                self.files.mappingHistory[filename] = path
                 self.mappingCombo.addItem(filename)
-            self.files.mappingHistory[filename] = path
+            else:
+                self.files.mappingHistory[filename] = path
             self.mappingCombo.setCurrentIndex( self.mappingCombo.findText(filename))
             self.files.mappingFile = path
             self.loadMapping.emit(path)
@@ -114,8 +116,10 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             filedir, filename = os.path.split(path)
             self.lastDir = filedir
             if filename not in self.files.definitionHistory:
+                self.files.definitionHistory[filename] = path
                 self.definitionCombo.addItem(filename)
-            self.files.definitionHistory[filename] = path
+            else:
+                self.files.definitionHistory[filename] = path
             self.definitionCombo.setCurrentIndex( self.definitionCombo.findText(filename))
             self.files.definitionFile = path
             self.loadDefinition.emit(path)

@@ -55,8 +55,8 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.dataError.connect( self.voltageTableModel.onDataError )
         self.tableView.setSortingEnabled(True)
         self.voltageFilesUi.reloadAll()
-#        adjust = self.adjustUi.adjust
-#        self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
+        adjust = self.adjustUi.adjust
+        self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
@@ -67,6 +67,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.globalAdjustUi.setupGlobalAdjust( str(path), self.voltageBlender.adjustDict )
     
     def onClose(self):
+        print "onClose()"
         self.settings.state = self.saveState()
         self.config[self.configname] = self.settings
         self.voltageFilesUi.onClose()
@@ -77,11 +78,20 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.onClose()
   
 if __name__ == "__main__":
+    class MyMainWindow(QtGui.QMainWindow):
+        def setCentralWidget(self, widget):
+            self.myCentralWidget = widget
+            super(MyMainWindow,self).setCentralWidget(widget)  
+            
+        def closeEvent(self,e):
+            self.myCentralWidget.onClose()
+            super(MyMainWindow,self).closeEvent(e)   
+    
     import sys
     from modules import configshelve
     with configshelve.configshelve("VoltageControl-test") as config:
         app = QtGui.QApplication(sys.argv)
-        MainWindow = QtGui.QMainWindow()
+        MainWindow = MyMainWindow()
         ui = VoltageControl(config)
         ui.setupUi(ui)
         MainWindow.setCentralWidget(ui)
