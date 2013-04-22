@@ -1,158 +1,104 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec 22 17:25:13 2012
+Created on Wed Apr 10 21:36:17 2013
+
+Scan that varies a parameter outside the FPGA
+it uses ScanExperiment and only overwrites procedures that need to handle
+stuff differently.
+
+External parameters that can be scanned in this way are defined in ExternalScannedParameters
+
+The pulse program is expected to run the experiment necessary for one external parameter setting.
+It reports the count values during each experiment and finishes by sending the end marker (0xffffffff).
 
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
-import Trace
-import numpy
-import pens
-import Traceui
-import MainWindowWidget
-import FitUi
-import ScanParameters
-import ScanExperimentSettings
+import ScanExperiment 
 import time
-import ExternalScannedParameters
-from modules import enum
-from modules import DataDirectory
+import numpy
+import Trace
 import functools
+import Traceui
+import pens
+import ExternalScannedParameters
+from PyQt4 import QtCore
+from modules import enum
 
+class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
+    Status = enum.enum('Idle','Starting','Running','Stopping')
+    def __init__(self,settings,pulserHardware,experimentName,parent=None):
+        super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,parent)
+        self.status = self.Status.Idle        
         
-ExternalScanForm, ExternalScanBase = PyQt4.uic.loadUiType(r'ui\ExternalScanExperiment.ui')
-
-class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget):
-    StatusMessage = QtCore.pyqtSignal( str )
-    ClearStatusMessage = QtCore.pyqtSignal()
-    NeedsDDSRewrite = QtCore.pyqtSignal()
-    OpStates = enum.enum('idle','running','paused')
-    experimentName = 'External Scan'
-
-    def __init__(self,settings,pulserHardware,parent=None):
-        MainWindowWidget.MainWindowWidget.__init__(self,parent)
-        ExternalScanForm.__init__(self)
-        self.settings = settings
-        self.pulserHardware = pulserHardware
-        self.activated = False
-        self.currentTrace = None
-
     def setupUi(self,MainWindow,config):
-        ExternalScanForm.setupUi(self,MainWindow)
-        self.config = config
-        self.graphicsView = self.graphicsLayout.graphicsView
-        self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,config,self.experimentName,self.graphicsView)
-        self.traceui.setupUi(self.traceui)
-        self.dockWidget.setWidget( self.traceui )
-        self.dockWidgetList.append(self.dockWidget)
-        self.fitWidget = FitUi.FitUi(self.traceui,self.config,"ExternalScanExperiment")
-        self.fitWidget.setupUi(self.fitWidget)
-        self.dockWidgetFitUi.setWidget( self.fitWidget )
-        self.dockWidgetList.append(self.dockWidgetFitUi )
-        self.scanParametersWidget = ScanParameters.ScanParameters(config,"ExternalScanExperiment")
-        self.scanParametersWidget.setupUi(self.scanParametersWidget)
-        self.scanParametersDock = QtGui.QDockWidget("Scan Parameters")
-        self.scanParametersDock.setObjectName("ExternalScanParametersDock")
-        self.scanParametersDock.setWidget(self.scanParametersWidget)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.scanParametersDock)
-        self.scanSettingsWidget = ScanExperimentSettings.ScanExperimentSettings(config,"ExternalScanExperiment")
-        self.scanSettingsWidget.setupUi(self.scanSettingsWidget)
-        self.scanSettingsDock = QtGui.QDockWidget("Settings")
-        self.scanSettingsDock.setObjectName("ExternalScanSettingsDock")
-        self.scanSettingsDock.setWidget(self.scanSettingsWidget)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.scanSettingsDock)
-        if 'ExternalScanExperiment.MainWindow.State' in self.config:
-            QtGui.QMainWindow.restoreState(self,self.config['ExternalScanExperiment.MainWindow.State'])
-            print "restoreState"
+        super(ExternalScanExperiment,self).setupUi(MainWindow,config)
         self.scanParametersWidget.setScanNames(ExternalScannedParameters.ExternalScannedParameters.keys())
-            
-    def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory( self.scanSettings.project )
-        if pattern and pattern!='':
-            filename, components = directory.sequencefile( pattern )
-            return filename
-        else:
-            path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
-            return path
-
+        
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
-        self.scanParametersWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
-
-    def onClear(self):
-        self.dockWidget.setShown(True)
-        self.StatusMessage.emit("test Clear not implemented")
-    
-    def onSave(self):
-        self.StatusMessage.emit("test Save not implemented")
-    
+        
+    def updateEnabledParameters(self, enabledParameters ):
+        self.enabledParameters = enabledParameters
+        
     def onStart(self):
-        start = time.time()
-        self.state = self.OpStates.running
-        self.scanSettings = self.scanSettingsWidget.settings
-        self.scan = self.scanParametersWidget.getScan()
-        self.externalParameter = ExternalScannedParameters.ExternalScannedParameters[self.scan.name]()
-        self.externalParameter.saveValue()
-        self.externalParameterIndex = 0
-        self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
-                
-        self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
-        self.pulserHardware.ppStart()
-        self.running = True
-        self.currentIndex = 0
-        if self.currentTrace is not None:
-            self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-            if self.scan.autoSave:
-                self.currentTrace.resave()
-            self.currentTrace = None
-        self.scanParametersWidget.progressBar.setRange(0,float(len(self.scan.list)))
-        self.scanParametersWidget.progressBar.setValue(0)
-        self.scanParametersWidget.progressBar.setVisible( True )
-        print "elapsed time", time.time()-start
-    
-    def onPause(self):
-        self.StatusMessage.emit("test Pause not implemented")
-    
-    def onStop(self):
-        if self.running:
-            self.pulserHardware.ppStop()
-            self.pulserHardware.ppClearWriteFifo()
+        if self.status in [self.status.Idle, self.Status.Stopping]:
+            self.start = time.time()
+            self.state = self.OpStates.running
+            self.scanSettings = self.scanSettingsWidget.settings
+            self.scan = self.scanParametersWidget.getScan()
+            self.externalParameter = self.enabledParameters[self.scan.name]
+            self.externalParameter.saveValue()
+            self.externalParameterIndex = 0
+                    
             self.pulserHardware.ppFlushData()
-            self.running = False
-            if self.scan.rewriteDDS:
-                self.NeedsDDSRewrite.emit()
-        self.externalParameter.restoreValue()
-        self.scanParametersWidget.progressBar.setVisible( False )
-       
-    def activate(self):
-        MainWindowWidget.MainWindowWidget.activate(self)
-        if (self.pulserHardware is not None) and (not self.activated):
-            try:
-                print "Scan activated"
-                self.pulserHardware.ppFlushData()
-                self.pulserHardware.dataAvailable.connect(self.onData)
-                self.activated = True
-            except Exception as ex:
-                print ex
-                self.StatusMessage.emit( ex.message )
+            self.pulserHardware.ppClearWriteFifo()
+            self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+            QtCore.QTimer.singleShot(100,self.startBottomHalf)
+            self.status = self.Status.Starting
+        
+    def startBottomHalf(self):
+        if self.status == self.Status.Starting:
+            if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
+                """We are done adjusting"""
+                self.pulserHardware.ppStart()
+                self.currentIndex = 0
+                if self.currentTrace is not None:
+                    self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
+                    if self.scan.autoSave:
+                        self.currentTrace.resave()
+                    self.currentTrace = None
+                self.scanParametersWidget.progressBar.setRange(0,float(len(self.scan.list)))
+                self.scanParametersWidget.progressBar.setValue(0)
+                self.scanParametersWidget.progressBar.setVisible( True )
+                self.timestampsNewRun = True
+                print "elapsed time", time.time()-self.start
+                self.status = self.Status.Running
+            else:
+                QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
-    def deactivate(self):
-        MainWindowWidget.MainWindowWidget.deactivate(self)
-        if self.activated :
-            print "Scan deactivated",
-            self.pulserHardware.dataAvailable.disconnect(self.onData)
-            self.activated = False
-            self.state = self.OpStates.idle
+    def onStop(self):
+        if self.status in [self.Status.Starting, self.Status.Running]:
+            super(ExternalScanExperiment,self).onStop()
+            self.status = self.Status.Stopping
+            self.stopBottomHalf()
+                    
+    def stopBottomHalf(self):
+        if self.status==self.Status.Stopping:
+            if not self.externalParameter.restoreValue():
+                QtCore.QTimer.singleShot(100,self.stopBottomHalf)
+            else:
+                self.status = self.Status.Idle
 
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
-        mean = numpy.mean( data.count[self.scanSettings.counter] )
-        x = self.externalParameter.currentExternalValue() #self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
+        print "NewExternalScan onData", len(data.count[self.scanSettings.counter]), data.scanvalue
+        mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+            x = self.currentIndex
+        else:
+            x = self.externalParameter.currentExternalValue() 
         print "data", x, mean 
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
@@ -166,30 +112,21 @@ class ExternalScanExperiment(ExternalScanForm, MainWindowWidget.MainWindowWidget
                 self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
-            self.currentTrace.x = numpy.append(self.currentTrace.x, x)
-            self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
+                self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
+                self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
+            else:
+                self.currentTrace.x = numpy.append(self.currentTrace.x, x)
+                self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
             self.plottedTrace.replot()
         self.externalParameterIndex += 1
-#        self.showHistogram(data)
-#        if self.timestampSettingsWidget.settings.enable: 
-#            self.showTimestamps(data)
+        self.showHistogram(data)
+        if self.timestampSettingsWidget.settings.enable: 
+            self.showTimestamps(data)
         if self.externalParameterIndex<len(self.scan.list):
             self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
             self.pulserHardware.ppStart()
             print "External Value:" , self.scan.list[self.externalParameterIndex]
         else:
-            self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
-            if self.scan.autoSave:
-                self.currentTrace.resave()
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
-                self.onStart()
-            else:
-                self.onStop()
+            self.finalizeData()
         self.scanParametersWidget.progressBar.setValue(float(self.externalParameterIndex))
-
-           
-    def onClose(self):
-        self.config['ExternalScanExperiment.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-        self.scanParametersWidget.onClose()
-        self.scanSettingsWidget.onClose()
-        self.traceui.onClose()

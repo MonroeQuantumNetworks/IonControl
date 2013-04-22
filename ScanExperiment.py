@@ -2,6 +2,14 @@
 """
 Created on Sat Dec 22 17:25:13 2012
 
+Experiment code to scan a parameter that is controlled by the FPGA.
+
+The Pulse Program for each point od the scan, the Pulse Program receives the
+address and value of the scanned parameter on its pipe input. It is expected to
+echo those on the pipe output followed by the measurement results.
+It is expected to send an endlabel (0xffffffff) when finished.
+
+
 @author: pmaunz
 """
 

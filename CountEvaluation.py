@@ -2,6 +2,9 @@
 """
 Algorithms to evaluate the observed counts from a sequence of experiments:
 This is used for simple averaging but also for different state detection algorithms
+
+algorithms are expected to defined the fileds as stated in MeanEvaluation
+
 """
 import numpy
 import math
@@ -11,9 +14,9 @@ class MeanEvaluation:
     returns mean and shot noise error
     """
     def __init__(self):
-        self.parameters = dict()
-        self.name = "Mean"
-        self.tooltip = "Mean of observed counts"
+        self.parameters = dict()      # parameters (can be edited in the gui)
+        self.name = "Mean"            # name (used by gui)
+        self.tooltip = "Mean of observed counts"  # tooltip (used by gui)
         
     def evaluate(self, countarray, timestamps=None ):
         mean = numpy.mean( countarray )

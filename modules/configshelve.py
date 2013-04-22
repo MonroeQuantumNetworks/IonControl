@@ -2,6 +2,9 @@
 """
 Created on Sun Dec 30 22:39:45 2012
 
+Wrapper for python shelve module to be able to use it with the with expression.
+It also includes default directory for storing of config files.
+
 @author: pmaunz
 """
 

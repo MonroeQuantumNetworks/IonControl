@@ -3,6 +3,9 @@
 Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
+
+DedicatedCounters reads and displays the counts from the simple counters and ADCs.
+
 """
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
@@ -100,7 +103,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     def onClose(self):
         self.config['DedicatedCounter.Settings'] = self.settings
         self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-      
+        self.settingsUi.onClose()
         
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()

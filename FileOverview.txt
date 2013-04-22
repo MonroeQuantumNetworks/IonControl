@@ -1,0 +1,121 @@
+Overview over the python files in the Main directory
+
+Alphabetically:
+=============================================================================
+Ad9912.py	Hardware control code for AD9912 DDS
+AnalogInputCalibration.py	Calibration to convert voltage values from the ADC to other units
+CoordinatePlotWidget.py	Combines a pyqtgraph plot ui with a label showing the current cursor position
+CounterTableModel.py	Gui display of the counter mask within the pulse program ui
+CounterWidget.py	Gui for the SimpleCounters measurement tab
+CountEvaluation.py	Evaluation of count values, different algorithms, used for mean and state detection
+DDSUi.py	Gui for the DDS outputs
+DedicatedCounters.py	Gui for dedicated counters 
+DedicatedCountersSettings.py	Settings gui for the dedicated counters window
+DedicatedDisplay.py	Numeric display gui of counts within the dedicated counters window
+Experiment_rc.py	Resources file, redirect to ui\Experiment_rc.py
+ExternalScanExperiment.py	Measurement tab gui for experiment where an external parameter is changed between points
+ExternalScannedParameters.py	Definition of external parameters that can be scanned
+ExternalScannedParametersConfig.py	Gui for external parameters, includes name, enable and configuration of the parameter
+ExternalScannedParametersSelection.py Gui for selection of enabled external parameters
+ExternalScannedParametersUi.py	Gui for changing the current value on all external parameters
+FitFunctions.py	Definitions of fit functions
+FitUi.py	Gui for fitting
+fpgaUtilit.py	Utilities for fpga hardware
+FromFile.py	Measurement tab gui to load existing files
+MagnitudeSpinBox.py	SpinBox gui for input of a magnitude value (double with unit)
+MainWindowWidget.py	Base class for measurement tab classes
+ParameterTableModel.py	table model for parameters within the pulse program ui
+pens.py	Pen definitions for plotting
+PulseProgram.py	Pulse program definition and compiler
+PulseProgramUi.py	Gui for Pulse program
+PulserHardware.py	Pulser Hardware control
+PulserHardwareTest.py	Test routines for PulserHardwar (not needed for ExperimentUi)
+PulserRamTest.py	Test routine for Pulser Ram (not needed for ExperimentUi)
+ScanExperiment.py	Experiment tab for scanning of fpga controlled values only
+ScanExperimentSettings.py	Settings gui for SanExperiment
+ScanList.py	Definitions of ways to scan (Linear up, Linear down, Randomized, ...)
+ScanParameters.py	Gui for scan parameters
+SettingsDialog.py	Dialog to select fpga and fpga firmware
+ShutterHardwareTableModel.py	Table model for the shutter diaplay in the Main window
+ShutterTableModel.py	Table model for display of shutters in the pulse program ui
+ShutterUi.py	Shutter control
+testExperiment.py	testExperiment measurement tab (used for debugging)
+TimestampSettings.py	Settings gui for timestamp evaluation
+Trace.py	Definition of measurement trace
+TraceAverage.py	Averaging of measurement traces
+TraceTableModel.py	Table model for trace display and selection
+Traceui.py	Gui for traces
+TriggerTableModel.py	Table model for triggers in Pulse program ui
+VariableTableModel.py	Table model for variables in the Pulse program ui
+VoltageAdjust.py	Voltage adjustment ui (line based)
+VoltageBlender.py	Blends the different voltage control methods and calculates the voltages sent to the DACs
+VoltageControl.py	Gui for voltage control (voltage control window)
+VoltageFiles.py	Gui for selection of files used for voltage output
+VoltageGlobalAdjust.py	Voltage adjust ui delta based
+VoltageTableModel.py	table model to display the current voltages
+WavemeterGetFrequency.py	Queries the laser frequency from the wavemeter
+
+
+By purpose:
+===============================================================================
+
+Hardware and device control:
+fpgaUtilit.py	Utilities for fpga hardware
+PulserHardware.py	Pulser Hardware control
+PulserHardwareTest.py	Test routines for PulserHardwar (not needed for ExperimentUi)
+PulserRamTest.py	Test routine for Pulser Ram (not needed for ExperimentUi)
+WavemeterGetFrequency.py	Queries the laser frequency from the wavemeter
+
+Middle layer:
+PulseProgram.py	Pulse program definition and compiler
+Trace.py	Definition of measurement trace
+TraceAverage.py	Averaging of measurement traces
+VoltageAdjust.py	Voltage adjustment ui (line based)
+VoltageBlender.py	Blends the different voltage control methods and calculates the voltages sent to the DACs
+
+
+Modules that can easily be expanded:
+AnalogInputCalibration.py	Calibration to convert voltage values from the ADC to other units
+CountEvaluation.py	Evaluation of count values, different algorithms, used for mean and state detection
+ExternalScannedParameters.py	Definition of external parameters that can be scanned
+FitFunctions.py	Definitions of fit functions
+pens.py	Pen definitions for plotting
+ScanList.py	Definitions of ways to scan (Linear up, Linear down, Randomized, ...)
+
+Gui:
+Ad9912.py	Hardware control code for AD9912 DDS
+CoordinatePlotWidget.py	Combines a pyqtgraph plot ui with a label showing the current cursor position
+CounterTableModel.py	Gui display of the counter mask within the pulse program ui
+CounterWidget.py	Gui for the SimpleCounters measurement tab
+DDSUi.py	Gui for the DDS outputs
+DedicatedCounters.py	Gui for dedicated counters 
+DedicatedCountersSettings.py	Settings gui for the dedicated counters window
+DedicatedDisplay.py	Numeric display gui of counts within the dedicated counters window
+Experiment_rc.py	Resources file, redirect to ui\Experiment_rc.py
+ExternalScanExperiment.py	Measurement tab gui for experiment where an external parameter is changed between points
+ExternalScannedParametersConfig.py	Gui for external parameters, includes name, enable and configuration of the parameter
+ExternalScannedParametersSelection.py Gui for selection of enabled external parameters
+ExternalScannedParametersUi.py	Gui for changing the current value on all external parameters
+FitUi.py	Gui for fitting
+FromFile.py	Measurement tab gui to load existing files
+MagnitudeSpinBox.py	SpinBox gui for input of a magnitude value (double with unit)
+MainWindowWidget.py	Base class for measurement tab classes
+ParameterTableModel.py	table model for parameters within the pulse program ui
+PulseProgramUi.py	Gui for Pulse program
+ScanExperiment.py	Experiment tab for scanning of fpga controlled values only
+ScanExperimentSettings.py	Settings gui for SanExperiment
+ScanParameters.py	Gui for scan parameters
+SettingsDialog.py	Dialog to select fpga and fpga firmware
+ShutterHardwareTableModel.py	Table model for the shutter diaplay in the Main window
+ShutterTableModel.py	Table model for display of shutters in the pulse program ui
+ShutterUi.py	Shutter control
+testExperiment.py	testExperiment measurement tab (used for debugging)
+TimestampSettings.py	Settings gui for timestamp evaluation
+TraceTableModel.py	Table model for trace display and selection
+Traceui.py	Gui for traces
+TriggerTableModel.py	Table model for triggers in Pulse program ui
+VariableTableModel.py	Table model for variables in the Pulse program ui
+VoltageControl.py	Gui for voltage control (voltage control window)
+VoltageFiles.py	Gui for selection of files used for voltage output
+VoltageGlobalAdjust.py	Voltage adjust ui delta based
+VoltageTableModel.py	table model to display the current voltages
