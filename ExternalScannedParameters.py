@@ -130,15 +130,19 @@ class LaserVCOScan(ExternalParameterBase):
         Move one steps towards the target, return current value
         """
         if isinstance(value,magnitude.Magnitude):
-            myvalue = round(value.ounit("V").toval())
+            myvalue = value.ounit("V").toval()
         else:
-            myvalue = round(value)
-        if abs(myvalue-self.value)<self.stepsize:
-            self.powersupply.write("volt " + str(myvalue))
-            return True
+            myvalue = value
+        if abs(myvalue-self.value)<=self.stepsize:
+            nextvalue = myvalue
+            arrived = True
         else:
-            self.powersupply.write("volt " + str( self.value + math.copysign(self.stepsize, myvalue-self.value) ))
-            return False
+            nextvalue =  self.value + math.copysign(self.stepsize, myvalue-self.value)
+            arrived = False
+        self.powersupply.write("volt " + str(nextvalue))
+        self.value = nextvalue
+        print "setValue", self.value 
+        return arrived
             
     def currentValue(self):
         return self.value
@@ -157,7 +161,10 @@ class LaserVCOScan(ExternalParameterBase):
         return self.detuning
 
     def paramDef(self):
-        return super(LaserVCOScan,self).paramDef().append({'name': 'AOMFreq', 'type': 'float', 'value': self.AOMFreq})
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'AOMFreq', 'type': 'float', 'value': self.AOMFreq})
+        print superior
+        return superior
 
 class DummyParameter(ExternalParameterBase):
     """
