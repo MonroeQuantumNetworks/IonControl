@@ -215,6 +215,12 @@ class LaserWavemeterScan(ExternalParameterBase):
         print superior
         return superior
 
+    def saveValue(self):
+        """
+        save current value
+        """
+        self.savedValue = self.currentExternalValue()
+
 class DummyParameter(ExternalParameterBase):
     """
     DummyParameter, used to debug this part of the software.
