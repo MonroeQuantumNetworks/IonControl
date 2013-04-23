@@ -15,7 +15,7 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
         self.graphicsView = self.addPlot(row=0,col=0)
         self.addItem(self.label,row=1,col=0)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
-        self.template = "<span style='font-size: 10pt'>x={0:.2f}, <span style='color: red'>y={1:.2f}</span></span>"
+        self.template = "<span style='font-size: 10pt'>x={0:.4f}, <span style='color: red'>y={1:.4f}</span></span>"
     
     def onMouseMoved(self,pos):
         if self.graphicsView.sceneBoundingRect().contains(pos):
