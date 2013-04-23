@@ -42,7 +42,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         self.enabledParameters = enabledParameters
         
     def onStart(self):
-        if self.status in [self.status.Idle, self.Status.Stopping]:
+        if self.status in [self.Status.Idle, self.Status.Stopping]:
             self.start = time.time()
             self.state = self.OpStates.running
             self.scanSettings = self.scanSettingsWidget.settings
