@@ -10,6 +10,7 @@ from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import magnitude
 import math
+import time
 
 try:
     import visa
@@ -194,7 +195,8 @@ class LaserWavemeterScan(ExternalParameterBase):
         self.wavemeter.set_frequency(myvalue, self.channel)
         self.value = myvalue
         print "setValue", self.value 
-        return True
+        return numpy.abs(self.wavemeter.get_frequency(self.channel)-self.value)<.005
+           
                 
     def currentExternalValue(self):
 #        self.lastExternalValue = self.wavemeter.get_frequency(4)
@@ -207,7 +209,7 @@ class LaserWavemeterScan(ExternalParameterBase):
             self.lastExternalValue = self.wavemeter.get_frequency(self.channel)    
             self.detuning=(self.lastExternalValue-self.value)
             counter += 1
-        return self.detuning
+        return self.lastExternalValue 
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
