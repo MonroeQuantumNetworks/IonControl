@@ -80,7 +80,10 @@ class LaserSynthesizerScan(ExternalParameterBase):
     """
     def __init__(self, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self)
-        self.synthesizer = visa.instrument(instrument) #open visa session
+        try:
+            self.synthesizer = visa.instrument(instrument) #open visa session
+        except:
+            print 'Initialization fall'            
         self.stepsize = 1000
     
     def setValue(self,value):
@@ -165,6 +168,58 @@ class LaserVCOScan(ExternalParameterBase):
         superior.append({'name': 'AOMFreq', 'type': 'float', 'value': self.AOMFreq})
         print superior
         return superior
+        
+class LaserWavemeterScan(ExternalParameterBase):
+    """
+    Scan a laser by changing the voltage on a HP power supply. The frequency is controlled via
+    a VCO. The laser frequency is determined by reading the wavemeter.
+    """
+    def __init__(self,instrument="power_supply_next_to_397_box"):
+        ExternalParameterBase.__init__(self)
+        self.wavemeter = WavemeterGetFrequency()
+        self.savedValue = 0
+        print "LaserWavemeterScan savedValue", self.savedValue
+        self.value = self.savedValue
+        self.channel = 6
+    
+    def setValue(self,value):
+        """
+        Move one steps towards the target, return current value
+        """
+        if isinstance(value,magnitude.Magnitude):
+            myvalue = value.ounit("GHz").toval()
+        else:
+            myvalue = value
+        
+        self.wavemeter.set_frequency(myvalue, self.channel)
+        self.value = myvalue
+        print "setValue", self.value 
+        return True
+                
+    def currentExternalValue(self):
+#        self.lastExternalValue = self.wavemeter.get_frequency(4)
+#        while self.lastExternalValue <=0:
+        self.lastExternalValue = self.wavemeter.get_frequency(self.channel) 
+        print self.lastExternalValue
+        self.detuning=(self.lastExternalValue)
+        counter = 0
+        while numpy.abs(self.detuning)>=1 and counter<10:
+            self.lastExternalValue = self.wavemeter.get_frequency(self.channel)    
+            self.detuning=(self.lastExternalValue-self.value)
+            counter += 1
+        return self.detuning
+
+    def paramDef(self):
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
+        print superior
+        return superior
+
+    def saveValue(self):
+        """
+        save current value
+        """
+        self.savedValue = self.currentExternalValue()
 
 class DummyParameter(ExternalParameterBase):
     """
@@ -193,5 +248,6 @@ class DummyParameter(ExternalParameterBase):
         
 ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 
                               'Laser Synthesizer Scan': LaserSynthesizerScan,
-                              'Dummy': DummyParameter }
+                              'Dummy': DummyParameter,
+                              'Laser Wavemeter Scan': LaserWavemeterScan}
 
