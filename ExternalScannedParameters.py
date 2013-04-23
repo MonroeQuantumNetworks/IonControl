@@ -148,7 +148,7 @@ class LaserVCOScan(ExternalParameterBase):
         return arrived
             
     def currentValue(self):
-        return self.value
+        return magnitude.mg(self.value,'V')
     
     def currentExternalValue(self):
 #        self.lastExternalValue = self.wavemeter.get_frequency(4)
