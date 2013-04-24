@@ -81,10 +81,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
     """
     def __init__(self, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self)
-        try:
-            self.synthesizer = visa.instrument(instrument) #open visa session
-        except:
-            print 'Initialization fall'            
+        self.synthesizer = visa.instrument(instrument) #open visa session
         self.stepsize = 1000
     
     def setValue(self,value):
