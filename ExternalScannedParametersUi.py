@@ -28,7 +28,7 @@ class ControlUi(UiForm,UiBase):
         self.setupParameters(EnabledParameters)
         
     def setupParameters(self,EnabledParameters):
-        print "ControlUi.setupParameters"
+        print "ControlUi.setupParameters", EnabledParameters
         self.targetValue = dict()
         self.enabledParameters = EnabledParameters
         if self.spacerItem:
