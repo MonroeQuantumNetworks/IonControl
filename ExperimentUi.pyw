@@ -88,6 +88,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
+            
+        self.ExternalScanExperiment = self.tabDict["External Scan"]
                
         self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter', self.config)
         self.shutterUi.setupUi(self.shutterUi)
@@ -119,8 +121,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersDock)
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
                
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.tabDict["External Scan"].updateEnabledParameters )               
-               
+        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
+        self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParameters )
+        
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
         self.actionPause.triggered.connect(self.onPause)

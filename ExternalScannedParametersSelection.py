@@ -47,7 +47,7 @@ class SelectionUi(SelectionForm,SelectionBase):
             if name not in self.enabledParameters:
                 try:
                     self.settings.instruments[name] = (instrument,True)
-                    instance = ExternalScannedParameters.ExternalScannedParameters[name](instrument)
+                    instance = ExternalScannedParameters.ExternalScannedParameters[name](name,self.config,instrument)
                     self.enabledParameters[name] = instance
                     self.selectionChanged.emit( self.enabledParameters )
                     widget.update( self.enabledParameters[name] )
@@ -64,6 +64,8 @@ class SelectionUi(SelectionForm,SelectionBase):
         
     def onClose(self):
         self.config["ExternalScannedParametersSelection.Settings"] = self.settings
+        for inst in self.enabledParameters.values():
+            inst.close()
         
 
 if __name__ == "__main__":

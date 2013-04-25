@@ -10,18 +10,20 @@ from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import magnitude
 import math
-import time
 
 try:
     import visa
 except:
-    print "visa loading failed. Prceeding without."
+    print "visa loading failed. Proceeding without."
 
 class ExternalParameterBase:
-    def __init__(self):
-        self.delay = 0.1    # s delay between subsequent updates
-        self.jump = False   # if True go to the target value in one jump
-        self.stepsize = 1   # the max step taken towards the tarhet value if jump is False
+    def __init__(self,name,config):
+        self.name = name
+        self.config = config
+        self.baseConfigName = 'ExternalParameterBase.'+self.name
+        self.delay = self.config.get(self.baseConfigName+'.delay',0.1)       # s delay between subsequent updates
+        self.jump = self.config.get(self.baseConfigName+'.jump',False)       # if True go to the target value in one jump
+        self.stepsize = self.config.get(self.baseConfigName+'.stepsize',1)   # the max step taken towards the tarhet value if jump is False
         self.value = 0      # the current value
     
     def saveValue(self):
@@ -73,14 +75,74 @@ class ExternalParameterBase:
         for param, change, data in changes:
             print self, "update", param.name(), data
             setattr( self, param.name(), data)
+            
+    def close(self):
+        self.config[self.baseConfigName+'.delay'] = self.delay
+        self.config[self.baseConfigName+'.jump'] = self.jump
+        self.config[self.baseConfigName+'.stepsize'] = self.stepsize
+
+class N6700BPowerSupply(ExternalParameterBase):
+    """
+    Adjust the current on the N6700B current supply
+    """
+    def __init__(self,name,config,instrument="QGABField"):
+        ExternalParameterBase.__init__(self,name,config)
+        print "trying to open '{0}'".format(instrument)
+        self.instrument = visa.instrument(instrument) #open visa session
+        print "opend {0}".format(instrument)
+        self.stepsize = 1000
+        self.channel = self.config.get('N6700BPowerSupply.'+self.name+'.channel',3)
+        self._getValue_()
     
+    def setValue(self,value):
+        """
+        Move one steps towards the target, return current value
+        """
+        if isinstance(value,magnitude.Magnitude):
+            myvalue = value.ounit("A").toval()
+        else:
+            myvalue = value
+        if abs(myvalue-self.value)<self.stepsize:
+            self._setValue_( myvalue )
+            return True
+        else:
+            self._setValue_( self.value + math.copysign(self.stepsize, myvalue-self.value) )
+            return False
+            
+    def _setValue_(self, v):
+        command = "Curr {0},(@{1})".format(v,self.channel)
+        self.instrument.write(command)#set voltage
+        self.value = v
+        
+    def _getValue_(self):
+        command = "Curr? (@{0})".format(self.channel)
+        self.value = float(self.instrument.ask(command))#set voltage
+        return self.value
+        
+    def currentValue(self):
+        return magnitude.mg(self.value,"A")
+    
+    def currentExternalValue(self):
+        command = "MEAS:CURR? (@{0})".format(self.channel)
+        value = float( self.instrument.ask(command))
+        return value  #magnitude.mg(value,"A")
+
+    def paramDef(self):
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
+        print superior
+        return superior
+        
+    def close(self):
+        ExternalParameterBase.close(self)
+        self.config['N6700BPowerSupply.'+self.name+'.channel'] = self.channel
 
 class LaserSynthesizerScan(ExternalParameterBase):
     """
     Scan the laser frequency by scanning a synthesizer HP8672A. (The laser is locked to a sideband)
     """
-    def __init__(self, instrument="GPIB0::23::INSTR"):
-        ExternalParameterBase.__init__(self)
+    def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
+        ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
         self.stepsize = 1000
     
@@ -116,8 +178,8 @@ class LaserVCOScan(ExternalParameterBase):
     Scan a laser by changing the voltage on a HP power supply. The frequency is controlled via
     a VCO. The laser frequency is determined by reading the wavemeter.
     """
-    def __init__(self,instrument="power_supply_next_to_397_box"):
-        ExternalParameterBase.__init__(self)
+    def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
+        ExternalParameterBase.__init__(self,name,config)
         self.powersupply = visa.instrument(instrument)#open visa session
         self.wavemeter = WavemeterGetFrequency()
         self.savedValue = float(self.powersupply.ask("volt?"))
@@ -172,8 +234,8 @@ class LaserWavemeterScan(ExternalParameterBase):
     Scan a laser by changing the voltage on a HP power supply. The frequency is controlled via
     a VCO. The laser frequency is determined by reading the wavemeter.
     """
-    def __init__(self,instrument="power_supply_next_to_397_box"):
-        ExternalParameterBase.__init__(self)
+    def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
+        ExternalParameterBase.__init__(self,name,config)
         self.wavemeter = WavemeterGetFrequency()
         self.savedValue = 0
         print "LaserWavemeterScan savedValue", self.savedValue
@@ -224,8 +286,8 @@ class DummyParameter(ExternalParameterBase):
     """
     DummyParameter, used to debug this part of the software.
     """
-    def __init__(self,instrument=''):
-        ExternalParameterBase.__init__(self)
+    def __init__(self,name,config,instrument=''):
+        ExternalParameterBase.__init__(self,name,config)
         print "Opening DummyInstrument", instrument
         self.savedValue = self.value
     
@@ -248,5 +310,8 @@ class DummyParameter(ExternalParameterBase):
 ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 
                               'Laser Synthesizer Scan': LaserSynthesizerScan,
                               'Dummy': DummyParameter,
-                              'Laser Wavemeter Scan': LaserWavemeterScan}
+                              'Laser Wavemeter Scan': LaserWavemeterScan,
+                              'B-Field Current X': N6700BPowerSupply,
+                              'B-Field Current Y': N6700BPowerSupply,
+                              'B-Field Current Z': N6700BPowerSupply}
 
