@@ -25,7 +25,9 @@ class DataDirectory:
     def setProject(self,project):
         self.project = project
     
-    def path(self, current=datetime.date.today()):
+    def path(self, current=None):
+        if not current:
+            current = datetime.date.today()
         #basedir = os.path.join(os.path.expanduser("~\\Documents\\"),self.project)
         basedir = os.path.join(DataDirectoryBase,self.project)
         yeardir = os.path.join(basedir,str(current.year))
@@ -37,12 +39,14 @@ class DataDirectory:
             os.makedirs(daydir)
         return daydir;
         
-    def sequencefile(self,name,  current=datetime.date.today()):
+    def sequencefile(self,name,  current=None):
         """
         return the sequenced filename in the current data directory.
         _000 serial is inserted before the file extension or at the end of the name if the filename has no extension.
         The directory is reread every time.
         """
+        if not current:
+            current = datetime.date.today()
         directory = self.path(current)
         fileName, fileExtension = os.path.splitext(name)
         pattern = re.compile(re.escape(fileName)+"_(?P<num>\\d+)"+re.escape(fileExtension))
