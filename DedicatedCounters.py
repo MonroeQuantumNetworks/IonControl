@@ -39,8 +39,8 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.integrationTimeLookup = dict()
         self.tick = 0
         self.analogCalbrations = [
-            AnalogInputCalibration.PowerDetectorCalibration(-36.47,60.7152,-1.79545,0.6,2),
-            AnalogInputCalibration.AnalogInputCalibration(),
+            AnalogInputCalibration.PowerDetectorCalibration(),
+            AnalogInputCalibration.PowerDetectorCalibrationTwo(),
             AnalogInputCalibration.AnalogInputCalibration(),
             AnalogInputCalibration.AnalogInputCalibration() ]
 
