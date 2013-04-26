@@ -16,7 +16,7 @@ class Settings:
     counterMask = 0
     adcMask = 0
     integrationTime = magnitude.mg(100,'ms')
-    displayUnit = CountrateConversion.DisplayUnit()
+    unit = 0
     pointsToKeep = 400
 
 class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersSettingsBase ):
@@ -27,6 +27,7 @@ class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersS
         DedicatedCountersSettingsBase.__init__(self)
         self.config = config
         self.settings = self.config.get('DedicatedCounterSettings.Settings',Settings())
+        self.displayUnit = CountrateConversion.DisplayUnit()
 
     def setupUi(self, parent):
         DedicatedCountersSettingsForm.setupUi(self,parent)
@@ -40,11 +41,12 @@ class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersS
         for num, channel in enumerate([ self.adc0Check, self.adc1Check, self.adc2Check, self.adc3Check]):
             channel.setChecked( self.settings.adcMask & (1<<num) )
             channel.stateChanged.connect( functools.partial( self.onAdcStateChanged,(1<<num) ))
-        self.displayUnitCombo.setCurrentIndex(self.settings.displayUnit.unit)
         self.displayUnitCombo.currentIndexChanged[int].connect( self.onIndexChanged )
+        self.displayUnitCombo.setCurrentIndex(self.settings.unit)
     
     def onIndexChanged(self, index):
-        self.settings.displayUnit.unit = index
+        self.displayUnit.unit = index
+        self.settings.unit = index
         self.valueChanged.emit( self.settings )
     
     def onValueChanged(self, name, value):
