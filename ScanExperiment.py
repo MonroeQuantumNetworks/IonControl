@@ -172,6 +172,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
         self.scanParametersWidget.progressBar.setVisible( False )
+        self.finalizeData()
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory( self.scanSettings.project )
@@ -217,21 +218,21 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.showTimestamps(data)
         if data.final:
             self.finalizeData()
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+                self.onStart()
+            else:
+                self.onStop()
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.pulserHardware.ppWriteData(self.scan.code)     
         self.scanParametersWidget.progressBar.setValue(self.currentIndex)
 
     def finalizeData(self):
+        print "finalize Data"
         pulseProgramHeader = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
         scanHeader = stringutilit.commentarize( repr(self.scan) )
         self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
-        if self.scan.autoSave:
-            self.currentTrace.resave()
-        if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
-            self.onStart()
-        else:
-            self.onStop()
+        self.currentTrace.resave(saveIfUnsaved=self.scan.autoSave)
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings

@@ -85,6 +85,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.status = self.Status.Stopping
             self.stopBottomHalf()
             print "Status -> Stopping"
+            self.finalizeData()
                     
     def stopBottomHalf(self):
         if self.status==self.Status.Stopping:
@@ -132,4 +133,8 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             print "External Value:" , self.scan.list[self.externalParameterIndex]
         else:
             self.finalizeData()
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+                self.onStart()
+            else:
+                self.onStop()
         self.scanParametersWidget.progressBar.setValue(float(self.externalParameterIndex))

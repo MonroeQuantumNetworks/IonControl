@@ -41,10 +41,10 @@ class Trace(object):
         if self.dataChangedCallback:
             self.dataChangedCallback()                            
         
-    def resave(self):
+    def resave(self, saveIfUnsaved=True):
         if hasattr(self, 'filename' ) and self.filename and self.filename!='':
             self.saveTrace(self.filename)
-        elif self.filenameCallback:
+        elif self.filenameCallback and saveIfUnsaved:
             self.saveTrace(self.filenameCallback())
     
     def plot(self,penindex):
