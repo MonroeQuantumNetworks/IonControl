@@ -111,6 +111,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetList.append(self.scanParametersUi)
         self.dockWidgetList.append(self.scanSettingsUi)
         self.dockWidgetList.append(self.timestampSettingsUi)
+        self.tabifyDockWidget( self.timestampSettingsUi, self.scanSettingsUi )
+        self.tabifyDockWidget( self.timestampSettingsUi, self.dockWidgetFitUi )
+        self.tabifyDockWidget( self.scanSettingsUi, self.scanParametersUi)
+        self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
 

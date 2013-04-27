@@ -106,6 +106,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
+        # tabify the dock widgets
+        self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
+        self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
+        
         self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalScannedParametersSelectionDock = QtGui.QDockWidget("Params Selection")
@@ -123,6 +127,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
                
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParameters )
+        #tabify 
+        self.tabifyDockWidget( self.ExternalScannedParametersSelectionDock, self.ExternalScannedParametersDock)
         
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
