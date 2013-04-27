@@ -222,6 +222,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     def onSettingsApply(self,settings):
         self.settings = settings
         self.pulserHardware.updateSettings(self.settings.fpga)
+        self.DDSUi.updateSettings(self.settings.fpga)
         #print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):

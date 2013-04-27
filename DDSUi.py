@@ -88,6 +88,9 @@ class DDSUi(DDSForm, DDSBase):
     def onReset(self):
         self.ad9912.reset(0x3f)
         
+    def updateSettings(self,fpgaUtilit):
+        self.ad9912.updateSettings(fpgaUtilit)
+        
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
