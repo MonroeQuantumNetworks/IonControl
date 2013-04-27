@@ -132,6 +132,7 @@ class PulserHardware(QtCore.QObject):
 
     dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     dedicatedDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
+    shutterChanged = QtCore.pyqtSignal()
     
     timestep = magnitude.mg(20,'ns')
 
@@ -177,6 +178,7 @@ class PulserHardware(QtCore.QObject):
             check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
             self._shutter = value
+            self.shutterChanged.emit( self._shutter )
             
     def setShutterBit(self, bit, value):
         mask = 1 << bit

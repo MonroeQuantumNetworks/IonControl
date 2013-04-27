@@ -92,7 +92,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalScanExperiment = self.tabDict["External Scan"]
                
         self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter', self.config)
-        self.shutterUi.setupUi(self.shutterUi)
+        self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
         print "ShutterUi representation:", repr(self.shutterUi)
 
