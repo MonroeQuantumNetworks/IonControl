@@ -23,6 +23,9 @@
     <file>icons/player_stop.png</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/media-playback-pause-7.png</file>
+    <file>icons/media-playback-start-7.png</file>
+    <file>icons/media-playback-stop-7.png</file>
     <file>icons/edit-clear-locationbar-ltr.png</file>
     <file>icons/edit-clear-locationbar-rtl.png</file>
     <file>icons/edit-redo-8.png</file>

@@ -15,6 +15,7 @@ import DedicatedCountersSettings
 import numpy
 import DedicatedDisplay
 import AnalogInputCalibration
+import AutoLoad
        
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -77,6 +78,13 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.displayDockADC.setObjectName("Analog Channels")
         self.displayDockADC.setWidget(self.displayUiADC)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDockADC)
+        # AutoLoad
+        self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware)
+        self.autoLoad.setupUi(self.autoLoad)
+        self.autoLoadDock = QtGui.QDockWidget("Auto Loader")
+        self.autoLoadDock.setObjectName("Auto Loader")
+        self.autoLoadDock.setWidget( self.autoLoad )
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.autoLoadDock)
         
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
@@ -104,6 +112,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.config['DedicatedCounter.Settings'] = self.settings
         self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.settingsUi.onClose()
+        self.autoLoad.close()
         
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()

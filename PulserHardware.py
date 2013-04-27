@@ -177,6 +177,11 @@ class PulserHardware(QtCore.QObject):
             check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
             self._shutter = value
+            
+    def setShutterBit(self, bit, value):
+        mask = 1 << bit
+        newval = (self._shutter & (~mask)) | (mask if value else 0)
+        self.shutter = newval
         
     @property
     def trigger(self):
