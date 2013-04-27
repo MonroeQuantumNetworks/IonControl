@@ -20,7 +20,7 @@ import ScanExperiment
 import ExternalScanExperiment
 import SettingsDialog
 import testExperiment
-from modules import configshelve
+from persist import configshelve
 import PulseProgramUi
 import ShutterUi
 import DDSUi
@@ -317,7 +317,7 @@ if __name__ == "__main__":
             
         DataDirectory.DefaultProject = project
         
-        with configshelve.configshelve("experiment-gui",configdir) as config:
+        with configshelve.configshelve("experiment-gui.db",configdir) as config:
             ui = WidgetContainerUi(config)
             ui.setupUi(ui)
             logger.textWritten.connect(ui.onMessageWrite)
