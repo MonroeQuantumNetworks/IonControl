@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>184</width>
+    <width>239</width>
     <height>318</height>
    </rect>
   </property>
@@ -87,6 +87,20 @@
         </widget>
        </item>
        <item>
+        <widget class="QTableWidget" name="tableWidget">
+         <column>
+          <property name="text">
+           <string>Loading</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Storing</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -111,6 +125,9 @@
          <property name="toolTip">
           <string>oven enable digital out</string>
          </property>
+         <property name="minimum">
+          <number>-31</number>
+         </property>
          <property name="maximum">
           <number>31</number>
          </property>
@@ -127,6 +144,9 @@
         <widget class="QSpinBox" name="counterChannelBox">
          <property name="toolTip">
           <string>counter channel</string>
+         </property>
+         <property name="minimum">
+          <number>0</number>
          </property>
          <property name="maximum">
           <number>7</number>
@@ -256,6 +276,9 @@
         <widget class="QSpinBox" name="shutterChannelBox">
          <property name="toolTip">
           <string>shuter enable digital out</string>
+         </property>
+         <property name="minimum">
+          <number>-31</number>
          </property>
          <property name="maximum">
           <number>31</number>

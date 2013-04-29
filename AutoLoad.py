@@ -26,8 +26,14 @@ class AutoLoadSettings:
         self.thresholdOven = 0
         self.checkTime = 0
 
+
+def invert( logic, channel):
+    """ returns logic for positive channel number, inverted for negative channel number """
+    print "invert", logic, channel, logic if channel>0 else not logic
+    return (logic if channel>0 else not logic)
+
 class AutoLoad(UiForm,UiBase):
-    Status = enum.enum('Idle','Preheat','Load','Check','Trapped')
+    Status = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared')
     def __init__(self, config, pulser, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
@@ -85,14 +91,17 @@ class AutoLoad(UiForm,UiBase):
         return delta.days*24*3600.0 + delta.seconds + delta.microseconds*1e-6
     
     def setIdle(self):
+        if self.timer:
+            del self.timer
+            self.timer = None
         self.elapsedLabel.setStyleSheet("QLabel { color:black; }")
         self.status = self.Status.Idle
         self.statusLabel.setText("Idle")
         if self.dataSignalConnected:
             self.pulser.dedicatedDataAvailable.disconnect( self.onData )
             self.dataSignalConnected = False
-        self.pulser.setShutterBit( self.settings.ovenChannel, False )
-        self.pulser.setShutterBit( self.settings.shutterChannel, False )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel ))
     
     def setPreheat(self):
         print "Loading Preheat"
@@ -104,7 +113,7 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:red; }")
         self.status = self.Status.Preheat
         self.statusLabel.setText("Preheating")
-        self.pulser.setShutterBit( self.settings.ovenChannel, True )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(True,self.settings.ovenChannel) )
     
     def setLoad(self):
         print "Loading Load"
@@ -113,8 +122,8 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Loading")
         self.pulser.dedicatedDataAvailable.connect( self.onData )
         self.dataSignalConnected = True
-        self.pulser.setShutterBit( self.settings.shutterChannel, True )
-        self.pulser.setShutterBit( self.settings.ovenChannel, True )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(True,self.settings.shutterChannel) )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(True,self.settings.ovenChannel) )
     
     def setCheck(self):
         print "Loading Check"
@@ -122,20 +131,23 @@ class AutoLoad(UiForm,UiBase):
         self.status = self.Status.Check
         self.checkStarted = datetime.now()
         self.statusLabel.setText("Checking for ion")
-        self.pulser.setShutterBit( self.settings.ovenChannel, False )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
         
-    def setTrapped(self):
+    def setTrapped(self,reappeared=False):
         print "Loading Trapped"
-        self.loadingTime = datetime.now() - self.started
-        self.started = datetime.now()
+        if not reappeared:
+            self.loadingTime = datetime.now() - self.started
+            self.started = datetime.now()
         self.status=self.Status.Trapped
         self.elapsedLabel.setStyleSheet("QLabel { color:green; }")
         self.statusLabel.setText("Trapped :)")       
-        if self.dataSignalConnected:
-            self.pulser.dedicatedDataAvailable.disconnect( self.onData )
-            self.dataSignalConnected = False
-        self.pulser.setShutterBit( self.settings.ovenChannel, False )
-        self.pulser.setShutterBit( self.settings.shutterChannel, False )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel) )
+    
+    def setDisappeared(self):
+        self.status = self.Status.Disappeared
+        self.disappearedAt = datetime.now()
+        self.statusLabel.setText("Disappeared :(")       
     
     def onTimer(self):
         self.elapsed = datetime.now()-self.started
@@ -145,6 +157,9 @@ class AutoLoad(UiForm,UiBase):
                 self.setLoad()
         elif self.status==self.Status.Load:
             if self.timedeltaseconds(self.elapsed)>self.settings.maxTime.toval('s'):
+                self.setIdle()
+        elif self.status==self.Status.Disappeared:
+            if self.timedeltaseconds(datetime.now()-self.disappearedAt)>self.settings.checkTime.toval('s'):
                 self.setIdle()
     
     def onData(self, data ):
@@ -156,6 +171,13 @@ class AutoLoad(UiForm,UiBase):
                 self.setLoad()
             elif self.timedeltaseconds(datetime.now()-self.checkStarted)>self.settings.checkTime.toval('s'):
                 self.setTrapped()
+        elif self.status==self.Status.Trapped:
+            if data.data[self.settings.counterChannel]<self.settings.thresholdBare:
+                self.setDisappeared()
+        elif self.status==self.Status.Disappeared:
+            if data.data[self.settings.counterChannel]>self.settings.thresholdBare:
+                self.setTrapped(True)
+            
     
     def close(self):
         self.config['AutoLoad.Settings'] = self.settings

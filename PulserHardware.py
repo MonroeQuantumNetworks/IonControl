@@ -132,7 +132,7 @@ class PulserHardware(QtCore.QObject):
 
     dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     dedicatedDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
-    shutterChanged = QtCore.pyqtSignal()
+    shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )
     
     timestep = magnitude.mg(20,'ns')
 
