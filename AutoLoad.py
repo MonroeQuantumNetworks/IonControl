@@ -84,7 +84,7 @@ class AutoLoad(UiForm,UiBase):
         seconds = seconds + delta.microseconds*1e-6
         components = list()
         if (hours>0): components.append("{0}".format(hours))
-        components.append("{0}:{1:04.1f}".format(minutes,seconds))
+        components.append("{0:02d}:{1:04.1f}".format(int(minutes),seconds))
         return ":".join(components)
         
     def timedeltaseconds(self,delta):
