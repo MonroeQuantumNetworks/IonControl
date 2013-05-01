@@ -164,6 +164,8 @@ class PulseProgram:
                 var.data = self.convertParameter(value, var.encoding )
                 self.bytecode[address] = (self.bytecode[address][0], var.data )
                 self.variabledict[name] = var
+                if debug:
+                    print "updateVariables {0} value {1},".format(name,value), hex(int(var.data))
             else:
                 print "variable", name, "not found in dictionary."
         return self.bytecode
