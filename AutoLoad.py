@@ -14,6 +14,7 @@ from datetime import datetime
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
 import MagnitudeSpinBox
+from LoadingHistoryModel import LoadingHistoryModel 
 
 class AutoLoadSettings:
     def __init__(self):
@@ -32,6 +33,12 @@ def invert( logic, channel):
     print "invert", logic, channel, logic if channel>0 else not logic
     return (logic if channel>0 else not logic)
 
+class LoadingEvent:
+    def __init__(self,loading=None,trappedAt=None):
+        self.loadingTime = loading
+        self.trappedAt = trappedAt
+        self.trappingTime = None
+
 class AutoLoad(UiForm,UiBase):
     Status = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared')
     def __init__(self, config, pulser, parent=None):
@@ -39,6 +46,7 @@ class AutoLoad(UiForm,UiBase):
         UiForm.__init__(self)
         self.config = config
         self.settings = self.config.get('AutoLoad.Settings',AutoLoadSettings())
+        self.loadingHistory = self.config.get('AutoLoad.History',list())
         self.status = self.Status.Idle
         self.timer = None
         self.pulser = pulser
@@ -64,6 +72,8 @@ class AutoLoad(UiForm,UiBase):
         self.checkTimeBox.valueChanged.connect( functools.partial( self.onValueChanged, 'checkTime' ))
         self.startButton.clicked.connect( self.onStart )
         self.stopButton.clicked.connect( self.onStop )
+        self.historyTableModel = LoadingHistoryModel(self.loadingHistory)
+        self.historyTableView.setModel(self.historyTableModel)
         self.setIdle()
         
     def onValueChanged(self,attr,value):
@@ -131,13 +141,15 @@ class AutoLoad(UiForm,UiBase):
         self.status = self.Status.Check
         self.checkStarted = datetime.now()
         self.statusLabel.setText("Checking for ion")
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
         
     def setTrapped(self,reappeared=False):
         print "Loading Trapped"
         if not reappeared:
             self.loadingTime = datetime.now() - self.started
-            self.started = datetime.now()
+            self.started = self.checkStarted
+            self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
         self.status=self.Status.Trapped
         self.elapsedLabel.setStyleSheet("QLabel { color:green; }")
         self.statusLabel.setText("Trapped :)")       
@@ -160,6 +172,7 @@ class AutoLoad(UiForm,UiBase):
                 self.setIdle()
         elif self.status==self.Status.Disappeared:
             if self.timedeltaseconds(datetime.now()-self.disappearedAt)>self.settings.checkTime.toval('s'):
+                self.historyTableModel.updateLast('trappingTime',self.disappearedAt-self.started)
                 self.setIdle()
     
     def onData(self, data ):
@@ -180,4 +193,7 @@ class AutoLoad(UiForm,UiBase):
             
     
     def close(self):
+        if not self.status==self.Status.Idle:
+            self.setIdle()
         self.config['AutoLoad.Settings'] = self.settings
+        self.config['AutoLoad.History'] = self.loadingHistory
