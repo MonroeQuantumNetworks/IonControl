@@ -62,8 +62,12 @@ class PipeReader(QtCore.QThread):
     analyzingState = enum.enum('normal','scanparameter')
     def run(self):
         """ run is responsible for reading the data back from the FPGA
-        next experiment marker is 0xffff0xxx where xxx is the address of the overwritten parameter
-        end marker is 0xffffffff
+            0xffffffff end of experiment marker
+            0xff000000 timestamping overflow marker
+            0xffffxxxx scan parameter, followed by scanparameter value
+            0x1nxxxxxx count result from channel n
+            0x2nxxxxxx timestamp result channel n
+            0x3nxxxxxx timestamp gate start channel n
         """
         print "PipeReader running"
         try:

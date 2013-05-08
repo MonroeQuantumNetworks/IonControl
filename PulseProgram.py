@@ -75,6 +75,10 @@ OPS = {'NOP'    : 0x00,
        'RAMREAD' : 0x44,
        'JMPRAMVALID' : 0x45,
        'JMPRAMINVALID' : 0x46,
+       'CMPGE' : 0x47,
+       'CMPLE' : 0x48, 
+       'CMPGREATER' : 0x4a,
+       'ORW' : 0x4b,
        'END'    : 0xFF }
 
 class Dimensions:

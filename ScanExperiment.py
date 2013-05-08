@@ -141,7 +141,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scan = self.scanParametersWidget.getScan()
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]])
-            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]]*2)
+            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]]*5)
         else:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
             mycode = self.scan.code
@@ -241,11 +241,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings
         bins = int( (settings.roiWidth/settings.binwidth).toval() )
-        myrange = (settings.roiStart.toval('ms'),(settings.roiStart+settings.roiWidth).toval('ms'))
-        y, x = numpy.histogram( [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]], 
+        multiplier = self.pulserHardware.timestep.toval('ms')
+        myrange = (settings.roiStart.toval('ms')/multiplier,(settings.roiStart+settings.roiWidth).toval('ms')/multiplier)
+        y, x = numpy.histogram( data.timestamp[settings.channel], 
                                 range=myrange,
                                 bins=bins)
-        x = x[0:-1]
+        x = x[0:-1] * multiplier
                                 
         if self.currentTimestampTrace and numpy.array_equal(self.currentTimestampTrace.x,x) and (
             settings.integrate == self.timestampSettingsWidget.integrationMode.IntegrateAll or 
