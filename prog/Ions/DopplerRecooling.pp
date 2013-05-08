@@ -44,14 +44,14 @@ var pretriggerTime 2, parameter, ms
 
 # General
 var experiments   10, parameter
-var Threshold 0, parameter
-var PMTChannel        1, parameter
+var threshold 0, parameter
+var maxcoolingrep   1000, parameter
 
 # Internal
 var experimentsleft 10
 var endLabel 0xffffffff
 var null 0
-var coolingrepcounterinit 0x40000000
+var coolingrepcounterFlag 0x40000000
 var coolingrepcounter 0
 
 # Preparation
@@ -85,11 +85,13 @@ scanloop: NOP
 	TRIGGER ddsApplyTrigger
 
 experimentloop: NOP
-	LDWR coolingrepcounterinit
+	LDWR null
 	STWR coolingrepcounter
 cooling: NOP
 	INC coolingrepcounter
 	STWR coolingrepcounter
+	CMP maxcoolingrep             # if coolingrepcounter greater than MaxCoolingRep w=w else W=0
+	JMPNZ endlabel
 	SHUTTERMASK coolingOnMask
 	ASYNCSHUTTER coolingOn
 	COUNTERMASK coolingCounter
@@ -100,12 +102,13 @@ cooling: NOP
 	ASYNCSHUTTER coolingOff
 	WAIT
 	UPDATE epsilon
-	LDWR Threshold
+	LDWR threshold
 	JMPZ	dark
 	LDCOUNT	ZERO
-	CMP      	Threshold 	# if counts greater than threshold w=w else W=0
+	CMP      	threshold 	# if counts greater than threshold w=w else W=0
 	JMPZ     	cooling  		# if w=0 back to init
 	LDWR coolingrepcounter
+	ADDW coolingrepcounterFlag
 	WRITEPIPE
 
 dark: NOP

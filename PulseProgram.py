@@ -100,7 +100,6 @@ encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = False
 
 def variableValueDict( variabledict ):
     returndict = dict()
@@ -124,6 +123,8 @@ class PulseProgram:
         self.code = []                   # this is a list of lines
         self.bytecode = []               # list of op, argument tuples
         self.binarycode = bytearray()    # binarycode to be uploaded
+        self.debug = False
+
         
         class Board:
             channelLimit = 1    
@@ -168,8 +169,8 @@ class PulseProgram:
                 var.data = self.convertParameter(value, var.encoding )
                 self.bytecode[address] = (self.bytecode[address][0], var.data )
                 self.variabledict[name] = var
-                if debug:
-                    print "updateVariables {0} value {1},".format(name,value), hex(int(var.data))
+                if self.debug:
+                    print "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data))
             else:
                 print "variable", name, "not found in dictionary."
         return self.bytecode
@@ -201,9 +202,9 @@ class PulseProgram:
         """ convert bytecode to binary
         """
         self.binarycode = bytearray()
-        for op, arg in self.bytecode:
-            if debug:
-                print hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
+        for wordno, (op, arg) in enumerate(self.bytecode):
+            if self.debug:
+                print hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
         
@@ -322,7 +323,7 @@ class PulseProgram:
     def addVariable(self, m, lineno, sourcename):
         """ add a variable to the self.variablesdict
         """
-        if debug:
+        if self.debug:
             print "Variable", m, lineno, sourcename
         var = Variable()
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
@@ -362,11 +363,11 @@ class PulseProgram:
     def toBytecode(self):
         """ generate bytecode from code
         """
-        if debug:
+        if self.debug:
             print "\nCode ---> ByteCode:"
         self.bytecode = []
         for index, line in enumerate(self.code):
-            if debug:
+            if self.debug:
                 print hex(line[0]),  ": ", line[1:], 
             bytedata = 0
             byteop = OPS[line[1]]
@@ -391,7 +392,7 @@ class PulseProgram:
                 #print self.variabledict
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data))
             self.bytecode.append((byteop, bytedata))
-            if debug:
+            if self.debug:
                 print "--->", (hex(byteop), hex(bytedata))
     
         return self.bytecode 
@@ -417,8 +418,8 @@ class PulseProgram:
 
 
 if __name__ == "__main__":
-    debug = True
     pp = PulseProgram()
+    pp.debug = True
     pp.loadSource(r"prog\Ions\Bluetest.pp")
     #pp.loadSource(r"prog\single_pulse_exp_adiabatic.pp")
     

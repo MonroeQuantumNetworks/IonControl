@@ -50,6 +50,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
+        self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
@@ -78,6 +79,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         for tag in [self.checkBoxParameter,self.checkBoxAddress,self.checkBoxOther]:
             visibledict[str(tag.text())] = tag.isChecked()
         self.variableTableModel.setVisible(visibledict)
+
+    def onDebugChanged(self):
+        self.pulseProgram.debug = self.debugCheckBox.isChecked()
         
     def onOk(self):
         pass

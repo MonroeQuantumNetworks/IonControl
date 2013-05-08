@@ -30,7 +30,7 @@ class AutoLoadSettings:
 
 def invert( logic, channel):
     """ returns logic for positive channel number, inverted for negative channel number """
-    print "invert", logic, channel, logic if channel>0 else not logic
+    #print "invert", logic, channel, logic if channel>0 else not logic
     return (logic if channel>0 else not logic)
 
 class LoadingEvent:
