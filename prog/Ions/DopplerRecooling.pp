@@ -51,7 +51,8 @@ var PMTChannel        1, parameter
 var experimentsleft 10
 var endLabel 0xffffffff
 var null 0
-var seven 7
+var coolingrepcounterinit 0x40000000
+var coolingrepcounter 0
 
 # Preparation
 	SHUTTERMASK startupMask
@@ -84,7 +85,11 @@ scanloop: NOP
 	TRIGGER ddsApplyTrigger
 
 experimentloop: NOP
+	LDWR coolingrepcounterinit
+	STWR coolingrepcounter
 cooling: NOP
+	INC coolingrepcounter
+	STWR coolingrepcounter
 	SHUTTERMASK coolingOnMask
 	ASYNCSHUTTER coolingOn
 	COUNTERMASK coolingCounter
@@ -100,6 +105,8 @@ cooling: NOP
 	LDCOUNT	ZERO
 	CMP      	Threshold 	# if counts greater than threshold w=w else W=0
 	JMPZ     	cooling  		# if w=0 back to init
+	LDWR coolingrepcounter
+	WRITEPIPE
 
 dark: NOP
 	LDWR darkTime

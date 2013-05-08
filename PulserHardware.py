@@ -126,6 +126,8 @@ class PipeReader(QtCore.QThread):
                                     self.data.timestampZero[channel] = self.timestampOffset + value
                                 elif key==4: # other return value
                                     self.data.other.append(value)
+                                else:
+                                    print "unprocessed", key,channel,value
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
                     #print "emit dataAvailable"

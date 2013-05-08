@@ -196,6 +196,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             thisdata = data.count[self.scanSettings.counter][self.scanSettings.sliceNo::self.scanSettings.sliceTotal]
             mean, error = self.scanSettings.evalAlgo.evaluate( thisdata )
+        if data.other:
+            print "Other:", data.other
         #mean = numpy.mean( data.count[self.scanSettings.counter] )
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
