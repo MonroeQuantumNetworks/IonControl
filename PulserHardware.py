@@ -18,6 +18,7 @@ class Data:
         self.timestampZero = [0]*8
         self.scanvalue = None
         self.final = False
+        self.other = list()
 
 class DedicatedData:
     def __init__(self):
@@ -68,6 +69,7 @@ class PipeReader(QtCore.QThread):
             0x1nxxxxxx count result from channel n
             0x2nxxxxxx timestamp result channel n
             0x3nxxxxxx timestamp gate start channel n
+            0x4xxxxxxx other return
         """
         print "PipeReader running"
         try:
@@ -122,6 +124,8 @@ class PipeReader(QtCore.QThread):
                                     self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
                                 elif key==3:  # timestamp gate start
                                     self.data.timestampZero[channel] = self.timestampOffset + value
+                                elif key==4: # other return value
+                                    self.data.other.append(value)
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
                     #print "emit dataAvailable"

@@ -191,7 +191,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Called by worker with new data
         """
         print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
-        mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        if self.scanSettings.sliceTotal<=1:
+            mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        else:
+            thisdata = data.count[self.scanSettings.counter][self.scanSettings.sliceNo::self.scanSettings.sliceTotal]
+            mean, error = self.scanSettings.evalAlgo.evaluate( thisdata )
         #mean = numpy.mean( data.count[self.scanSettings.counter] )
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
@@ -235,8 +239,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         print "finalize Data"
         pulseProgramHeader = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
         scanHeader = stringutilit.commentarize( repr(self.scan) )
-        self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
-        self.currentTrace.resave(saveIfUnsaved=self.scan.autoSave)
+        if self.currentTrace:
+            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+            self.currentTrace.resave(saveIfUnsaved=self.scan.autoSave)
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings
