@@ -44,7 +44,7 @@ var pretriggerTime 2, parameter, ms
 
 # General
 var experiments   10, parameter
-var threshold 0, parameter
+var Threshold 0, parameter
 var maxcoolingrep   1000, parameter
 
 # Internal
@@ -102,10 +102,10 @@ cooling: NOP
 	ASYNCSHUTTER coolingOff
 	WAIT
 	UPDATE epsilon
-	LDWR threshold
+	LDWR Threshold
 	JMPZ	dark
 	LDCOUNT	ZERO
-	CMP      	threshold 	# if counts greater than threshold w=w else W=0
+	CMP      	Threshold 	# if counts greater than threshold w=w else W=0
 	JMPZ     	cooling  		# if w=0 back to init
 	LDWR coolingrepcounter
 	ADDW coolingrepcounterFlag
