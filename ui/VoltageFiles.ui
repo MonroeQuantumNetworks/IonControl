@@ -113,6 +113,16 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>loadMappingButton</tabstop>
+  <tabstop>loadDefinitionButton</tabstop>
+  <tabstop>loadGlobalButton</tabstop>
+  <tabstop>loadLocalButton</tabstop>
+  <tabstop>mappingCombo</tabstop>
+  <tabstop>definitionCombo</tabstop>
+  <tabstop>globalCombo</tabstop>
+  <tabstop>localCombo</tabstop>
+ </tabstops>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

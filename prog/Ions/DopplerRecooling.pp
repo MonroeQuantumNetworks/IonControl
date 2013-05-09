@@ -16,6 +16,7 @@
 var coolingFreq     118, parameter, MHz, AD9912_FRQ
 var detectFreq      100, parameter, MHz, AD9912_FRQ
 var tickleFreq          15, parameter, MHz, AD9912_FRQ
+var precoolFreq    130, parameter, MHz,  AD9912_FRQ
 
 #Amplitude
 var A_cooling 1023, parameter
@@ -46,6 +47,7 @@ var detectTime        10, parameter, ms
 var darkTime           0, parameter, ms
 var epsilon         2, parameter, us
 var pretriggerTime 2, parameter, ms
+var precoolTime     0, parameter, ms
 
 # General
 var experiments   10, parameter
@@ -92,6 +94,20 @@ experimentloop: NOP
 	TRIGGER ddsApplyTrigger
 	LDWR null
 	STWR coolingrepcounter
+precooling: NOP
+	LDWR precoolTime
+	JMPZ cooling
+	DDSFRQ COOLDDS, precoolFreq
+	SHUTTERMASK coolingOnMask
+	ASYNCSHUTTER coolingOn
+	COUNTERMASK coolingCounter
+	TRIGGER ddsApplyTrigger
+	WAIT                             # for end of startup or last
+	UPDATE precoolTime	
+	DDSFRQ COOLDDS, coolingFreq 
+	DDSAMP COOLDDS, A_cooling
+	TRIGGER ddsApplyTrigger
+
 cooling: NOP
 	INC coolingrepcounter
 	STWR coolingrepcounter

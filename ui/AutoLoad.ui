@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget_2">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
@@ -310,6 +310,20 @@
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>tabWidget_2</tabstop>
+  <tabstop>startButton</tabstop>
+  <tabstop>stopButton</tabstop>
+  <tabstop>thresholdOvenBox</tabstop>
+  <tabstop>thresholdBareBox</tabstop>
+  <tabstop>checkTimeBox</tabstop>
+  <tabstop>maxTimeBox</tabstop>
+  <tabstop>laserDelayBox</tabstop>
+  <tabstop>ovenChannelBox</tabstop>
+  <tabstop>shutterChannelBox</tabstop>
+  <tabstop>counterChannelBox</tabstop>
+  <tabstop>historyTableView</tabstop>
+ </tabstops>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>
