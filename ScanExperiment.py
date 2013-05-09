@@ -241,9 +241,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         print "finalize Data"
         pulseProgramHeader = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
         scanHeader = stringutilit.commentarize( repr(self.scan) )
-        if self.currentTrace:
-            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
-            self.currentTrace.resave(saveIfUnsaved=self.scan.autoSave)
+        for trace in [self.currentTrace, self.currentTimestampTrace]:
+            if trace:
+                trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+                trace.resave(saveIfUnsaved=self.scan.autoSave)
+            
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings

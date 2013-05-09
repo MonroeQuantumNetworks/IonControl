@@ -145,8 +145,8 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
         
     def setTrapped(self,reappeared=False):
-        print "Loading Trapped"
         if not reappeared:
+            print "Loading Trapped"
             self.loadingTime = datetime.now() - self.started
             self.started = self.checkStarted
             self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
