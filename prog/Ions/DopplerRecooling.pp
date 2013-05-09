@@ -14,7 +14,12 @@
 
 # Frequencies
 var coolingFreq     118, parameter, MHz, AD9912_FRQ
+var detectFreq      100, parameter, MHz, AD9912_FRQ
 var tickleFreq          15, parameter, MHz, AD9912_FRQ
+
+#Amplitude
+var A_cooling 1023, parameter
+var A_detect 100, parameter 
 
 # Shutters
 var startupMask      0x4000001, mask
@@ -79,12 +84,12 @@ scanloop: NOP
 	# reload the number of experiments
 	LDWR experiments
 	STWR experimentsleft
-
-	DDSFRQ COOLDDS, coolingFreq 
 	DDSFRQ TickleDDS, tickleFreq
-	TRIGGER ddsApplyTrigger
 
 experimentloop: NOP
+	DDSFRQ COOLDDS, coolingFreq 
+	DDSAMP COOLDDS, A_cooling
+	TRIGGER ddsApplyTrigger
 	LDWR null
 	STWR coolingrepcounter
 cooling: NOP
@@ -123,6 +128,9 @@ dark: NOP
 	UPDATE pretriggerTime	
 	
 detect: NOP
+	DDSFRQ COOLDDS,detectFreq 
+	DDSAMP COOLDDS, A_detect
+	TRIGGER ddsApplyTrigger
 	SHUTTERMASK coolingOnMask
 	ASYNCSHUTTER coolingOn
 	COUNTERMASK detectCounter

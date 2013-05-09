@@ -368,6 +368,7 @@ class PulserHardware(QtCore.QObject):
                 byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
                 #if byteswaiting>0: print "byteswaiting", byteswaiting
             data = bytearray('\x00'*byteswaiting)
+            #if byteswaiting>0: print "Reading", byteswaiting
             with QtCore.QMutexLocker(self.Mutex):
                 self.xem.ReadFromPipeOut(0xa2, data)
             return data
