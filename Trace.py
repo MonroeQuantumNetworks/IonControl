@@ -6,7 +6,7 @@ Created on Sun Dec 23 19:27:39 2012
 """
 
 import numpy
-import datetime
+from datetime import datetime
 import os.path
 
 class Empty:
@@ -20,6 +20,7 @@ class Trace(object):
         self.curve = None
         self.vars = Empty()
         self.vars.comment = ""
+        self.vars.traceCreation = datetime.now()
         self.header = None
         self.curvePen = 0
         self._filename = None
@@ -55,7 +56,7 @@ class Trace(object):
         return str(self.vars.__dict__.get(name,""))
         
     def saveTraceHeader(self,outfile):
-        print >>outfile, "#", datetime.datetime.now()
+        self.vars.fileCreation = datetime.now()
         for var, value in self.vars.__dict__.iteritems():
             print >>outfile, "#", var, value
         if self.header is not None:

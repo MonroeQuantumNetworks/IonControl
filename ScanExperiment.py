@@ -32,6 +32,7 @@ import time
 import CoordinatePlotWidget
 import functools
 from modules import stringutilit
+from datetime import datetime
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -244,6 +245,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for trace in [self.currentTrace, self.currentTimestampTrace]:
             if trace:
                 trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+                trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
             
         

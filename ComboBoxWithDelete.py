@@ -6,6 +6,7 @@ Created on Thu May 09 13:48:16 2013
 """
 from PyQt4 import QtCore, QtGui
 
+
 class ComboBoxWithDelete( QtGui.QComboBox ):
     def __init__(self, parent=0):
         QtGui.QComboBox.__init__(self,parent)
@@ -13,6 +14,8 @@ class ComboBoxWithDelete( QtGui.QComboBox ):
     def keyReleaseEvent(self, e):
         print "key released"
         QtGui.QComboBox.keyReleaseEvent(self,e)
+
+
 
 
 if __name__ == "__main__":
