@@ -110,7 +110,7 @@ def fitFunctionFactory(text):
     """
     components = text.split(',')
     name = components[0].strip()
-    function = fitFunctionMap[name]
+    function = fitFunctionMap[name]()
     for index, arg in enumerate(components[2:]):
         value = float(arg.split('=')[1].strip())
         function.parameters[index] = value

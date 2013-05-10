@@ -9,6 +9,12 @@ import numpy
 from datetime import datetime
 import os.path
 
+try:
+    import FitFunctions
+    FitFunctionsAvailable = True
+except:
+    FitFunctionsAvailable = False
+
 class Empty:
     pass
 
@@ -57,7 +63,7 @@ class Trace(object):
         
     def saveTraceHeader(self,outfile):
         self.vars.fileCreation = datetime.now()
-        for var, value in self.vars.__dict__.iteritems():
+        for var, value in sorted(self.vars.__dict__.iteritems()):
             print >>outfile, "#", var, value
         if self.header is not None:
             print >>outfile, self.header
@@ -77,7 +83,7 @@ class Trace(object):
             self.vars.columnspec = ",".join(columnspec)
             self.saveTraceHeader(of)
             for l in zip(*columnlist):
-                print >>of, " ".join(map(str,l))
+                print >>of, " ".join(map(repr,l))
             self.filename = filename
             of.close()
     
@@ -98,6 +104,8 @@ class Trace(object):
         for attr,d in zip( columnspec, zip(*data) ):
             setattr( self, attr, numpy.array(d) )
         self.filename = filename
+        if hasattr(self.vars,'fitfunction') and FitFunctionsAvailable:
+            self.fitfunction = FitFunctions.fitFunctionFactory(self.vars.fitfunction)
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback
