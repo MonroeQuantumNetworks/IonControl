@@ -10,6 +10,7 @@ from PyQt4 import QtGui, QtCore
 import FitFunctions
 import functools
 import pyqtgraph
+import copy
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -68,7 +69,7 @@ class FitUi(fitForm, QtGui.QWidget):
             print name, value
         for plot in self.traceui.selectedPlottedTraces():
             params = functionui.fitfunction.leastsq(plot.trace.x,plot.trace.y,functionui.startParameters)
-            plot.trace.fitfunction = functionui.fitfunction
+            plot.trace.fitfunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
             for i,p in enumerate(params):
                 functionui.fittedParametersUi[i].setValue(p)
