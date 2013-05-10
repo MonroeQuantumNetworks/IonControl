@@ -18,8 +18,8 @@ class FitFunction(object):
     def leastsq(self, x, y, parameters=None):
         if parameters is None:
             parameters = self.parameters
-        print parameters
         self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn)
+        print self.parameters
         return self.parameters
         
     def __str__(self):
