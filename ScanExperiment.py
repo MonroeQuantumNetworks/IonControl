@@ -180,7 +180,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.finalizeData()
 
     def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory( self.scanSettings.project )
+        directory = DataDirectory.DataDirectory()
         if pattern and pattern!='':
             filename, components = directory.sequencefile( pattern )
             return filename

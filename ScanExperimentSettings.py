@@ -49,8 +49,6 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
 
     def setupUi(self, parent):
         ScanExperimentSettingsForm.setupUi(self,parent)
-        self.projectEdit.setText(self._settings.project)
-        self.projectEdit.editingFinished.connect(self.onProjectEditingFinished)
         self.histogramBinsBox.setValue(self._settings.histogramBins)
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramButton.setChecked( self._settings.integrate )
@@ -87,10 +85,7 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
 
     def onIntegrateHistogramClicked(self):
         self._settings.integrate = self.integrateHistogramButton.isChecked()
-
-    def onProjectEditingFinished(self):
-        self._settings.project = str(self.projectEdit.text())
-        
+ 
     def onHistogramBinsChanged(self, bins):
         self._settings.histogramBins = bins
         

@@ -17,6 +17,7 @@ class configshelve:
         if not os.path.exists(configdir):
             os.makedirs(configdir)
         self.configfile = os.path.join(configdir,name+".config")
+        #print "configshelve", self.configfile
         self.isOpen = False
 
     def __enter__(self):

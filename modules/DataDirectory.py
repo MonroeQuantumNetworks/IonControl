@@ -16,11 +16,12 @@ import re
 class DataDirectoryException(Exception):
     pass
 
-DataDirectoryBase = r"C:\Users\Public\Documents"
+DataDirectoryBase = r"C:\Users\Public\Documents\experiments"
+DefaultProject = None
 
 class DataDirectory:
-    def __init__(self,project):
-        self.project = project
+    def __init__(self,project=None):
+        self.project = project if project else DefaultProject
     
     def setProject(self,project):
         self.project = project
@@ -34,7 +35,7 @@ class DataDirectory:
         monthdir = os.path.join(yeardir,"{0}_{1:02d}".format(current.year,current.month))
         daydir = os.path.join(monthdir,"{0}_{1:02d}_{2:02d}".format(current.year,current.month,current.day))
         if not os.path.exists(basedir):
-            raise DataDirectoryException("Project directory does not exist")
+            raise DataDirectoryException("Data directory '{0}' does not exist.".format(basedir))
         if not os.path.exists(daydir):
             os.makedirs(daydir)
         return daydir;
@@ -59,6 +60,6 @@ class DataDirectory:
          
         
 if __name__ == "__main__":
-    d = DataDirectory("QGA")    
+    d = DataDirectory("HOA")    
     print d.path()
     print d.sequencefile("test.txt")

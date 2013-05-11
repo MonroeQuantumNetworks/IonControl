@@ -30,6 +30,9 @@ import PulserHardware
 import DedicatedCounters
 import ExternalScannedParametersSelection
 import ExternalScannedParametersUi
+import ProjectSelectionUi
+import os
+from modules import DataDirectory
 
 import VoltageControl
     
@@ -141,6 +144,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
+        self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
@@ -263,19 +267,38 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.close()
         self.ExternalParametersSelectionUi.onClose()
         
-
+    def onProjectSelection(self):
+        ProjectSelectionUi.GetProjectSelection()
+        
+        
 if __name__ == "__main__":
     import sys
     parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
-    parser.add_argument('--config-dir', type=str, default="~\\AppData\\Local\\python-control\\", help='name of directory for configuration files')
+    parser.add_argument('--config-dir', type=str, default=None, help='name of directory for configuration files')
+    parser.add_argument('--project',type=str,default=None,help='project name')
     args = parser.parse_args()
     app = QtGui.QApplication(sys.argv)
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
-    with configshelve.configshelve("experiment-gui",args.config_dir) as config:
-        ui = WidgetContainerUi(config)
-        ui.setupUi(ui)
-        logger.textWritten.connect(ui.onMessageWrite)
-        ui.show()
-        sys.exit(app.exec_())
+
+    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    
+    if project:
+        if args.config_dir:
+            configdir = args.config_dir
+        else:
+            configdir = os.path.join(projectDir, '.gui-config')
+            if not os.path.exists(configdir):
+                os.makedirs(configdir)
+            
+        DataDirectory.DefaultProject = project
+        
+        with configshelve.configshelve("experiment-gui",configdir) as config:
+            ui = WidgetContainerUi(config)
+            ui.setupUi(ui)
+            logger.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())
+    else:
+        print "No project selected. Nothing I can do about that ;)"

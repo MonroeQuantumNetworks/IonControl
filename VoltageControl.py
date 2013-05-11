@@ -56,7 +56,10 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.tableView.setSortingEnabled(True)
         self.voltageFilesUi.reloadAll()
         adjust = self.adjustUi.adjust
-        self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
+        try:
+            self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
+        except:
+            print "cannot apply voltages. Ignored for now."
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
