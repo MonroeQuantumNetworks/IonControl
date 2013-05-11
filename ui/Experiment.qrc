@@ -23,6 +23,12 @@
     <file>icons/player_stop.png</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/edit-delete-3.png</file>
+    <file>icons/edit-shred.png</file>
+    <file>icons/media-playback-pause-3.png</file>
+    <file>icons/media-playback-start-3.png</file>
+    <file>icons/media-playback-stop-3.png</file>
+    <file>icons/edit-add-2.png</file>
     <file>icons/media-playback-pause-7.png</file>
     <file>icons/media-playback-start-7.png</file>
     <file>icons/media-playback-stop-7.png</file>

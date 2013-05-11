@@ -54,6 +54,10 @@ class Trace(object):
         elif self.filenameCallback and saveIfUnsaved:
             self.saveTrace(self.filenameCallback())
     
+    def deleteFile(self):
+        if hasattr(self, 'filename' ) and self.filename and self.filename!='':
+            os.remove(self.filename)
+    
     def plot(self,penindex):
         if hasattr( self, 'plotfunction' ):
             (self.plotfunction)(self,penindex)
