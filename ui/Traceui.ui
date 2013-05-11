@@ -100,10 +100,17 @@
     </layout>
    </item>
    <item>
-    <widget class="QTableView" name="traceTableView"/>
+    <widget class="TableViewExtended" name="traceTableView"/>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TableViewExtended</class>
+   <extends>QTableView</extends>
+   <header>TableViewExtended</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

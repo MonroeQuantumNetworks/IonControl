@@ -16,7 +16,7 @@ import re
 class DataDirectoryException(Exception):
     pass
 
-DataDirectoryBase = r"C:\Users\Public\Documents\experiments"
+DataDirectoryBase = os.path.expanduser("~public\\Documents\\experiments")
 DefaultProject = None
 
 class DataDirectory:

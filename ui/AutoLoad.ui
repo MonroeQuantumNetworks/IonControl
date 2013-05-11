@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget_2">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
@@ -87,7 +87,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QTableView" name="historyTableView"/>
+        <widget class="TableViewExtended" name="historyTableView"/>
        </item>
        <item>
         <spacer name="verticalSpacer_2">
@@ -308,6 +308,11 @@
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>MagnitudeSpinBox</header>
+  </customwidget>
+  <customwidget>
+   <class>TableViewExtended</class>
+   <extends>QTableView</extends>
+   <header>TableViewExtended</header>
   </customwidget>
  </customwidgets>
  <tabstops>

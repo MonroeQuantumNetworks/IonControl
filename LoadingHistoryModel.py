@@ -31,7 +31,7 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         return None
         
     def flags(self, index ):
-        return  QtCore.Qt.ItemIsEnabled 
+        return  QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):

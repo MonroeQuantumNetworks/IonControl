@@ -57,7 +57,7 @@ def GetProjectSelection(atProgramStart=False):
         selectionui.warningLabel.setVisible( not atProgramStart)
         selectionui.exec_()
         project = selectionui.project
-        ProjectSelection.setProject(project)
+    ProjectSelection.setProject(project)
     return project, ProjectSelection.projectDir()
 
 if __name__ == "__main__":
