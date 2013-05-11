@@ -232,6 +232,21 @@
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>comboBox</tabstop>
+  <tabstop>comboBoxParameter</tabstop>
+  <tabstop>minimumBox</tabstop>
+  <tabstop>maximumBox</tabstop>
+  <tabstop>stepsBox</tabstop>
+  <tabstop>scanTypeCombo</tabstop>
+  <tabstop>scanModeComboBox</tabstop>
+  <tabstop>autoSaveCheckBox</tabstop>
+  <tabstop>filenameEdit</tabstop>
+  <tabstop>rewriteDDSCheckBox</tabstop>
+  <tabstop>saveButton</tabstop>
+  <tabstop>undoButton</tabstop>
+  <tabstop>redoButton</tabstop>
+ </tabstops>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

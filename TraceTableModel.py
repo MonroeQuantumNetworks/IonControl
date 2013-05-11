@@ -82,8 +82,10 @@ class TraceTableModel(QtCore.QAbstractTableModel):
         return None
 
     def setDataComment(self,index,value):
-        self.TraceList[index.row()].trace.vars.comment = value if api2 else str(value.toString())
-        self.TraceList[index.row()].trace.resave()
+        comment = value if api2 else str(value.toString())
+        if not comment==self.TraceList[index.row()].trace.vars.comment:
+            self.TraceList[index.row()].trace.vars.comment = comment
+            self.TraceList[index.row()].trace.resave()
         return True
         
     def setDataPen(self,index,value):   

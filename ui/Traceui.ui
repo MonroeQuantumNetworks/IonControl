@@ -18,6 +18,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QPushButton" name="clearButton">
+       <property name="toolTip">
+        <string>remove plots</string>
+       </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
@@ -25,7 +28,30 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="plotButton">
+       <property name="minimumSize">
+        <size>
+         <width>28</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>plot traces</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/edit-add-2.png</normaloff>:/openicon/icons/edit-add-2.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="saveButton">
+       <property name="toolTip">
+        <string>save traces</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -37,6 +63,15 @@
      </item>
      <item>
       <widget class="QToolButton" name="openFileButton">
+       <property name="minimumSize">
+        <size>
+         <width>28</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>open traces</string>
+       </property>
        <property name="text">
         <string>Open</string>
        </property>
@@ -51,9 +86,32 @@
      </item>
      <item>
       <widget class="QPushButton" name="removeButton">
+       <property name="toolTip">
+        <string>Remove trace from list</string>
+       </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/remove.png</normaloff>:/kde/icons/remove.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="shredderButton">
+       <property name="minimumSize">
+        <size>
+         <width>28</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Delete trace from disk</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/edit-shred.png</normaloff>:/openicon/icons/edit-shred.png</iconset>
        </property>
       </widget>
      </item>
@@ -100,10 +158,17 @@
     </layout>
    </item>
    <item>
-    <widget class="QTableView" name="traceTableView"/>
+    <widget class="TableViewExtended" name="traceTableView"/>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TableViewExtended</class>
+   <extends>QTableView</extends>
+   <header>TableViewExtended</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

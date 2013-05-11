@@ -125,12 +125,13 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
+        oldParameterName = self.comboBoxParameter.currentText()
         self.comboBoxParameter.clear()
         for name, var in iter(sorted(variabledict.iteritems())):
             if var.type == "parameter":
                 self.comboBoxParameter.addItem(var.name)
-        if self.settings.parameter is not None:
-            self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.parameter) )
+        if oldParameterName and oldParameterName!="":
+            self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(oldParameterName) )
             
     def setScanNames(self, scannames):
         self.comboBoxParameter.clear()

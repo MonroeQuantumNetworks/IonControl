@@ -34,25 +34,37 @@ class Ad9912:
         
     def sendCommand(self, channel, cmd, data):
         #print "Ad9912.sendCommand", hex(channel), hex(cmd), hex(data)
-        check( self.xem.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
-        check( self.xem.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
-        check( self.xem.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" )
-        self.xem.UpdateWireIns()
-        check( self.xem.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
-        self.xem.UpdateWireIns()
+        if self.xem:
+            check( self.xem.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
+            check( self.xem.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
+            check( self.xem.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" )
+            self.xem.UpdateWireIns()
+            check( self.xem.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
+            self.xem.UpdateWireIns()
+        else:
+            print "Pulser not available"
         
     def update(self, channelmask):
         #print "Apply DDS settings"
-        check( self.xem.SetWireInValue(0x08, channelmask & 0x3f), "Ad9912 apply" )
-        self.xem.UpdateWireIns()
-        self.xem.ActivateTriggerIn(0x41,2)
+        if self.xem:
+            check( self.xem.SetWireInValue(0x08, channelmask & 0x3f), "Ad9912 apply" )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn(0x41,2)
+        else:
+            print "Pulser not available"
         
     def reset(self, mask):
         #print "Resetting DDS"
-        if mask & 0x3: check( self.xem.ActivateTriggerIn(0x42,0), "DDS Reset board 0" )
-        if mask & 0xc: check( self.xem.ActivateTriggerIn(0x42,1), "DDS Reset board 1" )
-        if mask & 0x30: check( self.xem.ActivateTriggerIn(0x42,2), "DDS Reset board 2" )
-        
+        if self.xem:
+            if mask & 0x3: check( self.xem.ActivateTriggerIn(0x42,0), "DDS Reset board 0" )
+            if mask & 0xc: check( self.xem.ActivateTriggerIn(0x42,1), "DDS Reset board 1" )
+            if mask & 0x30: check( self.xem.ActivateTriggerIn(0x42,2), "DDS Reset board 2" )
+        else:
+            print "Pulser not available"
+
+    def updateSettings(self,fpgaUtilit):
+        self.xem = fpgaUtilit.xem
+        #self.Mutex = fpgaUtilit.Mutex        
         
 if __name__ == "__main__":
     import magnitude

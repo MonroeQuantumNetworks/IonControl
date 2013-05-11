@@ -157,6 +157,13 @@
            </property>
           </spacer>
          </item>
+         <item>
+          <widget class="QCheckBox" name="debugCheckBox">
+           <property name="text">
+            <string>debug</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>

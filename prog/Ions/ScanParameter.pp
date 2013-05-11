@@ -14,6 +14,7 @@ var datastart 3900, address   # serves as tooltip
 var dataend 4000, address
 var coolingFreq     118, parameter, MHz, AD9912_FRQ
 var tickleFreq          15, parameter, MHz, AD9912_FRQ
+var coolingAmp    1023, parameter
 var startupMask      0x4000001, mask
 var startup           0x4000001, shutter startupMask
 var startupTime       1, parameter, ms
@@ -29,12 +30,12 @@ var experimentsleft 10
 var epsilon         2, parameter, us
 var ddsApplyTrigger   0x3f,trigger
 var endLabel 0xffffffff
-var dummy3 42, parameter, MHz, AD9912_FRQ
 
 # Preparation
 	SHUTTERMASK startupMask
 	ASYNCSHUTTER startup
 	DDSFRQ COOLDDS, coolingFreq
+	DDSAMP COOLDDS, coolingAmp
 	DDSFRQFINE COOLDDS, coolingFreq
 	DDSFRQ TickleDDS, tickleFreq
 	TRIGGER ddsApplyTrigger

@@ -32,6 +32,7 @@ import time
 import CoordinatePlotWidget
 import functools
 from modules import stringutilit
+from datetime import datetime
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -111,6 +112,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetList.append(self.scanParametersUi)
         self.dockWidgetList.append(self.scanSettingsUi)
         self.dockWidgetList.append(self.timestampSettingsUi)
+        self.tabifyDockWidget( self.timestampSettingsUi, self.scanSettingsUi )
+        self.tabifyDockWidget( self.timestampSettingsUi, self.dockWidgetFitUi )
+        self.tabifyDockWidget( self.scanSettingsUi, self.scanParametersUi)
+        self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
 
@@ -137,7 +142,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scan = self.scanParametersWidget.getScan()
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]])
-            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]]*2)
+            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]]*5)
         else:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
             mycode = self.scan.code
@@ -172,9 +177,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
         self.scanParametersWidget.progressBar.setVisible( False )
+        self.finalizeData()
 
     def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory( self.scanSettings.project )
+        directory = DataDirectory.DataDirectory()
         if pattern and pattern!='':
             filename, components = directory.sequencefile( pattern )
             return filename
@@ -186,7 +192,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Called by worker with new data
         """
         print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
-        mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        if self.scanSettings.sliceTotal<=1:
+            mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        else:
+            thisdata = data.count[self.scanSettings.counter][self.scanSettings.sliceNo::self.scanSettings.sliceTotal]
+            mean, error = self.scanSettings.evalAlgo.evaluate( thisdata )
+        if data.other:
+            print "Other:", data.other
         #mean = numpy.mean( data.count[self.scanSettings.counter] )
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
@@ -217,30 +229,35 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.showTimestamps(data)
         if data.final:
             self.finalizeData()
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+                self.onStart()
+            else:
+                self.onStop()
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.pulserHardware.ppWriteData(self.scan.code)     
         self.scanParametersWidget.progressBar.setValue(self.currentIndex)
 
     def finalizeData(self):
+        print "finalize Data"
         pulseProgramHeader = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
         scanHeader = stringutilit.commentarize( repr(self.scan) )
-        self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
-        if self.scan.autoSave:
-            self.currentTrace.resave()
-        if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
-            self.onStart()
-        else:
-            self.onStop()
+        for trace in [self.currentTrace, self.currentTimestampTrace]:
+            if trace:
+                trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+                trace.vars.traceFinalized = datetime.now()
+                trace.resave(saveIfUnsaved=self.scan.autoSave)
+            
         
     def showTimestamps(self,data):
         settings = self.timestampSettingsWidget.settings
         bins = int( (settings.roiWidth/settings.binwidth).toval() )
-        myrange = (settings.roiStart.toval('ms'),(settings.roiStart+settings.roiWidth).toval('ms'))
-        y, x = numpy.histogram( [ (timestamp * self.pulserHardware.timestep).toval('ms') for timestamp in data.timestamp[settings.channel]], 
+        multiplier = self.pulserHardware.timestep.toval('ms')
+        myrange = (settings.roiStart.toval('ms')/multiplier,(settings.roiStart+settings.roiWidth).toval('ms')/multiplier)
+        y, x = numpy.histogram( data.timestamp[settings.channel], 
                                 range=myrange,
                                 bins=bins)
-        x = x[0:-1]
+        x = x[0:-1] * multiplier
                                 
         if self.currentTimestampTrace and numpy.array_equal(self.currentTimestampTrace.x,x) and (
             settings.integrate == self.timestampSettingsWidget.integrationMode.IntegrateAll or 

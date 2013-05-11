@@ -41,13 +41,19 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.comboBox.addItems( ExternalScannedParameters.ExternalScannedParameters.keys() )
             
     def enableStateChanged(self,name,widget,state):
-        print "'{0}' '{1}'".format(name, str(widget.instrumentLineEdit.text()))
+        instrument = str(widget.instrumentLineEdit.text())
+        print "'{0}' '{1}'".format(name,instrument)
         if state==QtCore.Qt.Checked:
             if name not in self.enabledParameters:
-                self.settings.instruments[name] = (str(widget.instrumentLineEdit.text()),True)
-                self.enabledParameters[name] = ExternalScannedParameters.ExternalScannedParameters[name](str(widget.instrumentLineEdit.text()))
-                self.selectionChanged.emit( self.enabledParameters )
-                widget.update( self.enabledParameters[name] )
+                try:
+                    self.settings.instruments[name] = (instrument,True)
+                    instance = ExternalScannedParameters.ExternalScannedParameters[name](name,self.config,instrument)
+                    self.enabledParameters[name] = instance
+                    self.selectionChanged.emit( self.enabledParameters )
+                    widget.update( self.enabledParameters[name] )
+                except Exception as e:
+                    widget.enableCheckBox.setChecked(False)
+                    print "Initialization of instrument {0} with option '{1}' failed. Exception: {2}".format(name,instrument,e)
         elif state==QtCore.Qt.Unchecked:
             if name in self.enabledParameters:
                 self.settings.instruments[name] = (str(widget.instrumentLineEdit.text()),False)
@@ -58,6 +64,8 @@ class SelectionUi(SelectionForm,SelectionBase):
         
     def onClose(self):
         self.config["ExternalScannedParametersSelection.Settings"] = self.settings
+        for inst in self.enabledParameters.values():
+            inst.close()
         
 
 if __name__ == "__main__":

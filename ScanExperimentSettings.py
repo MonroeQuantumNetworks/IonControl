@@ -30,6 +30,8 @@ class Settings:
         self.__dict__.setdefault( 'integrate', False)
         self.__dict__.setdefault( 'counter', 0)
         self.__dict__.setdefault( 'evalName', 'Mean')
+        self.__dict__.setdefault( 'sliceNo', 1)
+        self.__dict__.setdefault( 'sliceTotal', 1)
 
 class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsBase ):
     def __init__(self,config,parentname,parent=0):
@@ -47,17 +49,19 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
 
     def setupUi(self, parent):
         ScanExperimentSettingsForm.setupUi(self,parent)
-        self.projectEdit.setText(self._settings.project)
-        self.projectEdit.editingFinished.connect(self.onProjectEditingFinished)
         self.histogramBinsBox.setValue(self._settings.histogramBins)
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramButton.setChecked( self._settings.integrate )
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
         self.counterSpinBox.setValue( self._settings.counter )
-        self.counterSpinBox.valueChanged.connect( self.onCounterChanged )
+        self.counterSpinBox.valueChanged.connect( functools.partial(self.onValueChanged,'counter') )
         self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.evalMethodCombo.setCurrentIndex( self.evalMethodCombo.findText(self._settings.evalName) )
         self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onCurrentIndexChanged )
+        self.sliceNoBox.setValue( self._settings.sliceNo )
+        self.sliceTotalBox.setValue( self._settings.sliceTotal )
+        self.sliceNoBox.valueChanged.connect( functools.partial(self.onValueChanged,'sliceNo') )
+        self.sliceTotalBox.valueChanged.connect( functools.partial(self.onValueChanged,'sliceTotal') )
         self.algorithms = dict()
         for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
             self.algorithms[name] = algo()
@@ -81,15 +85,12 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
 
     def onIntegrateHistogramClicked(self):
         self._settings.integrate = self.integrateHistogramButton.isChecked()
-
-    def onProjectEditingFinished(self):
-        self._settings.project = str(self.projectEdit.text())
-        
+ 
     def onHistogramBinsChanged(self, bins):
         self._settings.histogramBins = bins
         
-    def onCounterChanged(self, value):
-        self._settings.counter = value
+    def onValueChanged(self, attr, value):
+        setattr( self._settings, attr, value )
     
     def onClose(self):
         self.config[self.configname] = self._settings

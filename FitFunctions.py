@@ -18,8 +18,8 @@ class FitFunction(object):
     def leastsq(self, x, y, parameters=None):
         if parameters is None:
             parameters = self.parameters
-        print parameters
         self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn)
+        print self.parameters
         return self.parameters
         
     def __str__(self):
@@ -110,7 +110,7 @@ def fitFunctionFactory(text):
     """
     components = text.split(',')
     name = components[0].strip()
-    function = fitFunctionMap[name]
+    function = fitFunctionMap[name]()
     for index, arg in enumerate(components[2:]):
         value = float(arg.split('=')[1].strip())
         function.parameters[index] = value

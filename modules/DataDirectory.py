@@ -16,28 +16,38 @@ import re
 class DataDirectoryException(Exception):
     pass
 
-DataDirectoryBase = r"C:\Users\Public\Documents"
+DataDirectoryBase = os.path.expanduser("~public\\Documents\\experiments")
+DefaultProject = None
 
 class DataDirectory:
-    def __init__(self,project):
-        self.project = project
+    def __init__(self,project=None):
+        self.project = project if project else DefaultProject
     
     def setProject(self,project):
         self.project = project
     
-    def path(self, current=datetime.date.today()):
+    def path(self, current=None):
+        if not current:
+            current = datetime.date.today()
         #basedir = os.path.join(os.path.expanduser("~\\Documents\\"),self.project)
         basedir = os.path.join(DataDirectoryBase,self.project)
         yeardir = os.path.join(basedir,str(current.year))
         monthdir = os.path.join(yeardir,"{0}_{1:02d}".format(current.year,current.month))
         daydir = os.path.join(monthdir,"{0}_{1:02d}_{2:02d}".format(current.year,current.month,current.day))
         if not os.path.exists(basedir):
-            raise DataDirectoryException("Project directory does not exist")
+            raise DataDirectoryException("Data directory '{0}' does not exist.".format(basedir))
         if not os.path.exists(daydir):
             os.makedirs(daydir)
         return daydir;
         
-    def sequencefile(self,name,  current=datetime.date.today()):
+    def sequencefile(self,name,  current=None):
+        """
+        return the sequenced filename in the current data directory.
+        _000 serial is inserted before the file extension or at the end of the name if the filename has no extension.
+        The directory is reread every time.
+        """
+        if not current:
+            current = datetime.date.today()
         """
         return the sequenced filename in the current data directory.
         _000 serial is inserted before the file extension or at the end of the name if the filename has no extension.
@@ -55,6 +65,6 @@ class DataDirectory:
          
         
 if __name__ == "__main__":
-    d = DataDirectory("QGA")    
+    d = DataDirectory("HOA")    
     print d.path()
     print d.sequencefile("test.txt")

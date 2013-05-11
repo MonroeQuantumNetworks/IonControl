@@ -30,6 +30,9 @@ import PulserHardware
 import DedicatedCounters
 import ExternalScannedParametersSelection
 import ExternalScannedParametersUi
+import ProjectSelectionUi
+import os
+from modules import DataDirectory
 
 import VoltageControl
     
@@ -88,9 +91,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
+            
+        self.ExternalScanExperiment = self.tabDict["External Scan"]
                
         self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter', self.config)
-        self.shutterUi.setupUi(self.shutterUi)
+        self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
         print "ShutterUi representation:", repr(self.shutterUi)
 
@@ -103,6 +108,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
+        
+        # tabify the dock widgets
+        self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
+        self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
         
         self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -119,8 +128,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersDock)
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
                
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.tabDict["External Scan"].updateEnabledParameters )               
-               
+        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
+        self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParameters )
+        #tabify 
+        self.tabifyDockWidget( self.ExternalScannedParametersSelectionDock, self.ExternalScannedParametersDock)
+        
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
         self.actionPause.triggered.connect(self.onPause)
@@ -132,6 +144,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
+        self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
@@ -213,6 +226,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     def onSettingsApply(self,settings):
         self.settings = settings
         self.pulserHardware.updateSettings(self.settings.fpga)
+        self.DDSUi.updateSettings(self.settings.fpga)
         #print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):
@@ -253,19 +267,38 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.close()
         self.ExternalParametersSelectionUi.onClose()
         
-
+    def onProjectSelection(self):
+        ProjectSelectionUi.GetProjectSelection()
+        
+        
 if __name__ == "__main__":
     import sys
     parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
-    parser.add_argument('--config-dir', type=str, default="~\\AppData\\Local\\python-control\\", help='name of directory for configuration files')
+    parser.add_argument('--config-dir', type=str, default=None, help='name of directory for configuration files')
+    parser.add_argument('--project',type=str,default=None,help='project name')
     args = parser.parse_args()
     app = QtGui.QApplication(sys.argv)
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
-    with configshelve.configshelve("experiment-gui",args.config_dir) as config:
-        ui = WidgetContainerUi(config)
-        ui.setupUi(ui)
-        logger.textWritten.connect(ui.onMessageWrite)
-        ui.show()
-        sys.exit(app.exec_())
+
+    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    
+    if project:
+        if args.config_dir:
+            configdir = args.config_dir
+        else:
+            configdir = os.path.join(projectDir, '.gui-config')
+            if not os.path.exists(configdir):
+                os.makedirs(configdir)
+            
+        DataDirectory.DefaultProject = project
+        
+        with configshelve.configshelve("experiment-gui",configdir) as config:
+            ui = WidgetContainerUi(config)
+            ui.setupUi(ui)
+            logger.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())
+    else:
+        print "No project selected. Nothing I can do about that ;)"

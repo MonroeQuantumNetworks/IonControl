@@ -23,7 +23,7 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.config = config
         self.configname = 'ShutterUi.'+self.outputname
         
-    def setupUi(self,parent):
+    def setupUi(self,parent,dynupdate=False):
         ShutterForm.setupUi(self,parent)
         self.setAtStartup = self.config.get(self.configname+".SetAtStartup",False)
         self.checkBoxSetAtStartup.setChecked(self.setAtStartup)
@@ -39,6 +39,8 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.resizeRowsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
+        if dynupdate:    # we only want this connection for the shutter, not the trigger
+            self.pulserHardware.shutterChanged.connect( self.shutterTableModel.updateShutter )
         
     def close(self):
         self.config[self.configname+".dict"] = self.shutterdict

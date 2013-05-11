@@ -126,6 +126,8 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.comboBoxStyle.currentIndexChanged[int].connect( self.setPlotStyle )
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.openFileButton.clicked.connect(self.onOpenFile)
+        self.plotButton.clicked.connect(self.onPlot)
+        self.shredderButton.clicked.connect(self.onShredder)
 
     def setPlotStyle(self,value):
         self.settings.plotstyle = value
@@ -133,6 +135,17 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onClicked(self,index):
         if index.column() in [1,3]:
             self.traceTableView.edit(index)
+        
+    def onPlot(self):
+        for index in unique([ i.row() for i in self.traceTableView.selectedIndexes() ]):
+            self.TraceList[index].plot(-1,self.settings.plotstyle)
+
+    def onShredder(self):
+        for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]),reverse=True):
+            if self.TraceList[index].curvePen!=0:
+                self.TraceList[index].plot(0)
+            self.TraceList[index].deleteFile()
+            self.model.dropTrace(index)
         
     def onClear(self):
         for index in unique([ i.row() for i in self.traceTableView.selectedIndexes() ]):

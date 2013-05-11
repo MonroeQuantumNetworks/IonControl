@@ -1,5 +1,6 @@
 from numpy import float64, append
 from fileParser import fileParser
+import collections
 
 ## This class will parse through an itf file.
 class itfParser(fileParser):
@@ -91,6 +92,9 @@ class itfParser(fileParser):
             dataDict.update({self.tableHeader[i]:float64(item)})
         return dataDict
 
+    def _checkForDuplicates(self, testlist ):
+        return [x for x, y in collections.Counter(testlist).items() if y > 1]   
+
     def _getEmapData(self, eMapFilePath=None):
         if not eMapFilePath:
             eMapFilePath = self.eMapFilePath
@@ -110,6 +114,12 @@ class itfParser(fileParser):
         # we do not want to have to expect the map file is in this order
         zipped = zip(self.aoNums,self.elect,self.dNums)
         zipped.sort()
+
+        duplicates = self._checkForDuplicates(self.aoNums)
+        if len(duplicates)>0:
+            print "The following Analog Out Channels are assigned twice:", duplicates
+            
+        
         self.aoNums, self.elect, self.dNums = zip(*zipped)
         self.eMapFileCached = eMapFilePath
         return self.elect, self.aoNums, self.dNums
@@ -132,7 +142,11 @@ class itfParser(fileParser):
         data = self.readline(lineNum)
         listData = []
         for i, j in enumerate(aoNums):
-            eIndex = aoNums.index(i)
+            try:
+                eIndex = aoNums.index(j)
+            except ValueError:
+                print i,j
+                raise
             e = elect[eIndex] 
             eString = e #'e{0:02d}'.format(e)
             eData = data.get(eString)

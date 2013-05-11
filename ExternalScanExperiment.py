@@ -42,7 +42,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         self.enabledParameters = enabledParameters
         
     def onStart(self):
-        if self.status in [self.status.Idle, self.Status.Stopping]:
+        if self.status in [self.Status.Idle, self.Status.Stopping]:
             self.start = time.time()
             self.state = self.OpStates.running
             self.scanSettings = self.scanSettingsWidget.settings
@@ -74,14 +74,18 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 self.timestampsNewRun = True
                 print "elapsed time", time.time()-self.start
                 self.status = self.Status.Running
+                print "Status -> Running"
             else:
                 QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
     def onStop(self):
+        print "Old Status", self.status
         if self.status in [self.Status.Starting, self.Status.Running]:
-            super(ExternalScanExperiment,self).onStop()
+            ScanExperiment.ScanExperiment.onStop(self)
             self.status = self.Status.Stopping
             self.stopBottomHalf()
+            print "Status -> Stopping"
+            self.finalizeData()
                     
     def stopBottomHalf(self):
         if self.status==self.Status.Stopping:
@@ -123,10 +127,14 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         self.showHistogram(data)
         if self.timestampSettingsWidget.settings.enable: 
             self.showTimestamps(data)
-        if self.externalParameterIndex<len(self.scan.list):
+        if self.externalParameterIndex<len(self.scan.list) and self.status==self.Status.Running:
             self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
             self.pulserHardware.ppStart()
             print "External Value:" , self.scan.list[self.externalParameterIndex]
         else:
             self.finalizeData()
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+                self.onStart()
+            else:
+                self.onStop()
         self.scanParametersWidget.progressBar.setValue(float(self.externalParameterIndex))

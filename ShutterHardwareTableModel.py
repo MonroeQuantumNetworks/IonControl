@@ -87,3 +87,12 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         self._shutter = value
         setattr(self.pulserHardware,self.outputname,self._shutter)
         self.dataChanged.emit(self.createIndex(0,1),self.createIndex(self.size,1))
+        
+    def updateShutter(self, value):
+        """ updates the display only,
+        called by the hardware backend to indicate changes
+        by other means than the gui
+        """
+        if self._shutter != value:
+            self._shutter = value
+            self.dataChanged.emit(self.createIndex(0,1),self.createIndex(self.size,1))

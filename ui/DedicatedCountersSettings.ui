@@ -212,6 +212,23 @@
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>pointsToKeepBox</tabstop>
+  <tabstop>integrationTimeBox</tabstop>
+  <tabstop>displayUnitCombo</tabstop>
+  <tabstop>ch0Check</tabstop>
+  <tabstop>ch1Check</tabstop>
+  <tabstop>ch2Check</tabstop>
+  <tabstop>ch3Check</tabstop>
+  <tabstop>ch4Check</tabstop>
+  <tabstop>ch5Check</tabstop>
+  <tabstop>ch6Check</tabstop>
+  <tabstop>ch7Check</tabstop>
+  <tabstop>adc0Check</tabstop>
+  <tabstop>adc1Check</tabstop>
+  <tabstop>adc2Check</tabstop>
+  <tabstop>adc3Check</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

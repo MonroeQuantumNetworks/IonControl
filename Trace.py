@@ -6,8 +6,14 @@ Created on Sun Dec 23 19:27:39 2012
 """
 
 import numpy
-import datetime
+from datetime import datetime
 import os.path
+
+try:
+    import FitFunctions
+    FitFunctionsAvailable = True
+except:
+    FitFunctionsAvailable = False
 
 class Empty:
     pass
@@ -20,6 +26,7 @@ class Trace(object):
         self.curve = None
         self.vars = Empty()
         self.vars.comment = ""
+        self.vars.traceCreation = datetime.now()
         self.header = None
         self.curvePen = 0
         self._filename = None
@@ -41,11 +48,15 @@ class Trace(object):
         if self.dataChangedCallback:
             self.dataChangedCallback()                            
         
-    def resave(self):
+    def resave(self, saveIfUnsaved=True):
         if hasattr(self, 'filename' ) and self.filename and self.filename!='':
             self.saveTrace(self.filename)
-        elif self.filenameCallback:
+        elif self.filenameCallback and saveIfUnsaved:
             self.saveTrace(self.filenameCallback())
+    
+    def deleteFile(self):
+        if hasattr(self, 'filename' ) and self.filename and self.filename!='':
+            os.remove(self.filename)
     
     def plot(self,penindex):
         if hasattr( self, 'plotfunction' ):
@@ -55,8 +66,8 @@ class Trace(object):
         return str(self.vars.__dict__.get(name,""))
         
     def saveTraceHeader(self,outfile):
-        print >>outfile, "#", datetime.datetime.now()
-        for var, value in self.vars.__dict__.iteritems():
+        self.vars.fileCreation = datetime.now()
+        for var, value in sorted(self.vars.__dict__.iteritems()):
             print >>outfile, "#", var, value
         if self.header is not None:
             print >>outfile, self.header
@@ -76,7 +87,7 @@ class Trace(object):
             self.vars.columnspec = ",".join(columnspec)
             self.saveTraceHeader(of)
             for l in zip(*columnlist):
-                print >>of, " ".join(map(str,l))
+                print >>of, " ".join(map(repr,l))
             self.filename = filename
             of.close()
     
@@ -97,6 +108,8 @@ class Trace(object):
         for attr,d in zip( columnspec, zip(*data) ):
             setattr( self, attr, numpy.array(d) )
         self.filename = filename
+        if hasattr(self.vars,'fitfunction') and FitFunctionsAvailable:
+            self.fitfunction = FitFunctions.fitFunctionFactory(self.vars.fitfunction)
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback

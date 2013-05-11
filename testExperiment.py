@@ -92,5 +92,6 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.traceui.onClose()
 
     def traceFilename(self, pattern):
-        path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file'))
+        directory = DataDirectory.DataDirectory()
+        path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
         return path

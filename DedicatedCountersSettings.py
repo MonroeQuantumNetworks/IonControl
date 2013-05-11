@@ -13,11 +13,13 @@ from modules import CountrateConversion
 DedicatedCountersSettingsForm, DedicatedCountersSettingsBase = PyQt4.uic.loadUiType(r'ui\DedicatedCountersSettings.ui')
 
 class Settings:
-    counterMask = 0
-    adcMask = 0
-    integrationTime = magnitude.mg(100,'ms')
-    displayUnit = CountrateConversion.DisplayUnit()
-    pointsToKeep = 400
+    def __init__(self):
+        self.counterMask = 0
+        self.adcMask = 0
+        self.integrationTime = magnitude.mg(100,'ms')
+        self.displayUnit = CountrateConversion.DisplayUnit()
+        self.unit = 0
+        self.pointsToKeep = 400
 
 class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersSettingsBase ):
     valueChanged = QtCore.pyqtSignal(object)
@@ -26,7 +28,7 @@ class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersS
         DedicatedCountersSettingsForm.__init__(self,parent)
         DedicatedCountersSettingsBase.__init__(self)
         self.config = config
-        self.settings = self.config.get('DedicatedCounterSettings.Settings',Settings())
+        self.settings = self.config.get('DedicatedCounterSettings.Settings2',Settings())
 
     def setupUi(self, parent):
         DedicatedCountersSettingsForm.setupUi(self,parent)
@@ -40,11 +42,13 @@ class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersS
         for num, channel in enumerate([ self.adc0Check, self.adc1Check, self.adc2Check, self.adc3Check]):
             channel.setChecked( self.settings.adcMask & (1<<num) )
             channel.stateChanged.connect( functools.partial( self.onAdcStateChanged,(1<<num) ))
-        self.displayUnitCombo.setCurrentIndex(self.settings.displayUnit.unit)
         self.displayUnitCombo.currentIndexChanged[int].connect( self.onIndexChanged )
+        self.displayUnitCombo.setCurrentIndex(self.settings.unit)
+        self.settings.displayUnit.unit = self.settings.unit
     
     def onIndexChanged(self, index):
         self.settings.displayUnit.unit = index
+        self.settings.unit = index
         self.valueChanged.emit( self.settings )
     
     def onValueChanged(self, name, value):
@@ -60,5 +64,5 @@ class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersS
         self.valueChanged.emit( self.settings )
 
     def onClose(self):
-        self.config['DedicatedCounterSettings.Settings'] = self.settings
+        self.config['DedicatedCounterSettings.Settings2'] = self.settings
                
