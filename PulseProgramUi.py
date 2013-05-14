@@ -14,6 +14,7 @@ import CounterTableModel
 import os.path
 from modules import configshelve
 from modules import dictutil
+import ProjectSelection
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -87,7 +88,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
     
     def onLoad(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file'))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
         if path!="":
             self.loadFile(path)
             
