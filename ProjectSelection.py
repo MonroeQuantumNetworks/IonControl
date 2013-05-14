@@ -15,6 +15,9 @@ Project = None
 DefaultProject = None
 DefaultProjectCached = False
 
+class ProjectException(Exception):
+    pass
+
 with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
     DefaultProject = config.get('DefaultProject')
     ProjectsBaseDir = config.get('ProjectBaseDir',ProjectsBaseDir)
@@ -61,7 +64,9 @@ def projectDir():
     return os.path.join(ProjectsBaseDir, Project) if Project else None
     
 def configDir():
-    configDir = os.path.join(ProjectsBaseDir, Project, 'config') if Project else None
+    if not Project:
+        raise ProjectException("no Project set")
+    configDir = os.path.join(ProjectsBaseDir, Project, 'config') 
     if not os.path.exists(configDir):
         os.makedirs(configDir)
     return configDir

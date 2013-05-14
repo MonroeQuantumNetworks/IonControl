@@ -32,6 +32,9 @@ import ExternalScannedParametersSelection
 import ExternalScannedParametersUi
 
 import VoltageControl
+import os.path
+import ProjectSelectionUi
+from modules import DataDirectory
     
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
@@ -275,9 +278,22 @@ if __name__ == "__main__":
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
-    with configshelve.configshelve("nohardware-gui",args.config_dir) as config:
-        ui = WidgetContainerUi(config)
-        ui.setupUi(ui)
-        logger.textWritten.connect(ui.onMessageWrite)
-        ui.show()
-        sys.exit(app.exec_())
+    
+    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    
+    if project:
+        if args.config_dir:
+            configdir = args.config_dir
+        else:
+            configdir = os.path.join(projectDir, '.gui-config')
+            if not os.path.exists(configdir):
+                os.makedirs(configdir)
+            
+        DataDirectory.DefaultProject = project
+        
+        with configshelve.configshelve("experiment-gui",configdir) as config:    
+            ui = WidgetContainerUi(config)
+            ui.setupUi(ui)
+            logger.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())

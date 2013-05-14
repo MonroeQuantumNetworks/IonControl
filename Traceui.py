@@ -13,6 +13,7 @@ import numpy
 from PyQt4 import QtGui
 import Trace
 import os.path
+import ProjectSelection
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
@@ -99,7 +100,7 @@ def unique(seq):
 
 class Settings:
     def __init__(self):
-        self.lastDir = os.path.expanduser('~')
+        self.lastDir = ProjectSelection.configDir()
         self.plotstyle = 0
 
 class Traceui(TraceuiForm, TraceuiBase):
