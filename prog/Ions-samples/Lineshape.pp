@@ -5,6 +5,7 @@
 #
 # A Pulse Programmer file for the ScanParameter experiment has to fulfill the following conditions
 # 
+#
 #define COOLDDS 4
 #define TickleDDS 5
 #define ZERO 0
@@ -45,6 +46,7 @@ var coolingTime       5, parameter, ms
 var detectTime        10, parameter, ms
 var darkTime           0, parameter, ms
 var epsilon         2, parameter, us
+var epsilonTwo  2, parameter, ms
 var pretriggerTime 2, parameter, ms
 
 # General
@@ -140,6 +142,8 @@ detect: NOP
 	COUNTERMASK null
 	DEC experimentsleft
 	STWR experimentsleft
+	WAIT
+	UPDATE epsilonTwo
 	JMPNZ experimentloop
 	JMP scanloop
 	
