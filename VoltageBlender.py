@@ -19,6 +19,9 @@ import math
 import numpy
 from PyQt4 import QtCore
 import socket
+import ProjectSelection
+import os.path
+from modules import MyException
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
@@ -30,7 +33,10 @@ class VoltageBlender(QtCore.QObject):
             self.chassis = WaveformChassis()
             self.chassis.mode = Mode.Static
             self.hostname = socket.gethostname()
-            self.chassis.initFromFile("Chassis\\config\\"+self.hostname+'.cfg')
+            ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
+            if not os.path.exists( ConfigFilename):
+                raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
+            self.chassis.initFromFile( ConfigFilename )
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = dict()  # names of the lines presented as possible adjusts
