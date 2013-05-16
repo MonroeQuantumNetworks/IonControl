@@ -64,7 +64,7 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         self.sliceTotalBox.valueChanged.connect( functools.partial(self.onValueChanged,'sliceTotal') )
         self.algorithms = dict()
         for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
-            self.algorithms[name] = algo()
+            self.algorithms[name] = algo(self.config)
             parameters = self.algorithms[name].parameters
             algoWidget = QtGui.QWidget(self.evalStackedWidget)
             gridLayout = QtGui.QGridLayout(algoWidget)
@@ -81,7 +81,7 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         self.evalStackedWidget.setCurrentIndex( self.evalMethodCombo.findText(self._settings.evalName) )
 
     def onParamValueChanged(self, algo, name, value):
-        self.algorithms[algo].parameters[name] = value
+        self.algorithms[algo].setParameter(name, value)
 
     def onIntegrateHistogramClicked(self):
         self._settings.integrate = self.integrateHistogramButton.isChecked()
