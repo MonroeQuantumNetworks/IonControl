@@ -33,7 +33,7 @@ class MeanEvaluation:
     def evaluate(self, countarray, timestamps=None ):
         mean = numpy.mean( countarray )
         stderror = math.sqrt( mean/len(countarray))
-        return mean, stderror
+        return mean, (stderror/2., stderror/2. )
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -58,9 +58,19 @@ class ThresholdEvaluation(EvaluationBase):
             descriminated = [ 0 if count > threshold else 1 for count in countarray ]
         else:
             descriminated = [ 1 if count > threshold else 0 for count in countarray ]
-        mean = numpy.mean( descriminated )
-        error = mean*(1-mean)/N/math.sqrt(N)
-        return mean, error
+        summe = numpy.sum( descriminated )
+        bottom = summe*(N-summe)
+        top = bottom
+        print N, summe
+        if summe==0:
+            print "summe==0"
+            top = (N-1)/2.
+        elif summe==N:
+            print "summe==N"
+            bottom = (N-1)/2.
+            print bottom
+        norm = pow(N,-3.5)
+        return summe/N, (bottom*norm, top*norm)
         
     def saveParam(self):
         self.config['ThresholdEvaluation.Parameters'] = self.parameters

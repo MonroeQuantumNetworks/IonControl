@@ -39,7 +39,10 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         ScanExperimentSettingsBase.__init__(self,parent)
         self.config = config
         self.configname = 'ScanExperimentSettings.'+parentname
-        self._settings = self.config.get(self.configname,Settings())
+        try:
+            self._settings = self.config.get(self.configname,Settings())
+        except:
+            self._settings = Settings()
         self._settings.upgrade()
 
     @property
@@ -93,6 +96,8 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         setattr( self._settings, attr, value )
     
     def onClose(self):
+        if hasattr(self._settings,'evalAlgo'):
+            del self._settings.evalAlgo
         self.config[self.configname] = self._settings
         
     def onCurrentIndexChanged(self, name):

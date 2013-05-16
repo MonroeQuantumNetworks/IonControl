@@ -227,6 +227,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
             self.currentTrace.y = numpy.array([mean])
+            if error:
+                self.currentTrace.bottom = error[0]
+                self.currentTrace.top = error[1]
             self.currentTrace.name = self.scan.name
             self.currentTrace.vars.comment = ""
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
@@ -238,9 +241,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
                 self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
+                if error:
+                    numpy.append(self.currentTrace.bottom[-self.scan.steps+1:], error[0]) 
+                    numpy.append(self.currentTrace.top[-self.scan.steps+1:], error[1]) 
             else:
                 self.currentTrace.x = numpy.append(self.currentTrace.x, x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
+                if error:
+                    self.currentTrace.x = numpy.append(self.currentTrace.bottom, error[0])
+                    self.currentTrace.x = numpy.append(self.currentTrace.top, error[0])
+                   
             self.plottedTrace.replot()
 
 

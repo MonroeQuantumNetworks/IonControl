@@ -88,7 +88,11 @@ class PlottedTrace(object):
         if hasattr(self,'curve') and self.curve is not None:
             self.curve.setData( self.trace.x, self.trace.y )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
-            self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
+            if hasattr(self.trace,'height'):
+                self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
+            else:
+                self.errorBarItem.setOpts(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom)
+                
 
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\Traceui.ui')
