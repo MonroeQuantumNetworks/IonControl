@@ -30,7 +30,7 @@ class ThresholdEvaluation:
     dark.
     """
     def __init__(self):
-        self.parameters = { 'threshold':1 }
+        self.parameters = { 'threshold':1, 'invert':0 }
         self.name = "Threshold"
         self.tooltip = "Obove threshold is bright"
         
@@ -39,7 +39,10 @@ class ThresholdEvaluation:
             return None, None
         N = len(countarray)
         threshold = self.parameters['threshold']
-        descriminated = [ 1 if count > threshold else 0 for count in countarray ]
+        if bool(self.parameters['invert']):
+            descriminated = [ 0 if count > threshold else 1 for count in countarray ]
+        else:
+            descriminated = [ 1 if count > threshold else 0 for count in countarray ]
         mean = numpy.mean( descriminated )
         error = mean*(1-mean)/N/math.sqrt(N)
         return mean, error

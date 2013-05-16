@@ -205,7 +205,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             x = self.currentIndex
         else:
             x = self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
-        if mean:
+        if mean is not None:
             self.updateMainGraph(x, mean, error)
         self.currentIndex += 1
         self.showHistogram(data)
