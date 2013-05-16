@@ -145,7 +145,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]),reverse=True):
             if self.TraceList[index].curvePen!=0:
                 self.TraceList[index].plot(0)
-            self.TraceList[index].deleteFile()
+            self.TraceList[index].trace.deleteFile()
             self.model.dropTrace(index)
         
     def onClear(self):
