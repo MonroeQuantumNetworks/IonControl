@@ -192,7 +192,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Called by worker with new data
         """
         print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
-        print data
         if self.scanSettings.sliceTotal<=1:
             mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
         else:
