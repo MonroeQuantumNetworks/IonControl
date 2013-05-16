@@ -16,7 +16,7 @@ class ShutterUi(ShutterForm, ShutterBase):
     offColor =  QtGui.QColor(QtCore.Qt.red)
     def __init__(self,pulserHardware,outputname,config,parent=None):
         ShutterBase.__init__(self,parent)
-        ShutterForm.__init__(self,parent)
+        ShutterForm.__init__(self)
         self.shutterdict = dict()
         self.pulserHardware = pulserHardware
         self.outputname = outputname

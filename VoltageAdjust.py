@@ -31,9 +31,9 @@ class Settings:
 class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
     
-    def __init__(self,config,parent=0):
-        VoltageAdjustForm.__init__(self,parent)
-        VoltageAdjustBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageAdjustForm.__init__(self)
+        VoltageAdjustBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageAdjust.Settings'
         self.settings = self.config.get(self.configname,Settings())

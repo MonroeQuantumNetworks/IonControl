@@ -21,9 +21,9 @@ class Settings:
     pass
 
 class VoltageControl(VoltageControlForm, VoltageControlBase ):    
-    def __init__(self,config,parent=0):
-        VoltageControlForm.__init__(self,parent)
-        VoltageControlBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageControlForm.__init__(self)
+        VoltageControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageControl.Settings'
         self.settings = self.config.get(self.configname,Settings())

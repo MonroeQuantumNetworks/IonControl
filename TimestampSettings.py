@@ -25,9 +25,9 @@ class Settings:
 class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
     integrationMode = enum.enum('IntegrateAll','IntegrateRun','NoIntegration')    
     
-    def __init__(self,config,parentname,parent=0):
-        TimestampSettingsForm.__init__(self,parent)
-        TimestampSettingsBase.__init__(self)
+    def __init__(self,config,parentname,parent=None):
+        TimestampSettingsForm.__init__(self)
+        TimestampSettingsBase.__init__(self,parent)
         self.config = config
         self.configname = 'TimestampSettings.'+parentname
         self.settings = self.config.get(self.configname,Settings())

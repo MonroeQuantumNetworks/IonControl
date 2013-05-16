@@ -120,6 +120,7 @@ class PipeReader(QtCore.QThread):
                                 key = token >> 28
                                 channel = (token >>24) & 0xf
                                 value = token & 0xffffff
+                                #print hex(token)
                                 if key==1:   # count
                                     (self.data.count[channel]).append(value)
                                 elif key==2:  # timestamp

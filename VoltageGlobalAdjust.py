@@ -22,9 +22,9 @@ class Settings:
 class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
     
-    def __init__(self,config,parent=0):
-        VoltageGlobalAdjustForm.__init__(self,parent)
-        VoltageGlobalAdjustBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageGlobalAdjustForm.__init__(self)
+        VoltageGlobalAdjustBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageGlobalAdjust.Settings'
         self.settings = self.config.get(self.configname,Settings())

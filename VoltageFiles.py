@@ -32,9 +32,9 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
     loadGlobalAdjust = QtCore.pyqtSignal(str)
     loadLocalAdjust = QtCore.pyqtSignal(str)
     
-    def __init__(self,config,parent=0):
-        VoltageFilesForm.__init__(self,parent)
-        VoltageFilesBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageFilesForm.__init__(self)
+        VoltageFilesBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageFiles.Files'
         self.files = self.config.get(self.configname,Files())

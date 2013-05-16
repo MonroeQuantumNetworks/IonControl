@@ -34,9 +34,9 @@ class Settings:
         self.__dict__.setdefault( 'sliceTotal', 1)
 
 class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsBase ):
-    def __init__(self,config,parentname,parent=0):
-        ScanExperimentSettingsForm.__init__(self,parent)
-        ScanExperimentSettingsBase.__init__(self)
+    def __init__(self,config,parentname,parent=None):
+        ScanExperimentSettingsForm.__init__(self)
+        ScanExperimentSettingsBase.__init__(self,parent)
         self.config = config
         self.configname = 'ScanExperimentSettings.'+parentname
         self._settings = self.config.get(self.configname,Settings())

@@ -57,9 +57,9 @@ class Settings:
 
 class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
     ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace')
-    def __init__(self,config,parentname,parent=0):
-        ScanExperimentForm.__init__(self,parent)
-        ScanExperimentBase.__init__(self)
+    def __init__(self,config,parentname,parent=None):
+        ScanExperimentForm.__init__(self)
+        ScanExperimentBase.__init__(self,parent)
         self.config = config
         self.configname = 'ScanParameters.'+parentname
         # History and Dictionary

@@ -63,7 +63,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         print "interpret text"
         
     def fixup(self,inputstring):
-        print inputstring
+        print "fixup" , inputstring
         
     def stepEnabled(self):
         #print "stepEnabled"
@@ -71,7 +71,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def value(self):
         value = self.expression.evaluate( str( self.lineEdit().text() ))
-        print value
+        #print value
         return value
         
     def setText(self,string):

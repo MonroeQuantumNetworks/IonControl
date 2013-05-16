@@ -10,7 +10,7 @@ DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 class DDSUi(DDSForm, DDSBase):
     def __init__(self,config,xem,parent=None):
         DDSBase.__init__(self,parent)
-        DDSForm.__init__(self,parent)
+        DDSForm.__init__(self)
         self.config = config
         self.frequency = self.config.get('DDSUi.Frequency',[mg(0,'MHz')]*6)
         self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*6)

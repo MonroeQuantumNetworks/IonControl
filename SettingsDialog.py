@@ -25,7 +25,7 @@ class SettingsDialogConfig:
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def __init__(self,config,parent=0):
         SettingsDialogBase.__init__(self,parent)    
-        SettingsDialogForm.__init__(self,parent)
+        SettingsDialogForm.__init__(self)
         self.config = config
         self.deviceMap = dict()
         self.settings = Settings()

@@ -10,9 +10,9 @@ DedicatedDisplayForm, DedicatedDisplayBase = PyQt4.uic.loadUiType(r'ui\Dedicated
 
 
 class DedicatedDisplay(DedicatedDisplayForm,DedicatedDisplayBase ):
-    def __init__(self,config,parent=0):
-        DedicatedDisplayForm.__init__(self,parent)
-        DedicatedDisplayBase.__init__(self)
+    def __init__(self,config,parent=None):
+        DedicatedDisplayForm.__init__(self)
+        DedicatedDisplayBase.__init__(self,parent)
         self.config = config
         self._values = [0]*8
 

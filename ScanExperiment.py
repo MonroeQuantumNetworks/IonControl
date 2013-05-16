@@ -204,6 +204,24 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             x = self.currentIndex
         else:
             x = self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
+        if mean:
+            self.updateMainGraph(x, mean, error)
+        self.currentIndex += 1
+        self.showHistogram(data)
+        if self.timestampSettingsWidget.settings.enable: 
+            self.showTimestamps(data)
+        if data.final:
+            self.finalizeData()
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+                self.onStart()
+            else:
+                self.onStop()
+        else:
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+                self.pulserHardware.ppWriteData(self.scan.code)     
+        self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+
+    def updateMainGraph(self, x, mean, error):
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
@@ -223,20 +241,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.currentTrace.x = numpy.append(self.currentTrace.x, x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
             self.plottedTrace.replot()
-        self.currentIndex += 1
-        self.showHistogram(data)
-        if self.timestampSettingsWidget.settings.enable: 
-            self.showTimestamps(data)
-        if data.final:
-            self.finalizeData()
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
-                self.onStart()
-            else:
-                self.onStop()
-        else:
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
-                self.pulserHardware.ppWriteData(self.scan.code)     
-        self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+
 
     def finalizeData(self):
         print "finalize Data"

@@ -24,9 +24,9 @@ class Settings:
 class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersSettingsBase ):
     valueChanged = QtCore.pyqtSignal(object)
 
-    def __init__(self,config,parent=0):
-        DedicatedCountersSettingsForm.__init__(self,parent)
-        DedicatedCountersSettingsBase.__init__(self)
+    def __init__(self,config,parent=None):
+        DedicatedCountersSettingsForm.__init__(self)
+        DedicatedCountersSettingsBase.__init__(self,parent)
         self.config = config
         self.settings = self.config.get('DedicatedCounterSettings.Settings2',Settings())
 
