@@ -282,27 +282,27 @@ if __name__ == "__main__":
     sys.stdout = logger
     sys.stderr = logger
 
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
+#    import warnings
+#    with warnings.catch_warnings():
+#        warnings.simplefilter("error")
 
-        project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
-        
-        if project:
-            if args.config_dir:
-                configdir = args.config_dir
-            else:
-                configdir = os.path.join(projectDir, '.gui-config')
-                if not os.path.exists(configdir):
-                    os.makedirs(configdir)
-                
-            DataDirectory.DefaultProject = project
-            
-            with configshelve.configshelve("experiment-gui",configdir) as config:
-                ui = WidgetContainerUi(config)
-                ui.setupUi(ui)
-                logger.textWritten.connect(ui.onMessageWrite)
-                ui.show()
-                sys.exit(app.exec_())
+    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    
+    if project:
+        if args.config_dir:
+            configdir = args.config_dir
         else:
-            print "No project selected. Nothing I can do about that ;)"
+            configdir = os.path.join(projectDir, '.gui-config')
+            if not os.path.exists(configdir):
+                os.makedirs(configdir)
+            
+        DataDirectory.DefaultProject = project
+        
+        with configshelve.configshelve("experiment-gui",configdir) as config:
+            ui = WidgetContainerUi(config)
+            ui.setupUi(ui)
+            logger.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())
+    else:
+        print "No project selected. Nothing I can do about that ;)"
