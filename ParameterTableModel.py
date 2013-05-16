@@ -81,4 +81,7 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
         for name,var in self.variabledict.iteritems():
             myvariables[name] = var.value
         return myvariables
+        
+    def getVariableValue(self,name):
+        return self.variabledict.get(name).value()
  

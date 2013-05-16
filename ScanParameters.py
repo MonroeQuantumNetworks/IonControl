@@ -89,7 +89,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.rewriteDDSCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'rewriteDDS') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
-        self.scanModeComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanMode') )
+        self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
         self.filenameEdit.editingFinished.connect( self.onNewFilename )
         
     def onNewFilename(self):
@@ -117,6 +117,14 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.beginChange()
         setattr( self.settings, attribute, index )
         self.commitChange()
+        
+    def onModeChanged(self, index):
+        self.beginChange()
+        self.settings.scanMode = index
+        self.minimumBox.setEnabled(index!=2)
+        self.maximumBox.setEnabled(index!=2)
+        self.scanTypeCombo.setEnabled(index!=2)
+        self.commitChange()       
     
     def onValueChanged(self, attribute, value):
         self.beginChange()

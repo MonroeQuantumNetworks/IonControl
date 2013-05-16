@@ -178,6 +178,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
         
+    def getVariableValue(self,name):
+        self.variableTableModel.getVariableValue(name)
+        
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
         pass
