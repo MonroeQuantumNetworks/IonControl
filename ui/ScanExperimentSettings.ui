@@ -61,7 +61,7 @@
    <item row="1" column="1" colspan="3">
     <widget class="QSpinBox" name="counterSpinBox">
      <property name="maximum">
-      <number>7</number>
+      <number>15</number>
      </property>
     </widget>
    </item>

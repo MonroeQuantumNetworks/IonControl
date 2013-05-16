@@ -21,15 +21,15 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         return len(self.variablelist) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 16
+        return 32
  
     def currentState(self,index):
         data = self.variablelist[index.row()].data
-        bit = 0x8000>>index.column()
+        bit = 0x80000000>>index.column()
         return bool( bit & data )
         
     def setState(self,index,state):
-        bit = 0x8000>>index.column()
+        bit = 0x80000000>>index.column()
         var = self.variablelist[index.row()]
         if state:
             var.data = (var.data & ~bit) | bit
@@ -56,7 +56,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return str(15-section)
+                return str(31-section)
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.variablelist[section].name
         return None #QtCore.QVariant()
