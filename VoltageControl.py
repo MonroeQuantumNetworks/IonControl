@@ -60,10 +60,12 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
         except:
             print "cannot apply voltages. Ignored for now."
+        self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
+        self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.onShuttlingDone )
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
-    
+                     
     def onLoadGlobalAdjust(self, path):
         #print "onLoadGlobalAdjust", path
         self.voltageBlender.loadGlobalAdjust(str(path) )

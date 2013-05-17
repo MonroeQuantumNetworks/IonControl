@@ -26,6 +26,7 @@ from modules import MyException
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
     dataError = QtCore.pyqtSignal(object)
+    shuttlingOnLine = QtCore.pyqtSignal(float)
     
     def __init__(self):
         super(VoltageBlender,self).__init__()
@@ -124,6 +125,14 @@ class VoltageBlender(QtCore.QObject):
             outOfRange = line>10
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
+            
+    def shuttle(self, definition):
+        for edge in definition:
+            for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
+                                       edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
+                self.applyLine(line,edge.lineGain,edge.globalGain)
+                print "shuttling applied line", line
+        self.shuttlingOnLine.emit(line)
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))

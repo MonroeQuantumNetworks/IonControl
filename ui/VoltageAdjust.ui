@@ -14,29 +14,8 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Line</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>Global Gain</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="MagnitudeSpinBox" name="lineGainBox"/>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Line Gain</string>
-     </property>
-    </widget>
+   <item row="3" column="1">
+    <widget class="MagnitudeSpinBox" name="globalGainBox"/>
    </item>
    <item row="0" column="1">
     <widget class="QComboBox" name="comboBox">
@@ -47,32 +26,6 @@
       </sizepolicy>
      </property>
     </widget>
-   </item>
-   <item row="7" column="1">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>175</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Named Set</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="MagnitudeSpinBox" name="globalGainBox"/>
-   </item>
-   <item row="1" column="1">
-    <widget class="MagnitudeSpinBox" name="lineBox"/>
    </item>
    <item row="4" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -135,11 +88,65 @@
      </item>
     </layout>
    </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="QWidget" name="shuttlingEdgesWidget" native="true"/>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Global Gain</string>
+     </property>
+    </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QListWidget" name="listWidget"/>
+   <item row="6" column="1">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>175</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="1">
+    <widget class="MagnitudeSpinBox" name="lineGainBox"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Line Gain</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Named Set</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Line</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="MagnitudeSpinBox" name="lineBox"/>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QFrame" name="shuttlingEdgesWidget">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="lineWidth">
+      <number>0</number>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
