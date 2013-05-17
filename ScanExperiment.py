@@ -223,13 +223,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanParametersWidget.progressBar.setValue(self.currentIndex)
 
     def updateMainGraph(self, x, mean, error):
+        print x, mean, error
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
             self.currentTrace.y = numpy.array([mean])
-            if error:
-                self.currentTrace.bottom = error[0]
-                self.currentTrace.top = error[1]
+            if error and self.scanSettings.errorBars:
+                self.currentTrace.bottom = numpy.array([error[0]])
+                self.currentTrace.top = numpy.array([error[1]])
             self.currentTrace.name = self.scan.name
             self.currentTrace.vars.comment = ""
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
@@ -241,13 +242,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
                 self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
-                if error:
+                if error and self.scanSettings.errorBars:
                     numpy.append(self.currentTrace.bottom[-self.scan.steps+1:], error[0]) 
                     numpy.append(self.currentTrace.top[-self.scan.steps+1:], error[1]) 
             else:
                 self.currentTrace.x = numpy.append(self.currentTrace.x, x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
-                if error:
+                if error and self.scanSettings.errorBars:
                     self.currentTrace.x = numpy.append(self.currentTrace.bottom, error[0])
                     self.currentTrace.x = numpy.append(self.currentTrace.top, error[0])
                    
