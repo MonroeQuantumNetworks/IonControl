@@ -6,7 +6,6 @@ Created on Thu May 16 20:56:17 2013
 """
 
 from FitFunctionBase import FitFunctionBase
-import numpy
 from scipy import constants
 from numpy import pi, cos, sqrt, sin
 from magnitude import mg
@@ -16,16 +15,16 @@ class RabiCarrierFunction(FitFunctionBase):
     def __init__(self):
         FitFunctionBase.__init__(self)
         self.functionString =  ''
-        self.parameterNames = [ 'A', 'n', 'omega' ]
+        self.parameterNames = [ 'A', 'n', 'rabiFreq' ]
         self.parameters = [0]*3
         self.startParameters = [1,7,0.28]
         # constants
-        self.constantNames = ['mass','angle','frequency','wavelength']
+        self.constantNames = ['mass','angle','trapFrequency','wavelength']
         self.mass = 40
         self.angle = 0
-        self.frequency = mg(1.578,'MHz')
+        self.trapFrequency = mg(1.578,'MHz')
         self.wavelength = mg(729,'nm' )
-        self.resultNames = ['nstart','taufinal','scTimeInit','scTimeInit']
+        self.resultNames = ['nstart','taufinal','scTimeInit','scIncrement']
         self.nstart=None
         self.taufinal=None
         self.scTimeInit=None
@@ -39,7 +38,7 @@ class RabiCarrierFunction(FitFunctionBase):
         
     def update(self):
         self.m = self.mass * constants.m_p
-        self.secfreq = self.frequency.toval('Hz')
+        self.secfreq = self.trapFrequency.toval('Hz')
         self.eta = ( (2*pi/self.wavelength.toval('m'))*cos(self.angle*pi/180)
                      * sqrt(constants.hbar/(2*self.m*2*pi*self.secfreq)) )
         self.eta2 = pow(self.eta,2)

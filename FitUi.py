@@ -40,7 +40,7 @@ class FitUi(fitForm, QtGui.QWidget):
         fitfunction.startParameters[index] = value
         
     def setConstant(self,fitfunction,parametername,value):
-        fitfunction.setConstant(parametername,value)
+        fitfunction.fitfunction.setConstant(parametername,value)
 
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)

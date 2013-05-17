@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 from scipy import optimize
 from matplotlib.backends.backend_pdf import PdfPages
 
-directory = "C:\Users\craclar\Documents\Research\Data\Circ\\11_45_12_Time__us_729"
+directory = r"C:\Users\Public\Documents\experiments\HOA\2013\2013_05\2013_05_16"
 
 # Check if directory terminates in a '\'
 if directory[-1] != '\\':
 	directory += '\\'
 
 # Get filenames of all files *.dat
-filename = directory + "11_45_12_Time__us_729.txt"
+filename = directory + "RabiFlop_003.txt"
 mass=40  # Calcium mass
 angle=0; # angle between the laser and the trap axis.  In the MOL Chamber this is currently 0
-freq=1.578 # Secular freq in MHz
+freq=0.8 # Secular freq in MHz
 A0=1 #Amplitude of State Prep 0-1
 omega0=.28 #Rabi Freq
 n0=7 # intial guess at avergae n 
@@ -28,7 +28,7 @@ output_file =  "Rabi_analysis.pdf"
 pp = PdfPages(output_file)
 
 # Number of header lines in file
-header_lines = 10
+header_lines = 63
 
 
 hbar=1.05457148e-34;
@@ -39,7 +39,7 @@ et2=eta*eta
 
 data = np.loadtxt(filename,skiprows=header_lines)
 X=data[:,0];
-Y=1-data[:,2]/np.max(data[:,2]);
+Y=data[:,1];
 
 # Fit function
 fnfit = lambda t, A,n,o: A/2*(1-1/(n+1)*(np.cos(2*o*t)*(1-n/(n+1)*np.cos(2*o*t*et2))+(n/(n+1))*np.sin(2*o*t)*np.sin(2*o*t*et2))/(1+(n/(n+1))**2-2*(n/(n+1))*np.cos(2*o*t*et2)))
