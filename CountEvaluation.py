@@ -61,16 +61,12 @@ class ThresholdEvaluation(EvaluationBase):
         summe = numpy.sum( descriminated )
         bottom = summe*(N-summe)
         top = bottom
-        print N, summe
         if summe==0:
-            print "summe==0"
             top = (N-1)/2.
         elif summe==N:
-            print "summe==N"
             bottom = (N-1)/2.
-            print bottom
-        norm = pow(N,-3.5)
-        return summe/N, (bottom*norm, top*norm)
+        norm = pow(float(N),-3.5)
+        return summe/float(N), (bottom*norm, top*norm)
         
     def saveParam(self):
         self.config['ThresholdEvaluation.Parameters'] = self.parameters
