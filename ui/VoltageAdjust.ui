@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>234</width>
-    <height>300</height>
+    <width>340</width>
+    <height>481</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -146,6 +146,23 @@
      <property name="lineWidth">
       <number>0</number>
      </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>3</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>3</number>
+      </property>
+     </layout>
     </widget>
    </item>
   </layout>
@@ -157,6 +174,16 @@
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>comboBox</tabstop>
+  <tabstop>lineBox</tabstop>
+  <tabstop>lineGainBox</tabstop>
+  <tabstop>globalGainBox</tabstop>
+  <tabstop>startShuttlingSeqFiniteButton</tabstop>
+  <tabstop>startShuttlingSeqContButton</tabstop>
+  <tabstop>addEdgeButton</tabstop>
+  <tabstop>removeEdgeButton</tabstop>
+ </tabstops>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

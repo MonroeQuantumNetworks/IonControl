@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>216</width>
-    <height>45</height>
+    <height>54</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -63,7 +63,7 @@
    <item row="1" column="0">
     <widget class="MagnitudeSpinBox" name="stepsBox">
      <property name="toolTip">
-      <string>stepsize</string>
+      <string>number of steps</string>
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
@@ -86,6 +86,13 @@
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>fromBox</tabstop>
+  <tabstop>toBox</tabstop>
+  <tabstop>stepsBox</tabstop>
+  <tabstop>comboBox</tabstop>
+  <tabstop>goButton</tabstop>
+ </tabstops>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

@@ -78,16 +78,16 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.removeEdgeButton.clicked.connect( self.removeShuttlingEdge )
         self.startShuttlingSeqFiniteButton.clicked.connect( self.onShuttleSequence )
         
-        self.edgesVerticalLayout = QtGui.QVBoxLayout(self.shuttlingEdgesWidget)
-        self.edgesVerticalLayout.setSpacing(0)
-        self.shuttlingEdgesWidget.setLayout(self.edgesVerticalLayout)
+#        self.edgesVerticalLayout = QtGui.QVBoxLayout(self.shuttlingEdgesWidget)
+#        self.edgesVerticalLayout.setSpacing(0)
+#        self.shuttlingEdgesWidget.setLayout(self.edgesVerticalLayout)
         
         for index in range(2):
             edge = ShuttlingEdgeUi()
             edge.setupUi(edge)
             edge.goButton.clicked.connect( functools.partial(self.onShuttleEdge, index) )
             self.shuttlingEdges.append(edge)
-            self.edgesVerticalLayout.addWidget(edge)
+            self.verticalLayout.addWidget(edge)
 
     def onShuttleSequence(self):
         print "ShuttleSequence"
