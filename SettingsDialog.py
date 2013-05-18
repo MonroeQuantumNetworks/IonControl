@@ -51,6 +51,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
                 self.onUploadBitfile()
+        else:
+            self.exec_()
                 
     def onAutoUploadChanged(self, state):
         self.configSettings.autoUpload = state==QtCore.Qt.Checked
