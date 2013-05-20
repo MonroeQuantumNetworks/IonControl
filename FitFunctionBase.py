@@ -25,7 +25,8 @@ class FitFunctionBase(object):
         return self.parameters
         
     def __str__(self):
-         return ", ".join([self.name, self.functionString] + [ "{0}={1}".format(name, value) for name, value in zip(self.parameterNames,self.parameters)])
+         return "; ".join([", ".join([self.name, self.functionString] + [ "{0}={1}".format(name, value) for name, value in zip(self.parameterNames,self.parameters)]),
+                          ", ".join([ "{0}={1}".format(name,getattr(self,name)) for name in self.constantNames ])])
 
     def setConstant(self, name, value):
         setattr(self,name,value)

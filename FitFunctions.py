@@ -7,7 +7,7 @@ Created on Sat Jan 19 10:47:59 2013
 import numpy
 
 from FitFunctionBase import FitFunctionBase
-
+from modules import MagnitudeParser
 
 class CosFit(FitFunctionBase):
     name = "Cos"
@@ -96,12 +96,19 @@ def fitFunctionFactory(text):
     """
     Creates a FitFunction Object from a saved string representation
     """
-    components = text.split(',')
+    parts = text.split(';')
+    components = parts[0].split(',')
     name = components[0].strip()
     function = fitFunctionMap[name]()
     for index, arg in enumerate(components[2:]):
         value = float(arg.split('=')[1].strip())
         function.parameters[index] = value
+    if len(parts)>1:
+        components = parts[1].split(',')
+        for item in components:
+            name, value = item.split('=')
+            print "'{0}' '{1}' '{2}'".format(item,name.strip(),value.strip())
+            setattr(function, name.strip(), MagnitudeParser.parse(value.strip()))
     return function
         
         

@@ -49,6 +49,7 @@ class FitUi(fitForm, QtGui.QWidget):
             fitfunction.page = QtGui.QWidget()
             fitfunction.gridLayout = QtGui.QGridLayout(fitfunction.page)
             label = QtGui.QLabel(fitfunction.fitfunction.functionString,fitfunction.page)
+            label.setWordWrap(True)
             fitfunction.gridLayout.addWidget(label, 0, 0, 1, 3)
             self.comboBox.addItem(fitfunction.fitfunction.name)
             #print fitfunction.fitfunction.startParameters
