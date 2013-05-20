@@ -15,7 +15,7 @@ class RabiCarrierFunction(FitFunctionBase):
     name = "RabiCarrier"
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  ''
+        self.functionString =  'Explicit Carrier Rabi Trnasition with Lamb-Dicke approx'
         self.parameterNames = [ 'A', 'n', 'rabiFreq' ]
         self.parameters = [0]*3
         self.startParameters = [1,7,0.28]
@@ -69,7 +69,7 @@ class FullRabiCarrierFunction(FitFunctionBase):
     name = "FullRabiCarrier"
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  ''
+        self.functionString =  'Numerical Carrier Rabi Transition without Lamb-Dicke approx'
         self.parameterNames = [ 'A', 'nbar', 'rabiFreq' ]
         self.parameters = [0]*3
         self.startParameters = [1,7,0.28]
