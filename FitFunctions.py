@@ -83,13 +83,14 @@ class TruncatedLorentzianFit(FitFunctionBase):
         s2 = numpy.square(s)
         return (A*s2/(s2+numpy.square(x-x0)))*(1-numpy.sign(x-x0))/2+O
         
-from RabiCarrierFunction import RabiCarrierFunction        
+from RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
         
 fitFunctionMap = { GaussianFit.name: GaussianFit, 
                    CosFit.name: CosFit, 
                    LorentzianFit.name: LorentzianFit,
                    TruncatedLorentzianFit.name: TruncatedLorentzianFit,
-                   RabiCarrierFunction.name: RabiCarrierFunction }
+                   RabiCarrierFunction.name: RabiCarrierFunction,
+                   FullRabiCarrierFunction.name: FullRabiCarrierFunction }
 
 def fitFunctionFactory(text):
     """
