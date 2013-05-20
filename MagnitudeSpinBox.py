@@ -24,6 +24,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     def __init__(self,parent=0):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.expression = Expression.Expression()
+        self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         self.editingFinished.connect( self.onEditingFinished )
         
     def validate(self, inputstring, pos):
