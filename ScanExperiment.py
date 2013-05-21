@@ -167,7 +167,24 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         print "elapsed time", time.time()-start
     
     def onPause(self):
-        self.StatusMessage.emit("test Pause not implemented")
+        if self.state == self.OpStates.paused:
+            self.state = self.OpStates.running
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+               mycode = self.scan.code * 5
+            else:
+                mycode = self.scan.code[self.currentIndex:]
+            self.pulserHardware.ppFlushData()
+            self.pulserHardware.ppClearWriteFifo()
+            self.pulserHardware.ppWriteData(mycode)
+            print "Starting"
+            self.pulserHardware.ppStart()
+            self.running = True
+            self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
+            self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+            self.scanParametersWidget.progressBar.setVisible( True )
+            self.timestampsNewRun = False
+            print "continued"
+            
     
     def onStop(self):
         if self.running:
@@ -213,10 +230,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.showTimestamps(data)
         if data.final:
             self.finalizeData()
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
-                self.onStart()
+            if self.currentIndex == len(self.scan.list)-1:
+                if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+                    self.onStart()
+                else:
+                    self.onStop()
             else:
-                self.onStop()
+                self.state = self.OpStates.paused
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.pulserHardware.ppWriteData(self.scan.code)     
