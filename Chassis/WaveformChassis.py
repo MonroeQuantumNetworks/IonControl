@@ -5,6 +5,7 @@ import DAQmxUtility as dutil
 from chassisConfigParser import chassisConfigParser
 from numpy import append
 from re import search
+import numpy
 #from time import sleep
 
 ## This class contains a list of WaveformGenerator objects and a Timing object.
@@ -176,6 +177,12 @@ class WaveformChassis(object):
                 testData = append(testData, data)
             i+=1
         return testData
+        
+    def createFalseDoBuffer(self):
+        testData =  numpy.array( [0]*len(self.gens), dtype=numpy.uint8)
+        print "createFalseDoBuffer", testData
+        return testData
+        
         
     ## This function will write data into the buffer of the analog outputs that
     #  are a part of the WaveformChassis class.

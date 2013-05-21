@@ -38,6 +38,9 @@ class VoltageBlender(QtCore.QObject):
             if not os.path.exists( ConfigFilename):
                 raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
             self.chassis.initFromFile( ConfigFilename )
+            self.DoLine = self.chassis.createFalseDoBuffer()
+            self.DoLine[0] = 1
+            print self.DoLine
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = dict()  # names of the lines presented as possible adjusts
@@ -116,6 +119,7 @@ class VoltageBlender(QtCore.QObject):
         try:
             if HardwareDriverLoaded:
                 self.chassis.writeAoBuffer(line)
+                self.chassis.writeDoBuffer(self.DoLine)
             else:
                 print "Hardware Driver not loaded, cannot write voltages"
             self.outputVoltage = line
