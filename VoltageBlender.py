@@ -10,6 +10,8 @@ try:
     from Chassis.WaveformChassis import WaveformChassis
     from Chassis.DAQmxUtility import Mode
     import PyDAQmx.DAQmxFunctions
+    from PyDAQmx import DAQmxUtility 
+
     HardwareDriverLoaded = True
 except ImportError as e:
     print "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e)
@@ -39,6 +41,7 @@ class VoltageBlender(QtCore.QObject):
                 raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
             self.chassis.initFromFile( ConfigFilename )
             self.DoLine = self.chassis.createFalseDoBuffer()
+            self.chassis.setOnDoneCallback( self.onChassisDone )
             self.DoLine[0] = 1
             print self.DoLine
         self.itf = itfParser()
@@ -108,13 +111,12 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
-        floor = int(math.floor(lineno))
-        ceil = int(math.ceil(lineno))
-        line = self.blendLines(floor,ceil,lineno-floor,lineGain)
+        line = self.blendLines(lineno,lineGain)
         self.lineGain = lineGain
         self.globalGain = globalGain
         self.lineno = lineno
         line = self.adjustLine( line )
+        line *= self.globalGain
         #print "writeAoBuffer", line
         try:
             if HardwareDriverLoaded:
@@ -130,13 +132,40 @@ class VoltageBlender(QtCore.QObject):
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
             
-    def shuttle(self, definition):
-        for edge in definition:
-            for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
-                                       edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
-                self.applyLine(line,edge.lineGain,edge.globalGain)
-                print "shuttling applied line", line
-        self.shuttlingOnLine.emit(line)
+    def shuttle(self, definition, cont):
+        if False:
+            for edge in definition:
+                for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
+                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
+                    self.applyLine(line,edge.lineGain,edge.globalGain)
+                    print "shuttling applied line", line
+            self.shuttlingOnLine.emit(line)
+        else:
+            outputmatrix = list()
+            globaladjust = [0]*len(self.lines[0])
+            self.adjustLine(globaladjust)
+            for edge in definition:
+                for lineno in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
+                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
+                    outputmatrix.append( (self.blendLines(lineno,edge.lineGain)+globaladjust)*self.globalGain )
+        try:
+            if HardwareDriverLoaded:
+                self.chassis.mode = DAQmxUtility.mode.Finite
+                self.chassis.writeAoBuffer( (numpy.array(outputmatrix)).flatten('F') )
+                self.chassis.start()
+                self.shuttleTo = lineno
+            else:
+                print "Hardware Driver not loaded, cannot write voltages"
+        except PyDAQmx.DAQmxFunctions.DAQError as e:
+            print e
+            outOfRange = line>10
+            outOfRange |= line<-10
+            self.dataError.emit(outOfRange.tolist())
+            
+    def onChassisDone( self, generator, value ):
+        print "onChassisDone", generator, value
+        self.outputVoltage = self.shuttleTo
+        self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
@@ -146,10 +175,13 @@ class VoltageBlender(QtCore.QObject):
         if "__GAIN__" in self.adjust:
             offset *= self.adjust["__GAIN__"]
         #print "adjustLine", self.globalGain, self.adjust
-        return (line+offset)*self.globalGain
+        return (line+offset)
             
-    def blendLines(self,left,right,convexc,lineGain):
+    def blendLines(self,lineno,lineGain):
         #print "blendlines", left, right, convexc, lineGain
+        left = int(math.floor(lineno))
+        right = int(math.ceil(lineno))
+        convexc = lineno-left
         return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
             
     def close(self):

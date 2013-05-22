@@ -53,7 +53,7 @@ class ShuttlingException(Exception):
     
 class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
-    shuttleOutput = QtCore.pyqtSignal(object)
+    shuttleOutput = QtCore.pyqtSignal(object, object)
     
     def __init__(self,config,parent=None):
         VoltageAdjustForm.__init__(self)
@@ -77,7 +77,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.addEdgeButton.clicked.connect( self.addShuttlingEdge )
         self.removeEdgeButton.clicked.connect( self.removeShuttlingEdge )
         self.startShuttlingSeqFiniteButton.clicked.connect( self.onShuttleSequence )
-        
+        self.startShuttlingSeqContButton.clicked.connect( functools.partial(self.onShuttleSequence, cont=True) )
 #        self.edgesVerticalLayout = QtGui.QVBoxLayout(self.shuttlingEdgesWidget)
 #        self.edgesVerticalLayout.setSpacing(0)
 #        self.shuttlingEdgesWidget.setLayout(self.edgesVerticalLayout)
@@ -89,7 +89,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
             self.shuttlingEdges.append(edge)
             self.verticalLayout.addWidget(edge)
 
-    def onShuttleSequence(self):
+    def onShuttleSequence(self, cont=False):
         print "ShuttleSequence"
         first = self.shuttlingEdges[0].definition.fromLine
         last = self.shuttlingEdges[-1].definition.toLine
@@ -104,8 +104,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
             item.lineGain = self.adjust.lineGain
             item.globalGain = self.adjust.globalGain
             item.reverse = reverse
-        self.shuttleOutput.emit( definitionlist )
-
+        self.shuttleOutput.emit( definitionlist, cont )
 
     def onShuttlingDone(self,currentline):
         self.lineBox.setValue(currentline)
