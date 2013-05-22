@@ -121,7 +121,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
             raise ShuttlingException("Current Line has to be either first line or last line of shuttling definition")
         definition.lineGain = self.adjust.lineGain
         definition.globalGain = self.adjust.globalGain
-        self.shuttleOutput.emit( [self.shuttlingEdges[index].definition] )
+        self.shuttleOutput.emit( [self.shuttlingEdges[index].definition], False )
         
     def addShuttlingEdge(self):
 #        if len(self.shuttlingEdges)>self.activeShuttlingEdges:

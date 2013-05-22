@@ -56,17 +56,9 @@ class ExceptionLogButton( QtGui.QToolButton ):
     def myexcepthook(self, type, value, tback):
         self.addMessage(value)
         sys.__excepthook__(type, value, tback)
+        
+    def mouseDoubleClickEvent(self, event):
+        self.myMenu.clear()
     
         
-
-if __name__ == "__main__":
-    import sys
-    config = dict()
-    app = QtGui.QApplication(sys.argv)
-    MainWindow = QtGui.QMainWindow()
-    ui = SimpleTest()
-    ui.setupUi(ui)
-    MainWindow.setCentralWidget(ui)
-    MainWindow.show()
-    sys.exit(app.exec_())
 
