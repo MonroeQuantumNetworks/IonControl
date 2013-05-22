@@ -6,11 +6,25 @@ import ctypes
 import numpy
 
 
-class CallbackTask(Task):
+class CallbackTask(Task,object):
     def __init__(self):
         Task.__init__(self)
-        self.AutoRegisterDoneEvent(0)
-        self.onDone = None
+        self._onDone = None
+    
+    @property
+    def onDone(self):
+        return self._onDone
+        
+    @onDone.setter
+    def onDone(self,func):
+        self._onDone = func
+        if self._onDone:
+            print "Registering Callback"
+            self.AutoRegisterDoneEvent(0)
+        else:
+            print "Unregistering Callback"
+            self.RegisterDoneEvent(options,None,None)
+
         
     def EveryNCallback(self):
         read = int32()
