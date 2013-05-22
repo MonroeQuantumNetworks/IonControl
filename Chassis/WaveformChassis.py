@@ -6,6 +6,7 @@ from chassisConfigParser import chassisConfigParser
 from numpy import append
 from re import search
 import numpy
+import functools
 #from time import sleep
 
 ## This class contains a list of WaveformGenerator objects and a Timing object.
@@ -257,6 +258,12 @@ class WaveformChassis(object):
             print 'Sleeping {0}s...'.format(estAcqTime+1)
             sleep(estAcqTime+1)
         '''
+    ## This function is used to set a callback function that will get called when the analog 
+    # output generation is complete
+    # the callbackFunction takes two arguments: the generator id and the completion status
+    def setOnDoneCallback(self, callbackFunction):
+        for i, generator in enumerate(self.gens):
+            generator.setOnDoneCallback( functools.partial(callbackFunction, i) )
     
     ## This function stops the analog and digital output generation.
     #  @param self The object pointer.
