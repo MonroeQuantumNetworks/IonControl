@@ -33,6 +33,7 @@ import CoordinatePlotWidget
 import functools
 from modules import stringutilit
 from datetime import datetime
+from ui import StyleSheets
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -162,6 +163,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace = None
         self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
         self.scanParametersWidget.progressBar.setValue(0)
+        self.scanParametersWidget.progressBar.setStyleSheet("")
         self.scanParametersWidget.progressBar.setVisible( True )
         self.timestampsNewRun = True
         print "elapsed time", time.time()-start
@@ -172,7 +174,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                mycode = self.scan.code * 5
             else:
-                mycode = self.scan.code[self.currentIndex:]
+                mycode = self.scan.code[self.currentIndex*2:]
+                print "original length", len(self.scan.code), "remaining", len(mycode)
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppWriteData(mycode)
@@ -181,9 +184,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.running = True
             self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
             self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+            self.scanParametersWidget.progressBar.setStyleSheet("")
             self.scanParametersWidget.progressBar.setVisible( True )
             self.timestampsNewRun = False
             print "continued"
+        elif self.state == self.OpStates.running:
+            self.pulserHardware.ppStop()
+            self.scanParametersWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            self.state = self.OpStates.paused
             
     
     def onStop(self):
@@ -230,13 +238,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.showTimestamps(data)
         if data.final:
             self.finalizeData()
-            if self.currentIndex == len(self.scan.list)-1:
+            print "current index", self.currentIndex, "expected", len(self.scan.list)
+            if self.currentIndex >= len(self.scan.list):
                 if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
                     self.onStart()
                 else:
                     self.onStop()
             else:
                 self.state = self.OpStates.paused
+                self.scanParametersWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.pulserHardware.ppWriteData(self.scan.code)     

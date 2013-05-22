@@ -33,6 +33,7 @@ class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
         self.config = config
         self.configname = 'TimestampSettings.'+parentname
         self.settings = self.config.get(self.configname,Settings())
+        if not hasattr(self.settings,'saveRawData'): self.settings = Settings()
 
     def setupUi(self, parent):
         TimestampSettingsForm.setupUi(self,parent)
