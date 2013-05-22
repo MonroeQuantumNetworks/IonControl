@@ -23,6 +23,9 @@
     <file>icons/player_stop.png</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/emblem-default.png</file>
+    <file>icons/emblem-important-4.png</file>
+    <file>icons/edit-delete-6.png</file>
     <file>icons/edit-add.png</file>
     <file>icons/edit_remove.png</file>
     <file>icons/view-refresh-7.png</file>

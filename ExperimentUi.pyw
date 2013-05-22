@@ -33,6 +33,7 @@ import ExternalScannedParametersUi
 import ProjectSelectionUi
 import os
 from modules import DataDirectory
+from ExceptionLogButton import ExceptionLogButton
 
 import VoltageControl
     
@@ -64,6 +65,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     
     def setupUi(self, parent):
         super(WidgetContainerUi,self).setupUi(parent)
+        self.toolBar.addWidget(ExceptionLogButton())
+        
         self.parent = parent
         self.tabList = list()
         self.tabDict = dict()
