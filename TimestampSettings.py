@@ -45,7 +45,7 @@ class TimestampSettings(TimestampSettingsForm, TimestampSettingsBase ):
         self.roiStartSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiStart') )
         self.roiWidthSpinBox.setValue(self.settings.roiWidth)
         self.roiWidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiWidth') )
-        self.enableCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,' enable' ) )
+        self.enableCheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'enable' ) )
         self.saveRawDataCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,' saveRawData' ) )
         self.integrateCombo.setCurrentIndex( self.settings.integrate )
         self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
