@@ -10,7 +10,7 @@ It also includes default directory for storing of config files.
 
 import os
 import shelve
-import shutils
+import shutil
 
 class configshelve:
     def __init__(self,name,directory="~\\AppData\\Local\\python-control\\"):
