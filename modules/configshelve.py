@@ -10,6 +10,7 @@ It also includes default directory for storing of config files.
 
 import os
 import shelve
+import shutils
 
 class configshelve:
     def __init__(self,name,directory="~\\AppData\\Local\\python-control\\"):
@@ -54,6 +55,7 @@ class configshelve:
         #print "configshelve close", self.configfile
         self.config.close()
         self.isOpen = False
+        shutils.copy2( self.configfile, self.configfile+".bak" )
         
 if __name__ == "__main__":
     with configshelve("test") as d:
