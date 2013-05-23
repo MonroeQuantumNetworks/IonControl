@@ -55,7 +55,7 @@ class configshelve:
         #print "configshelve close", self.configfile
         self.config.close()
         self.isOpen = False
-        shutils.copy2( self.configfile, self.configfile+".bak" )
+        shutil.copy2( self.configfile, self.configfile+".bak" )
         
 if __name__ == "__main__":
     with configshelve("test") as d:
