@@ -56,7 +56,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configname = 'PulseProgramUi.'+self.experimentname
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         self.configParams.upgrade()
-        self.datashelf = configshelve.configshelve(self.configname)
+        self.datashelf = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
         self.datashelf.open()
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())

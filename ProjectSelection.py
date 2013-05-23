@@ -70,7 +70,15 @@ def configDir():
     if not os.path.exists(configDir):
         os.makedirs(configDir)
     return configDir
-    
+
+def guiConfigDir():
+    if not Project:
+        raise ProjectException("no Project set")
+    configDir = os.path.join(ProjectsBaseDir, Project, '.gui-config') 
+    if not os.path.exists(configDir):
+        os.makedirs(configDir)
+    return configDir 
+   
 def getBaseDir():
     return ProjectsBaseDir
     

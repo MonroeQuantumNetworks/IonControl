@@ -8,6 +8,7 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 import ShutterHardwareTableModel
 from modules import configshelve
+import ProjectSelection
 
 ShutterForm, ShutterBase = PyQt4.uic.loadUiType(r'ui\Shutter.ui')
 
@@ -29,7 +30,7 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.checkBoxSetAtStartup.setChecked(self.setAtStartup)
         self.shutterdict = self.config.get(self.configname+".dict",dict())
         self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.shutterdict,self.pulserHardware,self.outputname)
-        self.datashelve = configshelve.configshelve(self.configname)
+        self.datashelve = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
         self.datashelve.open()
         if self.setAtStartup:
             print "Set old shutter values", 'Value' in self.datashelve, self.datashelve.get('Value',0)
