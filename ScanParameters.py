@@ -13,6 +13,7 @@ ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanParameter
 
 import ScanList
 from modules import enum
+from magnitude import mg
 
 class Scan:
     def __init__(self):
@@ -35,8 +36,8 @@ class Scan:
 class Settings:
     def __init__(self):
         self.parameter = None
-        self.minimum = "0 ms"
-        self.maximum = "10 ms"
+        self.minimum = mg(0, "ms")
+        self.maximum = mg(10,"ms" )
         self.steps = 10
         self.scantype = 0
         self.scanMode = 0
@@ -175,10 +176,14 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.stepsBox.setValue(self.settings.steps)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
+        self.autoSaveCheckBox.setChecked(self.settings.autoSave)
         self.progressBar.setVisible( False )
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         if settings.parameter: self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(settings.parameter))
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
+        self.minimumBox.setEnabled(self.settings.scanMode!=2)
+        self.maximumBox.setEnabled(self.settings.scanMode!=2)
+        self.scanTypeCombo.setEnabled(self.settings.scanMode!=2)
     
     def onRedo(self):
         if self.settingsHistoryPointer<len(self.settingsHistory):
