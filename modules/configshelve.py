@@ -55,7 +55,20 @@ class configshelve:
         #print "configshelve close", self.configfile
         self.config.close()
         self.isOpen = False
-        shutil.copy2( self.configfile, self.configfile+".bak" )
+        self.backup(self.configfile)
+        
+    def backup(self,name):
+        for index in [8,7,6,5,4,3,2,1]:
+            oldName = name+".bak{0}".format(index)
+            newName = name+".bak{0}".format(index+1)
+            if os.path.exists(oldName):
+                shutil.move( oldName, newName )
+        oldName = name+".bak"
+        newName = name+".bak0"
+        if os.path.exists(oldName):
+            shutil.move( oldName, newName )
+        shutil.copy2( name, name+".bak" )
+            
         
 if __name__ == "__main__":
     with configshelve("test") as d:
