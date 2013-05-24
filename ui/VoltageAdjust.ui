@@ -38,6 +38,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/media-playback-start-7.png</normaloff>:/openicon/icons/media-playback-start-7.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -48,6 +51,9 @@
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/view-refresh-7.png</normaloff>:/openicon/icons/view-refresh-7.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -73,6 +79,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/edit-add.png</normaloff>:/openicon/icons/edit-add.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -83,6 +92,9 @@
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/edit_remove.png</normaloff>:/openicon/icons/edit_remove.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

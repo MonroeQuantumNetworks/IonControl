@@ -35,6 +35,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -46,6 +49,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/edit-undo-8.png</normaloff>:/openicon/icons/edit-undo-8.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -56,6 +62,9 @@
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/edit-redo-8.png</normaloff>:/openicon/icons/edit-redo-8.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
