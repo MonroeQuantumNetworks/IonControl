@@ -22,6 +22,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="maximum">
+      <number>1000</number>
+     </property>
     </widget>
    </item>
    <item row="6" column="0" colspan="4">
