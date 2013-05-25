@@ -33,6 +33,8 @@ import CoordinatePlotWidget
 import functools
 from modules import stringutilit
 from datetime import datetime
+from ui import StyleSheets
+import RawData
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -141,8 +143,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # get parameter to scan and scanrange
         self.scan = self.scanParametersWidget.getScan()
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
-            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]])
-            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.scan.list[0]]*5)
+            self.stepInPlaceValue = self.pulseProgramUi.getVariableValue(self.scan.name)
+            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.stepInPlaceValue])
+            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.stepInPlaceValue]*5)
         else:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
             mycode = self.scan.code
@@ -161,12 +164,36 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace = None
         self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
         self.scanParametersWidget.progressBar.setValue(0)
+        self.scanParametersWidget.progressBar.setStyleSheet("")
         self.scanParametersWidget.progressBar.setVisible( True )
         self.timestampsNewRun = True
         print "elapsed time", time.time()-start
     
     def onPause(self):
-        self.StatusMessage.emit("test Pause not implemented")
+        if self.state == self.OpStates.paused:
+            self.state = self.OpStates.running
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+               mycode = self.scan.code * 5
+            else:
+                mycode = self.scan.code[self.currentIndex*2:]
+                print "original length", len(self.scan.code), "remaining", len(mycode)
+            self.pulserHardware.ppFlushData()
+            self.pulserHardware.ppClearWriteFifo()
+            self.pulserHardware.ppWriteData(mycode)
+            print "Starting"
+            self.pulserHardware.ppStart()
+            self.running = True
+            self.scanParametersWidget.progressBar.setRange(0,len(self.scan.list))
+            self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+            self.scanParametersWidget.progressBar.setStyleSheet("")
+            self.scanParametersWidget.progressBar.setVisible( True )
+            self.timestampsNewRun = False
+            print "continued"
+        elif self.state == self.OpStates.running:
+            self.pulserHardware.ppStop()
+            self.scanParametersWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            self.state = self.OpStates.paused
+            
     
     def onStop(self):
         if self.running:
@@ -191,7 +218,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", len(data.count[self.scanSettings.counter]), data.scanvalue
+        print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
         if self.scanSettings.sliceTotal<=1:
             mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
         else:
@@ -204,10 +231,37 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             x = self.currentIndex
         else:
             x = self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
+        if mean is not None:
+            self.updateMainGraph(x, mean, error)
+        self.currentIndex += 1
+        self.showHistogram(data)
+        if self.timestampSettingsWidget.settings.enable: 
+            self.showTimestamps(data)
+        if data.final:
+            self.finalizeData()
+            print "current index", self.currentIndex, "expected", len(self.scan.list)
+            if self.currentIndex >= len(self.scan.list):
+                if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
+                    self.onStart()
+                else:
+                    self.onStop()
+            else:
+                self.state = self.OpStates.paused
+                self.scanParametersWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+        else:
+            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+                self.pulserHardware.ppWriteData(self.scan.code)     
+        self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+
+    def updateMainGraph(self, x, mean, error):
+        print x, mean, error
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
             self.currentTrace.y = numpy.array([mean])
+            if error and self.scanSettings.errorBars:
+                self.currentTrace.bottom = numpy.array([error[0]])
+                self.currentTrace.top = numpy.array([error[1]])
             self.currentTrace.name = self.scan.name
             self.currentTrace.vars.comment = ""
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
@@ -219,24 +273,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
                 self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
+                if error and self.scanSettings.errorBars:
+                    self.currentTrace.bottom = numpy.append(self.currentTrace.bottom[-self.scan.steps+1:], error[0]) 
+                    self.currentTrace.top = numpy.append(self.currentTrace.top[-self.scan.steps+1:], error[1]) 
             else:
                 self.currentTrace.x = numpy.append(self.currentTrace.x, x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
+                if error and self.scanSettings.errorBars:
+                    self.currentTrace.bottom = numpy.append(self.currentTrace.bottom, error[0])
+                    self.currentTrace.top = numpy.append(self.currentTrace.top, error[1])
+                   
             self.plottedTrace.replot()
-        self.currentIndex += 1
-        self.showHistogram(data)
-        if self.timestampSettingsWidget.settings.enable: 
-            self.showTimestamps(data)
-        if data.final:
-            self.finalizeData()
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan:
-                self.onStart()
-            else:
-                self.onStop()
-        else:
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
-                self.pulserHardware.ppWriteData(self.scan.code)     
-        self.scanParametersWidget.progressBar.setValue(self.currentIndex)
+
 
     def finalizeData(self):
         print "finalize Data"
@@ -264,8 +312,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 (settings.integrate == self.timestampSettingsWidget.integrationMode.IntegrateRun and not self.timestampsNewRun) ) :
             self.currentTimestampTrace.y += y
             self.plottedTimestampTrace.replot()
+            if self.currentTimestampTrace.rawdata:
+                self.currentTimestampTrace.rawdata.addInt(data.timestamp[settings.channel])
         else:    
             self.currentTimestampTrace = Trace.Trace()
+            if settings.saveRawData:
+                self.currentTimestampTrace.rawdata = RawData()
+                self.currentTimestampTrace.rawdata.addInt(data.timestamp[settings.channel])
             self.currentTimestampTrace.x = x
             self.currentTimestampTrace.y = y
             self.currentTimestampTrace.name = self.scan.name

@@ -5,6 +5,8 @@ import DAQmxUtility as dutil
 from chassisConfigParser import chassisConfigParser
 from numpy import append
 from re import search
+import numpy
+import functools
 #from time import sleep
 
 ## This class contains a list of WaveformGenerator objects and a Timing object.
@@ -177,6 +179,12 @@ class WaveformChassis(object):
             i+=1
         return testData
         
+    def createFalseDoBuffer(self):
+        testData =  numpy.array( [0]*len(self.gens), dtype=numpy.uint8)
+        print "createFalseDoBuffer", testData
+        return testData
+        
+        
     ## This function will write data into the buffer of the analog outputs that
     #  are a part of the WaveformChassis class.
     #  @param self The object pointer
@@ -250,6 +258,12 @@ class WaveformChassis(object):
             print 'Sleeping {0}s...'.format(estAcqTime+1)
             sleep(estAcqTime+1)
         '''
+    ## This function is used to set a callback function that will get called when the analog 
+    # output generation is complete
+    # the callbackFunction takes two arguments: the generator id and the completion status
+    def setOnDoneCallback(self, callbackFunction):
+        for i, generator in enumerate(self.gens):
+            generator.setOnDoneCallback( functools.partial(callbackFunction, i) )
     
     ## This function stops the analog and digital output generation.
     #  @param self The object pointer.

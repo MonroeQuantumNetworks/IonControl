@@ -33,6 +33,7 @@ import ExternalScannedParametersUi
 import ProjectSelectionUi
 import os
 from modules import DataDirectory
+from ExceptionLogButton import ExceptionLogButton
 
 import VoltageControl
     
@@ -64,6 +65,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     
     def setupUi(self, parent):
         super(WidgetContainerUi,self).setupUi(parent)
+        self.toolBar.addWidget(ExceptionLogButton())
+        
         self.parent = parent
         self.tabList = list()
         self.tabDict = dict()
@@ -225,8 +228,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def onSettingsApply(self,settings):
         self.settings = settings
-        self.pulserHardware.updateSettings(self.settings.fpga)
-        self.DDSUi.updateSettings(self.settings.fpga)
+        if hasattr(self,'pulserHardware'): 
+            self.pulserHardware.updateSettings(self.settings.fpga)
+        if hasattr(self,'DDSUi'):
+            self.DDSUi.updateSettings(self.settings.fpga)
         #print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):
@@ -281,6 +286,10 @@ if __name__ == "__main__":
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
+
+#    import warnings
+#    with warnings.catch_warnings():
+#        warnings.simplefilter("error")
 
     project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
     

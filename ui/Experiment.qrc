@@ -23,6 +23,16 @@
     <file>icons/player_stop.png</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/go-down-4.png</file>
+    <file>icons/go-up-4.png</file>
+    <file>icons/office-chart-line.png</file>
+    <file>icons/window-close.png</file>
+    <file>icons/emblem-default.png</file>
+    <file>icons/emblem-important-4.png</file>
+    <file>icons/edit-delete-6.png</file>
+    <file>icons/edit-add.png</file>
+    <file>icons/edit_remove.png</file>
+    <file>icons/view-refresh-7.png</file>
     <file>icons/edit-delete-3.png</file>
     <file>icons/edit-shred.png</file>
     <file>icons/media-playback-pause-3.png</file>

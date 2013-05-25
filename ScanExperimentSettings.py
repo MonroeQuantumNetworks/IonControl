@@ -25,21 +25,24 @@ class Settings:
         self.evalName = 'Mean'
         
     def upgrade(self):
-        self.__dict__.setdefault( 'project', '')
         self.__dict__.setdefault( 'histogramBins', 50)
         self.__dict__.setdefault( 'integrate', False)
         self.__dict__.setdefault( 'counter', 0)
         self.__dict__.setdefault( 'evalName', 'Mean')
         self.__dict__.setdefault( 'sliceNo', 1)
         self.__dict__.setdefault( 'sliceTotal', 1)
+        self.__dict__.setdefault( 'errorBars', False)
 
 class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsBase ):
-    def __init__(self,config,parentname,parent=0):
-        ScanExperimentSettingsForm.__init__(self,parent)
-        ScanExperimentSettingsBase.__init__(self)
+    def __init__(self,config,parentname,parent=None):
+        ScanExperimentSettingsForm.__init__(self)
+        ScanExperimentSettingsBase.__init__(self,parent)
         self.config = config
         self.configname = 'ScanExperimentSettings.'+parentname
-        self._settings = self.config.get(self.configname,Settings())
+        try:
+            self._settings = self.config.get(self.configname,Settings())
+        except:
+            self._settings = Settings()
         self._settings.upgrade()
 
     @property
@@ -63,8 +66,10 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         self.sliceNoBox.valueChanged.connect( functools.partial(self.onValueChanged,'sliceNo') )
         self.sliceTotalBox.valueChanged.connect( functools.partial(self.onValueChanged,'sliceTotal') )
         self.algorithms = dict()
+        self.errorBarCheckBox.setChecked( self._settings.errorBars)
+        self.errorBarCheckBox.stateChanged.connect( self.onErrorBarsChanged )
         for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
-            self.algorithms[name] = algo()
+            self.algorithms[name] = algo(self.config)
             parameters = self.algorithms[name].parameters
             algoWidget = QtGui.QWidget(self.evalStackedWidget)
             gridLayout = QtGui.QGridLayout(algoWidget)
@@ -80,8 +85,11 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
             self.evalStackedWidget.addWidget( algoWidget )
         self.evalStackedWidget.setCurrentIndex( self.evalMethodCombo.findText(self._settings.evalName) )
 
+    def onErrorBarsChanged(self):
+        self._settings.errorBars = self.errorBarCheckBox.isChecked()
+
     def onParamValueChanged(self, algo, name, value):
-        self.algorithms[algo].parameters[name] = value
+        self.algorithms[algo].setParameter(name, value)
 
     def onIntegrateHistogramClicked(self):
         self._settings.integrate = self.integrateHistogramButton.isChecked()
@@ -93,6 +101,8 @@ class ScanExperimentSettings(ScanExperimentSettingsForm, ScanExperimentSettingsB
         setattr( self._settings, attr, value )
     
     def onClose(self):
+        if hasattr(self._settings,'evalAlgo'):
+            del self._settings.evalAlgo
         self.config[self.configname] = self._settings
         
     def onCurrentIndexChanged(self, name):

@@ -166,11 +166,11 @@ class PulseProgram:
                 var = self.variabledict[name]
                 address = var.address
                 var.value = value
+                if self.debug:
+                    print "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data))
                 var.data = self.convertParameter(value, var.encoding )
                 self.bytecode[address] = (self.bytecode[address][0], var.data )
                 self.variabledict[name] = var
-                if self.debug:
-                    print "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data))
             else:
                 print "variable", name, "not found in dictionary."
         return self.bytecode

@@ -7,6 +7,7 @@ Created on Sat Feb 16 16:56:57 2013
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import os.path
+import ProjectSelection
        
 VoltageFilesForm, VoltageFilesBase = PyQt4.uic.loadUiType(r'ui\VoltageFiles.ui')
 
@@ -31,13 +32,13 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
     loadGlobalAdjust = QtCore.pyqtSignal(str)
     loadLocalAdjust = QtCore.pyqtSignal(str)
     
-    def __init__(self,config,parent=0):
-        VoltageFilesForm.__init__(self,parent)
-        VoltageFilesBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageFilesForm.__init__(self)
+        VoltageFilesBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageFiles.Files'
         self.files = self.config.get(self.configname,Files())
-        self.lastDir = "."
+        self.lastDir = ProjectSelection.configDir()
 
     def setupUi(self, parent):
         VoltageFilesForm.setupUi(self,parent)

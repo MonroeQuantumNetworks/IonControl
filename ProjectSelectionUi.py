@@ -26,6 +26,7 @@ class ProjectSelectionUi(Form, Base):
         self.projectList.addItems( self.projects )
         self.createButton.clicked.connect( self.onCreateProject )
         self.defaultCheckBox.setChecked( bool(self.defaultProject) )
+        self.baseDirectoryEdit.setText( ProjectSelection.ProjectsBaseDir )
         if self.defaultProject:
             try:
                 index = self.projects.index(self.defaultProject)
@@ -57,12 +58,13 @@ def GetProjectSelection(atProgramStart=False):
         selectionui.warningLabel.setVisible( not atProgramStart)
         selectionui.exec_()
         project = selectionui.project
+        ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)
     ProjectSelection.setProject(project)
     return project, ProjectSelection.projectDir()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
-    print GetProjectSelection()
+    print GetProjectSelection(True)
     
     selectionui = ProjectSelectionUi()
     selectionui.setupUi(selectionui)

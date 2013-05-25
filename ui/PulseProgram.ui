@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1036</width>
-    <height>883</height>
+    <height>604</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,6 +48,9 @@
             <iconset resource="Experiment.qrc">
              <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
            </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -58,6 +61,9 @@
            <property name="icon">
             <iconset resource="Experiment.qrc">
              <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -70,6 +76,9 @@
             <iconset resource="Experiment.qrc">
              <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
            </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -80,6 +89,9 @@
            <property name="icon">
             <iconset resource="Experiment.qrc">
              <normaloff>:/openicon/icons/document-revert-5.png</normaloff>:/openicon/icons/document-revert-5.png</iconset>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

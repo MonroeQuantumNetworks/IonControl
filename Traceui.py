@@ -13,6 +13,7 @@ import numpy
 from PyQt4 import QtGui
 import Trace
 import os.path
+import ProjectSelection
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
@@ -87,7 +88,11 @@ class PlottedTrace(object):
         if hasattr(self,'curve') and self.curve is not None:
             self.curve.setData( self.trace.x, self.trace.y )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
-            self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
+            if hasattr(self.trace,'height'):
+                self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
+            else:
+                self.errorBarItem.setOpts(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom)
+                
 
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\Traceui.ui')
@@ -99,7 +104,7 @@ def unique(seq):
 
 class Settings:
     def __init__(self):
-        self.lastDir = os.path.expanduser('~')
+        self.lastDir = ProjectSelection.configDir()
         self.plotstyle = 0
 
 class Traceui(TraceuiForm, TraceuiBase):
@@ -144,7 +149,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]),reverse=True):
             if self.TraceList[index].curvePen!=0:
                 self.TraceList[index].plot(0)
-            self.TraceList[index].deleteFile()
+            self.TraceList[index].trace.deleteFile()
             self.model.dropTrace(index)
         
     def onClear(self):

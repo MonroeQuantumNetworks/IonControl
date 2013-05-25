@@ -5,6 +5,40 @@ import DAQmxUtility as dutil
 import ctypes
 import numpy
 
+
+class CallbackTask(Task,object):
+    def __init__(self):
+        Task.__init__(self)
+        self._onDone = None
+    
+    @property
+    def onDone(self):
+        return self._onDone
+        
+    @onDone.setter
+    def onDone(self,func):
+        self._onDone = func
+        if self._onDone:
+            print "Registering Callback"
+            self.AutoRegisterDoneEvent(0)
+        else:
+            print "Unregistering Callback"
+            self.RegisterDoneEvent(options,None,None)
+
+        
+    def EveryNCallback(self):
+        read = int32()
+        self.ReadAnalogF64(1000,10.0,DAQmx_Val_GroupByScanNumber,self.data,1000,byref(read),None)
+        self.a.extend(self.data.tolist())
+        print self.data[0]
+        
+    def DoneCallback(self, status):
+        if self.onDone:
+            self.onDone(status)
+        print "PyDAQmx Callback Status",status.value
+        return 0 # The function should return an integer
+
+
 ## This class will generate analog outputs using pyDAQmx.
 class AnalogOutput(object):
    
@@ -15,7 +49,7 @@ class AnalogOutput(object):
     def __init__(self):
 
         ## The DAQmx task reference.
-        self.taskRef = Task()
+        self.taskRef = CallbackTask()
 
         ## This is a boolean that is true when the DAQmx task has been initialized.
         self.initialized = False
@@ -304,7 +338,10 @@ class AnalogOutput(object):
         #if (self.estAcqTime >= 0.01 and self.mode != dutil.Mode.Static):
         if self.mode != dutil.Mode.Static:
             self.status = self.taskRef.WaitUntilTaskDone(float64(self.estAcqTime + 0.1))
-    
+ 
+    def setOnDoneCallback(self, callbackFunction):
+        self.taskRef.onDone = callbackFunction
+   
     ## This function stops the analog output generation.
     #  @param self The object pointer.
     def stop(self):

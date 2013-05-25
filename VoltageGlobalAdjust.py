@@ -10,6 +10,7 @@ import functools
 from MagnitudeSpinBox import MagnitudeSpinBox
 import magnitude
 from modules import configshelve
+import ProjectSelection
        
 VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')
 
@@ -22,9 +23,9 @@ class Settings:
 class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
     
-    def __init__(self,config,parent=0):
-        VoltageGlobalAdjustForm.__init__(self,parent)
-        VoltageGlobalAdjustBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageGlobalAdjustForm.__init__(self)
+        VoltageGlobalAdjustBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageGlobalAdjust.Settings'
         self.settings = self.config.get(self.configname,Settings())
@@ -33,7 +34,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.adjust["__GAIN__"] = 1.0
         self.myLabelList = list()
         self.myBoxList = list()
-        self.adjustHistoryShelve = configshelve.configshelve('VoltageGlobalAdjust')
+        self.adjustHistoryShelve = configshelve.configshelve('VoltageGlobalAdjust', ProjectSelection.guiConfigDir())
         self.adjustHistoryShelve.open()
         self.adjustHistoryName = None
         self.spacerItem = None

@@ -21,9 +21,9 @@ class Settings:
     pass
 
 class VoltageControl(VoltageControlForm, VoltageControlBase ):    
-    def __init__(self,config,parent=0):
-        VoltageControlForm.__init__(self,parent)
-        VoltageControlBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageControlForm.__init__(self)
+        VoltageControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageControl.Settings'
         self.settings = self.config.get(self.configname,Settings())
@@ -60,10 +60,12 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
         except:
             print "cannot apply voltages. Ignored for now."
+        self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
+        self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.onShuttlingDone )
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
-    
+                     
     def onLoadGlobalAdjust(self, path):
         #print "onLoadGlobalAdjust", path
         self.voltageBlender.loadGlobalAdjust(str(path) )

@@ -26,9 +26,9 @@ class Settings:
 
 class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     OpStates = enum.enum('idle','running','paused')
-    def __init__(self,config,pulserHardware,parent=0):
-        DedicatedCountersForm.__init__(self,parent)
-        DedicatedCountersBase.__init__(self)
+    def __init__(self,config,pulserHardware,parent=None):
+        DedicatedCountersForm.__init__(self)
+        DedicatedCountersBase.__init__(self,parent)
         self.dataSlotConnected = False
         self.config = config
         self.settings = self.config.get('DedicatedCounter.Settings',Settings())

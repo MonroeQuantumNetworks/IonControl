@@ -8,11 +8,22 @@ Created on Fri May 10 21:02:42 2013
 import os.path
 import __main__
 from modules.configshelve import configshelve
+from modules import DataDirectory
 
 ProjectsBaseDir = os.path.expanduser("~public\\Documents\\experiments")
 Project = None
 DefaultProject = None
 DefaultProjectCached = False
+
+class ProjectException(Exception):
+    pass
+
+with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
+    DefaultProject = config.get('DefaultProject')
+    ProjectsBaseDir = config.get('ProjectBaseDir',ProjectsBaseDir)
+    DataDirectory.DataDirectoryBase = ProjectsBaseDir
+DefaultProjectCached = True
+
 
 def checkProjectsDir():
     if not os.path.exists(ProjectsBaseDir):
@@ -53,8 +64,31 @@ def projectDir():
     return os.path.join(ProjectsBaseDir, Project) if Project else None
     
 def configDir():
-    configDir = os.path.join(ProjectsBaseDir, Project, 'config') if Project else None
+    if not Project:
+        raise ProjectException("no Project set")
+    configDir = os.path.join(ProjectsBaseDir, Project, 'config') 
     if not os.path.exists(configDir):
         os.makedirs(configDir)
     return configDir
+
+def guiConfigDir():
+    if not Project:
+        raise ProjectException("no Project set")
+    configDir = os.path.join(ProjectsBaseDir, Project, '.gui-config') 
+    if not os.path.exists(configDir):
+        os.makedirs(configDir)
+    return configDir 
+   
+def getBaseDir():
+    return ProjectsBaseDir
+    
+def setProjectBaseDir(name,atStartup=False):
+    with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
+        config['ProjectBaseDir'] = name
+    if atStartup:
+        global ProjectsBaseDir
+        ProjectsBaseDir = name
+        DataDirectory.DataDirectoryBase = name
+    
+    
     

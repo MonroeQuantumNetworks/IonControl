@@ -13,12 +13,15 @@ import traceback
 
 class Data:
     def __init__(self):
-        self.count = [list()]*8
-        self.timestamp = [list()]*8
+        self.count = [list() for i in range(16)]
+        self.timestamp = [list() for i in range(8)]
         self.timestampZero = [0]*8
         self.scanvalue = None
         self.final = False
         self.other = list()
+        
+    def __str__(self):
+        return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
 
 class DedicatedData:
     def __init__(self):
@@ -117,9 +120,9 @@ class PipeReader(QtCore.QThread):
                                 key = token >> 28
                                 channel = (token >>24) & 0xf
                                 value = token & 0xffffff
+                                #print hex(token)
                                 if key==1:   # count
-                                    self.data.count[channel].append(value)
-                                    #print "append", channel
+                                    (self.data.count[channel]).append(value)
                                 elif key==2:  # timestamp
                                     self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
                                 elif key==3:  # timestamp gate start

@@ -105,3 +105,5 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             myvariables[name] = var.value
         return myvariables
  
+    def getVariableValue(self,name):
+        return self.variabledict.get(name).value

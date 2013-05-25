@@ -25,7 +25,7 @@ class SettingsDialogConfig:
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def __init__(self,config,parent=0):
         SettingsDialogBase.__init__(self,parent)    
-        SettingsDialogForm.__init__(self,parent)
+        SettingsDialogForm.__init__(self)
         self.config = config
         self.deviceMap = dict()
         self.settings = Settings()
@@ -51,6 +51,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
                 self.onUploadBitfile()
+        else:
+            self.exec_()
                 
     def onAutoUploadChanged(self, state):
         self.configSettings.autoUpload = state==QtCore.Qt.Checked

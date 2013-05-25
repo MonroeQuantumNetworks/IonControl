@@ -24,6 +24,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     def __init__(self,parent=0):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.expression = Expression.Expression()
+        self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         self.editingFinished.connect( self.onEditingFinished )
         
     def validate(self, inputstring, pos):
@@ -63,7 +64,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         print "interpret text"
         
     def fixup(self,inputstring):
-        print inputstring
+        print "fixup" , inputstring
         
     def stepEnabled(self):
         #print "stepEnabled"
@@ -71,7 +72,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def value(self):
         value = self.expression.evaluate( str( self.lineEdit().text() ))
-        print value
+        #print value
         return value
         
     def setText(self,string):

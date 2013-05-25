@@ -14,6 +14,8 @@ import CounterTableModel
 import os.path
 from modules import configshelve
 from modules import dictutil
+from PulseProgramSourceEdit import PulseProgramSourceEdit
+import ProjectSelection
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -55,7 +57,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configname = 'PulseProgramUi.'+self.experimentname
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         self.configParams.upgrade()
-        self.datashelf = configshelve.configshelve(self.configname)
+        self.datashelf = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
         self.datashelf.open()
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
@@ -87,7 +89,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
     
     def onLoad(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file'))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
         if path!="":
             self.loadFile(path)
             
@@ -136,7 +138,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.sourceTabs.clear()
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
-            textEdit = QtGui.QTextEdit()
+            textEdit = PulseProgramSourceEdit()
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
@@ -176,6 +178,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             substitutes.update( model.getVariables() )
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
+        
+    def getVariableValue(self,name):
+        return self.variableTableModel.getVariableValue(name)
         
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:

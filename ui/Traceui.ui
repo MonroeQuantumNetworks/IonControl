@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>312</width>
     <height>300</height>
    </rect>
   </property>
@@ -17,7 +17,25 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="clearButton">
+      <widget class="QToolButton" name="clearButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
        <property name="toolTip">
         <string>remove plots</string>
        </property>
@@ -25,13 +43,28 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="plotButton">
        <property name="minimumSize">
         <size>
-         <width>28</width>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
          <height>24</height>
         </size>
        </property>
@@ -43,12 +76,33 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/edit-add-2.png</normaloff>:/openicon/icons/edit-add-2.png</iconset>
+         <normaloff>:/openicon/icons/office-chart-line.png</normaloff>:/openicon/icons/office-chart-line.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="saveButton">
+      <widget class="QToolButton" name="saveButton">
+       <property name="minimumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
        <property name="toolTip">
         <string>save traces</string>
        </property>
@@ -59,13 +113,28 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="openFileButton">
        <property name="minimumSize">
         <size>
-         <width>28</width>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
          <height>24</height>
         </size>
        </property>
@@ -79,13 +148,34 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
        <property name="shortcut">
         <string>Ctrl+S</string>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="removeButton">
+      <widget class="QToolButton" name="removeButton">
+       <property name="minimumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
        <property name="toolTip">
         <string>Remove trace from list</string>
        </property>
@@ -93,13 +183,28 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/remove.png</normaloff>:/kde/icons/remove.png</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="shredderButton">
        <property name="minimumSize">
         <size>
-         <width>28</width>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
          <height>24</height>
         </size>
        </property>
@@ -112,6 +217,15 @@
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/edit-shred.png</normaloff>:/openicon/icons/edit-shred.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -129,10 +243,31 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonApplyStyle">
+      <widget class="QToolButton" name="pushButtonApplyStyle">
+       <property name="minimumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/colorize.png</normaloff>:/kde/icons/colorize.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

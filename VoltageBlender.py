@@ -10,19 +10,25 @@ try:
     from Chassis.WaveformChassis import WaveformChassis
     from Chassis.DAQmxUtility import Mode
     import PyDAQmx.DAQmxFunctions
+
     HardwareDriverLoaded = True
 except ImportError as e:
     print "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e)
     HardwareDriverLoaded = False
-    
+
+from Chassis import DAQmxUtility     
 import math
 import numpy
 from PyQt4 import QtCore
 import socket
+import ProjectSelection
+import os.path
+from modules import MyException
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
     dataError = QtCore.pyqtSignal(object)
+    shuttlingOnLine = QtCore.pyqtSignal(float)
     
     def __init__(self):
         super(VoltageBlender,self).__init__()
@@ -30,7 +36,13 @@ class VoltageBlender(QtCore.QObject):
             self.chassis = WaveformChassis()
             self.chassis.mode = Mode.Static
             self.hostname = socket.gethostname()
-            self.chassis.initFromFile("Chassis\\config\\"+self.hostname+'.cfg')
+            ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
+            if not os.path.exists( ConfigFilename):
+                raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
+            self.chassis.initFromFile( ConfigFilename )
+            self.DoLine = self.chassis.createFalseDoBuffer()
+            self.DoLine[0] = 1
+            print self.DoLine
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = dict()  # names of the lines presented as possible adjusts
@@ -98,17 +110,17 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
-        floor = int(math.floor(lineno))
-        ceil = int(math.ceil(lineno))
-        line = self.blendLines(floor,ceil,lineno-floor,lineGain)
+        line = self.blendLines(lineno,lineGain)
         self.lineGain = lineGain
         self.globalGain = globalGain
         self.lineno = lineno
         line = self.adjustLine( line )
+        line *= self.globalGain
         #print "writeAoBuffer", line
         try:
             if HardwareDriverLoaded:
                 self.chassis.writeAoBuffer(line)
+                self.chassis.writeDoBuffer(self.DoLine)
             else:
                 print "Hardware Driver not loaded, cannot write voltages"
             self.outputVoltage = line
@@ -119,6 +131,42 @@ class VoltageBlender(QtCore.QObject):
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
             
+    def shuttle(self, definition, cont):
+        if True:
+            for edge in definition:
+                for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
+                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
+                    self.applyLine(line,edge.lineGain,edge.globalGain)
+                    print "shuttling applied line", line
+            self.shuttlingOnLine.emit(line)
+        else:  # this stuff does not work yet
+            print "Starting finite shuttling"
+            outputmatrix = list()
+            globaladjust = [0]*len(self.lines[0])
+            self.adjustLine(globaladjust)
+            for edge in definition:
+                for lineno in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
+                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
+                    outputmatrix.append( (self.blendLines(lineno,edge.lineGain)+globaladjust)*self.globalGain )
+            try:
+                if HardwareDriverLoaded:
+                    self.chassis.mode = DAQmxUtility.Mode.Finite
+                    self.chassis.writeAoBuffer( (numpy.array(outputmatrix)).flatten('F') )
+                    self.chassis.setOnDoneCallback( self.onChassisDone )
+                    self.chassis.start()
+                    self.shuttleTo = lineno
+                else:
+                    print "Hardware Driver not loaded, cannot write voltages"
+            except PyDAQmx.DAQmxFunctions.DAQError as e:
+                print e
+            
+    def onChassisDone( self, generator, value ):
+        print "onChassisDone", generator, value
+        self.chassis.mode = DAQmxUtility.Mode.Static
+        self.chassis.setOnDoneCallback( None )
+        self.outputVoltage = self.shuttleTo
+        self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
+            
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
         for name, value in self.adjust.iteritems():
@@ -127,10 +175,13 @@ class VoltageBlender(QtCore.QObject):
         if "__GAIN__" in self.adjust:
             offset *= self.adjust["__GAIN__"]
         #print "adjustLine", self.globalGain, self.adjust
-        return (line+offset)*self.globalGain
+        return (line+offset)
             
-    def blendLines(self,left,right,convexc,lineGain):
+    def blendLines(self,lineno,lineGain):
         #print "blendlines", left, right, convexc, lineGain
+        left = int(math.floor(lineno))
+        right = int(math.ceil(lineno))
+        convexc = lineno-left
         return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
             
     def close(self):
