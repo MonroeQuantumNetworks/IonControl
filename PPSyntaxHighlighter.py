@@ -16,19 +16,13 @@ class PPHighlighter( QSyntaxHighlighter ):
       QSyntaxHighlighter.__init__( self, parent )
       self.parent = parent
       keyword = QTextCharFormat()
-      reservedClasses = QTextCharFormat()
-      assignmentOperator = QTextCharFormat()
-      delimiter = QTextCharFormat()
-      specialConstant = QTextCharFormat()
-      boolean = QTextCharFormat()
-      number = QTextCharFormat()
       comment = QTextCharFormat()
-      string = QTextCharFormat()
-      singleQuotedString = QTextCharFormat()
+      define = QTextCharFormat()
 
       self.highlightingRules = []
 
-      # keyword
+
+      # FPGA commands
       brush = QBrush( Qt.darkBlue, Qt.SolidPattern )
       keyword.setForeground( brush )
       keyword.setFontWeight( QFont.Bold )
@@ -38,57 +32,11 @@ class PPHighlighter( QSyntaxHighlighter ):
         rule = HighlightingRule( pattern, keyword )
         self.highlightingRules.append( rule )
 
-      # reservedClasses
-      reservedClasses.setForeground( brush )
-      reservedClasses.setFontWeight( QFont.Bold )
-      keywords = QStringList( [ "array", "character", "complex", 
-                                "data.frame", "double", "factor", 
-                                "function", "integer", "list", 
-                                "logical", "matrix", "numeric", 
-                                "vector" ] )
-      for word in keywords:
-        pattern = QRegExp("\\b" + word + "\\b")
-        rule = HighlightingRule( pattern, reservedClasses )
-        self.highlightingRules.append( rule )
-
-
-      # assignmentOperator
-      brush = QBrush( Qt.yellow, Qt.SolidPattern )
-      pattern = QRegExp( "(<){1,2}-" )
-      assignmentOperator.setForeground( brush )
-      assignmentOperator.setFontWeight( QFont.Bold )
-      rule = HighlightingRule( pattern, assignmentOperator )
-      self.highlightingRules.append( rule )
-      
-      # delimiter
-      pattern = QRegExp( "[\)\(]+|[\{\}]+|[][]+" )
-      delimiter.setForeground( brush )
-      delimiter.setFontWeight( QFont.Bold )
-      rule = HighlightingRule( pattern, delimiter )
-      self.highlightingRules.append( rule )
-
-      # specialConstant
-      brush = QBrush( Qt.blue, Qt.SolidPattern )
-      specialConstant.setForeground( brush )
-      keywords = QStringList( [ "Inf", "NA", "NaN", "NULL" ] )
-      for word in keywords:
-        pattern = QRegExp("\\b" + word + "\\b")
-        rule = HighlightingRule( pattern, specialConstant )
-        self.highlightingRules.append( rule )
-
-      # boolean
-      boolean.setForeground( brush )
-      keywords = QStringList( [ "TRUE", "FALSE" ] )
-      for word in keywords:
-        pattern = QRegExp("\\b" + word + "\\b")
-        rule = HighlightingRule( pattern, boolean )
-        self.highlightingRules.append( rule )
-
-      # number
-      pattern = QRegExp( "[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?" )
-      pattern.setMinimal( True )
-      number.setForeground( brush )
-      rule = HighlightingRule( pattern, number )
+      # define and include
+      brush = QBrush( Qt.darkMagenta, Qt.SolidPattern )
+      pattern = QRegExp( "#define [^\n]*" )
+      define.setForeground( brush )
+      rule = HighlightingRule( pattern, define )
       self.highlightingRules.append( rule )
 
       # comment
@@ -96,21 +44,6 @@ class PPHighlighter( QSyntaxHighlighter ):
       pattern = QRegExp( "#(?!(define)|(include))[^\n]*" )
       comment.setForeground( brush )
       rule = HighlightingRule( pattern, comment )
-      self.highlightingRules.append( rule )
-
-      # string
-      brush = QBrush( Qt.red, Qt.SolidPattern )
-      pattern = QRegExp( "\".*\"" )
-      pattern.setMinimal( True )
-      string.setForeground( brush )
-      rule = HighlightingRule( pattern, string )
-      self.highlightingRules.append( rule )
-      
-      # singleQuotedString
-      pattern = QRegExp( "\'.*\'" )
-      pattern.setMinimal( True )
-      singleQuotedString.setForeground( brush )
-      rule = HighlightingRule( pattern, singleQuotedString )
       self.highlightingRules.append( rule )
 
     def highlightBlock( self, text ):
