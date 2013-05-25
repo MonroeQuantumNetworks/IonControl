@@ -32,6 +32,7 @@ class Trace(object):
         self._filename = None
         self.filenameCallback = None   # function to result in filename for save
         self.dataChangedCallback = None # used to update the gui table
+        self.rawdata = None
         
     @property
     def filename(self):        
@@ -73,6 +74,8 @@ class Trace(object):
             print >>outfile, self.header
 
     def saveTrace(self,filename):
+        if self.rawdata:
+            self.vars.rawdata = self.rawdata.save()
         if hasattr(self,'fitfunction'):
             print 'fitfunction saved'
             self.vars.fitfunction = self.fitfunction
