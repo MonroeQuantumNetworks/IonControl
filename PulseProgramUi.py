@@ -14,6 +14,7 @@ import CounterTableModel
 import os.path
 from modules import configshelve
 from modules import dictutil
+from PulseProgramSourceEdit import PulseProgramSourceEdit
 import ProjectSelection
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
@@ -137,7 +138,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.sourceTabs.clear()
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
-            textEdit = QtGui.QTextEdit()
+            textEdit = PulseProgramSourceEdit()
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )

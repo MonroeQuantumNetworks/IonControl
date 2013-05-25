@@ -91,6 +91,10 @@
         <property name="text">
          <string>Next</string>
         </property>
+        <property name="icon">
+         <iconset resource="Experiment.qrc">
+          <normaloff>:/openicon/icons/go-down-4.png</normaloff>:/openicon/icons/go-down-4.png</iconset>
+        </property>
         <property name="toolButtonStyle">
          <enum>Qt::ToolButtonTextBesideIcon</enum>
         </property>
@@ -109,6 +113,10 @@
         </property>
         <property name="text">
          <string>Previous</string>
+        </property>
+        <property name="icon">
+         <iconset resource="Experiment.qrc">
+          <normaloff>:/openicon/icons/go-up-4.png</normaloff>:/openicon/icons/go-up-4.png</iconset>
         </property>
         <property name="toolButtonStyle">
          <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -162,22 +170,6 @@
   <include location="Experiment.qrc"/>
  </resources>
  <connections>
-  <connection>
-   <sender>findCloseButton</sender>
-   <signal>clicked()</signal>
-   <receiver>findWidgetFrame</receiver>
-   <slot>hide()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>11</x>
-     <y>287</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>428</x>
-     <y>287</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>actionFind</sender>
    <signal>triggered()</signal>
