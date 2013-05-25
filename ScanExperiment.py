@@ -34,6 +34,7 @@ import functools
 from modules import stringutilit
 from datetime import datetime
 from ui import StyleSheets
+import RawData
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -311,8 +312,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 (settings.integrate == self.timestampSettingsWidget.integrationMode.IntegrateRun and not self.timestampsNewRun) ) :
             self.currentTimestampTrace.y += y
             self.plottedTimestampTrace.replot()
+            if self.currentTimestampTrace.rawdata:
+                self.currentTimestampTrace.rawdata.addInt(data.timestamp[settings.channel])
         else:    
             self.currentTimestampTrace = Trace.Trace()
+            if settings.saveRawData:
+                self.currentTimestampTrace.rawdata = RawData()
+                self.currentTimestampTrace.rawdata.addInt(data.timestamp[settings.channel])
             self.currentTimestampTrace.x = x
             self.currentTimestampTrace.y = y
             self.currentTimestampTrace.name = self.scan.name

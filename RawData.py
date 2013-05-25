@@ -20,7 +20,7 @@ class RawData(object):
     
     def _add(self,data,datatype):
         if not self.datafile:
-            self.datafilename, components = DataDirectory.DataDirectory().sequencefile( "RawData_temp.bin" )
+            self.datafilename, components = DataDirectory.DataDirectory().sequencefile( "RawData.bin" )
             self.datafile = open( self.datafilename, 'wb' )
         data_array = array(datatype, data)
         self.hash.update(data_array)
@@ -32,8 +32,8 @@ class RawData(object):
     def addInt(self,data):
         self._add(data,'L')
     
-    def save(self,name):
-        if not self.filenametemplate:   # we are currently on a temp file
+    def save(self,name=None):
+        if name and not self.filenametemplate:   # we are currently on a temp file
             self.datafile.close()
             newdatafilename, components = DataDirectory.DataDirectory().sequencefile( name )
             shutil.move( self.datafilename, newdatafilename )
@@ -60,5 +60,15 @@ if __name__=="__main__":
     rd.addFloat( range(200) )
     print rd.save("Peter.txt")
     print rd.close()
+    
+    filename, components = DataDirectory.DataDirectory().sequencefile( "TestTrace.txt" )    
+    
+    import Trace
+    tr = Trace.Trace()
+    tr.x = range(200)
+    tr.y = range(200)
+    tr.rawdata = RawData()
+    tr.rawdata.addInt( range(200) )
+    tr.saveTrace(filename)
     
     
