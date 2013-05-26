@@ -103,9 +103,11 @@ def fitFunctionFactory(text):
     for index, arg in enumerate(components[2:]):
         value = float(arg.split('=')[1].strip())
         function.parameters[index] = value
-    if len(parts)>1:
+    print parts
+    if len(parts)>1 and len(parts[1])>0:
         components = parts[1].split(',')
         for item in components:
+            print item
             name, value = item.split('=')
             print "'{0}' '{1}' '{2}'".format(item,name.strip(),value.strip())
             setattr(function, name.strip(), MagnitudeParser.parse(value.strip()))
