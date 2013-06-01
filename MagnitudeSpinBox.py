@@ -21,7 +21,7 @@ api2 = sip.getapi("QString")==2
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
     
-    def __init__(self,parent=0):
+    def __init__(self,parent=None):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.expression = Expression.Expression()
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
