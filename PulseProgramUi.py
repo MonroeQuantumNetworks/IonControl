@@ -139,6 +139,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
             textEdit = PulseProgramSourceEdit()
+            textEdit.setupUi(textEdit)
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
