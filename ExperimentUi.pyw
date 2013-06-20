@@ -166,6 +166,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
         self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
+        self.setWindowTitle("Experimental Control ({0})".format(project) )
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()
