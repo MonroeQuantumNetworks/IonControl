@@ -88,6 +88,13 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
             edge.goButton.clicked.connect( functools.partial(self.onShuttleEdge, index) )
             self.shuttlingEdges.append(edge)
             self.verticalLayout.addWidget(edge)
+            
+#        AONumberVoltageAction = QtGui.QAction( "AO Number/10 voltage")
+#        AONumberVoltageAction.triggered.connect( self.applyAONumberVoltage )
+#        self.lineLabel.addAction( AONumberVoltageAction )
+#        DSubNumberVoltageAction = QtGui.QAction( "DSub Number/10 voltage")
+#        DSubNumberVoltageAction.triggered.connect( self.applyDSubNumberVoltage )
+#        self.lineLabel.addAction( DSubNumberVoltageAction )
 
     def onShuttleSequence(self, cont=False):
         print "ShuttleSequence"

@@ -72,6 +72,7 @@ class ExternalParameterBase:
         """
         update the parameter, called by the signal of pyqtgraph parametertree
         """
+        print "ExternalParameterBase.update"
         for param, change, data in changes:
             print self, "update", param.name(), data
             setattr( self, param.name(), data)
@@ -145,6 +146,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
         self.stepsize = 1000
+        self.value = self.config.get('LaserSynthesizerScan.'+self.name+'.frequency',0)
     
     def setValue(self,value):
         """
@@ -154,7 +156,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
             myvalue = round(value.ounit("kHz").toval())
         else:
             myvalue = round(value)
-        if abs(myvalue-self.value)<self.stepsize:
+        if abs(myvalue-self.value)<self.stepsize or self.jump:
             self._setValue_( myvalue )
             return True
         else:
@@ -162,15 +164,20 @@ class LaserSynthesizerScan(ExternalParameterBase):
             return False
             
     def _setValue_(self, v):
-        command = "P{0:0>8.0f}Z0K0L0O1".format(v)
+        command = "P{0:0>8.0f}Z0K1L6O1".format(v)
         self.synthesizer.write(command)#set voltage
         self.value = v
         
     def currentValue(self):
-        return self.value/1000.
+        return magnitude.mg(self.value/1000.,"MHz")
     
     def currentExternalValue(self):
         return self.value/1000.
+        
+    def close(self):
+        ExternalParameterBase.close(self)
+        self.config['LaserSynthesizerScan.'+self.name+'.frequency'] = self.value
+        
 
     
 class LaserVCOScan(ExternalParameterBase):
