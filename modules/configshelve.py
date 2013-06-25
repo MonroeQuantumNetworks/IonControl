@@ -29,6 +29,7 @@ class configshelve:
     def __exit__(self, type, value, tb):
         self.config.close()
         self.isOpen = False
+        self.backup(self.configfile)
         
     def __iter__(self):
         return self.config.__iter__()
@@ -58,7 +59,7 @@ class configshelve:
         self.backup(self.configfile)
         
     def backup(self,name):
-        for index in [8,7,6,5,4,3,2,1]:
+        for index in [8,7,6,5,4,3,2,1,0]:
             oldName = name+".bak{0}".format(index)
             newName = name+".bak{0}".format(index+1)
             if os.path.exists(oldName):
