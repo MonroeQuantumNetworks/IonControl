@@ -7,6 +7,7 @@ Created on Wed Mar 20 13:06:13 2013
 
 from PyQt4 import QtCore, QtGui
 import operator
+import sys
 
 class VoltageTableModel(QtCore.QAbstractTableModel):
     def __init__(self, voltageBlender, parent=None, *args): 
@@ -42,12 +43,20 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
                 self.orderLookup = [operator.itemgetter(0)(t) for t in d]
             self.dataChanged.emit(self.index(0,0),self.index(len(self.blender.electrodes) -1,3))
         
+    def electrodeIndex(self,name):  
+        try:
+            index = self.blender.electrodes.index(name)
+        except Exception as e:
+            raise type(e), type(e)(e.message + 
+                " for x='{0}'".format(name)), sys.exc_info()[2]
+        return index
+        
     def orderAsVoltageFile(self):
         if self.blender.electrodes:
             self.orderLookup = list()
             allindices = [False]*len(self.blender.electrodes)
             for name in self.blender.tableHeader:
-                index = self.blender.electrodes.index(name)
+                index = self.electrodeIndex(name)
                 self.orderLookup.append( index )
                 allindices[index] = True
             for index, included in enumerate(allindices):

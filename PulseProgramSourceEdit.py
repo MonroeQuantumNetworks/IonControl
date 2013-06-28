@@ -7,6 +7,7 @@ Created on Fri May 24 17:32:35 2013
 
 from PyQt4 import uic, QtCore, QtGui
 import functools
+from PPSyntaxHighlighter import PPHighlighter
 
 Form, Base = uic.loadUiType(r'ui\PulseProgramEdit.ui')
 
@@ -27,6 +28,7 @@ class PulseProgramSourceEdit(Form, Base):
         self.findMatchCaseCheckBox.stateChanged.connect( self.onFindFlagsChanged )
         self.findNextButton.clicked.connect( self.onFind )
         self.findPreviousButton.clicked.connect( functools.partial(self.onFind , True))
+        self.highlighter = PPHighlighter( self.textEdit, "Classic" )
 
     def onFindFlagsChanged(self):
         self.findFlags = QtGui.QTextDocument.FindCaseSensitively if self.findMatchCaseCheckBox.isChecked() else QtGui.QTextDocument.FindFlag()
