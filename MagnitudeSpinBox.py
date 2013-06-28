@@ -84,6 +84,13 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     def onEditingFinished(self):
         self.valueChanged.emit( self.value() )
         
+    def sizeHint(self):
+        fontMetrics = QtGui.QFontMetrics( self.font() )
+        size = fontMetrics.boundingRect(self.lineEdit().text()).size()
+        size += QtCore.QSize( 8,0)
+        return size
+        
+        
 if __name__ == "__main__":
     debug = True
     TestWidget, TestBase = PyQt4.uic.loadUiType(r'ui\MagnitudeSpinBoxTest.ui')
