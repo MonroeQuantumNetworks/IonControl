@@ -94,7 +94,7 @@ class Variable:
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
-              'AD9912_PHASE': (360/2**14, '', Dimensions.dimensionless, 0xfff),
+              'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0xfff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
@@ -300,7 +300,7 @@ class PulseProgram:
                         self.code.append((len(self.code)+addr_offset, op, data, label, sourcename))
                     else:
                         print "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno)
-                        raise ppexception("Error parsing ops.")
+                        raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno))
         self.appendVariableCode()
         return self.code
 
