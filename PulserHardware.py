@@ -110,7 +110,7 @@ class PipeReader(QtCore.QThread):
                                     #self.exiting = True
                                     self.data.final = True
                                     self.pulserHardware.dataAvailable.emit( self.data )
-                                    print "End of Run maker received"
+                                    print "End of Run marker received"
                                     self.data = Data()
                                 elif token == 0xff000000:
                                     self.timestampOffset += 1<<28

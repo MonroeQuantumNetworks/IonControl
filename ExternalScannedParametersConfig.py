@@ -6,7 +6,7 @@ Created on Fri Apr 12 20:15:47 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 from pyqtgraph.parametertree import Parameter, ParameterTree
 
@@ -33,9 +33,10 @@ class ConfigUi(ConfigForm,ConfigBase):
                 self.treeWidget = ParameterTree()
                 self.treeWidget.setParameters(self.param, showTop=False)
                 self.verticalLayout.insertWidget(2,self.treeWidget)
-                self.param.sigTreeStateChanged.connect(parameter.update)
+                self.param.sigTreeStateChanged.connect(parameter.update, QtCore.Qt.UniqueConnection)
             else:
                 self.treeWidget.setVisible(True)
+                self.param.sigTreeStateChanged.connect(parameter.update, QtCore.Qt.UniqueConnection)
         else:
             if self.treeWidget:
                 self.treeWidget.setVisible(False)
