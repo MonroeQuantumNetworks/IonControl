@@ -26,6 +26,8 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.expression = Expression.Expression()
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         self.editingFinished.connect( self.onEditingFinished )
+        self.lineEdit().setDragEnabled(True)
+        self.lineEdit().setAcceptDrops(True)
         
     def validate(self, inputstring, pos):
         #print "validate"
@@ -89,7 +91,32 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         size = fontMetrics.boundingRect(self.lineEdit().text()).size()
         size += QtCore.QSize( 8,0)
         return size
-        
+ 
+#    def makeDrag(self):
+#        print "makeDrag"
+#        dr = QtGui.QDrag(self)
+#        # The data to be transferred by the drag and drop operation is contained in a QMimeData object
+#        data = QtCore.QMimeData()
+#        data.setText("This is a test")
+#        # Assign ownership of the QMimeData object to the QDrag object.
+#        dr.setMimeData(data)
+#        # Start the drag and drop operation
+#        dr.start()
+# 
+#    def dragMoveEvent(self, de):
+#        print "dragMove"
+#        # The event needs to be accepted here
+#        de.accept()
+#
+#    def dragEnterEvent(self, event):
+#        print "dragEnterEvent"
+#        # Set the drop action to be the proposed action.
+#        event.acceptProposedAction()
+#
+#    def dropEvent(de):
+#        # Unpack dropped data and handle it the way you want
+#        print "Contents: {0}".format(de.mimeData().text().toLatin1().data())
+       
         
 if __name__ == "__main__":
     debug = True
