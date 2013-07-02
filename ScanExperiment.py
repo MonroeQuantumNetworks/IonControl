@@ -35,6 +35,7 @@ from modules import stringutilit
 from datetime import datetime
 from ui import StyleSheets
 import RawData
+from modules import MagnitudeUtilit
 import magnitude
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
@@ -231,8 +232,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
         else:
-            xobj = self.scan.list[self.currentIndex]
-            x = xobj.ounit(self.scan.start.out_unit).toval() if isinstance(xobj,magnitude.Magnitude) else xobj
+            x = MagnitudeUtilit.valueAs( self.scan.list[self.currentIndex], self.scan.start )
         if mean is not None:
             self.updateMainGraph(x, mean, error)
         self.currentIndex += 1
@@ -269,7 +269,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             if not self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
-                self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
+                self.graphicsView.setXRange( MagnitudeUtilit.value(self.scan.start), 
+                                             MagnitudeUtilit.valueAs(self.scan.stop, self.scan.start) )
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
