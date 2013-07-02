@@ -13,18 +13,53 @@ class CosFit(FitFunctionBase):
     name = "Cos"
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  'A*cos(2*pi*k*x+theta)'
-        self.parameterNames = [ 'A', 'k', 'theta' ]
-        self.parameters = [1,1,0]
-        self.startParameters = [1,1,0]
+        self.functionString =  'A*cos(2*pi*k*x+theta)+O'
+        self.parameterNames = [ 'A', 'k', 'theta', 'O' ]
+        self.parameters = [1,1,0,0]
+        self.startParameters = [1,1,0,0]
         
     def residuals(self,p, y, x):
-        A,k,theta = p
-        return y-A*numpy.cos(2*numpy.pi*k*x+theta)
+        A,k,theta,O = p
+        return y-A*numpy.cos(2*numpy.pi*k*x+theta)-O
         
     def value(self,x,p=None):
-        A,k,theta = self.parameters if p is None else p
-        return A*numpy.cos(2*numpy.pi*k*x+theta)
+        A,k,theta, O = self.parameters if p is None else p
+        return A*numpy.cos(2*numpy.pi*k*x+theta)+O
+
+class CosSqFit(FitFunctionBase):
+    name = "Cos2"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*cos^2(pi*x/(2*T)+theta)+O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O' ]
+        self.parameters = [1,100,0,0]
+        self.startParameters = [1,1,0,0]
+       
+    def residuals(self,p, y, x):
+        A,T,theta,O = p
+        return y-A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))-O
+        
+    def value(self,x,p=None):
+        A,T,theta, O = self.parameters if p is None else p
+        return A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))+O
+        
+
+class SinSqFit(FitFunctionBase):
+    name = "Sin2"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*sin^2(pi/(2*T)*x+theta)+O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O' ]
+        self.parameters = [1,100,0,0]
+        self.startParameters = [1,100,0,0]
+        
+    def residuals(self,p, y, x):
+        A,T,theta,O = p
+        return y-A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
+        
+    def value(self,x,p=None):
+        A,T,theta, O = self.parameters if p is None else p
+        return A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
         
 class GaussianFit(FitFunctionBase):
     name = "Gaussian"
@@ -43,6 +78,29 @@ class GaussianFit(FitFunctionBase):
         A,x0,s,O = self.parameters if p is None else p
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
 
+class SquareRabiFit(FitFunctionBase):
+    name = "Square Rabi"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*R**2/(R**2+(x-C)**2) *sin**2(sqrt(R**2+(x-C)**2)*t/2)+O where R=2*pi/T'
+        self.parameterNames = [ 'T', 'C', 'A', 'O' ]
+        self.parameters = [0]*4
+        self.startParameters = [1,42,1,0]
+        self.constantNames = ['t']
+        self.t = 100
+        
+    def residuals(self,p, y, x):
+        T, C, A, O = p
+        Rs = numpy.square(2*numpy.pi/T)
+        Ds = numpy.square(2*numpy.pi*(x-C))
+        return y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2)))-O
+        
+    def value(self,x,p=None):
+        T, C, A, O = self.parameters if p is None else p
+        Rs = numpy.square(2*numpy.pi/T)
+        Ds = numpy.square(2*numpy.pi*(x-C))
+        return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2)))+O
+    
 
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
@@ -87,6 +145,9 @@ from RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction
         
 fitFunctionMap = { GaussianFit.name: GaussianFit, 
                    CosFit.name: CosFit, 
+                   CosSqFit.name: CosSqFit,
+                   SinSqFit.name: SinSqFit,
+                   SquareRabiFit.name: SquareRabiFit,
                    LorentzianFit.name: LorentzianFit,
                    TruncatedLorentzianFit.name: TruncatedLorentzianFit,
                    RabiCarrierFunction.name: RabiCarrierFunction,

@@ -35,6 +35,7 @@ from modules import stringutilit
 from datetime import datetime
 from ui import StyleSheets
 import RawData
+import magnitude
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -230,7 +231,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
         else:
-            x = self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
+            xobj = self.scan.list[self.currentIndex]
+            x = xobj.ounit(self.scan.start.out_unit).toval() if isinstance(xobj,magnitude.Magnitude) else xobj
         if mean is not None:
             self.updateMainGraph(x, mean, error)
         self.currentIndex += 1
