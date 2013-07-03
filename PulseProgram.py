@@ -94,7 +94,7 @@ class Variable:
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
-              'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0xfff),
+              'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),

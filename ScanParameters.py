@@ -12,7 +12,7 @@ from PyQt4 import QtCore
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanParameters.ui')
 
 import ScanList
-from modules import enum
+from modules import enum, MagnitudeUtilit
 from magnitude import mg
 
 class Scan:
@@ -129,7 +129,7 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
     
     def onValueChanged(self, attribute, value):
         self.beginChange()
-        setattr( self.settings, attribute, value )
+        setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
         self.commitChange()
         
     def setVariables(self, variabledict):

@@ -25,3 +25,10 @@ def valueAs( obj, tounit=None ):
         else:
             return obj.ounit(tounit).toval()
     return obj.toval()    
+    
+def mg( value, unit=None ):
+    if isinstance(value, magnitude.Magnitude):
+        return value
+    if unit:
+        return magnitude.mg(value,unit)
+    return magnitude.mg(value)

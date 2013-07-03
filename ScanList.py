@@ -36,3 +36,5 @@ if __name__ == "__main__":
     
     print shuffle( [1,2,3] )
     print random.random()
+
+    print scanList( mg(0), mg(360), mg(10) )
