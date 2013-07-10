@@ -43,17 +43,18 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         return len(self.variablelist) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 4
+        return 5
  
     def data(self, index, role): 
         if index.isValid():
             var = self.variablelist[index.row()]
-            return { (QtCore.Qt.DisplayRole,0): var.name,
-                     (QtCore.Qt.DisplayRole,1): str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                     (QtCore.Qt.DisplayRole,2): str(var.encoding),
-                     (QtCore.Qt.DisplayRole,3): str(var.value),
-                     (QtCore.Qt.EditRole,1): str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                     (QtCore.Qt.EditRole,2): str(var.encoding),
+            return { (QtCore.Qt.CheckStateRole,0): var.enabled,
+                     (QtCore.Qt.DisplayRole,1): var.name,
+                     (QtCore.Qt.DisplayRole,2): str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                     (QtCore.Qt.DisplayRole,3): str(var.encoding),
+                     (QtCore.Qt.DisplayRole,4): str(var.value),
+                     (QtCore.Qt.EditRole,2): str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                     (QtCore.Qt.EditRole,3): str(var.encoding),
                      }.get((role,index.column()))
         return None
         
@@ -75,34 +76,41 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         value = str(value.toString())
         self.variablelist[index.row()].encoding = None if value == 'None' else str(value)
         return True
+        
+    def setVarEnabled(self,index,value):
+        self.variablelist[index.row()].enabled = value
+        return True      
 
     def setData(self,index, value, role):
-        return { (QtCore.Qt.EditRole,1): functools.partial( self.setDataValue, index, value ),
-                 (QtCore.Qt.EditRole,2): functools.partial( self.setDataEncoding, index, value ),
+        return { (QtCore.Qt.CheckStateRole,0): functools.partial( self.setVarEnabled, index, value ),
+                 (QtCore.Qt.EditRole,2): functools.partial( self.setDataValue, index, value ),
+                 (QtCore.Qt.EditRole,3): functools.partial( self.setDataEncoding, index, value ),
                 }.get((role,index.column()), lambda: False )()
 
     def flags(self, index ):
-        return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
-                 1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+        return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable |  QtCore.Qt.ItemIsEnabled,
+                 1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
                  2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
+                 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+                 4: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
                  }.get(index.column(),QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
                 return {
-                    0: 'variable',
-                    1: 'value',
-                    2: 'encoding',
-                    3: 'evaluated'
+                    0: 'use',
+                    1: 'variable',
+                    2: 'value',
+                    3: 'encoding',
+                    4: 'evaluated'
                     }.get(section)
         return None #QtCore.QVariant()
         
     def getVariables(self):
         myvariables = dict()
         for name,var in self.variabledict.iteritems():
-            myvariables[name] = var.value
+            myvariables[name] = var.value if var.enabled else 0
         return myvariables
  
     def getVariableValue(self,name):

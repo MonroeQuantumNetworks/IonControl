@@ -317,7 +317,7 @@ class PulseProgram:
         """
         for name, var in self.variabledict.iteritems():
             address = len(self.code)
-            self.code.append((address, 'NOP', var.data, None, var.origin ))
+            self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin ))
             var.address = address        
 
     def addVariable(self, m, lineno, sourcename):
@@ -329,6 +329,7 @@ class PulseProgram:
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
         var.origin = sourcename
+        var.enabled = True
 
         if var.encoding not in encodings:
             raise ppexception("unknown encoding {0} in file '{1}':{2}".format(var.encoding,sourcename,lineno))
