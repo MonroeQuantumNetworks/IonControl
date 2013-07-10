@@ -379,6 +379,8 @@ class PulseProgram:
                     bytedata = 0
                 elif isinstance(data,(int,long)):
                     bytedata = data
+                elif isinstance(data,float):
+                    bytedata = int(data)
                 elif isinstance(data,basestring): # now we are dealing with a variable and need its address
                     bytedata = self.variabledict[line[2]].address if line[2] in self.variabledict else self.labeldict[line[2]]
                 elif isinstance(data,list): # list is what we have for DDS, will have 8bit channel and 16bit address
