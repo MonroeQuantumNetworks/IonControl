@@ -145,6 +145,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.sourceTabs.addTab( textEdit, name )
         self.variableTableModel = VariableTableModel.VariableTableModel( self.variabledict, self.parameterdict )
         self.variableView.setModel(self.variableTableModel)
+        self.variableView.resizeColumnToContents(0)
         self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.variabledict )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()

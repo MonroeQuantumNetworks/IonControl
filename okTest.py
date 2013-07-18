@@ -2,17 +2,23 @@
 """
 Encapsulation of the Pulse Programmer Hardware 
 """
-import ok 
+import ok
+import time
 
 if __name__ == "__main__":
     xem = ok.FrontPanel()
-    print xem.OpenBySerial('12230003NX')
-    print xem.ConfigureFPGA(r'FPGA_Ions\fpgafirmware.bit')
+    print xem.OpenBySerial('114400029T')
+    print xem.ConfigureFPGA(r'C:\Users\Public\Documents\WmFiberSwitchFirmware\tutorial.bit')
 
-    zeros = bytearray( b'\x00'*32)
-    data = bytearray( b'\x00'*32)
-    while True:
-        xem.ReadFromPipeOut(0xA0, data)
-        print len(data), len(zeros), zeros==data, hex(data[0])
-    
+    for i in range(100):
+        for j in range(16):
+            xem.SetWireInValue(8,j << 8 | 0x02)
+            xem.UpdateWireIns()
+            xem.UpdateWireOuts()
+            switch = xem.GetWireOutValue(0x30)
+            state = xem.GetWireOutValue(0x31)
+            print switch, hex(state)
+            time.sleep(0.1)
+            
+            
      

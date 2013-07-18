@@ -48,7 +48,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
     def data(self, index, role): 
         if index.isValid():
             var = self.variablelist[index.row()]
-            return { (QtCore.Qt.CheckStateRole,0): var.enabled,
+            return { (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
                      (QtCore.Qt.DisplayRole,1): var.name,
                      (QtCore.Qt.DisplayRole,2): str(var.strvalue if hasattr(var,'strvalue') else var.value),
                      (QtCore.Qt.DisplayRole,3): str(var.encoding),
@@ -78,7 +78,8 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         return True
         
     def setVarEnabled(self,index,value):
-        self.variablelist[index.row()].enabled = value
+        print value, value.toInt(), value==QtCore.Qt.Checked
+        self.variablelist[index.row()].enabled = value.toInt()[0] == QtCore.Qt.Checked
         return True      
 
     def setData(self,index, value, role):
