@@ -426,7 +426,11 @@ class PulseProgram:
                 step, unit, dimension, mask = encodings[encoding]
                 return int(round(mag.toval(unit)/step)) & mask
         else:
-            return mag
+            if encoding:
+                step, unit, dimension, mask = encodings[encoding]
+                return int(round(mag/step)) & mask
+            else:
+                return mag
 
     def compileCode(self):
         self.parse()
