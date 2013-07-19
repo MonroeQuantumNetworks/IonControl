@@ -30,14 +30,31 @@ class GateSetContainer(object):
         self.GateSetDict = GateSetOrderedDict()
         for gateset in root:
             self.GateSetDict.update( { gateset.attrib['name']: map(operator.methodcaller('strip'),gateset.text.split(','))} )
+            
+        self.validate()
     
     """Validate the gates used in the gate sets against the defined gates"""            
     def validate(self):
         for name, gateset in self.GateSetDict.iteritems():
-            for gate in gateset:
-                if gate not in self.gateDefinition.Gates:
-                    raise GateSetException( "'{0}' used in set '{1}' not defined".format(gate,name) )
+            self.validateGateSet( name, gateset )
 
+    def validateGateSet(self, name, gateset):
+        for index, gate in enumerate(gateset):
+            replacement = self.validateGate(name, gate)
+            if replacement:
+                gateset[index:index+1] = replacement
+        return gateset
+
+    def validateGate(self, name, gate):
+        if gate not in self.gateDefinition.Gates:
+            if gate in self.GateSetDict:
+                print gate, self.GateSetDict[gate]
+                return self.validateGateSet( gate, self.GateSetDict[gate] )
+            else:
+                raise GateSetException( "Gate '{0}' used in GateSet '{1}' is not defined".format(gate,name) )
+        else:
+            return None                
+        
 
 if __name__=="__main__":
     from GateDefinition import GateDefinition
@@ -46,7 +63,6 @@ if __name__=="__main__":
 
     container = GateSetContainer(gatedef)
     container.loadXml(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateSetDefinition.xml")
-    container.validate()
     
     print container
     

@@ -155,6 +155,11 @@
             <string>Step in place</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>Gate Set Scan</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item row="0" column="0">

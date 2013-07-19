@@ -32,8 +32,7 @@ class GateSetCompiler(object):
         data = list()
         for gate in gateset:
             data.append( self.compiledGates[gate] )
-        return [item for sublist in data for item in sublist]
-            
+        return [len(gateset)] + [item for sublist in data for item in sublist]
 
     """Compile each gate definition into its binary representation"""
     def gateCompile(self, gateDefinition ):

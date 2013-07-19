@@ -413,6 +413,19 @@ class PulserHardware(QtCore.QObject):
         else:
             print "Pulser Hardware not available"
             return None
+            
+    def wordListToBytearray(self, wordlist):
+        """ convert list of words to binary bytearray
+        """
+        self.binarycode = bytearray()
+        for index, word in enumerate(wordlist):
+#            if self.debug:
+#                print hex(index), hex(word)
+            self.binarycode += struct.pack('I', word)
+        return self.binarycode                       
+            
+    def ppWriteRamWordlist(self,wordlist,address):
+        self.ppWriteRam( self.wordListToBytearray(wordlist), address)
 
     def ppReadRam(self,data,address):
         if self.xem:
