@@ -92,9 +92,11 @@ class GateSetUi(Form,Base):
             filedir, filename = os.path.split(path)
             self.settings.lastDir = filedir
             self.GateSetEdit.setText(filename)
+            self.loadGateSetList(path)
             
     def loadGateSetList(self, path):
-        self.gateSetContainer.loadXml(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateSetDefinition.xml")
+        self.gateSetContainer.loadXml(path)
+        print "loaded {0} gateSets.".format(len(self.gateSetContainer.GateSetDict))
         self.settings.gateSet = path
     
     def onGateEditChanged(self):

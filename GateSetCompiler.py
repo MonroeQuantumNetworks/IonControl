@@ -16,6 +16,7 @@ class GateSetCompiler(object):
     """Compile all gate sets into binary representation
         returns tuple of start address list and bytearray data"""
     def gateSetsCompile(self, gatesets ):
+        print "compiling {0} gateSets.".format(len(gatesets.GateSetDict))
         self.gateCompile( gatesets.gateDefinition )
         addresses = list()
         data = list()
@@ -24,7 +25,7 @@ class GateSetCompiler(object):
             gatesetdata = self.gateSetCompile( gateset )
             addresses.append(index)
             data.append(gatesetdata)
-            index += len(gatesetdata)
+            index += len(gatesetdata)*4
         return addresses, [item for sublist in data for item in sublist]
     
     """Compile one gateset into its binary representation"""

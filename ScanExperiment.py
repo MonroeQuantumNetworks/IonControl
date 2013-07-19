@@ -235,7 +235,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.other:
             print "Other:", data.other
         #mean = numpy.mean( data.count[self.scanSettings.counter] )
-        if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+        if self.scan.scanMode in [self.scanParametersWidget.ScanModes.StepInPlace,self.scanParametersWidget.ScanModes.GateSetScan]:
             x = self.currentIndex
         else:
             x = MagnitudeUtilit.valueAs( self.scan.list[self.currentIndex], self.scan.start )
