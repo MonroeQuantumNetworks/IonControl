@@ -104,6 +104,7 @@ encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff )
               'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
+              'TIME' : ( 20, 'ns', Dimensions.time, 0x1 ),
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
@@ -181,6 +182,12 @@ class PulseProgram:
             else:
                 print "variable", name, "not found in dictionary."
         return self.bytecode
+        
+    def variables(self):
+        mydict = dict()
+        for name, var in self.variabledict.iteritems():
+            mydict.update( {name: var.value })
+        return mydict
         
     def variable(self, variablename ):
         return self.variabledict.get(variablename).value
