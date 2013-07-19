@@ -20,7 +20,7 @@ class GateSetCompiler(object):
         addresses = list()
         data = list()
         index = 0
-        for name, gateset in gatesets.iteritems():
+        for name, gateset in gatesets.GateSetDict.iteritems():
             gatesetdata = self.gateSetCompile( gateset )
             addresses.append(index)
             data.append(gatesetdata)
@@ -42,8 +42,8 @@ class GateSetCompiler(object):
             data = list()
             for pulsename, pulse in gateDefinition.PulseDefinition.iteritems():
                 strvalue = gate.pulsedict[pulsename]
-                result = self.expression.evaluate(strvalue, self.pulseProgram.variables())      
-                print strvalue, result, variables[strvalue] if strvalue in variables else None
+                result = self.expression.evaluate(strvalue, variables )      
+                #print strvalue, result, variables[strvalue] if strvalue in variables else None
                 if isinstance(result, magnitude.Magnitude) and result.dimensionless():
                     result.output_prec(0)
                 data.append( self.pulseProgram.convertParameter( result, pulse.encoding ) )
@@ -73,6 +73,9 @@ if __name__=="__main__":
     compiler.gateCompile( container.gateDefinition )
     print compiler.gateSetCompile( container.GateSetDict['S11'])
     
+    address, data = compiler.gateSetsCompile( container )
+    print address
+    print data
 
 
     
