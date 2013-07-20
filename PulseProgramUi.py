@@ -43,6 +43,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
+        self.experimentname = experimentname
+        self.configname = 'PulseProgramUi.'+self.experimentname
+        self.GateSetUi.postInit(self.experimentname,self.config,self.pulseProgram)
+        self.GateSetUi.setupUi(self.GateSetUi)
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
         self.actionReset.triggered.connect(self.onReset)
@@ -53,8 +57,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
         self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
-        self.experimentname = experimentname
-        self.configname = 'PulseProgramUi.'+self.experimentname
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         self.configParams.upgrade()
         self.datashelf = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
@@ -67,8 +69,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
             self.splitterVertical.restoreState(self.configParams.splitterVertical)
+        if hasattr(self.configParams,'GateSetSplitter'):
+            self.GateSetSplitter.restoreState(self.configParams.GateSetSplitter)
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
+        
 
     def onFilenameChange(self, name ):
         name = str(name)
@@ -145,6 +150,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.sourceTabs.addTab( textEdit, name )
         self.variableTableModel = VariableTableModel.VariableTableModel( self.variabledict, self.parameterdict )
         self.variableView.setModel(self.variableTableModel)
+        self.variableView.resizeColumnToContents(0)
         self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.variabledict )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
@@ -158,6 +164,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
         self.pulseProgramChanged.emit()
+        self.GateSetUi.setVariables(self.pulseProgram.variabledict)
                     
     def onAccept(self):
         pass
@@ -168,9 +175,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def close(self):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
+        self.configParams.GateSetSplitter = self.GateSetSplitter.saveState()
         self.config[self.configname] = self.configParams
         self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.datashelf.close()
+        self.GateSetUi.close()
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
@@ -182,6 +191,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         
     def getVariableValue(self,name):
         return self.variableTableModel.getVariableValue(name)
+        
+    def gateSetScanData(self):
+        return self.GateSetUi.gateSetScanData()
         
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:

@@ -35,6 +35,8 @@ from modules import stringutilit
 from datetime import datetime
 from ui import StyleSheets
 import RawData
+from modules import MagnitudeUtilit
+import magnitude
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -146,6 +148,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.stepInPlaceValue = self.pulseProgramUi.getVariableValue(self.scan.name)
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.stepInPlaceValue])
             mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.stepInPlaceValue]*5)
+        elif self.scan.scanMode == self.scanParametersWidget.ScanModes.GateSetScan:
+            address, data, parameter = self.pulseProgramUi.gateSetScanData()
+            self.pulserHardware.ppWriteRamWordlist(data,0)
+            self.scan.list = address
+            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
+            mycode = self.scan.code
         else:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
             mycode = self.scan.code
@@ -227,10 +235,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.other:
             print "Other:", data.other
         #mean = numpy.mean( data.count[self.scanSettings.counter] )
-        if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+        if self.scan.scanMode in [self.scanParametersWidget.ScanModes.StepInPlace,self.scanParametersWidget.ScanModes.GateSetScan]:
             x = self.currentIndex
         else:
-            x = self.scan.list[self.currentIndex].ounit(self.scan.start.out_unit).toval()
+            x = MagnitudeUtilit.valueAs( self.scan.list[self.currentIndex], self.scan.start )
         if mean is not None:
             self.updateMainGraph(x, mean, error)
         self.currentIndex += 1
@@ -267,7 +275,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             if not self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
-                self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
+                self.graphicsView.setXRange( MagnitudeUtilit.value(self.scan.start), 
+                                             MagnitudeUtilit.valueAs(self.scan.stop, self.scan.start) )
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:

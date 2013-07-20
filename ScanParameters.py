@@ -12,7 +12,7 @@ from PyQt4 import QtCore
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanParameters.ui')
 
 import ScanList
-from modules import enum
+from modules import enum, MagnitudeUtilit
 from magnitude import mg
 
 class Scan:
@@ -57,7 +57,7 @@ class Settings:
                 self.autoSave == other.autoSave )
 
 class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
-    ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace')
+    ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace','GateSetScan')
     def __init__(self,config,parentname,parent=None):
         ScanExperimentForm.__init__(self)
         ScanExperimentBase.__init__(self,parent)
@@ -122,14 +122,14 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
     def onModeChanged(self, index):
         self.beginChange()
         self.settings.scanMode = index
-        self.minimumBox.setEnabled(index!=2)
-        self.maximumBox.setEnabled(index!=2)
-        self.scanTypeCombo.setEnabled(index!=2)
+        self.minimumBox.setEnabled(index in [0,1])
+        self.maximumBox.setEnabled(index in [0,1])
+        self.scanTypeCombo.setEnabled(index in [0,1])
         self.commitChange()       
     
     def onValueChanged(self, attribute, value):
         self.beginChange()
-        setattr( self.settings, attribute, value )
+        setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
         self.commitChange()
         
     def setVariables(self, variabledict):
@@ -181,9 +181,9 @@ class ScanParameters(ScanExperimentForm, ScanExperimentBase ):
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         if settings.parameter: self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(settings.parameter))
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
-        self.minimumBox.setEnabled(self.settings.scanMode!=2)
-        self.maximumBox.setEnabled(self.settings.scanMode!=2)
-        self.scanTypeCombo.setEnabled(self.settings.scanMode!=2)
+        self.minimumBox.setEnabled(self.settings.scanMode in [0,1])
+        self.maximumBox.setEnabled(self.settings.scanMode in [0,1])
+        self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
     
     def onRedo(self):
         if self.settingsHistoryPointer<len(self.settingsHistory):

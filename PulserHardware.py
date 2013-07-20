@@ -10,6 +10,7 @@ import magnitude
 from modules import enum
 import math
 import traceback
+import copy
 
 class Data:
     def __init__(self):
@@ -413,6 +414,24 @@ class PulserHardware(QtCore.QObject):
         else:
             print "Pulser Hardware not available"
             return None
+            
+    def wordListToBytearray(self, wordlist):
+        """ convert list of words to binary bytearray
+        """
+        self.binarycode = bytearray()
+        for index, word in enumerate(wordlist):
+#            if self.debug:
+#                print hex(index), hex(word)
+            self.binarycode += struct.pack('I', word)
+        return self.binarycode                       
+            
+    def ppWriteRamWordlist(self,wordlist,address):
+        data = self.wordListToBytearray(wordlist)
+        self.ppWriteRam( data, address)
+        testdata = copy.copy(data)
+        print len(data), len(testdata), data==testdata
+        self.ppReadRam( testdata, address)
+        print len(data), len(testdata), data==testdata
 
     def ppReadRam(self,data,address):
         if self.xem:
