@@ -78,9 +78,6 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="GateDefinitionEdit"/>
-      </item>
       <item row="4" column="1">
        <widget class="QLineEdit" name="GateEdit"/>
       </item>
@@ -88,13 +85,6 @@
        <widget class="QRadioButton" name="GateRadioButton">
         <property name="text">
          <string>Gate</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="GateSetEdit">
-        <property name="enabled">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -121,6 +111,12 @@
          <string>Start Address Param</string>
         </property>
        </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="GateDefinitionBox"/>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="GateSetBox"/>
       </item>
      </layout>
     </widget>

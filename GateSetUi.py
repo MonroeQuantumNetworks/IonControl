@@ -27,6 +27,14 @@ class Settings(object):
         self.active = 0
         self.lastDir = ""
         self.startAddressParam = ""
+        self.gateSetCache = dict()
+        self.gateDefinitionCache = dict()
+        
+    def __setstate__(self,d):
+        self.__dict__ = d
+        self.__dict__.setdefault( "gateSetCache", dict() )
+        self.__dict__.setdefault( "gateDefinitionCache", dict() )
+        
 
 class GateSetUi(Form,Base):    
     Mode = enum('FullList', 'Gate')
@@ -41,12 +49,12 @@ class GateSetUi(Form,Base):
         self.settings = self.config.get(self.configname,Settings())
 
         self.gatedef = GateDefinition()
-        if self.settings.gateDefinition:
-            self.loadGateDefinition( self.settings.gateDefinition )
+#        if self.settings.gateDefinition:
+#            self.loadGateDefinition( self.settings.gateDefinition )
     
         self.gateSetContainer = GateSetContainer(self.gatedef)
-        if self.settings.gateSet:
-            self.loadGateSetList(self.settings.gateSet)
+#        if self.settings.gateSet:
+#            self.loadGateSetList(self.settings.gateSet)
             
         self.gateSetCompiler = GateSetCompiler(pulseProgram)
 
@@ -62,6 +70,18 @@ class GateSetUi(Form,Base):
         self.GateEdit.editingFinished.connect( self.onGateEditChanged )
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.StartAddressBox.currentIndexChanged['QString'].connect( self.onStartAddressParam )
+        try:
+            self.GateDefinitionBox.addItems( self.settings.gateDefinitionCache.keys() )
+            self.GateSetBox.addItems( self.settings.gateSetCache.keys() )
+            if self.settings.gateDefinition and self.settings.gateDefinition in self.settings.gateDefinitionCache:
+                self.loadGateDefinition( self.settings.gateDefinitionCache[self.settings.gateDefinition] )
+                self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(self.settings.gateDefinition))
+            if self.settings.gateSet and self.settings.gateSet in self.settings.gateSetCache:
+                self.loadGateSetList( self.settings.gateSetCache[self.settings.gateSet] )
+                self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(self.settings.gateSet))
+        except IOError as err:
+            print err, "during loading of GateSet Files, ignored."
+            
         
     def onStartAddressParam(self,name):
         self.settings.startAddressParam = str(name)       
@@ -79,11 +99,15 @@ class GateSetUi(Form,Base):
             filedir, filename = os.path.split(path)
             self.settings.lastDir = filedir
             self.loadGateDefinition(path)
-            self.GateDefinitionEdit.setText(filename)
+            if filename not in self.settings.gateDefinitionCache:
+                self.settings.gateDefinitionCache[filename] = path
+                self.GateDefinitionBox.addItem(filename)
 
     def loadGateDefinition(self, path):
         self.gatedef.loadGateDefinition(path)    
-        self.settings.gateDefinition = path
+        filedir, filename = os.path.split(path)
+        self.settings.gateDefinition = filename
+        self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(filename))
         self.gatedef.printGates()
     
     def onLoadGateSetList(self):
@@ -91,13 +115,17 @@ class GateSetUi(Form,Base):
         if path!="":
             filedir, filename = os.path.split(path)
             self.settings.lastDir = filedir
-            self.GateSetEdit.setText(filename)
             self.loadGateSetList(path)
+            if filename not in self.settings.gateSetCache:
+                self.settings.gateSetCache[filename] = path
+                self.GateSetBox.addItem(filename)
             
     def loadGateSetList(self, path):
         self.gateSetContainer.loadXml(path)
         print "loaded {0} gateSets.".format(len(self.gateSetContainer.GateSetDict))
-        self.settings.gateSet = path
+        filedir, filename = os.path.split(path)
+        self.settings.gateSet = filename
+        self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(filename))
     
     def onGateEditChanged(self):
         self.settings.gate = map(operator.methodcaller('strip'),str(self.GateEdit.text()).split(','))
