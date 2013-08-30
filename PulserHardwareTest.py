@@ -13,11 +13,19 @@ printdata = True
 
 if __name__ == "__main__":
     pp = PulseProgram.PulseProgram()
-    pp.loadSource(r'prog\Ions\test.pp')
+    pp.loadSource(r'prog\Ions-samples\test.pp')
     fpga = fpgaUtilit.FPGAUtilit()
     xem = fpga.openBySerial('12230003NX')
-    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware-100.bit')
-    hw = PulserHardware.PulserHardware(xem)
+    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
+    hw = PulserHardware.PulserHardware(None)
+    hw.xem = xem
+    
+    bytebuffer = bytearray([17]*1024)
+    backbuffer = bytearray([0]*1024)
+    hw.ppWriteRam( bytebuffer, 256 )
+    hw.ppReadRam( backbuffer, 256)
+    
+    
     hw.ppUpload( pp.toBinary() )
     xem.UpdateWireOuts()
     print "DataOutPipe", hex(xem.GetWireOutValue(0x20))

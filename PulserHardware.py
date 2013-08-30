@@ -131,7 +131,7 @@ class PipeReader(QtCore.QThread):
                                 elif key==4: # other return value
                                     self.data.other.append(value)
                                 else:
-                                    print "unprocessed", key,channel,value
+                                    print "unprocessed", key,channel,value, hex(token)
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
                     #print "emit dataAvailable"
@@ -423,15 +423,22 @@ class PulserHardware(QtCore.QObject):
 #            if self.debug:
 #                print hex(index), hex(word)
             self.binarycode += struct.pack('I', word)
-        return self.binarycode                       
+        return self.binarycode        
+
+    def bytearrayToWordList(self, barray):
+        return list(struct.unpack_from('I',buffer(barray)))
             
     def ppWriteRamWordlist(self,wordlist,address):
         data = self.wordListToBytearray(wordlist)
         self.ppWriteRam( data, address)
         testdata = copy.copy(data)
-        print len(data), len(testdata), data==testdata
+        print "ppWriteRamWordlist", len(data), len(testdata), data==testdata
         self.ppReadRam( testdata, address)
-        print len(data), len(testdata), data==testdata
+        print "ppWriteRamWordlist test", len(data), len(testdata), data==testdata
+        if data!=testdata:
+            print wordlist
+            print self.bytearrayToWordList(data)
+            print self.bytearrayToWordList(testdata)
 
     def ppReadRam(self,data,address):
         if self.xem:
@@ -448,6 +455,9 @@ class PulserHardware(QtCore.QObject):
                 self.xem.ReadFromPipeOut( 0xa3, data )
         else:
             print "Pulser Hardware not available"
+            
+    def ppReadRamWordList(self, wordlist, address):
+        data = bytearray()
                 
     def ppClearWriteFifo(self):
         if self.xem:
