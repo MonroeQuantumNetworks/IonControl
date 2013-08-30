@@ -90,11 +90,11 @@ scanloop: NOP
 	LDWR experiments
 	STWR experimentsleft
 
-	SETRAMADDR RamStartAddress
 	
 init: NOP
 	LDWR MaxInitRepeat
 	STWR initRemaining
+	SETRAMADDR RamStartAddress
 	
 cool: NOP
 	# Cool ion and check it is there
@@ -132,7 +132,7 @@ pump: NOP
 
 QubitInit: NOP  
 	LDWR QubitInitTime
-	JMPZ PulseTrain
+	JMPZ PulseTrainInit
 	DDSFRQ DDSMicrowave, MicrowaveFreq
 	DDSPHS DDSMicrowave, MicrowaveInitPhase
 	TRIGGER ddsMicrowaveApply
@@ -144,18 +144,23 @@ QubitInit: NOP
 	SHUTTERMASK  MicrowaveOffMask
 	ASYNCSHUTTER MicrowaveOff
 	
+PulseTrainInit: NOP
 	LDWR UseGateSet
 	JMPZ QubitAnalyze
 
 	RAMREAD 
+	NOP
 	STWR PulsesRemaining
 PulseTrain: NOP
 	LDWR PulsesRemaining
 	JMPZ QubitAnalyze
 	DEC PulsesRemaining
+	STWR PulsesRemaining
 	RAMREAD
+	NOP
 	STWR trainPhase
 	RAMREAD
+	NOP
 	STWR trainTime
 	JMPZ PulseTrainWait
 	DDSPHS DDSMicrowave, trainPhase
@@ -163,16 +168,18 @@ PulseTrain: NOP
 	ASYNCSHUTTER MicrowaveOn
 	WAIT
 	UPDATE trainTime
+	SHUTTERMASK  MicrowaveOffMask
+	ASYNCSHUTTER MicrowaveOff
 PulseTrainWait: NOP	
 	RAMREAD
+	NOP
 	STWR trainTime
 	JMPZ PulseTrain
 	SHUTTERMASK  MicrowaveOffMask
 	ASYNCSHUTTER MicrowaveOff
 	WAIT
 	UPDATE trainTime
-	JMP PulseTrain
-	
+	JMP PulseTrain	
 		
 
 QubitAnalyze: NOP

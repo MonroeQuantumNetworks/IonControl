@@ -16,11 +16,11 @@ if __name__ == "__main__":
     pp.loadSource(r'prog\Ions-samples\test.pp')
     fpga = fpgaUtilit.FPGAUtilit()
     xem = fpga.openBySerial('12230003NX')
-#    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
+    fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
     hw = PulserHardware.PulserHardware(None)
     hw.xem = xem
     
-    length = 1024 << 10
+    length = 1024 << 8
     start = 12 << 2
     
     print "length", length
