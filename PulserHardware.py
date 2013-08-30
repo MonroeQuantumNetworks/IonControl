@@ -10,7 +10,7 @@ import magnitude
 from modules import enum
 import math
 import traceback
-import copy
+import time
 
 class Data:
     def __init__(self):
@@ -401,13 +401,11 @@ class PulserHardware(QtCore.QObject):
             appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
             data += bytearray([0]*appendlength)
             with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn( 0x41, 4 )    # Ram write reset
-                if address!=0:
-                    print "set write address"
-                    self.xem.SetWireInValue( 0x01, address & 0xffff )
-                    self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-                    self.xem.UpdateWireIns()
-                    self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
+                print "set write address"
+                self.xem.SetWireInValue( 0x01, address & 0xffff )
+                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+                self.xem.UpdateWireIns()
+                self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
                 return self.xem.WriteToPipeIn( 0x82, data )
         else:
             print "Pulser Hardware not available"
@@ -444,15 +442,13 @@ class PulserHardware(QtCore.QObject):
     def ppReadRam(self,data,address):
         if self.xem:
             with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn( 0x41, 5 )   # Ram read reset
-                if address!=0:
-                    print "set read address"
-                    self.xem.SetWireInValue( 0x01, address & 0xffff )
-                    self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-                    self.xem.UpdateWireIns()
-                    self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
+#                print "set read address"
+                self.xem.SetWireInValue( 0x01, address & 0xffff )
+                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+                self.xem.UpdateWireIns()
+                self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
                 self.xem.ReadFromPipeOut( 0xa3, data )
-                print "read", len(data)
+#                print "read", len(data)
         else:
             print "Pulser Hardware not available"
             
