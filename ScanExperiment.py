@@ -150,9 +150,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, [self.stepInPlaceValue]*5)
         elif self.scan.scanMode == self.scanParametersWidget.ScanModes.GateSetScan:
             address, data, parameter = self.pulseProgramUi.gateSetScanData()
+            print "GateSetScan", address, parameter
             self.pulserHardware.ppWriteRamWordlist(data,0)
             self.scan.list = address
-            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
+            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
+            print "GateSetScanCode", self.scan.list, self.scan.code
             mycode = self.scan.code
         else:
             self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.name, self.scan.list)
