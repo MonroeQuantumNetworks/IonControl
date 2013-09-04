@@ -21,7 +21,10 @@ class ControlUi(UiForm,UiBase):
         self.spacerItem = None
         self.myLabelList = list()
         self.myBoxList = list()
+        self.myDisplayList = list()
         self.targetValue = dict()
+        self.currentValue = dict()
+        self.displayWidget = dict()
     
     def setupUi(self,EnabledParameters,MainWindow):
         UiForm.setupUi(self,MainWindow)
@@ -57,6 +60,15 @@ class ControlUi(UiForm,UiBase):
                 Box.valueChanged.connect( functools.partial(self.setValue, name) )
                 self.gridLayout.addWidget( Box, 1+index, 1, 1, 1 )
                 self.myBoxList.append( Box )
+            if index<len(self.myDisplayList):
+                self.myDisplayList[index].setText("")
+                self.myDisplayList[index].show()
+            else:
+                Display = QtGui.QLabel(self)
+                Display.setText("")
+                self.myDisplayList.append(Display)
+                self.gridLayout.addWidget( Display, 1+index, 2, 1, 1 )
+            self.enabledParameters[name].displayValueCallback = functools.partial(self.showValue,Display)
         for index in range( len(self.enabledParameters), len(self.myLabelList)):
             self.myLabelList[index].hide()
             self.myBoxList[index].hide()
@@ -66,6 +78,10 @@ class ControlUi(UiForm,UiBase):
         print "setValue", value
         self.targetValue[name] = value
         self.setValueFollowup(name)
+        
+    def showValue(self, display, value):
+        if display:
+            display.setText("{0}".format(value));       
     
     def setValueFollowup(self, name):
         print "setValueFollowup", self.enabledParameters[name].currentValue()
