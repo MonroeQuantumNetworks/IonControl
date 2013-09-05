@@ -137,6 +137,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         for name, textEdit in self.sourceCodeEdits.iteritems():
             self.pulseProgram.source[name] = str(textEdit.toPlainText())
         self.pulseProgram.loadFromMemory()
+        self.oldVariabledict = self.variabledict
+        self.variabledict = self.pulseProgram.variabledict.copy()
+        self.variabledict.update( dictutil.subdict(self.oldVariabledict, self.variabledict.keys() ) )
         self.updateDisplay()
     
     def updateDisplay(self):   # why does this not update the display?
