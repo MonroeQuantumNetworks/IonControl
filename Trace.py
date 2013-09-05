@@ -90,7 +90,7 @@ class Trace(object):
             self.vars.columnspec = ",".join(columnspec)
             self.saveTraceHeader(of)
             for l in zip(*columnlist):
-                print >>of, " ".join(map(repr,l))
+                print >>of, "\t".join(map(repr,l))
             self.filename = filename
             of.close()
     
