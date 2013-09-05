@@ -143,6 +143,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.state = self.OpStates.running
         self.scanSettings = self.scanSettingsWidget.settings
         # get parameter to scan and scanrange
+        PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
         self.scan = self.scanParametersWidget.getScan()
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             self.stepInPlaceValue = self.pulseProgramUi.getVariableValue(self.scan.name)
@@ -161,7 +162,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             mycode = self.scan.code
         self.pulserHardware.ppFlushData()
         self.pulserHardware.ppClearWriteFifo()
-        self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+        self.pulserHardware.ppUpload(PulseProgramBinary)
         self.pulserHardware.ppWriteData(mycode)
         print "Starting"
         self.pulserHardware.ppStart()

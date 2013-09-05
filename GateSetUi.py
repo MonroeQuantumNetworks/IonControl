@@ -148,6 +148,7 @@ class GateSetUi(Form,Base):
         if self.settings.active == self.Mode.FullList:
             address, data = self.gateSetCompiler.gateSetsCompile( self.gateSetContainer )
         else:
+            self.gateSetCompiler.gateCompile( self.gateSetContainer.gateDefinition )
             data = self.gateSetCompiler.gateSetCompile( self.settings.gate )
             address = [0]*self.settings.thisSequenceRepetition
         return address, data, self.settings.startAddressParam
