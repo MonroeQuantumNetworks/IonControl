@@ -282,11 +282,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
             if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
-                self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
-                self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
+                steps = int(self.scan.steps)
+                self.currentTrace.x = numpy.append(self.currentTrace.x[-steps+1:], x)
+                self.currentTrace.y = numpy.append(self.currentTrace.y[-steps+1:], mean)
                 if error and self.scanSettings.errorBars:
-                    self.currentTrace.bottom = numpy.append(self.currentTrace.bottom[-self.scan.steps+1:], error[0]) 
-                    self.currentTrace.top = numpy.append(self.currentTrace.top[-self.scan.steps+1:], error[1]) 
+                    self.currentTrace.bottom = numpy.append(self.currentTrace.bottom[-steps+1:], error[0]) 
+                    self.currentTrace.top = numpy.append(self.currentTrace.top[-steps+1:], error[1]) 
             else:
                 self.currentTrace.x = numpy.append(self.currentTrace.x, x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
