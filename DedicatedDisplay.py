@@ -6,6 +6,7 @@ Created on Sat Feb 16 16:56:57 2013
 """
 import PyQt4.uic
 from PyQt4 import QtCore
+import math
        
 DedicatedDisplayForm, DedicatedDisplayBase = PyQt4.uic.loadUiType(r'ui\DedicatedDisplay.ui')
 
@@ -21,7 +22,7 @@ class DedicatedDisplay(DedicatedDisplayForm,DedicatedDisplayBase ):
         self.config = config
         self.name = name
         self._values = [0]*8
-        self.settings = self.config.get("DedicatedDisplay."+self.name,Settings())
+        self.settings = Settings() #self.config.get("DedicatedDisplay."+self.name,Settings())
         self.sum = [0]*4
         self.sumnum = 0
 
@@ -47,11 +48,20 @@ class DedicatedDisplay(DedicatedDisplayForm,DedicatedDisplayBase ):
     @values.setter
     def values(self,values):
         if self.settings.average:
-            self.sum = [a+b for a,b in zip(self.sum,values) ]
+            self.sum = [a+b if b is not None else None for a,b in zip(self.sum,values)  ]
             self.sumnum += 1
-            self._values = [a*1.0/b for a,b in zip(self.sum,self.sumnum)]
             for index, label in enumerate([self.label0, self.label1, self.label2, self.label3]):
-                label.setText(str(self._values[index]))
+                if self.sum[index] is None:
+                    self._values[index] = None
+                    label.setText("None")
+                else:
+                    if self.sum[index]>0:
+                        self._values[index] =  self.sum[index]*1.0/self.sumnum
+                        prec = int(math.ceil(-math.log10(math.sqrt(self.sum[index])/self.sumnum)))
+                        fs = "{{0:.{0}f}}".format(prec)
+                        label.setText(fs.format(self._values[index]))
+                    else:
+                        label.setText("0")                        
             self.numPointsLabel.setText("{0} points".format(self.sumnum))
         else:
             for index, label in enumerate([self.label0, self.label1, self.label2, self.label3]):
