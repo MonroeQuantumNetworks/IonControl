@@ -29,11 +29,13 @@ class Settings(object):
         self.startAddressParam = ""
         self.gateSetCache = dict()
         self.gateDefinitionCache = dict()
+        self.thisSequenceRepetition = 10
         
     def __setstate__(self,d):
         self.__dict__ = d
         self.__dict__.setdefault( "gateSetCache", dict() )
         self.__dict__.setdefault( "gateDefinitionCache", dict() )
+        self.__dict__.setdefault( "thisSequenceRepetition", 10 )
         
 
 class GateSetUi(Form,Base):    
@@ -70,6 +72,8 @@ class GateSetUi(Form,Base):
         self.GateEdit.editingFinished.connect( self.onGateEditChanged )
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.StartAddressBox.currentIndexChanged['QString'].connect( self.onStartAddressParam )
+        self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
+        self.repetitionSpinBox.valueChanged.connect( self.onRepetitionChanged )
         try:
             self.GateDefinitionBox.addItems( self.settings.gateDefinitionCache.keys() )
             self.GateSetBox.addItems( self.settings.gateSetCache.keys() )
@@ -82,6 +86,9 @@ class GateSetUi(Form,Base):
         except IOError as err:
             print err, "during loading of GateSet Files, ignored."
             
+            
+    def onRepetitionChanged(self, value):
+        self.settings.thisSequenceRepetition = value
         
     def onStartAddressParam(self,name):
         self.settings.startAddressParam = str(name)       
@@ -142,7 +149,7 @@ class GateSetUi(Form,Base):
             address, data = self.gateSetCompiler.gateSetsCompile( self.gateSetContainer )
         else:
             data = self.gateSetCompiler.gateSetCompile( self.settings.gate )
-            address = [0]
+            address = [0]*self.settings.thisSequenceRepetition
         return address, data, self.settings.startAddressParam
         
     def setVariables(self, variabledict):

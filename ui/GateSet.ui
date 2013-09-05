@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>396</width>
+    <width>404</width>
     <height>208</height>
    </rect>
   </property>
@@ -33,31 +33,13 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="2" column="2">
-       <widget class="QToolButton" name="GateSetButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QToolButton" name="GateDefinitionButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
+      <item row="4" column="2">
+       <widget class="QSpinBox" name="repetitionSpinBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
        </widget>
       </item>
@@ -71,15 +53,12 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Gate Definition</string>
+         <string>Start Address Param</string>
         </property>
        </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QLineEdit" name="GateEdit"/>
       </item>
       <item row="4" column="0">
        <widget class="QRadioButton" name="GateRadioButton">
@@ -95,7 +74,58 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Gate Definition</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLineEdit" name="GateEdit">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>3</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QToolButton" name="GateSetButton">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="Experiment.qrc">
+          <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QToolButton" name="GateDefinitionButton">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="Experiment.qrc">
+          <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2">
+       <widget class="QComboBox" name="GateDefinitionBox"/>
+      </item>
+      <item row="2" column="1" colspan="2">
+       <widget class="QComboBox" name="GateSetBox"/>
+      </item>
+      <item row="0" column="1" colspan="2">
        <widget class="QComboBox" name="StartAddressBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -104,19 +134,6 @@
          </sizepolicy>
         </property>
        </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Start Address Param</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="GateDefinitionBox"/>
-      </item>
-      <item row="2" column="1">
-       <widget class="QComboBox" name="GateSetBox"/>
       </item>
      </layout>
     </widget>
