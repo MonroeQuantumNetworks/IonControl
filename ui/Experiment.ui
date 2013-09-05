@@ -185,7 +185,7 @@
   <action name="actionStart">
    <property name="icon">
     <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/player_play.png</normaloff>:/kde/icons/player_play.png</iconset>
+     <normaloff>:/openicon/icons/media-playback-start-7.png</normaloff>:/openicon/icons/media-playback-start-7.png</iconset>
    </property>
    <property name="text">
     <string>Start</string>
@@ -200,8 +200,8 @@
    </property>
    <property name="icon">
     <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/player_pause.png</normaloff>
-     <normalon>:/kde/icons/edit_clear.png</normalon>:/kde/icons/player_pause.png</iconset>
+     <normaloff>:/openicon/icons/media-playback-pause-7.png</normaloff>
+     <normalon>:/kde/icons/edit_clear.png</normalon>:/openicon/icons/media-playback-pause-7.png</iconset>
    </property>
    <property name="text">
     <string>Pause</string>
@@ -213,7 +213,7 @@
   <action name="actionStop">
    <property name="icon">
     <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/player_stop.png</normaloff>:/kde/icons/player_stop.png</iconset>
+     <normaloff>:/openicon/icons/media-playback-stop-7.png</normaloff>:/openicon/icons/media-playback-stop-7.png</iconset>
    </property>
    <property name="text">
     <string>Stop</string>
