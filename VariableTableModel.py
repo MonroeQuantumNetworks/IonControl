@@ -78,8 +78,8 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         return True
         
     def setVarEnabled(self,index,value):
-        print value, value.toInt(), value==QtCore.Qt.Checked
-        self.variablelist[index.row()].enabled = value.toInt()[0] == QtCore.Qt.Checked
+        print "parameter enabled", value==QtCore.Qt.Checked
+        self.variablelist[index.row()].enabled = value == QtCore.Qt.Checked
         return True      
 
     def setData(self,index, value, role):
