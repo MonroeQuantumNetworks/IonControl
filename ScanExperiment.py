@@ -231,10 +231,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """
         print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
         if self.scanSettings.sliceTotal<=1:
-            mean, error = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+            mean, error, raw = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
         else:
             thisdata = data.count[self.scanSettings.counter][self.scanSettings.sliceNo::self.scanSettings.sliceTotal]
-            mean, error = self.scanSettings.evalAlgo.evaluate( thisdata )
+            mean, error, raw = self.scanSettings.evalAlgo.evaluate( thisdata )
         if data.other:
             print "Other:", data.other
         #mean = numpy.mean( data.count[self.scanSettings.counter] )
@@ -243,7 +243,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             x = MagnitudeUtilit.valueAs( self.scan.list[self.currentIndex], self.scan.start )
         if mean is not None:
-            self.updateMainGraph(x, mean, error)
+            self.updateMainGraph(x, mean, error, raw)
         self.currentIndex += 1
         self.showHistogram(data)
         if self.timestampSettingsWidget.settings.enable: 
@@ -264,12 +264,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.pulserHardware.ppWriteData(self.scan.code)     
         self.scanParametersWidget.progressBar.setValue(self.currentIndex)
 
-    def updateMainGraph(self, x, mean, error):
+    def updateMainGraph(self, x, mean, error, raw):
         print x, mean, error
         if self.currentTrace is None:
             self.currentTrace = Trace.Trace()
             self.currentTrace.x = numpy.array([x])
             self.currentTrace.y = numpy.array([mean])
+            self.currentTrace.raw = numpy.array([raw])
             if error and self.scanSettings.errorBars:
                 self.currentTrace.bottom = numpy.array([error[0]])
                 self.currentTrace.top = numpy.array([error[1]])
@@ -286,12 +287,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 steps = int(self.scan.steps)
                 self.currentTrace.x = numpy.append(self.currentTrace.x[-steps+1:], x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y[-steps+1:], mean)
+                self.currentTrace.raw = numpy.append(self.currentTrace.raw[-steps+1:], raw)
                 if error and self.scanSettings.errorBars:
                     self.currentTrace.bottom = numpy.append(self.currentTrace.bottom[-steps+1:], error[0]) 
                     self.currentTrace.top = numpy.append(self.currentTrace.top[-steps+1:], error[1]) 
             else:
                 self.currentTrace.x = numpy.append(self.currentTrace.x, x)
                 self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
+                self.currentTrace.raw = numpy.append(self.currentTrace.raw, raw)
                 if error and self.scanSettings.errorBars:
                     self.currentTrace.bottom = numpy.append(self.currentTrace.bottom, error[0])
                     self.currentTrace.top = numpy.append(self.currentTrace.top, error[1])

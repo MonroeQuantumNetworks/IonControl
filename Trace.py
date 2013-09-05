@@ -83,7 +83,7 @@ class Trace(object):
             of = open(filename,'w')
             columnlist = [self.x,self.y]
             columnspec = ['x', 'y']
-            for column in ['height', 'top', 'bottom']:
+            for column in ['height', 'top', 'bottom','raw']:
                 if hasattr(self, column):
                     columnlist.append( getattr(self,column) )
                     columnspec.append( column )
