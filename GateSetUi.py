@@ -129,7 +129,7 @@ class GateSetUi(Form,Base):
             
     def loadGateSetList(self, path):
         self.gateSetContainer.loadXml(path)
-        print "loaded {0} gateSets.".format(len(self.gateSetContainer.GateSetDict))
+        print "loaded {0} gateSets from {1}.".format(len(self.gateSetContainer.GateSetDict), path)
         filedir, filename = os.path.split(path)
         self.settings.gateSet = filename
         self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(filename))
