@@ -16,6 +16,7 @@ import numpy
 import DedicatedDisplay
 import AnalogInputCalibration
 import AutoLoad
+import InputCalibrationUi
        
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -57,6 +58,14 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.settingsDock.setWidget( self.settingsUi )
         self.settingsUi.valueChanged.connect( self.onSettingsChanged )
         self.settings = self.settingsUi.settings
+        # Input Calibrations        
+        self.calibrationUi = InputCalibrationUi.InputCalibrationUi(self.config,4)
+        self.calibrationUi.setupUi(self.calibrationUi)
+        self.calibrationDock = QtGui.QDockWidget("Input Calibration")
+        self.calibrationDock.setObjectName("Input Calibration")
+        self.calibrationDock.setWidget( self.calibrationUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.calibrationDock)
+        self.analogCalbrations = self.calibrationUi.calibrations
         # Display Channels 0-3
         self.displayUi = DedicatedDisplay.DedicatedDisplay(self.config,"Channel 0-3")
         self.displayUi.setupUi(self.displayUi)
@@ -112,6 +121,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.config['DedicatedCounter.Settings'] = self.settings
         self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.settingsUi.onClose()
+        self.calibrationUi.onClose()
         self.autoLoad.close()
         
     def reject(self):
