@@ -91,7 +91,7 @@ class InputCalibrationUi(Form,Base):
             ui = InputCalibrationChannel(self.config,i)
             ui.setupUi(self.updateCalibration, ui)
             self.stackedWidget.insertWidget(i,ui)
-            self.calibrations.append(ui.myCalibration)
+            self.calibrations[i] = ui.myCalibration
             self.widgetList.append(ui)
         self.stackedWidget.setCurrentIndex(0)
 

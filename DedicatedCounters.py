@@ -40,11 +40,12 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.integrationTime = 0
         self.integrationTimeLookup = dict()
         self.tick = 0
-        self.analogCalbrations = [
-            AnalogInputCalibration.PowerDetectorCalibration(),
-            AnalogInputCalibration.PowerDetectorCalibrationTwo(),
-            AnalogInputCalibration.AnalogInputCalibration(),
-            AnalogInputCalibration.AnalogInputCalibration() ]
+        self.analogCalbrations = None
+#        [
+#            AnalogInputCalibration.PowerDetectorCalibration(),
+#            AnalogInputCalibration.PowerDetectorCalibrationTwo(),
+#            AnalogInputCalibration.AnalogInputCalibration(),
+#            AnalogInputCalibration.AnalogInputCalibration() ]
 
     def setupUi(self, parent):
         DedicatedCountersForm.setupUi(self,parent)
