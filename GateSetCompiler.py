@@ -26,6 +26,7 @@ class GateSetCompiler(object):
             addresses.append(index)
             data.append(gatesetdata)
             index += len(gatesetdata)*4
+            #print name, index, len(data), len(addresses), len(gatesetdata)
         return addresses, [item for sublist in data for item in sublist]
     
     """Compile one gateset into its binary representation"""

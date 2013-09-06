@@ -123,12 +123,12 @@
          <widget class="QComboBox" name="scanTypeCombo">
           <item>
            <property name="text">
-            <string>Linear up</string>
+            <string>Linear Start to Stop</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Linear down</string>
+            <string>Linear Stop to Start</string>
            </property>
           </item>
           <item>
@@ -165,7 +165,7 @@
         <item row="0" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>Minimum</string>
+           <string>Start</string>
           </property>
          </widget>
         </item>
@@ -188,7 +188,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Maximum</string>
+           <string>Stop</string>
           </property>
          </widget>
         </item>
@@ -209,6 +209,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="rewriteDDSCheckBox">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply DDS settings from Main Ui after sequence is finished&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Rewrite DDS when finished</string>
         </property>

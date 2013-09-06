@@ -200,9 +200,13 @@ class PulseProgram:
         data = self.convertParameter(value, var.encoding )
         return bytearray( struct.pack('II', (var.address, data)))
         
+    def flattenList(self,l):
+        return [item for sublist in l for item in sublist]
+        
     def variableScanCode(self, variablename, values):
         var = self.variabledict[variablename]
-        return [item for sublist in [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] for item in sublist]
+        # [item for sublist in l for item in sublist] idiom for flattening of list
+        return self.flattenList( [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] )
                    
     def loadFromMemory(self):
         """Similar to loadSource
@@ -421,16 +425,18 @@ class PulseProgram:
         """
         if isinstance(mag, magnitude.Magnitude):
             if tuple(mag.dimension())==Dimensions.time:
-                return int((mag/self.timestep).round()) 
+                result = int((mag/self.timestep).round()) 
             else:
                 step, unit, dimension, mask = encodings[encoding]
-                return int(round(mag.toval(unit)/step)) & mask
+                result = int(round(mag.toval(unit)/step)) & mask
         else:
             if encoding:
                 step, unit, dimension, mask = encodings[encoding]
-                return int(round(mag/step)) & mask
+                result = int(round(mag/step)) & mask
             else:
-                return mag
+                result = mag
+        # print "convertParameter encoding", encoding, mag, result
+        return result
 
     def compileCode(self):
         self.parse()
