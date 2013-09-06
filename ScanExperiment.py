@@ -278,7 +278,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.vars.comment = ""
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
-            if not self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
+            if self.scan.scanMode==self.scanParametersWidget.ScanModes.GateSet:
+                self.graphicsView.setXRange( 0, 
+                                             len(self.scan.list) )                
+            elif not self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
                 self.graphicsView.setXRange( MagnitudeUtilit.value(self.scan.start), 
                                              MagnitudeUtilit.valueAs(self.scan.stop, self.scan.start) )
             self.traceui.addTrace(self.plottedTrace,pen=-1)
