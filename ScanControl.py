@@ -27,6 +27,7 @@ class Scan:
         self.stepsSelect = 0
         self.scantype = 0
         self.scanMode = 0
+        self.scanRepeat = 0
         self.rewriteDDS = False
         self.filename = ""
         self.autoSave = False
@@ -49,6 +50,7 @@ class Scan:
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('xUnit', '')
+        self.__dict__.setdefault('scanRepeat', 0)
         
     def __eq__(self,other):
         return ( self.scanParameter == other.scanParameter and
@@ -58,6 +60,7 @@ class Scan:
                 self.stepsSelect == other.stepsSelect and
                 self.scantype == other.scantype and
                 self.scanMode == other.scanMode and 
+                self.scanRepeat == other.scanRepeat and 
                 self.rewriteDDS == other.rewriteDDS and
                 self.filename == other.filename and
                 self.autoSave == other.autoSave and
@@ -121,7 +124,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
         self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
-        
+        self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
@@ -174,6 +177,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.stopBox.setEnabled(self.settings.scanMode in [0,1])
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )
+        self.scanRepeatComboBox.setCurrentIndex( self.settings.scanRepeat )
         # Evaluation
         self.histogramBinsBox.setValue(self.settings.histogramBins)
         self.integrateHistogramButton.setChecked( self.settings.integrateHistogram )
@@ -188,6 +192,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.roiWidthSpinBox.setValue(self.settings.roiWidth)
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
+        self.onModeChanged(self.settings.scanMode)
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
@@ -220,9 +225,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onModeChanged(self, index):
         self.beginChange()
         self.settings.scanMode = index
-        self.startBox.setEnabled(index in [0,1])
-        self.stopBox.setEnabled(index in [0,1])
-        self.scanTypeCombo.setEnabled(index in [0,1])
+        self.startBox.setEnabled(index ==0)
+        self.stopBox.setEnabled(index ==0)
+        self.stepsBox.setEnabled( index==0)
+        self.scanTypeCombo.setEnabled(index in [0,2])
+        self.scanRepeatComboBox.setEnabled( index in [0,2] )
+        self.xUnitEdit.setEnabled( index==0)
+        self.comboBoxParameter.setEnabled( index==0 )
         self.commitChange()       
     
     def onValueChanged(self, attribute, value):
