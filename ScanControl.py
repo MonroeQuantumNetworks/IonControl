@@ -78,6 +78,7 @@ class Scan:
 
 class ScanControl(ScanControlForm, ScanControlBase ):
     ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace','GateSetScan')
+    integrationMode = enum.enum('IntegrateAll','IntegrateRun','NoIntegration')    
     def __init__(self,config,parentname,parent=None):
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
@@ -196,7 +197,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def onCurrentTextChanged(self, text):
         self.beginChange()
-        self.settings.parameter = str(text)
+        self.settings.scanParameter = str(text)
         self.commitChange()
     
     def onCurrentIndexChanged(self, attribute, index):
