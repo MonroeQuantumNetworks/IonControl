@@ -24,12 +24,13 @@ class Scan:
         self.start = 0
         self.stop = 0
         self.steps = 0
-        self.numOfSteps = True
+        self.stepsSelect = 0
         self.scantype = 0
         self.scanMode = 0
         self.rewriteDDS = False
         self.filename = ""
         self.autoSave = False
+        self.xUnit = ""
         # Evaluation
         self.histogramBins = 50
         self.integrateHistogram = False
@@ -45,17 +46,22 @@ class Scan:
         self.timestampsChannel = 0
         self.saveRawData = False
         
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault('xUnit', '')
+        
     def __eq__(self,other):
         return ( self.scanParameter == other.scanParameter and
                 self.start == other.start and
                 self.stop == other.stop and
                 self.steps == other.steps and
-                self.numOfSteps == other.numOfSteps and
+                self.stepsSelect == other.stepsSelect and
                 self.scantype == other.scantype and
                 self.scanMode == other.scanMode and 
                 self.rewriteDDS == other.rewriteDDS and
                 self.filename == other.filename and
                 self.autoSave == other.autoSave and
+                self.xUnit == other.xUnit and
                 self.histogramBins == other.histogramBins and
                 self.integrateHistogram == other.integrateHistogram and
                 self.counterChannel == other.counterChannel and
@@ -108,11 +114,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.startBox.valueChanged.connect( functools.partial(self.onValueChanged,'start') )
         self.stopBox.valueChanged.connect( functools.partial(self.onValueChanged,'stop') )
         self.stepsBox.valueChanged.connect( functools.partial(self.onValueChanged,'steps') )
+        self.stepsCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'stepsSelect') )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.rewriteDDSCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'rewriteDDS') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
-        self.filenameEdit.editingFinished.connect( self.onNewFilename )
+        self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
+        self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
@@ -154,6 +162,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.startBox.setValue(self.settings.start)
         self.stopBox.setValue(self.settings.stop)
         self.stepsBox.setValue(self.settings.steps)
+        self.stepsCombo.setCurrentIndex(self.settings.stepsSelect)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
@@ -164,6 +173,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.startBox.setEnabled(self.settings.scanMode in [0,1])
         self.stopBox.setEnabled(self.settings.scanMode in [0,1])
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
+        self.xUnitEdit.setText( self.settings.xUnit )
         # Evaluation
         self.histogramBinsBox.setValue(self.settings.histogramBins)
         self.integrateHistogramButton.setChecked( self.settings.integrateHistogram )
@@ -179,9 +189,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
 
-    def onNewFilename(self):
-        self.settings.filename = str(self.filenameEdit.text())
-        
+    def onEditingFinished(self,edit,attribute):
+        self.beginChange()
+        setattr( self.settings, attribute, str(edit.text())  )
+        self.commitChange()
+                
     def beginChange(self):
         self.tempSettings = copy.copy( self.settings )
 
@@ -233,13 +245,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBoxParameter.clear()
         for name in scannames:
             self.comboBoxParameter.addItem(name)
-        self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.parameter))
-        print self.configname,"activating", self.settings.parameter
+        self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
+        print self.configname,"activating", self.settings.scanParameter
                 
     def getScan(self):
         scan = copy.copy(self.settings)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
-        scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps, scan.type )
+        scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps, scan.type, scan.stepsSelect )
         self.onCommit()
         return scan
         

@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -78,16 +81,59 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="styleSheet">
+      <string notr="true">QToolBox {
+	    icon-size: 24px;
+	    border: 1px solid rgb(101, 147, 207);
+	    background-color: rgb(101, 147, 207);
+	}
+	
+	QToolBox:tab {
+	    height: 32px;
+	    color: rgb(32, 77, 137);
+	    background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(227, 239, 255, 255), stop:0.4 rgba(196, 221, 255, 255), stop:0.401 rgba(173, 209, 255, 255), stop:1 rgba(192, 219, 255, 255));
+	}
+	
+	QToolBox:tab:hover {
+	    height: 32px;
+	    color: rgb(32, 77, 137);
+	    background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(255, 254, 228, 255), stop:0.4 rgba(255, 232, 167, 255), stop:0.401 rgba(255, 215, 103, 255), stop:1 rgba(255, 230, 158, 255));
+	}
+	
+	QToolBox:tab:selected {
+	    height: 32px;
+	    font-weight: bold;
+	    color: rgb(0, 0, 0);
+	    /*background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1,
+26	 * stop:0 rgba(255, 217, 170, 255), stop:0.4 rgba(255, 187, 110, 255),
+27	 * stop:0.401 rgba(255, 171, 63, 255), stop:1 rgba(254, 225, 122, 255));*/
+	}
+	
+	QToolBox:tab:selected:hover {
+	    height: 32px;
+	    font-weight: bold;
+	    color: rgb(0, 0, 0);
+	    /*background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1,
+	 * stop:0 rgba(255, 189, 105, 255), stop:0.4 rgba(255, 172, 66, 255),
+	 * stop:0.401 rgba(251, 140, 60, 255), stop:1 rgba(254, 211, 100, 255));*/
+	} </string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Panel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page">
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>226</width>
-        <height>315</height>
+        <width>224</width>
+        <height>313</height>
        </rect>
       </property>
       <attribute name="label">
@@ -122,16 +168,6 @@
            </property>
            <property name="buttonSymbols">
             <enum>QAbstractSpinBox::NoButtons</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="stepsBox">
-           <property name="minimum">
-            <number>2</number>
-           </property>
-           <property name="maximum">
-            <number>10000</number>
            </property>
           </widget>
          </item>
@@ -217,7 +253,7 @@
           </widget>
          </item>
          <item row="2" column="0">
-          <widget class="QComboBox" name="comboBox_2">
+          <widget class="QComboBox" name="stepsCombo">
            <property name="frame">
             <bool>true</bool>
            </property>
@@ -232,6 +268,23 @@
             </property>
            </item>
           </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="MagnitudeSpinBox" name="stepsBox">
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::NoButtons</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>x-axis unit</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="xUnitEdit"/>
          </item>
         </layout>
        </item>
@@ -265,8 +318,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>226</width>
-        <height>315</height>
+        <width>224</width>
+        <height>313</height>
        </rect>
       </property>
       <attribute name="label">
@@ -348,8 +401,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>226</width>
-        <height>315</height>
+        <width>224</width>
+        <height>313</height>
        </rect>
       </property>
       <attribute name="label">
@@ -504,8 +557,7 @@
   <tabstop>comboBoxParameter</tabstop>
   <tabstop>startBox</tabstop>
   <tabstop>stopBox</tabstop>
-  <tabstop>comboBox_2</tabstop>
-  <tabstop>stepsBox</tabstop>
+  <tabstop>stepsCombo</tabstop>
   <tabstop>scanTypeCombo</tabstop>
   <tabstop>scanModeComboBox</tabstop>
   <tabstop>autoSaveCheckBox</tabstop>
