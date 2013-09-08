@@ -15,15 +15,24 @@ import MagnitudeSpinBox
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
-fitFunctionList = [  FitFunctions.GaussianFit, FitFunctions.CosFit, FitFunctions.LorentzianFit,
-                   FitFunctions.TruncatedLorentzianFit ]
+#fitFunctionList = [  FitFunctions.GaussianFit, FitFunctions.CosFit, FitFunctions.LorentzianFit,
+#                   FitFunctions.TruncatedLorentzianFit ]
 
 class FitFunctionUi(object):
     def __init__(self,fitfunction):
         self.fitfunction = fitfunction
         self.startParameters = fitfunction.startParameters
         self.fittedParametersUi = [None]* len(fitfunction.parameters)
+        self.startParametersUi = [None]* len(fitfunction.parameters)
         self.resultsUi = [None]* len(fitfunction.resultNames)
+        
+    def fittedParameterSetValue(self):
+        for i,p in enumerate(self.fitfunction.parameters):
+            self.fittedParametersUi[i].setValue(p)        
+
+    def startParameterSetValue(self):
+        for i,p in enumerate(self.fitfunction.startParameters):
+            self.startParametersUi[i].setValue(p)        
             
 class FitUi(fitForm, QtGui.QWidget):
     def __init__(self,traceui,config,parentname,parent=None):
@@ -61,6 +70,7 @@ class FitUi(fitForm, QtGui.QWidget):
                 doubleSpinBox.setValue(fitfunction.fitfunction.startParameters[line])
                 fitfunction.gridLayout.addWidget(doubleSpinBox, line+1, 1, 1, 1)
                 doubleSpinBox.valueChanged.connect( functools.partial( self.setParameter, fitfunction, line ) )
+                fitfunction.startParametersUi[line] = doubleSpinBox
                 doubleSpinBox = pyqtgraph.SpinBox(fitfunction.page,dec=True)
                 fitfunction.gridLayout.addWidget(doubleSpinBox, line+1,2, 1, 1)   
                 fitfunction.fittedParametersUi[line] = doubleSpinBox
@@ -104,6 +114,12 @@ class FitUi(fitForm, QtGui.QWidget):
                 functionui.fittedParametersUi[i].setValue(p)
             for index, name in enumerate(functionui.fitfunction.resultNames):
                 functionui.resultsUi[index].setValue(getattr(functionui.fitfunction,name))
+                
+#    def parameterSetValue(self,index):
+#        index = self.stackedWidget.currentIndex()
+#        functionui = self.fitFunctions[index]
+#        for i,p in enumerate(functionui.fitfunction.parameters):
+#            functionui.fittedParametersUi[i].setValue(p)        
             
     def onPlot(self):
         index = self.stackedWidget.currentIndex()
@@ -122,13 +138,26 @@ class FitUi(fitForm, QtGui.QWidget):
             plot.plot(-2)
     
     def onExtractFit(self):
-#        plots = self.traceui.selectedPlottedTrace()
-#        if plots:
-#            plot = plots[0]
-#            fitfunction = copy.deepcopy(plot.trace.fitfunction)
-#    
+        plots = self.traceui.selectedPlottedTraces()
+        print "onExtractFit {0} plots selected".format(len(plots) )
+        if plots:
+            plot = plots[0]
+            print "extracting plot"
+            if hasattr( plot.trace, 'fitfunction'):
+                print "plot has fitfunction"
+                for i, function in enumerate(self.fitFunctions):
+                    if function.fitfunction.name == plot.trace.fitfunction.name:
+                        print "compare names {0} == {1}".format(function.fitfunction.name,plot.trace.fitfunction.name)
+                        self.comboBox.setCurrentIndex(i)
+                        function.fitfunction.parameters = plot.trace.fitfunction.parameters
+                        print "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name)
+                        self.fitFunctions[i].fittedParameterSetValue()                
+    
     def onCopy(self):
-        pass
+        index = self.stackedWidget.currentIndex()
+        functionui = self.fitFunctions[index]
+        functionui.fitfunction.startParameters = copy.deepcopy(functionui.fitfunction.parameters)
+        functionui.startParameterSetValue()
     
     
             
