@@ -33,10 +33,142 @@ from datetime import datetime
 from ui import StyleSheets
 import RawData
 from modules import MagnitudeUtilit
-import magnitude
+import random
 import ScanControl
         
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
+
+class ParameterScanGenerator:
+    def __init__(self, scan):
+        self.scan = scan
+        
+    def prepare(self, pulseProgramUi ):
+        print self.scan.scanParameter
+        self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, self.scan.list)
+        return ( self.scan.code, [])
+        
+    def restartCode(self):
+        mycode = self.scan.code[self.currentIndex*2:]
+        print "original length", len(self.scan.code), "remaining", len(mycode)
+        return mycode
+        
+    def xValue(self, index):
+        return MagnitudeUtilit.valueAs( self.scan.list[index], self.scan.start )
+        
+    def dataNextCode(self, experiment):
+        return []
+        
+    def dataOnFinal(self, experiment):
+        if self.scan.scanRepeat == 1:
+            experiment.onStart()
+        else:
+            experiment.onStop()                   
+    
+    def xRange(self):
+        self.graphicsView.setXRange( MagnitudeUtilit.value(self.scan.start), 
+                                     MagnitudeUtilit.valueAs(self.scan.stop, self.scan.start) )
+                                     
+    def appendData(self,trace,x,y,raw,error):                                     
+        trace.x = numpy.append(self.currentTrace.x, x)
+        trace.y = numpy.append(self.currentTrace.y, y)
+        trace.raw = numpy.append(self.currentTrace.raw, raw)
+        if error and self.scan.errorBars:
+            trace.bottom = numpy.append(self.currentTrace.bottom, error[0])
+            trace.top = numpy.append(self.currentTrace.top, error[1])
+                
+class StepInPlaceGenerator:
+    def __init__(self, scan):
+        self.scan = scan
+        
+    def prepare(self, pulseProgramUi ):
+        self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
+        self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
+        return (pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue]*5) , [])
+
+    def restartCode(self):
+        return self.scan.code * 5
+        
+    def dataNextCode(self, experiment):
+        return self.scan.code
+        
+    def xValue(self,index):
+        return index
+
+    def xRange(self):
+        return []
+
+    def appendData(self,trace,x,y,raw,error):                                   
+        if len(trace.x)>=self.scan.steps:
+            steps = int(self.scan.steps)
+            trace.x = numpy.append(trace.x[-steps+1:], x)
+            trace.y = numpy.append(trace.y[-steps+1:], y)
+            trace.raw = numpy.append(trace.raw[-steps+1:], raw)
+            if error and self.scanSettings.errorBars:
+                trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0]) 
+                trace.top = numpy.append(trace.top[-steps+1:], error[1]) 
+        else:
+            trace.x = numpy.append(self.currentTrace.x, x)
+            trace.y = numpy.append(self.currentTrace.y, y)
+            trace.raw = numpy.append(self.currentTrace.raw, raw)
+            if error and self.scanSettings.errorBars:
+                trace.bottom = numpy.append(self.currentTrace.bottom, error[0])
+                trace.top = numpy.append(self.currentTrace.top, error[1])
+
+    def dataOnFinal(self, experiment):
+        experiment.onStop()                   
+
+class GateSetScanGenerator:
+    def __init__(self, scan):
+        self.scan = scan
+        
+    def prepare(self, pulseProgramUi):
+        address, data, parameter = pulseProgramUi.gateSetScanData()
+        print "GateSetScan", address, parameter
+        self.scan.list = address
+        self.scan.index = range(len(self.scan.list))
+        if self.scan.scantype == 1:
+            self.scan.list.reverse()
+            self.scan.index.reverse()
+        elif self.scantype == 2:
+            zipped = zip(self.scan.index,self.scan.list)
+            random.shuffle(zipped)
+            self.scan.index, self.scan.list = zip( *zipped )
+        self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
+        print "GateSetScanCode", self.scan.list, self.scan.code
+        return (self.scan.code, data)
+
+    def restartCode(self):
+        mycode = self.scan.code[self.currentIndex*2:]
+        print "original length", len(self.scan.code), "remaining", len(mycode)
+        return mycode
+
+    def xValue(self,index):
+        return self.scan.index[index]
+
+    def dataNextCode(self, experiment):
+        return []
+        
+    def xRange(self):
+        return [0, len(self.scan.list)]
+
+    def appendData(self,trace,x,y,raw,error):                                     
+        trace.x = numpy.append(self.currentTrace.x, x)
+        trace.y = numpy.append(self.currentTrace.y, y)
+        trace.raw = numpy.append(self.currentTrace.raw, raw)
+        if error and self.scan.errorBars:
+            trace.bottom = numpy.append(self.currentTrace.bottom, error[0])
+            trace.top = numpy.append(self.currentTrace.top, error[1])
+
+    def dataOnFinal(self, experiment):
+        if self.scan.scanRepeat == 1:
+            experiment.onStart()
+        else:
+            experiment.onStop()                   
+        
+GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSetScanGenerator]   
+    
+    
+
 
 class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
@@ -131,22 +263,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.state = self.OpStates.running
         PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
         self.scan = self.scanControlWidget.getScan()
-        if self.scan.scanMode == self.scanControlWidget.ScanModes.StepInPlace:
-            self.stepInPlaceValue = self.pulseProgramUi.getVariableValue(self.scan.scanParameter)
-            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
-            mycode = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue]*5)
-        elif self.scan.scanMode == self.scanControlWidget.ScanModes.GateSetScan:
-            address, data, parameter = self.pulseProgramUi.gateSetScanData()
-            print "GateSetScan", address, parameter
+        self.generator = GeneratorList[self.scan.scanMode](self.scan)
+        (mycode, data) = self.generator.prepare(self.pulseProgramUi)
+        if data:
             self.pulserHardware.ppWriteRamWordlist(data,0)
-            self.scan.list = address
-            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
-            print "GateSetScanCode", self.scan.list, self.scan.code
-            mycode = self.scan.code
-        else:
-            print self.scan.scanParameter
-            self.scan.code = self.pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, self.scan.list)
-            mycode = self.scan.code
         self.pulserHardware.ppFlushData()
         self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppUpload(PulseProgramBinary)
@@ -170,14 +290,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onPause(self):
         if self.state == self.OpStates.paused:
             self.state = self.OpStates.running
-            if self.scan.scanMode == self.scanControlWidget.ScanModes.StepInPlace:
-               mycode = self.scan.code * 5
-            else:
-                mycode = self.scan.code[self.currentIndex*2:]
-                print "original length", len(self.scan.code), "remaining", len(mycode)
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
-            self.pulserHardware.ppWriteData(mycode)
+            self.pulserHardware.ppWriteData(self.generator.restartCode())
             print "Starting"
             self.pulserHardware.ppStart()
             self.running = True
@@ -221,10 +336,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.other:
             print "Other:", data.other
         #mean = numpy.mean( data.count[self.scanSettings.counter] )
-        if self.scan.scanMode in [self.scanControlWidget.ScanModes.StepInPlace,self.scanControlWidget.ScanModes.GateSetScan]:
-            x = self.currentIndex
-        else:
-            x = MagnitudeUtilit.valueAs( self.scan.list[self.currentIndex], self.scan.start )
+        x = self.generator.xValue(self.currentIndex)
         if mean is not None:
             self.updateMainGraph(x, mean, error, raw)
         self.currentIndex += 1
@@ -235,16 +347,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.finalizeData()
             print "current index", self.currentIndex, "expected", len(self.scan.list)
             if self.currentIndex >= len(self.scan.list):
-                if self.scan.scanMode == self.scanControlWidget.ScanModes.RepeatedScan:
-                    self.onStart()
-                else:
-                    self.onStop()
+                self.generator.dataOnFinal(self)
             else:
                 self.state = self.OpStates.paused
                 self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
         else:
-            if self.scan.scanMode == self.scanControlWidget.ScanModes.StepInPlace:
-                self.pulserHardware.ppWriteData(self.scan.code)     
+            mycode = self.generator.dataNextCode()
+            if mycode:
+                self.pulserHardware.ppWriteData(mycode)     
         self.scanControlWidget.progressBar.setValue(self.currentIndex)
 
     def updateMainGraph(self, x, mean, error, raw):
@@ -261,32 +371,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.vars.comment = ""
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
-            if self.scan.scanMode==self.scanControlWidget.ScanModes.GateSet:
-                self.graphicsView.setXRange( 0, 
-                                             len(self.scan.list) )                
-            elif not self.scan.scanMode == self.scanControlWidget.ScanModes.StepInPlace:
-                self.graphicsView.setXRange( MagnitudeUtilit.value(self.scan.start), 
-                                             MagnitudeUtilit.valueAs(self.scan.stop, self.scan.start) )
+            xRange = self.generator.xRange
+            if xRange:
+                self.graphicsView.setXRange( *xRange )                
             self.traceui.addTrace(self.plottedTrace,pen=-1)
         else:
-            if self.scan.scanMode == self.scanControlWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
-                steps = int(self.scan.steps)
-                self.currentTrace.x = numpy.append(self.currentTrace.x[-steps+1:], x)
-                self.currentTrace.y = numpy.append(self.currentTrace.y[-steps+1:], mean)
-                self.currentTrace.raw = numpy.append(self.currentTrace.raw[-steps+1:], raw)
-                if error and self.scanSettings.errorBars:
-                    self.currentTrace.bottom = numpy.append(self.currentTrace.bottom[-steps+1:], error[0]) 
-                    self.currentTrace.top = numpy.append(self.currentTrace.top[-steps+1:], error[1]) 
-            else:
-                self.currentTrace.x = numpy.append(self.currentTrace.x, x)
-                self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
-                self.currentTrace.raw = numpy.append(self.currentTrace.raw, raw)
-                if error and self.scanSettings.errorBars:
-                    self.currentTrace.bottom = numpy.append(self.currentTrace.bottom, error[0])
-                    self.currentTrace.top = numpy.append(self.currentTrace.top, error[1])
-                   
+            self.generator.appendData(self.currentTrace, x, mean, raw, error)
             self.plottedTrace.replot()
-
 
     def finalizeData(self):
         print "finalize Data"
