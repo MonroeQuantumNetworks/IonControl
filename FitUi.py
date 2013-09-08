@@ -87,6 +87,9 @@ class FitUi(fitForm, QtGui.QWidget):
             self.stackedWidget.addWidget(fitfunction.page)
         self.pushButton.clicked.connect( self.onFit )
         self.plotButton.clicked.connect( self.onPlot )
+        self.removeButton.clicked.connect( self.onRemoveFit )
+        self.extractButton.clicked.connect( self.onExtractFit )
+        self.copyButton.clicked.connect( self.onCopy )
         
     def onFit(self):
         index = self.stackedWidget.currentIndex()
@@ -112,5 +115,21 @@ class FitUi(fitForm, QtGui.QWidget):
             functionui.fitfunction.finalize(functionui.fitfunction.parameters)
             for index, name in enumerate(functionui.fitfunction.resultNames):
                 functionui.resultsUi[index].setValue(getattr(functionui.fitfunction,name))
+                
+    def onRemoveFit(self):
+        for plot in self.traceui.selectedPlottedTraces():
+            del plot.trace.fitfunction
+            plot.plot(-2)
+    
+    def onExtractFit(self):
+#        plots = self.traceui.selectedPlottedTrace()
+#        if plots:
+#            plot = plots[0]
+#            fitfunction = copy.deepcopy(plot.trace.fitfunction)
+#    
+    def onCopy(self):
+        pass
+    
+    
             
         
