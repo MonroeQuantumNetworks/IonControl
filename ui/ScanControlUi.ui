@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>271</width>
-    <height>471</height>
+    <height>373</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -125,7 +125,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="page">
       <property name="geometry">
@@ -328,7 +328,7 @@
         <x>0</x>
         <y>0</y>
         <width>251</width>
-        <height>313</height>
+        <height>216</height>
        </rect>
       </property>
       <attribute name="label">
@@ -398,6 +398,12 @@
        </item>
        <item row="5" column="0" colspan="2">
         <widget class="QStackedWidget" name="evalStackedWidget">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="currentIndex">
           <number>-1</number>
          </property>
@@ -411,7 +417,7 @@
         <x>0</x>
         <y>0</y>
         <width>251</width>
-        <height>313</height>
+        <height>215</height>
        </rect>
       </property>
       <attribute name="label">
