@@ -136,7 +136,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
-        self.counterSpinBox.valueChanged.connect( functools.partial(self.onValueChanged,'counterChannel') )
+        self.counterSpinBox.valueChanged.connect( functools.partial(self.onIntValueChanged,'counterChannel') )
         self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onAlgorithmNameChanged )
         self.algorithms = dict()
@@ -250,6 +250,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
+        #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
+        self.commitChange()
+
+    def onIntValueChanged(self, attribute, value):
+        self.beginChange()
+        setattr( self.settings, attribute, value )
         #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
         self.commitChange()
         
