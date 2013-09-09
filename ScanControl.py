@@ -261,7 +261,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
-        oldParameterName = self.comboBoxParameter.currentText()
+        #oldParameterName = self.comboBoxParameter.currentText()
+        oldParameterName = self.settings.scanParameter
         self.comboBoxParameter.clear()
         for name, var in iter(sorted(variabledict.iteritems())):
             if var.type == "parameter":
