@@ -93,13 +93,19 @@ class SquareRabiFit(FitFunctionBase):
         T, C, A, O = p
         Rs = numpy.square(2*numpy.pi/T)
         Ds = numpy.square(2*numpy.pi*(x-C))
-        return y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2)))-O
+        return y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))-O
         
     def value(self,x,p=None):
         T, C, A, O = self.parameters if p is None else p
         Rs = numpy.square(2*numpy.pi/T)
         Ds = numpy.square(2*numpy.pi*(x-C))
-        return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2)))+O
+        print T, C, A, O
+        print Rs
+        print Ds
+        part = numpy.sqrt(Rs+Ds)*self.t/2.
+        print part
+        print numpy.cos, numpy.sin, numpy.sqrt
+        return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))+O
     
 
 class LorentzianFit(FitFunctionBase):
