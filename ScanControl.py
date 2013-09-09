@@ -32,6 +32,8 @@ class Scan:
         self.filename = ""
         self.autoSave = False
         self.xUnit = ""
+        self.loadPP = False
+        self.loadPPName = ""
         # Evaluation
         self.histogramBins = 50
         self.integrateHistogram = False
@@ -51,6 +53,8 @@ class Scan:
         self.__dict__ = state
         self.__dict__.setdefault('xUnit', '')
         self.__dict__.setdefault('scanRepeat', 0)
+        self.__dict__.setdefault('loadPP', False)
+        self.__dict__.setdefault('loadPPName', "")
         
     def __eq__(self,other):
         return ( self.scanParameter == other.scanParameter and
@@ -65,6 +69,8 @@ class Scan:
                 self.filename == other.filename and
                 self.autoSave == other.autoSave and
                 self.xUnit == other.xUnit and
+                self.loadPP == other.loadPP and
+                self.loadPPName == other.loadPPName and
                 self.histogramBins == other.histogramBins and
                 self.integrateHistogram == other.integrateHistogram and
                 self.counterChannel == other.counterChannel and
@@ -193,6 +199,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.onModeChanged(self.settings.scanMode)
+        
+    def setPulseProgramUi(self, pulseProgramUi ):
+        self.pulseProgramUi = pulseProgramUi
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
