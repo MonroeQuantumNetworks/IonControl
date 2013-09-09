@@ -103,14 +103,14 @@ class StepInPlaceGenerator:
             trace.x = numpy.append(trace.x[-steps+1:], x)
             trace.y = numpy.append(trace.y[-steps+1:], y)
             trace.raw = numpy.append(trace.raw[-steps+1:], raw)
-            if error and self.scanSettings.errorBars:
+            if error and self.scan.errorBars:
                 trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0]) 
                 trace.top = numpy.append(trace.top[-steps+1:], error[1]) 
         else:
             trace.x = numpy.append(self.currentTrace.x, x)
             trace.y = numpy.append(self.currentTrace.y, y)
             trace.raw = numpy.append(self.currentTrace.raw, raw)
-            if error and self.scanSettings.errorBars:
+            if error and self.scan.errorBars:
                 trace.bottom = numpy.append(self.currentTrace.bottom, error[0])
                 trace.top = numpy.append(self.currentTrace.top, error[1])
 
@@ -333,10 +333,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Called by worker with new data
         """
         print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
-        mean, error, raw = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
         if data.other:
             print "Other:", data.other
-        #mean = numpy.mean( data.count[self.scanSettings.counter] )
+        #mean = numpy.mean( data.count[self.scan.counterChannel] )
         x = self.generator.xValue(self.currentIndex)
         if mean is not None:
             self.updateMainGraph(x, mean, error, raw)
@@ -365,7 +365,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.x = numpy.array([x])
             self.currentTrace.y = numpy.array([mean])
             self.currentTrace.raw = numpy.array([raw])
-            if error and self.scanSettings.errorBars:
+            if error and self.scan.errorBars:
                 self.currentTrace.bottom = numpy.array([error[0]])
                 self.currentTrace.top = numpy.array([error[1]])
             self.currentTrace.name = self.scan.scanParameter

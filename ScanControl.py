@@ -55,6 +55,7 @@ class Scan:
         self.__dict__.setdefault('scanRepeat', 0)
         self.__dict__.setdefault('loadPP', False)
         self.__dict__.setdefault('loadPPName', "")
+        self.__dict__.setdefault('evalName','Mean')
         
     def __eq__(self,other):
         return ( self.scanParameter == other.scanParameter and
@@ -85,10 +86,10 @@ class Scan:
 
         
     def __repr__(self):
-        r = "Scanning parameter: {0}\nScanning From: {1}\nScanning To: {2}\n".format(self.scanParameter,self.start,self.stop)
-        r+= "Scanning Steps: {0}\nScanning type: {1}\nScanning rewriteDDS: {2}\n".format(self.steps,self.scantype,self.rewriteDDS)
-        r+= "Scanning mode: {0}".format(self.scanMode)
-        return r
+#        r = "Scanning parameter: {0}\nScanning From: {1}\nScanning To: {2}\n".format(self.scanParameter,self.start,self.stop)
+#        r+= "Scanning Steps: {0}\nScanning type: {1}\nScanning rewriteDDS: {2}\n".format(self.steps,self.scantype,self.rewriteDDS)
+#        r+= "Scanning mode: {0}".format(self.scanMode)
+        return "{0}".format(self.__dict__)
 
 
 class ScanControl(ScanControlForm, ScanControlBase ):
@@ -101,6 +102,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.configname = 'ScanControl.'+parentname
         # History and Dictionary
         self.settingsDict = self.config.get(self.configname+'.dict',dict())
+        #print self.settingsDict
         self.settingsHistory = list()
         self.settingsHistoryPointer = None
         self.historyFinalState = None
@@ -167,7 +169,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
         
     def setSettings(self, settings):
-        self.settings = copy.copy(settings)
+        self.settings = copy.deepcopy(settings)
+        #print "setSettings", id(self.settings), self.settings
+        self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.startBox.setValue(self.settings.start)
         self.stopBox.setValue(self.settings.stop)
         self.stepsBox.setValue(self.settings.steps)
@@ -176,8 +180,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
         self.progressBar.setVisible( False )
-        self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
-        if settings.scanParameter: self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(settings.scanParameter))
+        if self.settings.scanParameter: self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
         self.startBox.setEnabled(self.settings.scanMode in [0,1])
         self.stopBox.setEnabled(self.settings.scanMode in [0,1])
@@ -205,11 +208,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
+        #print id(self.settings), attribute, "->", str(edit.text())
         setattr( self.settings, attribute, str(edit.text())  )
         self.commitChange()
                 
     def beginChange(self):
-        self.tempSettings = copy.copy( self.settings )
+        self.tempSettings = copy.deepcopy( self.settings )
 
     def commitChange(self): 
         pass
@@ -246,7 +250,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
-        print "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
+        #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
         self.commitChange()
         
     def setVariables(self, variabledict):
@@ -267,9 +271,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         print self.configname,"activating", self.settings.scanParameter
                 
     def getScan(self):
-        scan = copy.copy(self.settings)
+        scan = copy.deepcopy(self.settings)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
         scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps, scan.type, scan.stepsSelect )
+        scan.evalAlgo = self.algorithms[scan.evalName]
         self.onCommit()
         return scan
         
@@ -291,22 +296,23 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onUndo(self):
         if self.settingsHistoryPointer>0:
             if self.settingsHistoryPointer==len(self.settingsHistory):
-                self.historyFinalState = copy.copy( self.settings )
+                self.historyFinalState = copy.deepcopy( self.settings )
             self.settingsHistoryPointer -= 1
             self.setSettings( self.settingsHistory[self.settingsHistoryPointer] )
     
     def onSave(self):
         name = str(self.comboBox.currentText())
+        #print "onSave", name, id(self.settings), self.settings
         if name != '':
             if name not in self.settingsDict:
                 if self.comboBox.findText(name)==-1:
                     self.comboBox.addItem(name)
                 print self.configname, "adding to combo", name
-            self.settingsDict[name] = copy.copy(self.settings)
+            self.settingsDict[name] = copy.deepcopy(self.settings)
     
     def onLoad(self,name):
         name = str(name)
-        print self.configname, "onLoad", name
+        #print self.configname, "onLoad", name
         if name !='' and name in self.settingsDict:
             self.setSettings(self.settingsDict[name])
         else:
@@ -315,7 +321,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
    
     def onCommit(self):
         if len(self.settingsHistory)==0 or self.settings!=self.settingsHistory[-1]:
-            self.settingsHistory.append(copy.copy(self.settings))
+            self.settingsHistory.append(copy.deepcopy(self.settings))
             self.settingsHistoryPointer = len(self.settingsHistory)
                 
     def onIntegrationChanged(self, value):
