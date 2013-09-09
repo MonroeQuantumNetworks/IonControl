@@ -128,7 +128,7 @@ class GateSetScanGenerator:
         if self.scan.scantype == 1:
             self.scan.list.reverse()
             self.scan.index.reverse()
-        elif self.scantype == 2:
+        elif self.scan.scantype == 2:
             zipped = zip(self.scan.index,self.scan.list)
             random.shuffle(zipped)
             self.scan.index, self.scan.list = zip( *zipped )
