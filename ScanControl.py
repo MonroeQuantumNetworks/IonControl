@@ -166,7 +166,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.saveRawDataCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData' ) )
         self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
         self.channelSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'timestampsChannel') )
-
+        self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
+        self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
         
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
@@ -187,6 +188,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )
         self.scanRepeatComboBox.setCurrentIndex( self.settings.scanRepeat )
+        self.loadPPcheckBox.setChecked( self.settings.loadPP )
+        if self.settings.loadPPName: 
+            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
+            self.onLoadPP(self.settings.loadPPName)
         # Evaluation
         self.histogramBinsBox.setValue(self.settings.histogramBins)
         self.integrateHistogramButton.setChecked( self.settings.integrateHistogram )
@@ -203,8 +208,29 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.onModeChanged(self.settings.scanMode)
         
+    def onLoadPP(self, ppname):
+        self.settings.loadPPName = str(ppname)
+        print "ScanControl.onLoadPP", self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName
+        if self.settings.loadPP and self.settings.loadPPName:
+            self.pulseProgramUi.onFilenameChange( self.settings.loadPPName )
+            
+    def onRecentPPFilesChanged(self, name):
+        print "ScanControl.onRecentPPFilesChanged"
+        self.loadPPComboBox.addItem(name)
+#        if self.settings.loadPPName: 
+#            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
+        
     def setPulseProgramUi(self, pulseProgramUi ):
+        print "ScanControl.setPulseProgramUi", pulseProgramUi.configParams.recentFiles.keys()
         self.pulseProgramUi = pulseProgramUi
+        oldstate = self.loadPPComboBox.blockSignals(True)
+        self.loadPPComboBox.clear()
+        if hasattr(pulseProgramUi.configParams,'recentFiles'):
+            self.loadPPComboBox.addItems(pulseProgramUi.configParams.recentFiles.keys())
+        if self.settings.loadPPName: 
+            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
+        self.loadPPComboBox.blockSignals(oldstate)
+        self.pulseProgramUi.recentFilesChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()

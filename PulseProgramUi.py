@@ -29,7 +29,8 @@ class ConfiguredParams:
         self.__dict__.setdefault('recentFiles',dict())
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
-    pulseProgramChanged = QtCore.pyqtSignal()    
+    pulseProgramChanged = QtCore.pyqtSignal() 
+    recentFilesChanged = QtCore.pyqtSignal(str)
     
     def __init__(self,config,parameterdict):
         PulseProgramWidget.__init__(self)
@@ -74,12 +75,14 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
-
     def onFilenameChange(self, name ):
         name = str(name)
-        if name in self.configParams.recentFiles:
+        print "onFilenameChange", name, self.configParams.recentFiles[name], self.configParams.lastFilename
+        if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastFilename:
             print "Loading: ", self.configParams.recentFiles[name]
             self.loadFile(self.configParams.recentFiles[name])
+            if str(self.filenameComboBox.currentText())!=name:
+                self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
         
     def onVariableSelectionChanged(self):
         visibledict = dict()
@@ -104,6 +107,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
+        print "loadFile", path
         if self.variabledict is not None and self.configParams.lastFilename is not None:
             self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.configParams.lastFilename = path
@@ -120,6 +124,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
+            print "self.recentFilesChanged.emit({0})".format(filename)
+            self.recentFilesChanged.emit(filename)
         self.configParams.recentFiles[filename]=path
         self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
 

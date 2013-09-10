@@ -246,6 +246,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
+        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
