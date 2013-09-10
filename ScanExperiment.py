@@ -53,7 +53,7 @@ class ParameterScanGenerator:
         return mycode
         
     def xValue(self, index):
-        return MagnitudeUtilit.valueAs( self.scan.list[index], self.scan.start )
+        return self.scan.list[index].ounit(self.scan.xUnit).toval()
         
     def dataNextCode(self, experiment):
         return []
@@ -65,7 +65,7 @@ class ParameterScanGenerator:
             experiment.onStop()                   
     
     def xRange(self):
-        return MagnitudeUtilit.value(self.scan.start), MagnitudeUtilit.valueAs(self.scan.stop, self.scan.start) 
+        return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
                                      
     def appendData(self,trace,x,y,raw,error):                                     
         trace.x = numpy.append(trace.x, x)
