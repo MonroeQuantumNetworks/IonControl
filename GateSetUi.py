@@ -75,11 +75,14 @@ class GateSetUi(Form,Base):
         self.GateDefinitionBox.currentIndexChanged[str].connect( self.onGateDefinitionChanged )
         
     def getSettings(self):
+        print "GateSetUi GetSettings", self.settings.__dict__
         return self.settings
         
     def setSettings(self,settings):
+        print "GateSetUi SetSettings", settings.__dict__
         self.settings = settings
         self.GateSetEnableCheckBox.setChecked( self.settings.enabled )
+        self.GateSetFrame.setEnabled( self.settings.enabled )
         self.GateSetFrame.setEnabled( self.settings.enabled )
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )

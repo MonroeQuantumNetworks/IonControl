@@ -41,6 +41,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.parameterdict = parameterdict
         self.variabledict = None
         self.variableTableModel = None
+        self.gateSetDict = None
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -62,6 +63,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.upgrade()
         self.datashelf = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
         self.datashelf.open()
+        self.gateSetShelf = configshelve.configshelve("GateSet-"+self.configname, ProjectSelection.guiConfigDir() )
+        self.gateSetShelf.open()
+        
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
         if self.configParams.lastFilename is not None:
@@ -110,6 +114,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         print "loadFile", path
         if self.variabledict is not None and self.configParams.lastFilename is not None:
             self.datashelf[self.configParams.lastFilename] = self.variabledict
+        if self.gateSetDict is not None and self.configParams.lastFilename is not None:
+            self.gateSetShelf[self.configParams.lastFilename] = self.GateSetUi.getSettings()
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
         try:
@@ -121,6 +127,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if key in self.datashelf:
             self.variabledict.update( dictutil.subdict(self.datashelf[key], self.variabledict.keys() ) )
         self.updateDisplay()
+        if key in self.gateSetShelf:
+            self.GateSetUi.setSettings(self.gateSetShelf[key])
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
@@ -188,6 +196,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname] = self.configParams
         self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.datashelf.close()
+        self.gateSetShelf[self.configParams.lastFilename] = self.variabledict
+        self.gateSetShelf.close()
         self.GateSetUi.close()
        
     def getPulseProgramBinary(self,parameters=dict()):
