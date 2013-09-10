@@ -61,8 +61,9 @@ class ControlUi(UiForm,UiBase):
                 self.gridLayout.addWidget( Box, 1+index, 1, 1, 1 )
                 self.myBoxList.append( Box )
             if index<len(self.myDisplayList):
-                self.myDisplayList[index].setText("")
-                self.myDisplayList[index].show()
+                Display = self.myDisplayList[index]
+                Display.setText("")
+                Display.show()
             else:
                 Display = QtGui.QLabel(self)
                 Display.setText("")
