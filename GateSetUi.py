@@ -79,6 +79,7 @@ class GateSetUi(Form,Base):
         return self.settings
         
     def setSettings(self,settings):
+        print settings
         print "GateSetUi SetSettings", settings.__dict__
         self.settings = settings
         self.GateSetEnableCheckBox.setChecked( self.settings.enabled )

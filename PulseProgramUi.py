@@ -127,7 +127,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if key in self.datashelf:
             self.variabledict.update( dictutil.subdict(self.datashelf[key], self.variabledict.keys() ) )
         self.updateDisplay()
-        if key in self.gateSetShelf:
+        if key in self.gateSetShelf and self.gateSetShelf[key]:
             self.GateSetUi.setSettings(self.gateSetShelf[key])
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
@@ -196,7 +196,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname] = self.configParams
         self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.datashelf.close()
-        self.gateSetShelf[self.configParams.lastFilename] = self.variabledict
+        self.gateSetShelf[self.configParams.lastFilename] = self.GateSetUi.getSettings()
         self.gateSetShelf.close()
         self.GateSetUi.close()
        
