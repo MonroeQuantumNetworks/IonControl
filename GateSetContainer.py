@@ -29,7 +29,10 @@ class GateSetContainer(object):
         # load pulse definition
         self.GateSetDict = GateSetOrderedDict()
         for gateset in root:
-            self.GateSetDict.update( { gateset.attrib['name']: map(operator.methodcaller('strip'),gateset.text.split(','))} )
+            if gateset.text:
+                self.GateSetDict.update( { gateset.attrib['name']: map(operator.methodcaller('strip'),gateset.text.split(','))} )
+            else:  # we have the length 0 gate string
+                self.GateSetDict.update( { gateset.attrib['name']: [] } )
             
         self.validate()
     

@@ -29,7 +29,8 @@ class ConfiguredParams:
         self.__dict__.setdefault('recentFiles',dict())
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
-    pulseProgramChanged = QtCore.pyqtSignal()    
+    pulseProgramChanged = QtCore.pyqtSignal() 
+    recentFilesChanged = QtCore.pyqtSignal(str)
     
     def __init__(self,config,parameterdict):
         PulseProgramWidget.__init__(self)
@@ -40,6 +41,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.parameterdict = parameterdict
         self.variabledict = None
         self.variableTableModel = None
+        self.gateSetDict = None
     
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -61,6 +63,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.upgrade()
         self.datashelf = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
         self.datashelf.open()
+        self.gateSetShelf = configshelve.configshelve("GateSet-"+self.configname, ProjectSelection.guiConfigDir() )
+        self.gateSetShelf.open()
+        
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
         if self.configParams.lastFilename is not None:
@@ -74,12 +79,14 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
-
     def onFilenameChange(self, name ):
         name = str(name)
-        if name in self.configParams.recentFiles:
+        print "onFilenameChange", name, self.configParams.recentFiles[name], self.configParams.lastFilename
+        if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastFilename:
             print "Loading: ", self.configParams.recentFiles[name]
             self.loadFile(self.configParams.recentFiles[name])
+            if str(self.filenameComboBox.currentText())!=name:
+                self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
         
     def onVariableSelectionChanged(self):
         visibledict = dict()
@@ -104,8 +111,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
+        print "loadFile", path
         if self.variabledict is not None and self.configParams.lastFilename is not None:
             self.datashelf[self.configParams.lastFilename] = self.variabledict
+        if self.gateSetDict is not None and self.configParams.lastFilename is not None:
+            self.gateSetShelf[self.configParams.lastFilename] = self.GateSetUi.getSettings()
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
         try:
@@ -117,9 +127,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if key in self.datashelf:
             self.variabledict.update( dictutil.subdict(self.datashelf[key], self.variabledict.keys() ) )
         self.updateDisplay()
+        if key in self.gateSetShelf and self.gateSetShelf[key]:
+            self.GateSetUi.setSettings(self.gateSetShelf[key])
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
+            print "self.recentFilesChanged.emit({0})".format(filename)
+            self.recentFilesChanged.emit(filename)
         self.configParams.recentFiles[filename]=path
         self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
 
@@ -182,6 +196,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname] = self.configParams
         self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.datashelf.close()
+        self.gateSetShelf[self.configParams.lastFilename] = self.GateSetUi.getSettings()
+        self.gateSetShelf.close()
         self.GateSetUi.close()
        
     def getPulseProgramBinary(self,parameters=dict()):

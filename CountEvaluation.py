@@ -53,7 +53,7 @@ class ThresholdEvaluation(EvaluationBase):
         
     def evaluate(self, countarray, timestamps=None ):
         if not countarray:
-            return None, None
+            return None, None, None
         N = len(countarray)
         threshold = self.parameters['threshold']
         if bool(self.parameters['invert']):
