@@ -37,6 +37,17 @@ class Settings(object):
         self.__dict__.setdefault( "gateDefinitionCache", dict() )
         self.__dict__.setdefault( "thisSequenceRepetition", 10 )
         
+    def __repr__(self):
+        m = list()
+        m.append( "GateSet {0}".format( {True:'enabled',False:'disabled'}[self.enabled]) )
+        m.append( "Gate Definition: {0}".format(self.gateDefinition))
+        m.append( "GateSet StartAddressParam {0}".format(self.startAddressParam))
+        if self.active==0: # Full list scan
+            m.append( "GateSet: {0}".format(self.gateSet))
+        else:
+            m.append( "Gate {0}".format(self.gate))
+        return "\n".join(m)
+        
 
 class GateSetUi(Form,Base):    
     Mode = enum('FullList', 'Gate')
@@ -98,7 +109,9 @@ class GateSetUi(Form,Base):
                 self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(self.settings.gateSet))
         except IOError as err:
             print err, "during loading of GateSet Files, ignored."
-        
+
+    def documentationString(self):
+        return repr(self.settings)        
             
     def onGateDefinitionChanged(self, name):
         name = str(name)

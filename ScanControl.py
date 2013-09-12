@@ -86,10 +86,10 @@ class Scan:
 
         
     def __repr__(self):
-#        r = "Scanning parameter: {0}\nScanning From: {1}\nScanning To: {2}\n".format(self.scanParameter,self.start,self.stop)
-#        r+= "Scanning Steps: {0}\nScanning type: {1}\nScanning rewriteDDS: {2}\n".format(self.steps,self.scantype,self.rewriteDDS)
-#        r+= "Scanning mode: {0}".format(self.scanMode)
-        return "{0}".format(self.__dict__)
+        r = "Scanning parameter: {0}\nScanning From: {1}\nScanning To: {2}\n".format(self.scanParameter,self.start,self.stop)
+        r+= "Scanning Steps: {0}\nScanning type: {1}\nScanning rewriteDDS: {2}\n".format(self.steps,self.scantype,self.rewriteDDS)
+        r+= "Scanning mode: {0}".format(self.scanMode)
+        return r
 
 
 class ScanControl(ScanControlForm, ScanControlBase ):

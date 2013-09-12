@@ -383,7 +383,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 
     def finalizeData(self):
         print "finalize Data"
-        pulseProgramHeader = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
+        pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
         scanHeader = stringutilit.commentarize( repr(self.scan) )
         for trace in [self.currentTrace, self.currentTimestampTrace]:
             if trace:

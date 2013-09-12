@@ -79,6 +79,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
+    def documentationString(self):
+        messages = [ "PulseProgram {1}".format( self.configParams.lastFilename ) ]
+        r = "\n".join([messages])
+        return "\n".join( [r, self.pulseProgram.currentVariablesText(''), self.GateSetUi.documentationString()])        
+               
     def onFilenameChange(self, name ):
         name = str(name)
         print "onFilenameChange", name, self.configParams.recentFiles[name], self.configParams.lastFilename
