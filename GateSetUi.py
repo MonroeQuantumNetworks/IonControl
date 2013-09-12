@@ -63,17 +63,30 @@ class GateSetUi(Form,Base):
     
     def setupUi(self,parent):
         super(GateSetUi,self).setupUi(parent)
-        self.GateSetEnableCheckBox.setChecked( self.settings.enabled )
-        self.GateSetFrame.setEnabled( self.settings.enabled )
+        self.setSettings( self.settings )
         self.GateSetEnableCheckBox.stateChanged.connect( self.onEnableChanged )
         self.GateDefinitionButton.clicked.connect( self.onLoadGateDefinition )
         self.GateSetButton.clicked.connect( self.onLoadGateSetList )
         self.FullListRadioButton.toggled.connect( self.onRadioButtonToggled )
         self.GateEdit.editingFinished.connect( self.onGateEditChanged )
-        self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.StartAddressBox.currentIndexChanged['QString'].connect( self.onStartAddressParam )
-        self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
         self.repetitionSpinBox.valueChanged.connect( self.onRepetitionChanged )
+        self.GateSetBox.currentIndexChanged[str].connect( self.onGateSetChanged )
+        self.GateDefinitionBox.currentIndexChanged[str].connect( self.onGateDefinitionChanged )
+        
+    def getSettings(self):
+        print "GateSetUi GetSettings", self.settings.__dict__
+        return self.settings
+        
+    def setSettings(self,settings):
+        print settings
+        print "GateSetUi SetSettings", settings.__dict__
+        self.settings = settings
+        self.GateSetEnableCheckBox.setChecked( self.settings.enabled )
+        self.GateSetFrame.setEnabled( self.settings.enabled )
+        self.GateSetFrame.setEnabled( self.settings.enabled )
+        self.GateEdit.setText( ", ".join(self.settings.gate ))
+        self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
         try:
             self.GateDefinitionBox.addItems( self.settings.gateDefinitionCache.keys() )
             self.GateSetBox.addItems( self.settings.gateSetCache.keys() )
@@ -85,7 +98,17 @@ class GateSetUi(Form,Base):
                 self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(self.settings.gateSet))
         except IOError as err:
             print err, "during loading of GateSet Files, ignored."
+        
             
+    def onGateDefinitionChanged(self, name):
+        name = str(name)
+        if name in self.settings.gateDefinitionCache:
+            self.loadGateDefinition( self.settings.gateDefinitionCache[name] )            
+            
+    def onGateSetChanged(self, name):
+        name = str(name)
+        if name in self.settings.gateSetCache:
+            self.loadGateSetList( self.settings.gateSetCache[name] )
             
     def onRepetitionChanged(self, value):
         self.settings.thisSequenceRepetition = value
@@ -109,6 +132,7 @@ class GateSetUi(Form,Base):
             if filename not in self.settings.gateDefinitionCache:
                 self.settings.gateDefinitionCache[filename] = path
                 self.GateDefinitionBox.addItem(filename)
+                self.GateDefinitionBox.setCurrentIndex( self.GateDefinitionBox.findText(filename))
 
     def loadGateDefinition(self, path):
         self.gatedef.loadGateDefinition(path)    
@@ -126,6 +150,7 @@ class GateSetUi(Form,Base):
             if filename not in self.settings.gateSetCache:
                 self.settings.gateSetCache[filename] = path
                 self.GateSetBox.addItem(filename)
+                self.GateSetBox.setCurrentIndex( self.GateSetBox.findText(filename))
             
     def loadGateSetList(self, path):
         self.gateSetContainer.loadXml(path)
