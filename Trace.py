@@ -18,7 +18,13 @@ except:
 class Empty:
     pass
 
+class TraceException(Exception):
+    pass
+
 class Trace(object):
+    """ Class to encapsulate one displayed trace. The data can be saved to and loaded
+    from a file
+    """
     def __init__(self):
         self.x = numpy.array([])
         self.y = numpy.array([])
@@ -33,13 +39,19 @@ class Trace(object):
         self.filenameCallback = None   # function to result in filename for save
         self.dataChangedCallback = None # used to update the gui table
         self.rawdata = None
+        self.columnNames = ['height', 'top', 'bottom','raw']
         
     @property
-    def filename(self):        
+    def filename(self):
+        """ getter for the full pathname of the file
+        """
         return self._filename
         
     @filename.setter
     def filename(self, filename):
+        """ setter for the full pathname of the file
+        upon resave, the data gets saved into this file
+        """
         self._filename = filename    
         if filename:
             self.filepath, self.fileleaf = os.path.split(filename)
@@ -50,23 +62,34 @@ class Trace(object):
             self.dataChangedCallback()                            
         
     def resave(self, saveIfUnsaved=True):
+        """ save the data to the filename set previously by writing to filename
+        """
         if hasattr(self, 'filename' ) and self.filename and self.filename!='':
             self.saveTrace(self.filename)
         elif self.filenameCallback and saveIfUnsaved:
             self.saveTrace(self.filenameCallback())
     
     def deleteFile(self):
+        """ delete the file from disk
+        """
         if hasattr(self, 'filename' ) and self.filename and self.filename!='':
             os.remove(self.filename)
     
     def plot(self,penindex):
+        """ plot the data, penindex >= 0 gives requests the style with this number,
+        penindex = -1 uses the first available style, penindex = -2 uses the previous style
+        """
         if hasattr( self, 'plotfunction' ):
             (self.plotfunction)(self,penindex)
     
     def varstr(self,name):
+        """ return the variable value as a string
+        """
         return str(self.vars.__dict__.get(name,""))
         
     def saveTraceHeader(self,outfile):
+        """ save the header of the trace to outfile
+        """
         self.vars.fileCreation = datetime.now()
         for var, value in sorted(self.vars.__dict__.iteritems()):
             print >>outfile, "#", var, value
@@ -83,7 +106,7 @@ class Trace(object):
             of = open(filename,'w')
             columnlist = [self.x,self.y]
             columnspec = ['x', 'y']
-            for column in ['height', 'top', 'bottom','raw']:
+            for column in self.columnNames:
                 if hasattr(self, column):
                     columnlist.append( getattr(self,column) )
                     columnspec.append( column )
@@ -113,6 +136,15 @@ class Trace(object):
         self.filename = filename
         if hasattr(self.vars,'fitfunction') and FitFunctionsAvailable:
             self.fitfunction = FitFunctions.fitFunctionFactory(self.vars.fitfunction)
+            
+    def addColumn(self, name):
+        """ adds a column with the given name, the column is saved in the file in the order added
+        """
+        if hasattr( self, name):
+            raise TraceException("cannot add column '{0}' trace already has attribute with this name.".format(name))
+        self.columnNames.append(name)
+        setattr( self, name, numpy.array([]))
+            
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback
