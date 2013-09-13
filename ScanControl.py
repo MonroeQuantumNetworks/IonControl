@@ -14,10 +14,14 @@ from MagnitudeSpinBox import MagnitudeSpinBox
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
 import ScanList
-from modules import enum, MagnitudeUtilit
+from modules import MagnitudeUtilit
 from magnitude import mg
+from modules.enum import enum
 
 class Scan:
+    ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')
+    ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized')
+    ScanRepeat = enum('SingleScan','RepeatedScan')
     def __init__(self):
         # Scan
         self.scanParameter = None
@@ -50,6 +54,9 @@ class Scan:
         self.saveRawData = False
         
     def __setstate__(self, state):
+        """this function ensures that the given fields are present in the class object
+        after unpickling. Only new class attributes need to be added here.
+        """
         self.__dict__ = state
         self.__dict__.setdefault('xUnit', '')
         self.__dict__.setdefault('scanRepeat', 0)
@@ -93,8 +100,8 @@ class Scan:
 
 
 class ScanControl(ScanControlForm, ScanControlBase ):
-    ScanModes = enum.enum('SingleScan','RepeatedScan','StepInPlace','GateSetScan')
-    integrationMode = enum.enum('IntegrateAll','IntegrateRun','NoIntegration')    
+    ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSetScan')
+    integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')    
     def __init__(self,config,parentname,parent=None):
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
