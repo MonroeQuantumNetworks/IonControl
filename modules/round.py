@@ -7,11 +7,16 @@ Created on Sat Sep 14 07:50:05 2013
 import math
 
 def roundToNDigits(value,n):
+    """round value to n significant digits
+    """
     if abs(value)==0:
         return 0
     return round( value,  -int(math.floor(math.log10(abs(value) ))) + (n - 1))   
     
 def roundToStdDev(value, stddev, extradigits=0):
+    """round value to the significant digits determined by the stddev
+    and add extradigits nonsignificant digits
+    """
     if abs(value)==0:
         return 0
     return roundToNDigits( value, int(math.log10(math.ceil(abs(value)/stddev)-0.5)+2+extradigits) if stddev>0 else 3)

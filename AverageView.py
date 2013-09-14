@@ -29,6 +29,8 @@ class AverageView(Form, Base ):
         self.update()
     
     def update(self):
+        """"update the output
+        """
         self.countLabel.setText( str(self.stat.count) )
         mean, stderr = self.stat.mean, self.stat.stderr
         self.averageLabel.setText( str(roundToStdDev(mean,stderr)) )
@@ -39,6 +41,8 @@ class AverageView(Form, Base ):
         self.update()
         
     def add(self, value):
+        """add value to the mean and stddev or stderr
+        """
         self.stat.add(value)
         self.update()
         
