@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>271</width>
+    <width>260</width>
     <height>459</height>
    </rect>
   </property>
@@ -132,7 +132,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>234</width>
+        <width>223</width>
         <height>303</height>
        </rect>
       </property>
@@ -181,25 +181,6 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="2">
-          <widget class="QComboBox" name="scanTypeCombo">
-           <item>
-            <property name="text">
-             <string>Linear Start to Stop</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Linear Stop to Start</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Randomized</string>
-            </property>
-           </item>
-          </widget>
-         </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
@@ -213,23 +194,6 @@
             <string>Repeat</string>
            </property>
           </widget>
-         </item>
-         <item row="5" column="2">
-          <widget class="QComboBox" name="scanRepeatComboBox">
-           <item>
-            <property name="text">
-             <string>Single Scan</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Repeated Scan</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="7" column="2">
-          <widget class="QLineEdit" name="filenameEdit"/>
          </item>
          <item row="2" column="0">
           <widget class="QComboBox" name="stepsCombo">
@@ -255,32 +219,6 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="2">
-          <widget class="QLineEdit" name="xUnitEdit"/>
-         </item>
-         <item row="1" column="2">
-          <widget class="MagnitudeSpinBox" name="stopBox">
-           <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="MagnitudeSpinBox" name="startBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>1</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="frame">
-            <bool>true</bool>
-           </property>
-           <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label">
            <property name="text">
@@ -302,8 +240,77 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="2">
+         <item row="2" column="3">
+          <widget class="QLabel" name="stepsLabel">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2" colspan="2">
+          <widget class="MagnitudeSpinBox" name="stopBox">
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::NoButtons</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2" colspan="2">
+          <widget class="MagnitudeSpinBox" name="startBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>1</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="frame">
+            <bool>true</bool>
+           </property>
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::NoButtons</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="2" colspan="2">
+          <widget class="QLineEdit" name="xUnitEdit"/>
+         </item>
+         <item row="4" column="2" colspan="2">
+          <widget class="QComboBox" name="scanTypeCombo">
+           <item>
+            <property name="text">
+             <string>Linear Start to Stop</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Linear Stop to Start</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Randomized</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="5" column="2" colspan="2">
+          <widget class="QComboBox" name="scanRepeatComboBox">
+           <item>
+            <property name="text">
+             <string>Single Scan</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Repeated Scan</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="6" column="2" colspan="2">
           <widget class="QComboBox" name="loadPPComboBox"/>
+         </item>
+         <item row="7" column="2" colspan="2">
+          <widget class="QLineEdit" name="filenameEdit"/>
          </item>
         </layout>
        </item>

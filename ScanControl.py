@@ -10,6 +10,7 @@ import functools
 from PyQt4 import QtCore, QtGui
 import CountEvaluation
 from MagnitudeSpinBox import MagnitudeSpinBox
+from modules.MagnitudeUtilit import valueAs
        
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -28,6 +29,7 @@ class Scan:
         self.start = 0
         self.stop = 0
         self.steps = 0
+        self.stepSize = 1
         self.stepsSelect = 0
         self.scantype = 0
         self.scanMode = 0
@@ -63,12 +65,14 @@ class Scan:
         self.__dict__.setdefault('loadPP', False)
         self.__dict__.setdefault('loadPPName', "")
         self.__dict__.setdefault('evalName','Mean')
+        self.__dict__.setdefault('stepSize',1)
         
     def __eq__(self,other):
         return ( self.scanParameter == other.scanParameter and
                 self.start == other.start and
                 self.stop == other.stop and
                 self.steps == other.steps and
+                self.stepSize == other.stepSize and
                 self.stepsSelect == other.stepsSelect and
                 self.scantype == other.scantype and
                 self.scanMode == other.scanMode and 
@@ -131,8 +135,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )        
         self.startBox.valueChanged.connect( functools.partial(self.onValueChanged,'start') )
         self.stopBox.valueChanged.connect( functools.partial(self.onValueChanged,'stop') )
-        self.stepsBox.valueChanged.connect( functools.partial(self.onValueChanged,'steps') )
-        self.stepsCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'stepsSelect') )
+        self.stepsBox.valueChanged.connect( self.onStepsValueChanged )
+        self.stepsCombo.currentIndexChanged[int].connect( self.onStepsSelectChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.rewriteDDSCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'rewriteDDS') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
@@ -182,7 +186,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.startBox.setValue(self.settings.start)
         self.stopBox.setValue(self.settings.stop)
-        self.stepsBox.setValue(self.settings.steps)
+        self.calculateSteps( self.settings )
+        self.setSteps( self.settings )
         self.stepsCombo.setCurrentIndex(self.settings.stepsSelect)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
@@ -214,6 +219,31 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.onModeChanged(self.settings.scanMode)
+        
+    def setSteps( self, settings ):
+        if settings.stepsSelect == 0:
+            self.stepsBox.setValue(settings.steps)
+            self.stepsLabel.setText( str(settings.stepSize) )
+        else:
+            self.stepsBox.setValue(settings.stepSize)
+            self.stepsLabel.setText( str(settings.steps) )
+
+        
+    def calculateSteps(self, settings):
+        print "calculateSteps", settings.stepsSelect
+        if settings.stepsSelect == 0:
+            try:
+                settings.stepSize = abs(settings.stop - settings.start)/(settings.steps - 1)
+                valueAs( settings.stepSize, settings.start )
+            except Exception as e:
+                print e
+                settings.stepSize = None
+        else:
+            try:
+                settings.steps = int( round( abs(settings.stop - settings.start)/settings.stepSize ) ) + 1
+            except Exception as e:
+                print e
+                settings.setps = None
         
     def onLoadPP(self, ppname):
         self.settings.loadPPName = str(ppname)
@@ -273,7 +303,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.scanMode = index
         self.startBox.setEnabled(index ==0)
         self.stopBox.setEnabled(index ==0)
-        self.stepsBox.setEnabled( index==0)
+        self.stepsBox.setEnabled( index in [0,1] )
         self.scanTypeCombo.setEnabled(index in [0,2])
         self.scanRepeatComboBox.setEnabled( index in [0,2] )
         self.xUnitEdit.setEnabled( index==0)
@@ -285,6 +315,20 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
         #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
         self.commitChange()
+
+    def onStepsSelectChanged(self, select ):
+        print "onStepsSelectChanged", select
+        self.settings.stepsSelect = select
+        self.calculateSteps( self.settings )
+        self.setSteps( self.settings )
+        
+    def onStepsValueChanged( self, value ):
+        if self.settings.stepsSelect==0:
+            self.settings.steps = value
+        else: 
+            self.settings.stepSize = value
+        self.calculateSteps(self.settings)
+        self.setSteps( self.settings )
 
     def onIntValueChanged(self, attribute, value):
         self.beginChange()
@@ -313,7 +357,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def getScan(self):
         scan = copy.deepcopy(self.settings)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
-        scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps, scan.type, scan.stepsSelect )
+        scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps if scan.stepsSelect==0 else scan.stepSize, 
+                                       scan.type, scan.stepsSelect )
         scan.evalAlgo = self.algorithms[scan.evalName]
         self.onCommit()
         return scan

@@ -97,7 +97,14 @@ class StepInPlaceGenerator:
         return []
 
     def appendData(self,trace,x,y,raw,error):                                   
-        if len(trace.x)>=self.scan.steps:
+        if len(trace.x)<self.scan.steps or self.scan.steps==0:
+            trace.x = numpy.append(trace.x, x)
+            trace.y = numpy.append(trace.y, y)
+            trace.raw = numpy.append(trace.raw, raw)
+            if error and self.scan.errorBars:
+                trace.bottom = numpy.append(trace.bottom, error[0])
+                trace.top = numpy.append(trace.top, error[1])
+        else:
             steps = int(self.scan.steps)
             trace.x = numpy.append(trace.x[-steps+1:], x)
             trace.y = numpy.append(trace.y[-steps+1:], y)
@@ -105,13 +112,6 @@ class StepInPlaceGenerator:
             if error and self.scan.errorBars:
                 trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0]) 
                 trace.top = numpy.append(trace.top[-steps+1:], error[1]) 
-        else:
-            trace.x = numpy.append(trace.x, x)
-            trace.y = numpy.append(trace.y, y)
-            trace.raw = numpy.append(trace.raw, raw)
-            if error and self.scan.errorBars:
-                trace.bottom = numpy.append(trace.bottom, error[0])
-                trace.top = numpy.append(trace.top, error[1])
 
     def dataOnFinal(self, experiment):
         experiment.onStop()                   
