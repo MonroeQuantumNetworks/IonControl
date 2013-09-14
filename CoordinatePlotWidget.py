@@ -3,6 +3,9 @@
 Created on Wed Jan 09 21:19:26 2013
 
 @author: pmaunz
+
+PlotWidget that adds the coordinates of the cursor position
+as a second element also allows one to copy the coordinates to the clipboard
 """
 
 import pyqtgraph

@@ -3,6 +3,9 @@
 Created on Thu Mar 14 09:26:25 2013
 
 @author: wolverine
+Analog Input calibrations
+to create a new calibration derive a new class from AnalogInputCalibration,
+overwrite the necessary functions and add the new class to AnalogInputCalibrationMap
 """
 
 
@@ -19,12 +22,16 @@ class AnalogInputCalibration:
         self.parameters = Parameters()
     
     def convert(self, binary):
+        """convert the binary representation from the ADC chip to voltage
+        """
         if binary is None:
             return None
         converted = binary * referenceVoltage / 0x3fffff
         return converted
         
     def convertMagnitude(self, binary):
+        """convert the binary representation from the ADC chip to a magnitude object
+        """
         if binary is None:
             return None
         return magnitude.mg( binary * referenceVoltage / 0x3fffff, 'V')
