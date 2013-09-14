@@ -128,6 +128,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.saveButton.clicked.connect(self.onSave )
         self.removeButton.clicked.connect(self.onRemove)
         self.traceTableView.clicked.connect(self.onClicked)
+        self.comboBoxStyle.setCurrentIndex( self.settings.plotstyle )
         self.comboBoxStyle.currentIndexChanged[int].connect( self.setPlotStyle )
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.openFileButton.clicked.connect(self.onOpenFile)
