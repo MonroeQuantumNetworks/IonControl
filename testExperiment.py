@@ -17,6 +17,7 @@ import MainWindowWidget
 import FitUi
 import functools
 from modules import DataDirectory
+from AverageView import AverageView
 
 testForm, testBase = PyQt4.uic.loadUiType(r'ui\testExperiment.ui')
 
@@ -46,6 +47,14 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         if 'testWidget.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
             print "restoreState"
+        self.displayUi = AverageView(self.config,"testExperiment")
+        self.displayUi.setupUi(self.displayUi)
+        self.displayDock = QtGui.QDockWidget("Average")
+        self.displayDock.setObjectName("Average")
+        self.displayDock.setWidget( self.displayUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
+        self.dockWidgetList.append(self.displayDock )
+
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi
@@ -75,13 +84,16 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.timer.setInterval(300)
         self.timer.timeout.connect( self.onData )
         self.timer.start(300)
+        self.displayUi.onClear()
         
     def onData(self):
         self.x += 0.1
         self.trace.x = numpy.append( self.trace.x, self.x )
-        self.trace.y = numpy.append( self.trace.y, random.gauss(numpy.sin( self.x + self.phase),0.1) )
+        value = random.gauss(numpy.sin( self.x + self.phase),0.1)
+        self.trace.y = numpy.append( self.trace.y, value )
         self.trace.top = numpy.append( self.trace.top, 0.1)
         self.trace.bottom = numpy.append( self.trace.bottom, 0.1)
+        self.displayUi.add( value )
         self.plottedtrace.replot()
         
     def onStop(self):
