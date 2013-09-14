@@ -55,6 +55,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             QtCore.QTimer.singleShot(100,self.startBottomHalf)
+            self.displayUi.onClear()
             self.status = self.Status.Starting
         
     def startBottomHalf(self):
@@ -99,6 +100,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         """
         print "NewExternalScan onData", len(data.count[self.scanSettings.counter]), data.scanvalue
         mean, error, raw = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        self.displayUi.add( mean )
         if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
             x = self.currentIndex
         else:

@@ -35,7 +35,8 @@ import RawData
 from modules import MagnitudeUtilit
 import random
 import ScanControl
-        
+from AverageView import AverageView
+     
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
 class ParameterScanGenerator:
@@ -239,8 +240,17 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetList.append(self.scanControlUi)
         self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
+        # Average View
+        self.displayUi = AverageView(self.config,"testExperiment")
+        self.displayUi.setupUi(self.displayUi)
+        self.displayDock = QtGui.QDockWidget("Average")
+        self.displayDock.setObjectName("Average")
+        self.displayDock.setWidget( self.displayUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
+        self.dockWidgetList.append(self.displayDock )
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
+
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
@@ -286,6 +296,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.progressBar.setStyleSheet("")
         self.scanControlWidget.progressBar.setVisible( True )
         self.timestampsNewRun = True
+        self.displayUi.onClear()
         print "elapsed time", time.time()-start
     
     def onPause(self):
@@ -335,6 +346,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
         print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
         mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+        self.displayUi.add( mean )
         if data.other:
             print "Other:", data.other
         #mean = numpy.mean( data.count[self.scan.counterChannel] )

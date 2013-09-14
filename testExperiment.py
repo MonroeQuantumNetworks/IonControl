@@ -44,9 +44,6 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
-        if 'testWidget.MainWindow.State' in self.config:
-            QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
-            print "restoreState"
         self.displayUi = AverageView(self.config,"testExperiment")
         self.displayUi.setupUi(self.displayUi)
         self.displayDock = QtGui.QDockWidget("Average")
@@ -54,6 +51,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.displayDock.setWidget( self.displayUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
         self.dockWidgetList.append(self.displayDock )
+        if 'testWidget.MainWindow.State' in self.config:
+            QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
+            print "restoreState"
 
 
     def setPulseProgramUi(self,pulseProgramUi):
@@ -97,7 +97,8 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.plottedtrace.replot()
         
     def onStop(self):
-        self.timer.stop()
+        if hasattr(self, 'timer'):
+            self.timer.stop()
     
     def onPause(self):
         self.StatusMessage.emit("test Pause not implemented")
