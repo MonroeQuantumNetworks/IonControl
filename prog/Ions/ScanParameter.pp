@@ -1,3 +1,4 @@
+
 ###########################################################################
 #
 # simple sequence with one cooling interval during which countrates can be measured
@@ -56,6 +57,7 @@ scanloop: NOP
 	STWR experimentsleft
 
 	DDSFRQ TickleDDS, tickleFreq
+	DDSFRQ COOLDDS, coolingFreq
 	TRIGGER ddsApplyTrigger
 	
 cooling: NOP
