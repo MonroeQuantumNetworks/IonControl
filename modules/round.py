@@ -9,7 +9,7 @@ import math
 def roundToNDigits(value,n):
     """round value to n significant digits
     """
-    if value==None or math.isNan(value) or math.isinf(value):
+    if value==None or math.isnan(value) or math.isinf(value):
         return value
     if abs(value)==0:
         return 0
