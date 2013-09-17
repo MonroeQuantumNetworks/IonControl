@@ -11,6 +11,8 @@ def roundToNDigits(value,n):
     """
     if abs(value)==0:
         return 0
+    elif value==None:
+        return None
     return round( value,  -int(math.floor(math.log10(abs(value) ))) + (n - 1))   
     
 def roundToStdDev(value, stddev, extradigits=0):
@@ -19,6 +21,8 @@ def roundToStdDev(value, stddev, extradigits=0):
     """
     if abs(value)==0:
         return 0
+    elif value==None:
+        return None
     return roundToNDigits( value, int(math.log10(math.ceil(abs(value)/stddev)-0.5)+2+extradigits) if stddev>0 else 3)
 
 
