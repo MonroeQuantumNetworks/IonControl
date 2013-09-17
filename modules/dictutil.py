@@ -6,11 +6,19 @@ Created on Sat Feb 23 15:19:22 2013
 """
 
 def subdict( fulldict, keys ):
+    """
+    returns the subdict of fulldict containing all entries that are in fulldict and dict
+    """
     if keys is not None and fulldict is not None:
         return dict((name,fulldict[name]) for name in keys if name in fulldict)
     else:
         return dict()
     
+
+def setdefault( thisdict, defaultdict ):
+    for key, value in defaultdict.iteritems():
+        thisdict.setdefault( key, value )
+    return thisdict
     
 if __name__=="__main__":
     d = {1:2, 3:4, 5:6, 7:8, 9:10}

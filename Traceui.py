@@ -13,6 +13,7 @@ import numpy
 from PyQt4 import QtGui
 import Trace
 import os.path
+import ProjectSelection
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
@@ -52,6 +53,11 @@ class PlottedTrace(object):
             self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, height=self.trace.height,
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
+        elif hasattr(self.trace,'top') and hasattr(self.trace,'bottom'):
+            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom,
+                                                       pen=self.penList[penindex][0])
+            self.graphicsView.addItem(self.errorBarItem)
+            
 
     def plotLines(self,penindex):
         self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=self.penList[penindex][0])
@@ -82,7 +88,11 @@ class PlottedTrace(object):
         if hasattr(self,'curve') and self.curve is not None:
             self.curve.setData( self.trace.x, self.trace.y )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
-            self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
+            if hasattr(self.trace,'height'):
+                self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
+            else:
+                self.errorBarItem.setOpts(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom)
+                
 
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\Traceui.ui')
@@ -94,7 +104,7 @@ def unique(seq):
 
 class Settings:
     def __init__(self):
-        self.lastDir = os.path.expanduser('~')
+        self.lastDir = ProjectSelection.configDir()
         self.plotstyle = 0
 
 class Traceui(TraceuiForm, TraceuiBase):
@@ -118,9 +128,12 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.saveButton.clicked.connect(self.onSave )
         self.removeButton.clicked.connect(self.onRemove)
         self.traceTableView.clicked.connect(self.onClicked)
+        self.comboBoxStyle.setCurrentIndex( self.settings.plotstyle )
         self.comboBoxStyle.currentIndexChanged[int].connect( self.setPlotStyle )
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.openFileButton.clicked.connect(self.onOpenFile)
+        self.plotButton.clicked.connect(self.onPlot)
+        self.shredderButton.clicked.connect(self.onShredder)
 
     def setPlotStyle(self,value):
         self.settings.plotstyle = value
@@ -128,6 +141,17 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onClicked(self,index):
         if index.column() in [1,3]:
             self.traceTableView.edit(index)
+        
+    def onPlot(self):
+        for index in unique([ i.row() for i in self.traceTableView.selectedIndexes() ]):
+            self.TraceList[index].plot(-1,self.settings.plotstyle)
+
+    def onShredder(self):
+        for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]),reverse=True):
+            if self.TraceList[index].curvePen!=0:
+                self.TraceList[index].plot(0)
+            self.TraceList[index].trace.deleteFile()
+            self.model.dropTrace(index)
         
     def onClear(self):
         for index in unique([ i.row() for i in self.traceTableView.selectedIndexes() ]):

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>854</width>
     <height>732</height>
    </rect>
   </property>
@@ -58,7 +58,7 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2"/>
   </widget>
-  <widget class="QDockWidget" name="scanParametersUi">
+  <widget class="QDockWidget" name="scanControlUi">
    <property name="windowTitle">
     <string>Scan Parameters</string>
    </property>
@@ -67,23 +67,14 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_3"/>
   </widget>
-  <widget class="QDockWidget" name="scanSettingsUi">
+  <widget class="QDockWidget" name="timestampDockWidget">
    <property name="windowTitle">
-    <string>Settings</string>
+    <string>Timestamp traces</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_4"/>
-  </widget>
-  <widget class="QDockWidget" name="timestampSettingsUi">
-   <property name="windowTitle">
-    <string>Timestamp Settings</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_5"/>
+   <widget class="QWidget" name="dockWidgetContents_6"/>
   </widget>
   <action name="actionExpand">
    <property name="text">

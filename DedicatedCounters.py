@@ -3,6 +3,9 @@
 Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
+
+DedicatedCounters reads and displays the counts from the simple counters and ADCs.
+
 """
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
@@ -12,6 +15,8 @@ import DedicatedCountersSettings
 import numpy
 import DedicatedDisplay
 import AnalogInputCalibration
+import AutoLoad
+import InputCalibrationUi
        
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -22,9 +27,9 @@ class Settings:
 
 class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     OpStates = enum.enum('idle','running','paused')
-    def __init__(self,config,pulserHardware,parent=0):
-        DedicatedCountersForm.__init__(self,parent)
-        DedicatedCountersBase.__init__(self)
+    def __init__(self,config,pulserHardware,parent=None):
+        DedicatedCountersForm.__init__(self)
+        DedicatedCountersBase.__init__(self,parent)
         self.dataSlotConnected = False
         self.config = config
         self.settings = self.config.get('DedicatedCounter.Settings',Settings())
@@ -35,11 +40,12 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.integrationTime = 0
         self.integrationTimeLookup = dict()
         self.tick = 0
-        self.analogCalbrations = [
-            AnalogInputCalibration.PowerDetectorCalibration(-36.47,60.7152,-1.79545,0.6,2),
-            AnalogInputCalibration.AnalogInputCalibration(),
-            AnalogInputCalibration.AnalogInputCalibration(),
-            AnalogInputCalibration.AnalogInputCalibration() ]
+        self.analogCalbrations = None
+#        [
+#            AnalogInputCalibration.PowerDetectorCalibration(),
+#            AnalogInputCalibration.PowerDetectorCalibrationTwo(),
+#            AnalogInputCalibration.AnalogInputCalibration(),
+#            AnalogInputCalibration.AnalogInputCalibration() ]
 
     def setupUi(self, parent):
         DedicatedCountersForm.setupUi(self,parent)
@@ -53,27 +59,42 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.settingsDock.setWidget( self.settingsUi )
         self.settingsUi.valueChanged.connect( self.onSettingsChanged )
         self.settings = self.settingsUi.settings
+        # Input Calibrations        
+        self.calibrationUi = InputCalibrationUi.InputCalibrationUi(self.config,4)
+        self.calibrationUi.setupUi(self.calibrationUi)
+        self.calibrationDock = QtGui.QDockWidget("Input Calibration")
+        self.calibrationDock.setObjectName("Input Calibration")
+        self.calibrationDock.setWidget( self.calibrationUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.calibrationDock)
+        self.analogCalbrations = self.calibrationUi.calibrations
         # Display Channels 0-3
-        self.displayUi = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUi = DedicatedDisplay.DedicatedDisplay(self.config,"Channel 0-3")
         self.displayUi.setupUi(self.displayUi)
         self.displayDock = QtGui.QDockWidget("Channel 0-3")
         self.displayDock.setObjectName("Channel 0-3")
         self.displayDock.setWidget( self.displayUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
         # Display Channel 4-7
-        self.displayUi2 = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUi2 = DedicatedDisplay.DedicatedDisplay(self.config,"Channel 4-7")
         self.displayUi2.setupUi(self.displayUi2)
         self.displayDock2 = QtGui.QDockWidget("Channel 4-7")
         self.displayDock2.setObjectName("Channel 4-7")
         self.displayDock2.setWidget(self.displayUi2)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock2)
         # Display ADC 0-3
-        self.displayUiADC = DedicatedDisplay.DedicatedDisplay(self.config)
+        self.displayUiADC = DedicatedDisplay.DedicatedDisplay(self.config,"Analog Channels")
         self.displayUiADC.setupUi(self.displayUiADC)
         self.displayDockADC = QtGui.QDockWidget("Analog Channels")
         self.displayDockADC.setObjectName("Analog Channels")
         self.displayDockADC.setWidget(self.displayUiADC)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDockADC)
+        # AutoLoad
+        self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware)
+        self.autoLoad.setupUi(self.autoLoad)
+        self.autoLoadDock = QtGui.QDockWidget("Auto Loader")
+        self.autoLoadDock.setObjectName("Auto Loader")
+        self.autoLoadDock.setWidget( self.autoLoad )
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.autoLoadDock)
         
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
@@ -100,7 +121,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     def onClose(self):
         self.config['DedicatedCounter.Settings'] = self.settings
         self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-      
+        self.settingsUi.onClose()
+        self.calibrationUi.onClose()
+        self.autoLoad.close()
         
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()

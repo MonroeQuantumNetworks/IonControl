@@ -2,6 +2,8 @@
 """
 Created on Sun Feb 24 16:41:05 2013
 
+Parser for magnitude expressions. Can parse arithmetic expressions with values including standard si units.
+
 @author: pmaunz
 """
 
@@ -23,7 +25,7 @@ def parse( string ):
     val = valueexpr.parseString( string )
     precres = precisionexpr.parseString( string )
     prec = len(precres[2]) if len(precres)==3 else 0
-    retval = magnitude.mg(float(val[0]),val[1])
+    retval = magnitude.mg(float(val[0]),val[1] if len(val)>1 else None)
     retval.output_prec( prec )
     return retval
 
@@ -49,7 +51,7 @@ def positionawareTrim( string, position ):
 
 if __name__=="__main__":
     print positionawareTrim('   1234',10)
-    for line in ['12MHz', '12.123456789 MHz','-200.234e3 us','   12.000 MHz']:
+    for line in ['12MHz', '12.123456789 MHz','-200.234e3 us','   12.000 MHz','40']:
         try:
             print line, "->"
             for elem in parseDelta(line, 4):

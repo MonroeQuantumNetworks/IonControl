@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="kde">
+    <file>exec.png</file>
+    <file>exit.png</file>
+    <file>filesave.png</file>
+  </qresource>
+</RCC>

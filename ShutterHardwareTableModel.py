@@ -36,7 +36,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         if index.column()==0 and role==QtCore.Qt.EditRole:
             if value in self.shutterNameDict and index.column()==self.shutterNameDict[value]: # no change
                 return True
-            elif value in self.shutterNameDict: # douplicate
+            elif value in self.shutterNameDict: # duplicate
                 print "cannot have the same name twice"
                 return False
             else:
@@ -48,7 +48,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
                     self.shutterdict[index.row()] = value
                 else:
                     if index.row() in self.shutterdict:
-                        self.shutterdict.pop(self.shutterdict[index.row()])
+                        self.shutterdict.pop(index.row())
         return False
         
     def data(self, index, role): 
@@ -87,3 +87,12 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         self._shutter = value
         setattr(self.pulserHardware,self.outputname,self._shutter)
         self.dataChanged.emit(self.createIndex(0,1),self.createIndex(self.size,1))
+        
+    def updateShutter(self, value):
+        """ updates the display only,
+        called by the hardware backend to indicate changes
+        by other means than the gui
+        """
+        if self._shutter != value:
+            self._shutter = value
+            self.dataChanged.emit(self.createIndex(0,1),self.createIndex(self.size,1))

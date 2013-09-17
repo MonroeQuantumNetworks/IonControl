@@ -10,6 +10,7 @@ import functools
 from MagnitudeSpinBox import MagnitudeSpinBox
 import magnitude
 from modules import configshelve
+import ProjectSelection
        
 VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')
 
@@ -22,17 +23,18 @@ class Settings:
 class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
     
-    def __init__(self,config,parent=0):
-        VoltageGlobalAdjustForm.__init__(self,parent)
-        VoltageGlobalAdjustBase.__init__(self)
+    def __init__(self,config,parent=None):
+        VoltageGlobalAdjustForm.__init__(self)
+        VoltageGlobalAdjustBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageGlobalAdjust.Settings'
         self.settings = self.config.get(self.configname,Settings())
         self.globalAdjustDict = dict()
         self.adjust = dict()
         self.adjust["__GAIN__"] = 1.0
-        self.myWidgetList = list()
-        self.adjustHistoryShelve = configshelve.configshelve('VoltageGlobalAdjust')
+        self.myLabelList = list()
+        self.myBoxList = list()
+        self.adjustHistoryShelve = configshelve.configshelve('VoltageGlobalAdjust', ProjectSelection.guiConfigDir())
         self.adjustHistoryShelve.open()
         self.adjustHistoryName = None
         self.spacerItem = None
@@ -44,8 +46,6 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.setupGlobalAdjust('none',dict())
         
     def setupGlobalAdjust(self, name, adjustDict):
-        for widget in self.myWidgetList:
-            self.gridLayout.removeWidget(widget)
         if self.spacerItem:
             self.gridLayout.removeItem( self.spacerItem )
         else:
@@ -55,18 +55,33 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         oldadjust = self.adjustHistoryShelve.get(name,dict())
         self.adjustHistoryName = name
         self.globalAdjustDict = adjustDict
+        #print self.globalAdjustDict
         self.adjust = dict()
         for index, name in enumerate(self.globalAdjustDict.keys()):
-            label = QtGui.QLabel(self)
-            label.setText(name)
-            self.gridLayout.addWidget( label, 2+index, 1, 1, 1 )
-            self.myWidgetList.append( label )
-            Box = MagnitudeSpinBox(self)
-            Box.setValue( oldadjust.get(name,0) )
-            Box.valueChanged.connect( functools.partial(self.onValueChanged, name) )
-            self.gridLayout.addWidget( Box, 2+index, 2, 1, 1 )
-            self.myWidgetList.append( Box )
-            self.adjust[name] = Box.value()
+            if index<len(self.myLabelList):
+                self.myLabelList[index].setText(name)
+                self.myLabelList[index].show()
+            else:
+                label = QtGui.QLabel(self)
+                label.setText(name)
+                self.myLabelList.append(label)
+                self.gridLayout.addWidget( label, 2+index, 1, 1, 1 )
+            if index<len(self.myBoxList):
+                self.myBoxList[index].valueChanged.disconnect()
+                self.myBoxList[index].setValue( oldadjust.get(name,0) )
+                self.myBoxList[index].valueChanged.connect( functools.partial(self.onValueChanged, name) )
+                self.myBoxList[index].show()
+                self.adjust[name] = self.myBoxList[index].value()
+            else:
+                Box = MagnitudeSpinBox(self)
+                Box.setValue( oldadjust.get(name,0) )
+                Box.valueChanged.connect( functools.partial(self.onValueChanged, name) )
+                self.gridLayout.addWidget( Box, 2+index, 2, 1, 1 )
+                self.myBoxList.append( Box )
+                self.adjust[name] = Box.value()
+        for index in range( len(self.globalAdjustDict.keys()), len(self.myLabelList)):
+            self.myLabelList[index].hide()
+            self.myBoxList[index].hide()
         self.gridLayout.addItem(self.spacerItem, len(self.globalAdjustDict)+2, 1, 1, 1)
         self.updateOutput.emit(self.adjust)
         

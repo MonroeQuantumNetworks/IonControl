@@ -75,6 +75,10 @@ OPS = {'NOP'    : 0x00,
        'RAMREAD' : 0x44,
        'JMPRAMVALID' : 0x45,
        'JMPRAMINVALID' : 0x46,
+       'CMPGE' : 0x47,
+       'CMPLE' : 0x48, 
+       'CMPGREATER' : 0x4a,
+       'ORW' : 0x4b,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -85,18 +89,25 @@ class Dimensions:
     dimensionless = (0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 class Variable:
+    def __init__(self):
+        self.enabled = True        
+        
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__dict__.setdefault( "enabled", True )
+        
     def __repr__(self):
         return str(self.__dict__)
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
-              'AD9912_PHASE': (360/2**14, '', Dimensions.dimensionless, 0xfff),
+              'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
+              'TIME' : ( 20, 'ns', Dimensions.time, 0x1 ),
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
-debug = False
 
 def variableValueDict( variabledict ):
     returndict = dict()
@@ -120,6 +131,8 @@ class PulseProgram:
         self.code = []                   # this is a list of lines
         self.bytecode = []               # list of op, argument tuples
         self.binarycode = bytearray()    # binarycode to be uploaded
+        self.debug = False
+
         
         class Board:
             channelLimit = 1    
@@ -160,12 +173,21 @@ class PulseProgram:
             if name in self.variabledict:
                 var = self.variabledict[name]
                 address = var.address
+                var.value = value
+                if self.debug:
+                    print "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data))
                 var.data = self.convertParameter(value, var.encoding )
                 self.bytecode[address] = (self.bytecode[address][0], var.data )
                 self.variabledict[name] = var
             else:
                 print "variable", name, "not found in dictionary."
         return self.bytecode
+        
+    def variables(self):
+        mydict = dict()
+        for name, var in self.variabledict.iteritems():
+            mydict.update( {name: var.value })
+        return mydict
         
     def variable(self, variablename ):
         return self.variabledict.get(variablename).value
@@ -178,9 +200,13 @@ class PulseProgram:
         data = self.convertParameter(value, var.encoding )
         return bytearray( struct.pack('II', (var.address, data)))
         
+    def flattenList(self,l):
+        return [item for sublist in l for item in sublist]
+        
     def variableScanCode(self, variablename, values):
         var = self.variabledict[variablename]
-        return [item for sublist in [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] for item in sublist]
+        # [item for sublist in l for item in sublist] idiom for flattening of list
+        return self.flattenList( [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] )
                    
     def loadFromMemory(self):
         """Similar to loadSource
@@ -194,9 +220,9 @@ class PulseProgram:
         """ convert bytecode to binary
         """
         self.binarycode = bytearray()
-        for op, arg in self.bytecode:
-            if debug:
-                print hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
+        for wordno, (op, arg) in enumerate(self.bytecode):
+            if self.debug:
+                print hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
         
@@ -292,7 +318,7 @@ class PulseProgram:
                         self.code.append((len(self.code)+addr_offset, op, data, label, sourcename))
                     else:
                         print "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno)
-                        raise ppexception("Error parsing ops.")
+                        raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno))
         self.appendVariableCode()
         return self.code
 
@@ -309,16 +335,19 @@ class PulseProgram:
         """
         for name, var in self.variabledict.iteritems():
             address = len(self.code)
-            self.code.append((address, 'NOP', var.data, None, var.origin ))
+            self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin ))
             var.address = address        
 
     def addVariable(self, m, lineno, sourcename):
         """ add a variable to the self.variablesdict
         """
+        if self.debug:
+            print "Variable", m, lineno, sourcename
         var = Variable()
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
         var.origin = sourcename
+        var.enabled = True
 
         if var.encoding not in encodings:
             raise ppexception("unknown encoding {0} in file '{1}':{2}".format(var.encoding,sourcename,lineno))
@@ -353,14 +382,14 @@ class PulseProgram:
     def toBytecode(self):
         """ generate bytecode from code
         """
-        if debug:
+        if self.debug:
             print "\nCode ---> ByteCode:"
         self.bytecode = []
         for index, line in enumerate(self.code):
+            if self.debug:
+                print hex(line[0]),  ": ", line[1:], 
             bytedata = 0
             byteop = OPS[line[1]]
-            if debug:
-                print hex(line[0]),  ": ", line[1:], 
             try:
                 data = line[2]
                 #attempt to locate commands with constant data
@@ -369,6 +398,8 @@ class PulseProgram:
                     bytedata = 0
                 elif isinstance(data,(int,long)):
                     bytedata = data
+                elif isinstance(data,float):
+                    bytedata = int(data)
                 elif isinstance(data,basestring): # now we are dealing with a variable and need its address
                     bytedata = self.variabledict[line[2]].address if line[2] in self.variabledict else self.labeldict[line[2]]
                 elif isinstance(data,list): # list is what we have for DDS, will have 8bit channel and 16bit address
@@ -382,7 +413,7 @@ class PulseProgram:
                 #print self.variabledict
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data))
             self.bytecode.append((byteop, bytedata))
-            if debug:
+            if self.debug:
                 print "--->", (hex(byteop), hex(bytedata))
     
         return self.bytecode 
@@ -394,12 +425,18 @@ class PulseProgram:
         """
         if isinstance(mag, magnitude.Magnitude):
             if tuple(mag.dimension())==Dimensions.time:
-                return int((mag/self.timestep).round()) 
+                result = int((mag/self.timestep).round()) 
             else:
                 step, unit, dimension, mask = encodings[encoding]
-                return int(round(mag.toval(unit)/step)) & mask
+                result = int(round(mag.toval(unit)/step)) & mask
         else:
-            return mag
+            if encoding:
+                step, unit, dimension, mask = encodings[encoding]
+                result = int(round(mag/step)) & mask
+            else:
+                result = mag
+        # print "convertParameter encoding", encoding, mag, result
+        return result
 
     def compileCode(self):
         self.parse()
@@ -408,8 +445,8 @@ class PulseProgram:
 
 
 if __name__ == "__main__":
-    debug = True
     pp = PulseProgram()
+    pp.debug = True
     pp.loadSource(r"prog\Ions\Bluetest.pp")
     #pp.loadSource(r"prog\single_pulse_exp_adiabatic.pp")
     

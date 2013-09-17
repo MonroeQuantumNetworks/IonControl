@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May 10 21:12:12 2013
+
+@author: pmaunz
+"""
+
+import PyQt4.uic
+from PyQt4 import QtGui
+import sys 
+
+import ProjectSelection
+
+Form, Base = PyQt4.uic.loadUiType(r'ui\ProjectSelection.ui')
+
+class ProjectSelectionUi(Form, Base):
+    def __init__(self,parent=None):
+        Base.__init__(self,parent)
+        Form.__init__(self,parent)
+        self.project = None
+        self.defaultProject = ProjectSelection.defaultProject()
+        
+    def setupUi(self,parent):
+        Form.setupUi(self,parent)
+        self.projects = ProjectSelection.projects()
+        self.projectList.addItems( self.projects )
+        self.createButton.clicked.connect( self.onCreateProject )
+        self.defaultCheckBox.setChecked( bool(self.defaultProject) )
+        self.baseDirectoryEdit.setText( ProjectSelection.ProjectsBaseDir )
+        if self.defaultProject:
+            try:
+                index = self.projects.index(self.defaultProject)
+                self.projectList.setCurrentRow( index )
+            except ValueError:
+                pass
+            
+        
+    def onCreateProject(self):
+        name = str(self.newProjectName.text())
+        if name not in self.projects:
+            ProjectSelection.createProject(name)
+            self.projects.append(name)
+            self.projectList.addItem(name)
+            
+    def accept(self):
+        if self.defaultCheckBox.isChecked():
+            ProjectSelection.setDefaultProject(str(self.projectList.currentItem().text()))
+        else:
+            ProjectSelection.setDefaultProject(None)
+        self.project = str(self.projectList.currentItem().text()) if self.projectList.currentItem() else None
+        Base.accept(self)
+        
+def GetProjectSelection(atProgramStart=False):
+    project = ProjectSelection.defaultProject()
+    if (not project) or (not atProgramStart):
+        selectionui = ProjectSelectionUi()
+        selectionui.setupUi(selectionui)
+        selectionui.warningLabel.setVisible( not atProgramStart)
+        selectionui.exec_()
+        project = selectionui.project
+        ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)
+    ProjectSelection.setProject(project)
+    return project, ProjectSelection.projectDir()
+
+if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
+    print GetProjectSelection(True)
+    
+    selectionui = ProjectSelectionUi()
+    selectionui.setupUi(selectionui)
+    selectionui.exec_()
+    project = selectionui.project
+

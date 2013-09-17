@@ -19,8 +19,6 @@ This is the main gui program for the ExperimentalUi
 import CounterWidget
 import ScanExperiment
 import ExternalScanExperiment
-#import TDCWidget
-#import FastTDCWidget
 import SettingsDialog
 import testExperiment
 from modules import configshelve
@@ -30,11 +28,18 @@ import ShutterUi
 import DDSUi
 import PulserHardware
 import DedicatedCounters
+import ExternalScannedParametersSelection
+import ExternalScannedParametersUi
+import ProjectSelectionUi
+import os
+from modules import DataDirectory
+from ExceptionLogButton import ExceptionLogButton
 
 import VoltageControl
     
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
+import argparse
 
 class Logger(QtCore.QObject):    
     textWritten = QtCore.pyqtSignal(str)
@@ -60,6 +65,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     
     def setupUi(self, parent):
         super(WidgetContainerUi,self).setupUi(parent)
+        self.toolBar.addWidget(ExceptionLogButton())
+        
         self.parent = parent
         self.tabList = list()
         self.tabDict = dict()
@@ -74,12 +81,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
         for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
-                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware), "Scanning"),
-                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware),"External Scan"),
-                             #(TDCWidget.TDCWidget(),"Time to digital converter" ),
-                             #(FastTDCWidget.FastTDCWidget(),"Fast Time to digital converter" ),
+                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
+                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware,"ExternalScan"), "External Scan"),
                              (FromFile.FromFile(),"From File"), 
-                             (testExperiment.test(),"test")
+                             (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
             if hasattr(widget,'setPulseProgramUi'):
@@ -89,10 +94,13 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
+            
+        self.ExternalScanExperiment = self.tabDict["External Scan"]
                
         self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter', self.config)
-        self.shutterUi.setupUi(self.shutterUi)
+        self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
+        print "ShutterUi representation:", repr(self.shutterUi)
 
         self.triggerUi = ShutterUi.TriggerUi(self.pulserHardware, 'trigger', self.config)
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
@@ -102,8 +110,32 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulserHardware.xem )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
-        self.tabDict['Scanning'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
+        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
+        
+        # tabify the dock widgets
+        self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
+        self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
+        
+        self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
+        self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
+        self.ExternalScannedParametersSelectionDock = QtGui.QDockWidget("Params Selection")
+        self.ExternalScannedParametersSelectionDock.setObjectName("_ExternalScannedParametersSelectionDock")
+        self.ExternalScannedParametersSelectionDock.setWidget(self.ExternalParametersSelectionUi)
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersSelectionDock)
+
+        self.ExternalParametersUi = ExternalScannedParametersUi.ControlUi()
+        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParameters, self.ExternalParametersUi )
+        self.ExternalScannedParametersDock = QtGui.QDockWidget("Params Control")
+        self.ExternalScannedParametersDock.setWidget(self.ExternalParametersUi)
+        self.ExternalScannedParametersDock.setObjectName("_ExternalScannedParametersDock")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersDock)
+        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
                
+        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
+        self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParameters )
+        #tabify 
+        self.tabifyDockWidget( self.ExternalScannedParametersSelectionDock, self.ExternalScannedParametersDock)
+        
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
         self.actionPause.triggered.connect(self.onPause)
@@ -115,6 +147,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
+        self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
@@ -133,6 +166,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
         self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
+        self.setWindowTitle("Experimental Control ({0})".format(project) )
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()
@@ -179,7 +213,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget]:
+        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
+                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock]:
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
@@ -194,7 +229,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def onSettingsApply(self,settings):
         self.settings = settings
-        self.pulserHardware.updateSettings(self.settings.fpga)
+        if hasattr(self,'pulserHardware'): 
+            self.pulserHardware.updateSettings(self.settings.fpga)
+        if hasattr(self,'DDSUi'):
+            self.DDSUi.updateSettings(self.settings.fpga)
         #print self.settings.deviceSerial, self.settings.deviceDescription
         for tab in self.tabList:
             if hasattr(tab,'updateSettings'):
@@ -233,18 +271,44 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.close()
         self.voltageControlWindow.onClose()
         self.voltageControlWindow.close()
+        self.ExternalParametersSelectionUi.onClose()
         
-
+    def onProjectSelection(self):
+        ProjectSelectionUi.GetProjectSelection()
+        
+        
 if __name__ == "__main__":
     import sys
+    parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
+    parser.add_argument('--config-dir', type=str, default=None, help='name of directory for configuration files')
+    parser.add_argument('--project',type=str,default=None,help='project name')
+    args = parser.parse_args()
     app = QtGui.QApplication(sys.argv)
-    #MainWindow = QtGui.QMainWindow()
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
-    with configshelve.configshelve("experiment-gui") as config:
-        ui = WidgetContainerUi(config)
-        ui.setupUi(ui)
-        logger.textWritten.connect(ui.onMessageWrite)
-        ui.show()
-        sys.exit(app.exec_())
+
+#    import warnings
+#    with warnings.catch_warnings():
+#        warnings.simplefilter("error")
+
+    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    
+    if project:
+        if args.config_dir:
+            configdir = args.config_dir
+        else:
+            configdir = os.path.join(projectDir, '.gui-config')
+            if not os.path.exists(configdir):
+                os.makedirs(configdir)
+            
+        DataDirectory.DefaultProject = project
+        
+        with configshelve.configshelve("experiment-gui",configdir) as config:
+            ui = WidgetContainerUi(config)
+            ui.setupUi(ui)
+            logger.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())
+    else:
+        print "No project selected. Nothing I can do about that ;)"

@@ -21,10 +21,13 @@ api2 = sip.getapi("QString")==2
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
     
-    def __init__(self,parent=0):
+    def __init__(self,parent=None):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.expression = Expression.Expression()
+        self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         self.editingFinished.connect( self.onEditingFinished )
+        self.lineEdit().setDragEnabled(True)
+        self.lineEdit().setAcceptDrops(True)
         
     def validate(self, inputstring, pos):
         #print "validate"
@@ -63,7 +66,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         print "interpret text"
         
     def fixup(self,inputstring):
-        print inputstring
+        print "fixup" , inputstring
         
     def stepEnabled(self):
         #print "stepEnabled"
@@ -71,7 +74,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def value(self):
         value = self.expression.evaluate( str( self.lineEdit().text() ))
-        print value
+        #print value
         return value
         
     def setText(self,string):
@@ -82,6 +85,38 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def onEditingFinished(self):
         self.valueChanged.emit( self.value() )
+        
+    def sizeHint(self):
+        fontMetrics = QtGui.QFontMetrics( self.font() )
+        size = fontMetrics.boundingRect(self.lineEdit().text()).size()
+        size += QtCore.QSize( 8,0)
+        return size
+ 
+#    def makeDrag(self):
+#        print "makeDrag"
+#        dr = QtGui.QDrag(self)
+#        # The data to be transferred by the drag and drop operation is contained in a QMimeData object
+#        data = QtCore.QMimeData()
+#        data.setText("This is a test")
+#        # Assign ownership of the QMimeData object to the QDrag object.
+#        dr.setMimeData(data)
+#        # Start the drag and drop operation
+#        dr.start()
+# 
+#    def dragMoveEvent(self, de):
+#        print "dragMove"
+#        # The event needs to be accepted here
+#        de.accept()
+#
+#    def dragEnterEvent(self, event):
+#        print "dragEnterEvent"
+#        # Set the drop action to be the proposed action.
+#        event.acceptProposedAction()
+#
+#    def dropEvent(de):
+#        # Unpack dropped data and handle it the way you want
+#        print "Contents: {0}".format(de.mimeData().text().toLatin1().data())
+       
         
 if __name__ == "__main__":
     debug = True

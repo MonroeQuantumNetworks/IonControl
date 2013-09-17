@@ -3,16 +3,17 @@ import PyQt4.uic
 import functools
 from modules import configshelve
 import Ad9912
+from magnitude import mg
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
 class DDSUi(DDSForm, DDSBase):
     def __init__(self,config,xem,parent=None):
         DDSBase.__init__(self,parent)
-        DDSForm.__init__(self,parent)
+        DDSForm.__init__(self)
         self.config = config
-        self.frequency = self.config.get('DDSUi.Frequency',[0]*6)
-        self.phase = self.config.get('DDSUi.Phase',[0]*6)
+        self.frequency = self.config.get('DDSUi.Frequency',[mg(0,'MHz')]*6)
+        self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*6)
         self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
         self.names = self.config.get('DDSUi.Names',['']*6)
         self.ad9912 = Ad9912.Ad9912(xem)
@@ -86,6 +87,9 @@ class DDSUi(DDSForm, DDSBase):
         
     def onReset(self):
         self.ad9912.reset(0x3f)
+        
+    def updateSettings(self,fpgaUtilit):
+        self.ad9912.updateSettings(fpgaUtilit)
         
 if __name__ == "__main__":
     import sys

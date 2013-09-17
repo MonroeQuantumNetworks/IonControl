@@ -4,6 +4,8 @@ Created on Fri Jan 11 16:47:30 2013
 
 @author: plmaunz
 
+converting count rates between different units
+
 This way of switching between conversion functions is certainly premature optimization.
 Thus I will see it as an excercise in function pointers
 

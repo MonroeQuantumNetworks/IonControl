@@ -154,6 +154,12 @@ class WaveformGenerator(object):
             self.ao.waitUntilDone()
         if self.useDo:
             self.do.waitUntilDone()
+         
+    ## This function takes a reference to a function that will get executed when
+    # the analog output generation completes.
+    def setOnDoneCallback(self, callbackFunction):
+        if self.useAo:
+            self.ao.setOnDoneCallback( callbackFunction )
     
     ## This function stops the analog and digital output generation.
     #  @param self The object pointer.

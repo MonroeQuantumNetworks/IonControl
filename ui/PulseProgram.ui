@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1036</width>
-    <height>883</height>
+    <height>604</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,6 +37,23 @@
           </widget>
          </item>
          <item>
+          <widget class="QToolButton" name="removeCurrent">
+           <property name="toolTip">
+            <string>remove Current entry from Combo Box</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="Experiment.qrc">
+             <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QToolButton" name="loadButton">
            <property name="text">
             <string>...</string>
@@ -44,6 +61,9 @@
            <property name="icon">
             <iconset resource="Experiment.qrc">
              <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -56,6 +76,9 @@
             <iconset resource="Experiment.qrc">
              <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
            </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -66,6 +89,9 @@
            <property name="icon">
             <iconset resource="Experiment.qrc">
              <normaloff>:/openicon/icons/document-revert-5.png</normaloff>:/openicon/icons/document-revert-5.png</iconset>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -143,10 +169,23 @@
            </property>
           </spacer>
          </item>
+         <item>
+          <widget class="QCheckBox" name="debugCheckBox">
+           <property name="text">
+            <string>debug</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
-        <widget class="QTableView" name="variableView"/>
+        <widget class="QSplitter" name="GateSetSplitter">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <widget class="QTableView" name="variableView"/>
+         <widget class="GateSetUi" name="GateSetUi" native="true"/>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -193,6 +232,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GateSetUi</class>
+   <extends>QWidget</extends>
+   <header>GateSetUi</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

@@ -7,30 +7,43 @@ Created on Sep 28, 2012
 import httplib
 
 
+class WavemeterReadException(Exception):
+    pass
+
 class WavemeterGetFrequency(object):
     def __init__(self, address = "132.175.165.36:8082"):
         self.address = address
         self.nAttempts = 0
         self.nMaxAttempts = 100
         self.connection = httplib.HTTPConnection(self.address, timeout = 5)
+        #self.connection.set_debuglevel(5)
+        #print "Initialize WavemeterGetFrequency" 
+        
     def __del__(self):
         self.connection.close()
+        
     def get_frequency(self, channel):
         self.channel = channel
         try:
-            self.connection.request("GET", "/wavemeter/wavemeter/wavemeter-status?channel=%d" % channel)
-            self.response = self.connection.getresponse()
-        except:
+            requeststr = "/wavemeter/wavemeter/wavemeter-status?channel={0}".format( channel )
+            self.connection.request("GET", requeststr )
+            response = self.connection.getresponse()
+            responsestring = response.read().strip()
+        except Exception as e:
+            print "Exception:", e
             self.connection.close()
             self.connection = httplib.HTTPConnection(self.address, timeout = 50)
             self.nAttempts += 1
             if self.nAttempts == self.nMaxAttempts:
-                return -1
+                raise WavemeterReadException("Wavemeter connection failed")
             else:
-                self.get_frequency(self.channel)
+                return self.get_frequency(self.channel)
         else:
             self.nAttempts = 0
-            return  float(self.response.read())
+            frequency = float(responsestring)
+            print "wavemeter response '{0}' {1}".format( responsestring, frequency )
+            return frequency
+            
     def set_frequency(self, freq, channel):
         self.channel = channel
         try:
@@ -69,7 +82,7 @@ if __name__ == '__main__':
     import timeit
     fg = WavemeterGetFrequency()
     def speed():
-        print fg.get_frequency(1)
+        print fg.get_frequency(0)
     t = timeit.Timer("speed()", "from __main__ import speed")
     print t.timeit(number = 10)
     del fg    
