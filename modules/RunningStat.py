@@ -36,16 +36,17 @@ class RunningStat(object):
         return self.stddev / math.sqrt(self.count-1) if self.count>1 else 0
         
     def add(self, value):
-        self.count += 1
-        if self.count == 1:
-            self.mOld = value
-            self.mNew = value
-            self.sOld = 0
-            self.sNew = 0
-        else:
-            self.mNew = self.mOld + ( value - self.mOld )/self.count
-            self.sNew = self.sOld + ( value - self.mOld ) * ( value - self.mNew )
-            
-            self.mOld = self.mNew
-            self.sOld = self.sNew
+        if not( value is None or math.isnan(value) or math.isinf(value) ):
+            self.count += 1
+            if self.count == 1:
+                self.mOld = value
+                self.mNew = value
+                self.sOld = 0
+                self.sNew = 0
+            else:
+                self.mNew = self.mOld + ( value - self.mOld )/self.count
+                self.sNew = self.sOld + ( value - self.mOld ) * ( value - self.mNew )
+                
+                self.mOld = self.mNew
+                self.sOld = self.sNew
         

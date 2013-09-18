@@ -9,16 +9,22 @@ import math
 def roundToNDigits(value,n):
     """round value to n significant digits
     """
+    if value is None or math.isnan(value) or math.isinf(value):
+        return value
     if abs(value)==0:
         return 0
+    if not n:
+        n=0
     return round( value,  -int(math.floor(math.log10(abs(value) ))) + (n - 1))   
     
 def roundToStdDev(value, stddev, extradigits=0):
     """round value to the significant digits determined by the stddev
     and add extradigits nonsignificant digits
     """
-    if abs(value)==0:
-        return 0
+    if value is None or math.isnan(value) or math.isinf(value) or value==0:
+        return value
+    if not stddev:
+        stddev=0
     return roundToNDigits( value, int(math.log10(math.ceil(abs(value)/stddev)-0.5)+2+extradigits) if stddev>0 else 3)
 
 
@@ -35,5 +41,9 @@ if __name__=="__main__":
     print roundToStdDev( 5.123445, 0.1 )
     print roundToStdDev( 5.123445, 0.01 )
     print roundToStdDev( 5.123445, 0.001 )
+    
+    print roundToNDigits(None,1)
+    print roundToNDigits(None,None)
+    print roundToNDigits(1,None)
     
     
