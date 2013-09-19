@@ -187,7 +187,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.startBox.setValue(self.settings.start)
         self.stopBox.setValue(self.settings.stop)
         self.calculateSteps( self.settings )
-        self.setSteps( self.settings )
+        self.setSteps( self.settings, True )
         self.stepsCombo.setCurrentIndex(self.settings.stepsSelect)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
@@ -220,12 +220,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.onModeChanged(self.settings.scanMode)
         
-    def setSteps( self, settings ):
+    def setSteps( self, settings, writeInput=False ):
         if settings.stepsSelect == 0:
-            self.stepsBox.setValue(settings.steps)
+            if writeInput:
+                self.stepsBox.setValue(settings.steps)
             self.stepsLabel.setText( str(settings.stepSize) )
         else:
-            self.stepsBox.setValue(settings.stepSize)
+            if writeInput:
+                self.stepsBox.setValue(settings.stepSize)
             self.stepsLabel.setText( str(settings.steps) )
 
         
@@ -327,7 +329,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         print "onStepsSelectChanged", select
         self.settings.stepsSelect = select
         self.calculateSteps( self.settings )
-        self.setSteps( self.settings )
+        self.setSteps( self.settings, True )
         
     def onStepsValueChanged( self, value ):
         if self.settings.stepsSelect==0:
