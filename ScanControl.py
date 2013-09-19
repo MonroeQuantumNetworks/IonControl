@@ -133,8 +133,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.comboBox.addItem(name)
         # update connections
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )        
-        self.startBox.valueChanged.connect( functools.partial(self.onValueChanged,'start') )
-        self.stopBox.valueChanged.connect( functools.partial(self.onValueChanged,'stop') )
+        self.startBox.valueChanged.connect( functools.partial(self.onStartStopChanged,'start') )
+        self.stopBox.valueChanged.connect( functools.partial(self.onStartStopChanged,'stop') )
         self.stepsBox.valueChanged.connect( self.onStepsValueChanged )
         self.stepsCombo.currentIndexChanged[int].connect( self.onStepsSelectChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
@@ -314,6 +314,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
         #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
+        self.commitChange()
+        
+    def onStartStopChanged(self, attribute, value):
+        self.beginChange()
+        setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
+        self.calculateSteps( self.settings )
+        self.setSteps( self.settings )
         self.commitChange()
 
     def onStepsSelectChanged(self, select ):
