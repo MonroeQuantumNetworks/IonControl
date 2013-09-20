@@ -30,8 +30,8 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
             self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
             vR = self.graphicsView.vb.viewRange()
             deltaX, deltaY = vR[0][1]-vR[0][0], vR[1][1]-vR[1][0]
-            precx = int( math.ceil( math.log10(abs(self.mousePoint.x()/deltaX)) ) + 3 )
-            precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 )
+            precx = int( math.ceil( math.log10(abs(self.mousePoint.x()/deltaX)) ) + 3 ) if self.mousePoint.x()>0 else 0
+            precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()>0 else 0
             roundedx, roundedy = roundToNDigits( self.mousePoint.x(),precx), roundToNDigits(self.mousePoint.y(), precy )
             self.label.setText( self.template.format( repr(roundedx), repr(roundedy) ))
             
