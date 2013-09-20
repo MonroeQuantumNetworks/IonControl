@@ -126,6 +126,7 @@ class Expression:
                 l = fmag.parseString(op)
                 #print l
                 m = magnitude.mg( float(l[0]),l[1])
+                m.significantDigits = len(list(filter( lambda s: s.isdigit(), l[0])))
                 return m
             return res
             
