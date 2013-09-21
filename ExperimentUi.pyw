@@ -16,13 +16,11 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QTime",2)
 #sip.setapi("QUrl",2)
 
-import CounterWidget
 import ScanExperiment
 import ExternalScanExperiment
 import SettingsDialog
 import testExperiment
 from modules import configshelve
-import FromFile
 import PulseProgramUi
 import ShutterUi
 import DDSUi
@@ -80,10 +78,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settings = self.settingsDialog.settings        
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
-        for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
-                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
                              (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware,"ExternalScan"), "External Scan"),
-                             (FromFile.FromFile(),"From File"), 
                              (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
