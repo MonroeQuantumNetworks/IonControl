@@ -184,6 +184,7 @@ class MagnitudeError(Exception):
     pass
 
 _mags = {}
+_outputDimensions = {}
 _unames = ['m', 's', 'K', 'kg', 'A', 'mol', 'cd', '$', 'b']
 _prefix = {'y': 1e-24,  # yocto
            'z': 1e-21,  # zepto
@@ -438,6 +439,7 @@ class Magnitude():
 
 
     def __str__(self):
+        unitTuple = tuple(self.unit)
         if self.significantDigits:
             if self.out_unit:
                 m = self.copy()
@@ -446,6 +448,15 @@ class Magnitude():
                 if _prn_units:
                     return st + ' ' + self.out_unit.strip()
                 return st
+            elif unitTuple in _outputDimensions:
+                outmag = _mags[unitTuple]
+                m = self.copy()
+                m._div_by(outmag)
+                st = repr( roundToNDigits(m.val,self.significantDigits) )
+                if _prn_units:
+                    return st + ' ' + _outputDimensions[unitTuple].strip()
+                return st                
+
             st = repr( roundToNDigits(m.val,self.significantDigits) )
             st += self.__unitRepr__()
             return st.strip()
@@ -466,7 +477,17 @@ class Magnitude():
                 if _prn_units:
                     return st + ' ' + self.out_unit.strip()
                 return st
-
+            elif unitTuple in _outputDimensions:
+                outmag = _mags[_outputDimensions[unitTuple]]
+                m = self.copy()
+                m._div_by(outmag)
+                if '*' in oformat:  # requires the precision arg
+                    st = oformat % (oprec, m.val)
+                else:
+                    st = oformat % (m.val)
+                if _prn_units:
+                    return st + ' ' + _outputDimensions[unitTuple].strip()
+                return st                
             if '*' in oformat:
                 st = oformat % (oprec, self.val)
             else:
@@ -1088,7 +1109,7 @@ def __div(m1, *rest):
         m._div_by(ensmg(m1))
         return m
 
-def new_mag(indicator, mag):
+def new_mag(indicator, mag, isDimensionIndicator=False ):
     """Define a new magnitude understood by the package.
 
     Defines a new magnitude type by giving it a name (indicator) and
@@ -1099,19 +1120,21 @@ def new_mag(indicator, mag):
     160.9344 km/h
     """
     _mags[indicator] = mag
+    if isDimensionIndicator:
+        _outputDimensions[tuple(mag.unit)] = indicator
 
 # Finally, define the Magnitudes and initialize _mags.
 
 def _init_mags():
     # Magnitudes for the base SI units
-    new_mag('m', Magnitude(1.0, m=1))
-    new_mag('s', Magnitude(1.0, s=1))
-    new_mag('K', Magnitude(1.0, K=1))
+    new_mag('m', Magnitude(1.0, m=1), True)
+    new_mag('s', Magnitude(1.0, s=1), True)
+    new_mag('K', Magnitude(1.0, K=1), True)
     new_mag('kg', Magnitude(1.0, kg=1))
-    new_mag('A', Magnitude(1.0, A=1))
-    new_mag('mol', Magnitude(1.0, mol=1))
-    new_mag('cd', Magnitude(1.0, cd=1))
-    new_mag('$', Magnitude(1.0, dollar=1))
+    new_mag('A', Magnitude(1.0, A=1), True)
+    new_mag('mol', Magnitude(1.0, mol=1), True)
+    new_mag('cd', Magnitude(1.0, cd=1), True)
+    new_mag('$', Magnitude(1.0, dollar=1), True)
     new_mag('dollar', Magnitude(1.0, dollar=1))
     new_mag('b', Magnitude(1.0, b=1))           # bit
 
@@ -1119,20 +1142,20 @@ def _init_mags():
     new_mag('B', Magnitude(8.0, b=1))
     new_mag('rad', Magnitude(1.0))  # radian
     new_mag('sr', Magnitude(1.0))  # steradian
-    new_mag('Hz', Magnitude(1.0, s=-1))  # hertz
-    new_mag('g', Magnitude(1e-3, kg=1))  # gram
-    new_mag('N', Magnitude(1.0, m=1, kg=1, s=-2))  # newton
-    new_mag('Pa', Magnitude(1.0, m=-1, kg=1, s=-2))  # pascal
-    new_mag('J', Magnitude(1.0, m=2, kg=1, s=-2))  # joule
-    new_mag('W', Magnitude(1.0, m=2, kg=1, s=-3))  # watt
-    new_mag('C', Magnitude(1.0, s=1, A=1))  # coulomb
-    new_mag('V', Magnitude(1.0, m=2, kg=1, s=-3, A=-1))  # volt
-    new_mag('F', Magnitude(1.0, m=-2, kg=-1, s=4, A=2))  # farad, C/V
-    new_mag('ohm', Magnitude(1.0, m=2, kg=1, s=-3, A=-2))  # ohm, V/A
-    new_mag('S', Magnitude(1.0, m=-2, kg=-1, s=3, A=2))  # siemens, A/V, el cond
-    new_mag('Wb', Magnitude(1.0, m=2, kg=1, s=-2, A=-1))  # weber, V.s, mag flux
-    new_mag('T', Magnitude(1.0, kg=1, s=-2, A=-1))  # tesla, Wb/m2, mg flux dens
-    new_mag('H', Magnitude(1.0, m=2, kg=1, s=-2, A=-2))  # henry, Wb/A, induct.
+    new_mag('Hz', Magnitude(1.0, s=-1), True)  # hertz
+    new_mag('g', Magnitude(1e-3, kg=1), True)  # gram
+    new_mag('N', Magnitude(1.0, m=1, kg=1, s=-2), True)  # newton
+    new_mag('Pa', Magnitude(1.0, m=-1, kg=1, s=-2), True)  # pascal
+    new_mag('J', Magnitude(1.0, m=2, kg=1, s=-2), True)  # joule
+    new_mag('W', Magnitude(1.0, m=2, kg=1, s=-3), True)  # watt
+    new_mag('C', Magnitude(1.0, s=1, A=1), True)  # coulomb
+    new_mag('V', Magnitude(1.0, m=2, kg=1, s=-3, A=-1), True)  # volt
+    new_mag('F', Magnitude(1.0, m=-2, kg=-1, s=4, A=2), True)  # farad, C/V
+    new_mag('ohm', Magnitude(1.0, m=2, kg=1, s=-3, A=-2), True)  # ohm, V/A
+    new_mag('S', Magnitude(1.0, m=-2, kg=-1, s=3, A=2), True)  # siemens, A/V, el cond
+    new_mag('Wb', Magnitude(1.0, m=2, kg=1, s=-2, A=-1), True)  # weber, V.s, mag flux
+    new_mag('T', Magnitude(1.0, kg=1, s=-2, A=-1), True)  # tesla, Wb/m2, mg flux dens
+    new_mag('H', Magnitude(1.0, m=2, kg=1, s=-2, A=-2), True)  # henry, Wb/A, induct.
     new_mag('degC', Magnitude(1.0, K=1))  # celsius, !!
     new_mag('lm', Magnitude(1.0, cd=1))  # lumen, cd.sr (=cd)), luminous flux
     new_mag('lux', Magnitude(1.0, m=-2, cd=1))  # lux, lm/m2, illuminance
@@ -1181,3 +1204,4 @@ if not _mags:
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+    print _outputDimensions
