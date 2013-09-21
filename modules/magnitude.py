@@ -217,6 +217,26 @@ _prefix = {'y': 1e-24,  # yocto
            'Pi': 2 ** 50, # Pebi (<- peta, 10^15)
            'Ei': 2 ** 60  # Exbi (<- exa, 10^18)
            }
+_reverse_prefix = { -24: 'y',  # yocto
+                    -21: 'z',  # zepto
+                    -18: 'a',  # atto
+                    -15: 'f',  # femto
+                    -12: 'p',  # pico
+                    -9: 'n',   # nano
+                    -6: 'u',   # micro
+                    -3: 'm',   # mili
+                    -2: 'c',   # centi
+                    -1: 'd',   # deci
+                    0: '',
+                    3: 'k',    # kilo
+                    6: 'M',    # mega
+                    9: 'G',    # giga
+                    12: 'T',   # tera
+                    15: 'P',   # peta
+                    18: 'E',   # exa
+                    21: 'Z',   # zetta
+                    24: 'Y'   # yotta
+                    }
 
 
 ###### Default print formatting options
@@ -382,7 +402,7 @@ class Magnitude():
         >>> print a.output_prec(2)
         333.33 mm
         >>> print a.copy()
-        0.3333 m
+        333.3333 mm
         >>> print a.copy(with_format=True)
         333.33 mm
         """
@@ -448,7 +468,14 @@ class Magnitude():
                 st = oformat % (oprec, self.val)
             else:
                 st = oformat % (self.val)
-        return st                    
+        return st     
+
+    def _bestPrefix_(self):
+        r = math.log10(abs(self.val))/3 if self.val != 0 else 0
+        r2 = math.floor(r)
+        r3 = math.copysign(r2,r)*3
+        r4 = int(r3) if not( math.isnan(r3) or math.isinf(r3) ) else 0
+        return _reverse_prefix[r4]               
 
     def __str__(self):
         unitTuple = tuple(self.unit)
@@ -463,9 +490,14 @@ class Magnitude():
             outmag = _mags[_outputDimensions[unitTuple]]
             m = self.copy(True)
             m._div_by(outmag)
+            prefix = m._bestPrefix_()
+            if prefix != '':
+                m = self.copy(True)
+                outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
+                m._div_by(outmag)
             st = m.__formatNumber__()
             if _prn_units:
-                return st + ' ' + _outputDimensions[unitTuple].strip()
+                return st + ' ' + prefix + _outputDimensions[unitTuple].strip()
             return st                
         else:
             st = self.__formatNumber__()
@@ -531,7 +563,7 @@ class Magnitude():
         >>> a.sunit2mag('km/h').toval()
         0.2777777777777778
         >>> print a.sunit2mag('W h')
-        3600.0000 J
+        3.6000 kJ
         >>> print a.sunit2mag('W h').ounit('J')
         3600.0000 J
         >>> print a.sunit2mag('m2 kg / s3 Pa')
@@ -617,7 +649,7 @@ class Magnitude():
         >>> print a
         10.0000 km
         >>> print a.to_base_units()
-        10000.0000 m
+        10.0000 km
         """
         self.out_unit = None
         self.out_factor = None
@@ -678,7 +710,7 @@ class Magnitude():
         """Add Magnitude instances.
 
         >>> print mg(10, 'm') + (20, 'km') + (30, 'lightyear')
-        283821914177444000.0000 m
+        283.8219 Pm
         """
         if m.unit != self.unit:
             raise MagnitudeError("Incompatible units: %s and %s" %
@@ -753,7 +785,7 @@ class Magnitude():
         """Divide Magnitude instances.
 
         >>> print mg(100, 'V') / (10, 'kohm')
-        0.0100 A
+        10.0000 mA
         """
         r = self.copy()
         r._div_by(m)
@@ -764,7 +796,7 @@ class Magnitude():
         is in effect.
 
         >>> print mg(100, 'V') / (1, 'kohm')
-        0.1000 A
+        100.0000 mA
         """
         r = self.copy()
         r._div_by(m)
