@@ -7,7 +7,7 @@
 #
 # Copyright 2003-2006 by Paul McGuire
 #
-import modules.magnitude as magnitude
+import magnitude as magnitude
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
     ZeroOrMore,Forward,nums,alphas
 import math
@@ -182,8 +182,9 @@ if __name__ == "__main__":
     test( "2*(3+5)", 16 )
     test( "2*(alpha+beta)", 14, {'alpha':5,'beta':2} )
     test( "-4 MHz" , magnitude.mg(-4,'MHz') )
+    test( "2*4 MHz" , magnitude.mg(8,'MHz') )
     test( "2 * sqrt ( 4s / 1 s)",4 )
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
     test( "piTime",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10,'ms')} )
 
-
+    print ExprEval.evaluate( "4 MHz" )

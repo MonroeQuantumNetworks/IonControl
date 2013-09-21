@@ -392,6 +392,7 @@ class Magnitude():
             cp.out_factor = self.out_factor
             cp.oprec = self.oprec
             cp.oformat = self.oformat
+        cp.significantDigits = self.significantDigits
         return cp
 
     def toval(self, ounit=''):
@@ -452,7 +453,7 @@ class Magnitude():
     def __str__(self):
         unitTuple = tuple(self.unit)
         if self.out_unit:
-            m = self.copy()
+            m = self.copy(True)
             m._div_by(self.out_factor)
             st = m.__formatNumber__()
             if _prn_units:
@@ -460,7 +461,7 @@ class Magnitude():
             return st
         elif unitTuple in _outputDimensions:
             outmag = _mags[_outputDimensions[unitTuple]]
-            m = self.copy()
+            m = self.copy(True)
             m._div_by(outmag)
             st = m.__formatNumber__()
             if _prn_units:
@@ -530,7 +531,7 @@ class Magnitude():
         >>> a.sunit2mag('km/h').toval()
         0.2777777777777778
         >>> print a.sunit2mag('W h')
-        3600.0000 m2 kg / s2
+        3600.0000 J
         >>> print a.sunit2mag('W h').ounit('J')
         3600.0000 J
         >>> print a.sunit2mag('m2 kg / s3 Pa')
@@ -819,7 +820,7 @@ class Magnitude():
         >>> print mg(10, 'm/s') // (3, 's')
         3.0000 m / s2
         >>> print mg(-10, 'm/s') // (3, 'm')
-        -4.0000 1 / s
+        -4.0000 Hz
         """
         r = self.copy()
         r._div_by(m)
@@ -1178,4 +1179,3 @@ if not _mags:
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    print _outputDimensions
