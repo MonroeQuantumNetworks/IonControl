@@ -333,7 +333,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def onStepsValueChanged( self, value ):
         if self.settings.stepsSelect==0:
-            self.settings.steps = value
+            self.settings.steps = int(value)
         else: 
             self.settings.stepSize = value
         self.calculateSteps(self.settings)
