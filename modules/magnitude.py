@@ -437,65 +437,39 @@ class Magnitude():
             st += num
         return st
 
-
-    def __str__(self):
-        unitTuple = tuple(self.unit)
+    def __formatNumber__(self):
         if self.significantDigits:
-            if self.out_unit:
-                m = self.copy()
-                m._div_by(self.out_factor)
-                st = repr( roundToNDigits(m.val,self.significantDigits) )
-                if _prn_units:
-                    return st + ' ' + self.out_unit.strip()
-                return st
-            elif unitTuple in _outputDimensions:
-                outmag = _mags[unitTuple]
-                m = self.copy()
-                m._div_by(outmag)
-                st = repr( roundToNDigits(m.val,self.significantDigits) )
-                if _prn_units:
-                    return st + ' ' + _outputDimensions[unitTuple].strip()
-                return st                
-
-            st = repr( roundToNDigits(m.val,self.significantDigits) )
-            st += self.__unitRepr__()
-            return st.strip()
+            st = repr( roundToNDigits(self.val,self.significantDigits) )
         else:
-            oformat = self.oformat
-            oprec = self.oprec
-            if oprec is None:
-                oprec = _prn_prec
-            if oformat is None:
-                oformat = _prn_format
-            if self.out_unit:
-                m = self.copy()
-                m._div_by(self.out_factor)
-                if '*' in oformat:  # requires the precision arg
-                    st = oformat % (oprec, m.val)
-                else:
-                    st = oformat % (m.val)
-                if _prn_units:
-                    return st + ' ' + self.out_unit.strip()
-                return st
-            elif unitTuple in _outputDimensions:
-                outmag = _mags[_outputDimensions[unitTuple]]
-                m = self.copy()
-                m._div_by(outmag)
-                if '*' in oformat:  # requires the precision arg
-                    st = oformat % (oprec, m.val)
-                else:
-                    st = oformat % (m.val)
-                if _prn_units:
-                    return st + ' ' + _outputDimensions[unitTuple].strip()
-                return st                
-            if '*' in oformat:
+            oformat = self.oformat if self.oformat is not None else _prn_format
+            oprec = self.oprec if self.oprec is not None else _prn_prec
+            if '*' in oformat:  # requires the precision arg
                 st = oformat % (oprec, self.val)
             else:
                 st = oformat % (self.val)
+        return st                    
 
-            if not _prn_units:
-                return st
-            st += self.__unitRepr__()
+    def __str__(self):
+        unitTuple = tuple(self.unit)
+        if self.out_unit:
+            m = self.copy()
+            m._div_by(self.out_factor)
+            st = m.__formatNumber__()
+            if _prn_units:
+                return st + ' ' + self.out_unit.strip()
+            return st
+        elif unitTuple in _outputDimensions:
+            outmag = _mags[_outputDimensions[unitTuple]]
+            m = self.copy()
+            m._div_by(outmag)
+            st = m.__formatNumber__()
+            if _prn_units:
+                return st + ' ' + _outputDimensions[unitTuple].strip()
+            return st                
+        else:
+            st = self.__formatNumber__()
+            if _prn_units:
+                st += self.__unitRepr__()
             return st.strip()
 
     def term2mag(self, s):
