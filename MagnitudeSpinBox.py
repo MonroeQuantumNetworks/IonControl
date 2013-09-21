@@ -14,6 +14,7 @@ import PyQt4.uic
 from modules import Expression
 from modules import MagnitudeParser
 import sip
+import pyparsing
 
 debug = False
 api2 = sip.getapi("QString")==2
@@ -28,6 +29,11 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.editingFinished.connect( self.onEditingFinished )
         self.lineEdit().setDragEnabled(True)
         self.lineEdit().setAcceptDrops(True)
+        self.redTextPalette = QtGui.QPalette()
+        self.redTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.red )
+        self.blackTextPalette = QtGui.QPalette()
+        self.blackTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.black )
+
         
     def validate(self, inputstring, pos):
         #print "validate"
@@ -73,8 +79,12 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
         
     def value(self):
-        value = self.expression.evaluate( str( self.lineEdit().text() ))
-        #print value
+        try:
+            value = self.expression.evaluate( str( self.lineEdit().text() ))
+        except Exception as e:
+            self.lineEdit().setPalette( self.redTextPalette )
+            raise e
+        self.lineEdit().setPalette( self.blackTextPalette )
         return value
         
     def setText(self,string):
