@@ -14,7 +14,6 @@ import PyQt4.uic
 from modules import Expression
 from modules import MagnitudeParser
 import sip
-import pyparsing
 
 debug = False
 api2 = sip.getapi("QString")==2
