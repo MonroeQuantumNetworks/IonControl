@@ -435,7 +435,7 @@ class Magnitude():
             m._div_by(out_factor)
         return m.val
 
-    def __unitRepr__(self):
+    def _unitRepr_(self):
         u = self.unit
         num = ' '  # numerator
         for i in range(len(_unames)):
@@ -458,7 +458,7 @@ class Magnitude():
             st += num
         return st
 
-    def __formatNumber__(self):
+    def _formatNumber_(self):
         if self.significantDigits:
             st = repr( roundToNDigits(self.val,self.significantDigits) )
         else:
@@ -482,7 +482,7 @@ class Magnitude():
         if self.out_unit:
             m = self.copy(True)
             m._div_by(self.out_factor)
-            st = m.__formatNumber__()
+            st = m._formatNumber_()
             if _prn_units:
                 return st + ' ' + self.out_unit.strip()
             return st
@@ -495,14 +495,14 @@ class Magnitude():
                 m = self.copy(True)
                 outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
                 m._div_by(outmag)
-            st = m.__formatNumber__()
+            st = m._formatNumber_()
             if _prn_units:
                 return st + ' ' + prefix + _outputDimensions[unitTuple].strip()
             return st                
         else:
-            st = self.__formatNumber__()
+            st = self._formatNumber_()
             if _prn_units:
-                st += self.__unitRepr__()
+                st += self._unitRepr_()
             return st.strip()
 
     def term2mag(self, s):
