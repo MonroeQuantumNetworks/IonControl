@@ -3,7 +3,7 @@ import PyQt4.uic
 import functools
 from modules import configshelve
 import Ad9912
-from magnitude import mg
+from modules.magnitude import mg
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 

@@ -9,7 +9,7 @@ overwrite the necessary functions and add the new class to AnalogInputCalibratio
 """
 
 
-import magnitude
+import modules.magnitude as magnitude
 
 referenceVoltage = 3.33
 

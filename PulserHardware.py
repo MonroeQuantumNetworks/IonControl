@@ -6,7 +6,7 @@ from fpgaUtilit import check
 from PyQt4 import QtCore 
 import struct
 from Queue import Queue, Empty
-import magnitude
+import modules.magnitude as magnitude
 from modules import enum
 import math
 import traceback

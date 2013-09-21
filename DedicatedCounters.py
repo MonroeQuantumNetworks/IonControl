@@ -10,7 +10,7 @@ DedicatedCounters reads and displays the counts from the simple counters and ADC
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 from modules import enum
-import magnitude
+import modules.magnitude as magnitude
 import DedicatedCountersSettings
 import numpy
 import DedicatedDisplay

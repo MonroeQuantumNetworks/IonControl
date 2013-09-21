@@ -5,7 +5,7 @@ Created on Wed Sep 18 20:33:29 2013
 @author: pmaunz
 """
 
-import magnitude
+import modules.magnitude as magnitude
 from round import roundToNDigits
 
 class MagnitudeError(magnitude.MagnitudeError):

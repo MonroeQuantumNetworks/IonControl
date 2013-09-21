@@ -7,7 +7,7 @@ Created on Fri Feb 08 22:02:08 2013
 from PyQt4 import QtCore
 from operator import attrgetter
 import functools
-import magnitude
+import modules.magnitude as magnitude
 from modules import Expression
 import sip
 

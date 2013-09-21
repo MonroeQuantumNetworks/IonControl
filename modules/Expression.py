@@ -7,7 +7,7 @@
 #
 # Copyright 2003-2006 by Paul McGuire
 #
-import magnitude
+import modules.magnitude as magnitude
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
     ZeroOrMore,Forward,nums,alphas
 import math

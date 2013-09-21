@@ -8,7 +8,7 @@ Created on Thu May 16 20:56:17 2013
 from FitFunctionBase import FitFunctionBase
 from scipy import constants
 from numpy import pi, cos, sqrt, sin, exp, dot, array, log
-from magnitude import mg
+from modules.magnitude import mg
 from scipy.special import laguerre
 
 class RabiCarrierFunction(FitFunctionBase):

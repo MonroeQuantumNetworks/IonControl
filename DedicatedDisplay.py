@@ -7,7 +7,7 @@ Created on Sat Feb 16 16:56:57 2013
 import PyQt4.uic
 from PyQt4 import QtCore
 import math
-import magnitude
+import modules.magnitude as magnitude
        
 DedicatedDisplayForm, DedicatedDisplayBase = PyQt4.uic.loadUiType(r'ui\DedicatedDisplay.ui')
 

@@ -16,7 +16,7 @@ ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
 import ScanList
 from modules import MagnitudeUtilit
-from magnitude import mg
+from modules.magnitude import mg
 from modules.enum import enum
 
 class Scan:
