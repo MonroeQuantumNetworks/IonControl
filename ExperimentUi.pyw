@@ -287,6 +287,10 @@ if __name__ == "__main__":
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
+    
+    # the next two lines migrate old pickle files to use the new magnitude module
+    import modules.magnitude as magnitude
+    sys.modules['magnitude'] = magnitude
 
 #    import warnings
 #    with warnings.catch_warnings():
