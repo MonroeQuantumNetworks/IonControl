@@ -107,7 +107,12 @@ class FitUi(fitForm, QtGui.QWidget):
         for name, value in zip(functionui.fitfunction.parameterNames, functionui.startParameters):
             print name, value
         for plot in self.traceui.selectedPlottedTraces():
-            params = functionui.fitfunction.leastsq(plot.trace.x,plot.trace.y,functionui.startParameters)
+            sigma = None
+            if hasattr(plot.trace,'height'):
+                sigma = plot.trace.height
+            elif hasattr(plot.trace,'top') and hasattr(plot.trace,'bottom'):
+                sigma = abs(plot.trace.top - plot.trace.bottom)
+            params = functionui.fitfunction.leastsq(plot.trace.x,plot.trace.y,functionui.startParameters,sigma=sigma)
             plot.trace.fitfunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
             for i,p in enumerate(params):
