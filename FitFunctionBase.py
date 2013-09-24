@@ -8,6 +8,7 @@ Created on Thu May 16 20:53:03 2013
 from scipy.optimize import leastsq
 import numpy
 from math import sqrt
+import magnitude
 
 class FitFunctionBase(object):
     name = 'None'
@@ -33,7 +34,8 @@ class FitFunctionBase(object):
         self.chisq=sum(self.infodict["fvec"]*self.infodict["fvec"])
         
         self.dof=len(x)-len(parameters)
-        self.RMSres = sqrt(self.chisq/self.dof)
+        self.RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
+        self.RMSres.significantDigits = 3
         # chisq, sqrt(chisq/dof) agrees with gnuplot
         print "success", self.ier
         print "Converged with chi squared ",self.chisq

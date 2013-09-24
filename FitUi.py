@@ -13,6 +13,7 @@ import pyqtgraph
 import copy
 import MagnitudeSpinBox
 from modules.round import roundToNDigits
+from modules.round import roundToStdDev
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -122,8 +123,8 @@ class FitUi(fitForm, QtGui.QWidget):
             params = functionui.fitfunction.leastsq(plot.trace.x,plot.trace.y,functionui.startParameters,sigma=sigma)
             plot.trace.fitfunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
-            for i,(p,conf) in enumerate(zip(params,functionui.fitfunction.parametersRelConfidence)):
-                functionui.fittedParametersUi[i].setValue(p)
+            for i,(p,conf,relconf) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
+                functionui.fittedParametersUi[i].setValue(roundToStdDev(p,conf))
                 functionui.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2))+'%')
 
             for index, name in enumerate(functionui.fitfunction.resultNames):
