@@ -25,7 +25,7 @@ class RabiCarrierFunction(FitFunctionBase):
         self.angle = 0
         self.trapFrequency = mg(1.578,'MHz')
         self.wavelength = mg(729,'nm' )
-        self.resultNames = ['nstart','taufinal','scTimeInit','scIncrement']
+        self.resultNames = self.resultNames + ['nstart','taufinal','scTimeInit','scIncrement']
         self.nstart=None
         self.taufinal=None
         self.scTimeInit=None
@@ -79,7 +79,7 @@ class FullRabiCarrierFunction(FitFunctionBase):
         self.angle = 0
         self.trapFrequency = mg(1.578,'MHz')
         self.wavelength = mg(729,'nm' )
-        self.resultNames = ['eta','taufinal','scTimeInit','scIncrement']
+        self.resultNames = self.resultNames + ['eta','taufinal','scTimeInit','scIncrement']
         self.nstart=None
         self.taufinal=None
         self.scTimeInit=None

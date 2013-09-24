@@ -6,7 +6,7 @@ Created on Thu May 16 20:53:03 2013
 """
 
 from scipy.optimize import leastsq
-from scipy.optimize import curve_fit
+import numpy
 from math import sqrt
 
 class FitFunctionBase(object):
@@ -15,8 +15,10 @@ class FitFunctionBase(object):
         self.epsfcn=0.0
         self.parameterNames = []
         self.parameters = []
+        self.parametersConfidence = []
         self.constantNames = []
-        self.resultNames = []
+        self.resultNames = ["RMSres"]
+        self.RMSres = 0
 
     def leastsq(self, x, y, parameters=None, sigma=None):
         if parameters is None:
@@ -31,17 +33,21 @@ class FitFunctionBase(object):
         self.chisq=sum(self.infodict["fvec"]*self.infodict["fvec"])
         
         self.dof=len(x)-len(parameters)
+        self.RMSres = sqrt(self.chisq/self.dof)
         # chisq, sqrt(chisq/dof) agrees with gnuplot
         print "success", self.ier
         print "Converged with chi squared ",self.chisq
         print "degrees of freedom, dof ", self.dof
-        print "RMS of residuals (i.e. sqrt(chisq/dof)) ", sqrt(self.chisq/self.dof)
+        print "RMS of residuals (i.e. sqrt(chisq/dof)) ", self.RMSres
         print "Reduced chisq (i.e. variance of residuals) ", self.chisq/self.dof
         print
         
         # uncertainties are calculated as per gnuplot, "fixing" the result
         # for non unit values of the reduced chisq.
         # values at min match gnuplot
+        if self.cov_x is not None:
+            self.parametersConfidence = numpy.sqrt(numpy.diagonal(self.cov_x))*sqrt(self.chisq/self.dof)
+            self.parametersRelConfidence = self.parametersConfidence/numpy.abs(self.parameters)*100
         print "Fitted parameters at minimum, with 68% C.I.:"
         for i,pmin in enumerate(self.parameters):
             print "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(self.cov_x[i,i])*sqrt(self.chisq/self.dof))
