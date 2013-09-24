@@ -18,9 +18,9 @@ class CosFit(FitFunctionBase):
         self.parameters = [1,1,0,0]
         self.startParameters = [1,1,0,0]
         
-    def residuals(self,p, y, x, sigma=None):
+    def residuals(self,p, y, x, sigma):
         A,k,theta,O = p
-        if sigma:
+        if sigma is not None:
             return (y-A*numpy.cos(2*numpy.pi*k*x+theta)-O)/sigma
         else:
             return y-A*numpy.cos(2*numpy.pi*k*x+theta)-O
@@ -38,9 +38,9 @@ class CosSqFit(FitFunctionBase):
         self.parameters = [1,100,0,0]
         self.startParameters = [1,1,0,0]
        
-    def residuals(self,p, y, x, sigma=None):
+    def residuals(self,p, y, x, sigma):
         A,T,theta,O = p
-        if sigma:
+        if sigma is not None:
             return (y-A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))-O)/sigma
         else:            
             return y-A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))-O
@@ -59,9 +59,9 @@ class SinSqFit(FitFunctionBase):
         self.parameters = [1,100,0,0]
         self.startParameters = [1,100,0,0]
         
-    def residuals(self,p, y, x, sigma=None):
+    def residuals(self,p, y, x, sigma):
         A,T,theta,O = p
-        if sigma:
+        if sigma is not None:
             return (y-A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O)/sigma
         else:
             return y-A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
@@ -79,9 +79,9 @@ class GaussianFit(FitFunctionBase):
         self.parameters = [0]*4
         self.startParameters = [1,0,1,0]
         
-    def residuals(self,p, y, x, sigma=None):
+    def residuals(self,p, y, x, sigma):
         A,x0,s,O = p
-        if sigma:
+        if sigma is not None:
             return (y-(A*numpy.exp(-numpy.square((x-x0)/s))+O))/sigma
         else:
             return y-(A*numpy.exp(-numpy.square((x-x0)/s))+O)
@@ -101,11 +101,11 @@ class SquareRabiFit(FitFunctionBase):
         self.constantNames = ['t']
         self.t = 100
         
-    def residuals(self,p, y, x, sigma=None):
+    def residuals(self,p, y, x, sigma):
         T, C, A, O = p
         Rs = numpy.square(2*numpy.pi/T)
         Ds = numpy.square(2*numpy.pi*(x-C))
-        if sigma:
+        if sigma is not None:
             return (y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))-O)/sigma
         else:
             return (y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))-O)
@@ -132,10 +132,10 @@ class LorentzianFit(FitFunctionBase):
         self.parameters = [0]*4
         self.startParameters = [1,1,0,0]
         
-    def residuals(self,p, y, x, sigma=None):
+    def residuals(self,p, y, x, sigma):
         A,s,x0,O = p
         s2 = numpy.square(s)
-        if sigma:
+        if sigma is not None:
             return (y-(A*s2/(s2+numpy.square(x-x0))+O))/sigma
         else:
             return (y-(A*s2/(s2+numpy.square(x-x0))+O))            
@@ -155,10 +155,10 @@ class TruncatedLorentzianFit(FitFunctionBase):
         self.startParameters = [1,1,0,0]
         self.epsfcn=10.0
         
-    def residuals(self,p, y, x, sigma=None):
+    def residuals(self,p, y, x, sigma):
         A,s,x0,O = p
         s2 = numpy.square(s)
-        if sigma:
+        if sigma is not None:
             return (y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O))/sigma
         else:
             return (y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O))

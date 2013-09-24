@@ -21,10 +21,10 @@ class FitFunctionBase(object):
     def leastsq(self, x, y, parameters=None, sigma=None):
         if parameters is None:
             parameters = self.parameters
-        self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn)
-        self.finalize(self.parameters)
+        #self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn)
         
-        self.parameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn, full_output=True)
+        self.parameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, parameters, args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
+        self.finalize(self.parameters)
         print "chisq", sum(self.infodict["fvec"]*self.infodict["fvec"])        
         
         # calculate final chi square
