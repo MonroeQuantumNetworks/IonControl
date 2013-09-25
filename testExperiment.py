@@ -73,8 +73,8 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.phase = random.uniform(0,2*numpy.pi)
         self.trace.x = numpy.array([self.x])
         self.trace.y = numpy.array([random.gauss(numpy.sin( self.x + self.phase),0.1)])
-        self.trace.top = numpy.array([0.1])
-        self.trace.bottom = numpy.array([0.1])
+        self.trace.top = numpy.array([0.05])
+        self.trace.bottom = numpy.array([0.05])
         self.trace.name = "test trace"
         self.trace.vars.comment = "My Comment"
         self.trace.filenameCallback = functools.partial( self.traceFilename, '' )
@@ -91,8 +91,8 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.trace.x = numpy.append( self.trace.x, self.x )
         value = random.gauss(numpy.sin( self.x + self.phase),0.1)
         self.trace.y = numpy.append( self.trace.y, value )
-        self.trace.top = numpy.append( self.trace.top, 0.1)
-        self.trace.bottom = numpy.append( self.trace.bottom, 0.1)
+        self.trace.top = numpy.append( self.trace.top, 0.05)
+        self.trace.bottom = numpy.append( self.trace.bottom, 0.05)
         self.displayUi.add( value )
         self.plottedtrace.replot()
         

@@ -8,7 +8,7 @@ Created on Tue Mar 12 15:22:09 2013
 
 from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
-import magnitude
+import modules.magnitude as magnitude
 import math
 
 try:

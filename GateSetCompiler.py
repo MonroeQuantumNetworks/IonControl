@@ -5,7 +5,7 @@ Created on Fri Jul 19 09:22:24 2013
 @author: wolverine
 """
 from modules.Expression import Expression
-import magnitude
+import modules.magnitude as magnitude
 
 class GateSetCompiler(object):
     def __init__(self, pulseProgram ):
