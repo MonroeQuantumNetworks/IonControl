@@ -34,7 +34,7 @@ def scanList( start, stop, steps, scantype=ScanType.LinearUp, scanSelect=0 ):
 
 
 if __name__ == "__main__":
-    from magnitude import mg
+    from modules.magnitude import mg
     start = mg(12642,'MHz')
     stop = mg(12652,'MHz')
     steps = 11

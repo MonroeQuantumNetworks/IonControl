@@ -8,7 +8,7 @@ import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import functools
 from MagnitudeSpinBox import MagnitudeSpinBox
-import magnitude
+import modules.magnitude as magnitude
 from modules import configshelve
 import ProjectSelection
        

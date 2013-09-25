@@ -8,7 +8,7 @@
 #
 
 import re, os
-import magnitude
+import modules.magnitude as magnitude
 import struct
 
 #TIMESTEP= 16e-9

@@ -16,7 +16,7 @@ ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
 import ScanList
 from modules import MagnitudeUtilit
-from magnitude import mg
+from modules.magnitude import mg
 from modules.enum import enum
 
 class Scan:
@@ -333,7 +333,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def onStepsValueChanged( self, value ):
         if self.settings.stepsSelect==0:
-            self.settings.steps = value
+            self.settings.steps = int(value)
         else: 
             self.settings.stepSize = value
         self.calculateSteps(self.settings)

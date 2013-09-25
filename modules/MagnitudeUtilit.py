@@ -5,7 +5,7 @@ Created on Tue Jul 02 14:25:44 2013
 @author: wolverine
 """
 
-import magnitude
+import modules.magnitude as magnitude
 import math
 
 def value( obj, tounit=None ):

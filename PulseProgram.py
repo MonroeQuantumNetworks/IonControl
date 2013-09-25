@@ -7,7 +7,7 @@
 # rewritten Peter Maunz
   
 import re, os
-import magnitude
+import modules.magnitude as magnitude
 import struct
 import math
 import collections
