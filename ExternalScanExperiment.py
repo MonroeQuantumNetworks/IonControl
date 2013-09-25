@@ -45,11 +45,11 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         if self.status in [self.Status.Idle, self.Status.Stopping, self.Status.Running]:
             self.start = time.time()
             self.state = self.OpStates.running
-            self.scanSettings = self.scanSettingsWidget.settings
-            self.scan = self.scanParametersWidget.getScan()
-            self.externalParameter = self.enabledParameters[self.scan.name]
+            self.scan = self.scanControlWidget.getScan()
+            self.externalParameter = self.enabledParameters[self.scan.scanParameter]
             self.externalParameter.saveValue()
             self.externalParameterIndex = 0
+            self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
                     
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
@@ -69,9 +69,9 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                     if self.scan.autoSave:
                         self.currentTrace.resave()
                     self.currentTrace = None
-                self.scanParametersWidget.progressBar.setRange(0,float(len(self.scan.list)))
-                self.scanParametersWidget.progressBar.setValue(0)
-                self.scanParametersWidget.progressBar.setVisible( True )
+                self.scanControlWidget.progressBar.setRange(0,float(len(self.scan.list)))
+                self.scanControlWidget.progressBar.setValue(0)
+                self.scanControlWidget.progressBar.setVisible( True )
                 self.timestampsNewRun = True
                 print "elapsed time", time.time()-self.start
                 self.status = self.Status.Running
@@ -98,39 +98,18 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "NewExternalScan onData", len(data.count[self.scanSettings.counter]), data.scanvalue
-        mean, error, raw = self.scanSettings.evalAlgo.evaluate( data.count[self.scanSettings.counter] )
+        print "NewExternalScan onData", len(data.count[self.scan.counterChannel]), data.scanvalue
+        mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
         self.displayUi.add( mean )
-        if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
-            x = self.currentIndex
-        else:
-            x = self.externalParameter.currentExternalValue() 
+        x = self.generator.xValue(self.externalParameterIndex)
         print "data", x, mean 
-        if self.currentTrace is None:
-            self.currentTrace = Trace.Trace()
-            self.currentTrace.x = numpy.array([x])
-            self.currentTrace.y = numpy.array([mean])
-            self.currentTrace.raw = numpy.array([raw])
-            self.currentTrace.name = self.scan.name
-            self.currentTrace.vars.comment = ""
-            self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
-            self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
-            if not self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace:
-                self.graphicsView.setXRange( self.scan.start.toval(), self.scan.stop.ounit(self.scan.start.out_unit).toval() )
-            self.traceui.addTrace(self.plottedTrace,pen=-1)
-        else:
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.StepInPlace and len(self.currentTrace.x)>=self.scan.steps:
-                self.currentTrace.x = numpy.append(self.currentTrace.x[-self.scan.steps+1:], x)
-                self.currentTrace.y = numpy.append(self.currentTrace.y[-self.scan.steps+1:], mean)
-                self.currentTrace.raw = numpy.append(self.currentTrace.raw[-self.scan.steps+1:], raw)
-            else:
-                self.currentTrace.x = numpy.append(self.currentTrace.x, x)
-                self.currentTrace.y = numpy.append(self.currentTrace.y, mean)
-                self.currentTrace.raw = numpy.append(self.currentTrace.raw, raw)
-            self.plottedTrace.replot()
+        if mean is not None:
+            self.updateMainGraph(x, mean, error, raw)
+        self.currentIndex += 1
+
         self.externalParameterIndex += 1
         self.showHistogram(data)
-        if self.timestampSettingsWidget.settings.enable: 
+        if self.scan.enableTimestamps: 
             self.showTimestamps(data)
         if self.externalParameterIndex<len(self.scan.list) and self.status==self.Status.Running:
             self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
@@ -138,8 +117,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             print "External Value:" , self.scan.list[self.externalParameterIndex]
         else:
             self.finalizeData()
-            if self.scan.scanMode == self.scanParametersWidget.ScanModes.RepeatedScan and self.status == self.Status.Running:
-                self.onStart()
-            else:
-                self.onStop()
-        self.scanParametersWidget.progressBar.setValue(float(self.externalParameterIndex))
+            if self.externalParameterIndex >= len(self.scan.list):
+                self.generator.dataOnFinal(self)
+        self.scanControlWidget.progressBar.setValue(float(self.externalParameterIndex))
+
