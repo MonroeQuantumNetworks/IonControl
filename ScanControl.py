@@ -124,6 +124,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.saveButton.clicked.connect( self.onSave )
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
+        self.reloadButton.clicked.connect( self.onReload )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
         try:
             self.setSettings( self.config.get(self.configname,Scan()) )
@@ -412,6 +413,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         else:
             print self.configname, self.settingsDict
 
+    def onReload(self):
+        self.onLoad( self.comboBox.currentText() )
    
     def onCommit(self):
         if len(self.settingsHistory)==0 or self.settings!=self.settingsHistory[-1]:
