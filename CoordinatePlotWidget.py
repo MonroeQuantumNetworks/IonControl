@@ -13,17 +13,30 @@ from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
 
+class LabelItem(pyqtgraph.LabelItem):
+    clicked = QtCore.pyqtSignal()
+        
+    def mouseClickEvent(self,ev):
+        self.clicked.emit()
+ 
 class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
 
     def __init__(self,parent):
         super(CoordinatePlotWidget,self).__init__(parent)
         self.label = pyqtgraph.LabelItem(justify='right')
-        self.graphicsView = self.addPlot(row=0,col=0)
+        self.button = LabelItem(justify='left')
+        self.button.setText('Unity Range')
+        self.button.clicked.connect( self.onUnityRange )
+        self.graphicsView = self.addPlot(row=0,col=0) #,colspan=2
         self.addItem(self.label,row=1,col=0)
+        self.addItem(self.button,row=1,col=0)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
         self.mousePointList = list()
+        
+    def onUnityRange(self):
+        self.graphicsView.setYRange(0,1)
     
     def onMouseMoved(self,pos):
         if self.graphicsView.sceneBoundingRect().contains(pos):
@@ -42,7 +55,8 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
         
     def mouseDoubleClickEvent(self, ev):
         pyqtgraph.GraphicsLayoutWidget.mouseDoubleClickEvent(self,ev)
-        self.onMouseClicked(ev)
+        print "CoordinatePlotWidget mouseDoubleClicked"
+        #self.onMouseClicked(ev)
         
     def copyPointsToClipboard(self, modifiers):
         print "copyPointsToClipboard"
