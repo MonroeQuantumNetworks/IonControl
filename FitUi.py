@@ -116,7 +116,7 @@ class FitUi(fitForm, QtGui.QWidget):
         functionui = self.fitFunctions[index]
         for name, value in zip(functionui.fitfunction.parameterNames, functionui.startParameters):
             print name, value
-        for plot in self.traceui.selectedPlottedTraces():
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             sigma = None
             if hasattr(plot.trace,'height'):
                 sigma = plot.trace.height
@@ -141,7 +141,7 @@ class FitUi(fitForm, QtGui.QWidget):
     def onPlot(self):
         index = self.stackedWidget.currentIndex()
         functionui = self.fitFunctions[index]
-        for plot in self.traceui.selectedPlottedTraces():
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             functionui.fitfunction.parameters = functionui.startParameters
             plot.trace.fitfunction = functionui.fitfunction
             plot.plot(-2)
@@ -150,12 +150,12 @@ class FitUi(fitForm, QtGui.QWidget):
                 functionui.resultsUi[index].setValue(getattr(functionui.fitfunction,name))
                 
     def onRemoveFit(self):
-        for plot in self.traceui.selectedPlottedTraces():
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             del plot.trace.fitfunction
             plot.plot(-2)
     
     def onExtractFit(self):
-        plots = self.traceui.selectedPlottedTraces()
+        plots = self.traceui.selectedPlottedTraces(defaultToLastLine=True)
         print "onExtractFit {0} plots selected".format(len(plots) )
         if plots:
             plot = plots[0]
