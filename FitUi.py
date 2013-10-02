@@ -77,6 +77,8 @@ class FitUi(fitForm, QtGui.QWidget):
                 doubleSpinBox.valueChanged.connect( functools.partial( self.setParameter, fitfunction, line ) )
                 fitfunction.startParametersUi[line] = doubleSpinBox
                 doubleSpinBox = pyqtgraph.SpinBox(fitfunction.page,dec=True)
+                doubleSpinBox.setReadOnly(True)
+                doubleSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
                 fitfunction.gridLayout.addWidget(doubleSpinBox, line+1,2, 1, 1)   
                 fitfunction.fittedParametersUi[line] = doubleSpinBox
                 confidenceLabel = QtGui.QLabel("",fitfunction.page)
