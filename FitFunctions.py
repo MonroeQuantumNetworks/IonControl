@@ -168,7 +168,29 @@ class TruncatedLorentzianFit(FitFunctionBase):
         A,s,x0,O  = self.parameters if p is None else p
         s2 = numpy.square(s)
         return (A*s2/(s2+numpy.square(x-x0)))*(1-numpy.sign(x-x0))/2+O
+
+class LinearFit(FitFunctionBase):
+    """class for fitting to a line
+    """
+    name = "Line"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'm*x + b'
+        self.parameterNames = [ 'm', 'b' ]
+        self.parameters = [1,0]
+        self.startParameters = [1,0]
         
+    def residuals(self,p, y, x, sigma):
+        m,b = p
+        if sigma is not None:
+            return (y - m*x - b)/sigma
+        else:
+            return y - m*x - b
+        
+    def value(self,x,p=None):
+        m, b = self.parameters if p is None else p
+        return m*x + b
+
 from RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
         
 fitFunctionMap = { GaussianFit.name: GaussianFit, 
@@ -179,7 +201,9 @@ fitFunctionMap = { GaussianFit.name: GaussianFit,
                    LorentzianFit.name: LorentzianFit,
                    TruncatedLorentzianFit.name: TruncatedLorentzianFit,
                    RabiCarrierFunction.name: RabiCarrierFunction,
-                   FullRabiCarrierFunction.name: FullRabiCarrierFunction }
+                   FullRabiCarrierFunction.name: FullRabiCarrierFunction,
+                   LinearFit.name: LinearFit
+                 }
 
 def fitFunctionFactory(text):
     """
