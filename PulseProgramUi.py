@@ -41,8 +41,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.parameterdict = parameterdict
         self.variabledict = None
         self.variableTableModel = None
-        self.gateSetDict = None
-    
+   
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
         self.experimentname = experimentname
@@ -119,7 +118,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         print "loadFile", path
         if self.variabledict is not None and self.configParams.lastFilename is not None:
             self.datashelf[self.configParams.lastFilename] = self.variabledict
-        if self.gateSetDict is not None and self.configParams.lastFilename is not None:
+        if self.configParams.lastFilename is not None:
             self.gateSetShelf[self.configParams.lastFilename] = self.GateSetUi.getSettings()
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
