@@ -34,7 +34,7 @@ class MeanEvaluation:
         summe = numpy.sum( countarray )
         l = len(countarray)
         mean = summe/float(l)
-        stderror = math.sqrt( mean/l )
+        stderror = math.sqrt( mean/float(l) )
         return mean, (stderror/2., stderror/2. ), summe
 
 class ThresholdEvaluation(EvaluationBase):
