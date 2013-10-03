@@ -99,7 +99,9 @@ class GateSetUi(Form,Base):
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
         try:
+            self.GateDefinitionBox.clear()
             self.GateDefinitionBox.addItems( self.settings.gateDefinitionCache.keys() )
+            self.GateSetBox.clear()
             self.GateSetBox.addItems( self.settings.gateSetCache.keys() )
             if self.settings.gateDefinition and self.settings.gateDefinition in self.settings.gateDefinitionCache:
                 self.loadGateDefinition( self.settings.gateDefinitionCache[self.settings.gateDefinition] )
