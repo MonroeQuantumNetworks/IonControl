@@ -287,7 +287,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.running = True
         self.currentIndex = 0
         if self.currentTrace is not None:
-            self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             if self.scan.autoSave:
                 self.currentTrace.resave()
             self.currentTrace = None

@@ -228,7 +228,7 @@ class PulseProgram:
         
     def currentVariablesText(self, comment=""):
         lines = list()
-        for name, var in self.variabledict.iteritems():
+        for name, var in iter(sorted(self.variabledict.iteritems())):
             lines.append("{0} {1} {2}".format(comment,name,var.value))
         return '\n'.join(lines)
            
