@@ -99,10 +99,14 @@ class GateSetUi(Form,Base):
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
         try:
+            oldState = self.GateDefinitionBox.blockSignals(True);
             self.GateDefinitionBox.clear()
             self.GateDefinitionBox.addItems( self.settings.gateDefinitionCache.keys() )
+            self.GateDefinitionBox.blockSignals(oldState);
+            oldState = self.GateSetBox.blockSignals(True);
             self.GateSetBox.clear()
             self.GateSetBox.addItems( self.settings.gateSetCache.keys() )
+            self.GateSetBox.blockSignals(oldState);
             if self.settings.gateDefinition and self.settings.gateDefinition in self.settings.gateDefinitionCache:
                 self.loadGateDefinition( self.settings.gateDefinitionCache[self.settings.gateDefinition] )
                 self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(self.settings.gateDefinition))
