@@ -81,7 +81,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def documentationString(self):
         messages = [ "PulseProgram {0}".format( self.configParams.lastFilename ) ]
         r = "\n".join(messages)
-        return "\n".join( [r, self.pulseProgram.currentVariablesText(''), self.GateSetUi.documentationString()])        
+        return "\n".join( [r, self.pulseProgram.currentVariablesText(), self.GateSetUi.documentationString()])        
                
     def onFilenameChange(self, name ):
         name = str(name)

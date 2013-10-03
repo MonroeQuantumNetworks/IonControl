@@ -65,7 +65,6 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 self.pulserHardware.ppStart()
                 self.currentIndex = 0
                 if self.currentTrace is not None:
-                    self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
                     if self.scan.autoSave:
                         self.currentTrace.resave()
                     self.currentTrace = None
