@@ -26,8 +26,8 @@ class Trace(object):
     from a file
     """
     def __init__(self):
-        self.x = numpy.array([])
-        self.y = numpy.array([])
+        self._x_ = numpy.array([])
+        self._y_ = numpy.array([])
         self.name = "noname"
         self.curve = None
         self.vars = Empty()
@@ -40,6 +40,23 @@ class Trace(object):
         self.dataChangedCallback = None # used to update the gui table
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
+        
+    @property
+    def x(self):
+        return self._x_
+        
+    @x.setter
+    def x(self, new):
+        self._x_ = new
+        
+    @property
+    def y(self):
+        return self._y_
+        
+    @y.setter
+    def y(self,new):
+        self._y_ = new
+        self.vars.lastDataAquired = datetime.now()
         
     @property
     def filename(self):
@@ -104,7 +121,7 @@ class Trace(object):
             self.vars.fitfunction = self.fitfunction
         if filename!='':
             of = open(filename,'w')
-            columnlist = [self.x,self.y]
+            columnlist = [self._x_,self._y_]
             columnspec = ['x', 'y']
             for column in self.columnNames:
                 if hasattr(self, column):

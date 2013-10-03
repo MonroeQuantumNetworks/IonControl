@@ -389,17 +389,17 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if xRange:
                 self.graphicsView.setXRange( *xRange )                
             self.traceui.addTrace(self.plottedTrace,pen=-1)
+            pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
+            scanHeader = stringutilit.commentarize( repr(self.scan) )
+            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         else:
             self.generator.appendData(self.currentTrace, x, mean, raw, error)
             self.plottedTrace.replot()
 
     def finalizeData(self):
         print "finalize Data"
-        pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-        scanHeader = stringutilit.commentarize( repr(self.scan) )
         for trace in [self.currentTrace, self.currentTimestampTrace]:
             if trace:
-                trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
                 trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
             
@@ -432,6 +432,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
             self.plottedTimestampTrace = Traceui.PlottedTrace(self.currentTimestampTrace,self.timestampView,pens.penList)
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
+            pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
+            scanHeader = stringutilit.commentarize( repr(self.scan) )
+            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
     def showHistogram(self, data):

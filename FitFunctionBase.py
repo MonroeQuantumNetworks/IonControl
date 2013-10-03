@@ -50,10 +50,10 @@ class FitFunctionBase(object):
         if self.cov_x is not None:
             self.parametersConfidence = numpy.sqrt(numpy.diagonal(self.cov_x))*sqrt(self.chisq/self.dof)
             self.parametersRelConfidence = self.parametersConfidence/numpy.abs(self.parameters)*100
-        print "Fitted parameters at minimum, with 68% C.I.:"
-        for i,pmin in enumerate(self.parameters):
-            print "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(self.cov_x[i,i])*sqrt(self.chisq/self.dof))
-        print
+            print "Fitted parameters at minimum, with 68% C.I.:"
+            for i,pmin in enumerate(self.parameters):
+                print "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(self.cov_x[i,i])*sqrt(self.chisq/self.dof))
+            print
         
         print "Correlation matrix"
         # correlation matrix close to gnuplot
