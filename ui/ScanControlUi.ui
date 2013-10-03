@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>260</width>
-    <height>459</height>
+    <width>249</width>
+    <height>475</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -146,8 +146,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>223</width>
-        <height>303</height>
+        <width>229</width>
+        <height>315</height>
        </rect>
       </property>
       <attribute name="label">
@@ -358,8 +358,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>165</width>
-        <height>148</height>
+        <width>240</width>
+        <height>301</height>
        </rect>
       </property>
       <attribute name="label">
@@ -447,8 +447,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>172</width>
-        <height>171</height>
+        <width>240</width>
+        <height>301</height>
        </rect>
       </property>
       <attribute name="label">
@@ -580,11 +580,25 @@
     </widget>
    </item>
    <item>
-    <widget class="QProgressBar" name="progressBar">
-     <property name="value">
-      <number>24</number>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QProgressBar" name="progressBar">
+       <property name="value">
+        <number>24</number>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="timeLabel">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
