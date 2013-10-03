@@ -27,8 +27,8 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
         self.button = LabelItem(justify='left')
         self.button.setText('Unity Range')
         self.button.clicked.connect( self.onUnityRange )
-        self.graphicsView = self.addPlot(row=0,col=0) #,colspan=2
-        self.addItem(self.label,row=1,col=0)
+        self.graphicsView = self.addPlot(row=0,col=0,colspan=2)
+        self.addItem(self.label,row=1,col=1)
         self.addItem(self.button,row=1,col=0)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
