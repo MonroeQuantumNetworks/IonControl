@@ -229,7 +229,7 @@ class PulseProgram:
     def currentVariablesText(self):
         lines = list()
         for name, var in iter(sorted(self.variabledict.iteritems())):
-            lines.append("{1} {2}".format(name,var.value))
+            lines.append("{0} {1}".format(name,var.value))
         return '\n'.join(lines)
            
 
