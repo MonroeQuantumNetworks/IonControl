@@ -179,6 +179,8 @@ class LinearFit(FitFunctionBase):
         self.parameterNames = [ 'm', 'b' ]
         self.parameters = [1,0]
         self.startParameters = [1,0]
+        self.resultNames = self.resultNames + ['halfpoint']
+        self.halfpoint = 0        
         
     def residuals(self,p, y, x, sigma):
         m,b = p
@@ -190,6 +192,10 @@ class LinearFit(FitFunctionBase):
     def value(self,x,p=None):
         m, b = self.parameters if p is None else p
         return m*x + b
+        
+    def finalize(self,parameters):
+        m, b = parameters
+        self.halfpoint= (0.5-b)/m
 
 from RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
         
