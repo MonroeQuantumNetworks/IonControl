@@ -30,12 +30,14 @@ class Settings(object):
         self.gateSetCache = dict()
         self.gateDefinitionCache = dict()
         self.thisSequenceRepetition = 10
+        self.debug = False
         
     def __setstate__(self,d):
         self.__dict__ = d
         self.__dict__.setdefault( "gateSetCache", dict() )
         self.__dict__.setdefault( "gateDefinitionCache", dict() )
         self.__dict__.setdefault( "thisSequenceRepetition", 10 )
+        self.__dict__.setdefault( "debug", False )
         
     def __repr__(self):
         m = list()
@@ -84,14 +86,17 @@ class GateSetUi(Form,Base):
         self.repetitionSpinBox.valueChanged.connect( self.onRepetitionChanged )
         self.GateSetBox.currentIndexChanged[str].connect( self.onGateSetChanged )
         self.GateDefinitionBox.currentIndexChanged[str].connect( self.onGateDefinitionChanged )
+        self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
         
     def getSettings(self):
-        print "GateSetUi GetSettings", self.settings.__dict__
+        if self.settings.debug:
+            print "GateSetUi GetSettings", self.settings.__dict__
         return self.settings
         
     def setSettings(self,settings):
-        print settings
-        print "GateSetUi SetSettings", settings.__dict__
+        if self.settings.debug:
+            print settings
+            print "GateSetUi SetSettings", settings.__dict__
         self.settings = settings
         self.GateSetEnableCheckBox.setChecked( self.settings.enabled )
         self.GateSetFrame.setEnabled( self.settings.enabled )
@@ -139,6 +144,9 @@ class GateSetUi(Form,Base):
         self.settings.enabled = state == QtCore.Qt.Checked
         self.GateSetFrame.setEnabled( self.settings.enabled )
         
+    def onDebugChanged(self, state):
+        self.settings.debug = state == QtCore.Qt.Checked        
+        
     def close(self):
         self.config[self.configname] = self.settings
                 
@@ -173,7 +181,8 @@ class GateSetUi(Form,Base):
             
     def loadGateSetList(self, path):
         self.gateSetContainer.loadXml(path)
-        print "loaded {0} gateSets from {1}.".format(len(self.gateSetContainer.GateSetDict), path)
+        if self.settings.debug:
+            print "loaded {0} gateSets from {1}.".format(len(self.gateSetContainer.GateSetDict), path)
         filedir, filename = os.path.split(path)
         self.settings.gateSet = filename
         self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(filename))
@@ -195,7 +204,10 @@ class GateSetUi(Form,Base):
             self.gateSetCompiler.gateCompile( self.gateSetContainer.gateDefinition )
             data = self.gateSetCompiler.gateSetCompile( self.settings.gate )
             address = [0]*self.settings.thisSequenceRepetition
-        return address, data, self.settings.startAddressParam
+        if self.settings.debug:
+            with open("GateSetData.debug","w") as of:
+                print >>of, data
+        return address, data, self.settings
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -217,9 +229,21 @@ if __name__ == "__main__":
     config = dict()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    ui = GateSetUi("test",config,pp)
+    ui = GateSetUi()
+    ui.postInit("test",config,pp)
     ui.setupUi(ui)
     MainWindow.setCentralWidget(ui)
     MainWindow.show()
-    sys.exit(app.exec_())
+    app.exec_()
+    address, data, parameter = ui.gateSetScanData()
+    a = address[541]
+    l = data[ a/4 ]
+    print a, l
+    print data[ a/4 : a/4+3*l+1 ]
+    address, data, parameter = ui.gateSetScanData()
+    a = address[36]
+    l = data[ a/4 ]
+    print a, l
+    print data[ a/4 : a/4+3*l+1 ]
     print config
+    print "done"

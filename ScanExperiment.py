@@ -122,8 +122,10 @@ class GateSetScanGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi):
-        address, data, parameter = pulseProgramUi.gateSetScanData()
-        print "GateSetScan", address, parameter
+        address, data, self.gateSetSettings = pulseProgramUi.gateSetScanData()
+        parameter = self.gateSetSettings.startAddressParam
+        if self.gateSetSettings.debug:
+            print "GateSetScan", address, parameter
         self.scan.list = address
         self.scan.index = range(len(self.scan.list))
         if self.scan.scantype == 1:
@@ -134,12 +136,14 @@ class GateSetScanGenerator:
             random.shuffle(zipped)
             self.scan.index, self.scan.list = zip( *zipped )
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
-        print "GateSetScanCode", self.scan.list, self.scan.code
+        if self.gateSetSettings.debug:
+            print "GateSetScanCode", self.scan.list, self.scan.code
         return (self.scan.code, data)
 
     def restartCode(self,currentIndex):
         mycode = self.scan.code[currentIndex*2:]
-        print "original length", len(self.scan.code), "remaining", len(mycode)
+        if self.gateSetSettings.debug:
+            print "original length", len(self.scan.code), "remaining", len(mycode)
         return mycode
 
     def xValue(self,index):
