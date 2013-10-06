@@ -41,6 +41,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.parameterdict = parameterdict
         self.variabledict = None
         self.variableTableModel = None
+        self.parameterChangedSignal = None
    
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -170,6 +171,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
         self.variableTableModel = VariableTableModel.VariableTableModel( self.variabledict, self.parameterdict )
+        if self.parameterChangedSignal:
+            self.parameterChangedSignal.connect(self.variableTableModel.onParameterChanged)
         self.variableView.setModel(self.variableTableModel)
         self.variableView.resizeColumnToContents(0)
         self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.variabledict )
@@ -236,9 +239,10 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.setWindowTitle('Pulse Program')
         self.setWindowFlags(QtCore.Qt.WindowMinMaxButtonsHint)
 
-    def addExperiment(self, experiment, parameterdict=dict()):
+    def addExperiment(self, experiment, parameterdict=dict(), parameterChangedSignal=None):
         if not experiment in self.pulseProgramSet:
             programUi = PulseProgramUi(self.config, parameterdict)
+            programUi.parameterChangedSignal = parameterChangedSignal
             programUi.setupUi(experiment,programUi)
             programUi.myindex = self.tabWidget.addTab(programUi,experiment)
             self.pulseProgramSet[experiment] = programUi

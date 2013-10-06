@@ -22,19 +22,26 @@ class GlobalVariables(object):
 
 
 class GlobalVariableUi(Form, Base ):
-
     def __init__(self,config,parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
         self.config = config
         self.configname = 'GlobalParameters'
-        self.variables = self.config.get(self.configname,GlobalVariables())
+        self._variables_ = self.config.get(self.configname,GlobalVariables())
+
+    @property
+    def variables(self):
+        return self._variables_.variabledict
+        
+    @property
+    def valueChanged(self):
+        return self.model.valueChanged
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         self.addButton.clicked.connect( self.onAddVariable )
         self.dropButton.clicked.connect( self.onDropVariable )
-        self.model = GlobalVariableTableModel(self.variables.variabledict)
+        self.model = GlobalVariableTableModel(self.variables)
         self.tableView.setModel( self.model )
         
     def onAddVariable(self):
@@ -45,7 +52,7 @@ class GlobalVariableUi(Form, Base ):
             name = self.model.dropVariableByIndex(index)
         
     def onClose(self):
-        self.config[self.configname] = self.variables
+        self.config[self.configname] = self._variables_
 
 if __name__=="__main__":
     import sys

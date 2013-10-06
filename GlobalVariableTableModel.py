@@ -14,6 +14,7 @@ import sip
 api2 = sip.getapi("QVariant")==2
 
 class GlobalVariableTableModel(QtCore.QAbstractTableModel):
+    valueChanged = QtCore.pyqtSignal()
     def __init__(self, variabledict, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
@@ -47,7 +48,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             result = self.expression.evaluate(strvalue,self.variabledict)
             name = self.variableKeys[ index.row() ] 
             self.variabledict[name] = result
-            self.variableList[ index.row() ] = self.variabledict[ name ]        
+            self.variableList[ index.row() ] = self.variabledict[ name ]
+            self.valueChanged.emit()
             return True    
         except Exception as e:
             print e, "No match for", str(value.toString())
