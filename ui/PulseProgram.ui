@@ -184,7 +184,6 @@
           <enum>Qt::Vertical</enum>
          </property>
          <widget class="QTableView" name="variableView"/>
-         <widget class="GateSetUi" name="GateSetUi" native="true"/>
         </widget>
        </item>
       </layout>
@@ -232,14 +231,6 @@
    </property>
   </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>GateSetUi</class>
-   <extends>QWidget</extends>
-   <header>GateSetUi</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>

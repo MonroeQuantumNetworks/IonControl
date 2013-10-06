@@ -122,7 +122,7 @@ class GateSetScanGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi):
-        address, data, parameter = pulseProgramUi.gateSetScanData()
+        address, data, parameter = self.scan.gateSetUi.gateSetScanData()
         print "GateSetScan", address, parameter
         self.scan.list = address
         self.scan.index = range(len(self.scan.list))

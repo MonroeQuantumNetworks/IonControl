@@ -18,6 +18,7 @@ import ScanList
 from modules import MagnitudeUtilit
 from modules.magnitude import mg
 from modules.enum import enum
+import GateSetUi
 
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')
@@ -54,6 +55,8 @@ class Scan:
         self.integrateTimestamps = 0
         self.timestampsChannel = 0
         self.saveRawData = False
+        # GateSet Settings
+        self.gateSetSettings = GateSetUi.Settings()
         
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -66,6 +69,7 @@ class Scan:
         self.__dict__.setdefault('loadPPName', "")
         self.__dict__.setdefault('evalName','Mean')
         self.__dict__.setdefault('stepSize',1)
+        self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
         
     def __eq__(self,other):
         return ( self.scanParameter == other.scanParameter and
@@ -93,7 +97,8 @@ class Scan:
                 self.roiStart == other.roiStart and
                 self.integrateTimestamps == other.integrateTimestamps and
                 self.timestampsChannel == other.timestampsChannel and
-                self.saveRawData == other.saveRawData)
+                self.saveRawData == other.saveRawData and
+                self.gateSetSettings == other.gateSetSettings)
 
         
     def __repr__(self):
@@ -117,6 +122,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settingsHistory = list()
         self.settingsHistoryPointer = None
         self.historyFinalState = None
+        self.settings = self.config.get(self.configname,Scan())
+        self.gateSetUi = None
 
     def setupUi(self, parent):
         ScanControlForm.setupUi(self,parent)
@@ -127,7 +134,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.reloadButton.clicked.connect( self.onReload )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
         try:
-            self.setSettings( self.config.get(self.configname,Scan()) )
+            self.setSettings( self.settings )
         except AttributeError as e:
             print "Ignoring exception",e
         for name in self.settingsDict:
@@ -153,6 +160,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onAlgorithmNameChanged )
         self.algorithms = dict()
         self.errorBarCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'errorBars') )
+        
         for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
             self.algorithms[name] = algo(self.config)
             parameters = self.algorithms[name].parameters
@@ -168,7 +176,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             gridLayout.addItem(spacerItem, len(parameters), 0, 1, 1)
             algoWidget.setLayout(gridLayout)
             self.evalStackedWidget.addWidget( algoWidget )
-        self.evalStackedWidget.setCurrentIndex( self.evalMethodCombo.findText(self.settings.evalName) )
         
         # Timestamps
         self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
@@ -211,6 +218,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.counterSpinBox.setValue( self.settings.counterChannel )
         self.evalMethodCombo.setCurrentIndex( self.evalMethodCombo.findText(self.settings.evalName) )
         self.errorBarCheckBox.setChecked( self.settings.errorBars)
+        self.evalStackedWidget.setCurrentIndex( self.evalMethodCombo.findText(self.settings.evalName) )
         # Timestamps
         self.enableCheckBox.setChecked(self.settings.enableTimestamps )
         self.saveRawDataCheckBox.setChecked(self.settings.saveRawData)
@@ -220,6 +228,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.onModeChanged(self.settings.scanMode)
+        if self.gateSetUi:
+            self.gateSetUi.setSettings( self.settings.gateSetSettings )
         
     def setSteps( self, settings, writeInput=False ):
         if settings.stepsSelect == 0:
@@ -271,6 +281,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         self.loadPPComboBox.blockSignals(oldstate)
         self.pulseProgramUi.recentFilesChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+
+        if not self.gateSetUi:
+            self.gateSetUi = GateSetUi.GateSetUi()
+            self.gateSetUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
+            self.gateSetUi.setupUi(self.gateSetUi)
+            self.toolBox.addItem(self.gateSetUi,"Gate Sets")
+        self.gateSetUi.setSettings( self.settings.gateSetSettings )
+
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
@@ -370,13 +388,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps if scan.stepsSelect==0 else scan.stepSize, 
                                        scan.type, scan.stepsSelect )
         scan.evalAlgo = self.algorithms[scan.evalName]
+        self.gateSetUi = self.gateSetUi
         self.onCommit()
         return scan
         
     def onClose(self):
         self.config[self.configname] = self.settings
         self.config[self.configname+'.dict'] = self.settingsDict
-               
     # History stuff
     
     def onRedo(self):
