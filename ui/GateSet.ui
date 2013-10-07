@@ -94,7 +94,7 @@
       <item row="4" column="1" colspan="3">
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Gate Set List</string>
+         <string>Gate Sequence List</string>
         </property>
        </widget>
       </item>
