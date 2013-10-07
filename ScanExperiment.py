@@ -122,7 +122,7 @@ class GateSetScanGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi):
-        address, data, self.gateSetSettings = pulseProgramUi.gateSetScanData()
+        address, data, self.gateSetSettings = self.scan.gateSetUi.gateSetScanData()
         parameter = self.gateSetSettings.startAddressParam
         if self.gateSetSettings.debug:
             print "GateSetScan", address, parameter
@@ -194,6 +194,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.running = False
         self.currentTimestampTrace = None
         self.experimentName = experimentName
+        self.globalVariables = dict()
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -255,12 +256,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
 
-
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
+        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
         self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+        
+    def setGlobalVariablesUi(self, globalVariablesUi ):
+        self.globalVariables = globalVariablesUi.variables
+        self.globalVariablesChanged = globalVariablesUi.valueChanged
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )

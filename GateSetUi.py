@@ -224,7 +224,7 @@ if __name__ == "__main__":
     from PulseProgram import PulseProgram   
     pp = PulseProgram()
     pp.debug = False
-    pp.loadSource(r"C:\Users\Public\Documents\experiments\QGA\config\PulsePrograms\YbGateSetTomography.pp")
+    pp.loadSource(r"C:\Users\Public\Documents\experiments\test3\config\PulsePrograms\YbGateSetTomography.pp")
     import sys
     config = dict()
     app = QtGui.QApplication(sys.argv)
