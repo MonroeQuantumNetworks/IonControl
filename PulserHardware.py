@@ -23,6 +23,7 @@ class Data:
         self.scanvalue = None
         self.final = False
         self.other = list()
+        self.overrun = False
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -88,9 +89,10 @@ class PipeReader(QtCore.QThread):
                         self.dedicatedData = DedicatedData()
                     self.timestampOffset = 0
                     while not self.exiting:
-                        data = self.pulserHardware.ppReadData(4,1.0)
+                        data, overrun = self.pulserHardware.ppReadData(4,1.0)
                         #print len(data)
                         with QtCore.QMutexLocker(self.dataMutex):
+                            self.data.overrun = self.data.overrun or overrun
                             for s in sliceview(data,4):
                                 (token,) = struct.unpack('I',s)
                                 #print hex(token)
@@ -338,6 +340,7 @@ class PulserHardware(QtCore.QObject):
             with QtCore.QMutexLocker(self.Mutex):
                 self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
                 self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
+                self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
                 return True
         else:
             print "Pulser Hardware not available"
@@ -379,7 +382,8 @@ class PulserHardware(QtCore.QObject):
             #if byteswaiting>0: print "Reading", byteswaiting
             with QtCore.QMutexLocker(self.Mutex):
                 self.xem.ReadFromPipeOut(0xa2, data)
-            return data
+            overrun = (wirevalue & 0x4000)!=0
+            return data, overrun
         else:
             print "Pulser Hardware not available"
             return None
@@ -528,7 +532,7 @@ if __name__ == "__main__":
     hw.ppStart()
     Finished = False
     while not Finished:#for j in range(60):
-        data = hw.ppReadData(4,1.0)
+        data, overrun = hw.ppReadData(4,1.0)
         if printdata:
             for i in sliceview(data,4):
                 (num,) = struct.unpack('I',i)

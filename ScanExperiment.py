@@ -361,7 +361,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
+        print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue, data.overrun
         print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
         mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
         self.displayUi.add( mean )
