@@ -103,6 +103,11 @@ class GateSetUi(Form,Base):
         self.GateSetFrame.setEnabled( self.settings.enabled )
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
+        if self.settings.startAddressParam:
+            self.StartAddressBox.setCurrentIndex(self.StartAddressBox.findText(self.settings.startAddressParam) )
+        else:
+            self.settings.startAddressParam = str(self.StartAddressBox.currentText())
+        self.settings.startAddressParam = str(self.settings.startAddressParam)
         try:
             oldState = self.GateDefinitionBox.blockSignals(True);
             self.GateDefinitionBox.clear()
@@ -211,13 +216,15 @@ class GateSetUi(Form,Base):
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
-        oldParameterName = self.StartAddressBox.currentText()
+        #oldParameterName = self.StartAddressBox.currentText()
         self.StartAddressBox.clear()
         for name, var in iter(sorted(variabledict.iteritems())):
             if var.type == "address":
                 self.StartAddressBox.addItem(var.name)
-        if oldParameterName and oldParameterName!="":
-            self.StartAddressBox.setCurrentIndex(self.StartAddressBox.findText(oldParameterName) )
+        if self.settings.startAddressParam:
+            self.StartAddressBox.setCurrentIndex(self.StartAddressBox.findText(self.settings.startAddressParam) )
+        else:
+            self.settings.startAddressParam = self.StartAddressBox.currentText()
 
 
 if __name__ == "__main__":
