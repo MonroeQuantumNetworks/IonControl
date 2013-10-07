@@ -6,10 +6,11 @@ Created on Fri Apr 12 23:45:54 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui, QtCore, QtNetwork
 import functools
 from modules import enum
 from datetime import datetime
+from functools import partial
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -26,7 +27,14 @@ class AutoLoadSettings:
         self.thresholdBare = 0
         self.thresholdOven = 0
         self.checkTime = 0
-
+#        self.mynewvariable = 42
+#
+#    def __setstate__(self, state):
+#        """this function ensures that the given fields are present in the class object
+#        after unpickling. Only new class attributes need to be added here.
+#        """
+#        self.__dict__ = state
+#        self.__dict__.setdefault('mynewvariable', 42)
 
 def invert( logic, channel):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -74,7 +82,110 @@ class AutoLoad(UiForm,UiBase):
         self.stopButton.clicked.connect( self.onStop )
         self.historyTableModel = LoadingHistoryModel(self.loadingHistory)
         self.historyTableView.setModel(self.historyTableModel)
+        #Wavemeter interlock setup        
+        self.am = QtNetwork.QNetworkAccessManager()
+        self.useChannel = [self.use_channel0,
+                           self.use_channel1,
+                           self.use_channel2,
+                           self.use_channel3,
+                           self.use_channel4,
+                           self.use_channel5,
+                           self.use_channel6,
+                           self.use_channel7]
+        self.channelResult = [self.channel_result0, 
+                              self.channel_result1, 
+                              self.channel_result2, 
+                              self.channel_result3,
+                              self.channel_result4, 
+                              self.channel_result5, 
+                              self.channel_result6, 
+                              self.channel_result7]
+        self.channelMin  = [self.channel_min0,
+                            self.channel_min1,
+                            self.channel_min2,
+                            self.channel_min3,
+                            self.channel_min4,
+                            self.channel_min5,
+                            self.channel_min6,
+                            self.channel_min7]
+        self.channelMax  = [self.channel_max0,
+                            self.channel_max1,
+                            self.channel_max2,
+                            self.channel_max3,
+                            self.channel_max4,
+                            self.channel_max5,
+                            self.channel_max6,
+                            self.channel_max7]
+        self.channelLabel = [self.channel_label0,
+                             self.channel_label1,
+                             self.channel_label2,
+                             self.channel_label3,
+                             self.channel_label4,
+                             self.channel_label5,
+                             self.channel_label6,
+                             self.channel_label7]
+        self.channelInRange = [True]*8 #indicates whether each channel is in range
+        for num, channel in enumerate(self.useChannel): #Connect up each checkbox signal
+            channel.stateChanged.connect(partial(self.onUseChannelClicked, num))
+        self.checkFreqsInRange()
+        #end wavemeter interlock setup      
         self.setIdle()
+
+    def onUseChannelClicked(self, channel):
+        """Run if one of the wavemeter channel checkboxes is clicked. Begin reading that channel."""        
+        if self.useChannel[channel].isChecked():
+            self.getWavemeterData(channel)
+        else:
+            self.channelInRange[channel] = True #deactivated channel should be considered in range
+            self.channelLabel[channel].setStyleSheet(
+            "QLabel {background-color: transparent}") #remove green/red coloring on label
+
+    def onWavemeterError(self, error):
+        """Print out received error"""
+        print "Error {0}".format(error)
+
+    def getWavemeterData(self, channel, addressStart="http://132.175.165.36:8082/wavemeter/wavemeter/wavemeter-status?channel="):
+        """Get the data from the wavemeter at the specified channel."""
+        intchannel= int(channel) #makes sure the channel is an integer
+        if 0 <= intchannel <= 7 and self.useChannel[channel].isChecked():
+            address = addressStart + "{0}".format(intchannel)
+            reply = self.am.get( QtNetwork.QNetworkRequest(QtCore.QUrl(address)))
+            reply.error.connect(self.onWavemeterError)
+            reply.finished.connect(partial(self.onWavemeterData, intchannel, reply))
+        elif not self.useChannel[channel].isChecked():
+            self.channelInRange[channel] = True
+            self.channelLabel[channel].setStyleSheet(
+            "QLabel {background-color: transparent}")
+        else:
+            print "invalid wavemeter channel"
+
+    def onWavemeterData(self, channel, data):
+        """Execute when data is received from the wavemeter. Display it on the
+           GUI, and check whether it is in range."""
+        freq = round(float(data.readAll()), 4)
+        freq_string = "{0:.4f}".format(freq) + " GHz"
+        self.channelResult[channel].setText(freq_string) #Display freq on GUI
+        if self.channelMin[channel].value() < freq < self.channelMax[channel].value():
+            self.channelLabel[channel].setStyleSheet("QLabel {background-color: rgb(133, 255, 124)}") #set label bg to green
+            self.channelInRange[channel] = True
+        else:
+            self.channelLabel[channel].setStyleSheet("QLabel {background-color: rgb(255, 123, 123)}") #set label bg to red
+            self.channelInRange[channel] = False
+        #read the wavemeter channel once per second
+        QtCore.QTimer.singleShot(1000,partial(self.getWavemeterData, channel))
+        
+    def checkFreqsInRange(self):
+        if all([not self.useChannel[channel].isChecked() for channel in range(0,8)]):
+            #if no channels are checked, set bar on GUI to black
+            self.all_freqs_in_range.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
+        elif all(self.channelInRange):
+            #if all channels are in range, set bar on GUI to green
+            self.all_freqs_in_range.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
+        else:
+            #if not all channels are in range, set bar on GUI to red
+            self.all_freqs_in_range.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
+        #check if channels are in range once per second
+        QtCore.QTimer.singleShot(1000, self.checkFreqsInRange)
         
     def onValueChanged(self,attr,value):
         setattr( self.settings, attr, value)
