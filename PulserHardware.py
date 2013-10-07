@@ -12,6 +12,9 @@ import math
 import traceback
 import time
 
+class PulserHardwareException(Exception):
+    pass
+
 class Data:
     def __init__(self):
         self.count = [list() for i in range(16)]
@@ -439,6 +442,7 @@ class PulserHardware(QtCore.QObject):
             print "Write unsuccessfull data does not match"
             print len(data), self.bytearrayToWordList(data)
             print len(testdata), self.bytearrayToWordList(testdata)
+            raise PulserHardwareException("RAM write unsuccessful")
 
     def ppReadRam(self,data,address):
         if self.xem:
