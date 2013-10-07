@@ -65,7 +65,7 @@ if __name__=="__main__":
     gatedef.loadGateDefinition(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\StandardGateDefinitions.xml")    
 
     container = GateSetContainer(gatedef)
-    container.loadXml(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateSetDefinition.xml")
+    container.loadXml(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateSetLongGSTwithInversion.xml")
     
     print container
     
