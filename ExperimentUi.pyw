@@ -32,6 +32,7 @@ import ProjectSelectionUi
 import os
 from modules import DataDirectory
 from ExceptionLogButton import ExceptionLogButton
+import GlobalVariables 
 
 import VoltageControl
     
@@ -78,11 +79,21 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settings = self.settingsDialog.settings        
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
+        # Global Variables
+        self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
+        self.globalVariablesUi.setupUi(self.globalVariablesUi)
+        self.globalVariablesDock = QtGui.QDockWidget("Global Variables")
+        self.globalVariablesDock.setObjectName("Global Variables")
+        self.globalVariablesDock.setWidget( self.globalVariablesUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
+
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
                              (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware,"ExternalScan"), "External Scan"),
                              (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
+            if hasattr(widget, 'setGlobalVariablesUi'):
+                widget.setGlobalVariablesUi( self.globalVariablesUi )
             if hasattr(widget,'setPulseProgramUi'):
                 widget.setPulseProgramUi( self.pulseProgramDialog )
             self.tabWidget.addTab(widget, name)
@@ -107,10 +118,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
-        
+                
         # tabify the dock widgets
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
+        self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
         
         self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -210,7 +222,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock]:
+                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock, self.globalVariablesDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
@@ -268,6 +280,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.onClose()
         self.voltageControlWindow.close()
         self.ExternalParametersSelectionUi.onClose()
+        self.globalVariablesUi.onClose()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()

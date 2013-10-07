@@ -29,7 +29,7 @@ import time
 import CoordinatePlotWidget
 import functools
 from modules import stringutilit
-from datetime import datetime
+from datetime import datetime, timedelta
 from ui import StyleSheets
 import RawData
 from modules import MagnitudeUtilit
@@ -122,7 +122,7 @@ class GateSetScanGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi):
-        address, data, parameter = pulseProgramUi.gateSetScanData()
+        address, data, parameter = self.scan.gateSetUi.gateSetScanData()
         print "GateSetScan", address, parameter
         self.scan.list = address
         self.scan.index = range(len(self.scan.list))
@@ -190,6 +190,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.running = False
         self.currentTimestampTrace = None
         self.experimentName = experimentName
+        self.globalVariables = dict()
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -251,12 +252,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
 
-
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
+        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
         self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+        
+    def setGlobalVariablesUi(self, globalVariablesUi ):
+        self.globalVariables = globalVariablesUi.variables
+        self.globalVariablesChanged = globalVariablesUi.valueChanged
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
@@ -269,8 +273,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onSave(self):
         self.StatusMessage.emit("test Save not implemented")
     
+    def setTimeLabel(self):
+        elapsed = time.time()-self.startTime
+        expected = elapsed / (self.currentIndex/float(len(self.scan.list))) if self.currentIndex>0 else 0
+        self.scanControlWidget.timeLabel.setText( "{0} / {1}".format(timedelta(seconds=round(elapsed)),
+                                                 timedelta(seconds=round(expected)))) 
+    
     def onStart(self):
-        start = time.time()
+        self.startTime = time.time()
         self.state = self.OpStates.running
         PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
         self.scan = self.scanControlWidget.getScan()
@@ -287,7 +297,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.running = True
         self.currentIndex = 0
         if self.currentTrace is not None:
-            self.currentTrace.header = self.pulseProgramUi.pulseProgram.currentVariablesText("#")
             if self.scan.autoSave:
                 self.currentTrace.resave()
             self.currentTrace = None
@@ -295,9 +304,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.progressBar.setValue(0)
         self.scanControlWidget.progressBar.setStyleSheet("")
         self.scanControlWidget.progressBar.setVisible( True )
+        self.scanControlWidget.timeLabel.setVisible( True )
+        self.setTimeLabel()
         self.timestampsNewRun = True
         self.displayUi.onClear()
-        print "elapsed time", time.time()-start
+        print "elapsed time", time.time()-self.startTime
     
     def onPause(self):
         if self.state == self.OpStates.paused:
@@ -312,6 +323,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.scanControlWidget.progressBar.setValue(self.currentIndex)
             self.scanControlWidget.progressBar.setStyleSheet("")
             self.scanControlWidget.progressBar.setVisible( True )
+            self.scanControlWidget.timeLabel.setVisible( True )
+            self.setTimeLabel()
             self.timestampsNewRun = False
             print "continued"
         elif self.state == self.OpStates.running:
@@ -329,6 +342,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
         self.scanControlWidget.progressBar.setVisible( False )
+        self.scanControlWidget.timeLabel.setVisible( False )
         self.finalizeData()
 
     def traceFilename(self, pattern):
@@ -370,6 +384,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if mycode:
                 self.pulserHardware.ppWriteData(mycode)     
         self.scanControlWidget.progressBar.setValue(self.currentIndex)
+        self.setTimeLabel()
+
 
     def updateMainGraph(self, x, mean, error, raw):
         print x, mean, error

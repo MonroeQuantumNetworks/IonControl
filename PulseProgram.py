@@ -226,10 +226,10 @@ class PulseProgram:
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
         
-    def currentVariablesText(self, comment=""):
+    def currentVariablesText(self):
         lines = list()
-        for name, var in self.variabledict.iteritems():
-            lines.append("{0} {1} {2}".format(comment,name,var.value))
+        for name, var in iter(sorted(self.variabledict.iteritems())):
+            lines.append("{0} {1}".format(name,var.value))
         return '\n'.join(lines)
            
 

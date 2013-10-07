@@ -72,6 +72,13 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             print e, "No match for", str(value.toString())
             return False
         
+    def onParameterChanged(self):
+        for row, var in enumerate(self.variablelist):
+            if hasattr(var,'strvalue'):
+                result = self.expression.evaluate(var.strvalue, self.parameterdict)
+                var.value = result
+                self.dataChanged.emit( self.index(row,4), self.index(row,4) )
+        
     def setDataEncoding(self,index, value):
         value = str(value.toString())
         self.variablelist[index.row()].encoding = None if value == 'None' else str(value)
