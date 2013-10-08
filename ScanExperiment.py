@@ -122,8 +122,10 @@ class GateSetScanGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi):
-        address, data, parameter = self.scan.gateSetUi.gateSetScanData()
-        print "GateSetScan", address, parameter
+        address, data, self.gateSetSettings = self.scan.gateSetUi.gateSetScanData()
+        parameter = self.gateSetSettings.startAddressParam
+        if self.gateSetSettings.debug:
+            print "GateSetScan", address, parameter
         self.scan.list = address
         self.scan.index = range(len(self.scan.list))
         if self.scan.scantype == 1:
@@ -134,12 +136,14 @@ class GateSetScanGenerator:
             random.shuffle(zipped)
             self.scan.index, self.scan.list = zip( *zipped )
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
-        print "GateSetScanCode", self.scan.list, self.scan.code
+        if self.gateSetSettings.debug:
+            print "GateSetScanCode", self.scan.list, self.scan.code
         return (self.scan.code, data)
 
     def restartCode(self,currentIndex):
         mycode = self.scan.code[currentIndex*2:]
-        print "original length", len(self.scan.code), "remaining", len(mycode)
+        if self.gateSetSettings.debug:
+            print "original length", len(self.scan.code), "remaining", len(mycode)
         return mycode
 
     def xValue(self,index):
@@ -357,34 +361,38 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
-        print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-        mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-        self.displayUi.add( mean )
-        if data.other:
-            print "Other:", data.other
-        #mean = numpy.mean( data.count[self.scan.counterChannel] )
-        x = self.generator.xValue(self.currentIndex)
-        if mean is not None:
-            self.updateMainGraph(x, mean, error, raw)
-        self.currentIndex += 1
-        self.showHistogram(data)
-        if self.scan.enableTimestamps: 
-            self.showTimestamps(data)
-        if data.final:
-            self.finalizeData()
-            print "current index", self.currentIndex, "expected", len(self.scan.list)
-            if self.currentIndex >= len(self.scan.list):
-                self.generator.dataOnFinal(self)
-            else:
-                self.state = self.OpStates.paused
-                self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+        if data.overrun:
+            print "Read Pipe Overrun"
+            self.onPause()
         else:
-            mycode = self.generator.dataNextCode(self)
-            if mycode:
-                self.pulserHardware.ppWriteData(mycode)     
-        self.scanControlWidget.progressBar.setValue(self.currentIndex)
-        self.setTimeLabel()
+            print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
+            print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+            mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+            self.displayUi.add( mean )
+            if data.other:
+                print "Other:", data.other
+            #mean = numpy.mean( data.count[self.scan.counterChannel] )
+            x = self.generator.xValue(self.currentIndex)
+            if mean is not None:
+                self.updateMainGraph(x, mean, error, raw)
+            self.currentIndex += 1
+            self.showHistogram(data)
+            if self.scan.enableTimestamps: 
+                self.showTimestamps(data)
+            if data.final:
+                self.finalizeData()
+                print "current index", self.currentIndex, "expected", len(self.scan.list)
+                if self.currentIndex >= len(self.scan.list):
+                    self.generator.dataOnFinal(self)
+                else:
+                    self.state = self.OpStates.paused
+                    self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            else:
+                mycode = self.generator.dataNextCode(self)
+                if mycode:
+                    self.pulserHardware.ppWriteData(mycode)     
+            self.scanControlWidget.progressBar.setValue(self.currentIndex)
+            self.setTimeLabel()
 
 
     def updateMainGraph(self, x, mean, error, raw):

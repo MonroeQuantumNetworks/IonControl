@@ -287,6 +287,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.gateSetUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
             self.gateSetUi.setupUi(self.gateSetUi)
             self.toolBox.addItem(self.gateSetUi,"Gate Sets")
+        self.gateSetUi.setVariables( pulseProgramUi.variabledict )
         self.gateSetUi.setSettings( self.settings.gateSetSettings )
 
 
@@ -366,14 +367,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
-        #oldParameterName = self.comboBoxParameter.currentText()
         oldParameterName = self.settings.scanParameter
         self.comboBoxParameter.clear()
         for name, var in iter(sorted(variabledict.iteritems())):
             if var.type == "parameter":
                 self.comboBoxParameter.addItem(var.name)
-        if oldParameterName and oldParameterName!="":
-            self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(oldParameterName) )
+        self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
+        if self.gateSetUi:
+            self.gateSetUi.setVariables(variabledict)
             
     def setScanNames(self, scannames):
         self.comboBoxParameter.clear()
@@ -388,7 +389,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps if scan.stepsSelect==0 else scan.stepSize, 
                                        scan.type, scan.stepsSelect )
         scan.evalAlgo = self.algorithms[scan.evalName]
-        self.gateSetUi = self.gateSetUi
+        scan.gateSetUi = self.gateSetUi
         self.onCommit()
         return scan
         
