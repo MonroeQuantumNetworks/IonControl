@@ -82,66 +82,67 @@ class PipeReader(QtCore.QThread):
         print "PipeReader running"
         try:
             with self:
-                with open("unprocessed.dat","w") as unprocessedfile:
-                    state = self.analyzingState.normal
-                    with QtCore.QMutexLocker(self.dataMutex):
-                        self.data = Data()
-                        self.dedicatedData = DedicatedData()
-                    self.timestampOffset = 0
-                    while not self.exiting:
-                        data, overrun = self.pulserHardware.ppReadData(4,1.0)
-                        #print len(data)
-                        with QtCore.QMutexLocker(self.dataMutex):
-                            self.data.overrun = self.data.overrun or overrun
-                            for s in sliceview(data,4):
-                                (token,) = struct.unpack('I',s)
-                                #print hex(token)
-                                if state == self.analyzingState.scanparameter:
-                                    if self.data.scanvalue is None:
-                                        self.data.scanvalue = token
-                                    else:
-                                        self.pulserHardware.dataAvailable.emit( self.data )
-                                        #print "emit dataAvailable"
-                                        self.data = Data()
-                                        self.data.scanvalue = token
-                                    state = self.analyzingState.normal
-                                elif token & 0xf0000000 == 0xe0000000: # dedicated results
-                                    channel = (token >>24) & 0xf
-                                    if self.dedicatedData.data[channel] is not None:
-                                        self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
-                                        #print "emit dedicatedDataAvailable", channel, self.dedicatedData.data
-                                        self.dedicatedData = DedicatedData()
-                                    self.dedicatedData.data[channel] = token & 0xffffff
-                                elif token & 0xff000000 == 0xff000000:
-                                    if token == 0xffffffff:    # end of run
-                                        #self.exiting = True
-                                        self.data.final = True
-                                        self.pulserHardware.dataAvailable.emit( self.data )
-                                        print "End of Run marker received"
-                                        self.data = Data()
-                                    elif token == 0xff000000:
-                                        self.timestampOffset += 1<<28
-                                    elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
-                                        state = self.analyzingState.scanparameter
-                                else:
-                                    key = token >> 28
-                                    channel = (token >>24) & 0xf
-                                    value = token & 0xffffff
-                                    #print hex(token)
-                                    if key==1:   # count
-                                        (self.data.count[channel]).append(value)
-                                    elif key==2:  # timestamp
-                                        self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
-                                    elif key==3:  # timestamp gate start
-                                        self.data.timestampZero[channel] = self.timestampOffset + value
-                                    elif key==4: # other return value
-                                        self.data.other.append(value)
-                                    else:
-                                        print >>unprocessedfile, token
-                    if self.data.scanvalue is not None:
-                        self.pulserHardware.dataAvailable.emit( self.data )
-                        #print "emit dataAvailable"
+#               with open("unprocessed.dat","w") as unprocessedfile:
+                state = self.analyzingState.normal
+                with QtCore.QMutexLocker(self.dataMutex):
                     self.data = Data()
+                    self.dedicatedData = DedicatedData()
+                self.timestampOffset = 0
+                while not self.exiting:
+                    data, overrun = self.pulserHardware.ppReadData(4,1.0)
+                    #print len(data)
+                    with QtCore.QMutexLocker(self.dataMutex):
+                        self.data.overrun = self.data.overrun or overrun
+                        for s in sliceview(data,4):
+                            (token,) = struct.unpack('I',s)
+                            #print hex(token)
+                            if state == self.analyzingState.scanparameter:
+                                if self.data.scanvalue is None:
+                                    self.data.scanvalue = token
+                                else:
+                                    self.pulserHardware.dataAvailable.emit( self.data )
+                                    #print "emit dataAvailable"
+                                    self.data = Data()
+                                    self.data.scanvalue = token
+                                state = self.analyzingState.normal
+                            elif token & 0xf0000000 == 0xe0000000: # dedicated results
+                                channel = (token >>24) & 0xf
+                                if self.dedicatedData.data[channel] is not None:
+                                    self.pulserHardware.dedicatedDataAvailable.emit( self.dedicatedData )
+                                    #print "emit dedicatedDataAvailable", channel, self.dedicatedData.data
+                                    self.dedicatedData = DedicatedData()
+                                self.dedicatedData.data[channel] = token & 0xffffff
+                            elif token & 0xff000000 == 0xff000000:
+                                if token == 0xffffffff:    # end of run
+                                    #self.exiting = True
+                                    self.data.final = True
+                                    self.pulserHardware.dataAvailable.emit( self.data )
+                                    print "End of Run marker received"
+                                    self.data = Data()
+                                elif token == 0xff000000:
+                                    self.timestampOffset += 1<<28
+                                elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
+                                    state = self.analyzingState.scanparameter
+                            else:
+                                key = token >> 28
+                                channel = (token >>24) & 0xf
+                                value = token & 0xffffff
+                                #print hex(token)
+                                if key==1:   # count
+                                    (self.data.count[channel]).append(value)
+                                elif key==2:  # timestamp
+                                    self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
+                                elif key==3:  # timestamp gate start
+                                    self.data.timestampZero[channel] = self.timestampOffset + value
+                                elif key==4: # other return value
+                                    self.data.other.append(value)
+                                else:
+                                    pass
+                                    #print >>unprocessedfile, token
+                if self.data.scanvalue is not None:
+                    self.pulserHardware.dataAvailable.emit( self.data )
+                    #print "emit dataAvailable"
+                self.data = Data()
         except Exception as err:
             print "PipeReader worker exception:", err
             traceback.print_exc()
