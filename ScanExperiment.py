@@ -361,34 +361,38 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue, data.overrun
-        print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-        mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-        self.displayUi.add( mean )
-        if data.other:
-            print "Other:", data.other
-        #mean = numpy.mean( data.count[self.scan.counterChannel] )
-        x = self.generator.xValue(self.currentIndex)
-        if mean is not None:
-            self.updateMainGraph(x, mean, error, raw)
-        self.currentIndex += 1
-        self.showHistogram(data)
-        if self.scan.enableTimestamps: 
-            self.showTimestamps(data)
-        if data.final:
-            self.finalizeData()
-            print "current index", self.currentIndex, "expected", len(self.scan.list)
-            if self.currentIndex >= len(self.scan.list):
-                self.generator.dataOnFinal(self)
-            else:
-                self.state = self.OpStates.paused
-                self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+        if data.overrun:
+            print "Read Pipe Overrun"
+            self.onPause()
         else:
-            mycode = self.generator.dataNextCode(self)
-            if mycode:
-                self.pulserHardware.ppWriteData(mycode)     
-        self.scanControlWidget.progressBar.setValue(self.currentIndex)
-        self.setTimeLabel()
+            print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
+            print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+            mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+            self.displayUi.add( mean )
+            if data.other:
+                print "Other:", data.other
+            #mean = numpy.mean( data.count[self.scan.counterChannel] )
+            x = self.generator.xValue(self.currentIndex)
+            if mean is not None:
+                self.updateMainGraph(x, mean, error, raw)
+            self.currentIndex += 1
+            self.showHistogram(data)
+            if self.scan.enableTimestamps: 
+                self.showTimestamps(data)
+            if data.final:
+                self.finalizeData()
+                print "current index", self.currentIndex, "expected", len(self.scan.list)
+                if self.currentIndex >= len(self.scan.list):
+                    self.generator.dataOnFinal(self)
+                else:
+                    self.state = self.OpStates.paused
+                    self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            else:
+                mycode = self.generator.dataNextCode(self)
+                if mycode:
+                    self.pulserHardware.ppWriteData(mycode)     
+            self.scanControlWidget.progressBar.setValue(self.currentIndex)
+            self.setTimeLabel()
 
 
     def updateMainGraph(self, x, mean, error, raw):
