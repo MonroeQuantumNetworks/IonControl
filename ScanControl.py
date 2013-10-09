@@ -99,6 +99,12 @@ class Scan:
                 self.timestampsChannel == other.timestampsChannel and
                 self.saveRawData == other.saveRawData and
                 self.gateSetSettings == other.gateSetSettings)
+        
+    def __hash__(self):
+        return hash( (self.scanParameter, self.start, self.stop, self.steps, self.stepSize, self.stepsSelect, self.scantype, self.scanMode,
+                      self.scanRepeat, self.rewriteDDS, self.filename, self.autoSave, self.xUnit, self.loadPP, self.loadPPName, self.histogramBins,
+                      self.integrateHistogram, self.counterChannel, self.evalName, self.errorBars, self.enableTimestamps, self.binwidth,
+                      self.roiStart, self.integrateTimestamps, self.timestampsChannel, self.saveRawData) )
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
