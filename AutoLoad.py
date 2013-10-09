@@ -42,6 +42,7 @@ class AutoLoadSettings:
         self.thresholdBare = 0
         self.thresholdOven = 0
         self.checkTime = 0
+        self.useInterlock = False
         self.useChannel = [False]*8
         self.channelMin = [0.0]*8
         self.channelMax = [0.0]*8
@@ -54,6 +55,7 @@ class AutoLoadSettings:
         self.__dict__.setdefault('useChannel', [False]*8)
         self.__dict__.setdefault('channelMin', [0.0]*8)
         self.__dict__.setdefault('channelMax', [0.0]*8)
+        self.__dict__.setdefault('useInterlock', False)
 
 def invert( logic, channel):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -147,6 +149,8 @@ class AutoLoad(UiForm,UiBase):
                                 self.channelLabelGui7]
         self.channelInRange = [True]*8 #indicates whether each channel is in range
         self.channelResult = [0.0]*8 #The frequency measured on each channel
+        self.useInterlockGui.setChecked(self.settings.useInterlock)
+        self.useInterlockGui.stateChanged.connect(self.onUseInterlockClicked)
         for channel in range(0,8): #Connect each GUI signal
             #For checkboxes, connection is made before setting from file, so that onUseChannelClicked is executed
             self.useChannelGui[channel].stateChanged.connect(functools.partial(self.onUseChannelClicked,channel))
@@ -158,6 +162,10 @@ class AutoLoad(UiForm,UiBase):
         self.checkFreqsInRange() #Begins the loop which continually checks if frequencies are in range
         #end wavemeter interlock setup      
         self.setIdle()
+        
+    def onUseInterlockClicked(self):
+        """Run if useInterlock button is clicked. Change settings to match."""
+        self.settings.useInterlock = self.useInterlockGui.isChecked()
 
     def onUseChannelClicked(self, channel):
         """Run if one of the wavemeter channel checkboxes is clicked. Begin reading that channel."""
@@ -203,7 +211,7 @@ class AutoLoad(UiForm,UiBase):
         #read the wavemeter channel once per second
         QtCore.QTimer.singleShot(1000,functools.partial(self.getWavemeterData, channel))
         
-    def checkFreqsInRange(self):
+    def checkFreqsInRange(self, outOfRangeCount=0):
         """Check whether all laser frequencies being used by the interlock are 
            in range. If they are not, loading is stopped/prevented, and the 
            lock status bar turns from green to red. If the lock is not being
@@ -211,19 +219,28 @@ class AutoLoad(UiForm,UiBase):
         if all([not self.settings.useChannel[channel] for channel in range(0,8)]):
             #if no channels are checked, set bar on GUI to black
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
-            self.allFreqsInRange.setToolTip("Wavemeter interlock is not in use")
+            self.allFreqsInRange.setToolTip("No channels are selected")
+            outOfRangeCount = 0
         elif all(self.channelInRange):
             #if all channels are in range, set bar on GUI to green
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
             self.allFreqsInRange.setToolTip("All laser frequencies are in range")
+            outOfRangeCount = 0
         else:
             #if not all channels are in range, set bar on GUI to red
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
             self.allFreqsInRange.setToolTip("There are laser frequencies out of range")
-            if (self.status != self.StatusOptions.Idle):
-                self.setIdle() #This is the actual interlock: loading is inhibited if frequency are out of range
+            #This is the interlock: loading is inhibited if frequencies are out of range
+            #Because of the bug where the wavemeter reads incorrectly after calibration,
+            #Loading is only inhibited after 10 consecutive bad measurements
+            if ((self.status != self.StatusOptions.Idle) & self.settings.useInterlock):
+                if (outOfRangeCount >= 10):
+                    self.setIdle() 
+                    outOfRangeCount = 0
+                else:
+                    outOfRangeCount += 1
         #check if channels are in range once per second
-        QtCore.QTimer.singleShot(1000, self.checkFreqsInRange)
+        QtCore.QTimer.singleShot(300, functools.partial(self.checkFreqsInRange, outOfRangeCount))
         
     def onValueChanged(self,attr,value):
         """Change the value of attr in settings to value"""
@@ -265,7 +282,7 @@ class AutoLoad(UiForm,UiBase):
         self.timer.timeout.connect( self.onTimer )
         self.timer.start(100)
         self.started = datetime.now()
-        self.elapsedLabel.setText(formatDelta(datetime.timedelta(0))) #Set time display to zero
+        self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
         self.elapsedLabel.setStyleSheet("QLabel { color:red; }")
         self.status = self.StatusOptions.Preheat
         self.statusLabel.setText("Preheating")
