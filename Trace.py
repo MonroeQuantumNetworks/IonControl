@@ -109,7 +109,7 @@ class Trace(object):
         """
         self.vars.fileCreation = datetime.now()
         for var, value in sorted(self.vars.__dict__.iteritems()):
-            print >>outfile, "#", var, value
+            print >>outfile, "# {0}\t{1}".format(var, value)
         if self.header is not None:
             print >>outfile, self.header
 
@@ -142,9 +142,13 @@ class Trace(object):
             for line in infile:
                 line = line.strip()
                 if line[0]=='#':
-                    a = line.split(None,2)
-                    if len(a)>2:
-                        self.vars.__dict__[a[1]] = a[2]  
+                    line = line.lstrip('# \t\r\n')
+                    if line.find('\t')<0:
+                        a = line.split(None,1)
+                    else:
+                        a = line.split('\t',1)
+                    if len(a)>1:
+                        self.vars.__dict__[a[0]] = a[1]  
                 else:
                     data.append( map(float,line.split()) )
         columnspec =  self.vars.columnspec.split(',')

@@ -414,7 +414,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.graphicsView.setXRange( *xRange )                
             self.traceui.addTrace(self.plottedTrace,pen=-1)
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-            scanHeader = stringutilit.commentarize( repr(self.scan) )
+            scanHeader = stringutilit.commentarize( self.scan.documentationString() )
             self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         else:
             self.generator.appendData(self.currentTrace, x, mean, raw, error)

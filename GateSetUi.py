@@ -49,6 +49,12 @@ class Settings(object):
         else:
             m.append( "Gate {0}".format(self.gate))
         return "\n".join(m)
+
+    documentationList = [ 'gateDefinition', 'gateSet', 'startAddressParam' ]
+    
+    def documentationString(self):
+        r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
+        return r
         
 
 class GateSetUi(Form,Base):    

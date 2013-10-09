@@ -100,11 +100,12 @@ class Scan:
                 self.saveRawData == other.saveRawData and
                 self.gateSetSettings == other.gateSetSettings)
 
+    documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
+                'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
         
-    def __repr__(self):
-        r = "Scanning parameter: {0}\nScanning From: {1}\nScanning To: {2}\n".format(self.scanParameter,self.start,self.stop)
-        r+= "Scanning Steps: {0}\nScanning type: {1}\nScanning rewriteDDS: {2}\n".format(self.steps,self.scantype,self.rewriteDDS)
-        r+= "Scanning mode: {0}".format(self.scanMode)
+    def documentationString(self):
+        r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
+        r += self.gateSetSettings.fileComments()
         return r
 
 
@@ -466,6 +467,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalStackedWidget.setCurrentIndex(self.evalMethodCombo.currentIndex())
         self.commitChange()
         
+    def documentationString(self):
+        return self.settings.documentationString()
 
 if __name__=="__main__":
     import sys
