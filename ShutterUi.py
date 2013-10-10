@@ -30,11 +30,9 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.checkBoxSetAtStartup.setChecked(self.setAtStartup)
         self.shutterdict = self.config.get(self.configname+".dict",dict())
         self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.shutterdict,self.pulserHardware,self.outputname)
-        self.datashelve = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
-        self.datashelve.open()
         if self.setAtStartup:
-            print "Set old shutter values", 'Value' in self.datashelve, self.datashelve.get('Value',0)
-            self.shutterTableModel.shutter = self.datashelve.get('Value',0) 
+            print "Set old shutter values", (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0)
+            self.shutterTableModel.shutter = self.config.get((self.configname, 'Value'),0) 
         self.shutterTableModel.offColor = self.offColor
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
@@ -46,8 +44,7 @@ class ShutterUi(ShutterForm, ShutterBase):
     def close(self):
         self.config[self.configname+".dict"] = self.shutterdict
         self.config[self.configname+".SetAtStartup"] = self.checkBoxSetAtStartup.isChecked()
-        self.datashelve['Value'] = self.shutterTableModel.shutter
-        self.datashelve.close()
+        self.config[(self.configname, 'Value')] = self.shutterTableModel.shutter
         
     def __repr__(self):
         r = "{0}\n".format(self.__class__)

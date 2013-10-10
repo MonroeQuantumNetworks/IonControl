@@ -18,19 +18,21 @@ import pickle
 from sqlalchemy import Column, Integer, String
 
 Base = declarative_base()
-
+defaultcategory = 'main'
     
 class ShelveEntry(Base):
     __tablename__ = "shelve"
+    category = Column(String, primary_key=True )
     key = Column(String, primary_key=True)
     pvalue = Column(String)
     
-    def __init__(self,key,value):
+    def __init__(self,key,value,category=defaultcategory):
+        self.category = category
         self.key = key
         self.pvalue = pickle.dumps(value)
         
     def __repr__(self):
-        return "<'{0}' '{1}'>".format(self.key,self.value)
+        return "<'{0}.{1}' '{2}'>".format(self.category, self.key, self.value)
        
     @property
     def value(self):
@@ -58,22 +60,38 @@ class configshelve:
         self.session.commit()
         
     def __setitem__(self, key, value):
+        if isinstance(key,tuple):
+            category, key = key
+        else:
+            category, key = defaultcategory, key
         try:
-            elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key).one()
+            elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            elem = ShelveEntry(key,value)
+            elem = ShelveEntry(key,value,category)
             self.session.add(elem)
         elem.value = value
         
     def __getitem__(self, key):
-        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key).one().value
+        if isinstance(key,tuple):
+            category, key = key
+        else:
+            category, key = defaultcategory, key
+        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
             
     def __contains__(self, key):
-        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key).count()>0
+        if isinstance(key,tuple):
+            category, key = key
+        else:
+            category, key = defaultcategory, key
+        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).count()>0
         
     def get(self, key, default=None):
+        if isinstance(key,tuple):
+            category, key = key
+        else:
+            category, key = defaultcategory, key
         try:
-            return self.session.query(ShelveEntry).filter(ShelveEntry.key==key).one().value
+            return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
         except sqlalchemy.orm.exc.NoResultFound:
             return default
         
@@ -91,6 +109,9 @@ class configshelve:
         self.isOpen = False
         
 if __name__ == "__main__":
-    with configshelve("test.db") as d:
-        peter = d.get('Peter','Klein')
-        print peter
+    with configshelve("new-test.db") as d:
+        d['Peter'] = 'Maunz'
+        print 'Peter'in d
+        print ('Peter', 'main') in d
+        print ('main','Peter') in d
+        
