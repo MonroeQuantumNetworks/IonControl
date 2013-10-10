@@ -112,7 +112,7 @@ class Scan:
         
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
-        r += self.gateSetSettings.fileComments()
+        r += self.gateSetSettings.documentationString()
         return r
 
 
