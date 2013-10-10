@@ -382,7 +382,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if data.final:
                 self.finalizeData()
                 print "current index", self.currentIndex, "expected", len(self.scan.list)
-                if self.currentIndex >= len(self.scan.list):
+                if self.currentIndex >= len(self.scan.list):    # if all points were taken
                     self.generator.dataOnFinal(self)
                 else:
                     self.state = self.OpStates.paused

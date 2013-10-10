@@ -12,12 +12,12 @@ import numpy
 resultsTable = None
 headerList = list()
 
-path = r'\\snl\mesa\Projects\Quantum_Graph_Analysis\experiments\QGA\2013\2013_10\2013_10_02'
+path = r'C:\Users\Public\Documents\experiments\QGA\2013\2013_10\2013_10_09'
 headerList.append("GateSequenceNo")
-filenamebody = "GateSet"
-expectedLength = 1066
-minfileno = 2
-beyondmaxfileno = 47
+filenamebody = "GateTestSet"
+expectedLength = 2020
+minfileno = 1
+beyondmaxfileno = 8
 
 for num in range(minfileno,beyondmaxfileno):
     filename = filenamebody+"_{0:03d}.txt".format(num)
@@ -42,5 +42,5 @@ print resultsTable
 print len(resultsTable)
 a = numpy.array( resultsTable )
 
-numpy.savetxt(os.path.join(path,filenamebody+"_{0:03d}_{1:03d}.txt".format(minfileno,beyondmaxfileno-1)),numpy.transpose(a),delimiter='\t',fmt='%.0f',header="\t".join(headerList))
+numpy.savetxt(os.path.join(path,filenamebody+"_{0:03d}_{1:03d}.txt".format(minfileno,beyondmaxfileno-1)),numpy.transpose(a),delimiter='\t',fmt='%.0f') #,header="\t".join(headerList)
 
