@@ -24,7 +24,8 @@ class ConfiguredParams:
         self.lastFilename = None
         self.recentFiles = dict()
         
-    def upgrade(self):
+    def __setstate__(self,d):
+        self.__dict__ = d
         self.__dict__.setdefault('lastFilename',None)
         self.__dict__.setdefault('recentFiles',dict())
 
@@ -58,10 +59,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
         self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
-        self.configParams.upgrade()
         
         if hasattr(self.configParams,'recentFiles'):
-            self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
+            for key, path in self.configParams.recentFiles.iteritems():
+                if os.path.exists(path):
+                    self.filenameComboBox.addItem(key)
         if self.configParams.lastFilename is not None:
             try:
                 self.loadFile( self.configParams.lastFilename )
@@ -81,9 +83,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                
     def onFilenameChange(self, name ):
         name = str(name)
-        print "onFilenameChange", name, self.configParams.recentFiles[name], self.configParams.lastFilename
         if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastFilename:
-            print "Loading: ", self.configParams.recentFiles[name]
             self.loadFile(self.configParams.recentFiles[name])
             if str(self.filenameComboBox.currentText())!=name:
                 self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
