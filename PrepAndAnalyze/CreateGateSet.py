@@ -70,31 +70,31 @@ for length in range(1,4):
     for sequence in allstrings(basis,length):
         gateSequence(root,str(i),sequence,i)
         i += 1
-
-#GST sequences, of the form prep-G^n-analyze 
-seqlengths = [2**n for n in range(1, nmax+1)]
-for length in seqlengths:    
-    root.append( ElementTree.Comment('GST sequences G^n, n = {0}'.format(length)))
-    for sequence in gst_strings(basis, length):
-        gateSequence(root, str(i), sequence, i)
-        i += 1
-
-        
-#This creates the same sequences as above, with x2 appended to each
-root.append( ElementTree.Comment('Inverted Strings of length {0}'.format(0)))
-gateSequence(root,str(i),['x2'],i)
-i += 1
-for length in range(1,4):
-    root.append( ElementTree.Comment('Inverted Strings of length {0}'.format(length)))
-    for sequence in allstrings(basis,length):
-        gateSequence(root,str(i),sequence+['x2'],i)
-        i += 1
-
-for length in seqlengths:    
-    root.append( ElementTree.Comment('Inverted GST sequences G^n, n = {0}'.format(length)))
-    for sequence in gst_strings(basis, length):
-        gateSequence(root, str(i), sequence +['x2'], i)
-        i += 1
+#
+##GST sequences, of the form prep-G^n-analyze 
+#seqlengths = [2**n for n in range(1, nmax+1)]
+#for length in seqlengths:    
+#    root.append( ElementTree.Comment('GST sequences G^n, n = {0}'.format(length)))
+#    for sequence in gst_strings(basis, length):
+#        gateSequence(root, str(i), sequence, i)
+#        i += 1
+#
+#        
+##This creates the same sequences as above, with x2 appended to each
+#root.append( ElementTree.Comment('Inverted Strings of length {0}'.format(0)))
+#gateSequence(root,str(i),['x2'],i)
+#i += 1
+#for length in range(1,4):
+#    root.append( ElementTree.Comment('Inverted Strings of length {0}'.format(length)))
+#    for sequence in allstrings(basis,length):
+#        gateSequence(root,str(i),sequence+['x2'],i)
+#        i += 1
+#
+#for length in seqlengths:    
+#    root.append( ElementTree.Comment('Inverted GST sequences G^n, n = {0}'.format(length)))
+#    for sequence in gst_strings(basis, length):
+#        gateSequence(root, str(i), sequence +['x2'], i)
+#        i += 1
 
 with open(filename,'w') as f:
     f.write(prettify(root))
