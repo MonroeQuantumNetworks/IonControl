@@ -19,6 +19,7 @@ from modules import MagnitudeUtilit
 from modules.magnitude import mg
 from modules.enum import enum
 import GateSetUi
+from modules.PyqtUtility import BlockSignals, updateComboBoxItems
 
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')
@@ -280,13 +281,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def setPulseProgramUi(self, pulseProgramUi ):
         print "ScanControl.setPulseProgramUi", pulseProgramUi.configParams.recentFiles.keys()
         self.pulseProgramUi = pulseProgramUi
-        oldstate = self.loadPPComboBox.blockSignals(True)
-        self.loadPPComboBox.clear()
-        if hasattr(pulseProgramUi.configParams,'recentFiles'):
-            self.loadPPComboBox.addItems(pulseProgramUi.configParams.recentFiles.keys())
-        if self.settings.loadPPName: 
-            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-        self.loadPPComboBox.blockSignals(oldstate)
+        with BlockSignals(self.loadPPComboBox):
+            self.loadPPComboBox.clear()
+            if hasattr(pulseProgramUi.configParams,'recentFiles'):
+                self.loadPPComboBox.addItems(pulseProgramUi.configParams.recentFiles.keys())
+            if self.settings.loadPPName: 
+                self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         self.pulseProgramUi.recentFilesChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
 
         if not self.gateSetUi:
@@ -376,10 +376,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def setVariables(self, variabledict):
         self.variabledict = variabledict
         oldParameterName = self.settings.scanParameter
-        self.comboBoxParameter.clear()
-        for name, var in iter(sorted(variabledict.iteritems())):
-            if var.type == "parameter":
-                self.comboBoxParameter.addItem(var.name)
+        with BlockSignals(self.comboBoxParameter):
+            self.comboBoxParameter.clear()
+            for name, var in iter(sorted(variabledict.iteritems())):
+                if var.type == "parameter":
+                    self.comboBoxParameter.addItem(var.name)
         if self.settings.scanParameter:
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         if self.gateSetUi:
