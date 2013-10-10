@@ -294,7 +294,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.gateSetUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
             self.gateSetUi.setupUi(self.gateSetUi)
             self.toolBox.addItem(self.gateSetUi,"Gate Sets")
-        self.gateSetUi.setVariables( pulseProgramUi.variabledict )
+        if  pulseProgramUi.variabledict:
+            self.gateSetUi.setVariables( pulseProgramUi.variabledict )
         self.gateSetUi.setSettings( self.settings.gateSetSettings )
 
 
@@ -379,7 +380,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         for name, var in iter(sorted(variabledict.iteritems())):
             if var.type == "parameter":
                 self.comboBoxParameter.addItem(var.name)
-        self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
+        if self.settings.scanParameter:
+            self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         if self.gateSetUi:
             self.gateSetUi.setVariables(variabledict)
             
