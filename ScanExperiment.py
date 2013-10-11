@@ -405,7 +405,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if error and self.scan.errorBars:
                 self.currentTrace.bottom = numpy.array([error[0]])
                 self.currentTrace.top = numpy.array([error[1]])
-            self.currentTrace.name = self.scan.scanParameter
+            self.currentTrace.name = self.scan.settingsName
             self.currentTrace.vars.comment = ""
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
@@ -451,7 +451,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.scan.timestampsChannel])
             self.currentTimestampTrace.x = x
             self.currentTimestampTrace.y = y
-            self.currentTimestampTrace.name = self.scan.name
+            self.currentTimestampTrace.name = self.scan.settingsName
             self.currentTimestampTrace.vars.comment = ""
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
             self.plottedTimestampTrace = Traceui.PlottedTrace(self.currentTimestampTrace,self.timestampView,pens.penList)
