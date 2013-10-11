@@ -13,6 +13,8 @@ from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
 
+grid_opacity = 0.3
+
 class LabelItem(pyqtgraph.LabelItem):
     clicked = QtCore.pyqtSignal()
         
@@ -20,25 +22,44 @@ class LabelItem(pyqtgraph.LabelItem):
         self.clicked.emit()
  
 class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
-
+    """This is the main widget for plotting data. It consists of a plot, a
+       coordinate display, a button to set the y scale to 0-1, and a button
+       to display/hide the grid."""
     def __init__(self,parent):
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = pyqtgraph.LabelItem(justify='right')
         self.unityRangeButton = LabelItem(justify='left')
         self.unityRangeButton.setText('Unity Range')
         self.unityRangeButton.clicked.connect( self.onUnityRange )
-        self.graphicsView = self.addPlot(row=0,col=0,colspan=2)
-        self.addItem(self.coordinateLabel,row=1,col=1)
+        self.showGridButton = LabelItem(justify='center')
+        self.showGridButton.setText('Show Grid')
+        self.showGridButton.clicked.connect(self.onShowGrid)
+        self.showGridClicks = 0 #Because we can't query whether the grid is on or off, we just keep track of clicks
+        self.graphicsView = self.addPlot(row=0,col=0,colspan=3)
+        self.addItem(self.coordinateLabel,row=1,col=2)
         self.addItem(self.unityRangeButton,row=1,col=0)
+        self.addItem(self.showGridButton,row=1,col=1)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
         self.mousePointList = list()
+        self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         
     def onUnityRange(self):
+        """Execute when unityRangeButton is clicked"""
         self.graphicsView.setYRange(0,1)
-    
+
+    def onShowGrid(self):
+        """Execute when showGridButton is clicked"""
+        if self.showGridClicks % 2 == 0:
+            self.graphicsView.showGrid(x = False, y = False)
+        else:
+            self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity)
+        self.showGridClicks += 1
+            
     def onMouseMoved(self,pos):
+        """Execute when mouse is moved. If mouse is over plot, show cursor
+           coordinates on coordinateLabel."""
         if self.graphicsView.sceneBoundingRect().contains(pos):
             self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
             vR = self.graphicsView.vb.viewRange()
@@ -53,10 +74,10 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
                 'y': ("{0}".format(self.mousePoint.y())) }.get(which,"{0}, {1}".format(self.mousePoint.x(),self.mousePoint.y()))
         QtGui.QApplication.clipboard().setText(text)
         
-    def mouseDoubleClickEvent(self, ev):
-        pyqtgraph.GraphicsLayoutWidget.mouseDoubleClickEvent(self,ev)
-        print "CoordinatePlotWidget mouseDoubleClicked"
-        #self.onMouseClicked(ev)
+#    def mouseDoubleClickEvent(self, ev):
+#        pyqtgraph.GraphicsLayoutWidget.mouseDoubleClickEvent(self,ev)
+#        print "CoordinatePlotWidget mouseDoubleClicked"
+#        #self.onMouseClicked(ev)
         
     def copyPointsToClipboard(self, modifiers):
         print "copyPointsToClipboard"
