@@ -233,13 +233,6 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Start</string>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="2">
           <widget class="MagnitudeSpinBox" name="stepsBox">
            <property name="buttonSymbols">
@@ -326,6 +319,20 @@
          <item row="7" column="2" colspan="2">
           <widget class="QLineEdit" name="filenameEdit"/>
          </item>
+         <item row="0" column="0">
+          <widget class="QComboBox" name="startCenterCombo">
+           <item>
+            <property name="text">
+             <string>Start</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Center</string>
+            </property>
+           </item>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
@@ -358,8 +365,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>240</width>
-        <height>301</height>
+        <width>229</width>
+        <height>315</height>
        </rect>
       </property>
       <attribute name="label">
@@ -447,8 +454,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>240</width>
-        <height>301</height>
+        <width>229</width>
+        <height>315</height>
        </rect>
       </property>
       <attribute name="label">
