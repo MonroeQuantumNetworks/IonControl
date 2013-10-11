@@ -190,7 +190,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
-        self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
+        if self.configParams.lastFilename:
+            self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
