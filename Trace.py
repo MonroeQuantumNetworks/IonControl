@@ -74,7 +74,7 @@ class Trace(object):
             self.filepath, self.fileleaf = os.path.split(filename)
         else:
             self.filepath, self.fileleaf = None, None
-        print "Trace filename", self.filename, self.filepath, self.fileleaf
+        #print "Trace filename", self.filename, self.filepath, self.fileleaf
         if self.dataChangedCallback:
             self.dataChangedCallback()                            
         
@@ -117,7 +117,7 @@ class Trace(object):
         if self.rawdata:
             self.vars.rawdata = self.rawdata.save()
         if hasattr(self,'fitfunction'):
-            print 'fitfunction saved'
+            #print 'fitfunction saved'
             self.vars.fitfunction = self.fitfunction
         if filename!='':
             of = open(filename,'w')
