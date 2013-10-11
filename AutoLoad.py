@@ -13,24 +13,13 @@ import PyQt4.uic
 from PyQt4 import QtGui, QtCore, QtNetwork
 import functools
 from modules import enum
+from modules.formatDelta import formatDelta
 from datetime import datetime
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
 import MagnitudeSpinBox
 from LoadingHistoryModel import LoadingHistoryModel 
-
-def formatDelta(delta):
-    """Return a string version of a datetime time difference object (timedelta),
-       formatted as: HH:MM:SS.S. If hours = 0, returns MM:SS.S"""
-    hours, remainder = divmod(delta.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    hours = hours + delta.days*24
-    seconds = seconds + delta.microseconds*1e-6
-    components = list()
-    if (hours > 0): components.append("{0}".format(hours))
-    components.append("{0:02d}:{1:04.1f}".format(int(minutes),seconds))
-    return ":".join(components)
 
 class AutoLoadSettings:
     def __init__(self):
