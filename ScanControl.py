@@ -274,7 +274,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             
     def onRecentPPFilesChanged(self, name):
         print "ScanControl.onRecentPPFilesChanged"
-        self.loadPPComboBox.addItem(name)
+        if self.loadPPComboBox.findText(name)<0:
+            self.loadPPComboBox.addItem(name)
 #        if self.settings.loadPPName: 
 #            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         
