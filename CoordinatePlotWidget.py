@@ -23,13 +23,13 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
 
     def __init__(self,parent):
         super(CoordinatePlotWidget,self).__init__(parent)
-        self.label = pyqtgraph.LabelItem(justify='right')
-        self.button = LabelItem(justify='left')
-        self.button.setText('Unity Range')
-        self.button.clicked.connect( self.onUnityRange )
+        self.coordinateLabel = pyqtgraph.LabelItem(justify='right')
+        self.unityRangeButton = LabelItem(justify='left')
+        self.unityRangeButton.setText('Unity Range')
+        self.unityRangeButton.clicked.connect( self.onUnityRange )
         self.graphicsView = self.addPlot(row=0,col=0,colspan=2)
-        self.addItem(self.label,row=1,col=1)
-        self.addItem(self.button,row=1,col=0)
+        self.addItem(self.coordinateLabel,row=1,col=1)
+        self.addItem(self.unityRangeButton,row=1,col=0)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
@@ -46,7 +46,7 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
             precx = int( math.ceil( math.log10(abs(self.mousePoint.x()/deltaX)) ) + 3 ) if self.mousePoint.x()!=0 and deltaX>0 else 1
             precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
             roundedx, roundedy = roundToNDigits( self.mousePoint.x(),precx), roundToNDigits(self.mousePoint.y(), precy )
-            self.label.setText( self.template.format( repr(roundedx), repr(roundedy) ))
+            self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
             
     def onCopyLocation(self,which):
         text = {'x': ("{0}".format(self.mousePoint.x())),
