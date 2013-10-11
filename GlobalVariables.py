@@ -35,6 +35,7 @@ class GlobalVariableUi(Form, Base ):
         
     @property
     def valueChanged(self):
+        """PyQt Signal fired when a variable value changed"""
         return self.model.valueChanged
 
     def setupUi(self, parent):

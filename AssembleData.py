@@ -12,28 +12,35 @@ import numpy
 resultsTable = None
 headerList = list()
 
-path = r'\\snl\mesa\Projects\Quantum_Graph_Analysis\experiments\QGA\2013\2013_09\2013_09_10'
+path = r'C:\Users\Public\Documents\experiments\QGA\2013\2013_10\2013_10_09'
 headerList.append("GateSequenceNo")
+filenamebody = "GateTestSet"
+expectedLength = 2020
+minfileno = 1
+beyondmaxfileno = 8
 
-
-for num in range(10):
-    filename = "GateSet_{0:03d}.txt".format(num+1)
-    headerList.append(filename)
+for num in range(minfileno,beyondmaxfileno):
+    filename = filenamebody+"_{0:03d}.txt".format(num)
     fullfilename =  os.path.join(path,filename)
     t = Trace()
     t.loadTrace(fullfilename)
     #print t.vars.experiments, t.x, t.raw
-    t.x, t.raw = zip(*sorted(zip(t.x,t.raw)))
-    #print t.vars.experiments, t.x, t.raw
-    if resultsTable:
-        resultsTable.append(t.raw)        
+    if len(t.x)==expectedLength:
+        print filename, " has expected length."
+        headerList.append(filename)
+        t.x, t.raw = zip(*sorted(zip(t.x,t.raw)))
+        #print t.vars.experiments, t.x, t.raw
+        if resultsTable:
+            resultsTable.append(t.raw)        
+        else:
+            resultsTable = list()
+            resultsTable.append(t.x)
+            resultsTable.append(t.raw)
     else:
-        resultsTable = list()
-        resultsTable.append(t.x)
-        resultsTable.append(t.raw)
+        print filename, "unexpected length {0} instead of expected {1}".format(len(t.x),expectedLength)
 print resultsTable
 print len(resultsTable)
 a = numpy.array( resultsTable )
 
-numpy.savetxt(os.path.join(path,"GateSet_001_010.txt"),numpy.transpose(a),delimiter='\t',fmt='%.0f',header="\t".join(headerList))
+numpy.savetxt(os.path.join(path,filenamebody+"_{0:03d}_{1:03d}.txt".format(minfileno,beyondmaxfileno-1)),numpy.transpose(a),delimiter='\t',fmt='%.0f') #,header="\t".join(headerList)
 

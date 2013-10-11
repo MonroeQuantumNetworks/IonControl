@@ -382,7 +382,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if data.final:
                 self.finalizeData()
                 print "current index", self.currentIndex, "expected", len(self.scan.list)
-                if self.currentIndex >= len(self.scan.list):
+                if self.currentIndex >= len(self.scan.list):    # if all points were taken
                     self.generator.dataOnFinal(self)
                 else:
                     self.state = self.OpStates.paused
@@ -414,7 +414,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.graphicsView.setXRange( *xRange )                
             self.traceui.addTrace(self.plottedTrace,pen=-1)
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-            scanHeader = stringutilit.commentarize( repr(self.scan) )
+            scanHeader = stringutilit.commentarize( self.scan.documentationString() )
             self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         else:
             self.generator.appendData(self.currentTrace, x, mean, raw, error)

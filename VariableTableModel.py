@@ -27,6 +27,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         #print self.variablelist 
         self.expression = Expression.Expression()
         self.parameterdict = parameterdict
+        self.onParameterChanged()   # make sure we update all global variables
 
     def setVisible(self, visibledict ):
         #print self.rowCount()

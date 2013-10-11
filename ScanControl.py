@@ -19,6 +19,7 @@ from modules import MagnitudeUtilit
 from modules.magnitude import mg
 from modules.enum import enum
 import GateSetUi
+from modules.PyqtUtility import BlockSignals, updateComboBoxItems
 
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')
@@ -99,12 +100,19 @@ class Scan:
                 self.timestampsChannel == other.timestampsChannel and
                 self.saveRawData == other.saveRawData and
                 self.gateSetSettings == other.gateSetSettings)
-
         
-    def __repr__(self):
-        r = "Scanning parameter: {0}\nScanning From: {1}\nScanning To: {2}\n".format(self.scanParameter,self.start,self.stop)
-        r+= "Scanning Steps: {0}\nScanning type: {1}\nScanning rewriteDDS: {2}\n".format(self.steps,self.scantype,self.rewriteDDS)
-        r+= "Scanning mode: {0}".format(self.scanMode)
+    def __hash__(self):
+        return hash( (self.scanParameter, self.start, self.stop, self.steps, self.stepSize, self.stepsSelect, self.scantype, self.scanMode,
+                      self.scanRepeat, self.rewriteDDS, self.filename, self.autoSave, self.xUnit, self.loadPP, self.loadPPName, self.histogramBins,
+                      self.integrateHistogram, self.counterChannel, self.evalName, self.errorBars, self.enableTimestamps, self.binwidth,
+                      self.roiStart, self.integrateTimestamps, self.timestampsChannel, self.saveRawData) )
+
+    documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
+                'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
+        
+    def documentationString(self):
+        r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
+        r += self.gateSetSettings.documentationString()
         return r
 
 
@@ -273,13 +281,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def setPulseProgramUi(self, pulseProgramUi ):
         print "ScanControl.setPulseProgramUi", pulseProgramUi.configParams.recentFiles.keys()
         self.pulseProgramUi = pulseProgramUi
-        oldstate = self.loadPPComboBox.blockSignals(True)
-        self.loadPPComboBox.clear()
-        if hasattr(pulseProgramUi.configParams,'recentFiles'):
-            self.loadPPComboBox.addItems(pulseProgramUi.configParams.recentFiles.keys())
-        if self.settings.loadPPName: 
-            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-        self.loadPPComboBox.blockSignals(oldstate)
+        with BlockSignals(self.loadPPComboBox):
+            self.loadPPComboBox.clear()
+            if hasattr(pulseProgramUi.configParams,'recentFiles'):
+                self.loadPPComboBox.addItems(pulseProgramUi.configParams.recentFiles.keys())
+            if self.settings.loadPPName: 
+                self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         self.pulseProgramUi.recentFilesChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
 
         if not self.gateSetUi:
@@ -369,10 +376,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def setVariables(self, variabledict):
         self.variabledict = variabledict
         oldParameterName = self.settings.scanParameter
-        self.comboBoxParameter.clear()
-        for name, var in iter(sorted(variabledict.iteritems())):
-            if var.type == "parameter":
-                self.comboBoxParameter.addItem(var.name)
+        with BlockSignals(self.comboBoxParameter):
+            self.comboBoxParameter.clear()
+            for name, var in iter(sorted(variabledict.iteritems())):
+                if var.type == "parameter":
+                    self.comboBoxParameter.addItem(var.name)
         if self.settings.scanParameter:
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         if self.gateSetUi:
@@ -468,6 +476,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalStackedWidget.setCurrentIndex(self.evalMethodCombo.currentIndex())
         self.commitChange()
         
+    def documentationString(self):
+        return self.settings.documentationString()
 
 if __name__=="__main__":
     import sys

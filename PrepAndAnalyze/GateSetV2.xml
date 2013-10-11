@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<GateSetDefinition>
+  <!--Strings of length 0-->
+  <GateSequence index="0" name="0"/>
+  <!--Strings of length 1-->
+  <GateSequence index="1" name="1">I</GateSequence>
+  <GateSequence index="2" name="2">x</GateSequence>
+  <GateSequence index="3" name="3">y</GateSequence>
+  <GateSequence index="4" name="4">x2</GateSequence>
+  <!--Strings of length 2-->
+  <GateSequence index="5" name="5">I, I</GateSequence>
+  <GateSequence index="6" name="6">I, x</GateSequence>
+  <GateSequence index="7" name="7">I, y</GateSequence>
+  <GateSequence index="8" name="8">I, x2</GateSequence>
+  <GateSequence index="9" name="9">x, I</GateSequence>
+  <GateSequence index="10" name="10">x, x</GateSequence>
+  <GateSequence index="11" name="11">x, y</GateSequence>
+  <GateSequence index="12" name="12">x, x2</GateSequence>
+  <GateSequence index="13" name="13">y, I</GateSequence>
+  <GateSequence index="14" name="14">y, x</GateSequence>
+  <GateSequence index="15" name="15">y, y</GateSequence>
+  <GateSequence index="16" name="16">y, x2</GateSequence>
+  <GateSequence index="17" name="17">x2, I</GateSequence>
+  <GateSequence index="18" name="18">x2, x</GateSequence>
+  <GateSequence index="19" name="19">x2, y</GateSequence>
+  <GateSequence index="20" name="20">x2, x2</GateSequence>
+  <!--Strings of length 3-->
+  <GateSequence index="21" name="21">I, I, I</GateSequence>
+  <GateSequence index="22" name="22">I, I, x</GateSequence>
+  <GateSequence index="23" name="23">I, I, y</GateSequence>
+  <GateSequence index="24" name="24">I, I, x2</GateSequence>
+  <GateSequence index="25" name="25">I, x, I</GateSequence>
+  <GateSequence index="26" name="26">I, x, x</GateSequence>
+  <GateSequence index="27" name="27">I, x, y</GateSequence>
+  <GateSequence index="28" name="28">I, x, x2</GateSequence>
+  <GateSequence index="29" name="29">I, y, I</GateSequence>
+  <GateSequence index="30" name="30">I, y, x</GateSequence>
+  <GateSequence index="31" name="31">I, y, y</GateSequence>
+  <GateSequence index="32" name="32">I, y, x2</GateSequence>
+  <GateSequence index="33" name="33">I, x2, I</GateSequence>
+  <GateSequence index="34" name="34">I, x2, x</GateSequence>
+  <GateSequence index="35" name="35">I, x2, y</GateSequence>
+  <GateSequence index="36" name="36">I, x2, x2</GateSequence>
+  <GateSequence index="37" name="37">x, I, I</GateSequence>
+  <GateSequence index="38" name="38">x, I, x</GateSequence>
+  <GateSequence index="39" name="39">x, I, y</GateSequence>
+  <GateSequence index="40" name="40">x, I, x2</GateSequence>
+  <GateSequence index="41" name="41">x, x, I</GateSequence>
+  <GateSequence index="42" name="42">x, x, x</GateSequence>
+  <GateSequence index="43" name="43">x, x, y</GateSequence>
+  <GateSequence index="44" name="44">x, x, x2</GateSequence>
+  <GateSequence index="45" name="45">x, y, I</GateSequence>
+  <GateSequence index="46" name="46">x, y, x</GateSequence>
+  <GateSequence index="47" name="47">x, y, y</GateSequence>
+  <GateSequence index="48" name="48">x, y, x2</GateSequence>
+  <GateSequence index="49" name="49">x, x2, I</GateSequence>
+  <GateSequence index="50" name="50">x, x2, x</GateSequence>
+  <GateSequence index="51" name="51">x, x2, y</GateSequence>
+  <GateSequence index="52" name="52">x, x2, x2</GateSequence>
+  <GateSequence index="53" name="53">y, I, I</GateSequence>
+  <GateSequence index="54" name="54">y, I, x</GateSequence>
+  <GateSequence index="55" name="55">y, I, y</GateSequence>
+  <GateSequence index="56" name="56">y, I, x2</GateSequence>
+  <GateSequence index="57" name="57">y, x, I</GateSequence>
+  <GateSequence index="58" name="58">y, x, x</GateSequence>
+  <GateSequence index="59" name="59">y, x, y</GateSequence>
+  <GateSequence index="60" name="60">y, x, x2</GateSequence>
+  <GateSequence index="61" name="61">y, y, I</GateSequence>
+  <GateSequence index="62" name="62">y, y, x</GateSequence>
+  <GateSequence index="63" name="63">y, y, y</GateSequence>
+  <GateSequence index="64" name="64">y, y, x2</GateSequence>
+  <GateSequence index="65" name="65">y, x2, I</GateSequence>
+  <GateSequence index="66" name="66">y, x2, x</GateSequence>
+  <GateSequence index="67" name="67">y, x2, y</GateSequence>
+  <GateSequence index="68" name="68">y, x2, x2</GateSequence>
+  <GateSequence index="69" name="69">x2, I, I</GateSequence>
+  <GateSequence index="70" name="70">x2, I, x</GateSequence>
+  <GateSequence index="71" name="71">x2, I, y</GateSequence>
+  <GateSequence index="72" name="72">x2, I, x2</GateSequence>
+  <GateSequence index="73" name="73">x2, x, I</GateSequence>
+  <GateSequence index="74" name="74">x2, x, x</GateSequence>
+  <GateSequence index="75" name="75">x2, x, y</GateSequence>
+  <GateSequence index="76" name="76">x2, x, x2</GateSequence>
+  <GateSequence index="77" name="77">x2, y, I</GateSequence>
+  <GateSequence index="78" name="78">x2, y, x</GateSequence>
+  <GateSequence index="79" name="79">x2, y, y</GateSequence>
+  <GateSequence index="80" name="80">x2, y, x2</GateSequence>
+  <GateSequence index="81" name="81">x2, x2, I</GateSequence>
+  <GateSequence index="82" name="82">x2, x2, x</GateSequence>
+  <GateSequence index="83" name="83">x2, x2, y</GateSequence>
+  <GateSequence index="84" name="84">x2, x2, x2</GateSequence>
+</GateSetDefinition>
