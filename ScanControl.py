@@ -400,6 +400,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                                        scan.type, scan.stepsSelect )
         scan.evalAlgo = self.algorithms[scan.evalName]
         scan.gateSetUi = self.gateSetUi
+        scan.settingsName = self.settingsName
         self.onCommit()
         return scan
         
@@ -425,20 +426,20 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.setSettings( self.settingsHistory[self.settingsHistoryPointer] )
     
     def onSave(self):
-        name = str(self.comboBox.currentText())
+        self.settingsName = str(self.comboBox.currentText())
         #print "onSave", name, id(self.settings), self.settings
-        if name != '':
-            if name not in self.settingsDict:
-                if self.comboBox.findText(name)==-1:
-                    self.comboBox.addItem(name)
+        if self.settingsName != '':
+            if self.settingsName not in self.settingsDict:
+                if self.comboBox.findText(self.settingsName)==-1:
+                    self.comboBox.addItem(self.settingsName)
                 print self.configname, "adding to combo", name
-            self.settingsDict[name] = copy.deepcopy(self.settings)
+            self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
     
     def onLoad(self,name):
-        name = str(name)
+        self.settingsName = str(name)
         #print self.configname, "onLoad", name
-        if name !='' and name in self.settingsDict:
-            self.setSettings(self.settingsDict[name])
+        if self.settingsName !='' and self.settingsName in self.settingsDict:
+            self.setSettings(self.settingsDict[self.settingsName])
         else:
             print self.configname, self.settingsDict
 
