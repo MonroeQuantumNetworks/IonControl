@@ -156,12 +156,11 @@ class PulserHardwareServer(Process):
          
     def setShutter(self, value):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                check( self.xem.SetWireInValue(0x06, value, 0xFFFF) , 'SetWireInValue' )	
-                check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
-                check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
-                self._shutter = value
-                self.shutterChanged.emit( self._shutter )
+            check( self.xem.SetWireInValue(0x06, value, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
+            self._shutter = value
+            self.shutterChanged.emit( self._shutter )
         else:
             print "Pulser Hardware not available"
             
@@ -175,12 +174,11 @@ class PulserHardwareServer(Process):
             
     def setTrigger(self,value):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                check( self.xem.SetWireInValue(0x08, value, 0xFFFF) , 'SetWireInValue' )	
-                check( self.xem.SetWireInValue(0x09, value>>16, 0xFFFF)	, 'SetWireInValue' )
-                check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
-                check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
-                self._trigger = value
+            check( self.xem.SetWireInValue(0x08, value, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.SetWireInValue(0x09, value>>16, 0xFFFF)	, 'SetWireInValue' )
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
+            check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
+            self._trigger = value
         else:
             print "Pulser Hardware not available"
             
@@ -189,11 +187,10 @@ class PulserHardwareServer(Process):
         
     def setCounterMask(self, value):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self._adcCounterMask = (self._adcCounterMask & 0xf00) | (value & 0xff)
-                check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
-                check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
-                print "set counterMask", hex(self._adcCounterMask)
+            self._adcCounterMask = (self._adcCounterMask & 0xf00) | (value & 0xff)
+            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+            print "set counterMask", hex(self._adcCounterMask)
         else:
             print "Pulser Hardware not available"
 
@@ -202,11 +199,10 @@ class PulserHardwareServer(Process):
         
     def setAdcMask(self, value):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self._adcCounterMask = ((value<<8) & 0xf00) | (self._adcCounterMask & 0xff)
-                check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
-                check( self.xem.UpdateWireIns(), 'UpdateWireIns' )  
-                print "set adc mask", hex(self._adcCounterMask)
+            self._adcCounterMask = ((value<<8) & 0xf00) | (self._adcCounterMask & 0xff)
+            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )  
+            print "set adc mask", hex(self._adcCounterMask)
         else:
             print "Pulser Hardware not available"
         
@@ -216,12 +212,11 @@ class PulserHardwareServer(Process):
     def setIntegrationTime(self, value):
         self.integrationTimeBinary = int( (value/self.timestep).toval() )
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                print "set dedicated integration time" , value, self.integrationTimeBinary
-                check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
-                check( self.xem.SetWireInValue(0x0c, self.integrationTimeBinary, 0xFFFF) , 'SetWireInValue' )	
-                check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
-                self._integrationTime = value
+            print "set dedicated integration time" , value, self.integrationTimeBinary
+            check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.SetWireInValue(0x0c, self.integrationTimeBinary, 0xFFFF) , 'SetWireInValue' )	
+            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+            self._integrationTime = value
         else:
             print "Pulser Hardware not available"
             
@@ -230,49 +225,45 @@ class PulserHardwareServer(Process):
             
     def ppUpload(self,binarycode,startaddress=0):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                print "starting PP upload",
-                check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )	# start addr at zero
-                self.xem.UpdateWireIns()
-                check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
-                print len(binarycode), "bytes,",
-                num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
-                check(num, 'Write to program pipe' )
-                print "uploaded pp file {0} bytes".format(num),
-                num, data = self.ppDownload(0,num)
-                print "Verified {0} bytes. ".format(num),data==binarycode
-                return True
+            print "starting PP upload",
+            check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )	# start addr at zero
+            self.xem.UpdateWireIns()
+            check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
+            print len(binarycode), "bytes,",
+            num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
+            check(num, 'Write to program pipe' )
+            print "uploaded pp file {0} bytes".format(num),
+            num, data = self.ppDownload(0,num)
+            print "Verified {0} bytes. ".format(num),data==binarycode
+            return True
         else:
             print "Pulser Hardware not available"
             return False
             
     def ppDownload(self,startaddress,length):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)	# start addr at 3900
-                self.xem.UpdateWireIns()
-                self.xem.ActivateTriggerIn(0x41, 0)
-                self.xem.ActivateTriggerIn(0x41, 1)
-                data = bytearray('\000'*length)
-                num = self.xem.ReadFromPipeOut(0xA0, data)
-                return num, data
+            self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)	# start addr at 3900
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn(0x41, 0)
+            self.xem.ActivateTriggerIn(0x41, 1)
+            data = bytearray('\000'*length)
+            num = self.xem.ReadFromPipeOut(0xA0, data)
+            return num, data
         else:
             print "Pulser Hardware not available"
             return 0,None
         
     def ppIsRunning(self):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-    		#Commented CWC 04032012
-                data = '\x00'*32
-                self.xem.ReadFromPipeOut(0xA1, data)
-                if ((data[:2] != '\xED\xFE') or (data[-2:] != '\xED\x0F')):
-                    print "Bad data string: ", map(ord, data)
-                    return True
-                data = map(ord, data[2:-2])
-                #Decode
-                active =  bool(data[1] & 0x80)
-                return active
+            data = '\x00'*32
+            self.xem.ReadFromPipeOut(0xA1, data)
+            if ((data[:2] != '\xED\xFE') or (data[-2:] != '\xED\x0F')):
+                print "Bad data string: ", map(ord, data)
+                return True
+            data = map(ord, data[2:-2])
+            #Decode
+            active =  bool(data[1] & 0x80)
+            return active
         else:
             print "Pulser Hardware not available"
             return False
@@ -280,29 +271,26 @@ class PulserHardwareServer(Process):
 
     def ppReset(self):#, widget = None, data = None):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn(0x40,0)
-                self.xem.ActivateTriggerIn(0x41,0)
-                print "pp_reset is not working right now... CWC 08302012"
+            self.xem.ActivateTriggerIn(0x40,0)
+            self.xem.ActivateTriggerIn(0x41,0)
+            print "pp_reset is not working right now... CWC 08302012"
         else:
             print "Pulser Hardware not available"
 
     def ppStart(self):#, widget = None, data = None):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
-                self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
-                self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
-                return True
+            self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
+            self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
+            self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
+            return True
         else:
             print "Pulser Hardware not available"
             return False
 
     def ppStop(self):#, widget, data= None):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
-                return True
+            self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
+            return True
         else:
             print "Pulser Hardware not available"
             return False
@@ -314,24 +302,9 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-            byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
-            #if byteswaiting>0: print "byteswaiting", byteswaiting
-            totaltime = 0
-            while byteswaiting<minbytes and totaltime<timeout:
-                try: 
-                    self.sleepQueue.get(True, retryevery)
-                    totaltime = timeout     # we were interrupted
-                except Empty:         
-                    pass                    # expiration is the normal case
-                totaltime += retryevery
-                with QtCore.QMutexLocker(self.Mutex):
-                    self.xem.UpdateWireOuts()
-                    wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-                byteswaiting = max( (wirevalue & 0xffe)*2, 4 * bool( wirevalue & 0x000 ) )
-                #if byteswaiting>0: print "byteswaiting", byteswaiting
-            data = bytearray('\x00'*byteswaiting)
-            #if byteswaiting>0: print "Reading", byteswaiting
-            with QtCore.QMutexLocker(self.Mutex):
+            byteswaiting = (wirevalue & 0xffe)*2
+            if byteswaiting:
+                data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa2, data)
             overrun = (wirevalue & 0x4000)!=0
             return data, overrun
@@ -342,8 +315,7 @@ class PulserHardwareServer(Process):
     def ppWriteData(self,data):
         if self.xem:
             if isinstance(data,bytearray):
-                with QtCore.QMutexLocker(self.Mutex):
-                    return self.xem.WriteToPipeIn(0x81,data)
+                return self.xem.WriteToPipeIn(0x81,data)
             else:
                 code = bytearray()
                 for item in data:
@@ -359,13 +331,12 @@ class PulserHardwareServer(Process):
         if self.xem:
             appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
             data += bytearray([0]*appendlength)
-            with QtCore.QMutexLocker(self.Mutex):
-                print "set write address"
-                self.xem.SetWireInValue( 0x01, address & 0xffff )
-                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-                self.xem.UpdateWireIns()
-                self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
-                return self.xem.WriteToPipeIn( 0x82, data )
+            print "set write address"
+            self.xem.SetWireInValue( 0x01, address & 0xffff )
+            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
+            return self.xem.WriteToPipeIn( 0x82, data )
         else:
             print "Pulser Hardware not available"
             return None
@@ -401,14 +372,13 @@ class PulserHardwareServer(Process):
 
     def ppReadRam(self,data,address):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-#                print "set read address"
-                self.xem.SetWireInValue( 0x01, address & 0xffff )
-                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-                self.xem.UpdateWireIns()
-                self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
-                self.xem.ReadFromPipeOut( 0xa3, data )
-#                print "read", len(data)
+#           print "set read address"
+            self.xem.SetWireInValue( 0x01, address & 0xffff )
+            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
+            self.xem.ReadFromPipeOut( 0xa3, data )
+#           print "read", len(data)
         else:
             print "Pulser Hardware not available"
             
@@ -420,8 +390,7 @@ class PulserHardwareServer(Process):
                 
     def ppClearWriteFifo(self):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn(0x41, 3)
+            self.xem.ActivateTriggerIn(0x41, 3)
         else:
             print "Pulser Hardware not available"
             
@@ -433,23 +402,78 @@ class PulserHardwareServer(Process):
 
     def ppClearReadFifo(self):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn(0x41, 4)
+            self.xem.ActivateTriggerIn(0x41, 4)
         else:
             print "Pulser Hardware not available"
             
     def ppReadLog(self):
         if self.xem:
-            with QtCore.QMutexLocker(self.Mutex):
      		#Commented CWC 04032012
-                data = bytearray('\x00'*32)
-                self.xem.ReadFromPipeOut(0xA1, data)
-                with open(r'debug\log','wb') as f:
-                    f.write(data)
+            data = bytearray('\x00'*32)
+            self.xem.ReadFromPipeOut(0xA1, data)
+            with open(r'debug\log','wb') as f:
+                f.write(data)
             return data
         else:
             print "Pulser Hardware not available"
             return None
+        
+        
+    def listBoards(self):
+        xem = ok.FrontPanel()
+        self.moduleCount = xem.GetDeviceCount()
+        self.modules = dict()
+        for i in range(self.moduleCount):
+            serial = xem.GetDeviceListSerial(i)
+            tmp = ok.FrontPanel()
+            check( tmp.OpenBySerial( serial ), "OpenBySerial" )
+            desc = self.getDeviceDescription(tmp)
+            tmp = None
+            self.modules[desc.identifier] = desc
+        del(xem)
+        if self.openModule is not None:
+            self.modules[self.openModule.identifier] = self.openModule
+        return self.modules
+        
+    def getDeviceDescription(self,xem):
+        """Get informaion from an open device
+        """
+        desc = DeviceDescription()
+        desc.serial = xem.GetSerialNumber()
+        desc.identifier = xem.GetDeviceID()
+        desc.major = xem.GetDeviceMajorVersion()
+        desc.minor = xem.GetDeviceMinorVersion()
+        desc.model = xem.GetBoardModel()
+        desc.modelName = ModelStrings.get(desc.model,'Unknown')
+        return desc
+        
+    def renameBoard(self,serial,newname):
+        tmp = ok.FrontPanel()
+        tmp.OpenBySerial(serial)
+        oldname = tmp.GetDeviceID()
+        tmp.SetDeviceId( newname )
+        tmp.OpenBySerial(serial)
+        newname = tmp.GetDeviceID()
+        if newname!=oldname:
+            self.modules[newname] = self.modules.pop(oldname)
+            
+    def uploadBitfile(self,bitfile):
+        if self.xem is not None and self.xem.IsOpen():
+            check( self.xem.ConfigureFPGA(bitfile), "Configure bitfile {0}".format(bitfile))
+        
+    def openByName(self,name):
+        self.xem = ok.FrontPanel()
+        check( self.xem.OpenBySerial( self.modules[name].serial ), "OpenByName {0}".format(name) )
+        return self.xem
+
+    def openBySerial(self,serial):
+        print "Open Serial",serial
+        if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:
+            self.xem = ok.FrontPanel()
+            check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
+            self.openModule = self.getDeviceDescription(self.xem)
+        return self.xem
+
         
 def sliceview(view,length):
     return tuple(buffer(view, i, length) for i in range(0, len(view), length))    
