@@ -7,13 +7,13 @@ Created on Sat Dec 22 22:34:06 2012
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-import fpgaUtilit
+from PulserHardwareClient import PulserHardware
 
 class Settings:
     def __init__(self):
         self.deviceSerial = None
         self.deviceDescription = None
-        self.fpga = None
+        self.pulser = None
 
 SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialog.ui')
 
@@ -29,7 +29,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.config = config
         self.deviceMap = dict()
         self.settings = Settings()
-        self.fpga = fpgaUtilit.FPGAUtilit()
+        self.pulser = PulserHardware()
         
     def setupUi(self,recipient):
         super(SettingsDialog,self).setupUi(self)
@@ -56,18 +56,16 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
                 
     def onAutoUploadChanged(self, state):
         self.configSettings.autoUpload = state==QtCore.Qt.Checked
-        #print self.configSettings.__dict__
-        #print self.bitfileCache
         
     def onBoardRename(self):
         newIdentifier = str(self.identifierEdit.text())
-        self.fpga.renameBoard(self.settings.deviceSerial, newIdentifier )
+        self.pulser.renameBoard(self.settings.deviceSerial, newIdentifier )
         self.scanInstruments()
         self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(newIdentifier) )
         
     def scanInstruments(self):
         self.comboBoxInstruments.clear()
-        self.deviceMap = self.fpga.listBoards()
+        self.deviceMap = self.pulser.listBoards()
         self.comboBoxInstruments.addItems( self.deviceMap.keys() )
         print self.deviceMap
         
@@ -79,8 +77,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.settings.deviceInfo = self.deviceMap[str(description)]
             self.identifierEdit.setText( description )
             if self.settings.deviceSerial not in [None,'',0]:
-                self.fpga.openBySerial(self.settings.deviceSerial)
-                self.settings.fpga = self.fpga
+                self.pulser.openBySerial(self.settings.deviceSerial)
+                self.settings.pulser = self.pulser
         
     def accept(self):
         print "accept"
@@ -122,8 +120,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         bitfile = str(self.comboBoxBitfiles.currentText())
         print "Uploading file '{0}'".format(bitfile),
         if bitfile!="":
-            self.fpga.openBySerial( self.settings.deviceSerial )
-            self.fpga.uploadBitfile(self.bitfileCache[bitfile])
+            self.pulser.openBySerial( self.settings.deviceSerial )
+            self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
 
             

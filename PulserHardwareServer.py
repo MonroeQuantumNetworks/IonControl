@@ -2,17 +2,79 @@
 """
 Encapsulation of the Pulse Programmer Hardware 
 """
-from fpgaUtilit import check
-from PyQt4 import QtCore 
 import struct
 from Queue import Queue, Empty
-import modules.magnitude as magnitude
 from modules import enum
 import math
 import traceback
 import time
 from multiprocessing import Process, Queue, Pipe
-import time
+import modules.magnitude as magnitude
+import ok
+
+ModelStrings = {
+        0: 'Unknown',
+        1: 'XEM3001v1',
+        2: 'XEM3001v2',
+        3: 'XEM3010',
+        4: 'XEM3005',
+        5: 'XEM3001CL',
+        6: 'XEM3020',
+        7: 'XEM3050',
+        8: 'XEM9002',
+        9: 'XEM3001RB',
+        10: 'XEM5010',
+        11: 'XEM6110LX45',
+        15: 'XEM6110LX150',
+        12: 'XEM6001',
+        13: 'XEM6010LX45',
+        14: 'XEM6010LX150',
+        16: 'XEM6006LX9',
+        17: 'XEM6006LX16',
+        18: 'XEM6006LX25',
+        19: 'XEM5010LX110',
+        20: 'ZEM4310',
+        21: 'XEM6310LX45',
+        22: 'XEM6310LX150',
+        23: 'XEM6110v2LX45',
+        24: 'XEM6110v2LX150'
+}
+
+ErrorMessages = {
+     0: 'NoError',
+    -1: 'Failed',
+    -2: 'Timeout',
+    -3: 'DoneNotHigh',
+    -4: 'TransferError',
+    -5: 'CommunicationError',
+    -6: 'InvalidBitstream',
+    -7: 'FileError',
+    -8: 'DeviceNotOpen',
+    -9: 'InvalidEndpoint',
+    -10: 'InvalidBlockSize',
+    -11: 'I2CRestrictedAddress',
+    -12: 'I2CBitError',
+    -13: 'I2CNack',
+    -14: 'I2CUnknownStatus',
+    -15: 'UnsupportedFeature',
+    -16: 'FIFOUnderflow',
+    -17: 'FIFOOverflow',
+    -18: 'DataAlignmentError',
+    -19: 'InvalidResetProfile',
+    -20: 'InvalidParameter'
+}
+
+
+class DeviceDescription:
+    pass
+
+class FPGAException(Exception):
+    pass
+        
+def check(number, command):
+    if number is not None and number<0:
+        raise FPGAException("OpalKelly exception '{0}' in command {1}".format(ErrorMessages.get(number,number),command))
+
 
 class PulserHardwareException(Exception):
     pass
@@ -47,10 +109,12 @@ class DedicatedData:
 class PulserHardwareServer(Process):
     timestep = magnitude.mg(20,'ns')
     def __init__(self, dataQueue, commandPipe):
-        super(P,self).__init__()
+        super(PulserHardwareServer,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
         self.running = True
+        self.openModule = None
+        self.xem = None
         
         # PipeReader stuff
         self.state = self.analyzingState.normal
@@ -68,9 +132,12 @@ class PulserHardwareServer(Process):
         i = 0
         while (self.running):
             if self.commandPipe.poll(0.2):
-                commandstring, argument = self.pipe.recv()
-                command = getattr(self, commandstring)
-                self.commandPipe.send(command(*argument))
+                try:
+                    commandstring, argument = self.commandPipe.recv()
+                    command = getattr(self, commandstring)
+                    self.commandPipe.send(command(*argument))
+                except Exception as e:
+                    self.commandPipe.send(e)
             self.readDataFifo()
             
     def finish(self):
@@ -88,69 +155,51 @@ class PulserHardwareServer(Process):
             0x3nxxxxxx timestamp gate start channel n
             0x4xxxxxxx other return
         """
-        data, overrun = self.pulserHardware.ppReadData(4,1.0)
-        self.data.overrun = self.data.overrun or overrun
-        for s in sliceview(data,4):
-            (token,) = struct.unpack('I',s)
-            if self.state == self.analyzingState.scanparameter:
-                if self.data.scanvalue is None:
-                    self.data.scanvalue = token
+        data, overrun = self.ppReadData(4)
+        if data:
+            self.data.overrun = self.data.overrun or overrun
+            for s in sliceview(data,4):
+                (token,) = struct.unpack('I',s)
+                if self.state == self.analyzingState.scanparameter:
+                    if self.data.scanvalue is None:
+                        self.data.scanvalue = token
+                    else:
+                        self.dataQueue.put( self.data )
+                        self.data = Data()
+                        self.data.scanvalue = token
+                    state = self.analyzingState.normal
+                elif token & 0xf0000000 == 0xe0000000: # dedicated results
+                    channel = (token >>24) & 0xf
+                    if self.dedicatedData.data[channel] is not None:
+                        self.dataQueue.put( self.dedicatedData )
+                        self.dedicatedData = DedicatedData()
+                    self.dedicatedData.data[channel] = token & 0xffffff
+                elif token & 0xff000000 == 0xff000000:
+                    if token == 0xffffffff:    # end of run
+                        self.data.final = True
+                        self.dataQueue.put( self.data )
+                        print "End of Run marker received"
+                        self.data = Data()
+                    elif token == 0xff000000:
+                        self.timestampOffset += 1<<28
+                    elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
+                        state = self.analyzingState.scanparameter
                 else:
-                    self.dataQueue.put( self.data )
-                    self.data = Data()
-                    self.data.scanvalue = token
-                state = self.analyzingState.normal
-            elif token & 0xf0000000 == 0xe0000000: # dedicated results
-                channel = (token >>24) & 0xf
-                if self.dedicatedData.data[channel] is not None:
-                    self.dataQueue.put( self.dedicatedData )
-                    self.dedicatedData = DedicatedData()
-                self.dedicatedData.data[channel] = token & 0xffffff
-            elif token & 0xff000000 == 0xff000000:
-                if token == 0xffffffff:    # end of run
-                    self.data.final = True
-                    self.dataQueue.put( self.data )
-                    print "End of Run marker received"
-                    self.data = Data()
-                elif token == 0xff000000:
-                    self.timestampOffset += 1<<28
-                elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
-                    state = self.analyzingState.scanparameter
-            else:
-                key = token >> 28
-                channel = (token >>24) & 0xf
-                value = token & 0xffffff
-                #print hex(token)
-                if key==1:   # count
-                    (self.data.count[channel]).append(value)
-                elif key==2:  # timestamp
-                    self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
-                elif key==3:  # timestamp gate start
-                    self.data.timestampZero[channel] = self.timestampOffset + value
-                elif key==4: # other return value
-                    self.data.other.append(value)
-                else:
-                    pass
-
-
-    def updateSettings(self,fpgaUtilit):
-        self.stopPipeReader()
-        self.fpga = fpgaUtilit
-        self.xem = self.fpga.xem
-        self.Mutex = self.fpga.Mutex
-        self.pipeReader = PipeReader(self)
-        self.pipeReader.start()        
-
-    def stopPipeReader(self):
-        self.pipeReader.finish()
-        self.interruptRead()
-        self.pipeReader.wait()
-        
-    def setHardware(self,xem):
-        self.xem = xem
-        if self.xem and not self.pipeReader.isRunning():
-            self.pipeReader.start()            
-        
+                    key = token >> 28
+                    channel = (token >>24) & 0xf
+                    value = token & 0xffffff
+                    #print hex(token)
+                    if key==1:   # count
+                        (self.data.count[channel]).append(value)
+                    elif key==2:  # timestamp
+                        self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
+                    elif key==3:  # timestamp gate start
+                        self.data.timestampZero[channel] = self.timestampOffset + value
+                    elif key==4: # other return value
+                        self.data.other.append(value)
+                    else:
+                        pass
+     
     def getShutter(self):
         return self._shutter  #
          
@@ -310,7 +359,7 @@ class PulserHardwareServer(Process):
             return data, overrun
         else:
             print "Pulser Hardware not available"
-            return None
+            return None, False
                         
     def ppWriteData(self,data):
         if self.xem:
@@ -321,8 +370,7 @@ class PulserHardwareServer(Process):
                 for item in data:
                     code.extend(struct.pack('I',item))
                 print "ppWriteData length",len(code)
-                with QtCore.QMutexLocker(self.Mutex):
-                    return self.xem.WriteToPipeIn(0x81,code)
+                return self.xem.WriteToPipeIn(0x81,code)
         else:
             print "Pulser Hardware not available"
             return None
