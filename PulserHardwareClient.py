@@ -24,8 +24,9 @@ class QueueReader(QtCore.QThread):
         self.running = False
         self.dataMutex = QtCore.QMutex()           # protects the thread data
         self.dataQueue = dataQueue
-        self.dataHandler = { 'Data': pulserHardware.dataAvailable,
-                             'DedicatedData': pulserHardware.dedicatedDataAvailable }
+        self.dataHandler = { 'Data': lambda data : self.pulserHardware.dataAvailable.emit(data),
+                             'DedicatedData': lambda data: self.pulserHardware.dedicatedDataAvailable.emit(data),
+                             'FinishException': lambda data: self.finish() }
    
     def finish(self):
         self.exiting = True
@@ -39,9 +40,11 @@ class QueueReader(QtCore.QThread):
         try:
             while not self.exiting:
                 data = self.dataQueue.get()
-                self.dataHandler[ data.__class__.__name__ ].emit( data )
+                #print "QueueReader", data.__class__.__name__
+                self.dataHandler[ data.__class__.__name__ ]( data )
         except Exception as e:
             print e
+        print "PulserHardware client thread finished."
                 
 
 class PulserHardware(QtCore.QObject):
@@ -73,10 +76,10 @@ class PulserHardware(QtCore.QObject):
         self.queueReader = QueueReader(self, self.dataQueue)
         self.queueReader.start()
 
-    def stopPipeReader(self):
-        self.pipeReader.finish()
-        self.interruptRead()
-        self.pipeReader.wait()
+    def shutdown(self):
+        self.clientPipe.send( ('finish', () ) )
+        self.serverProcess.join()
+        self.queueReader.wait()
         
     @property
     def shutter(self):

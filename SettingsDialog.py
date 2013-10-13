@@ -7,7 +7,6 @@ Created on Sat Dec 22 22:34:06 2012
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-from PulserHardwareClient import PulserHardware
 
 class Settings:
     def __init__(self):
@@ -23,13 +22,13 @@ class SettingsDialogConfig:
     lastBitfile = None
 
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
-    def __init__(self,config,parent=0):
+    def __init__(self,pulser,config,parent=0):
         SettingsDialogBase.__init__(self,parent)    
         SettingsDialogForm.__init__(self)
         self.config = config
         self.deviceMap = dict()
         self.settings = Settings()
-        self.pulser = PulserHardware()
+        self.pulser = pulser
         
     def setupUi(self,recipient):
         super(SettingsDialog,self).setupUi(self)

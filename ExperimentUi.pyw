@@ -33,6 +33,7 @@ import os
 from modules import DataDirectory
 from ExceptionLogButton import ExceptionLogButton
 import GlobalVariables 
+from PulserHardwareClient import PulserHardware 
 
 import VoltageControl
     
@@ -61,6 +62,14 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settings = SettingsDialog.Settings()
         self.deviceSerial = config.get('Settings.deviceSerial')
         self.deviceDescription = config.get('Settings.deviceDescription')
+        
+    def __enter__(self):
+        self.pulser = PulserHardware()
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        self.pulser.shutdown()
+        return False
     
     def setupUi(self, parent):
         super(WidgetContainerUi,self).setupUi(parent)
@@ -73,11 +82,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config)
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
-        self.settingsDialog = SettingsDialog.SettingsDialog(self.config,self.parent)
+        self.settingsDialog = SettingsDialog.SettingsDialog(self.pulser, self.config, self.parent)
         self.settingsDialog.setupUi(self)
 
         self.settings = self.settingsDialog.settings        
-        self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
         # Global Variables
         self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
@@ -87,8 +95,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
-                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware,"ExternalScan"), "External Scan"),
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment"), "Scan"),
+                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan"), "External Scan"),
                              (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
@@ -104,17 +112,17 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             
         self.ExternalScanExperiment = self.tabDict["External Scan"]
                
-        self.shutterUi = ShutterUi.ShutterUi(self.pulserHardware, 'shutter', self.config)
+        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config)
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
         print "ShutterUi representation:", repr(self.shutterUi)
 
-        self.triggerUi = ShutterUi.TriggerUi(self.pulserHardware, 'trigger', self.config)
+        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config)
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
         self.triggerDockWidget.setWidget( self.triggerUi )
 
-        self.DDSUi = DDSUi.DDSUi(self.config, self.pulserHardware.xem )
+        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
@@ -169,7 +177,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
             
-        self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulserHardware)
+        self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulser)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
         self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
@@ -238,7 +246,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     def onSettingsApply(self,settings):
         self.settings = settings
         if hasattr(self,'pulserHardware'): 
-            self.pulserHardware.updateSettings(self.settings.fpga)
+            self.pulser.updateSettings(self.settings.fpga)
         if hasattr(self,'DDSUi'):
             self.DDSUi.updateSettings(self.settings.fpga)
         #print self.settings.deviceSerial, self.settings.deviceDescription
@@ -258,7 +266,6 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
     def closeEvent(self,e):
         print "closeEvent"
-        self.pulserHardware.stopPipeReader()
         self.config['MainWindow.State'] = self.parent.saveState()
         for tab in self.tabList:
             tab.onClose()
@@ -318,10 +325,10 @@ if __name__ == "__main__":
         DataDirectory.DefaultProject = project
         
         with configshelve.configshelve("experiment-gui.db",configdir) as config:
-            ui = WidgetContainerUi(config)
-            ui.setupUi(ui)
-            logger.textWritten.connect(ui.onMessageWrite)
-            ui.show()
-            sys.exit(app.exec_())
+            with WidgetContainerUi(config) as ui:
+                ui.setupUi(ui)
+                logger.textWritten.connect(ui.onMessageWrite)
+                ui.show()
+                sys.exit(app.exec_())
     else:
         print "No project selected. Nothing I can do about that ;)"
