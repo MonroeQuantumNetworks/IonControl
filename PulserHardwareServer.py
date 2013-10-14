@@ -527,6 +527,9 @@ class PulserHardwareServer(Process):
             self.openModule = self.getDeviceDescription(self.xem)
         return self.xem
 
+    def SetWireInValue(self, address, data):
+        if self.xem:
+            self.xem.SetWireInValue(address, data)
         
 def sliceview(view,length):
     return tuple(buffer(view, i, length) for i in range(0, len(view), length))    

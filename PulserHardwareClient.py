@@ -245,6 +245,10 @@ class PulserHardware(QtCore.QObject):
         self.clientPipe.send( ('openBySerial', (serial, ) ) )
         return processReturn( self.clientPipe.recv() )
 
+    def SetWireInValue(self,address,data):
+        self.clientPipe.send( ('SetWireInValue', (address,data) ) )
+        return processReturn( self.clientPipe.recv() )
+
 def processReturn( returnvalue ):
     if isinstance( returnvalue, Exception ):
         raise returnvalue
