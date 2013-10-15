@@ -81,6 +81,13 @@ class PulserHardware(QtCore.QObject):
         self.serverProcess.join()
         self.queueReader.wait()
         
+    def __getattr__(selfself,name):
+        def wrapper(*args):
+            self.clientPipe.send( (name, args) )
+            return processReturn( self.clientPipe.recv() )
+        setattr(self, name, wrapper)
+        return wrapper      
+        
     @property
     def shutter(self):
         self.clientPipe.send( ('getShutter', () ) )
@@ -89,10 +96,6 @@ class PulserHardware(QtCore.QObject):
     @shutter.setter
     def shutter(self, value):
         self.clientPipe.send( ('setShutter', (value,) ) )        
-        return processReturn( self.clientPipe.recv() )
-        
-    def setShutterBit(self, bit, value):
-        self.clientPipe.send( ('setShutterBit', (bit, value) ) )        
         return processReturn( self.clientPipe.recv() )
         
     @property
@@ -135,45 +138,6 @@ class PulserHardware(QtCore.QObject):
         self.clientPipe.send( ('setIntegrationTime', (value,) ) )        
         return processReturn( self.clientPipe.recv() )
             
-    def getIntegrationTimeBinary(self, value):
-        self.clientPipe.send( ('getIntegrationTimeBinary', (value, ) ) )
-        return processReturn( self.clientPipe.recv() )
-        
-    def ppUpload(self,binarycode,startaddress=0):
-        self.clientPipe.send( ('ppUpload', (binarycode,startaddress) ) )
-        return processReturn( self.clientPipe.recv() )
-            
-    def ppDownload(self,startaddress,length):
-        self.clientPipe.send( ('ppDownload', (startaddress,length) ) )
-        return processReturn( self.clientPipe.recv() )
-        
-    def ppIsRunning(self):
-        self.clientPipe.send( ('ppIsRunning', () ) )
-        return processReturn( self.clientPipe.recv() )
-        
-    def ppReset(self):#, widget = None, data = None):
-        self.clientPipe.send( ('ppReset', () ) )        
-        return processReturn( self.clientPipe.recv() )
-
-    def ppStart(self):#, widget = None, data = None):
-        self.clientPipe.send( ('ppStart', () ) )
-        return processReturn( self.clientPipe.recv() )
-
-    def ppStop(self):#, widget, data= None):
-        self.clientPipe.send( ('ppStop', () ) )
-        return processReturn( self.clientPipe.recv() )
-
-    def interruptRead(self):
-        self.sleepQueue.put(False)
-                    
-    def ppWriteData(self,data):
-        self.clientPipe.send( ('ppWriteData', (data, ) ) )
-        return processReturn( self.clientPipe.recv() )
-                
-    def ppWriteRam(self,data,address):
-        self.clientPipe.send( ('ppWriteRam', (data,address) ) )
-        return processReturn( self.clientPipe.recv() )
-            
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
@@ -191,63 +155,6 @@ class PulserHardware(QtCore.QObject):
             wordlist.append(w)
         return wordlist
             
-    def ppWriteRamWordlist(self,wordlist,address):
-        self.clientPipe.send( ('ppWriteRamWordlist', (wordlist,address) ) )        
-        return processReturn( self.clientPipe.recv() )
-
-    def ppReadRam(self,data,address):
-        self.clientPipe.send( ('ppReadRam', (data,address) ) )
-        return processReturn( self.clientPipe.recv() )
-            
-    def ppReadRamWordList(self, wordlist, address):
-        self.clientPipe.send( ('ppReadRam', (wordlist, address) ) )
-        return processReturn( self.clientPipe.recv() )
-                
-    def ppClearWriteFifo(self):
-        self.clientPipe.send( ('ppClearWriteFifo', (wordlist,address) ) )        
-        return processReturn( self.clientPipe.recv() )
-            
-    def ppFlushData(self):
-        self.clientPipe.send( ('ppFlushData', (wordlist,address) ) )        
-        return processReturn( self.clientPipe.recv() )
-
-    def ppClearReadFifo(self):
-        self.clientPipe.send( ('ppClearReadFifo', (wordlist,address) ) )        
-        return processReturn( self.clientPipe.recv() )
-            
-    def ppReadLog(self):
-        self.clientPipe.send( ('ppReadLog', (wordlist, address) ) )
-        return processReturn( self.clientPipe.recv() )
-
-    def listBoards(self):
-        self.clientPipe.send( ('listBoards', () ) )
-        return processReturn( self.clientPipe.recv() )
-        
-    def getDeviceDescription(self):
-        """Get informaion from an open device
-        """
-        self.clientPipe.send( ('getDeviceDescription', () ) )
-        return processReturn( self.clientPipe.recv() )
-        
-    def renameBoard(self,serial,newname):
-        self.clientPipe.send( ('renameBoard', (serial,newname) ) )
-        return processReturn( self.clientPipe.recv() )
-            
-    def uploadBitfile(self,bitfile):
-        self.clientPipe.send( ('uploadBitfile', (serial,newname) ) )
-        return processReturn( self.clientPipe.recv() )
-        
-    def openByName(self,name):
-        self.clientPipe.send( ('openByName', (name, ) ) )
-        return processReturn( self.clientPipe.recv() )
-
-    def openBySerial(self,serial):
-        self.clientPipe.send( ('openBySerial', (serial, ) ) )
-        return processReturn( self.clientPipe.recv() )
-
-    def SetWireInValue(self,address,data):
-        self.clientPipe.send( ('SetWireInValue', (address,data) ) )
-        return processReturn( self.clientPipe.recv() )
 
 def processReturn( returnvalue ):
     if isinstance( returnvalue, Exception ):
