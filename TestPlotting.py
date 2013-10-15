@@ -22,6 +22,11 @@ class LabelItem(pyqtgraph.LabelItem):
     def mouseClickEvent(self,ev):
         self.clicked.emit()
 
+class TestModPlotItem(pyqtgraph.PlotItem):
+    def __init__(self,parent=None):
+        super(TestModPlotItem,self).__init__(parent)
+        self.testButton = pyqtgraph.ButtonItem(pyqtgraph.pixmaps.getPixmap('testimg'), 14, self)
+
 class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, a button to set the y scale to 0-1, and a button
@@ -106,7 +111,10 @@ if __name__ == '__main__':
     import sys    
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    MainWindow.setCentralWidget(CoordinatePlotWidget())
+    a = TestModPlotItem()
+    b = pyqtgraph.GraphicsView()
+    b.setCentralWidget(a)
+    MainWindow.setCentralWidget(b)
     MainWindow.show()
     sys.exit(app.exec_())
     
