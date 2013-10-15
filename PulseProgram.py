@@ -7,7 +7,7 @@
 # rewritten Peter Maunz
   
 import re, os
-import magnitude
+import modules.magnitude as magnitude
 import struct
 import math
 import collections
@@ -89,14 +89,22 @@ class Dimensions:
     dimensionless = (0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 class Variable:
+    def __init__(self):
+        self.enabled = True        
+        
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__dict__.setdefault( "enabled", True )
+        
     def __repr__(self):
         return str(self.__dict__)
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
-              'AD9912_PHASE': (360/2**14, '', Dimensions.dimensionless, 0xfff),
+              'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
+              'TIME' : ( 20, 'ns', Dimensions.time, 0x1 ),
               None: (1, '', Dimensions.dimensionless, 0xffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
 
@@ -175,6 +183,12 @@ class PulseProgram:
                 print "variable", name, "not found in dictionary."
         return self.bytecode
         
+    def variables(self):
+        mydict = dict()
+        for name, var in self.variabledict.iteritems():
+            mydict.update( {name: var.value })
+        return mydict
+        
     def variable(self, variablename ):
         return self.variabledict.get(variablename).value
 
@@ -186,9 +200,13 @@ class PulseProgram:
         data = self.convertParameter(value, var.encoding )
         return bytearray( struct.pack('II', (var.address, data)))
         
+    def flattenList(self,l):
+        return [item for sublist in l for item in sublist]
+        
     def variableScanCode(self, variablename, values):
         var = self.variabledict[variablename]
-        return [item for sublist in [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] for item in sublist]
+        # [item for sublist in l for item in sublist] idiom for flattening of list
+        return self.flattenList( [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] )
                    
     def loadFromMemory(self):
         """Similar to loadSource
@@ -208,10 +226,10 @@ class PulseProgram:
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
         
-    def currentVariablesText(self, comment=""):
+    def currentVariablesText(self):
         lines = list()
-        for name, var in self.variabledict.iteritems():
-            lines.append("{0} {1} {2}".format(comment,name,var.value))
+        for name, var in iter(sorted(self.variabledict.iteritems())):
+            lines.append("{0} {1}".format(name,var.value))
         return '\n'.join(lines)
            
 
@@ -300,7 +318,7 @@ class PulseProgram:
                         self.code.append((len(self.code)+addr_offset, op, data, label, sourcename))
                     else:
                         print "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno)
-                        raise ppexception("Error parsing ops.")
+                        raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno))
         self.appendVariableCode()
         return self.code
 
@@ -317,7 +335,7 @@ class PulseProgram:
         """
         for name, var in self.variabledict.iteritems():
             address = len(self.code)
-            self.code.append((address, 'NOP', var.data, None, var.origin ))
+            self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin ))
             var.address = address        
 
     def addVariable(self, m, lineno, sourcename):
@@ -329,6 +347,7 @@ class PulseProgram:
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
         var.origin = sourcename
+        var.enabled = True
 
         if var.encoding not in encodings:
             raise ppexception("unknown encoding {0} in file '{1}':{2}".format(var.encoding,sourcename,lineno))
@@ -379,6 +398,8 @@ class PulseProgram:
                     bytedata = 0
                 elif isinstance(data,(int,long)):
                     bytedata = data
+                elif isinstance(data,float):
+                    bytedata = int(data)
                 elif isinstance(data,basestring): # now we are dealing with a variable and need its address
                     bytedata = self.variabledict[line[2]].address if line[2] in self.variabledict else self.labeldict[line[2]]
                 elif isinstance(data,list): # list is what we have for DDS, will have 8bit channel and 16bit address
@@ -404,12 +425,18 @@ class PulseProgram:
         """
         if isinstance(mag, magnitude.Magnitude):
             if tuple(mag.dimension())==Dimensions.time:
-                return int((mag/self.timestep).round()) 
+                result = int((mag/self.timestep).round()) 
             else:
                 step, unit, dimension, mask = encodings[encoding]
-                return int(round(mag.toval(unit)/step)) & mask
+                result = int(round(mag.toval(unit)/step)) & mask
         else:
-            return mag
+            if encoding:
+                step, unit, dimension, mask = encodings[encoding]
+                result = int(round(mag/step)) & mask
+            else:
+                result = mag
+        # print "convertParameter encoding", encoding, mag, result
+        return result
 
     def compileCode(self):
         self.parse()

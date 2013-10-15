@@ -29,7 +29,8 @@ class ConfiguredParams:
         self.__dict__.setdefault('recentFiles',dict())
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
-    pulseProgramChanged = QtCore.pyqtSignal()    
+    pulseProgramChanged = QtCore.pyqtSignal() 
+    recentFilesChanged = QtCore.pyqtSignal(str)
     
     def __init__(self,config,parameterdict):
         PulseProgramWidget.__init__(self)
@@ -40,9 +41,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.parameterdict = parameterdict
         self.variabledict = None
         self.variableTableModel = None
-    
+        self.parameterChangedSignal = None
+   
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
+        self.experimentname = experimentname
+        self.configname = 'PulseProgramUi.'+self.experimentname
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
         self.actionReset.triggered.connect(self.onReset)
@@ -53,28 +57,36 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
         self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
-        self.experimentname = experimentname
-        self.configname = 'PulseProgramUi.'+self.experimentname
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         self.configParams.upgrade()
         self.datashelf = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
         self.datashelf.open()
+        
         if hasattr(self.configParams,'recentFiles'):
             self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
         if self.configParams.lastFilename is not None:
-            self.loadFile( self.configParams.lastFilename )
+            try:
+                self.loadFile( self.configParams.lastFilename )
+            except Exception as e:
+                print "Ignoring exception {0}, pulse programming file {1} cannot be loaded."
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
             self.splitterVertical.restoreState(self.configParams.splitterVertical)
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
-
+        
+    def documentationString(self):
+        messages = [ "PulseProgram {0}".format( self.configParams.lastFilename ) ]
+        r = "\n".join(messages)
+        return "\n".join( [r, self.pulseProgram.currentVariablesText()])        
+               
     def onFilenameChange(self, name ):
         name = str(name)
-        if name in self.configParams.recentFiles:
-            print "Loading: ", self.configParams.recentFiles[name]
+        if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastFilename:
             self.loadFile(self.configParams.recentFiles[name])
+            if str(self.filenameComboBox.currentText())!=name:
+                self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
         
     def onVariableSelectionChanged(self):
         visibledict = dict()
@@ -99,6 +111,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
+        print "loadFile", path
         if self.variabledict is not None and self.configParams.lastFilename is not None:
             self.datashelf[self.configParams.lastFilename] = self.variabledict
         self.configParams.lastFilename = path
@@ -115,6 +128,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
+            print "self.recentFilesChanged.emit({0})".format(filename)
+            self.recentFilesChanged.emit(filename)
         self.configParams.recentFiles[filename]=path
         self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
 
@@ -132,6 +147,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         for name, textEdit in self.sourceCodeEdits.iteritems():
             self.pulseProgram.source[name] = str(textEdit.toPlainText())
         self.pulseProgram.loadFromMemory()
+        self.oldVariabledict = self.variabledict
+        self.variabledict = self.pulseProgram.variabledict.copy()
+        self.variabledict.update( dictutil.subdict(self.oldVariabledict, self.variabledict.keys() ) )
         self.updateDisplay()
     
     def updateDisplay(self):   # why does this not update the display?
@@ -139,11 +157,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
             textEdit = PulseProgramSourceEdit()
+            textEdit.setupUi(textEdit)
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
         self.variableTableModel = VariableTableModel.VariableTableModel( self.variabledict, self.parameterdict )
+        if self.parameterChangedSignal:
+            self.parameterChangedSignal.connect(self.variableTableModel.onParameterChanged)
         self.variableView.setModel(self.variableTableModel)
+        self.variableView.resizeColumnToContents(0)
         self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.variabledict )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
@@ -181,7 +203,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         
     def getVariableValue(self,name):
         return self.variableTableModel.getVariableValue(name)
-        
+             
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
         pass
@@ -200,9 +222,10 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.setWindowTitle('Pulse Program')
         self.setWindowFlags(QtCore.Qt.WindowMinMaxButtonsHint)
 
-    def addExperiment(self, experiment, parameterdict=dict()):
+    def addExperiment(self, experiment, parameterdict=dict(), parameterChangedSignal=None):
         if not experiment in self.pulseProgramSet:
             programUi = PulseProgramUi(self.config, parameterdict)
+            programUi.parameterChangedSignal = parameterChangedSignal
             programUi.setupUi(experiment,programUi)
             programUi.myindex = self.tabWidget.addTab(programUi,experiment)
             self.pulseProgramSet[experiment] = programUi

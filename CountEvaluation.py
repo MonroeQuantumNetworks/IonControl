@@ -31,9 +31,11 @@ class MeanEvaluation:
         self.tooltip = "Mean of observed counts"  # tooltip (used by gui)
         
     def evaluate(self, countarray, timestamps=None ):
-        mean = numpy.mean( countarray )
-        stderror = math.sqrt( mean/len(countarray))
-        return mean, (stderror/2., stderror/2. )
+        summe = numpy.sum( countarray )
+        l = len(countarray)
+        mean = summe/float(l)
+        stderror = math.sqrt( mean/float(l) )
+        return mean, (stderror/2., stderror/2. ), summe
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -51,7 +53,7 @@ class ThresholdEvaluation(EvaluationBase):
         
     def evaluate(self, countarray, timestamps=None ):
         if not countarray:
-            return None, None
+            return None, None, None
         N = len(countarray)
         threshold = self.parameters['threshold']
         if bool(self.parameters['invert']):
@@ -66,7 +68,7 @@ class ThresholdEvaluation(EvaluationBase):
         elif summe==N:
             bottom = (N-1)/2.
         norm = pow(float(N),-3.5)
-        return summe/float(N), (bottom*norm, top*norm)
+        return summe/float(N), (bottom*norm, top*norm), summe
         
     def saveParam(self):
         self.config['ThresholdEvaluation.Parameters'] = self.parameters

@@ -128,6 +128,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.saveButton.clicked.connect(self.onSave )
         self.removeButton.clicked.connect(self.onRemove)
         self.traceTableView.clicked.connect(self.onClicked)
+        self.comboBoxStyle.setCurrentIndex( self.settings.plotstyle )
         self.comboBoxStyle.currentIndexChanged[int].connect( self.setPlotStyle )
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.openFileButton.clicked.connect(self.onOpenFile)
@@ -180,8 +181,11 @@ class Traceui(TraceuiForm, TraceuiBase):
     def selectedTraces(self):
         return [self.TraceList[index].trace for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]))]
 
-    def selectedPlottedTraces(self):
-        return [self.TraceList[index] for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]))]
+    def selectedPlottedTraces(self, defaultToLastLine=False):
+        traceList = [self.TraceList[index] for index in sorted(unique([ i.row() for i in self.traceTableView.selectedIndexes() ]))]
+        if defaultToLastLine and len(traceList)==0 and len(self.model.TraceList)>0:
+            traceList = [self.model.TraceList[-1]]
+        return traceList
 
     def onOpenFile(self):
         fnames = QtGui.QFileDialog.getOpenFileNames(self, 'Open files', self.settings.lastDir)

@@ -67,7 +67,7 @@ class Ad9912:
         #self.Mutex = fpgaUtilit.Mutex        
         
 if __name__ == "__main__":
-    import magnitude
+    import modules.magnitude as magnitude
     
     ad = Ad9912(None)
     ad.setFrequency( 0, magnitude.mg(250,'MHz'))

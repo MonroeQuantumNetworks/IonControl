@@ -21,11 +21,18 @@ api2 = sip.getapi("QString")==2
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
     
-    def __init__(self,parent=0):
+    def __init__(self,parent=None):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.expression = Expression.Expression()
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         self.editingFinished.connect( self.onEditingFinished )
+        self.lineEdit().setDragEnabled(True)
+        self.lineEdit().setAcceptDrops(True)
+        self.redTextPalette = QtGui.QPalette()
+        self.redTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.red )
+        self.blackTextPalette = QtGui.QPalette()
+        self.blackTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.black )
+
         
     def validate(self, inputstring, pos):
         #print "validate"
@@ -71,8 +78,12 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
         
     def value(self):
-        value = self.expression.evaluate( str( self.lineEdit().text() ))
-        #print value
+        try:
+            value = self.expression.evaluate( str( self.lineEdit().text() ))
+        except Exception as e:
+            self.lineEdit().setPalette( self.redTextPalette )
+            raise e
+        self.lineEdit().setPalette( self.blackTextPalette )
         return value
         
     def setText(self,string):
@@ -83,6 +94,38 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def onEditingFinished(self):
         self.valueChanged.emit( self.value() )
+        
+    def sizeHint(self):
+        fontMetrics = QtGui.QFontMetrics( self.font() )
+        size = fontMetrics.boundingRect(self.lineEdit().text()).size()
+        size += QtCore.QSize( 8,0)
+        return size
+ 
+#    def makeDrag(self):
+#        print "makeDrag"
+#        dr = QtGui.QDrag(self)
+#        # The data to be transferred by the drag and drop operation is contained in a QMimeData object
+#        data = QtCore.QMimeData()
+#        data.setText("This is a test")
+#        # Assign ownership of the QMimeData object to the QDrag object.
+#        dr.setMimeData(data)
+#        # Start the drag and drop operation
+#        dr.start()
+# 
+#    def dragMoveEvent(self, de):
+#        print "dragMove"
+#        # The event needs to be accepted here
+#        de.accept()
+#
+#    def dragEnterEvent(self, event):
+#        print "dragEnterEvent"
+#        # Set the drop action to be the proposed action.
+#        event.acceptProposedAction()
+#
+#    def dropEvent(de):
+#        # Unpack dropped data and handle it the way you want
+#        print "Contents: {0}".format(de.mimeData().text().toLatin1().data())
+       
         
 if __name__ == "__main__":
     debug = True

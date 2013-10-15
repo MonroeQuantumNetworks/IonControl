@@ -6,10 +6,14 @@ from fpgaUtilit import check
 from PyQt4 import QtCore 
 import struct
 from Queue import Queue, Empty
-import magnitude
+import modules.magnitude as magnitude
 from modules import enum
 import math
 import traceback
+import time
+
+class PulserHardwareException(Exception):
+    pass
 
 class Data:
     def __init__(self):
@@ -19,6 +23,7 @@ class Data:
         self.scanvalue = None
         self.final = False
         self.other = list()
+        self.overrun = False
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -77,15 +82,17 @@ class PipeReader(QtCore.QThread):
         print "PipeReader running"
         try:
             with self:
+#               with open("unprocessed.dat","w") as unprocessedfile:
                 state = self.analyzingState.normal
                 with QtCore.QMutexLocker(self.dataMutex):
                     self.data = Data()
                     self.dedicatedData = DedicatedData()
                 self.timestampOffset = 0
                 while not self.exiting:
-                    data = self.pulserHardware.ppReadData(4,1.0)
+                    data, overrun = self.pulserHardware.ppReadData(4,1.0)
                     #print len(data)
                     with QtCore.QMutexLocker(self.dataMutex):
+                        self.data.overrun = self.data.overrun or overrun
                         for s in sliceview(data,4):
                             (token,) = struct.unpack('I',s)
                             #print hex(token)
@@ -110,7 +117,7 @@ class PipeReader(QtCore.QThread):
                                     #self.exiting = True
                                     self.data.final = True
                                     self.pulserHardware.dataAvailable.emit( self.data )
-                                    print "End of Run maker received"
+                                    print "End of Run marker received"
                                     self.data = Data()
                                 elif token == 0xff000000:
                                     self.timestampOffset += 1<<28
@@ -130,7 +137,8 @@ class PipeReader(QtCore.QThread):
                                 elif key==4: # other return value
                                     self.data.other.append(value)
                                 else:
-                                    print "unprocessed", key,channel,value
+                                    pass
+                                    #print >>unprocessedfile, token
                 if self.data.scanvalue is not None:
                     self.pulserHardware.dataAvailable.emit( self.data )
                     #print "emit dataAvailable"
@@ -333,6 +341,7 @@ class PulserHardware(QtCore.QObject):
             with QtCore.QMutexLocker(self.Mutex):
                 self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
                 self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
+                self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
                 return True
         else:
             print "Pulser Hardware not available"
@@ -374,7 +383,8 @@ class PulserHardware(QtCore.QObject):
             #if byteswaiting>0: print "Reading", byteswaiting
             with QtCore.QMutexLocker(self.Mutex):
                 self.xem.ReadFromPipeOut(0xa2, data)
-            return data
+            overrun = (wirevalue & 0x4000)!=0
+            return data, overrun
         else:
             print "Pulser Hardware not available"
             return None
@@ -400,35 +410,63 @@ class PulserHardware(QtCore.QObject):
             appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
             data += bytearray([0]*appendlength)
             with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn( 0x41, 4 )    
-                self.xem.ActivateTriggerIn( 0x41, 5 )
-                if address!=0:
-                    print "set write address"
-                    self.xem.SetWireInValue( 0x01, address & 0xffff )
-                    self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-                    self.xem.UpdateWireIns()
-                    self.xem.ActivateTriggerIn( 0x41, 6 )
-                    self.xem.ActivateTriggerIn( 0x41, 7 )
+                print "set write address"
+                self.xem.SetWireInValue( 0x01, address & 0xffff )
+                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+                self.xem.UpdateWireIns()
+                self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
                 return self.xem.WriteToPipeIn( 0x82, data )
         else:
             print "Pulser Hardware not available"
             return None
+            
+    def wordListToBytearray(self, wordlist):
+        """ convert list of words to binary bytearray
+        """
+        self.binarycode = bytearray()
+        for index, word in enumerate(wordlist):
+#            if self.debug:
+#                print hex(index), hex(word)
+            self.binarycode += struct.pack('I', word)
+        return self.binarycode        
+
+    def bytearrayToWordList(self, barray):
+        wordlist = list()
+        for offset in range(0,len(barray),4):
+            (w,) = struct.unpack_from('I',buffer(barray),offset)
+            wordlist.append(w)
+        return wordlist
+            
+    def ppWriteRamWordlist(self,wordlist,address):
+        data = self.wordListToBytearray(wordlist)
+        self.ppWriteRam( data, address)
+        testdata = bytearray([0]*len(data))
+        self.ppReadRam( testdata, address)
+        print "ppWriteRamWordlist", len(data), len(testdata), data==testdata
+        if data!=testdata:
+            print "Write unsuccessfull data does not match"
+            print len(data), self.bytearrayToWordList(data)
+            print len(testdata), self.bytearrayToWordList(testdata)
+            raise PulserHardwareException("RAM write unsuccessful")
 
     def ppReadRam(self,data,address):
         if self.xem:
             with QtCore.QMutexLocker(self.Mutex):
-                self.xem.ActivateTriggerIn( 0x41, 4 )    
-                self.xem.ActivateTriggerIn( 0x41, 5 )    
-                if address!=0:
-                    print "set read address"
-                    self.xem.SetWireInValue( 0x01, address & 0xffff )
-                    self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-                    self.xem.UpdateWireIns()
-                    self.xem.ActivateTriggerIn( 0x41, 7 )
-                    self.xem.ActivateTriggerIn( 0x41, 6 )
+#                print "set read address"
+                self.xem.SetWireInValue( 0x01, address & 0xffff )
+                self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+                self.xem.UpdateWireIns()
+                self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
                 self.xem.ReadFromPipeOut( 0xa3, data )
+#                print "read", len(data)
         else:
             print "Pulser Hardware not available"
+            
+    def ppReadRamWordList(self, wordlist, address):
+        data = bytearray([0]*len(wordlist)*4)
+        self.ppReadRam(data,address)
+        wordlist = self.bytearrayToWordList(data)
+        return wordlist
                 
     def ppClearWriteFifo(self):
         if self.xem:
@@ -495,7 +533,7 @@ if __name__ == "__main__":
     hw.ppStart()
     Finished = False
     while not Finished:#for j in range(60):
-        data = hw.ppReadData(4,1.0)
+        data, overrun = hw.ppReadData(4,1.0)
         if printdata:
             for i in sliceview(data,4):
                 (num,) = struct.unpack('I',i)

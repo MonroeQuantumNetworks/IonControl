@@ -7,7 +7,7 @@
 #
 # Copyright 2003-2006 by Paul McGuire
 #
-import magnitude
+import magnitude as magnitude
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
     ZeroOrMore,Forward,nums,alphas
 import math
@@ -63,6 +63,8 @@ class Expression:
     exprStack = []
 
     def __init__(self, variabledict=dict()):
+        variabledict.setdefault('pi',math.pi)
+        variabledict.setdefault('e',math.e)
         """
         expop   :: '^'
         multop  :: '*' | '/'
@@ -74,7 +76,7 @@ class Expression:
         expr    :: term [ addop term ]*
         """
         expr = Forward()
-        atom = (Optional("-") + ( pi | e | funit | fnumber | ident + lpar + expr + rpar | ident ).setParseAction( self.pushFirst ) | ( lpar + expr.suppress() + rpar )).setParseAction(self.pushUMinus) 
+        atom = (Optional("-") + ( funit | fnumber | ident + lpar + expr + rpar | ident ).setParseAction( self.pushFirst ) | ( lpar + expr.suppress() + rpar )).setParseAction(self.pushUMinus) 
         
         # by defining exponentiation as "atom [ ^ factor ]..." instead of "atom [ ^ atom ]...", we get right-to-left exponents, instead of left-to-righ
         # that is, 2^3^2 = 2^(3^2), not (2^3)^2.
@@ -124,6 +126,7 @@ class Expression:
                 l = fmag.parseString(op)
                 #print l
                 m = magnitude.mg( float(l[0]),l[1])
+                m.significantDigits = len(list(filter( lambda s: s.isdigit(), l[0])))
                 return m
             return res
             
@@ -179,7 +182,9 @@ if __name__ == "__main__":
     test( "2*(3+5)", 16 )
     test( "2*(alpha+beta)", 14, {'alpha':5,'beta':2} )
     test( "-4 MHz" , magnitude.mg(-4,'MHz') )
+    test( "2*4 MHz" , magnitude.mg(8,'MHz') )
     test( "2 * sqrt ( 4s / 1 s)",4 )
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
+    test( "piTime",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10,'ms')} )
 
-
+    print ExprEval.evaluate( "4 MHz" )

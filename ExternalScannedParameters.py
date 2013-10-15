@@ -8,7 +8,7 @@ Created on Tue Mar 12 15:22:09 2013
 
 from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
-import magnitude
+import modules.magnitude as magnitude
 import math
 
 try:
@@ -25,6 +25,7 @@ class ExternalParameterBase:
         self.jump = self.config.get(self.baseConfigName+'.jump',False)       # if True go to the target value in one jump
         self.stepsize = self.config.get(self.baseConfigName+'.stepsize',1)   # the max step taken towards the tarhet value if jump is False
         self.value = 0      # the current value
+        self.displayValueCallback = None
     
     def saveValue(self):
         """
@@ -46,7 +47,8 @@ class ExternalParameterBase:
         it should return False. The user should call repeatedly until the intended value is reached
         and True is returned.
         """
-        pass
+        if self.displayValueCallback:
+            self.displayValueCallback(value)
     
     def currentValue(self):
         """
@@ -72,6 +74,7 @@ class ExternalParameterBase:
         """
         update the parameter, called by the signal of pyqtgraph parametertree
         """
+        print "ExternalParameterBase.update"
         for param, change, data in changes:
             print self, "update", param.name(), data
             setattr( self, param.name(), data)
@@ -104,9 +107,11 @@ class N6700BPowerSupply(ExternalParameterBase):
             myvalue = value
         if abs(myvalue-self.value)<self.stepsize:
             self._setValue_( myvalue )
+            ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"A") )
             return True
         else:
             self._setValue_( self.value + math.copysign(self.stepsize, myvalue-self.value) )
+            ExternalParameterBase.setValue(self, magnitude.mg(self.value + math.copysign(self.stepsize, myvalue-self.value),"A") )
             return False
             
     def _setValue_(self, v):
@@ -145,6 +150,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
         self.stepsize = 1000
+        self.value = self.config.get('LaserSynthesizerScan.'+self.name+'.frequency',0)
     
     def setValue(self,value):
         """
@@ -154,23 +160,30 @@ class LaserSynthesizerScan(ExternalParameterBase):
             myvalue = round(value.ounit("kHz").toval())
         else:
             myvalue = round(value)
-        if abs(myvalue-self.value)<self.stepsize:
+        if abs(myvalue-self.value)<self.stepsize or self.jump:
             self._setValue_( myvalue )
+            ExternalParameterBase.setValue(self, magnitude.mg(myvalue/1000.,"MHz") )
             return True
         else:
             self._setValue_( self.value + math.copysign(self.stepsize, myvalue-self.value) )
+            ExternalParameterBase.setValue(self, magnitude.mg((self.value + math.copysign(self.stepsize, myvalue-self.value))/1000.,"MHz") )
             return False
             
     def _setValue_(self, v):
-        command = "P{0:0>8.0f}Z0K0L0O1".format(v)
+        command = "P{0:0>8.0f}Z0K1L6O1".format(v)
         self.synthesizer.write(command)#set voltage
         self.value = v
         
     def currentValue(self):
-        return self.value/1000.
+        return magnitude.mg(self.value/1000.,"MHz")
     
     def currentExternalValue(self):
         return self.value/1000.
+        
+    def close(self):
+        ExternalParameterBase.close(self)
+        self.config['LaserSynthesizerScan.'+self.name+'.frequency'] = self.value
+        
 
     
 class LaserVCOScan(ExternalParameterBase):
@@ -205,6 +218,7 @@ class LaserVCOScan(ExternalParameterBase):
         self.powersupply.write("volt " + str(nextvalue))
         self.value = nextvalue
         print "setValue", self.value 
+        ExternalParameterBase.setValue(self, magnitude.mg(self.value,"V") )
         return arrived
             
     def currentValue(self):
@@ -254,6 +268,7 @@ class LaserWavemeterScan(ExternalParameterBase):
         self.wavemeter.set_frequency(myvalue, self.channel)
         self.value = myvalue
         print "setValue", self.value 
+        ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"GHz") )
         return numpy.abs(self.wavemeter.get_frequency(self.channel)-self.value)<.005
            
                 
@@ -301,9 +316,11 @@ class DummyParameter(ExternalParameterBase):
             myvalue = round(value)
         if abs(myvalue-self.value)<self.stepsize or self.jump:
             self.value = myvalue 
+            ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"kHz") )
             return True
         else:
             self.value = ( self.value + math.copysign(self.stepsize, myvalue-self.value) )
+            ExternalParameterBase.setValue(self, magnitude.mg(self.value,"kHz") )
             return False
     
         

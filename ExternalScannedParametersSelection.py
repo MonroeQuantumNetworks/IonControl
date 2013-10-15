@@ -56,7 +56,7 @@ class SelectionUi(SelectionForm,SelectionBase):
                     print "Initialization of instrument {0} with option '{1}' failed. Exception: {2}".format(name,instrument,e)
         elif state==QtCore.Qt.Unchecked:
             if name in self.enabledParameters:
-                self.settings.instruments[name] = (str(widget.instrumentLineEdit.text()),False)
+                self.settings.instruments[name] = (instrument,False)
                 self.enabledParameters.pop(name)
                 self.selectionChanged.emit( self.enabledParameters )
                 widget.update( None )

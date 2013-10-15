@@ -22,7 +22,12 @@
     <file>icons/player_play.png</file>
     <file>icons/player_stop.png</file>
   </qresource>
+  <qresource prefix="other">
+    <file>icons/ions.jpg</file>
+  </qresource>
   <qresource prefix="openicon">
+    <file>icons/arrow-left-2.png</file>
+    <file>icons/archive-extract-2.png</file>
     <file>icons/go-down-4.png</file>
     <file>icons/go-up-4.png</file>
     <file>icons/office-chart-line.png</file>

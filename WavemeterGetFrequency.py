@@ -82,7 +82,7 @@ if __name__ == '__main__':
     import timeit
     fg = WavemeterGetFrequency()
     def speed():
-        print fg.get_frequency(0)
+        print fg.get_frequency(4)
     t = timeit.Timer("speed()", "from __main__ import speed")
     print t.timeit(number = 10)
     del fg    

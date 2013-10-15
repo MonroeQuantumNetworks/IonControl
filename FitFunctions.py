@@ -13,18 +13,62 @@ class CosFit(FitFunctionBase):
     name = "Cos"
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  'A*cos(2*pi*k*x+theta)'
-        self.parameterNames = [ 'A', 'k', 'theta' ]
-        self.parameters = [1,1,0]
-        self.startParameters = [1,1,0]
+        self.functionString =  'A*cos(2*pi*k*x+theta)+O'
+        self.parameterNames = [ 'A', 'k', 'theta', 'O' ]
+        self.parameters = [1,1,0,0]
+        self.startParameters = [1,1,0,0]
         
-    def residuals(self,p, y, x):
-        A,k,theta = p
-        return y-A*numpy.cos(2*numpy.pi*k*x+theta)
+    def residuals(self,p, y, x, sigma):
+        A,k,theta,O = p
+        if sigma is not None:
+            return (y-A*numpy.cos(2*numpy.pi*k*x+theta)-O)/sigma
+        else:
+            return y-A*numpy.cos(2*numpy.pi*k*x+theta)-O
         
     def value(self,x,p=None):
-        A,k,theta = self.parameters if p is None else p
-        return A*numpy.cos(2*numpy.pi*k*x+theta)
+        A,k,theta, O = self.parameters if p is None else p
+        return A*numpy.cos(2*numpy.pi*k*x+theta)+O
+
+class CosSqFit(FitFunctionBase):
+    name = "Cos2"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*cos^2(pi*x/(2*T)+theta)+O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O' ]
+        self.parameters = [1,100,0,0]
+        self.startParameters = [1,1,0,0]
+       
+    def residuals(self,p, y, x, sigma):
+        A,T,theta,O = p
+        if sigma is not None:
+            return (y-A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))-O)/sigma
+        else:            
+            return y-A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))-O
+        
+    def value(self,x,p=None):
+        A,T,theta, O = self.parameters if p is None else p
+        return A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))+O
+        
+
+class SinSqFit(FitFunctionBase):
+    name = "Sin2"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*sin^2(pi/(2*T)*x+theta)+O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O' ]
+        self.parameters = [1,100,0,0]
+        self.startParameters = [1,100,0,0]
+        
+    def residuals(self,p, y, x, sigma):
+        A,T,theta,O = p
+        if sigma is not None:
+            return (y-A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O)/sigma
+        else:
+            return y-A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
+        
+    def value(self,x,p=None):
+        A,T,theta, O = self.parameters if p is None else p
+        return A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
         
 class GaussianFit(FitFunctionBase):
     name = "Gaussian"
@@ -35,14 +79,49 @@ class GaussianFit(FitFunctionBase):
         self.parameters = [0]*4
         self.startParameters = [1,0,1,0]
         
-    def residuals(self,p, y, x):
+    def residuals(self,p, y, x, sigma):
         A,x0,s,O = p
-        return y-(A*numpy.exp(-numpy.square((x-x0)/s))+O)
+        if sigma is not None:
+            return (y-(A*numpy.exp(-numpy.square((x-x0)/s))+O))/sigma
+        else:
+            return y-(A*numpy.exp(-numpy.square((x-x0)/s))+O)
         
     def value(self,x,p=None):
         A,x0,s,O = self.parameters if p is None else p
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
 
+class SquareRabiFit(FitFunctionBase):
+    name = "Square Rabi"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*R**2/(R**2+(x-C)**2) *sin**2(sqrt(R**2+(x-C)**2)*t/2)+O where R=2*pi/T'
+        self.parameterNames = [ 'T', 'C', 'A', 'O' ]
+        self.parameters = [0]*4
+        self.startParameters = [1,42,1,0]
+        self.constantNames = ['t']
+        self.t = 100
+        
+    def residuals(self,p, y, x, sigma):
+        T, C, A, O = p
+        Rs = numpy.square(2*numpy.pi/T)
+        Ds = numpy.square(2*numpy.pi*(x-C))
+        if sigma is not None:
+            return (y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))-O)/sigma
+        else:
+            return (y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))-O)
+        
+    def value(self,x,p=None):
+        T, C, A, O = self.parameters if p is None else p
+        Rs = numpy.square(2*numpy.pi/T)
+        Ds = numpy.square(2*numpy.pi*(x-C))
+        print T, C, A, O
+        print Rs
+        print Ds
+        part = numpy.sqrt(Rs+Ds)*self.t/2.
+        print part
+        print numpy.cos, numpy.sin, numpy.sqrt
+        return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))+O
+    
 
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
@@ -53,10 +132,13 @@ class LorentzianFit(FitFunctionBase):
         self.parameters = [0]*4
         self.startParameters = [1,1,0,0]
         
-    def residuals(self,p, y, x):
+    def residuals(self,p, y, x, sigma):
         A,s,x0,O = p
         s2 = numpy.square(s)
-        return y-(A*s2/(s2+numpy.square(x-x0))+O)
+        if sigma is not None:
+            return (y-(A*s2/(s2+numpy.square(x-x0))+O))/sigma
+        else:
+            return (y-(A*s2/(s2+numpy.square(x-x0))+O))            
         
     def value(self,x,p=None):
         A,s,x0,O  = self.parameters if p is None else p
@@ -73,24 +155,61 @@ class TruncatedLorentzianFit(FitFunctionBase):
         self.startParameters = [1,1,0,0]
         self.epsfcn=10.0
         
-    def residuals(self,p, y, x):
+    def residuals(self,p, y, x, sigma):
         A,s,x0,O = p
         s2 = numpy.square(s)
-        return y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O)
+        if sigma is not None:
+            return (y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O))/sigma
+        else:
+            return (y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O))
+
         
     def value(self,x,p=None):
         A,s,x0,O  = self.parameters if p is None else p
         s2 = numpy.square(s)
         return (A*s2/(s2+numpy.square(x-x0)))*(1-numpy.sign(x-x0))/2+O
+
+class LinearFit(FitFunctionBase):
+    """class for fitting to a line
+    """
+    name = "Line"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'm*x + b'
+        self.parameterNames = [ 'm', 'b' ]
+        self.parameters = [1,0]
+        self.startParameters = [1,0]
+        self.resultNames = self.resultNames + ['halfpoint']
+        self.halfpoint = 0        
         
+    def residuals(self,p, y, x, sigma):
+        m,b = p
+        if sigma is not None:
+            return (y - m*x - b)/sigma
+        else:
+            return y - m*x - b
+        
+    def value(self,x,p=None):
+        m, b = self.parameters if p is None else p
+        return m*x + b
+        
+    def finalize(self,parameters):
+        m, b = parameters
+        self.halfpoint= (0.5-b)/m
+
 from RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
         
 fitFunctionMap = { GaussianFit.name: GaussianFit, 
                    CosFit.name: CosFit, 
+                   CosSqFit.name: CosSqFit,
+                   SinSqFit.name: SinSqFit,
+                   SquareRabiFit.name: SquareRabiFit,
                    LorentzianFit.name: LorentzianFit,
                    TruncatedLorentzianFit.name: TruncatedLorentzianFit,
                    RabiCarrierFunction.name: RabiCarrierFunction,
-                   FullRabiCarrierFunction.name: FullRabiCarrierFunction }
+                   FullRabiCarrierFunction.name: FullRabiCarrierFunction,
+                   LinearFit.name: LinearFit
+                 }
 
 def fitFunctionFactory(text):
     """
