@@ -365,8 +365,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>229</width>
-        <height>315</height>
+        <width>165</width>
+        <height>148</height>
        </rect>
       </property>
       <attribute name="label">
@@ -454,8 +454,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>229</width>
-        <height>315</height>
+        <width>172</width>
+        <height>171</height>
        </rect>
       </property>
       <attribute name="label">
@@ -591,7 +591,7 @@
      <item>
       <widget class="QProgressBar" name="progressBar">
        <property name="value">
-        <number>24</number>
+        <number>0</number>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

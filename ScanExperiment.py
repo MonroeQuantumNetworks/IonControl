@@ -195,6 +195,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.currentTimestampTrace = None
         self.experimentName = experimentName
         self.globalVariables = dict()
+        self.state = self.OpStates.idle
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -255,6 +256,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetList.append(self.displayDock )
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
+        self.updateProgressBar()
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
@@ -279,23 +281,23 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def setTimeLabel(self):
         elapsed = time.time()-self.startTime
-        expected = elapsed / (self.currentIndex/float(len(self.scan.list))) if self.currentIndex>0 else 0
+        expected = elapsed / ((self.currentIndex)/float(len(self.scan.list))) if self.currentIndex>0 else 0
         self.scanControlWidget.timeLabel.setText( "{0} / {1}".format(timedelta(seconds=round(elapsed)),
                                                  timedelta(seconds=round(expected)))) 
  
     def updateProgressBar(self):
         if self.state == self.OpStates.idle:
-            self.scanControlWidget.progressBar.setVisible( False )
-            self.scanControlWidget.timeLabel.setVisible( False )
+            self.scanControlWidget.progressBar.setFormat("Idle")            
+            self.scanControlWidget.progressBar.setValue(0)
         elif self.state == self.OpStates.running:
-            self.scanControlWidget.progressBar.setRange(0,len(self.scan.list))
+            self.scanControlWidget.progressBar.setRange(0,max(len(self.scan.list),1))
             self.scanControlWidget.progressBar.setValue(self.currentIndex)
             self.scanControlWidget.progressBar.setStyleSheet("")
-            self.scanControlWidget.progressBar.setVisible( True )
-            self.scanControlWidget.timeLabel.setVisible( True )
+            self.scanControlWidget.progressBar.setFormat("%p%")            
             self.setTimeLabel()
         elif self.state == self.OpStates.paused:
             self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            self.scanControlWidget.progressBar.setFormat("Paused")            
             self.setTimeLabel()
     
     def onStart(self):
