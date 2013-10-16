@@ -256,7 +256,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetList.append(self.displayDock )
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
-        self.updateProgressBar()
+        self.updateProgressBar(0,1)
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
@@ -285,13 +285,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.timeLabel.setText( "{0} / {1}".format(timedelta(seconds=round(elapsed)),
                                                  timedelta(seconds=round(expected)))) 
  
-    def updateProgressBar(self):
+    def updateProgressBar(self, value, range=None):
         if self.state == self.OpStates.idle:
             self.scanControlWidget.progressBar.setFormat("Idle")            
             self.scanControlWidget.progressBar.setValue(0)
         elif self.state == self.OpStates.running:
-            self.scanControlWidget.progressBar.setRange(0,max(len(self.scan.list),1))
-            self.scanControlWidget.progressBar.setValue(self.currentIndex)
+            if range:
+                self.scanControlWidget.progressBar.setRange(0,range)
+            self.scanControlWidget.progressBar.setValue(value)
             self.scanControlWidget.progressBar.setStyleSheet("")
             self.scanControlWidget.progressBar.setFormat("%p%")            
             self.setTimeLabel()
@@ -320,7 +321,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.currentTrace = None
         self.timestampsNewRun = True
         self.displayUi.onClear()
-        self.updateProgressBar()
+        self.updateProgressBar(0,max(len(self.scan.list),1))
         print "elapsed time", time.time()-self.startTime
     
     def onPause(self):
@@ -332,12 +333,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             print "Starting"
             self.pulserHardware.ppStart()
             self.running = True
-            self.updateProgressBar()
+            self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
             self.timestampsNewRun = False
             print "continued"
         elif self.state == self.OpStates.running:
             self.pulserHardware.ppStop()
-            self.updateProgressBar()
+            self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
             self.state = self.OpStates.paused
             
     
@@ -350,7 +351,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
             self.state = self.OpStates.idle
-        self.updateProgressBar()
+        self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
         self.finalizeData()
 
     def traceFilename(self, pattern):
@@ -394,7 +395,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 mycode = self.generator.dataNextCode(self)
                 if mycode:
                     self.pulserHardware.ppWriteData(mycode)     
-            self.updateProgressBar()
+            self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
 
 
     def updateMainGraph(self, x, mean, error, raw):
