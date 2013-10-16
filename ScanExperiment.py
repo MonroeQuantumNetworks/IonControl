@@ -282,6 +282,21 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         expected = elapsed / (self.currentIndex/float(len(self.scan.list))) if self.currentIndex>0 else 0
         self.scanControlWidget.timeLabel.setText( "{0} / {1}".format(timedelta(seconds=round(elapsed)),
                                                  timedelta(seconds=round(expected)))) 
+ 
+    def updateProgressBar(self):
+        if self.state == self.OpStates.idle:
+            self.scanControlWidget.progressBar.setVisible( False )
+            self.scanControlWidget.timeLabel.setVisible( False )
+        elif self.state == self.OpStates.running:
+            self.scanControlWidget.progressBar.setRange(0,len(self.scan.list))
+            self.scanControlWidget.progressBar.setValue(self.currentIndex)
+            self.scanControlWidget.progressBar.setStyleSheet("")
+            self.scanControlWidget.progressBar.setVisible( True )
+            self.scanControlWidget.timeLabel.setVisible( True )
+            self.setTimeLabel()
+        elif self.state == self.OpStates.paused:
+            self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            self.setTimeLabel()
     
     def onStart(self):
         self.startTime = time.time()
@@ -301,14 +316,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.running = True
         self.currentIndex = 0
         self.currentTrace = None
-        self.scanControlWidget.progressBar.setRange(0,len(self.scan.list))
-        self.scanControlWidget.progressBar.setValue(0)
-        self.scanControlWidget.progressBar.setStyleSheet("")
-        self.scanControlWidget.progressBar.setVisible( True )
-        self.scanControlWidget.timeLabel.setVisible( True )
-        self.setTimeLabel()
         self.timestampsNewRun = True
         self.displayUi.onClear()
+        self.updateProgressBar()
         print "elapsed time", time.time()-self.startTime
     
     def onPause(self):
@@ -320,17 +330,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             print "Starting"
             self.pulserHardware.ppStart()
             self.running = True
-            self.scanControlWidget.progressBar.setRange(0,len(self.scan.list))
-            self.scanControlWidget.progressBar.setValue(self.currentIndex)
-            self.scanControlWidget.progressBar.setStyleSheet("")
-            self.scanControlWidget.progressBar.setVisible( True )
-            self.scanControlWidget.timeLabel.setVisible( True )
-            self.setTimeLabel()
+            self.updateProgressBar()
             self.timestampsNewRun = False
             print "continued"
         elif self.state == self.OpStates.running:
             self.pulserHardware.ppStop()
-            self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            self.updateProgressBar()
             self.state = self.OpStates.paused
             
     
@@ -342,8 +347,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.running = False
             if self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
-        self.scanControlWidget.progressBar.setVisible( False )
-        self.scanControlWidget.timeLabel.setVisible( False )
+            self.state = self.OpStates.idle
+        self.updateProgressBar()
         self.finalizeData()
 
     def traceFilename(self, pattern):
@@ -383,13 +388,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.generator.dataOnFinal(self)
                 else:
                     self.state = self.OpStates.paused
-                    self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
             else:
                 mycode = self.generator.dataNextCode(self)
                 if mycode:
                     self.pulserHardware.ppWriteData(mycode)     
-            self.scanControlWidget.progressBar.setValue(self.currentIndex)
-            self.setTimeLabel()
+            self.updateProgressBar()
 
 
     def updateMainGraph(self, x, mean, error, raw):
@@ -499,8 +502,4 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.onClose()
         self.traceui.onClose()
 
-    def updateSettings(self,settings,active=False):
-        """ Main program settings have changed
-        """
-        self.deviceSettings = settings
         

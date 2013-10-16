@@ -83,7 +83,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
         self.settingsDialog = SettingsDialog.SettingsDialog(self.pulser, self.config, self.parent)
-        self.settingsDialog.setupUi(self)
+        self.settingsDialog.setupUi()
 
         self.settings = self.settingsDialog.settings        
 
@@ -242,18 +242,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.raise_()
         if hasattr(self.currentTab,'experimentName'):
             self.pulseProgramDialog.setCurrentTab(self.currentTab.experimentName)
-        
-    def onSettingsApply(self,settings):
-        self.settings = settings
-        if hasattr(self,'pulserHardware'): 
-            self.pulser.updateSettings(self.settings.fpga)
-        if hasattr(self,'DDSUi'):
-            self.DDSUi.updateSettings(self.settings.fpga)
-        #print self.settings.deviceSerial, self.settings.deviceDescription
-        for tab in self.tabList:
-            if hasattr(tab,'updateSettings'):
-                tab.updateSettings(self.settings,active=(tab == self.currentTab))
-                
+                  
     def onClose(self):
         self.parent.close()
         

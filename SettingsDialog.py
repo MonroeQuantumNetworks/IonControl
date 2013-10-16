@@ -17,9 +17,10 @@ class Settings:
 SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialog.ui')
 
 class SettingsDialogConfig:
-    autoUpload = False
-    lastInstrument = None
-    lastBitfile = None
+    def __init__(self):
+        self.autoUpload = False
+        self.lastInstrument = None
+        self.lastBitfile = None
 
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def __init__(self,pulser,config,parent=0):
@@ -30,9 +31,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.settings = Settings()
         self.pulser = pulser
         
-    def setupUi(self,recipient):
+    def setupUi(self):
         super(SettingsDialog,self).setupUi(self)
-        self.recipient = recipient
         self.pushButtonScan.clicked.connect( self.scanInstruments )
         self.renameButton.clicked.connect( self.onBoardRename )
         self.uploadButton.clicked.connect( self.onUploadBitfile )
@@ -50,6 +50,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
                 self.onUploadBitfile()
+            else:
+                self.pulser.OpenBySerial(self.configSettings.lastInstrument)
         else:
             self.exec_()
                 
@@ -83,7 +85,6 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         print "accept"
         self.lastPos = self.pos()
         self.hide()
-        self.recipient.onSettingsApply(self.settings)        
         
     def reject(self):
         print "reject"
@@ -98,7 +99,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def apply(self,button):
         #print button.text(), "button pressed"
         if str(button.text())=="Apply":
-            self.recipient.onSettingsApply(self.settings)
+            self.pulser.openBySerial( self.settings.deviceSerial )   
             
     def close(self):
         self.config['SettingsDialog.Config'] = self.configSettings

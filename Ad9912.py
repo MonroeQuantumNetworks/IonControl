@@ -62,9 +62,6 @@ class Ad9912:
         else:
             print "Pulser not available"
 
-    def updateSettings(self,fpgaUtilit):
-        self.pulser = fpgaUtilit.xem
-        #self.Mutex = fpgaUtilit.Mutex        
         
 if __name__ == "__main__":
     import modules.magnitude as magnitude

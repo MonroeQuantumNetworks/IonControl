@@ -375,11 +375,9 @@ class PulserHardwareServer(Process):
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa2, data)
-            overrun = (wirevalue & 0x4000)!=0
-            return data, overrun
-        else:
-            #print "ppReadData: Pulser Hardware not available"
-            return None, False
+                overrun = (wirevalue & 0x4000)!=0
+                return data, overrun
+        return None, False
                         
     def ppWriteData(self,data):
         if self.xem:
@@ -540,7 +538,7 @@ class PulserHardwareServer(Process):
             self.xem = ok.FrontPanel()
             check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
             self.openModule = self.getDeviceDescription(self.xem)
-        return self.xem
+        return None
 
         
 def sliceview(view,length):
