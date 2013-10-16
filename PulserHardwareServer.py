@@ -133,11 +133,11 @@ class PulserHardwareServer(Process):
     def run(self):
         i = 0
         while (self.running):
-            if self.commandPipe.poll(0.2):
+            if self.commandPipe.poll(0.05):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
-                    print "PulserHardwareServer:", commandstring
+                    #print "PulserHardwareServer:", commandstring
                     self.commandPipe.send(command(*argument))
                 except Exception as e:
                     self.commandPipe.send(e)
@@ -172,7 +172,7 @@ class PulserHardwareServer(Process):
                         self.dataQueue.put( self.data )
                         self.data = Data()
                         self.data.scanvalue = token
-                    state = self.analyzingState.normal
+                    self.state = self.analyzingState.normal
                 elif token & 0xf0000000 == 0xe0000000: # dedicated results
                     channel = (token >>24) & 0xf
                     if self.dedicatedData.data[channel] is not None:
@@ -188,7 +188,7 @@ class PulserHardwareServer(Process):
                     elif token == 0xff000000:
                         self.timestampOffset += 1<<28
                     elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
-                        state = self.analyzingState.scanparameter
+                        self.state = self.analyzingState.scanparameter
                 else:
                     key = token >> 28
                     channel = (token >>24) & 0xf
@@ -229,14 +229,15 @@ class PulserHardwareServer(Process):
             check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
             self._shutter = value
-            self.shutterChanged.emit( self._shutter )
         else:
             print "setShutter: Pulser Hardware not available"
+        return self._shutter
             
     def setShutterBit(self, bit, value):
         mask = 1 << bit
         newval = (self._shutter & (~mask)) | (mask if value else 0)
         self.shutter = newval
+        return self.shutter
         
     def getTrigger(self):
         return self._trigger
@@ -250,6 +251,7 @@ class PulserHardwareServer(Process):
             self._trigger = value
         else:
             print "setTrigger: Pulser Hardware not available"
+        return self._trigger
             
     def getCounterMask(self):
         return self._adcCounterMask & 0xff
@@ -262,6 +264,7 @@ class PulserHardwareServer(Process):
             print "set counterMask", hex(self._adcCounterMask)
         else:
             print "setCounterMask: Pulser Hardware not available"
+        return self._adcCounterMask & 0xff
 
     def getAdcMask(self):
         return (self._adcCounterMask >> 8) & 0xff
@@ -274,6 +277,7 @@ class PulserHardwareServer(Process):
             print "set adc mask", hex(self._adcCounterMask)
         else:
             print "setAdcMask: Pulser Hardware not available"
+        return (self._adcCounterMask >> 8) & 0xff
         
     def getIntegrationTime(self):
         return self._integrationTime
@@ -288,6 +292,7 @@ class PulserHardwareServer(Process):
             self._integrationTime = value
         else:
             print "setIntegrationTime: Pulser Hardware not available"
+        return self.integrationTimeBinary
             
     def getIntegrationTimeBinary(self, value):
         return int( (value/self.timestep).toval() ) & 0xffffffff
@@ -462,9 +467,10 @@ class PulserHardwareServer(Process):
             
     def ppFlushData(self):
         if self.xem:
-            self.pipeReader.flushData()
+            self.data = Data()
         else:
             print "ppFlushData: Pulser Hardware not available"
+        return None
 
     def ppClearReadFifo(self):
         if self.xem:

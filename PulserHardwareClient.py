@@ -97,8 +97,9 @@ class PulserHardware(QtCore.QObject):
          
     @shutter.setter
     def shutter(self, value):
-        self.clientPipe.send( ('setShutter', (value,) ) )        
-        return processReturn( self.clientPipe.recv() )
+        self.clientPipe.send( ('setShutter', (value,) ) )      
+        _shutter = processReturn( self.clientPipe.recv() )
+        self.shutterChanged.emit( _shutter )          
         
     @property
     def trigger(self):

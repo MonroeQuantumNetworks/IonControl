@@ -267,18 +267,22 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.stopLabel.setText("Span")        
         
     def onStartChanged(self, value):
+        self.beginChange()
         if self.settings.startCenter == 0:
-            self.settings.start = value
+            self.settings.start = MagnitudeUtilit.mg(value)
         elif self.settings.startCenter == 1:
-            self.settings.center = value
+            self.settings.center = MagnitudeUtilit.mg(value)
         self.calculateBoundaries()
+        self.commitChange()
 
     def onStopChanged(self, value):
+        self.beginChange()
         if self.settings.startCenter == 0:
-            self.settings.stop = value
+            self.settings.stop = MagnitudeUtilit.mg(value)
         elif self.settings.startCenter == 1:
-            self.settings.span = value
+            self.settings.span = MagnitudeUtilit.mg(value)
         self.calculateBoundaries()
+        self.commitChange()
             
     def calculateBoundaries(self):
         if self.settings.startCenter == 0:
@@ -287,8 +291,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         elif self.settings.startCenter == 1:
             self.settings.start = self.settings.center - self.settings.span/2
             self.settings.stop = self.settings.center + self.settings.span/2
-        
-        
+                
     def setSteps( self, settings, writeInput=False ):
         if settings.stepsSelect == 0:
             if writeInput:
