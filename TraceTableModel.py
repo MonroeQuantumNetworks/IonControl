@@ -3,6 +3,8 @@
 Created on Wed Jan 02 09:53:48 2013
 
 @author: plmaunz
+
+This is the model used with TraceTableView to view the list of traces in a table.
 """
 
 import numpy

@@ -3,6 +3,9 @@
 Created on Sun Dec 23 19:27:39 2012
 
 @author: pmaunz
+
+This is the class in which the data associated with a single trace is stored.
+
 """
 
 import numpy
@@ -22,9 +25,25 @@ class TraceException(Exception):
     pass
 
 class Trace(object):
-    """ Class to encapsulate one displayed trace. The data can be saved to and loaded
-    from a file
+    
+    """ Class to encapsulate one displayed trace. 
+    
+    data contained:
+    _x -- array of x values
+    _y -- array of y values
+    name -- name to display in table of traces
+    curve --
+    vars --
+        vars.comment -- comment to add to file
+        vars.traceCreation -- the time the Trace object was created
+    header --
+    curvePen -- which style pen to use for displaying the trace
+    _filename -- filename to save the trace as
+    
+    The data can be saved to and loaded
+    from a file.
     """
+
     def __init__(self):
         """Construct a trace object."""
         self._x_ = numpy.array([]) #array of x values
@@ -44,25 +63,28 @@ class Trace(object):
         
     @property
     def x(self):
+        """Get x array"""
         return self._x_
         
     @x.setter
-    def x(self, new):
-        self._x_ = new
+    def x(self, val):
+        """Set x array"""
+        self._x_ = val
         
     @property
     def y(self):
+        """Get y array"""
         return self._y_
         
     @y.setter
-    def y(self,new):
-        self._y_ = new
+    def y(self,val):
+        """Set y array, and record the time it was set."""
+        self._y_ = val
         self.vars.lastDataAquired = datetime.now()
         
     @property
     def filename(self):
-        """ getter for the full pathname of the file
-        """
+        """Get the full pathname of the file."""
         return self._filename
         
     @filename.setter
@@ -101,8 +123,7 @@ class Trace(object):
             (self.plotfunction)(self,penindex)
     
     def varstr(self,name):
-        """ return the variable value as a string
-        """
+        """return the variable value as a string"""
         return str(self.vars.__dict__.get(name,""))
         
     def saveTraceHeader(self,outfile):
