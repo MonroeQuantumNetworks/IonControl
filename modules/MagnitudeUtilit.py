@@ -16,6 +16,17 @@ def value( obj, tounit=None ):
         return obj.ounit(tounit).toval()
     return obj.toval()
     
+def haveSameDimension( first, second ):
+    isFirstMag = isinstance( first, magnitude.Magnitude )
+    isSecondMag = isinstance( second, magnitude.Magnitude )
+    if isFirstMag and isSecondMag:
+        return first.dimension()==second.dimension()
+    elif isFirstMag:
+        return first.dimensionless()
+    elif isSecondMag:
+        return second.dimensionless()
+    return True
+    
 def valueAs( obj, tounit=None ):
     """ return the value of a magnitude object, in the unit of another magnitude object"""
     if not isinstance(obj, magnitude.Magnitude ):

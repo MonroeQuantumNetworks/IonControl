@@ -284,12 +284,19 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.commitChange()
             
     def calculateBoundaries(self):
-        if self.settings.startCenter == 0:
-            self.settings.center = (self.settings.start + self.settings.stop)/2
-            self.settings.span = abs(self.settings.start - self.settings.stop)
-        elif self.settings.startCenter == 1:
-            self.settings.start = self.settings.center - self.settings.span/2
-            self.settings.stop = self.settings.center + self.settings.span/2
+        try:
+            if self.settings.startCenter == 0:
+                self.settings.center = (self.settings.start + self.settings.stop)/2
+                self.settings.span = abs(self.settings.start - self.settings.stop)
+            elif self.settings.startCenter == 1:
+                self.settings.start = self.settings.center - self.settings.span/2
+                self.settings.stop = self.settings.center + self.settings.span/2
+            self.startBox.setStyleSheet("")
+            self.stopBox.setStyleSheet("")
+        except Exception as e:
+            self.startBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
+            self.stopBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
+            
                 
     def setSteps( self, settings, writeInput=False ):
         if settings.stepsSelect == 0:
@@ -415,8 +422,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onStepsValueChanged( self, value ):
         if self.settings.stepsSelect==0:
             self.settings.steps = int(value)
+            self.stepsBox.setStyleSheet("")
         else: 
             self.settings.stepSize = value
+            if MagnitudeUtilit.haveSameDimension(self.settings.stepSize, self.settings.start):
+                self.stepsBox.setStyleSheet("")
+            else:
+                self.stepsBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
         self.calculateSteps(self.settings)
         self.setSteps( self.settings )
 
