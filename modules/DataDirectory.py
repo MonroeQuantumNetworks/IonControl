@@ -53,6 +53,11 @@ class DataDirectory:
         """
         if not current:
             current = datetime.date.today()
+        """
+        return the sequenced filename in the current data directory.
+        _000 serial is inserted before the file extension or at the end of the name if the filename has no extension.
+        The directory is reread every time.
+        """
         directory = self.path(current)
         fileName, fileExtension = os.path.splitext(name)
         pattern = re.compile(re.escape(fileName)+"_(?P<num>\\d+)"+re.escape(fileExtension))

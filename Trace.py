@@ -26,9 +26,10 @@ class Trace(object):
     from a file
     """
     def __init__(self):
-        self._x_ = numpy.array([])
-        self._y_ = numpy.array([])
-        self.name = "noname"
+        """Construct a trace object."""
+        self._x_ = numpy.array([]) #array of x values
+        self._y_ = numpy.array([]) #array of y values
+        self.name = "noname" #name to display in table of traces
         self.curve = None
         self.vars = Empty()
         self.vars.comment = ""

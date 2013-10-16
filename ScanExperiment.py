@@ -300,10 +300,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppStart()
         self.running = True
         self.currentIndex = 0
-        if self.currentTrace is not None:
-            if self.scan.autoSave:
-                self.currentTrace.resave()
-            self.currentTrace = None
+        self.currentTrace = None
         self.scanControlWidget.progressBar.setRange(0,len(self.scan.list))
         self.scanControlWidget.progressBar.setValue(0)
         self.scanControlWidget.progressBar.setStyleSheet("")
@@ -408,6 +405,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTrace.name = self.scan.settingsName
             self.currentTrace.vars.comment = ""
             self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
+            if hasattr(self, 'plottedTrace'):
+                self.plottedTrace.plot(0)
             self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
             xRange = self.generator.xRange()
             if xRange:
