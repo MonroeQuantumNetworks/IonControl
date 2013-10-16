@@ -22,7 +22,10 @@ def valueAs( obj, tounit=None ):
         return obj
     if tounit:
         if isinstance(tounit,magnitude.Magnitude ):
-            return obj.ounit(tounit.out_unit).toval()
+            if tounit.out_unit:
+                return obj.ounit( tounit.out_unit ).toval()
+            else:
+                return obj.toval()
         else:
             return obj.ounit(tounit).toval()
     return obj.toval()    
