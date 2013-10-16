@@ -205,6 +205,21 @@ class PulserHardwareServer(Process):
                     else:
                         pass
      
+    def __getattr__(self, name):
+        """delegate not available procedures to xem"""
+        if name.startswith('__') and name.endswith('__'):
+            return super(PulserHardwareServer, self).__getattr__(key)
+        def wrapper(*args):
+            if self.xem:
+                return getattr( self.xem, name )(*args)
+            return None
+        setattr(self, name, wrapper)
+        return wrapper      
+     
+    def SetWireInValue(self, address, data):
+        if self.xem:
+            self.xem.SetWireInValue(address, data)
+
     def getShutter(self):
         return self._shutter  #
          
@@ -527,9 +542,6 @@ class PulserHardwareServer(Process):
             self.openModule = self.getDeviceDescription(self.xem)
         return self.xem
 
-    def SetWireInValue(self, address, data):
-        if self.xem:
-            self.xem.SetWireInValue(address, data)
         
 def sliceview(view,length):
     return tuple(buffer(view, i, length) for i in range(0, len(view), length))    

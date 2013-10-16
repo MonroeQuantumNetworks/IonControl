@@ -81,7 +81,9 @@ class PulserHardware(QtCore.QObject):
         self.serverProcess.join()
         self.queueReader.wait()
         
-    def __getattr__(selfself,name):
+    def __getattr__(self,name):
+        if name.startswith('__') and name.endswith('__'):
+            return super(PulserHardware, self).__getattr__(key)
         def wrapper(*args):
             self.clientPipe.send( (name, args) )
             return processReturn( self.clientPipe.recv() )
