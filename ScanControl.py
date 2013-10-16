@@ -30,6 +30,8 @@ class Scan:
         self.scanParameter = None
         self.start = 0
         self.stop = 0
+        self.center = 0
+        self.span = 0
         self.steps = 0
         self.stepSize = 1
         self.stepsSelect = 0
@@ -42,6 +44,7 @@ class Scan:
         self.xUnit = ""
         self.loadPP = False
         self.loadPPName = ""
+        self.startCenter = 0    # 0: start, stop;  1:center, span
         # Evaluation
         self.histogramBins = 50
         self.integrateHistogram = False
@@ -70,6 +73,9 @@ class Scan:
         self.__dict__.setdefault('loadPPName', "")
         self.__dict__.setdefault('evalName','Mean')
         self.__dict__.setdefault('stepSize',1)
+        self.__dict__.setdefault('center',0)
+        self.__dict__.setdefault('span',0)
+        self.__dict__.setdefault('startCenter',0)        
         self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
         
     def __eq__(self,other):
@@ -99,13 +105,16 @@ class Scan:
                 self.integrateTimestamps == other.integrateTimestamps and
                 self.timestampsChannel == other.timestampsChannel and
                 self.saveRawData == other.saveRawData and
-                self.gateSetSettings == other.gateSetSettings)
+                self.gateSetSettings == other.gateSetSettings and
+                self.center == other.center and
+                self.span == other.span and
+                self.startCenter == other.startCenter )
         
     def __hash__(self):
         return hash( (self.scanParameter, self.start, self.stop, self.steps, self.stepSize, self.stepsSelect, self.scantype, self.scanMode,
                       self.scanRepeat, self.rewriteDDS, self.filename, self.autoSave, self.xUnit, self.loadPP, self.loadPPName, self.histogramBins,
                       self.integrateHistogram, self.counterChannel, self.evalName, self.errorBars, self.enableTimestamps, self.binwidth,
-                      self.roiStart, self.integrateTimestamps, self.timestampsChannel, self.saveRawData) )
+                      self.roiStart, self.integrateTimestamps, self.timestampsChannel, self.saveRawData, self.center, self.span, self.startCeneter) )
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
@@ -132,6 +141,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.historyFinalState = None
         self.settings = self.config.get(self.configname,Scan())
         self.gateSetUi = None
+        self.settingsName = None
 
     def setupUi(self, parent):
         ScanControlForm.setupUi(self,parent)
@@ -149,8 +159,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.comboBox.addItem(name)
         # update connections
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )        
-        self.startBox.valueChanged.connect( functools.partial(self.onStartStopChanged,'start') )
-        self.stopBox.valueChanged.connect( functools.partial(self.onStartStopChanged,'stop') )
+        self.startBox.valueChanged.connect( self.onStartChanged )
+        self.stopBox.valueChanged.connect( self.onStopChanged )
         self.stepsBox.valueChanged.connect( self.onStepsValueChanged )
         self.stepsCombo.currentIndexChanged[int].connect( self.onStepsSelectChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
@@ -160,6 +170,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
+        self.startCenterCombo.currentIndexChanged[int].connect( self.onStartCenterChanged )
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
@@ -200,8 +211,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings = copy.deepcopy(settings)
         #print "setSettings", id(self.settings), self.settings
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
-        self.startBox.setValue(self.settings.start)
-        self.stopBox.setValue(self.settings.stop)
+        self.setStartCenter()
         self.calculateSteps( self.settings )
         self.setSteps( self.settings, True )
         self.stepsCombo.setCurrentIndex(self.settings.stepsSelect)
@@ -238,6 +248,46 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.onModeChanged(self.settings.scanMode)
         if self.gateSetUi:
             self.gateSetUi.setSettings( self.settings.gateSetSettings )
+            
+    def onStartCenterChanged(self, value):   
+        self.settings.startCenter = value 
+        self.calculateBoundaries()
+        self.setStartCenter()
+        
+    def setStartCenter(self):
+        if self.settings.startCenter == 0:
+            self.startBox.setValue(self.settings.start)
+            self.stopBox.setValue(self.settings.stop)
+            self.startCenterCombo.setCurrentIndex(0)
+            self.stopLabel.setText("Stop")
+        elif self.settings.startCenter == 1:
+            self.startBox.setValue(self.settings.center)
+            self.stopBox.setValue(self.settings.span)
+            self.startCenterCombo.setCurrentIndex(1)
+            self.stopLabel.setText("Span")        
+        
+    def onStartChanged(self, value):
+        if self.settings.startCenter == 0:
+            self.settings.start = value
+        elif self.settings.startCenter == 1:
+            self.settings.center = value
+        self.calculateBoundaries()
+
+    def onStopChanged(self, value):
+        if self.settings.startCenter == 0:
+            self.settings.stop = value
+        elif self.settings.startCenter == 1:
+            self.settings.span = value
+        self.calculateBoundaries()
+            
+    def calculateBoundaries(self):
+        if self.settings.startCenter == 0:
+            self.settings.center = (self.settings.start + self.settings.stop)/2
+            self.settings.span = abs(self.settings.start - self.settings.stop)
+        elif self.settings.startCenter == 1:
+            self.settings.start = self.settings.center - self.settings.span/2
+            self.settings.stop = self.settings.center + self.settings.span/2
+        
         
     def setSteps( self, settings, writeInput=False ):
         if settings.stepsSelect == 0:
@@ -264,7 +314,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 settings.steps = int( round( abs(settings.stop - settings.start)/settings.stepSize ) ) + 1
             except Exception as e:
                 print e
-                settings.setps = None
+                settings.steps = None
         
     def onLoadPP(self, ppname):
         self.settings.loadPPName = str(ppname)
@@ -433,7 +483,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             if self.settingsName not in self.settingsDict:
                 if self.comboBox.findText(self.settingsName)==-1:
                     self.comboBox.addItem(self.settingsName)
-                print self.configname, "adding to combo", name
+                #print self.configname, "adding to combo", self.settingsName
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
     
     def onLoad(self,name):
