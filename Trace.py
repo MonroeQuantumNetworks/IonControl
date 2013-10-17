@@ -28,11 +28,10 @@ class Trace(object):
     
     """ Class to encapsulate one displayed trace. 
     
-    data contained:
+    instance variables:
     _x -- array of x values
     _y -- array of y values
     name -- name to display in table of traces
-    curve --
     vars --
         vars.comment -- comment to add to file
         vars.traceCreation -- the time the Trace object was created
@@ -49,7 +48,7 @@ class Trace(object):
         self._x_ = numpy.array([]) #array of x values
         self._y_ = numpy.array([]) #array of y values
         self.name = "noname" #name to display in table of traces
-        self.curve = None
+#        self.curve = None
         self.vars = Empty()
         self.vars.comment = ""
         self.vars.traceCreation = datetime.now()

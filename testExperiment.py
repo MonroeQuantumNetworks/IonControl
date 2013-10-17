@@ -7,12 +7,12 @@ Created on Sat Dec 22 17:25:13 2012
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-import Trace
+from Trace import Trace
+from PlottedTrace import PlottedTrace
 import random
 import numpy
 import pens
-import Traceui
-import pyqtgraph
+from Traceui import Traceui
 import MainWindowWidget
 import FitUi
 import functools
@@ -28,15 +28,15 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def __init__(self,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
         testForm.__init__(self)
-        pyqtgraph.setConfigOption('background', 'w')
-        pyqtgraph.setConfigOption('foreground', 'k')
+#        pyqtgraph.setConfigOption('background', 'w')
+#        pyqtgraph.setConfigOption('foreground', 'k')
 
     def setupUi(self,MainWindow,config):
         testForm.setupUi(self,MainWindow)
         self.config = config
         self.graphicsView = self.graphicsLayout.graphicsView
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,"testExperiment",self.graphicsView)
+        self.traceui = Traceui(self.penicons,self.config,"testExperiment",self.graphicsView)
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
@@ -68,7 +68,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.StatusMessage.emit("test Save not implemented")
     
     def onStart(self):
-        self.trace = Trace.Trace()
+        self.trace = Trace()
         self.x = 0
         self.phase = random.uniform(0,2*numpy.pi)
         self.trace.x = numpy.array([self.x])
@@ -78,7 +78,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.trace.name = "test trace"
         self.trace.vars.comment = "My Comment"
         self.trace.filenameCallback = functools.partial( self.traceFilename, '' )
-        self.plottedtrace = Traceui.PlottedTrace(self.trace,self.graphicsView,pens.penList)
+        self.plottedtrace = PlottedTrace(self.trace,self.graphicsView,pens.penList)
         self.traceui.addTrace(self.plottedtrace ,pen=-1)
         self.timer = QtCore.QTimer()
         self.timer.setInterval(300)

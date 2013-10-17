@@ -7,7 +7,6 @@ Created on Wed Jan 02 09:53:48 2013
 This is the model used with TraceTableView to view the list of traces in a table.
 """
 
-import numpy
 from PyQt4 import QtCore, QtGui
 import sip
 import functools
@@ -15,11 +14,22 @@ import functools
 api2 = sip.getapi("QVariant")==2
 
 class TraceComboDelegate(QtGui.QItemDelegate):
+    
+    """
+    This class is responsible for the combo box editor in the trace table,
+    which is used to select which pen to use in drawing the trace on the plot.
+    The pen icons are in the array penicons, which is determined when the delegate
+    is constructed.
+    """    
+    
     def __init__(self, penicons):
+        """Construct the TraceComboDelegate object, and set the penicons array."""
         QtGui.QItemDelegate.__init__(self)
         self.penicons = penicons        
         
     def createEditor(self,parent, option, index ):
+        """Create the combo box editor used to select which pen icon to use.
+           The for loop adds each pen icon into the combo box."""
         editor = QtGui.QComboBox(parent);
         #for icon, string in zip(self.penicons, ["{0}".format(i) for i in range(0,len(self.penicons))] ):
         for icon, string in zip(self.penicons, ['']*len(self.penicons) ):
@@ -38,10 +48,17 @@ class TraceComboDelegate(QtGui.QItemDelegate):
         editor.setGeometry(option.rect)
     
 class TraceTableModel(QtCore.QAbstractTableModel):
+    
+    """
+    This class is the data model used to displaying the traces in a table.
+    
+    instance variables:
+    TraceList -- the list of all traces, stored as PlottedTrace objects
+    penicons -- the list of icons available for the different traces
+    """
+    
     def __init__(self, TraceList, penicons, parent=None, *args): 
-        """ datain: a list where each item is a row
-        
-        """
+        """ datain: a list where each item is a row"""
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.TraceList = TraceList
         self.penicons = penicons
@@ -70,17 +87,20 @@ class TraceTableModel(QtCore.QAbstractTableModel):
         return 5
  
     def data(self, index, role): 
+        row = index.row()
+        col = index.column()
+        traceplot = self.TraceList[row]
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,2): self.TraceList[index.row()].trace.name,
-                     (QtCore.Qt.DisplayRole,3): self.TraceList[index.row()].trace.vars.comment,
-                     (QtCore.Qt.DisplayRole,4): getattr( self.TraceList[index.row()].trace, 'fileleaf', None ),
-                     (QtCore.Qt.CheckStateRole,0): self.TraceList[index.row()].curvePen>0,
-                     (QtCore.Qt.DecorationRole,1): QtGui.QIcon(self.penicons[self.TraceList[index.row()].curvePen]) if hasattr(self.TraceList[index.row()], 'curve') and self.TraceList[index.row()].curve is not None else None,
-                     (QtCore.Qt.BackgroundColorRole,1): QtGui.QColor(QtCore.Qt.white) if not (hasattr(self.TraceList[index.row()], 'curve') and self.TraceList[index.row()].curve is not None) else None,
-                     (QtCore.Qt.EditRole,1): self.TraceList[index.row()].curvePen,
-                     (QtCore.Qt.EditRole,2): self.TraceList[index.row()].trace.vars.comment,
-                     (QtCore.Qt.EditRole,3): self.TraceList[index.row()].trace.vars.comment
-                     }.get((role,index.column()))
+            return { (QtCore.Qt.DisplayRole,2): traceplot.trace.name,
+                     (QtCore.Qt.DisplayRole,3): traceplot.trace.vars.comment,
+                     (QtCore.Qt.DisplayRole,4): getattr( traceplot.trace, 'fileleaf', None ),
+                     (QtCore.Qt.CheckStateRole,0): traceplot.curvePen>0,
+                     (QtCore.Qt.DecorationRole,1): QtGui.QIcon(self.penicons[traceplot.curvePen]) if hasattr(traceplot, 'curve') and traceplot.curve is not None else None,
+                     (QtCore.Qt.BackgroundColorRole,1): QtGui.QColor(QtCore.Qt.white) if not (hasattr(traceplot, 'curve') and traceplot.curve is not None) else None,
+                     (QtCore.Qt.EditRole,1): traceplot.curvePen,
+                     (QtCore.Qt.EditRole,2): traceplot.trace.vars.comment,
+                     (QtCore.Qt.EditRole,3): traceplot.trace.vars.comment
+                     }.get((role,col))
         return None
 
     def setDataComment(self,index,value):
