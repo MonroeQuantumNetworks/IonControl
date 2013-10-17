@@ -310,7 +310,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
         
     def calculateSteps(self, settings):
-        print "calculateSteps", settings.stepsSelect
+        #print "calculateSteps", settings.stepsSelect
         if settings.stepsSelect == 0:
             try:
                 settings.stepSize = abs(settings.stop - settings.start)/(settings.steps - 1)
@@ -414,7 +414,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.commitChange()
 
     def onStepsSelectChanged(self, select ):
-        print "onStepsSelectChanged", select
+        #print "onStepsSelectChanged", select
         self.settings.stepsSelect = select
         self.calculateSteps( self.settings )
         self.setSteps( self.settings, True )
@@ -456,7 +456,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         for name in scannames:
             self.comboBoxParameter.addItem(name)
         self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
-        print self.configname,"activating", self.settings.scanParameter
+        #print self.configname,"activating", self.settings.scanParameter
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)
@@ -505,8 +505,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         #print self.configname, "onLoad", name
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
-        else:
-            print self.configname, self.settingsDict
+        #else:
+        #    print self.configname, self.settingsDict
 
     def onReload(self):
         self.onLoad( self.comboBox.currentText() )
