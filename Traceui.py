@@ -4,99 +4,16 @@ Created on Fri Dec 28 18:40:30 2012
 
 @author: pmaunz
 """
-from modules import enum
 import PyQt4.uic
-import TraceTableModel
+from TraceTableModel import TraceComboDelegate, TraceTableModel
 import pens
-import pyqtgraph
-import numpy
 from PyQt4 import QtGui
 import Trace
 import os.path
 import ProjectSelection
-
-class PlottedTrace(object):
-    Styles = enum.enum('lines','points','linespoints')
-    def __init__(self,Trace,graphicsView,penList,pen=0,style=None):
-        self.penList = penList
-        self.graphicsView = graphicsView
-        if not hasattr(self.graphicsView,'penUsageDict'):
-            self.graphicsView.penUsageDict = [0]*len(pens.penList)
-        self.penUsageDict = self.graphicsView.penUsageDict
-        self.trace = Trace
-        self.curve = None
-        self.fitcurve = None
-        self.errorBarItem = None
-        self.style = self.Styles.lines if style is None else style
-        #self.plot(pen)
-        
-    def removePlots(self):
-        if self.curve is not None:
-            self.graphicsView.removeItem(self.curve)
-            self.curve = None
-            self.penUsageDict[self.curvePen] -= 1
-            if self.errorBarItem is not None:
-                self.graphicsView.removeItem(self.errorBarItem)  
-                self.errorBarItem = None
-            if self.fitcurve is not None:
-                self.graphicsView.removeItem(self.fitcurve)
-                self.fitcurve = None
-                
-    def plotFitfunction(self,penindex):
-        if hasattr(self.trace,'fitfunction'):
-            self.fitx = numpy.linspace(numpy.min(self.trace.x),numpy.max(self.trace.x),300)
-            self.fity = self.trace.fitfunction.value(self.fitx)
-            self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
- 
-    def plotErrorBars(self,penindex):
-        if hasattr(self.trace,'height'):
-            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, height=self.trace.height,
-                                                       pen=self.penList[penindex][0])
-            self.graphicsView.addItem(self.errorBarItem)
-        elif hasattr(self.trace,'top') and hasattr(self.trace,'bottom'):
-            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom,
-                                                       pen=self.penList[penindex][0])
-            self.graphicsView.addItem(self.errorBarItem)
-            
-
-    def plotLines(self,penindex):
-        self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=self.penList[penindex][0])
-    
-    def plotPoints(self,penindex):
-        self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=None, symbol=self.penList[penindex][1],
-                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
-    
-    def plotLinespoints(self,penindex):
-        self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
-                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])                
-    
-    def plot(self,penindex,style=None):
-        self.style = self.style if style is None else style
-        self.removePlots()
-        penindex = { -2: self.__dict__.get('curvePen',0),
-                     -1: sorted(zip(self.penUsageDict, range(len(self.penUsageDict))))[1][1] }.get(penindex, penindex)
-        if penindex>0:
-            self.plotFitfunction(penindex)
-            self.plotErrorBars(penindex)
-            { self.Styles.lines: self.plotLines,
-              self.Styles.points: self.plotPoints,
-              self.Styles.linespoints: self.plotLinespoints }.get(self.style,self.plotLines)(penindex)
-            self.penUsageDict[penindex] += 1
-        self.curvePen = penindex
-        
-    def replot(self):
-        if hasattr(self,'curve') and self.curve is not None:
-            self.curve.setData( self.trace.x, self.trace.y )
-        if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
-            if hasattr(self.trace,'height'):
-                self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
-            else:
-                self.errorBarItem.setOpts(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom)
-                
-
+from PlottedTrace import PlottedTrace
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\Traceui.ui')
-
 
 def unique(seq):
     seen = set()
@@ -120,9 +37,9 @@ class Traceui(TraceuiForm, TraceuiBase):
     def setupUi(self,MainWindow):
         TraceuiForm.setupUi(self,MainWindow)
         self.TraceList = list()
-        self.model = TraceTableModel.TraceTableModel(self.TraceList,self.penicons)    
+        self.model = TraceTableModel(self.TraceList,self.penicons)    
         self.traceTableView.setModel(self.model)
-        self.traceTableView.setItemDelegateForColumn(1,TraceTableModel.TraceComboDelegate(self.penicons))
+        self.traceTableView.setItemDelegateForColumn(1,TraceComboDelegate(self.penicons))
         
         self.clearButton.clicked.connect(self.onClear )
         self.saveButton.clicked.connect(self.onSave )
