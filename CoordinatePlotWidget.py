@@ -37,6 +37,9 @@ class CustomPlotItem(pg.PlotItem):
         0 to 1 and the default grid to on.
         """
         super(CustomPlotItem,self).__init__(parent)
+        pg.setConfigOption('background', 'w') #set background to white
+        pg.setConfigOption('foreground', 'k') #set foreground to black
+
         self.gridBtn = pg.ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
         self.unityRangeBtn = pg.ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
