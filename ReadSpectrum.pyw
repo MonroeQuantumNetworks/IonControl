@@ -5,16 +5,16 @@ Created on Mon Dec 17 07:02:00 2012
 @author: plmaunz
 """
 
-from ...modules import DataDirectory
+from modules import DataDirectory
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import visa
 import Read_N9342CN
 import Read_E5100B
 import Read_N9010A
-from .. import pens
-from .. import Traceui
-from ...modules import configshelve
+import pens
+import Traceui
+from modules import configshelve
 
 instrumentmap = {
     'N9342CN' : Read_N9342CN.N9342CN,
