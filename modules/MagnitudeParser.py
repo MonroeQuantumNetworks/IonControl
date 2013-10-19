@@ -40,7 +40,7 @@ def parseDelta( string, deltapos=0, parseAll=True ):
     retval = magnitude.mg(float(val[0]),unit)
     retval.output_prec( prec )
     delta = decimalpos-mydeltapos
-    return retval, magnitude.mg(pow(10,delta),unit), deltapos
+    return retval, magnitude.mg(pow(10,delta),unit), deltapos, decimalpos
     
 def positionawareTrim( string, position ):
     oldlen = len(string)
