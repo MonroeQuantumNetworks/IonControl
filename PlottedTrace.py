@@ -14,10 +14,10 @@ class PlottedTrace(object):
     def __init__(self,Trace,graphicsView,penList,pen=0,style=None,parentTrace=None):
         self.penList = penList
         self.graphicsView = graphicsView
-        if not hasattr(self.graphicsView,'penUsageDict'):
-            if self.graphicsView != None:
+        if self.graphicsView != None:
+            if not hasattr(self.graphicsView,'penUsageDict'):
                 self.graphicsView.penUsageDict = [0]*len(pens.penList)
-        self.penUsageDict = self.graphicsView.penUsageDict
+            self.penUsageDict = self.graphicsView.penUsageDict
         self.trace = Trace
         self.curve = None
         self.fitcurve = None
@@ -26,30 +26,30 @@ class PlottedTrace(object):
 #Tree related data
         self.parentTrace = parentTrace
         self.childTraces = []
-        
-    def appendChild(self, child):
-        """Append a child to the trace's list of children"""
-        return self.childTraces.append(child)
-    
-    def child(self, row):
-        """Return the child at the specified row, from the trace's list of children."""
-        return self.childTraces[row]
-        
+
+    def child(self, number):
+        """Return the child at the specified number, from the trace's list of children."""
+        return self.childTraces[number]
+
     def childCount(self):
         """Return the number of children of the trace."""
         return len(self.childTraces)
-        
+
+    def childNumber(self):
+        """Return the row of this trace in its parent's list of traces."""
+        if self.parentTrace != None:
+            return self.parentTrace.childTraces.index(self)
+        else:
+            return 0
+
     def parent(self):
         """Return the parent of the trace."""
         return self.parentTrace
     
-    def row(self):
-        """Return the row of the trace. This is determined by the index of the row in the parent's list of children."""
-        if self.parentTrace != None:
-            return self.parentTrace.childItems.index(self)
-        else:
-            return 0
-        
+    def appendChild(self, trace):
+        self.childTraces.append(trace)
+        return True
+
     def removePlots(self):
         if self.curve is not None:
             self.graphicsView.removeItem(self.curve)

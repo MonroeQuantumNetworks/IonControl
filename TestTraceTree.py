@@ -5,7 +5,9 @@ Created on Wed Oct 16 16:57:23 2013
 @author: jamizra
 """
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui, uic
+
+WidgetContainerForm, WidgetContainerBase = uic.loadUiType(r'C:\Users\jamizra\Programming\playground\TestTraceTree.ui')
 
 class TraceTreeItem(object):
     def __init__(self, data, parent=None):
@@ -23,7 +25,7 @@ class TraceTreeItem(object):
         return len(self.childItems)
         
     def columnCount(self):
-        return len(self.itemData)
+        return 4
     
     def data(self, column):
         if column < len(self.itemData):
@@ -40,28 +42,43 @@ class TraceTreeItem(object):
         else:
             return 0
             
+    def setData(self, column, value):
+        if column < 0 or column >= len(self.itemData):
+            return False
+        self.itemData[column] = value
+        return True
+
+    def insertChildren(self, position, count, columns):
+        if position < 0 or position > len(self.childItems):
+            return False
+        for row in range(count):
+            data = [None for v in range(columns)]
+            item = TraceTreeItem(data, parent=self)
+            self.childItems.insert(position, item)
+        return True
+
 class TraceTreeModel(QtCore.QAbstractItemModel):
-    def __init__(self, topLevelData, parent=None):
+    def __init__(self, initialData, parent=None):
         super(TraceTreeModel, self).__init__(parent)
-        self.rootItem = TraceTreeItem(['column 1', 'column 2', 'column 3'])
-        for element in topLevelData:
-            element.parentItem = self.rootItem
-            self.rootItem.appendChild(element)
+        self.rootItem = TraceTreeItem(['', 'column 1', 'column 2', 'column 3'])
+        for element in initialData:
+            if element.parent() == None:
+                element.parentItem = self.rootItem
+                self.rootItem.appendChild(element)
     
-    def index(self, row, column, parent):
-        if not self.hasIndex(row, column, parent):
+    def index(self, row, column, parentIndex):
+        if not self.hasIndex(row, column, parentIndex):
             return QtCore.QModelIndex()
-        
-        elif not parent.isValid():
+
+        if not parentIndex.isValid():
             parentItem = self.rootItem
         else:
-            parentItem = parent.internalPointer()
-            
+            parentItem = parentIndex.internalPointer()
         childItem = parentItem.child(row)
         if childItem:
             return self.createIndex(row, column, childItem)
-        else:
-            return QtCore.QModelIndex()
+
+        return QtCore.QModelIndex()
     
     def parent(self, index):
         if not index.isValid():
@@ -75,40 +92,44 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
 
         else:
             return self.createIndex(parentItem.row(), 0, parentItem)
-        
-    def rowCount(self, parent):
-        if parent.column() > 0:
+
+    def rowCount(self, parentIndex):
+        if parentIndex.column() > 0:
             return 0
-        
-        if not parent.isValid():
-            parentItem = self.rootItem
+        if not parentIndex.isValid():
+            parent= self.rootItem
         else:
-            parentItem = parent.internalPointer()
-        
-        return parentItem.childCount()
+            parent= parentIndex.internalPointer()
+        return parent.childCount()
         
     def columnCount(self, parent):
-        if parent.isValid():
-            return parent.internalPointer().columnCount()
-        else:
-            return self.rootItem.columnCount()
+        return 4
             
     def data(self, index, role):
         if not index.isValid():
             return None
-            
+        col = index.column()
+        item = index.internalPointer()
+        if role == QtCore.Qt.CheckStateRole and col == 0:
+            if item.itemData[0] > 0:
+                return QtCore.Qt.Checked 
+            else:
+                return QtCore.Qt.Unchecked
         elif role != QtCore.Qt.DisplayRole:
             return None
-        
-        item = index.internalPointer()
-        
-        return item.data(index.column())
-        
+        elif col != 0:
+            return item.data(col-1)
+        else:
+            return None
+
     def flags(self, index):
+        col = index.column()
         if not index.isValid():
             return QtCore.Qt.NoItemFlags
+        elif col == 0:
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable
         else:
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
             
     def headerData(self, section, orientation, role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
@@ -116,34 +137,81 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         else:
             return None
           
+    def setData(self, index, value, role):
+        col = index.column()
+        item = index.internalPointer()
 
-            
-if __name__ == "__main__":
+        if role == QtCore.Qt.EditRole:
+            result = item.setData(col-1, value.toFloat()[0])
+            if result:
+                self.dataChanged.emit(index, index)
+            return result
+
+        elif role == QtCore.Qt.CheckStateRole:
+            self.layoutAboutToBeChanged.emit()
+            if QtCore.Qt.CheckState(str(value.toString())) == QtCore.Qt.Checked:
+                result = item.setData(0,10)
+            else:
+                result = item.setData(0, -5)
+            self.layoutChanged.emit()
+            if result:
+                self.dataChanged.emit(index, index)
+            return result
+
+    def getItem(self, index):
+        if index.isValid():
+            item = index.internalPointer()
+            if item:
+                return item
+        return self.rootItem
+        
+    def insertRows(self, position, rows, parentIndex=QtCore.QModelIndex()):
+        parentItem = self.getItem(parentIndex)
+        self.beginInsertRows(parentIndex, position, position + rows - 1)
+        success = parentItem.insertChildren(position, rows, self.rootItem.columnCount())
+        self.endInsertRows()
+#        if success:
+#            self.dataChanged.emit(parentIndex, parentIndex)
+        return success
+
+class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
+    def __init__(self, parent=None):
+        WidgetContainerBase.__init__(self,parent)
+        WidgetContainerForm.__init__(self)
+
+    def setupUi(self,MainWindow):
+        WidgetContainerForm.setupUi(self,MainWindow)
+        item1 = TraceTreeItem([1, 2, 3.5])
+        item2 = TraceTreeItem([3, 1, 23], item1)
+        item1.appendChild(item2)
+        item3 = TraceTreeItem([152, 9, 7])
+        item4 = TraceTreeItem([55, 19, 69],item3)
+        item3.appendChild(item4)
+        item5 = TraceTreeItem([99, 9, 1951],item3)
+        item3.appendChild(item5)
+        item6 = TraceTreeItem([5930285,13519, 1011101],item3)
+        item3.appendChild(item6)
+        item7 = TraceTreeItem([1,2,311], item6)
+        item6.appendChild(item7)
+        item8 = TraceTreeItem([999,11,235])
+        items = [item1, item2, item3, item4, item5, item6, item7, item8]
+        
+        self.treeModel = TraceTreeModel(items)
+        self.treeView.setModel(self.treeModel)
+        
+        self.AddElementButton.clicked.connect(self.onAddElement)
+        
+    def onAddElement(self):
+        parentIndex = self.treeView.selectedIndexes()[0]
+        parentItem = self.treeModel.getItem(parentIndex)
+        self.treeModel.insertRows(len(parentItem.childItems), 1, parentIndex)
+#        self.treeModel.
     
+if __name__ == '__main__':
     import sys    
-    
-    item1 = TraceTreeItem(['a', 'b', 'c'])
-    item2 = TraceTreeItem([3, 'q', 'L'], item1)
-    item1.appendChild(item2)
-    item3 = TraceTreeItem(['r', 9, 7])
-    item4 = TraceTreeItem(['ab', 19, 'z'],item3)
-    item3.appendChild(item4)
-    item5 = TraceTreeItem(['abga', 9, 'aba'],item3)
-    item3.appendChild(item5)
-    item6 = TraceTreeItem(['rrr',13519, 1011101],item3)
-    item3.appendChild(item6)
-    item7 = TraceTreeItem([1,2,311], item6)
-    item6.appendChild(item7)
-    
-    treemodel = TraceTreeModel([item1, item3])
-    
     app = QtGui.QApplication(sys.argv)
-
-    view = QtGui.QTreeView()
-    view.setModel(treemodel)
-    view.setWindowTitle("Simple Tree Model")
-    view.show()
+    ui = WidgetContainerUi()
+    ui.setupUi(ui)
+    ui.show()
     sys.exit(app.exec_())
-    
-    
     

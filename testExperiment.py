@@ -55,7 +55,6 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
             print "restoreState"
 
-
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi
         self.pulseProgramUi.addExperiment('Sequence')
