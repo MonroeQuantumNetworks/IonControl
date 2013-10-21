@@ -18,11 +18,12 @@ DefaultProjectCached = False
 class ProjectException(Exception):
     pass
 
-with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
-    DefaultProject = config.get('DefaultProject')
-    ProjectsBaseDir = config.get('ProjectBaseDir',ProjectsBaseDir)
-    DataDirectory.DataDirectoryBase = ProjectsBaseDir
-DefaultProjectCached = True
+if hasattr(__main__,'__file__'):
+    with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
+        DefaultProject = config.get('DefaultProject')
+        ProjectsBaseDir = config.get('ProjectBaseDir',ProjectsBaseDir)
+        DataDirectory.DataDirectoryBase = ProjectsBaseDir
+    DefaultProjectCached = True
 
 
 def checkProjectsDir():

@@ -54,13 +54,14 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         try:
             lineEdit = self.lineEdit()
             #print steps, lineEdit.cursorPosition()
-            value, delta, pos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
+            value, delta, pos, decimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
             #print value, delta
             newvalue = value + (steps * delta)
             newvalue.ounit( value.out_unit )
             newvalue.output_prec( value.oprec )
             self.setValue( newvalue )
-            lineEdit.setCursorPosition(pos)
+            value, delta, newpos, newdecimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
+            lineEdit.setCursorPosition( pos + newdecimalpos - decimalpos )
             self.valueChanged.emit( newvalue )
         except Exception:
             pass

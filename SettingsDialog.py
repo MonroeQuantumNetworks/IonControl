@@ -7,33 +7,32 @@ Created on Sat Dec 22 22:34:06 2012
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-import fpgaUtilit
 
 class Settings:
     def __init__(self):
         self.deviceSerial = None
         self.deviceDescription = None
-        self.fpga = None
+        self.pulser = None
 
 SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialog.ui')
 
 class SettingsDialogConfig:
-    autoUpload = False
-    lastInstrument = None
-    lastBitfile = None
+    def __init__(self):
+        self.autoUpload = False
+        self.lastInstrument = None
+        self.lastBitfile = None
 
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
-    def __init__(self,config,parent=0):
+    def __init__(self,pulser,config,parent=0):
         SettingsDialogBase.__init__(self,parent)    
         SettingsDialogForm.__init__(self)
         self.config = config
         self.deviceMap = dict()
         self.settings = Settings()
-        self.fpga = fpgaUtilit.FPGAUtilit()
+        self.pulser = pulser
         
-    def setupUi(self,recipient):
+    def setupUi(self):
         super(SettingsDialog,self).setupUi(self)
-        self.recipient = recipient
         self.pushButtonScan.clicked.connect( self.scanInstruments )
         self.renameButton.clicked.connect( self.onBoardRename )
         self.uploadButton.clicked.connect( self.onUploadBitfile )
@@ -51,23 +50,23 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
                 self.onUploadBitfile()
+            else:
+                self.pulser.OpenBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
         else:
             self.exec_()
                 
     def onAutoUploadChanged(self, state):
         self.configSettings.autoUpload = state==QtCore.Qt.Checked
-        #print self.configSettings.__dict__
-        #print self.bitfileCache
         
     def onBoardRename(self):
         newIdentifier = str(self.identifierEdit.text())
-        self.fpga.renameBoard(self.settings.deviceSerial, newIdentifier )
+        self.pulser.renameBoard(self.settings.deviceSerial, newIdentifier )
         self.scanInstruments()
         self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(newIdentifier) )
         
     def scanInstruments(self):
         self.comboBoxInstruments.clear()
-        self.deviceMap = self.fpga.listBoards()
+        self.deviceMap = self.pulser.listBoards()
         self.comboBoxInstruments.addItems( self.deviceMap.keys() )
         print self.deviceMap
         
@@ -79,14 +78,13 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.settings.deviceInfo = self.deviceMap[str(description)]
             self.identifierEdit.setText( description )
             if self.settings.deviceSerial not in [None,'',0]:
-                self.fpga.openBySerial(self.settings.deviceSerial)
-                self.settings.fpga = self.fpga
+                self.pulser.openBySerial(self.settings.deviceSerial)
+                self.settings.pulser = self.pulser
         
     def accept(self):
         print "accept"
         self.lastPos = self.pos()
         self.hide()
-        self.recipient.onSettingsApply(self.settings)        
         
     def reject(self):
         print "reject"
@@ -101,7 +99,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def apply(self,button):
         #print button.text(), "button pressed"
         if str(button.text())=="Apply":
-            self.recipient.onSettingsApply(self.settings)
+            self.pulser.openBySerial( self.settings.deviceSerial )   
             
     def close(self):
         self.config['SettingsDialog.Config'] = self.configSettings
@@ -122,8 +120,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         bitfile = str(self.comboBoxBitfiles.currentText())
         print "Uploading file '{0}'".format(bitfile),
         if bitfile!="":
-            self.fpga.openBySerial( self.settings.deviceSerial )
-            self.fpga.uploadBitfile(self.bitfileCache[bitfile])
+            self.pulser.openBySerial( self.settings.deviceSerial )
+            self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
 
             

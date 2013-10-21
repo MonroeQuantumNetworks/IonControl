@@ -89,7 +89,9 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         print "onDefinitionChanged",self.files.definitionFile
         
     def onGlobalChanged(self,value):
-        self.files.globalFile = self.files.globalHistory[str(value)]
+        value = str(value)
+        if  value in self.files.globalHistory:
+            self.files.globalFile = self.files.globalHistory[value]
         self.loadGlobalAdjust.emit(self.files.globalFile)
         print "onGlobalChanged",self.files.globalFile
         

@@ -42,7 +42,7 @@ class TextHeader(Structure):
         ("comment", c_char * 256)]
         
     def __str__(self):
-        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_ ] )
+        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_.remove(("crlf", c_char * 2)) ] )
                             
 class BinaryHeader(Structure):
     _fields_ = [

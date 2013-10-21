@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget_2">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
@@ -891,8 +891,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>startButton</tabstop>
-  <tabstop>stopButton</tabstop>
   <tabstop>thresholdOvenBox</tabstop>
   <tabstop>thresholdBareBox</tabstop>
   <tabstop>checkTimeBox</tabstop>
@@ -901,7 +899,35 @@
   <tabstop>ovenChannelBox</tabstop>
   <tabstop>shutterChannelBox</tabstop>
   <tabstop>counterChannelBox</tabstop>
+  <tabstop>startButton</tabstop>
+  <tabstop>stopButton</tabstop>
   <tabstop>historyTableView</tabstop>
+  <tabstop>useChannelGui0</tabstop>
+  <tabstop>channelMinGui0</tabstop>
+  <tabstop>channelMaxGui0</tabstop>
+  <tabstop>useChannelGui1</tabstop>
+  <tabstop>channelMinGui1</tabstop>
+  <tabstop>channelMaxGui1</tabstop>
+  <tabstop>useChannelGui2</tabstop>
+  <tabstop>channelMinGui2</tabstop>
+  <tabstop>channelMaxGui2</tabstop>
+  <tabstop>useChannelGui3</tabstop>
+  <tabstop>channelMinGui3</tabstop>
+  <tabstop>channelMaxGui3</tabstop>
+  <tabstop>useChannelGui4</tabstop>
+  <tabstop>channelMinGui4</tabstop>
+  <tabstop>channelMaxGui4</tabstop>
+  <tabstop>useChannelGui5</tabstop>
+  <tabstop>channelMinGui5</tabstop>
+  <tabstop>channelMaxGui5</tabstop>
+  <tabstop>useChannelGui6</tabstop>
+  <tabstop>channelMinGui6</tabstop>
+  <tabstop>channelMaxGui6</tabstop>
+  <tabstop>useChannelGui7</tabstop>
+  <tabstop>channelMinGui7</tabstop>
+  <tabstop>channelMaxGui7</tabstop>
+  <tabstop>useInterlockGui</tabstop>
+  <tabstop>tabWidget_2</tabstop>
  </tabstops>
  <resources>
   <include location="Experiment.qrc"/>

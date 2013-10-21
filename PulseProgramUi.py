@@ -24,7 +24,8 @@ class ConfiguredParams:
         self.lastFilename = None
         self.recentFiles = dict()
         
-    def upgrade(self):
+    def __setstate__(self,d):
+        self.__dict__ = d
         self.__dict__.setdefault('lastFilename',None)
         self.__dict__.setdefault('recentFiles',dict())
 
@@ -58,12 +59,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
         self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
-        self.configParams.upgrade()
-        self.datashelf = configshelve.configshelve(self.configname, ProjectSelection.guiConfigDir() )
-        self.datashelf.open()
         
         if hasattr(self.configParams,'recentFiles'):
-            self.filenameComboBox.addItems(self.configParams.recentFiles.keys())
+            for key, path in self.configParams.recentFiles.iteritems():
+                if os.path.exists(path):
+                    self.filenameComboBox.addItem(key)
         if self.configParams.lastFilename is not None:
             try:
                 self.loadFile( self.configParams.lastFilename )
@@ -113,7 +113,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def loadFile(self, path):
         print "loadFile", path
         if self.variabledict is not None and self.configParams.lastFilename is not None:
-            self.datashelf[self.configParams.lastFilename] = self.variabledict
+            self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
         try:
@@ -122,8 +122,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             # compilation failed
             pass
         self.variabledict = self.pulseProgram.variabledict.copy()
-        if key in self.datashelf:
-            self.variabledict.update( dictutil.subdict(self.datashelf[key], self.variabledict.keys() ) )
+        if (self.configname,key) in self.config:
+            self.variabledict.update( dictutil.subdict(self.config[(self.configname,key)], self.variabledict.keys() ) )
         self.updateDisplay()
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
@@ -190,8 +190,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
-        self.datashelf[self.configParams.lastFilename] = self.variabledict
-        self.datashelf.close()
+        if self.configParams.lastFilename:
+            self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
