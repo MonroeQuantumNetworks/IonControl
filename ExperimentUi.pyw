@@ -16,13 +16,11 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QTime",2)
 #sip.setapi("QUrl",2)
 
-import CounterWidget
 import ScanExperiment
 import ExternalScanExperiment
 import SettingsDialog
 import testExperiment
 from modules import configshelve
-import FromFile
 import PulseProgramUi
 import ShutterUi
 import DDSUi
@@ -34,6 +32,7 @@ import ProjectSelectionUi
 import os
 from modules import DataDirectory
 from ExceptionLogButton import ExceptionLogButton
+import GlobalVariables 
 
 import VoltageControl
     
@@ -80,13 +79,21 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.settings = self.settingsDialog.settings        
         self.pulserHardware = PulserHardware.PulserHardware(self.settings.fpga)
 
-        for widget,name in [ (CounterWidget.CounterWidget(self.settings,self.pulserHardware), "Simple Counter"), 
-                             (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
+        # Global Variables
+        self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
+        self.globalVariablesUi.setupUi(self.globalVariablesUi)
+        self.globalVariablesDock = QtGui.QDockWidget("Global Variables")
+        self.globalVariablesDock.setObjectName("Global Variables")
+        self.globalVariablesDock.setWidget( self.globalVariablesUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
+
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulserHardware,"ScanExperiment"), "Scan"),
                              (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulserHardware,"ExternalScan"), "External Scan"),
-                             (FromFile.FromFile(),"From File"), 
                              (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
+            if hasattr(widget, 'setGlobalVariablesUi'):
+                widget.setGlobalVariablesUi( self.globalVariablesUi )
             if hasattr(widget,'setPulseProgramUi'):
                 widget.setPulseProgramUi( self.pulseProgramDialog )
             self.tabWidget.addTab(widget, name)
@@ -111,10 +118,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
-        
+                
         # tabify the dock widgets
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
+        self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
         
         self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -214,7 +222,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock]:
+                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock, self.globalVariablesDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
@@ -272,6 +280,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.onClose()
         self.voltageControlWindow.close()
         self.ExternalParametersSelectionUi.onClose()
+        self.globalVariablesUi.onClose()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
@@ -287,6 +296,10 @@ if __name__ == "__main__":
     logger = Logger()    
     sys.stdout = logger
     sys.stderr = logger
+    
+    # the next two lines migrate old pickle files to use the new magnitude module
+    import modules.magnitude as magnitude
+    sys.modules['magnitude'] = magnitude
 
 #    import warnings
 #    with warnings.catch_warnings():

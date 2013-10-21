@@ -12,6 +12,8 @@ import functools
 import pyqtgraph
 import copy
 import MagnitudeSpinBox
+from modules.round import roundToNDigits
+from modules.round import roundToStdDev
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -25,10 +27,13 @@ class FitFunctionUi(object):
         self.fittedParametersUi = [None]* len(fitfunction.parameters)
         self.startParametersUi = [None]* len(fitfunction.parameters)
         self.resultsUi = [None]* len(fitfunction.resultNames)
+        self.parametersConfidenceLabel  = [None]* len(fitfunction.parameters)
         
     def fittedParameterSetValue(self):
-        for i,p in enumerate(self.fitfunction.parameters):
-            self.fittedParametersUi[i].setValue(p)        
+        for i,(p,conf) in enumerate(zip(self.fitfunction.parameters,self.fitfunction.parametersConfidence)):
+            self.fittedParametersUi[i].setValue(p)
+            print repr(roundToNDigits(conf,2))
+            self.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2)))
 
     def startParameterSetValue(self):
         for i,p in enumerate(self.fitfunction.startParameters):
@@ -72,8 +77,13 @@ class FitUi(fitForm, QtGui.QWidget):
                 doubleSpinBox.valueChanged.connect( functools.partial( self.setParameter, fitfunction, line ) )
                 fitfunction.startParametersUi[line] = doubleSpinBox
                 doubleSpinBox = pyqtgraph.SpinBox(fitfunction.page,dec=True)
+                doubleSpinBox.setReadOnly(True)
+                doubleSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
                 fitfunction.gridLayout.addWidget(doubleSpinBox, line+1,2, 1, 1)   
                 fitfunction.fittedParametersUi[line] = doubleSpinBox
+                confidenceLabel = QtGui.QLabel("",fitfunction.page)
+                fitfunction.gridLayout.addWidget(confidenceLabel, line+1, 3, 1, 1)
+                fitfunction.parametersConfidenceLabel[line] = confidenceLabel
             line2 = 0
             for line2, paramname in enumerate(fitfunction.fitfunction.constantNames):
                 label = QtGui.QLabel(paramname,fitfunction.page)
@@ -90,7 +100,7 @@ class FitUi(fitForm, QtGui.QWidget):
                 fitfunction.gridLayout.addWidget(label, line+3+line2+line3, 0, 1, 1)
                 doubleSpinBox = MagnitudeSpinBox.MagnitudeSpinBox(fitfunction.page)
                 doubleSpinBox.setValue(getattr(fitfunction.fitfunction,paramname))
-                fitfunction.gridLayout.addWidget(doubleSpinBox, line+3+line2+line3, 1, 1, 1)
+                fitfunction.gridLayout.addWidget(doubleSpinBox, line+3+line2+line3, 1, 1,2)
                 doubleSpinBox.setEnabled(False)
                 fitfunction.resultsUi[line3] = doubleSpinBox
             fitfunction.gridLayout.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding), line+3+line2, 1, 1, 1)                
@@ -106,12 +116,19 @@ class FitUi(fitForm, QtGui.QWidget):
         functionui = self.fitFunctions[index]
         for name, value in zip(functionui.fitfunction.parameterNames, functionui.startParameters):
             print name, value
-        for plot in self.traceui.selectedPlottedTraces():
-            params = functionui.fitfunction.leastsq(plot.trace.x,plot.trace.y,functionui.startParameters)
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
+            sigma = None
+            if hasattr(plot.trace,'height'):
+                sigma = plot.trace.height
+            elif hasattr(plot.trace,'top') and hasattr(plot.trace,'bottom'):
+                sigma = abs(plot.trace.top + plot.trace.bottom)
+            params = functionui.fitfunction.leastsq(plot.trace.x,plot.trace.y,functionui.startParameters,sigma=sigma)
             plot.trace.fitfunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
-            for i,p in enumerate(params):
-                functionui.fittedParametersUi[i].setValue(p)
+            for i,(p,conf,relconf) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
+                functionui.fittedParametersUi[i].setValue(roundToStdDev(p,conf))
+                functionui.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2))+'%')
+
             for index, name in enumerate(functionui.fitfunction.resultNames):
                 functionui.resultsUi[index].setValue(getattr(functionui.fitfunction,name))
                 
@@ -124,7 +141,7 @@ class FitUi(fitForm, QtGui.QWidget):
     def onPlot(self):
         index = self.stackedWidget.currentIndex()
         functionui = self.fitFunctions[index]
-        for plot in self.traceui.selectedPlottedTraces():
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             functionui.fitfunction.parameters = functionui.startParameters
             plot.trace.fitfunction = functionui.fitfunction
             plot.plot(-2)
@@ -133,12 +150,12 @@ class FitUi(fitForm, QtGui.QWidget):
                 functionui.resultsUi[index].setValue(getattr(functionui.fitfunction,name))
                 
     def onRemoveFit(self):
-        for plot in self.traceui.selectedPlottedTraces():
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             del plot.trace.fitfunction
             plot.plot(-2)
     
     def onExtractFit(self):
-        plots = self.traceui.selectedPlottedTraces()
+        plots = self.traceui.selectedPlottedTraces(defaultToLastLine=True)
         print "onExtractFit {0} plots selected".format(len(plots) )
         if plots:
             plot = plots[0]

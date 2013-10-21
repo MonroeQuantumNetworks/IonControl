@@ -9,7 +9,7 @@ Parser for magnitude expressions. Can parse arithmetic expressions with values i
 
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
     nums,alphas,ParseException
-import magnitude
+import modules.magnitude as magnitude
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )

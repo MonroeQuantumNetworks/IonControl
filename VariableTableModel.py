@@ -7,7 +7,7 @@ Created on Fri Feb 08 22:02:08 2013
 from PyQt4 import QtCore
 from operator import attrgetter
 import functools
-import magnitude
+import modules.magnitude as magnitude
 from modules import Expression
 import sip
 
@@ -27,6 +27,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         #print self.variablelist 
         self.expression = Expression.Expression()
         self.parameterdict = parameterdict
+        self.onParameterChanged()   # make sure we update all global variables
 
     def setVisible(self, visibledict ):
         #print self.rowCount()
@@ -71,6 +72,13 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         except Exception as e:
             print e, "No match for", str(value.toString())
             return False
+        
+    def onParameterChanged(self):
+        for row, var in enumerate(self.variablelist):
+            if hasattr(var,'strvalue'):
+                result = self.expression.evaluate(var.strvalue, self.parameterdict)
+                var.value = result
+                self.dataChanged.emit( self.index(row,4), self.index(row,4) )
         
     def setDataEncoding(self,index, value):
         value = str(value.toString())

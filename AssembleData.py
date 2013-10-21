@@ -8,32 +8,76 @@ Created on Wed Sep 11 12:09:09 2013
 from Trace import Trace
 import os.path
 import numpy
+from modules.DataDirectory import DataDirectory
+import datetime
 
 resultsTable = None
 headerList = list()
 
-path = r'\\snl\mesa\Projects\Quantum_Graph_Analysis\experiments\QGA\2013\2013_09\2013_09_10'
-headerList.append("GateSequenceNo")
+goodGateSets = [ (datetime.date(2013,10,9), [3, 5, 6, 7, 8, 9, 10, 11, 12] ),
+                 (datetime.date(2013,10,10), [2, 4, 5, 6, 7, 8, 10, 11, 12, 13] ),
+                 (datetime.date(2013,10,11), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20] ) ]
+
+goodTestGateSets = [  (datetime.date(2013,10,9),[1, 4, 5, 6, 7]),
+                  (datetime.date(2013,10,10), [2, 3, 4, 5, 6]),
+                  (datetime.date(2013,10,11), [2, 3, 5, 7, 9, 10, 11, 12, 14] ) ]
 
 
-for num in range(10):
-    filename = "GateSet_{0:03d}.txt".format(num+1)
-    headerList.append(filename)
-    fullfilename =  os.path.join(path,filename)
-    t = Trace()
-    t.loadTrace(fullfilename)
-    #print t.vars.experiments, t.x, t.raw
-    t.x, t.raw = zip(*sorted(zip(t.x,t.raw)))
-    #print t.vars.experiments, t.x, t.raw
-    if resultsTable:
-        resultsTable.append(t.raw)        
-    else:
-        resultsTable = list()
-        resultsTable.append(t.x)
-        resultsTable.append(t.raw)
-print resultsTable
-print len(resultsTable)
+datadirectory = DataDirectory('QGA')
+outputpath = datadirectory.path( datetime.date(2013,10,11))
+
+filenamebody = "GateSet"
+expectedLength = 1066
+for date, filenolist in goodGateSets:
+    path = datadirectory.path( date )
+    for fileno in filenolist:
+        filename = filenamebody+"_{0:03d}.txt".format(fileno)
+        fullfilename =  os.path.join(path,filename)
+        t = Trace()
+        t.loadTrace(fullfilename)
+        #print t.vars.experiments, t.x, t.raw
+        if len(t.x)==expectedLength:
+            #print filename, " has expected length."
+            headerList.append(filename)
+            t.x, t.raw = zip(*sorted(zip(t.x,t.raw)))
+            #print t.vars.experiments, t.x, t.raw
+            if resultsTable:
+                resultsTable.append(t.raw)        
+            else:
+                resultsTable = list()
+                resultsTable.append(t.x)
+                resultsTable.append(t.raw)
+        else:
+            print filename, "unexpected length {0} instead of expected {1}".format(len(t.x),expectedLength)
+
 a = numpy.array( resultsTable )
+numpy.savetxt(os.path.join(outputpath,filenamebody+"_good.txt"),numpy.transpose(a),delimiter='\t',fmt='%.0f') #,header="\t".join(headerList)
 
-numpy.savetxt(os.path.join(path,"GateSet_001_010.txt"),numpy.transpose(a),delimiter='\t',fmt='%.0f',header="\t".join(headerList))
+resultsTable = list()
+filenamebody = "GateTestSet"
+expectedLength = 2020
+for date, filenolist in goodTestGateSets:
+    path = datadirectory.path( date )
+    for fileno in filenolist:
+        filename = filenamebody+"_{0:03d}.txt".format(fileno)
+        fullfilename =  os.path.join(path,filename)
+        t = Trace()
+        t.loadTrace(fullfilename)
+        #print t.vars.experiments, t.x, t.raw
+        if len(t.x)==expectedLength:
+            #print filename, " has expected length."
+            headerList.append(filename)
+            t.x, t.raw = zip(*sorted(zip(t.x,t.raw)))
+            #print t.vars.experiments, t.x, t.raw
+            if resultsTable:
+                resultsTable.append(t.raw)        
+            else:
+                resultsTable = list()
+                resultsTable.append(t.x)
+                resultsTable.append(t.raw)
+        else:
+            print filename, "unexpected length {0} instead of expected {1}".format(len(t.x),expectedLength)
+
+a = numpy.array( resultsTable )
+numpy.savetxt(os.path.join(outputpath,filenamebody+"_good.txt"),numpy.transpose(a),delimiter='\t',fmt='%.0f') #,header="\t".join(headerList)
 
