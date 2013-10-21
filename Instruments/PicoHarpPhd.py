@@ -5,7 +5,7 @@ Created on Wed Oct 16 21:30:44 2013
 @author: pmaunz
 """
 
-from ctypes import Structure, c_float, c_int, c_char, c_longlong, c_ulong, sizeof, c_uint
+from ctypes import Structure, c_float, c_int, c_char, c_longlong, c_ulong, c_uint
 
 displayCurves = 8
 resolution = 4e-12
@@ -200,14 +200,30 @@ class PicoHarpPhd(object):
                 curveData = ( c_uint  * channels )()
                 f.readinto( curveData )
                 self.curveDataList.append( list(curveData) )
+                
+    def pruned(self):
+        '''
+        bpt
+        prune zero entries, convert to int, remove last bin
+        '''
+        curveList = []
+        for q in self.curveDataList:
+            curve = []
+            for t in q:
+                if t!=0:
+                    curve.append(int(t))
+            curve.pop()
+            curveList.append(curve)
+        return curveList
         
         
 if __name__=="__main__":
 
-    phd = PicoHarpPhd(r'C:\Users\pmaunz\Documents\Python\HOA1_Micromotion.phd')
+    phd = PicoHarpPhd(r'C:\ex-control\data\ring_94\data\traces.phd')
     
-    print phd.curveDataList
-            
+    print phd.binaryHeader.curves
+   # print phd.curveDataList
+    print phd.pruned()        
         
        
 
