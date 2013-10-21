@@ -51,7 +51,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
                 self.onUploadBitfile()
             else:
-                self.pulser.OpenBySerial(self.configSettings.lastInstrument)
+                self.pulser.OpenBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
         else:
             self.exec_()
                 
