@@ -18,12 +18,14 @@ import FitUi
 import functools
 from modules import DataDirectory
 from AverageView import AverageView
+from ScanControl import ScanControl
 
 testForm, testBase = PyQt4.uic.loadUiType(r'ui\testExperiment.ui')
 
 class test(testForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
+    experimentName = 'Test Scan'
 
     def __init__(self,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
@@ -34,6 +36,8 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def setupUi(self,MainWindow,config):
         testForm.setupUi(self,MainWindow)
         self.config = config
+        self.trace = None
+        self.plottedtrace = None
         self.graphicsView = self.graphicsLayout.graphicsView
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui(self.penicons,self.config,"testExperiment",self.graphicsView)
@@ -55,6 +59,13 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
             print "restoreState"
 
+        self.scanControlWidget = ScanControl(config,self.experimentName)
+        self.scanControlWidget.setupUi(self.scanControlWidget)
+        self.scanControlUi.setWidget(self.scanControlWidget )
+        self.dockWidgetList.append(self.scanControlUi)
+        self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
+
+
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi
         self.pulseProgramUi.addExperiment('Sequence')
@@ -65,18 +76,20 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     
     def onSave(self):
         self.StatusMessage.emit("test Save not implemented")
-    
+
     def onStart(self):
         self.trace = Trace()
-        self.x = 0
-        self.phase = random.uniform(0,2*numpy.pi)
-        self.trace.x = numpy.array([self.x])
-        self.trace.y = numpy.array([random.gauss(numpy.sin( self.x + self.phase),0.1)])
+        self.xvalue = 0
+        self.phase = 0 #random.uniform(0,2*numpy.pi)
+        self.trace.x = numpy.array([self.xvalue])
+        self.trace.y = numpy.array([random.gauss((numpy.sin( self.xvalue + self.phase))**2, 0.1)])
         self.trace.top = numpy.array([0.05])
         self.trace.bottom = numpy.array([0.05])
         self.trace.name = "test trace"
         self.trace.vars.comment = "My Comment"
         self.trace.filenameCallback = functools.partial( self.traceFilename, '' )
+        if self.plottedtrace is not None:
+            self.plottedtrace.plot(0)
         self.plottedtrace = PlottedTrace(self.trace,self.graphicsView,pens.penList)
         self.traceui.addTrace(self.plottedtrace ,pen=-1)
         self.timer = QtCore.QTimer()
@@ -86,9 +99,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.onClear()
         
     def onData(self):
-        self.x += 0.1
-        self.trace.x = numpy.append( self.trace.x, self.x )
-        value = random.gauss(numpy.sin( self.x + self.phase),0.1)
+        self.xvalue += 0.1
+        self.trace.x = numpy.append( self.trace.x, self.xvalue )
+        value = random.gauss((numpy.sin( self.xvalue + self.phase))**2,0.1)
         self.trace.y = numpy.append( self.trace.y, value )
         self.trace.top = numpy.append( self.trace.top, 0.05)
         self.trace.bottom = numpy.append( self.trace.bottom, 0.05)
