@@ -26,7 +26,12 @@ class TraceComboDelegate(QtGui.QItemDelegate):
     methods:
     __init__: constructor for TraceComboDelegate. Construct the parent, and set the penicons array.
     createEditor: create the combo box editor, and add in all the icons.
-    setEditorData: 
+    
+    The following methods are required reimplementations if QItemDelegate methods:
+    createEditor(self,parent, option, index): Create the combo box editor used to select the pen icon.
+    setEditorData(self,editor, index): Supply data to the editor from the model.
+    setModelData(self,editor, model, index): Supply data to the model from the editor.
+    updateEditorGeometry(self,editor, option, index): Set the size of the combo box appropriately.
     """    
     
     def __init__(self, penicons):
@@ -35,7 +40,7 @@ class TraceComboDelegate(QtGui.QItemDelegate):
         self.penicons = penicons        
         
     def createEditor(self,parent, option, index ):
-        """Required reimplementation of parent method. Create the combo box editor used to select pen icon.
+        """Required. Create the combo box editor used to select pen icon.
         
            The for loop adds each pen icon into the combo box."""
         editor = QtGui.QComboBox(parent);
@@ -45,17 +50,17 @@ class TraceComboDelegate(QtGui.QItemDelegate):
         return editor
 
     def setEditorData(self,editor, index):
-        """Required reimplementation of parent method. Supply data to the editor from the model."""
+        """Required. Supply data to the editor from the model."""
         value = index.model().data(index, QtCore.Qt.EditRole) 
         editor.setCurrentIndex(value)
         
     def setModelData(self,editor, model, index):
-        """Required reimplementation of parent method. Supply data to the model from the editor."""
+        """Required. Supply data to the model from the editor."""
         value = editor.currentIndex()
         model.setData(index, value, QtCore.Qt.EditRole)
          
     def updateEditorGeometry(self,editor, option, index ):
-        """Required reimplementation of parent method. Set the size of the combo box appropriately."""
+        """Required. Set the size of the combo box appropriately."""
         editor.setGeometry(option.rect)
     
 class TraceTreeModel(QtCore.QAbstractItemModel):
@@ -71,22 +76,36 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
                  in the model.
 
     methods:
-    __init__(self, TraceList, penicons, parent=None, *args):  Construct the TraceTreeModel
+    __init__(self, TraceList, penicons, parent=None, *args): Construct the TraceTreeModel
     getTrace(self, traceIndex): Return the trace at the given index.
-    index: 
+    addTrace(self,trace,parentIndex=QtCore.QModelIndex()): Add a new trace to the list of traces.
+    dropTrace(self, parentTraceIndex, row): Remove a trace from the list of traces.
+    updateTrace(self, traceIndex): Emit the signal to update the trace.
+    
+    The following methods are required reimplementations of QAbstractItemModel methods (they are used by
+    the view to display the data):
+    index(self, row, column, parentIndex=QtCore.QModelIndex()): Return the index at the row, column, and parentIndex.
+    parent(self, traceIndex): Return the index of the parent of traceIndex.
+    rowCount(self, parentIndex=QtCore.QModelIndex()): Return the number of rows beneath the given parent.
+    columnCount(self, parent=QtCore.QModelIndex()): Return the number of columns.
+    data(self, traceIndex, role): Return the data from the model to the view at the given index for the given role.
+    setData(self, traceIndex, value, role): Set the data in the model from the value set in the view.
+    flags(self, index): Return the flags for the given index.
+    headerData(self, section, orientation, role): Return the headers for each column.
+    setData(self, traceIndex, value, role): Set the data in the model from the value set in the view.
     """
     
-    def __init__(self, TraceList, penicons, parent=None, *args): 
+    def __init__(self, traceList, penicons, parent=None, *args): 
         """
         Construct the TraceTreeModel.
         
-        TraceList: The initial list of traces (typically empty)
+        traceList: The initial list of traces (typically empty)
         penicons: The list of available icons for the different traces
         """
         super(TraceTreeModel, self).__init__(parent)
         self.rootTrace = PlottedTrace(None,None,None) #rootTrace is an empty plotted trace
         self.penicons = penicons
-        for trace in TraceList: #set all top level traces to have rootTrace as parent
+        for trace in traceList: #set all top level traces to have rootTrace as parent
             if trace.parentTrace == None:
                 trace.parentTrace = self.rootTrace
                 self.rootTrace.appendChild(trace)
@@ -95,52 +114,45 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         """Return the trace at the given index. If the index is invalid, return the root trace."""
         if not traceIndex.isValid():
             return self.rootTrace
-        else:
-            return traceIndex.internalPointer()
+        return traceIndex.internalPointer()
         
     def index(self, row, column, parentIndex=QtCore.QModelIndex()):
-        """
-        Required reimplementation of parent method. Return a model index for the specified row, column, and parent.
-        
-        This method is used by the view to extract indices for each element in the tree.        
-        """
+        """Required. Return a model index for the specified row, column, and parent."""
         if not self.hasIndex(row, column, parentIndex):
             return QtCore.QModelIndex()
-        if not parentIndex.isValid():
-            parentTrace = self.rootTrace
-        else:
-            parentTrace = parentIndex.internalPointer()
-        childTrace = parentTrace.child(row)
-        if childTrace:
-            return self.createIndex(row, column, childTrace)
-        return QtCore.QModelIndex()
+        parentTrace = self.getTrace(parentIndex)
+        trace = parentTrace.child(row)
+        if trace == None:
+            return QtCore.QModelIndex()
+        return self.createIndex(row, column, trace)
 
     def parent(self, traceIndex):
-        if not traceIndex.isValid():
+        """Required. Return a model index for the parent of the specified index."""
+        trace = self.getTrace(traceIndex)
+        if trace == self.rootTrace:
             return QtCore.QModelIndex()
-        trace = traceIndex.internalPointer()
         parentTrace = trace.parent()
         if parentTrace == self.rootTrace:
             return QtCore.QModelIndex()
-        return self.createIndex(parentTrace.childNumber(), 0, parentTrace)
+        return self.createIndex(parentTrace.childNumber(), 0, parentTrace) #index created for column 0 of parent
 
     def rowCount(self, parentIndex=QtCore.QModelIndex()):
-        if not parentIndex.isValid():
-            parentTrace = self.rootTrace
-        else:
-            parentTrace = parentIndex.internalPointer()
+        """Required. Return the number of rows beneath the given parent."""
+        parentTrace = self.getTrace(parentIndex)
         if parentIndex.column() > 0:
             return 0
         return parentTrace.childCount()
 
     def columnCount(self, parent=QtCore.QModelIndex()): 
+        """Required. Return the number of columns."""
         return 5
 
-    def data(self, traceIndex, role): 
-        if not traceIndex.isValid():
+    def data(self, traceIndex, role):
+        """Required. Return the data at the given index for the given role."""
+        trace = self.getTrace(traceIndex)
+        if trace == self.rootTrace:
             return None
         col = traceIndex.column()
-        trace = traceIndex.internalPointer()
         return { (QtCore.Qt.DisplayRole,2): trace.trace.name,
                  (QtCore.Qt.DisplayRole,3): trace.trace.vars.comment,
                  (QtCore.Qt.DisplayRole,4): getattr( trace.trace, 'fileleaf', None ),
@@ -153,6 +165,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
                  }.get((role,col))
 
     def flags(self, index):
+        """Required. Return the flags for the given index."""
         if not index.isValid():
             return QtCore.Qt.NoItemFlags
         col = index.column()
@@ -162,69 +175,74 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
                  }.get(col, QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
     def headerData(self, section, orientation, role):
-        if (role == QtCore.Qt.DisplayRole):
-            if (orientation == QtCore.Qt.Horizontal): 
-                return {
-                    1: 'Plot   ',
-                    2: 'Name',
-                    3: 'Comment',
-                    4: 'Filename'
-                    }.get(section)
+        """Required. Return the headers for each column."""
+        if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
+            return {
+                1: 'Plot   ',
+                2: 'Name',
+                3: 'Comment',
+                4: 'Filename'
+                }.get(section)
         return None #QtCore.QVariant()
 
-    def setDataComment(self,traceIndex,value):
-        comment = value if api2 else str(value.toString())
-        trace = self.getTrace(traceIndex)
-        if not comment==trace.trace.vars.comment:
-            trace.trace.vars.comment = comment
-            trace.trace.resave()
-        return True
-        
-    def setDataPen(self,traceIndex,value):
-        trace = self.getTrace(traceIndex)
-        trace.plot(value)
-        return True
-        
-    def setDataPlot(self,traceIndex,value):
-        trace = self.getTrace(traceIndex)
-        if trace.curvePen > 0:
-            trace.plot(0)
-        else:
-            trace.plot(-1)
-        row = traceIndex.row()
-        leftInd = self.createIndex(row, 0, trace)
-        rightInd = self.createIndex(row, 4, trace)
-        self.dataChanged.emit(leftInd, rightInd)
-        return True      
-
     def setData(self, traceIndex, value, role):
+        """Required. Set the data in the model from the value set in the view."""
+        row = traceIndex.row()
         col = traceIndex.column()
-        return { (QtCore.Qt.CheckStateRole,0): partial( self.setDataPlot, traceIndex, value ),
-                 (QtCore.Qt.EditRole,1): partial( self.setDataPen, traceIndex, value ),
-                 (QtCore.Qt.EditRole,3): partial( self.setDataComment, traceIndex, value ),
-                }.get((role,col), lambda: False )()
+        trace = self.getTrace(traceIndex)
+        
+        if (role == QtCore.Qt.CheckStateRole) and (col == 0):
+            #If the checkbox is checked, replot.
+            if trace.curvePen > 0:
+                trace.plot(0)
+            else:
+                trace.plot(-1)
+            leftInd = self.createIndex(row, 0, trace)
+            rightInd = self.createIndex(row, 4, trace)
+            self.dataChanged.emit(leftInd, rightInd)
+            return True      
+
+        elif (role == QtCore.Qt.EditRole) and (col == 1):
+            trace.plot(value)
+            return True
+
+        elif (role == QtCore.Qt.EditRole) and (col == 3):
+            #If the comment changes, change it and resave the file.
+            comment = value if api2 else str(value.toString())
+            if not comment == trace.trace.vars.comment:
+                trace.trace.vars.comment = comment
+                trace.trace.resave()
+            return True
+        
+        else:
+            return False
 
     def addTrace(self,trace,parentIndex=QtCore.QModelIndex()):
+        """Add a new trace to the list of traces."""
         parentTrace = self.getTrace(parentIndex)
-        position = parentTrace.childCount()
+        position = parentTrace.childCount() #New trace is added at the end of the list
         self.beginInsertRows(parentIndex, position, position)
         parentTrace.appendChild(trace)
         trace.parentTrace = parentTrace
-        leftColTraceIndex = self.createIndex(position, 0, trace)
-        rightColTraceIndex = self.createIndex(position, 4, trace)
-        leftPersTraceIndex = QtCore.QPersistentModelIndex(leftColTraceIndex)
-        rightPersTraceIndex = QtCore.QPersistentModelIndex(rightColTraceIndex)
-        trace.trace.dataChangedCallback = partial(self.updateTrace, leftPersTraceIndex,rightPersTraceIndex)
+        #For the callback, we use a persistent index, so that when the trace "calls"
+        #that its data is changed, the index it calls remains valid.
+        persistentIndex = QtCore.QPersistentModelIndex(self.createIndex(position, 0, trace))
+        trace.trace.dataChangedCallback = partial(self.updateTrace, persistentIndex)
         self.endInsertRows()
 
     def dropTrace(self, parentTraceIndex, row):
-        self.beginRemoveRows(parentTraceIndex,row,row)
+        """Remove a trace from the list of traces."""
+        self.beginRemoveRows(parentTraceIndex, row, row)
         parentTrace = self.getTrace(parentTraceIndex)
         del parentTrace.childTraces[row]
         self.endRemoveRows()
 
-    def updateTrace(self, leftPersTraceIndex, rightPersTraceIndex):
-        leftIndex = QtCore.QModelIndex(leftPersTraceIndex)
-        rightIndex = QtCore.QModelIndex(rightPersTraceIndex)
-        self.dataChanged.emit(leftIndex, rightIndex)
-    
+    def updateTrace(self, persistentIndex):
+        """Emit the signal to update the trace."""
+        #the index passed in is of type QPersistentModelIndex, it has to be recast as a QModelIndex
+        traceIndex = QtCore.QModelIndex(persistentIndex)
+        trace = self.getTrace(traceIndex)
+        row = traceIndex.row()
+        leftInd = self.createIndex(row, 0, trace)
+        rightInd = self.createIndex(row, 4, trace)
+        self.dataChanged.emit(leftInd, rightInd) #Update all 5 columns

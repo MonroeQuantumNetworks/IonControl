@@ -39,7 +39,6 @@ class CustomPlotItem(pg.PlotItem):
         super(CustomPlotItem,self).__init__(parent)
         pg.setConfigOption('background', 'w') #set background to white
         pg.setConfigOption('foreground', 'k') #set foreground to black
-
         self.gridBtn = pg.ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
         self.unityRangeBtn = pg.ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
@@ -87,6 +86,8 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         self.graphicsView.setYRange(0,1) #Range defaults to 0 to 1
         self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         self.gridShown = True #Because we can't query whether the grid is on or off, we just keep track
+        pg.setConfigOption('background', 'w')
+        pg.setConfigOption('foreground', 'k')
         
     def addCustomPlot(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
         """This is a duplicate of addPlot from GraphicsLayout.py. The only change
@@ -141,8 +142,6 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
 if __name__ == '__main__':
     import sys    
     app = QtGui.QApplication(sys.argv)
-    pg.setConfigOption('background', 'w')
-    pg.setConfigOption('foreground', 'k')
     MainWindow = QtGui.QMainWindow()
     MainWindow.setCentralWidget(CoordinatePlotWidget())
     MainWindow.show()

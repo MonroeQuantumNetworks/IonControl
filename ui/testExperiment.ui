@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>732</height>
+    <height>521</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,6 +57,15 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2"/>
+  </widget>
+  <widget class="QDockWidget" name="scanControlUi">
+   <property name="windowTitle">
+    <string>Scan Parameters</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3"/>
   </widget>
   <action name="actionExpand">
    <property name="text">

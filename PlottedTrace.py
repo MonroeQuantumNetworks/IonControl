@@ -47,6 +47,7 @@ class PlottedTrace(object):
         return self.parentTrace
     
     def appendChild(self, trace):
+        """Append a child to the trace."""
         self.childTraces.append(trace)
         return True
 
