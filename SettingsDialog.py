@@ -7,6 +7,7 @@ Created on Sat Dec 22 22:34:06 2012
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
+from functools import partial
 
 class Settings:
     def __init__(self):
@@ -21,6 +22,16 @@ class SettingsDialogConfig:
         self.autoUpload = False
         self.lastInstrument = None
         self.lastBitfile = None
+        self.showOnStartup = True
+        
+    def __setstate__(self, state):
+        """this function ensures that the given fields are present in the class object"""
+        self.__dict__ = state
+        self.__dict__.setdefault('autoUpload', False)
+        self.__dict__.setdefault('lastInstrument', None)
+        self.__dict__.setdefault('lastBitfile', None)
+        self.__dict__.setdefault('showOnStartup', True)
+
 
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def __init__(self,pulser,config,parent=0):
@@ -42,11 +53,13 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.configSettings = self.config.get('SettingsDialog.Config',SettingsDialogConfig() )
         self.bitfileCache = self.config.get('SettingsDialog.bitfileCache',dict() )
         self.checkBoxAutoUpload.setChecked( self.configSettings.autoUpload )
-        self.checkBoxAutoUpload.stateChanged.connect( self.onAutoUploadChanged )
+        self.checkBoxAutoUpload.stateChanged.connect( partial(self.onStateChanged, 'autoUpload') )
+        self.showOnStartupCheckBox.setChecked( self.configSettings.showOnStartup )
+        self.showOnStartupCheckBox.stateChanged.connect( partial(self.onStateChanged, 'showOnStartup') )
         #print "bitfileCacheLength" , len(self.bitfileCache)
         for item in self.bitfileCache:
             self.comboBoxBitfiles.addItem(item)
-        if self.configSettings.lastInstrument in self.deviceMap:
+        if self.configSettings.lastInstrument in self.deviceMap and not self.configSettings.showOnStartup:
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
                 self.onUploadBitfile()
@@ -55,8 +68,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         else:
             self.exec_()
                 
-    def onAutoUploadChanged(self, state):
-        self.configSettings.autoUpload = state==QtCore.Qt.Checked
+    def onStateChanged(self, attribute, state):
+        setattr( self.configSettings, attribute, state==QtCore.Qt.Checked )
         
     def onBoardRename(self):
         newIdentifier = str(self.identifierEdit.text())
