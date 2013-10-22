@@ -43,7 +43,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         
     def onStart(self):
         if self.status in [self.Status.Idle, self.Status.Stopping, self.Status.Running]:
-            self.start = time.time()
+            self.startTime = time.time()
             self.state = self.OpStates.running
             self.scan = self.scanControlWidget.getScan()
             self.externalParameter = self.enabledParameters[self.scan.scanParameter]
@@ -70,7 +70,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                     self.currentTrace = None
                 self.updateProgressBar(0,max(len(self.scan.list),1))
                 self.timestampsNewRun = True
-                print "elapsed time", time.time()-self.start
+                print "elapsed time", time.time()-self.startTime
                 self.status = self.Status.Running
                 print "Status -> Running"
             else:
@@ -117,5 +117,5 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.finalizeData()
             if self.externalParameterIndex >= len(self.scan.list):
                 self.generator.dataOnFinal(self)
-        self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list,1)))
+        self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list),1))
 
