@@ -141,7 +141,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.historyFinalState = None
         self.settings = self.config.get(self.configname,Scan())
         self.gateSetUi = None
-        self.settingsName = None
+        self.settingsName = self.config.get(self.configname+'.settingsName',None)
 
     def setupUi(self, parent):
         ScanControlForm.setupUi(self,parent)
@@ -150,13 +150,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
         self.reloadButton.clicked.connect( self.onReload )
-        self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
         try:
             self.setSettings( self.settings )
         except AttributeError as e:
             print "Ignoring exception",e
         for name in self.settingsDict:
             self.comboBox.addItem(name)
+        if self.settingsName and self.comboBox.findText(self.settingsName):
+            self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
+        self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
         # update connections
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )        
         self.startBox.valueChanged.connect( self.onStartChanged )
@@ -472,6 +474,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onClose(self):
         self.config[self.configname] = self.settings
         self.config[self.configname+'.dict'] = self.settingsDict
+        self.config[self.configname+'.settingsName'] = self.settingsName
     # History stuff
     
     def onRedo(self):
