@@ -63,7 +63,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
         self.dockWidgetList.append(self.scanControlUi)
-        self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
+        self.tabifyDockWidget( self.dockWidgetFitUi, self.scanControlUi )
 
 
     def setPulseProgramUi(self,pulseProgramUi):
@@ -78,35 +78,64 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.StatusMessage.emit("test Save not implemented")
 
     def onStart(self):
-        self.trace = Trace()
-        self.xvalue = 0
-        self.phase = 0 #random.uniform(0,2*numpy.pi)
-        self.trace.x = numpy.array([self.xvalue])
-        self.trace.y = numpy.array([random.gauss((numpy.sin( self.xvalue + self.phase))**2, 0.1)])
-        self.trace.top = numpy.array([0.05])
-        self.trace.bottom = numpy.array([0.05])
-        self.trace.name = "test trace"
-        self.trace.vars.comment = "My Comment"
-        self.trace.filenameCallback = functools.partial( self.traceFilename, '' )
-        if self.plottedtrace is not None:
-            self.plottedtrace.plot(0)
-        self.plottedtrace = PlottedTrace(self.trace,self.graphicsView,pens.penList)
-        self.traceui.addTrace(self.plottedtrace ,pen=-1)
-        self.timer = QtCore.QTimer()
-        self.timer.setInterval(300)
-        self.timer.timeout.connect( self.onData )
-        self.timer.start(300)
-        self.displayUi.onClear()
+        if self.scanControlWidget.scanRepeatComboBox.currentIndex() == 0:
+            self.trace = Trace()
+            self.xvalue = 0
+            self.phase = 0 #random.uniform(0,2*numpy.pi)
+            self.trace.x = numpy.array([self.xvalue])
+            c = numpy.sin( self.xvalue + self.phase)**2
+            self.trace.y = numpy.array([random.gauss(c, c*(1-c))])
+            self.trace.top = numpy.array([0.05])
+            self.trace.bottom = numpy.array([0.05])
+            self.trace.name = "test trace"
+            self.trace.vars.comment = "My Comment"
+            self.trace.filenameCallback = functools.partial( self.traceFilename, '' )
+            if self.plottedtrace is not None:
+                self.plottedtrace.plot(0)
+            self.plottedtrace = PlottedTrace(self.trace,self.graphicsView,pens.penList)
+            self.traceui.addTrace(self.plottedtrace ,pen=-1)
+            self.timer = QtCore.QTimer()
+            self.timer.setInterval(100)
+            self.timer.timeout.connect( self.onData )
+            self.timer.start(100)
+            self.displayUi.onClear()
+        else:
+            self.averageTrace = Trace()
+            self.trace = Trace()
+            self.xvalue = 0
+            self.phase = 0 #random.uniform(0,2*numpy.pi)
+            self.trace.x = numpy.array([self.xvalue])
+            c = numpy.sin( self.xvalue + self.phase)**2
+            self.trace.y = numpy.array([random.gauss(c, c*(1-c))])
+            self.trace.top = numpy.array([0.05])
+            self.trace.bottom = numpy.array([0.05])
+            self.trace.name = "test trace"
+            self.trace.vars.comment = "My Comment"
+            self.trace.filenameCallback = functools.partial( self.traceFilename, '' )
+            if self.plottedtrace is not None:
+                self.plottedtrace.plot(0)
+            self.plottedtrace = PlottedTrace(self.trace,self.graphicsView,pens.penList)
+            self.traceui.addTrace(self.plottedtrace ,pen=-1)
+            self.timer = QtCore.QTimer()
+            self.timer.setInterval(100)
+            self.timer.timeout.connect( self.onData )
+            self.timer.start(100)
+            self.displayUi.onClear()
+
+
         
     def onData(self):
         self.xvalue += 0.1
         self.trace.x = numpy.append( self.trace.x, self.xvalue )
-        value = random.gauss((numpy.sin( self.xvalue + self.phase))**2,0.1)
+        c = numpy.sin( self.xvalue + self.phase)**2
+        value = random.gauss(c, c*(1-c))
         self.trace.y = numpy.append( self.trace.y, value )
         self.trace.top = numpy.append( self.trace.top, 0.05)
         self.trace.bottom = numpy.append( self.trace.bottom, 0.05)
-        self.displayUi.add( value )
+        self.displayUi.add(value)
         self.plottedtrace.replot()
+        if self.xvalue > 3.2:
+            self.onStop()
         
     def onStop(self):
         if hasattr(self, 'timer'):
