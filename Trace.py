@@ -79,13 +79,14 @@ class Trace(object):
         """Set y array, and record the time it was set."""
         self._y_ = val
         self.vars.lastDataAquired = datetime.now()
-        
+         
     def getFilename(self):
         """return the filename if no filename is available get a filename using the callback"""
         if not self._filename and self.filenameCallback:
             self.filename = self.filenameCallback()
+            self.resave()
         return self._filename
-        
+          
     @property
     def filename(self):
         """Get the full pathname of the file."""
@@ -112,6 +113,7 @@ class Trace(object):
             self.saveTrace(self.filename)
         elif self.filenameCallback and saveIfUnsaved:
             self.saveTrace(self.filenameCallback())
+        return self._filename
     
     def deleteFile(self):
         """ delete the file from disk

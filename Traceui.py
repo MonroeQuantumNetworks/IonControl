@@ -74,7 +74,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.model = TraceTreeModel([], self.penicons)    
         self.traceTreeView.setModel(self.model)
         self.traceTreeView.setItemDelegateForColumn(1,TraceComboDelegate(self.penicons)) #This is for selecting which pen to use in the plot
-        self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.MultiSelection) #allows selecting more than one element in the view
+        self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
         self.removeButton.clicked.connect(self.onRemove)
