@@ -295,6 +295,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 self.settings.stop = self.settings.center + self.settings.span/2
             self.startBox.setStyleSheet("")
             self.stopBox.setStyleSheet("")
+            self.calculateSteps(self.settings)
+            self.setSteps(self.settings, False)
         except Exception as e:
             self.startBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
             self.stopBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
