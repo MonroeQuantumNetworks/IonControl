@@ -89,6 +89,10 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         
+    def autoRange(self):
+        """Set the display to autorange."""
+        self.graphicsView.vb.enableAutoRange()
+        
     def addCustomPlot(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
         """This is a duplicate of addPlot from GraphicsLayout.py. The only change
         is CustomPlotItem instead of PlotItem."""

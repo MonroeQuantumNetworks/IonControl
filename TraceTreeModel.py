@@ -156,7 +156,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         return { (QtCore.Qt.DisplayRole,2): trace.trace.name,
                  (QtCore.Qt.DisplayRole,3): trace.trace.vars.comment,
                  (QtCore.Qt.DisplayRole,4): getattr( trace.trace, 'fileleaf', None ),
-                 (QtCore.Qt.CheckStateRole,0): trace.curvePen>0,
+                 (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if trace.curvePen > 0 else QtCore.Qt.Unchecked,
                  (QtCore.Qt.DecorationRole,1): QtGui.QIcon(self.penicons[trace.curvePen]) if hasattr(trace, 'curve') and trace.curve is not None else None,
                  (QtCore.Qt.BackgroundColorRole,1): QtGui.QColor(QtCore.Qt.white) if not (hasattr(trace, 'curve') and trace.curve is not None) else None,
                  (QtCore.Qt.EditRole,1): trace.curvePen,
@@ -193,7 +193,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         
         if (role == QtCore.Qt.CheckStateRole) and (col == 0):
             #If the checkbox is checked, replot.
-            if trace.curvePen > 0:
+            if (value == QtCore.Qt.Unchecked) and (trace.curvePen > 0):
                 trace.plot(0)
             else:
                 trace.plot(-1)
@@ -216,10 +216,14 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         
         else:
             return False
-
-    def addTrace(self,trace,parentIndex=QtCore.QModelIndex()):
+            
+    def addTrace(self,trace,parentTrace=None):
         """Add a new trace to the list of traces."""
-        parentTrace = self.getTrace(parentIndex)
+        if parentTrace == None:
+            parentTrace = self.rootTrace
+            parentIndex = QtCore.QModelIndex()
+        else:
+            parentIndex = self.createIndex(parentTrace.childNumber(), 0, parentTrace)
         position = parentTrace.childCount() #New trace is added at the end of the list
         self.beginInsertRows(parentIndex, position, position)
         parentTrace.appendChild(trace)

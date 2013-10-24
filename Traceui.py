@@ -99,9 +99,13 @@ class Traceui(TraceuiForm, TraceuiBase):
                 uniqueRowIndexes.append(traceIndex)
         return uniqueRowIndexes
 
-    def addTrace(self,trace,pen):
+    def addTrace(self, trace, pen, parentTrace=None):
         """Add a trace to the model, plot it, and resize the view appropriately."""
-        self.model.addTrace(trace)
+        self.model.addTrace(trace, parentTrace)
+        if parentTrace != None:
+            parentIndex = self.model.createIndex(parentTrace.childNumber(), 0, parentTrace)
+            if not self.traceTreeView.isExpanded(parentIndex):
+                self.traceTreeView.expand(parentIndex)
         trace.plot(pen,self.settings.plotstyle)
         numcols = self.model.columnCount()
         for column in range(numcols):

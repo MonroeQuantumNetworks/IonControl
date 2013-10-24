@@ -98,6 +98,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
+        self.graphicsView.autoRange()
         if 'DedicatedCounter.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['DedicatedCounter.MainWindow.State'])
         self.onSettingsChanged()

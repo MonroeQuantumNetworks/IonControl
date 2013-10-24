@@ -15,7 +15,7 @@ It is expected to send an endlabel (0xffffffff) when finished.
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-import Trace
+from Trace import Trace
 import numpy
 import pens
 import Traceui
@@ -186,7 +186,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
-        self.currentTrace = None
+        self.plottedTrace = None
         self.currentIndex = 0
         self.activated = False
         self.histogramCurve = None
@@ -300,7 +300,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppStart()
         self.running = True
         self.currentIndex = 0
-        self.currentTrace = None
+        if self.plottedTrace is not None:
+            self.plottedTrace.plot(0)
+            self.plottedTrace = None
         self.scanControlWidget.progressBar.setRange(0,len(self.scan.list))
         self.scanControlWidget.progressBar.setValue(0)
         self.scanControlWidget.progressBar.setStyleSheet("")
@@ -332,7 +334,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppStop()
             self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
             self.state = self.OpStates.paused
-            
     
     def onStop(self):
         if self.running:
@@ -394,34 +395,31 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 
     def updateMainGraph(self, x, mean, error, raw):
         print x, mean, error
-        if self.currentTrace is None:
-            self.currentTrace = Trace.Trace()
-            self.currentTrace.x = numpy.array([x])
-            self.currentTrace.y = numpy.array([mean])
-            self.currentTrace.raw = numpy.array([raw])
+        if self.plottedTrace is None:
+            self.plottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
+            self.plottedTrace.trace.x = numpy.array([x])
+            self.plottedTrace.trace.y = numpy.array([mean])
+            self.plottedTrace.trace.raw = numpy.array([raw])
             if error and self.scan.errorBars:
-                self.currentTrace.bottom = numpy.array([error[0]])
-                self.currentTrace.top = numpy.array([error[1]])
-            self.currentTrace.name = self.scan.settingsName
-            self.currentTrace.vars.comment = ""
-            self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
-            if hasattr(self, 'plottedTrace'):
-                self.plottedTrace.plot(0)
-            self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
+                self.plottedTrace.trace.bottom = numpy.array([error[0]])
+                self.plottedTrace.trace.top = numpy.array([error[1]])
+            self.plottedTrace.trace.name = self.scan.settingsName
+            self.plottedTrace.trace.vars.comment = ""
+            self.plottedTrace.trace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
             xRange = self.generator.xRange()
             if xRange:
                 self.graphicsView.setXRange( *xRange )                
-            self.traceui.addTrace(self.plottedTrace,pen=-1)
+            self.traceui.addTrace(self.plottedTrace, pen=-1)
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( self.scan.documentationString() )
-            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader))
         else:
-            self.generator.appendData(self.currentTrace, x, mean, raw, error)
+            self.generator.appendData(self.plottedTrace.trace, x, mean, raw, error)
             self.plottedTrace.replot()
 
     def finalizeData(self):
         print "finalize Data"
-        for trace in [self.currentTrace, self.currentTimestampTrace]:
+        for trace in [self.plottedTrace.trace, self.currentTimestampTrace]:
             if trace:
                 trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
@@ -457,7 +455,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
-            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
     def showHistogram(self, data):
