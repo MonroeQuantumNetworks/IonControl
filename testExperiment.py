@@ -36,8 +36,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def setupUi(self,MainWindow,config):
         testForm.setupUi(self,MainWindow)
         self.config = config
-        self.trace = None
-        self.plottedtrace = None
+        self.plottedTrace = None
         self.graphicsView = self.graphicsLayout.graphicsView
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui(self.penicons,self.config,"testExperiment",self.graphicsView)
@@ -58,13 +57,13 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         if 'testWidget.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
             print "restoreState"
-
+#start added
         self.scanControlWidget = ScanControl(config,self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
         self.dockWidgetList.append(self.scanControlUi)
-        self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
-
+#end added
+        self.tabifyDockWidget( self.dockWidgetFitUi, self.scanControlUi )
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi
@@ -78,36 +77,72 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.StatusMessage.emit("test Save not implemented")
 
     def onStart(self):
-        self.trace = Trace()
+        self.scanType = self.scanControlWidget.scanRepeatComboBox.currentIndex()
+#start added
+        if self.scanType == 0:
+            self.startScan()
+        elif self.scanType == 1:
+            self.createAverageScan()
+            self.startScan()
+#end added
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(80)
+        self.timer.timeout.connect( self.onData )
+        self.timer.start(80)
+        self.displayUi.onClear()
+
+#start added
+    def createAverageScan(self):
+        self.averagePlottedTrace = PlottedTrace(Trace(), self.graphicsView, pens.penList)
+        self.averagePlottedTrace.trace.name = "test average trace"
+        self.averagePlottedTrace.trace.vars.comment = "average trace comment"
+        self.averagePlottedTrace.trace.filenameCallback = functools.partial(self.traceFilename, '')
+        self.traceui.addTrace(self.averagePlottedTrace, pen=0)
+#end added
+
+    def startScan(self):
+        if self.plottedTrace is not None:
+            self.plottedTrace.plot(0)
+        self.plottedTrace = PlottedTrace(Trace(),self.graphicsView,pens.penList)
         self.xvalue = 0
         self.phase = 0 #random.uniform(0,2*numpy.pi)
-        self.trace.x = numpy.array([self.xvalue])
-        self.trace.y = numpy.array([random.gauss((numpy.sin( self.xvalue + self.phase))**2, 0.1)])
-        self.trace.top = numpy.array([0.05])
-        self.trace.bottom = numpy.array([0.05])
-        self.trace.name = "test trace"
-        self.trace.vars.comment = "My Comment"
-        self.trace.filenameCallback = functools.partial( self.traceFilename, '' )
-        if self.plottedtrace is not None:
-            self.plottedtrace.plot(0)
-        self.plottedtrace = PlottedTrace(self.trace,self.graphicsView,pens.penList)
-        self.traceui.addTrace(self.plottedtrace ,pen=-1)
-        self.timer = QtCore.QTimer()
-        self.timer.setInterval(300)
-        self.timer.timeout.connect( self.onData )
-        self.timer.start(300)
-        self.displayUi.onClear()
-        
+        self.plottedTrace.trace.x = numpy.array([self.xvalue])
+        c = numpy.sin( self.xvalue + self.phase)**2
+        self.plottedTrace.trace.y = numpy.array([random.gauss(c, 0.1)])#c*(1-c))])
+        self.plottedTrace.trace.top = numpy.array([0.05])
+        self.plottedTrace.trace.bottom = numpy.array([0.05])
+        self.plottedTrace.trace.filenameCallback = functools.partial( self.traceFilename, '' )
+        if self.scanType == 0:
+            self.plottedTrace.trace.name = "test trace"
+            self.plottedTrace.trace.vars.comment = "My Comment"
+            self.traceui.addTrace(self.plottedTrace, pen=-1)
+#start added
+        elif self.scanType == 1:
+            self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
+            self.plottedTrace.trace.name = "test trace {0}".format(self.averagePlottedTrace.childCount())
+            self.plottedTrace.trace.vars.comment = "My Comment {0}".format(self.averagePlottedTrace.childCount())
+#end added
+
     def onData(self):
-        self.xvalue += 0.1
-        self.trace.x = numpy.append( self.trace.x, self.xvalue )
-        value = random.gauss((numpy.sin( self.xvalue + self.phase))**2,0.1)
-        self.trace.y = numpy.append( self.trace.y, value )
-        self.trace.top = numpy.append( self.trace.top, 0.05)
-        self.trace.bottom = numpy.append( self.trace.bottom, 0.05)
-        self.displayUi.add( value )
-        self.plottedtrace.replot()
-        
+        self.xvalue += 0.05
+        self.plottedTrace.trace.x = numpy.append( self.plottedTrace.trace.x, self.xvalue )
+        c = numpy.sin( self.xvalue + self.phase)**2
+        value = random.gauss(c, 0.1)#c*(1-c))
+        self.plottedTrace.trace.y = numpy.append( self.plottedTrace.trace.y, value )
+        self.plottedTrace.trace.top = numpy.append( self.plottedTrace.trace.top, 0.05)
+        self.plottedTrace.trace.bottom = numpy.append( self.plottedTrace.trace.bottom, 0.05)
+        self.displayUi.add(value)
+        self.plottedTrace.replot()
+        if self.xvalue > 3.5:
+            if self.scanType == 0:
+                self.onStop()
+#start added
+            elif self.scanType == 1:
+                self.averagePlottedTrace.averageChildren()
+                self.averagePlottedTrace.plot(7) #average plot is in black
+                self.startScan()
+#end added
+                
     def onStop(self):
         if hasattr(self, 'timer'):
             self.timer.stop()

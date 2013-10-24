@@ -11,7 +11,7 @@ import numpy
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
-    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,parentTrace=None):
+    def __init__(self,Trace,graphicsView,penList,pen=0,style=None):
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:
@@ -23,9 +23,10 @@ class PlottedTrace(object):
         self.fitcurve = None
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
-#Tree related data
-        self.parentTrace = parentTrace
+#Tree related data. Parent and children are set in the model's addTrace method, but declared here
+        self.parentTrace = None
         self.childTraces = []
+        self.curvePen = 0
 
     def child(self, number):
         """Return the child at the specified number, from the trace's list of children."""
@@ -50,6 +51,12 @@ class PlottedTrace(object):
         """Append a child to the trace."""
         self.childTraces.append(trace)
         return True
+        
+    def averageChildren(self):
+        """Set the trace data to the average of its children's data."""
+        self.trace.x = self.childTraces[0].trace.x #All child traces should have the same x data!
+        childTraceYvalues = numpy.array([childTrace.trace.y for childTrace in self.childTraces]) #2D array of children's y data
+        self.trace.y = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
 
     def removePlots(self):
         if self.curve is not None:

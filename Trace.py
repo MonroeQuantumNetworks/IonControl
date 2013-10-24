@@ -53,7 +53,6 @@ class Trace(object):
         self.vars.comment = ""
         self.vars.traceCreation = datetime.now()
         self.header = None
-        self.curvePen = 0
         self._filename = None
         self.filenameCallback = None   # function to result in filename for save
         self.dataChangedCallback = None # used to update the gui table
