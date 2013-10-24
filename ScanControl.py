@@ -79,6 +79,36 @@ class Scan:
         self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
         
     def __eq__(self,other):
+        if not self.scanParameter == other.scanParameter: print self.scanParameter, "!=",  other.scanParameter
+        if not self.start == other.start: print self.start , "!=",  other.start
+        if not self.stop == other.stop: print self.stop , "!=",  other.stop
+        if not self.steps == other.steps: print self.steps , "!=",  other.steps
+        if not self.stepSize == other.stepSize: print self.stepSize , "!=",  other.stepSize
+        if not self.stepsSelect == other.stepsSelect: print self.stepsSelect , "!=", other.stepsSelect
+        if not self.scantype == other.scantype: print self.scantype , "!=",  other.scantype
+        if not self.scanMode == other.scanMode: print self.scanMode , "!=",  other.scanMode
+        if not self.scanRepeat == other.scanRepeat: print self.scanRepeat , "!=", other.scanRepeat
+        if not self.rewriteDDS == other.rewriteDDS: print self.rewriteDDS , "!=", other.rewriteDDS
+        if not self.filename == other.filename: print self.filename , "!=", other.filename
+        if not self.autoSave == other.autoSave: print self.autoSave , "!=", other.autoSave
+        if not self.xUnit == other.xUnit: print self.xUnit , "!=", other.xUnit
+        if not self.loadPP == other.loadPP: print self.loadPP , "!=", other.loadPP
+        if not self.loadPPName == other.loadPPName: print self.loadPPName , "!=", other.loadPPName
+        if not self.histogramBins == other.histogramBins: print self.histogramBins , "!=", other.histogramBins
+        if not self.integrateHistogram == other.integrateHistogram: print self.integrateHistogram , "!=", other.integrateHistogram
+        if not self.counterChannel == other.counterChannel: print self.counterChannel , "!=", other.counterChannel
+        if not self.evalName == other.evalName: print self.evalName , "!=", other.evalName
+        if not self.errorBars == other.errorBars: print self.errorBars , "!=", other.errorBars
+        if not self.enableTimestamps == other.enableTimestamps: print self.enableTimestamps , "!=", other.enableTimestamps
+        if not self.binwidth == other.binwidth: print self.binwidth , "!=", other.binwidth
+        if not self.roiStart == other.roiStart: print self.roiStart , "!=", other.roiStart
+        if not self.integrateTimestamps == other.integrateTimestamps: print self.integrateTimestamps , "!=", other.integrateTimestamps
+        if not self.timestampsChannel == other.timestampsChannel: print self.timestampsChannel , "!=", other.timestampsChannel
+        if not self.saveRawData == other.saveRawData: print self.saveRawData , "!=", other.saveRawData
+        if not self.gateSetSettings == other.gateSetSettings: print self.gateSetSettings , "!=", other.gateSetSettings
+        if not self.center == other.center: print self.center , "!=", other.center
+        if not self.span == other.span: print self.span , "!=", other.span
+        if not self.startCenter == other.startCenter: print self.startCenter , "!=", other.startCenter
         return ( self.scanParameter == other.scanParameter and
                 self.start == other.start and
                 self.stop == other.stop and
@@ -249,6 +279,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.onModeChanged(self.settings.scanMode)
         if self.gateSetUi:
             self.gateSetUi.setSettings( self.settings.gateSetSettings )
+        self.updateSaveStatus()
+
+    def updateSaveStatus(self):
+        if self.settingsName !='' and self.settingsName in self.settingsDict:
+            self.saveStatus = self.settingsDict[self.settingsName]==self.settings
+            self.saveButton.setEnabled( not self.saveStatus )
+
             
     def onStartCenterChanged(self, value):   
         self.settings.startCenter = value 
@@ -256,6 +293,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.setStartCenter()
         
     def setStartCenter(self):
+        self.beginChange()
         if self.settings.startCenter == 0:
             self.startBox.setValue(self.settings.start)
             self.stopBox.setValue(self.settings.stop)
@@ -266,6 +304,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.stopBox.setValue(self.settings.span)
             self.startCenterCombo.setCurrentIndex(1)
             self.stopLabel.setText("Span")        
+        self.commitChange()
         
     def onStartChanged(self, value):
         self.beginChange()
@@ -373,6 +412,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.tempSettings = copy.deepcopy( self.settings )
 
     def commitChange(self): 
+        self.updateSaveStatus()
         pass
         #if self.tempSettings!=self.settings:
         #    self.comboBox.setEditText('')

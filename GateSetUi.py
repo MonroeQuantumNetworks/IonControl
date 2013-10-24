@@ -19,6 +19,7 @@ Form, Base = PyQt4.uic.loadUiType('ui/GateSet.ui')
 
 
 class Settings(object):
+    stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSet', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' ]
     def __init__(self):
         self.enabled = False
         self.gate = []
@@ -38,6 +39,12 @@ class Settings(object):
         self.__dict__.setdefault( "gateDefinitionCache", dict() )
         self.__dict__.setdefault( "thisSequenceRepetition", 10 )
         self.__dict__.setdefault( "debug", False )
+
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     def __repr__(self):
         m = list()
