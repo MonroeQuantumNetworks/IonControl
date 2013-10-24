@@ -1,3 +1,5 @@
+
+
 ###########################################################################
 #
 # simple sequence with one cooling interval during which countrates can be measured
@@ -28,8 +30,8 @@ var ddsApplyTrigger   3,trigger
 	SHUTTERMASK startupMask
 	ASYNCSHUTTER startup
 	UPDATE startupTime
-	DDSFRQ COOLDDS, coolingFreq
-	DDSFRQFINE COOLDDS, coolingFreqFine
+#	DDSFRQ COOLDDS, coolingFreq
+#	DDSFRQFINE COOLDDS, coolingFreqFine
 	TRIGGER ddsApplyTrigger
 cooling: NOP
 	SHUTTERMASK coolingOnMask

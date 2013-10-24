@@ -34,8 +34,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.adjust["__GAIN__"] = 1.0
         self.myLabelList = list()
         self.myBoxList = list()
-        self.adjustHistoryShelve = configshelve.configshelve('VoltageGlobalAdjust', ProjectSelection.guiConfigDir())
-        self.adjustHistoryShelve.open()
+        self.historyCategory = 'VoltageGlobalAdjust'
         self.adjustHistoryName = None
         self.spacerItem = None
 
@@ -51,8 +50,8 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         else:
             self.spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         if self.adjustHistoryName:
-            self.adjustHistoryShelve[self.adjustHistoryName] = self.adjust
-        oldadjust = self.adjustHistoryShelve.get(name,dict())
+            self.config[(self.historyCategory,self.adjustHistoryName)] = self.adjust
+        oldadjust = self.config.get((self.historyCategory,name),dict())
         self.adjustHistoryName = name
         self.globalAdjustDict = adjustDict
         #print self.globalAdjustDict
@@ -91,8 +90,6 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     
     def onClose(self):
         self.config[self.configname] = self.settings
-        if self.adjustHistoryShelve.isOpen:
-            if self.adjustHistoryName:
-                self.adjustHistoryShelve[self.adjustHistoryName] = self.adjust
-            self.adjustHistoryShelve.close()
+        if self.adjustHistoryName:
+            self.config[(self.historyCategory,self.adjustHistoryName)] = self.adjust
         

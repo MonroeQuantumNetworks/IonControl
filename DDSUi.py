@@ -8,7 +8,7 @@ from modules.magnitude import mg
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
 class DDSUi(DDSForm, DDSBase):
-    def __init__(self,config,xem,parent=None):
+    def __init__(self,config,pulser,parent=None):
         DDSBase.__init__(self,parent)
         DDSForm.__init__(self)
         self.config = config
@@ -16,7 +16,7 @@ class DDSUi(DDSForm, DDSBase):
         self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*6)
         self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
         self.names = self.config.get('DDSUi.Names',['']*6)
-        self.ad9912 = Ad9912.Ad9912(xem)
+        self.ad9912 = Ad9912.Ad9912(pulser)
         self.writeOnStartup = self.config.get('DDSUi.WriteOnStartup',False)
         self.autoApply = self.config.get('DDSUi.autoApply',False)
         
@@ -87,10 +87,7 @@ class DDSUi(DDSForm, DDSBase):
         
     def onReset(self):
         self.ad9912.reset(0x3f)
-        
-    def updateSettings(self,fpgaUtilit):
-        self.ad9912.updateSettings(fpgaUtilit)
-        
+             
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)

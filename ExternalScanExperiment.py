@@ -43,7 +43,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         
     def onStart(self):
         if self.status in [self.Status.Idle, self.Status.Stopping, self.Status.Running]:
-            self.start = time.time()
+            self.startTime = time.time()
             self.state = self.OpStates.running
             self.scan = self.scanControlWidget.getScan()
             self.externalParameter = self.enabledParameters[self.scan.scanParameter]
@@ -68,11 +68,9 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                     if self.scan.autoSave:
                         self.currentTrace.resave()
                     self.currentTrace = None
-                self.scanControlWidget.progressBar.setRange(0,float(len(self.scan.list)))
-                self.scanControlWidget.progressBar.setValue(0)
-                self.scanControlWidget.progressBar.setVisible( True )
+                self.updateProgressBar(0,max(len(self.scan.list),1))
                 self.timestampsNewRun = True
-                print "elapsed time", time.time()-self.start
+                print "elapsed time", time.time()-self.startTime
                 self.status = self.Status.Running
                 print "Status -> Running"
             else:
@@ -86,6 +84,8 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.stopBottomHalf()
             print "Status -> Stopping"
             self.finalizeData()
+            self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
+
                     
     def stopBottomHalf(self):
         if self.status==self.Status.Stopping:
@@ -93,6 +93,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
                 self.status = self.Status.Idle
+                self.updateProgressBar(0,max(len(self.scan.list),1))
 
     def onData(self, data ):
         """ Called by worker with new data
@@ -118,5 +119,5 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.finalizeData()
             if self.externalParameterIndex >= len(self.scan.list):
                 self.generator.dataOnFinal(self)
-        self.scanControlWidget.progressBar.setValue(float(self.externalParameterIndex))
+        self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list),1))
 

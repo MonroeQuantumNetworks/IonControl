@@ -67,8 +67,8 @@ class ExternalParameterBase:
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
         return [{'name': 'stepsize', 'type': 'float', 'value': self.stepsize},
-        {'name': 'delay', 'type': 'float', 'value': self.delay, 'step': 0.1},
-        {'name': 'jump', 'type': 'bool', 'value': self.jump, 'tip': "This is a checkbox"}]
+        {'name': 'delay', 'type': 'float', 'value': self.delay, 'step': 0.1, 'tip': "between steps in s"},
+        {'name': 'jump', 'type': 'bool', 'value': self.jump}]
         
     def update(self,param, changes):
         """
@@ -183,7 +183,15 @@ class LaserSynthesizerScan(ExternalParameterBase):
     def close(self):
         ExternalParameterBase.close(self)
         self.config['LaserSynthesizerScan.'+self.name+'.frequency'] = self.value
-        
+    
+    def paramDef(self):
+        """
+        return the parameter definition used by pyqtgraph parametertree to show the gui
+        """
+        return [{'name': 'stepsize', 'type': 'float', 'value': self.stepsize, 'tip': "in kHz"},
+        {'name': 'delay', 'type': 'float', 'value': self.delay, 'step': 0.1, 'tip': "between steps in s"},
+        {'name': 'jump', 'type': 'bool', 'value': self.jump}]
+
 
     
 class LaserVCOScan(ExternalParameterBase):
