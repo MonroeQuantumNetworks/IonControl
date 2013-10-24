@@ -8,10 +8,12 @@ from modules import enum
 import pens
 import pyqtgraph
 import numpy
+from modules import DataDirectory 
+import os.path
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
-    def __init__(self,Trace,graphicsView,penList,pen=0,style=None):
+    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False):
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:
@@ -24,6 +26,7 @@ class PlottedTrace(object):
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
 #Tree related data. Parent and children are set in the model's addTrace method, but declared here
+        self.isRootTrace = isRootTrace
         self.parentTrace = None
         self.childTraces = []
         self.curvePen = 0
@@ -120,3 +123,20 @@ class PlottedTrace(object):
                 self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
             else:
                 self.errorBarItem.setOpts(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom)
+
+    def traceFilename(self, pattern):
+        directory = DataDirectory.DataDirectory()
+        if self.parent().isRootTrace: 
+            if pattern and pattern!='':
+                filename, components = directory.sequencefile(pattern)
+                return filename
+            else:
+                path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
+                return path
+        else:
+            parentFilename = self.parent().trace.getFilename() 
+            filename, components = directory.sequencefile( os.path.split(parentFilename)[1] )
+            return filename
+            
+            
+                

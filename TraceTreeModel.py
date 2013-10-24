@@ -103,7 +103,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         penicons: The list of available icons for the different traces
         """
         super(TraceTreeModel, self).__init__(parent)
-        self.rootTrace = PlottedTrace(None,None,None) #rootTrace is an empty plotted trace
+        self.rootTrace = PlottedTrace(None,None,None,isRootTrace=True) #rootTrace is an empty plotted trace
         self.penicons = penicons
         for trace in traceList: #set all top level traces to have rootTrace as parent
             if trace.parentTrace == None:

@@ -319,7 +319,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.traceui.addTrace(self.averagePlottedTrace, pen=0)
         self.averagePlottedTrace.trace.name = self.scan.settingsName + " Average"
         self.averagePlottedTrace.trace.vars.comment = "Average Trace"
-        self.averagePlottedTrace.trace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename+"_Average" )
+        self.averagePlottedTrace.trace.filenameCallback = functools.partial( self.averagePlottedTrace.traceFilename, self.scan.filename)
         
     def startScan(self):
         self.startTime = time.time()
@@ -343,7 +343,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         print "elapsed time", time.time()-self.startTime
         if self.plottedTrace is not None:
             self.plottedTrace.plot(0) #unplot previous trace
-            self.plottedTrace = None #reset plotted trace
+        self.plottedTrace = None #reset plotted trace
     
     def onPause(self):
         if self.state == self.OpStates.paused:
@@ -420,10 +420,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def updateMainGraph(self, x, mean, error, raw):
         print x, mean, error
         if self.plottedTrace is None:
-            if self.scan.scanRepeat == 1:
-                self.plottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList, parentTrace=self.averagePlottedTrace)
-            else:
-                self.plottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
+            self.plottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
             self.plottedTrace.trace.x = numpy.array([x])
             self.plottedTrace.trace.y = numpy.array([mean])
             self.plottedTrace.trace.raw = numpy.array([raw])
@@ -432,11 +429,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.plottedTrace.trace.top = numpy.array([error[1]])
             self.plottedTrace.trace.name = self.scan.settingsName
             self.plottedTrace.trace.vars.comment = ""
-            self.plottedTrace.trace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
+            self.plottedTrace.trace.filenameCallback = functools.partial( self.plottedTrace.traceFilename, self.scan.filename )
             xRange = self.generator.xRange()
             if xRange:
-                self.graphicsView.setXRange( *xRange )                
-            self.traceui.addTrace(self.plottedTrace, pen=-1)
+                self.graphicsView.setXRange( *xRange )     
+            if self.scan.scanRepeat == 1:           
+                self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
+            else:
+                self.traceui.addTrace(self.plottedTrace, pen=-1)
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( self.scan.documentationString() )
             self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader))
