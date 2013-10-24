@@ -206,12 +206,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # initialize all the plot windows we want
         self.mainDock = Dock("Scan data")
         self.histogramDock = Dock("Histogram")
-#        self.averageDock = Dock("average")
         self.timestampDock = Dock("timestamps")
         self.area.addDock(self.mainDock,'left')
         self.area.addDock(self.histogramDock,'right')
-#        self.area.addDock(self.averageDock,'bottom',self.histogramDock)
-#        self.area.addDock(self.timestampDock,'bottom',self.averageDock)
         self.area.addDock(self.timestampDock,'bottom',self.histogramDock)
         self.graphicsWidget = CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
         self.mainDock.addWidget(self.graphicsWidget)
@@ -220,10 +217,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramDock.addWidget(self.histogramWidget)
         self.histogramView = self.histogramWidget.graphicsView        
         self.histogramWidget.autoRange()
-#        self.histogramView = pyqtgraph.PlotWidget()
-#        self.histogramDock.addWidget( self.histogramView)
-#        self.averageView = pyqtgraph.PlotWidget()       
-#        self.averageDock.addWidget( self.averageView )
         self.timestampWidget = CoordinatePlotWidget(self) # pyqtgraph.PlotWidget()
         self.timestampDock.addWidget( self.timestampWidget )
         self.timestampView = self.timestampWidget.graphicsView
@@ -250,6 +243,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
+        self.scanControlWidget.scansAveraged.hide()
         self.dockWidgetList.append(self.scanControlUi)
         self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
@@ -312,6 +306,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scan = self.scanControlWidget.getScan()
         if self.scan.scanRepeat == 1:
             self.createAverageTrace()
+            self.scanControlWidget.scansAveraged.setText("Scans averaged: 0")
+            self.scanControlWidget.scansAveraged.show()
+        else:
+            self.scanControlWidget.scansAveraged.hide()
         self.startScan()
 
     def createAverageTrace(self):
@@ -453,6 +451,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.scan.scanRepeat == 1:
                 if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
                     self.averagePlottedTrace.averageChildren()
+                    self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
                     self.averagePlottedTrace.plot(7) #average trace is plotted in black
                 self.averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
             
