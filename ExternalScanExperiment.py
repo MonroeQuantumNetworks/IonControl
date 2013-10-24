@@ -84,6 +84,8 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.stopBottomHalf()
             print "Status -> Stopping"
             self.finalizeData()
+            self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
+
                     
     def stopBottomHalf(self):
         if self.status==self.Status.Stopping:
