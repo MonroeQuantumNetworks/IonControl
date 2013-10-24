@@ -188,9 +188,12 @@ class Traceui(TraceuiForm, TraceuiBase):
             trace = self.model.getTrace(traceIndex)
             parentIndex = self.model.parent(traceIndex)
             row = trace.childNumber()
-            if trace.curvePen != 0:
-                trace.plot(0)
-            self.model.dropTrace(parentIndex, row)
+            if trace.childCount() == 0:
+                if trace.curvePen != 0:
+                    trace.plot(0)
+                self.model.dropTrace(parentIndex, row)
+            else:
+                print "trace has children, please remove them first."
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
