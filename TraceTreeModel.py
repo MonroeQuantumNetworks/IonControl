@@ -195,7 +195,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
             #If the checkbox is checked, replot.
             if (value == QtCore.Qt.Unchecked) and (trace.curvePen > 0):
                 trace.plot(0)
-            else:
+            elif len(trace.trace.x) != 0: #Make sure the x array isn't empty before trying to plot
                 trace.plot(-1)
             leftInd = self.createIndex(row, 0, trace)
             rightInd = self.createIndex(row, 4, trace)
@@ -203,7 +203,8 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
             return True      
 
         elif (role == QtCore.Qt.EditRole) and (col == 1):
-            trace.plot(value)
+            if len(trace.trace.x) != 0: #Make sure the x array isn't empty before trying to plot
+                trace.plot(value)
             return True
 
         elif (role == QtCore.Qt.EditRole) and (col == 3):
