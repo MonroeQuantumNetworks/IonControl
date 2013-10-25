@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>249</width>
-    <height>475</height>
+    <height>509</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -147,7 +147,7 @@
         <x>0</x>
         <y>0</y>
         <width>229</width>
-        <height>315</height>
+        <height>330</height>
        </rect>
       </property>
       <attribute name="label">
@@ -606,6 +606,13 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="scansAveraged">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

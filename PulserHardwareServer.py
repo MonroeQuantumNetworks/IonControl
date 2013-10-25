@@ -236,8 +236,7 @@ class PulserHardwareServer(Process):
     def setShutterBit(self, bit, value):
         mask = 1 << bit
         newval = (self._shutter & (~mask)) | (mask if value else 0)
-        self.shutter = newval
-        return self.shutter
+        return self.setShutter( newval )
         
     def getTrigger(self):
         return self._trigger

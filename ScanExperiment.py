@@ -15,7 +15,7 @@ It is expected to send an endlabel (0xffffffff) when finished.
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-import Trace
+from Trace import Trace
 import numpy
 import pens
 import Traceui
@@ -26,7 +26,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 import pyqtgraph
 from modules import DataDirectory
 import time
-import CoordinatePlotWidget
+from CoordinatePlotWidget import CoordinatePlotWidget
 import functools
 from modules import stringutilit
 from datetime import datetime, timedelta
@@ -61,7 +61,7 @@ class ParameterScanGenerator:
         
     def dataOnFinal(self, experiment):
         if self.scan.scanRepeat == 1:
-            experiment.onStart()
+            experiment.startScan()
         else:
             experiment.onStop()                   
     
@@ -165,7 +165,7 @@ class GateSetScanGenerator:
 
     def dataOnFinal(self, experiment):
         if self.scan.scanRepeat == 1:
-            experiment.onStart()
+            experiment.startScan()
         else:
             experiment.onStop()                   
         
@@ -186,7 +186,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
-        self.currentTrace = None
+        self.plottedTrace = None
+        self.averagePlottedTrace = None
         self.currentIndex = 0
         self.activated = False
         self.histogramCurve = None
@@ -205,22 +206,21 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # initialize all the plot windows we want
         self.mainDock = Dock("Scan data")
         self.histogramDock = Dock("Histogram")
-        self.averageDock = Dock("average")
         self.timestampDock = Dock("timestamps")
         self.area.addDock(self.mainDock,'left')
         self.area.addDock(self.histogramDock,'right')
-        self.area.addDock(self.averageDock,'bottom',self.histogramDock)
-        self.area.addDock(self.timestampDock,'bottom',self.averageDock)
-        self.graphicsWidget = CoordinatePlotWidget.CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
+        self.area.addDock(self.timestampDock,'bottom',self.histogramDock)
+        self.graphicsWidget = CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
         self.mainDock.addWidget(self.graphicsWidget)
         self.graphicsView = self.graphicsWidget.graphicsView
-        self.histogramView = pyqtgraph.PlotWidget()
-        self.histogramDock.addWidget( self.histogramView)
-        self.averageView = pyqtgraph.PlotWidget()       
-        self.averageDock.addWidget( self.averageView )
-        self.timestampWidget = CoordinatePlotWidget.CoordinatePlotWidget(self) # pyqtgraph.PlotWidget()
+        self.histogramWidget = CoordinatePlotWidget(self)
+        self.histogramDock.addWidget(self.histogramWidget)
+        self.histogramView = self.histogramWidget.graphicsView        
+        self.histogramWidget.autoRange()
+        self.timestampWidget = CoordinatePlotWidget(self) # pyqtgraph.PlotWidget()
         self.timestampDock.addWidget( self.timestampWidget )
         self.timestampView = self.timestampWidget.graphicsView
+        self.timestampWidget.autoRange()
         try:
             if self.experimentName+'.pyqtgraph-dokareastate' in self.config:
                 self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dokareastate'])
@@ -243,6 +243,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
+        self.scanControlWidget.scansAveraged.hide()
         self.dockWidgetList.append(self.scanControlUi)
         self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
@@ -302,10 +303,26 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.setTimeLabel()
     
     def onStart(self):
+        self.scan = self.scanControlWidget.getScan()
+        if self.scan.scanRepeat == 1:
+            self.createAverageTrace()
+            self.scanControlWidget.scansAveraged.setText("Scans averaged: 0")
+            self.scanControlWidget.scansAveraged.show()
+        else:
+            self.scanControlWidget.scansAveraged.hide()
+        self.startScan()
+
+    def createAverageTrace(self):
+        self.averagePlottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
+        self.traceui.addTrace(self.averagePlottedTrace, pen=0)
+        self.averagePlottedTrace.trace.name = self.scan.settingsName + " Average"
+        self.averagePlottedTrace.trace.vars.comment = "Average Trace"
+        self.averagePlottedTrace.trace.filenameCallback = functools.partial( self.averagePlottedTrace.traceFilename, self.scan.filename)
+        
+    def startScan(self):
         self.startTime = time.time()
         self.state = self.OpStates.running
         PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
-        self.scan = self.scanControlWidget.getScan()
         self.generator = GeneratorList[self.scan.scanMode](self.scan)
         (mycode, data) = self.generator.prepare(self.pulseProgramUi)
         if data:
@@ -318,11 +335,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppStart()
         self.running = True
         self.currentIndex = 0
-        self.currentTrace = None
         self.timestampsNewRun = True
         self.displayUi.onClear()
         self.updateProgressBar(0,max(len(self.scan.list),1))
         print "elapsed time", time.time()-self.startTime
+        if self.plottedTrace is not None:
+            self.plottedTrace.plot(0) #unplot previous trace
+        self.plottedTrace = None #reset plotted trace
     
     def onPause(self):
         if self.state == self.OpStates.paused:
@@ -340,7 +359,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppStop()
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
             self.state = self.OpStates.paused
-            
     
     def onStop(self):
         if self.running:
@@ -352,12 +370,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.NeedsDDSRewrite.emit()
             self.state = self.OpStates.idle
         self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
-        self.finalizeData()
+        self.finalizeData(reason='stopped')
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
         if pattern and pattern!='':
-            filename, components = directory.sequencefile( pattern )
+            filename, components = directory.sequencefile(pattern)
             return filename
         else:
             path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
@@ -385,7 +403,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
             if data.final:
-                self.finalizeData()
+                self.finalizeData(reason='end of scan')
                 print "current index", self.currentIndex, "expected", len(self.scan.list)
                 if self.currentIndex >= len(self.scan.list):    # if all points were taken
                     self.generator.dataOnFinal(self)
@@ -397,42 +415,46 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.pulserHardware.ppWriteData(mycode)     
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
 
-
     def updateMainGraph(self, x, mean, error, raw):
         print x, mean, error
-        if self.currentTrace is None:
-            self.currentTrace = Trace.Trace()
-            self.currentTrace.x = numpy.array([x])
-            self.currentTrace.y = numpy.array([mean])
-            self.currentTrace.raw = numpy.array([raw])
+        if self.plottedTrace is None:
+            self.plottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
+            self.plottedTrace.trace.x = numpy.array([x])
+            self.plottedTrace.trace.y = numpy.array([mean])
+            self.plottedTrace.trace.raw = numpy.array([raw])
             if error and self.scan.errorBars:
-                self.currentTrace.bottom = numpy.array([error[0]])
-                self.currentTrace.top = numpy.array([error[1]])
-            self.currentTrace.name = self.scan.settingsName
-            self.currentTrace.vars.comment = ""
-            self.currentTrace.filenameCallback = functools.partial( self.traceFilename, self.scan.filename )
-            if hasattr(self, 'plottedTrace'):
-                self.plottedTrace.plot(0)
-            self.plottedTrace = Traceui.PlottedTrace(self.currentTrace,self.graphicsView,pens.penList)
+                self.plottedTrace.trace.bottom = numpy.array([error[0]])
+                self.plottedTrace.trace.top = numpy.array([error[1]])
+            self.plottedTrace.trace.name = self.scan.settingsName
+            self.plottedTrace.trace.vars.comment = ""
+            self.plottedTrace.trace.filenameCallback = functools.partial( self.plottedTrace.traceFilename, self.scan.filename )
             xRange = self.generator.xRange()
             if xRange:
-                self.graphicsView.setXRange( *xRange )                
-            self.traceui.addTrace(self.plottedTrace,pen=-1)
+                self.graphicsView.setXRange( *xRange )     
+            if self.scan.scanRepeat == 1:           
+                self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
+            else:
+                self.traceui.addTrace(self.plottedTrace, pen=-1)
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( self.scan.documentationString() )
-            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader))
         else:
-            self.generator.appendData(self.currentTrace, x, mean, raw, error)
+            self.generator.appendData(self.plottedTrace.trace, x, mean, raw, error)
             self.plottedTrace.replot()
 
-    def finalizeData(self):
+    def finalizeData(self, reason='end of scan'):
         print "finalize Data"
-        for trace in [self.currentTrace, self.currentTimestampTrace]:
+        for trace in [self.plottedTrace.trace, self.currentTimestampTrace]:
             if trace:
                 trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
+        if self.scan.scanRepeat == 1:
+                if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
+                    self.averagePlottedTrace.averageChildren()
+                    self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
+                    self.averagePlottedTrace.plot(7) #average trace is plotted in black
+                self.averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
             
-        
     def showTimestamps(self,data):
         bins = int( (self.scan.roiWidth/self.scan.binwidth).toval() )
         multiplier = self.pulserHardware.timestep.toval('ms')
@@ -463,7 +485,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
-            self.currentTrace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
     def showHistogram(self, data):

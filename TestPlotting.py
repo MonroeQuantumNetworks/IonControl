@@ -8,42 +8,53 @@ PlotWidget that adds the coordinates of the cursor position
 as a second element also allows one to copy the coordinates to the clipboard
 """
 
-import pyqtgraph
+import pyqtgraph as pg
 from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
 
 grid_opacity = 0.3
+grid_icon_file = 'C:\\Users\\jamizra\\Programming\\aaAQC_FPGA\\ui\\icons\\grid2'
+range_icon_file = 'C:\\Users\\jamizra\\Programming\\aaAQC_FPGA\\ui\\icons\\unityrange2'
 
-class LabelItem(pyqtgraph.LabelItem):
-    """Allows for clicking pyqtgraph labels"""
-    clicked = QtCore.pyqtSignal()
-        
-    def mouseClickEvent(self,ev):
-        self.clicked.emit()
-
-class TestModPlotItem(pyqtgraph.PlotItem):
+class PlotItemWithButtons(pg.PlotItem):
     def __init__(self,parent=None):
-        super(TestModPlotItem,self).__init__(parent)
-        self.testButton = pyqtgraph.ButtonItem(pyqtgraph.pixmaps.getPixmap('testimg'), 14, self)
+        super(PlotItemWithButtons,self).__init__(parent)
+        self.gridBtn = pg.ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
+        self.unityRangeBtn = pg.ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
+        self.unityRangeBtn.clicked.connect(self.onUnityRange)
+        self.gridBtn.clicked.connect(self.onGrid)
+        self.setYRange(0,1) #Range defaults to 0 to 1
+        self.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        
+    def resizeEvent(self, ev):
+        pg.PlotItem.resizeEvent(self,ev)
+        gridBtnRect = self.mapRectFromItem(self.gridBtn, self.gridBtn.boundingRect())
+        unityRangeBtnRect = self.mapRectFromItem(self.unityRangeBtn, self.unityRangeBtn.boundingRect())
+        yGrid = self.size().height() - gridBtnRect.height()
+        yRange= self.size().height() - unityRangeBtnRect.height()
+        self.gridBtn.setPos(0, yGrid-24)
+        self.unityRangeBtn.setPos(0, yRange-49)
+    
+    def onUnityRange(self):
+        """Execute when unityRangeBtn is clicked"""
+        self.setYRange(0,1)
 
-class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
+    def onGrid(self):
+        """Execute when gridBtn is clicked"""
+        xChecked = self.ctrl.xGridCheck.isChecked()
+        yChecked = self.ctrl.yGridCheck.isChecked()
+        self.showGrid(x = not xChecked, y = not yChecked)
+
+class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, a button to set the y scale to 0-1, and a button
        to display/hide the grid."""
     def __init__(self,parent=None):
         super(CoordinatePlotWidget,self).__init__(parent)
-        self.coordinateLabel = pyqtgraph.LabelItem(justify='right')
-        self.unityRangeButton = LabelItem(justify='left')
-        self.unityRangeButton.setText('Unity Range')
-        self.unityRangeButton.clicked.connect( self.onUnityRange )
-        self.showGridButton = LabelItem(justify='center')
-        self.showGridButton.setText('Show Grid')
-        self.showGridButton.clicked.connect(self.onShowGrid)
-        self.graphicsView = self.addPlot(row=0,col=0,colspan=3)
-        self.addItem(self.coordinateLabel,row=1,col=2)
-        self.addItem(self.unityRangeButton,row=1,col=0)
-        self.addItem(self.showGridButton,row=1,col=1)
+        self.coordinateLabel = pg.LabelItem(justify='right')
+        self.graphicsView = self.addPlotWithButtons(row=0,col=0,colspan=2)
+        self.addItem(self.coordinateLabel,row=1,col=1)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
@@ -52,17 +63,10 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
         self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         self.gridShown = True #Because we can't query whether the grid is on or off, we just keep track
 
-    def onUnityRange(self):
-        """Execute when unityRangeButton is clicked"""
-        self.graphicsView.setYRange(0,1)
-
-    def onShowGrid(self):
-        """Execute when showGridButton is clicked"""
-        if self.gridShown:
-            self.graphicsView.showGrid(x = False, y = False)
-        else:
-            self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity)
-        self.gridShown = not self.gridShown
+    def addPlotWithButtons(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
+        plot = PlotItemWithButtons(**kargs)
+        self.addItem(plot, row, col, rowspan, colspan)
+        return plot
             
     def onMouseMoved(self,pos):
         """Execute when mouse is moved. If mouse is over plot, show cursor
@@ -82,7 +86,7 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
         QtGui.QApplication.clipboard().setText(text)
         
 #    def mouseDoubleClickEvent(self, ev):
-#        pyqtgraph.GraphicsLayoutWidget.mouseDoubleClickEvent(self,ev)
+#        pg.GraphicsLayoutWidget.mouseDoubleClickEvent(self,ev)
 #        print "CoordinatePlotWidget mouseDoubleClicked"
 #        #self.onMouseClicked(ev)
         
@@ -101,20 +105,19 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
         { 67: self.copyPointsToClipboard }.get(ev.key(),lambda x:None)(ev.modifiers())
         
     def mouseReleaseEvent(self,ev):
-        pyqtgraph.GraphicsLayoutWidget.mouseReleaseEvent(self,ev)
+        pg.GraphicsLayoutWidget.mouseReleaseEvent(self,ev)
         if ev.modifiers()&QtCore.Qt.ShiftModifier:
             self.mousePointList.append(self.mousePoint)
         else:
             self.mousePointList = [self.mousePoint]
-
+            
 if __name__ == '__main__':
     import sys    
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    a = TestModPlotItem()
-    b = pyqtgraph.GraphicsView()
-    b.setCentralWidget(a)
-    MainWindow.setCentralWidget(b)
+    pg.setConfigOption('background', 'w')
+    pg.setConfigOption('foreground', 'k')
+    MainWindow.setCentralWidget(CoordinatePlotWidget())
     MainWindow.show()
     sys.exit(app.exec_())
     
