@@ -41,33 +41,31 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def updateEnabledParameters(self, enabledParameters ):
         self.enabledParameters = enabledParameters
         
-    def onStart(self):
-        if self.status in [self.Status.Idle, self.Status.Stopping, self.Status.Running]:
-            self.startTime = time.time()
-            self.state = self.OpStates.running
-            self.scan = self.scanControlWidget.getScan()
-            self.externalParameter = self.enabledParameters[self.scan.scanParameter]
-            self.externalParameter.saveValue()
-            self.externalParameterIndex = 0
-            self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
-                    
-            self.pulserHardware.ppFlushData()
-            self.pulserHardware.ppClearWriteFifo()
-            self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
-            QtCore.QTimer.singleShot(100,self.startBottomHalf)
-            self.displayUi.onClear()
-            self.status = self.Status.Starting
-        
+    def startScan(self):
+#        if self.status in [self.Status.Idle, self.Status.Stopping, self.Status.Running]:
+        self.startTime = time.time()
+        self.state = self.OpStates.running
+        self.externalParameter = self.enabledParameters[self.scan.scanParameter]
+        self.externalParameter.saveValue()
+        self.externalParameterIndex = 0
+        self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
+                
+        self.pulserHardware.ppFlushData()
+        self.pulserHardware.ppClearWriteFifo()
+        self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+        QtCore.QTimer.singleShot(100,self.startBottomHalf)
+        self.displayUi.onClear()
+        self.status = self.Status.Starting
+       
     def startBottomHalf(self):
         if self.status == self.Status.Starting:
             if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
                 """We are done adjusting"""
                 self.pulserHardware.ppStart()
                 self.currentIndex = 0
-                if self.currentTrace is not None:
-                    if self.scan.autoSave:
-                        self.currentTrace.resave()
-                    self.currentTrace = None
+                if self.plottedTrace is not None:
+                    self.plottedTrace.plot(0) #unplot previous trace
+                self.plottedTrace = None #reset plotted trace
                 self.updateProgressBar(0,max(len(self.scan.list),1))
                 self.timestampsNewRun = True
                 print "elapsed time", time.time()-self.startTime
@@ -83,7 +81,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.status = self.Status.Stopping
             self.stopBottomHalf()
             print "Status -> Stopping"
-            self.finalizeData()
+            self.finalizeData(reason='stopped')
             self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
 
                     
@@ -116,7 +114,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.pulserHardware.ppStart()
             print "External Value:" , self.scan.list[self.externalParameterIndex]
         else:
-            self.finalizeData()
+            self.finalizeData(reason='end of scan')
             if self.externalParameterIndex >= len(self.scan.list):
                 self.generator.dataOnFinal(self)
         self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list),1))
