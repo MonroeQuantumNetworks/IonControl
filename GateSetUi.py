@@ -18,7 +18,7 @@ from GateSetCompiler import GateSetCompiler
 Form, Base = PyQt4.uic.loadUiType('ui/GateSet.ui')
 
 
-class Settings(object):
+class Settings:
     stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSet', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' ]
     def __init__(self):
         self.enabled = False
@@ -69,6 +69,7 @@ class Settings(object):
 
 class GateSetUi(Form,Base):    
     Mode = enum('FullList', 'Gate')
+    valueChanged = QtCore.pyqtSignal()
     def __init__(self,parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
@@ -148,25 +149,31 @@ class GateSetUi(Form,Base):
     def onGateDefinitionChanged(self, name):
         name = str(name)
         if name in self.settings.gateDefinitionCache:
-            self.loadGateDefinition( self.settings.gateDefinitionCache[name] )            
+            self.loadGateDefinition( self.settings.gateDefinitionCache[name] )  
+        self.valueChanged.emit()          
             
     def onGateSetChanged(self, name):
         name = str(name)
         if name in self.settings.gateSetCache:
             self.loadGateSetList( self.settings.gateSetCache[name] )
+        self.valueChanged.emit()          
             
     def onRepetitionChanged(self, value):
         self.settings.thisSequenceRepetition = value
+        self.valueChanged.emit()          
         
     def onStartAddressParam(self,name):
         self.settings.startAddressParam = str(name)       
+        self.valueChanged.emit()          
         
     def onEnableChanged(self, state):
         self.settings.enabled = state == QtCore.Qt.Checked
         self.GateSetFrame.setEnabled( self.settings.enabled )
+        self.valueChanged.emit()          
         
     def onDebugChanged(self, state):
         self.settings.debug = state == QtCore.Qt.Checked        
+        self.valueChanged.emit()          
         
     def close(self):
         self.config[self.configname] = self.settings
@@ -181,6 +188,7 @@ class GateSetUi(Form,Base):
                 self.settings.gateDefinitionCache[filename] = path
                 self.GateDefinitionBox.addItem(filename)
                 self.GateDefinitionBox.setCurrentIndex( self.GateDefinitionBox.findText(filename))
+        self.valueChanged.emit()          
 
     def loadGateDefinition(self, path):
         self.gatedef.loadGateDefinition(path)    
@@ -188,6 +196,7 @@ class GateSetUi(Form,Base):
         self.settings.gateDefinition = filename
         self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(filename))
         self.gatedef.printGates()
+        self.valueChanged.emit()          
     
     def onLoadGateSetList(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, "Open Gate Set file:", self.settings.lastDir))
@@ -199,6 +208,7 @@ class GateSetUi(Form,Base):
                 self.settings.gateSetCache[filename] = path
                 self.GateSetBox.addItem(filename)
                 self.GateSetBox.setCurrentIndex( self.GateSetBox.findText(filename))
+        self.valueChanged.emit()          
             
     def loadGateSetList(self, path):
         self.gateSetContainer.loadXml(path)
@@ -211,12 +221,14 @@ class GateSetUi(Form,Base):
     def onGateEditChanged(self):
         self.settings.gate = map(operator.methodcaller('strip'),str(self.GateEdit.text()).split(','))
         self.GateEdit.setText( ", ".join(self.settings.gate ))
+        self.valueChanged.emit()          
     
     def onRadioButtonToggled(self):
         if self.FullListRadioButton.isChecked():
             self.settings.active = self.Mode.FullList 
         else:
             self.settings.active = self.Mode.Gate   
+        self.valueChanged.emit()          
             
     def gateSetScanData(self):
         if self.settings.active == self.Mode.FullList:

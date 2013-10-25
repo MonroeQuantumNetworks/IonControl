@@ -16,7 +16,7 @@ ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
 import ScanList
 from modules import MagnitudeUtilit
-from modules.magnitude import mg
+from modules.magnitude import mg, MagnitudeError
 from modules.enum import enum
 import GateSetUi
 from modules.PyqtUtility import BlockSignals, updateComboBoxItems
@@ -228,16 +228,19 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.updateSaveStatus()
 
     def updateSaveStatus(self):
-        if self.settingsName !='' and self.settingsName in self.settingsDict:
-            self.saveStatus = self.settingsDict[self.settingsName]==self.settings
-            self.saveButton.setEnabled( not self.saveStatus )
-
+        try:
+            if self.settingsName !='' and self.settingsName in self.settingsDict:
+                self.saveStatus = self.settingsDict[self.settingsName]==self.settings
+                self.saveButton.setEnabled( not self.saveStatus )
+        except MagnitudeError:
+            pass
             
     def onStartCenterChanged(self, value):   
         self.settings.startCenter = value 
         self.calculateBoundaries()
         self.setStartCenter()
-        
+        self.updateSaveStatus()
+ 
     def setStartCenter(self):
         self.beginChange()
         if self.settings.startCenter == 0:
@@ -260,6 +263,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings.center = MagnitudeUtilit.mg(value)
         self.calculateBoundaries()
         self.commitChange()
+        self.updateSaveStatus()
 
     def onStopChanged(self, value):
         self.beginChange()
@@ -269,6 +273,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings.span = MagnitudeUtilit.mg(value)
         self.calculateBoundaries()
         self.commitChange()
+        self.updateSaveStatus()
             
     def calculateBoundaries(self):
         try:
@@ -296,6 +301,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             if writeInput:
                 self.stepsBox.setValue(settings.stepSize)
             self.stepsLabel.setText( str(settings.steps) )
+        self.updateSaveStatus()
 
         
     def calculateSteps(self, settings):
@@ -319,11 +325,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         print "ScanControl.onLoadPP", self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName
         if self.settings.loadPP and self.settings.loadPPName and hasattr(self,"pulseProgramUi"):
             self.pulseProgramUi.onFilenameChange( self.settings.loadPPName )
+        self.updateSaveStatus()
             
     def onRecentPPFilesChanged(self, name):
         print "ScanControl.onRecentPPFilesChanged"
         if self.loadPPComboBox.findText(name)<0:
             self.loadPPComboBox.addItem(name)
+        self.updateSaveStatus()
 #        if self.settings.loadPPName: 
 #            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         
@@ -340,6 +348,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
         if not self.gateSetUi:
             self.gateSetUi = GateSetUi.GateSetUi()
+            self.gateSetUi.valueChanged.connect( self.updateSaveStatus )
             self.gateSetUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
             self.gateSetUi.setupUi(self.gateSetUi)
             self.toolBox.addItem(self.gateSetUi,"Gate Sets")
@@ -353,12 +362,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         #print id(self.settings), attribute, "->", str(edit.text())
         setattr( self.settings, attribute, str(edit.text())  )
         self.commitChange()
+        self.updateSaveStatus()
                 
     def beginChange(self):
         self.tempSettings = copy.deepcopy( self.settings )
 
     def commitChange(self): 
-        self.updateSaveStatus()
         pass
         #if self.tempSettings!=self.settings:
         #    self.comboBox.setEditText('')
@@ -367,16 +376,19 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.beginChange()
         setattr( self.settings, attribute, (state == QtCore.Qt.Checked)  )
         self.commitChange()
+        self.updateSaveStatus()
         
     def onCurrentTextChanged(self, text):
         self.beginChange()
         self.settings.scanParameter = str(text)
         self.commitChange()
+        self.updateSaveStatus()
     
     def onCurrentIndexChanged(self, attribute, index):
         self.beginChange()
         setattr( self.settings, attribute, index )
         self.commitChange()
+        self.updateSaveStatus()
         
     def onModeChanged(self, index):
         self.beginChange()
@@ -389,12 +401,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xUnitEdit.setEnabled( index==0)
         self.comboBoxParameter.setEnabled( index==0 )
         self.commitChange()       
+        self.updateSaveStatus()
     
     def onValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
         #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
         self.commitChange()
+        self.updateSaveStatus()
         
     def onStartStopChanged(self, attribute, value):
         self.beginChange()
@@ -402,12 +416,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.calculateSteps( self.settings )
         self.setSteps( self.settings )
         self.commitChange()
+        self.updateSaveStatus()
 
     def onStepsSelectChanged(self, select ):
         #print "onStepsSelectChanged", select
         self.settings.stepsSelect = select
         self.calculateSteps( self.settings )
         self.setSteps( self.settings, True )
+        self.updateSaveStatus()
         
     def onStepsValueChanged( self, value ):
         if self.settings.stepsSelect==0:
@@ -421,12 +437,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 self.stepsBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
         self.calculateSteps(self.settings)
         self.setSteps( self.settings )
+        self.updateSaveStatus()
 
     def onIntValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, value )
         #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
         self.commitChange()
+        self.updateSaveStatus()
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -440,6 +458,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         if self.gateSetUi:
             self.gateSetUi.setVariables(variabledict)
+        self.updateSaveStatus()
             
     def setScanNames(self, scannames):
         self.comboBoxParameter.clear()
@@ -447,6 +466,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.comboBoxParameter.addItem(name)
         self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         #print self.configname,"activating", self.settings.scanParameter
+        self.updateSaveStatus()
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)
@@ -490,14 +510,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBox.addItem(self.settingsName)
                 #print self.configname, "adding to combo", self.settingsName
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
+        self.updateSaveStatus()
+
     
     def onLoad(self,name):
         self.settingsName = str(name)
         #print self.configname, "onLoad", name
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
-        #else:
-        #    print self.configname, self.settingsDict
+        self.updateSaveStatus()
 
     def onReload(self):
         self.onLoad( self.comboBox.currentText() )
