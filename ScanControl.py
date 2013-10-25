@@ -77,74 +77,20 @@ class Scan:
         self.__dict__.setdefault('span',0)
         self.__dict__.setdefault('startCenter',0)        
         self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
-        
+
     def __eq__(self,other):
-        if not self.scanParameter == other.scanParameter: print self.scanParameter, "!=",  other.scanParameter
-        if not self.start == other.start: print self.start , "!=",  other.start
-        if not self.stop == other.stop: print self.stop , "!=",  other.stop
-        if not self.steps == other.steps: print self.steps , "!=",  other.steps
-        if not self.stepSize == other.stepSize: print self.stepSize , "!=",  other.stepSize
-        if not self.stepsSelect == other.stepsSelect: print self.stepsSelect , "!=", other.stepsSelect
-        if not self.scantype == other.scantype: print self.scantype , "!=",  other.scantype
-        if not self.scanMode == other.scanMode: print self.scanMode , "!=",  other.scanMode
-        if not self.scanRepeat == other.scanRepeat: print self.scanRepeat , "!=", other.scanRepeat
-        if not self.rewriteDDS == other.rewriteDDS: print self.rewriteDDS , "!=", other.rewriteDDS
-        if not self.filename == other.filename: print self.filename , "!=", other.filename
-        if not self.autoSave == other.autoSave: print self.autoSave , "!=", other.autoSave
-        if not self.xUnit == other.xUnit: print self.xUnit , "!=", other.xUnit
-        if not self.loadPP == other.loadPP: print self.loadPP , "!=", other.loadPP
-        if not self.loadPPName == other.loadPPName: print self.loadPPName , "!=", other.loadPPName
-        if not self.histogramBins == other.histogramBins: print self.histogramBins , "!=", other.histogramBins
-        if not self.integrateHistogram == other.integrateHistogram: print self.integrateHistogram , "!=", other.integrateHistogram
-        if not self.counterChannel == other.counterChannel: print self.counterChannel , "!=", other.counterChannel
-        if not self.evalName == other.evalName: print self.evalName , "!=", other.evalName
-        if not self.errorBars == other.errorBars: print self.errorBars , "!=", other.errorBars
-        if not self.enableTimestamps == other.enableTimestamps: print self.enableTimestamps , "!=", other.enableTimestamps
-        if not self.binwidth == other.binwidth: print self.binwidth , "!=", other.binwidth
-        if not self.roiStart == other.roiStart: print self.roiStart , "!=", other.roiStart
-        if not self.integrateTimestamps == other.integrateTimestamps: print self.integrateTimestamps , "!=", other.integrateTimestamps
-        if not self.timestampsChannel == other.timestampsChannel: print self.timestampsChannel , "!=", other.timestampsChannel
-        if not self.saveRawData == other.saveRawData: print self.saveRawData , "!=", other.saveRawData
-        if not self.gateSetSettings == other.gateSetSettings: print self.gateSetSettings , "!=", other.gateSetSettings
-        if not self.center == other.center: print self.center , "!=", other.center
-        if not self.span == other.span: print self.span , "!=", other.span
-        if not self.startCenter == other.startCenter: print self.startCenter , "!=", other.startCenter
-        return ( self.scanParameter == other.scanParameter and
-                self.start == other.start and
-                self.stop == other.stop and
-                self.steps == other.steps and
-                self.stepSize == other.stepSize and
-                self.stepsSelect == other.stepsSelect and
-                self.scantype == other.scantype and
-                self.scanMode == other.scanMode and 
-                self.scanRepeat == other.scanRepeat and 
-                self.rewriteDDS == other.rewriteDDS and
-                self.filename == other.filename and
-                self.autoSave == other.autoSave and
-                self.xUnit == other.xUnit and
-                self.loadPP == other.loadPP and
-                self.loadPPName == other.loadPPName and
-                self.histogramBins == other.histogramBins and
-                self.integrateHistogram == other.integrateHistogram and
-                self.counterChannel == other.counterChannel and
-                self.evalName == other.evalName and
-                self.errorBars == other.errorBars and
-                self.enableTimestamps == other.enableTimestamps and
-                self.binwidth == other.binwidth and
-                self.roiStart == other.roiStart and
-                self.integrateTimestamps == other.integrateTimestamps and
-                self.timestampsChannel == other.timestampsChannel and
-                self.saveRawData == other.saveRawData and
-                self.gateSetSettings == other.gateSetSettings and
-                self.center == other.center and
-                self.span == other.span and
-                self.startCenter == other.startCenter )
-        
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
     def __hash__(self):
-        return hash( (self.scanParameter, self.start, self.stop, self.steps, self.stepSize, self.stepsSelect, self.scantype, self.scanMode,
-                      self.scanRepeat, self.rewriteDDS, self.filename, self.autoSave, self.xUnit, self.loadPP, self.loadPPName, self.histogramBins,
-                      self.integrateHistogram, self.counterChannel, self.evalName, self.errorBars, self.enableTimestamps, self.binwidth,
-                      self.roiStart, self.integrateTimestamps, self.timestampsChannel, self.saveRawData, self.center, self.span, self.startCeneter) )
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+        
+    stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
+                'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 'counterChannel', 'evalName',
+                'errorBars', 'enableTimestamps', 'binwidth', 'roiStart', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
+                'center', 'span', 'startCenter']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
