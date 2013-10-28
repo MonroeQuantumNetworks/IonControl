@@ -219,7 +219,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
             return False
             
     def addTrace(self,trace,parentTrace=None):
-        """Add a new trace to the list of traces."""
+        """Add a new trace to the list of traces. Return a persistent index to that trace."""
         if parentTrace == None:
             parentTrace = self.rootTrace
             parentIndex = QtCore.QModelIndex()
@@ -234,6 +234,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         persistentIndex = QtCore.QPersistentModelIndex(self.createIndex(position, 0, trace))
         trace.trace.dataChangedCallback = partial(self.updateTrace, persistentIndex)
         self.endInsertRows()
+        return persistentIndex
 
     def dropTrace(self, parentTraceIndex, row):
         """Remove a trace from the list of traces."""

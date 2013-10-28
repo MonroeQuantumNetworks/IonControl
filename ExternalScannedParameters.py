@@ -148,7 +148,9 @@ class LaserSynthesizerScan(ExternalParameterBase):
     """
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
+        self.amplitudeString = "Z0K1L6O1"
         self.synthesizer = visa.instrument(instrument) #open visa session
+        self.synthesizer.write(self.amplitudeString)
         self.stepsize = 1000
         self.value = self.config.get('LaserSynthesizerScan.'+self.name+'.frequency',0)
     
@@ -170,7 +172,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
             return False
             
     def _setValue_(self, v):
-        command = "P{0:0>8.0f}Z0K1L6O1".format(v)
+        command = "P{0:0>8.0f}".format(v) + self.amplitudeString
         self.synthesizer.write(command)#set voltage
         self.value = v
         

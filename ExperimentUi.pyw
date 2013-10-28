@@ -188,6 +188,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.show()
         self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
         self.dedicatedCountersWindow.raise_()
+        self.dedicatedCountersWindow.onStart() #Start displaying data immediately
 
     def onVoltageControl(self):
         self.voltageControlWindow.show()
@@ -284,6 +285,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
 if __name__ == "__main__":
     import sys
+    #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
+    import ctypes
+    myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    
     parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
     parser.add_argument('--config-dir', type=str, default=None, help='name of directory for configuration files')
     parser.add_argument('--project',type=str,default=None,help='project name')
