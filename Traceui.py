@@ -101,7 +101,7 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     def addTrace(self, trace, pen, parentTrace=None):
         """Add a trace to the model, plot it, and resize the view appropriately."""
-        self.model.addTrace(trace, parentTrace)
+        self.lastTracePersIndex = self.model.addTrace(trace, parentTrace)
         if parentTrace != None:
             parentIndex = self.model.createIndex(parentTrace.childNumber(), 0, parentTrace)
             if not self.traceTreeView.isExpanded(parentIndex):
@@ -208,6 +208,20 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onClose(self):
         """Execute when the UI is closed. Save the settings to the config file."""
         self.config[self.configname+".settings"] = self.settings
+        
+    def selectedPlottedTraces(self, defaultToLastLine=False):
+        """Return a list of the selected traces. If no traces are selected, return the last trace added."""
+        selectedIndexes = self.uniqueSelectedIndexes()
+        if selectedIndexes != []:
+            traceList = []
+            for traceIndex in selectedIndexes:
+                trace = self.model.getTrace(traceIndex)
+                traceList.append(trace)
+        else: #If no traces are selected, return the last trace added
+            lastTraceIndex = QtCore.QModelIndex(self.lastTracePersIndex)
+            lastTrace = self.model.getTrace(lastTraceIndex)
+            traceList = [lastTrace]
+        return traceList
 
 #if __name__ == '__main__':
 #    import sys
