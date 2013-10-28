@@ -449,11 +449,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
         if self.scan.scanRepeat == 1:
-                if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
-                    self.averagePlottedTrace.averageChildren()
-                    self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
-                    self.averagePlottedTrace.plot(7) #average trace is plotted in black
-                self.averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
+            if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
+                self.averagePlottedTrace.averageChildren()
+                self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
+                self.averagePlottedTrace.plot(7) #average trace is plotted in black
+            self.averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
             
     def showTimestamps(self,data):
         bins = int( (self.scan.roiWidth/self.scan.binwidth).toval() )

@@ -43,7 +43,6 @@ class CustomPlotItem(pg.PlotItem):
         self.unityRangeBtn = pg.ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
         self.gridBtn.clicked.connect(self.onGrid)
-        self.setYRange(0,1) #Range defaults to 0 to 1
         self.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         
     def resizeEvent(self, ev):
@@ -83,7 +82,7 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
         self.mousePointList = list()
-        self.graphicsView.setYRange(0,1) #Range defaults to 0 to 1
+#        self.graphicsView.setYRange(0,1) #Range defaults to 0 to 1
         self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         self.gridShown = True #Because we can't query whether the grid is on or off, we just keep track
         pg.setConfigOption('background', 'w')
@@ -91,7 +90,7 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         
     def autoRange(self):
         """Set the display to autorange."""
-        self.graphicsView.vb.enableAutoRange()
+        self.graphicsView.vb.enableAutoRange(axis=None, enable=True)
         
     def addCustomPlot(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
         """This is a duplicate of addPlot from GraphicsLayout.py. The only change

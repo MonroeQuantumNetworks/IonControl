@@ -98,12 +98,10 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
         self.curves = [None]*8
         self.graphicsView = self.graphicsLayout.graphicsView
-        self.graphicsView.autoRange()
         if 'DedicatedCounter.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['DedicatedCounter.MainWindow.State'])
         self.onSettingsChanged()
-
-        
+                
     def onSettingsChanged(self):
         self.integrationTimeLookup[ self.pulserHardware.getIntegrationTimeBinary(self.settings.integrationTime) & 0xffffff] = self.settings.integrationTime
         self.pulserHardware.integrationTime = self.settings.integrationTime
