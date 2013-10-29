@@ -196,7 +196,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
-        if self.settings.scanParameter: self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
+        if self.settings.scanParameter: 
+            self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
+        elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
+            self.settings.scanParameter = self.comboBoxParameter.currentText()
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
         self.startBox.setEnabled(self.settings.scanMode in [0,1])
         self.stopBox.setEnabled(self.settings.scanMode in [0,1])
