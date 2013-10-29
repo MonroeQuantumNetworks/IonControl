@@ -10,6 +10,7 @@ import pyqtgraph
 import numpy
 from modules import DataDirectory 
 import os.path
+from PyQt4 import QtGui
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
@@ -131,7 +132,7 @@ class PlottedTrace(object):
                 filename, components = directory.sequencefile(pattern)
                 return filename
             else:
-                path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
+                path = str(QtGui.QFileDialog.getSaveFileName(None, 'Save file',directory.path()))
                 return path
         else:
             parentFilename = self.parent().trace.getFilename() 
