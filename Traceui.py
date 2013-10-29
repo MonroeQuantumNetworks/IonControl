@@ -71,7 +71,8 @@ class Traceui(TraceuiForm, TraceuiBase):
     def setupUi(self,MainWindow):
         """Setup the UI. Create the model and the view. Connect all the buttons."""
         TraceuiForm.setupUi(self,MainWindow)
-        self.model = TraceTreeModel([], self.penicons)    
+        self.model = TraceTreeModel([], self.penicons)
+        self.tracePersistentIndexes = []
         self.traceTreeView.setModel(self.model)
         self.traceTreeView.setItemDelegateForColumn(1,TraceComboDelegate(self.penicons)) #This is for selecting which pen to use in the plot
         self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
@@ -86,22 +87,37 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.plotButton.clicked.connect(self.onPlot)
         self.shredderButton.clicked.connect(self.onShredder)
 
-    def uniqueSelectedIndexes(self):
+    def uniqueSelectedIndexes(self, useLastIfNoSelection=True):
         """From the selected elements, return one index from each row.
         
-        This prevents executing an action multiple times on the same row."""
-        uniqueRowIndexes = []
-        uniqueRows = []
-        for traceIndex in self.traceTreeView.selectedIndexes():
-            row = traceIndex.row()
-            if row not in uniqueRows:
-                uniqueRows.append(row)
-                uniqueRowIndexes.append(traceIndex)
-        return uniqueRowIndexes
+        Using one index from each row prevents executing an action multiple times on the same row.
+        If useLastifNoSelection is true, then an index to the last trace added is used if there is
+        no selection.
+        """
+        selectedIndexes = self.traceTreeView.selectedIndexes()
+        if (len(selectedIndexes) == 0) and useLastIfNoSelection:
+            if len(self.tracePersistentIndexes) != 0:
+                #Find and return the most recently added trace that still has a valid index (i.e. has not been removed).
+                for ind in range(-1, -len(self.tracePersistentIndexes), -1): 
+                    if self.tracePersistentIndexes[ind].isValid():
+                        return [QtCore.QModelIndex(self.tracePersistentIndexes[ind])]
+                return None #If the for loop failed to find a valid index, return None. This happens if all traces have been deleted.
+            else:
+                return None #If there were no traces added, return None. This happens if no trace was ever added.
+        else:
+            uniqueRowIndexes = []
+            uniqueRows = []
+            for traceIndex in selectedIndexes:
+                row = traceIndex.row()
+                if row not in uniqueRows:
+                    uniqueRows.append(row)
+                    uniqueRowIndexes.append(traceIndex)
+            return uniqueRowIndexes
 
     def addTrace(self, trace, pen, parentTrace=None):
         """Add a trace to the model, plot it, and resize the view appropriately."""
-        self.lastTracePersIndex = self.model.addTrace(trace, parentTrace)
+        PersistentIndex = self.model.addTrace(trace, parentTrace)
+        self.tracePersistentIndexes.append(PersistentIndex)
         if parentTrace != None:
             parentIndex = self.model.createIndex(parentTrace.childNumber(), 0, parentTrace)
             if not self.traceTreeView.isExpanded(parentIndex):
@@ -123,55 +139,60 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onPlot(self):
         """Execute when the plot button is clicked. Plot the selected traces."""
         selectedIndexes = self.uniqueSelectedIndexes()
-        for traceIndex in selectedIndexes:
-            trace = self.model.getTrace(traceIndex)
-            trace.plot(-1,self.settings.plotstyle)
-            self.model.updateTrace(QtCore.QPersistentModelIndex(traceIndex))
+        if selectedIndexes:
+            for traceIndex in selectedIndexes:
+                trace = self.model.getTrace(traceIndex)
+                trace.plot(-1,self.settings.plotstyle)
+                self.model.updateTrace(QtCore.QPersistentModelIndex(traceIndex))
 
     def onClear(self):
         """Execute when the clear button is clicked. Remove the selected plots from the trace.
         
            This leaves the traces in the list of traces (i.e. in the model and view)."""
         selectedIndexes = self.uniqueSelectedIndexes()
-        for traceIndex in selectedIndexes:
-            trace = self.model.getTrace(traceIndex)
-            if trace.curvePen != 0:
-                trace.plot(0)
-            self.model.updateTrace(QtCore.QPersistentModelIndex(traceIndex))
+        if selectedIndexes:
+            for traceIndex in selectedIndexes:
+                trace = self.model.getTrace(traceIndex)
+                if trace.curvePen != 0:
+                    trace.plot(0)
+                self.model.updateTrace(QtCore.QPersistentModelIndex(traceIndex))
 
     def onApplyStyle(self):
         """Execute when the apply style button is clicked. Change the selected traces to the new style."""
         selectedIndexes = self.uniqueSelectedIndexes()
-        for traceIndex in selectedIndexes:
-            trace = self.model.getTrace(traceIndex)
-            trace.plot(-2, self.settings.plotstyle)           
+        if selectedIndexes:
+            for traceIndex in selectedIndexes:
+                trace = self.model.getTrace(traceIndex)
+                trace.plot(-2, self.settings.plotstyle)           
 
     def onSave(self):
         """Execute when the save button is clicked. Save (or resave) the selected traces."""
         selectedIndexes = self.uniqueSelectedIndexes()
-        for traceIndex in selectedIndexes:
-            trace = self.model.getTrace(traceIndex)
-            trace.trace.resave()
+        if selectedIndexes:
+            for traceIndex in selectedIndexes:
+                trace = self.model.getTrace(traceIndex)
+                trace.trace.resave()
 
     def onShredder(self):
         """Execute when the shredder button is clicked. Remove the selected plots, and delete the files from disk.
         
            A warning message appears first, asking to confirm deletion. Traces with children cannot be deleted
            unless their children are deleted first."""
-        warningResponse = self.warningMessage()
-        if warningResponse == QtGui.QMessageBox.Ok:
-            selectedIndexes = self.uniqueSelectedIndexes()
-            for traceIndex in selectedIndexes:
-                trace = self.model.getTrace(traceIndex)
-                parentIndex = self.model.parent(traceIndex)
-                row = trace.childNumber()
-                if trace.childCount() == 0:
-                    if trace.curvePen != 0:
-                        trace.plot(0)
-                    trace.trace.deleteFile()
-                    self.model.dropTrace(parentIndex, row)
-                else:
-                    print "trace has children, please delete them first."
+        selectedIndexes = self.uniqueSelectedIndexes()
+        if selectedIndexes:
+            warningResponse = self.warningMessage()
+            if warningResponse == QtGui.QMessageBox.Ok:
+                for traceIndex in selectedIndexes:
+                    trace = self.model.getTrace(traceIndex)
+                    parentIndex = self.model.parent(traceIndex)
+                    row = trace.childNumber()
+                    if trace.childCount() == 0:
+                        if trace.curvePen != 0:
+                            trace.plot(0)
+                        trace.trace.deleteFile()
+                        self.model.dropTrace(parentIndex, row)
+                    else:
+                        print "trace has children, please delete them first."
 
     def warningMessage(self):
         """Pop up a warning message asking to confirm deletion. Return the response."""
@@ -184,16 +205,17 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onRemove(self):
         """Execute when the remove button is clicked. Remove the selected traces from the model and view (but don't delete files)."""
         selectedIndexes = self.uniqueSelectedIndexes()
-        for traceIndex in selectedIndexes:
-            trace = self.model.getTrace(traceIndex)
-            parentIndex = self.model.parent(traceIndex)
-            row = trace.childNumber()
-            if trace.childCount() == 0:
-                if trace.curvePen != 0:
-                    trace.plot(0)
-                self.model.dropTrace(parentIndex, row)
-            else:
-                print "trace has children, please remove them first."
+        if selectedIndexes:
+            for traceIndex in selectedIndexes:
+                trace = self.model.getTrace(traceIndex)
+                parentIndex = self.model.parent(traceIndex)
+                row = trace.childNumber()
+                if trace.childCount() == 0:
+                    if trace.curvePen != 0:
+                        trace.plot(0)
+                    self.model.dropTrace(parentIndex, row)
+                else:
+                    print "trace has children, please remove them first."
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
@@ -210,17 +232,13 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.config[self.configname+".settings"] = self.settings
         
     def selectedPlottedTraces(self, defaultToLastLine=False):
-        """Return a list of the selected traces. If no traces are selected, return the last trace added."""
+        """Return a list of the selected traces."""
         selectedIndexes = self.uniqueSelectedIndexes()
-        if selectedIndexes != []:
-            traceList = []
+        traceList = []
+        if selectedIndexes:
             for traceIndex in selectedIndexes:
                 trace = self.model.getTrace(traceIndex)
                 traceList.append(trace)
-        else: #If no traces are selected, return the last trace added
-            lastTraceIndex = QtCore.QModelIndex(self.lastTracePersIndex)
-            lastTrace = self.model.getTrace(lastTraceIndex)
-            traceList = [lastTrace]
         return traceList
 
 #if __name__ == '__main__':
