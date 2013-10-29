@@ -126,6 +126,24 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
         self.reloadButton.clicked.connect( self.onReload )
+        self.algorithms = dict()
+        self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
+        for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
+            self.algorithms[name] = algo(self.config)
+            parameters = self.algorithms[name].parameters
+            algoWidget = QtGui.QWidget(self.evalStackedWidget)
+            gridLayout = QtGui.QGridLayout(algoWidget)
+            for num, paramname in enumerate( parameters ):
+                gridLayout.addWidget( QtGui.QLabel(paramname), num, 0, 1, 1)
+                Box = MagnitudeSpinBox(self)
+                Box.setValue( parameters[paramname] )
+                Box.valueChanged.connect( functools.partial(self.onAlgorithmValueChanged, name, paramname) )
+                gridLayout.addWidget( Box, num, 1, 1, 1)                
+            spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+            gridLayout.addItem(spacerItem, len(parameters), 0, 1, 1)
+            algoWidget.setLayout(gridLayout)
+            self.evalStackedWidget.addWidget( algoWidget )
+
         try:
             self.setSettings( self.settings )
         except AttributeError as e:
@@ -153,27 +171,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
         self.counterSpinBox.valueChanged.connect( functools.partial(self.onIntValueChanged,'counterChannel') )
-        self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onAlgorithmNameChanged )
-        self.algorithms = dict()
         self.errorBarCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'errorBars') )
-        
-        for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
-            self.algorithms[name] = algo(self.config)
-            parameters = self.algorithms[name].parameters
-            algoWidget = QtGui.QWidget(self.evalStackedWidget)
-            gridLayout = QtGui.QGridLayout(algoWidget)
-            for num, paramname in enumerate( parameters ):
-                gridLayout.addWidget( QtGui.QLabel(paramname), num, 0, 1, 1)
-                Box = MagnitudeSpinBox(self)
-                Box.setValue( parameters[paramname] )
-                Box.valueChanged.connect( functools.partial(self.onAlgorithmValueChanged, name, paramname) )
-                gridLayout.addWidget( Box, num, 1, 1, 1)                
-            spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-            gridLayout.addItem(spacerItem, len(parameters), 0, 1, 1)
-            algoWidget.setLayout(gridLayout)
-            self.evalStackedWidget.addWidget( algoWidget )
-        
+                
         # Timestamps
         self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
         self.roiStartSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiStart') )
@@ -459,6 +459,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBoxParameter.addItem(var.name)
         if self.settings.scanParameter:
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
+        elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
+            self.settings.scanParameter = self.comboBoxParameter.currentText()
         if self.gateSetUi:
             self.gateSetUi.setVariables(variabledict)
         self.updateSaveStatus()
