@@ -307,7 +307,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onStart(self):
         self.scan = self.scanControlWidget.getScan()
-        if self.scan.scanRepeat == 1:
+        if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             self.createAverageTrace()
             self.scanControlWidget.scansAveraged.setText("Scans averaged: 0")
             self.scanControlWidget.scansAveraged.show()
@@ -434,7 +434,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             xRange = self.generator.xRange()
             if xRange:
                 self.graphicsView.setXRange( *xRange )     
-            if self.scan.scanRepeat == 1:           
+            if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
                 self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
             else:
                 self.traceui.addTrace(self.plottedTrace, pen=-1)
@@ -451,7 +451,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if trace:
                 trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
-        if self.scan.scanRepeat == 1:
+        if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
                 self.averagePlottedTrace.averageChildren()
                 self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
