@@ -110,12 +110,20 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.config = config
         self.configname = 'ScanControl.'+parentname
         # History and Dictionary
-        self.settingsDict = self.config.get(self.configname+'.dict',dict())
+        try:
+            self.settingsDict = self.config.get(self.configname+'.dict',dict())
+        except TypeError:
+            print "Unable to read scan control settings dictionary. Setting to empty dictionary."
+            self.settingsDict = dict()
         #print self.settingsDict
         self.settingsHistory = list()
         self.settingsHistoryPointer = None
         self.historyFinalState = None
-        self.settings = self.config.get(self.configname,Scan())
+        try:
+            self.settings = self.config.get(self.configname,Scan())
+        except TypeError:
+            print "Unable to read scan control settings. Setting to new scan."
+            self.settings = Scan()
         self.gateSetUi = None
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
 
