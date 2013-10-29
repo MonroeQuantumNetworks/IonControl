@@ -81,9 +81,12 @@ class StepInPlaceGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi ):
-        self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
-        self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
-        return (pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue]*5) , [])
+        #self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
+        self.stepInPlaceValue = 0
+        self.scan.code = [4095, 0] # writing the last memory location
+        #self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
+        return (self.scan.code*5, []) # write 5 points to the fifo queue at start,
+                        # this prevents the Step in Place from stopping in case the computer lags behind evaluating by up to 5 points
 
     def restartCode(self,currentIndex):
         return self.scan.code * 5

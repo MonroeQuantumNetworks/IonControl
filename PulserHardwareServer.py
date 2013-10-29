@@ -391,7 +391,7 @@ class PulserHardwareServer(Process):
                 code = bytearray()
                 for item in data:
                     code.extend(struct.pack('I',item))
-                print "ppWriteData length",len(code)
+                #print "ppWriteData length",len(code)
                 return self.xem.WriteToPipeIn(0x81,code)
         else:
             print "ppWriteData: Pulser Hardware not available"
