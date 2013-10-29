@@ -201,10 +201,10 @@ class AutoLoad(UiForm,UiBase):
         QtCore.QTimer.singleShot(1000,functools.partial(self.getWavemeterData, channel))
         
     def checkFreqsInRange(self, outOfRangeCount=0):
-        """Check whether all laser frequencies being used by the interlock are 
-           in range. If they are not, loading is stopped/prevented, and the 
-           lock status bar turns from green to red. If the lock is not being
-           used, the status bar is black."""
+        """Check whether all laser frequencies being used by the interlock are in range.
+        
+            If they are not, loading is stopped/prevented, and the lock status bar turns
+            from green to red. If the lock is not being used, the status bar is black."""
         if all([not self.settings.useChannel[channel] for channel in range(0,8)]):
             #if no channels are checked, set bar on GUI to black
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
@@ -216,18 +216,17 @@ class AutoLoad(UiForm,UiBase):
             self.allFreqsInRange.setToolTip("All laser frequencies are in range")
             outOfRangeCount = 0
         else:
-            #if not all channels are in range, set bar on GUI to red
-            self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
-            self.allFreqsInRange.setToolTip("There are laser frequencies out of range")
-            #This is the interlock: loading is inhibited if frequencies are out of range
             #Because of the bug where the wavemeter reads incorrectly after calibration,
             #Loading is only inhibited after 10 consecutive bad measurements
-            if ((self.status != self.StatusOptions.Idle) & self.settings.useInterlock):
-                if (outOfRangeCount >= 10):
+            if outOfRangeCount < 20: #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
+                outOfRangeCount += 1
+            if (outOfRangeCount >= 10):
+                #set bar on GUI to red
+                self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
+                self.allFreqsInRange.setToolTip("There are laser frequencies out of range")
+                #This is the interlock: loading is inhibited if frequencies are out of range
+                if ((self.status != self.StatusOptions.Idle) & self.settings.useInterlock):
                     self.setIdle() 
-                    outOfRangeCount = 0
-                else:
-                    outOfRangeCount += 1
         #check if channels are in range once per second
         QtCore.QTimer.singleShot(300, functools.partial(self.checkFreqsInRange, outOfRangeCount))
         
