@@ -89,8 +89,8 @@ class Scan:
         
     stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 'counterChannel', 'evalName',
-                'errorBars', 'enableTimestamps', 'binwidth', 'roiStart', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
-                'center', 'span', 'startCenter']
+                'errorBars', 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
+                'center', 'span', 'startCenter', 'evalParameters']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
@@ -545,27 +545,32 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.beginChange()
         self.settings.integrateTimestamps = value
         self.commitChange()
+        self.updateSaveStatus()
         
     def onAlgorithmValueChanged(self, algo, name, value):
         self.beginChange()
         self.algorithms[algo].setParameter(name, value)
         self.commitChange()
+        self.updateSaveStatus()
 
     def onIntegrateHistogramClicked(self):
         self.beginChange()
         self.settings.integrateHistogram = self.integrateHistogramButton.isChecked()
         self.commitChange()
+        self.updateSaveStatus()
  
     def onHistogramBinsChanged(self, bins):
         self.beginChange()
         self.settings.histogramBins = bins
         self.commitChange()
+        self.updateSaveStatus()
         
     def onAlgorithmNameChanged(self, name):
         self.beginChange()
         self.settings.evalName = str(name)
         self.evalStackedWidget.setCurrentIndex(self.evalMethodCombo.currentIndex())
         self.commitChange()
+        self.updateSaveStatus()
         
     def documentationString(self):
         return self.settings.documentationString()
