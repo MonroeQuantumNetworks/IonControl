@@ -11,7 +11,8 @@ from PyQt4 import QtCore, QtGui
 import CountEvaluation
 from MagnitudeSpinBox import MagnitudeSpinBox
 from modules.MagnitudeUtilit import valueAs
-       
+from pyqtgraph.parametertree import ParameterTree
+ 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
 import ScanList
@@ -20,6 +21,7 @@ from modules.magnitude import mg, MagnitudeError
 from modules.enum import enum
 import GateSetUi
 from modules.PyqtUtility import BlockSignals, updateComboBoxItems
+from CountEvaluationUi import CountEvaluationUi
 
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')
@@ -50,6 +52,7 @@ class Scan:
         self.integrateHistogram = False
         self.counterChannel = 0
         self.evalName = 'Mean'
+        self.evalParameters = dict()
         self.errorBars = False
         # Timestamps
         self.enableTimestamps = False
@@ -77,6 +80,7 @@ class Scan:
         self.__dict__.setdefault('span',0)
         self.__dict__.setdefault('startCenter',0)        
         self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
+        self.__dict__.setdefault('evalParameters',dict())
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -135,22 +139,16 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.redoButton.clicked.connect( self.onRedo )
         self.reloadButton.clicked.connect( self.onReload )
         self.algorithms = dict()
+        self.algorithmsUi = dict()
         self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
-            self.algorithms[name] = algo(self.config)
-            parameters = self.algorithms[name].parameters
-            algoWidget = QtGui.QWidget(self.evalStackedWidget)
-            gridLayout = QtGui.QGridLayout(algoWidget)
-            for num, paramname in enumerate( parameters ):
-                gridLayout.addWidget( QtGui.QLabel(paramname), num, 0, 1, 1)
-                Box = MagnitudeSpinBox(self)
-                Box.setValue( parameters[paramname] )
-                Box.valueChanged.connect( functools.partial(self.onAlgorithmValueChanged, name, paramname) )
-                gridLayout.addWidget( Box, num, 1, 1, 1)                
-            spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-            gridLayout.addItem(spacerItem, len(parameters), 0, 1, 1)
-            algoWidget.setLayout(gridLayout)
-            self.evalStackedWidget.addWidget( algoWidget )
+            myalgo = algo()
+            myalgo.subscribe(self.updateSaveStatus)
+            treeWidget = ParameterTree()
+            treeWidget.setParameters(myalgo.parameter, showTop=False)
+            self.evalStackedWidget.addWidget( treeWidget )
+            self.algorithmsUi[name] = treeWidget
+            self.algorithms[name] = myalgo
 
         try:
             self.setSettings( self.settings )
@@ -237,6 +235,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.gateSetUi:
             self.gateSetUi.setSettings( self.settings.gateSetSettings )
         self.updateSaveStatus()
+        for name in self.algorithms.keys():
+            self.settings.evalParameters.setdefault(name,dict())
+            self.algorithms[name].setSettings(self.settings.evalParameters[name])
 
     def updateSaveStatus(self):
         try:
