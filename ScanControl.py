@@ -21,7 +21,6 @@ from modules.magnitude import mg, MagnitudeError
 from modules.enum import enum
 import GateSetUi
 from modules.PyqtUtility import BlockSignals, updateComboBoxItems
-from CountEvaluationUi import CountEvaluationUi
 
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')

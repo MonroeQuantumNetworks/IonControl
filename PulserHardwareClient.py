@@ -143,8 +143,9 @@ class PulserHardware(QtCore.QObject):
             
     def setShutterBit(self, bit, value):
         self.clientPipe.send( ('setShutterBit', (bit, value) ) )  
-        self.shutterChanged.emit()
-        return processReturn( self.clientPipe.recv() )
+        _shutter = processReturn( self.clientPipe.recv() )
+        self.shutterChanged.emit( _shutter )
+        return _shutter 
   
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
