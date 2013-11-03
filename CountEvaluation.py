@@ -47,6 +47,10 @@ class MeanEvaluation(EvaluationBase):
     tooltip = "Mean of observed counts" 
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
+        self.setdefault()
+        
+    def setdefault(self):
+        self.settings.setdefault('errorBars',False)
          
     def evaluate(self, countarray, timestamps=None ):
         summe = numpy.sum( countarray )
@@ -54,6 +58,9 @@ class MeanEvaluation(EvaluationBase):
         mean = summe/l
         stderror = math.sqrt( max(summe,1) )/l
         return mean, (stderror/2. if summe>0 else 0, stderror/2. ), summe
+
+    def children(self):
+        return [{'name':'errorBars', 'type': 'bool', 'value':False }]     
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -70,6 +77,7 @@ class ThresholdEvaluation(EvaluationBase):
     def setdefault(self):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
+        self.settings.setdefault('errorBars',False)
         
     def evaluate(self, countarray, timestamps=None ):
         if not countarray:
@@ -91,6 +99,7 @@ class ThresholdEvaluation(EvaluationBase):
         
     def children(self):
         return [{'name':'threshold','type':'int','value':1},
+                {'name':'errorBars', 'type': 'bool', 'value':False },
                 {'name':'invert', 'type': 'bool', 'value':False }]     
 
    
