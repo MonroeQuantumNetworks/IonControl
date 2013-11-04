@@ -52,10 +52,13 @@ solidBluePen = mkPen(blue, width=penWidth, style=solid)
 dashedBluePen = mkPen(blue, width=penWidth, style=dashed)
 solidCyanPen = mkPen(cyan, width=penWidth, style=solid)
 dashedCyanPen = mkPen(cyan, width=penWidth, style=dashed)
+cyanBrush = mkBrush(cyan)
 solidMagentaPen = mkPen(magenta, width=penWidth, style=solid)
 dashedMagentaPen = mkPen(magenta, width=penWidth, style=dashed)
+magentaBrush = mkBrush(magenta)
 solidBlackPen = mkPen(black, width=penWidth, style=solid)
 dashedBlackPen = mkPen(black, width=penWidth, style=dashed)
+blackBrush = mkBrush(black)
 solidAquamarinePen = mkPen(aquamarine, width=penWidth, style=solid)
 solidLightBluePen = mkPen(lightblue, width=penWidth, style=solid)
 solidPurplePen = mkPen(purple, width=penWidth, style=solid)
@@ -66,9 +69,9 @@ penList = [ (solidYellowPen,),
             (solidRedPen, 'o', solidRedPen, blank),
             (solidGreenPen, 't', solidGreenPen, blank),
             (solidBluePen, 'd', solidBluePen, blank),
-            (solidCyanPen, 's', None, mkBrush(cyan)),
-            (solidMagentaPen, 'o', None, mkBrush(magenta)),
-            (solidBlackPen,'t',None,mkBrush(black)),
+            (solidCyanPen, 's', None, cyanBrush),
+            (solidMagentaPen, 'o', None, magentaBrush),
+            (solidBlackPen,'t',None, blackBrush),
             (solidAquamarinePen, 's', solidAquamarinePen, blank),
             (solidLightBluePen, 'o', solidLightBluePen, blank),
             (solidPurplePen, 't', solidPurplePen, blank),
@@ -77,9 +80,9 @@ penList = [ (solidYellowPen,),
             (dashedRedPen, 'o', solidRedPen, blank),
             (dashedGreenPen, 't', solidGreenPen, blank),
             (dashedBluePen, 'd', solidBluePen, blank),
-            (dashedCyanPen, 's', None, mkBrush(cyan)),
-            (dashedMagentaPen, 'o', None, mkBrush(magenta)),
-            (dashedBlackPen, 't', None, mkBrush(black)) ]
+            (dashedCyanPen, 's', None, cyanBrush),
+            (dashedMagentaPen, 'o', None, magentaBrush),
+            (dashedBlackPen, 't', None, blackBrush) ]
 
 class penicons:
     def penicons(self):
