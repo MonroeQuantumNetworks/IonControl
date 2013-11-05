@@ -21,6 +21,26 @@ from modules.magnitude import mg, MagnitudeError
 from modules.enum import enum
 import GateSetUi
 from modules.PyqtUtility import BlockSignals, updateComboBoxItems
+from EvaluationTableModel import EvaluationTableModel
+
+class EvaluationDefinition:
+    def __init__(self):
+        self.counter = None
+        self.evaluation = None
+        self.settings = dict()
+        self.name = None
+        
+    stateFields = ['counter', 'evaluation', 'settings', 'name'] 
+        
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+ 
 
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')
@@ -52,6 +72,7 @@ class Scan:
         self.counterChannel = 0
         self.evalName = 'Mean'
         self.evalParameters = dict()
+        self.evalDict = dict()
         # Timestamps
         self.enableTimestamps = False
         self.binwidth =  mg(1,'us')
@@ -79,6 +100,7 @@ class Scan:
         self.__dict__.setdefault('startCenter',0)        
         self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
         self.__dict__.setdefault('evalParameters',dict())
+        self.__dict__.setdefault('evalDict',dict())
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -92,7 +114,7 @@ class Scan:
     stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 'counterChannel', 'evalName',
                 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
-                'center', 'span', 'startCenter', 'evalParameters']
+                'center', 'span', 'startCenter', 'evalParameters', 'evalDict']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
@@ -136,6 +158,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
         self.reloadButton.clicked.connect( self.onReload )
+        self.evalTableModel = EvaluationTableModel()
+        self.evalTableView.setModel( self.evalTableModel )
+        
         self.algorithms = dict()
         self.algorithmsUi = dict()
         self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
@@ -234,6 +259,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         for name in self.algorithms.keys():
             self.settings.evalParameters.setdefault(name,dict())
             self.algorithms[name].setSettings(self.settings.evalParameters[name])
+        self.evalTableModel.setEvalList( self.settings.evalDict )
 
     def updateSaveStatus(self):
         try:

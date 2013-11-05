@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>249</width>
+    <width>273</width>
     <height>509</height>
    </rect>
   </property>
@@ -146,7 +146,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>229</width>
+        <width>253</width>
         <height>330</height>
        </rect>
       </property>
@@ -365,7 +365,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>229</width>
+        <width>253</width>
         <height>330</height>
        </rect>
       </property>
@@ -380,7 +380,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
+       <item row="0" column="1" colspan="3">
         <widget class="QSpinBox" name="histogramBinsBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -400,14 +400,14 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="1" column="1" colspan="3">
         <widget class="QSpinBox" name="counterSpinBox">
          <property name="maximum">
           <number>15</number>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="0" colspan="4">
         <widget class="QPushButton" name="integrateHistogramButton">
          <property name="text">
           <string>Integrate Histogram</string>
@@ -417,28 +417,55 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_6">
+       <item row="6" column="0" colspan="4">
+        <widget class="QTreeWidget" name="evalParamTreeWidget">
+         <column>
+          <property name="text">
+           <string notr="true">1</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QComboBox" name="evalAlgorithmCombo"/>
+       </item>
+       <item row="4" column="0">
+        <widget class="QSpinBox" name="counterSelectSpinBox">
+         <property name="maximum">
+          <number>15</number>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="QToolButton" name="toolButton">
          <property name="text">
-          <string>Eval Method</string>
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="Experiment.qrc">
+           <normaloff>:/openicon/icons/edit-add.png</normaloff>:/openicon/icons/edit-add.png</iconset>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QComboBox" name="evalMethodCombo"/>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QStackedWidget" name="evalStackedWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+       <item row="4" column="3">
+        <widget class="QToolButton" name="toolButton_2">
+         <property name="text">
+          <string>...</string>
          </property>
-         <property name="currentIndex">
-          <number>-1</number>
+         <property name="icon">
+          <iconset resource="Experiment.qrc">
+           <normaloff>:/openicon/icons/edit-delete-6.png</normaloff>:/openicon/icons/edit-delete-6.png</iconset>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
          </property>
         </widget>
+       </item>
+       <item row="5" column="0" colspan="4">
+        <widget class="QTableView" name="evalTableView"/>
        </item>
       </layout>
      </widget>
@@ -447,7 +474,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>229</width>
+        <width>253</width>
         <height>330</height>
        </rect>
       </property>
@@ -636,7 +663,6 @@
   <tabstop>histogramBinsBox</tabstop>
   <tabstop>counterSpinBox</tabstop>
   <tabstop>integrateHistogramButton</tabstop>
-  <tabstop>evalMethodCombo</tabstop>
   <tabstop>enableCheckBox</tabstop>
   <tabstop>saveRawDataCheckBox</tabstop>
   <tabstop>binwidthSpinBox</tabstop>
