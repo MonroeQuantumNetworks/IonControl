@@ -527,6 +527,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
         scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps if scan.stepsSelect==0 else scan.stepSize, 
                                        scan.type, scan.stepsSelect )
+        scan.evalAlgorithmList = self.evalAlgorithmList
         scan.gateSetUi = self.gateSetUi
         scan.settingsName = self.settingsName
         self.onCommit()

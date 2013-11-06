@@ -393,16 +393,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
             print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-            mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-            self.displayUi.add( mean )
+            # Evaluate as given in evalList
+            x = self.generator.xValue(self.currentIndex)
+            evaluated = list()
+            for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+                evaluated.append( algo.evaluate( data.count[eval.counter])) # returns mean, error, raw
             if data.other:
                 print "Other:", data.other
-            #mean = numpy.mean( data.count[self.scan.counterChannel] )
-            x = self.generator.xValue(self.currentIndex)
-            if mean is not None:
-                self.updateMainGraph(x, mean, error, raw)
+            if len(evaluated)>0:
+                self.displayUi.add( evaluated[0][0] )
+                self.updateMainGraph(x, evaluated )
+                self.showHistogram(data, self.scan.evalList[0].counter )
             self.currentIndex += 1
-            self.showHistogram(data)
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
             if data.final:
@@ -491,8 +493,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
-    def showHistogram(self, data):
-        y, x = numpy.histogram( data.count[self.scan.counterChannel] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins)
+    def showHistogram(self, data, channel):
+        y, x = numpy.histogram( data.count[channel] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins)
         if self.scan.integrateHistogram and hasattr(self,'histx') and numpy.array_equal(self.histx,x):
             self.histy += y
         else:
