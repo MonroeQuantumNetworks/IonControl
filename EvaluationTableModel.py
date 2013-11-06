@@ -4,17 +4,19 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
     def __init__(self, evalList=None, parent=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
-            self.evalList = list(evalList.values())
+            self.evalList = evalList
         else:
             self.evalList = list()
         
     def setEvalList(self, evalList):
-        self.evalList = list(evalList.values())
+        self.beginResetModel()
+        self.evalList = evalList
+        self.endResetModel()
         
-    def rowCount(self):
+    def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self.evalList)
     
-    def columnCount(self):
+    def columnCount(self,  parent=QtCore.QModelIndex()):
         return 3
     
     def data(self, index, role): 

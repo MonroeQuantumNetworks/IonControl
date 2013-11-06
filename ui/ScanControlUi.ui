@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>273</width>
+    <width>294</width>
     <height>509</height>
    </rect>
   </property>
@@ -146,7 +146,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>253</width>
+        <width>274</width>
         <height>330</height>
        </rect>
       </property>
@@ -365,7 +365,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>253</width>
+        <width>274</width>
         <height>330</height>
        </rect>
       </property>
@@ -418,7 +418,7 @@
         </widget>
        </item>
        <item row="6" column="0" colspan="4">
-        <widget class="QTreeWidget" name="evalParamTreeWidget">
+        <widget class="ParameterTree" name="evalParamTreeWidget">
          <column>
           <property name="text">
            <string notr="true">1</string>
@@ -437,7 +437,7 @@
         </widget>
        </item>
        <item row="4" column="2">
-        <widget class="QToolButton" name="toolButton">
+        <widget class="QToolButton" name="addEvaluationButton">
          <property name="text">
           <string>...</string>
          </property>
@@ -451,7 +451,7 @@
         </widget>
        </item>
        <item row="4" column="3">
-        <widget class="QToolButton" name="toolButton_2">
+        <widget class="QToolButton" name="removeEvaluationButton">
          <property name="text">
           <string>...</string>
          </property>
@@ -474,7 +474,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>253</width>
+        <width>274</width>
         <height>330</height>
        </rect>
       </property>
@@ -641,6 +641,11 @@
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>MagnitudeSpinBox</header>
+  </customwidget>
+  <customwidget>
+   <class>ParameterTree</class>
+   <extends>QTreeWidget</extends>
+   <header>pyqtgraph.parametertree</header>
   </customwidget>
  </customwidgets>
  <tabstops>

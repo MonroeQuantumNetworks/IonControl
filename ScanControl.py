@@ -23,6 +23,11 @@ import GateSetUi
 from modules.PyqtUtility import BlockSignals, updateComboBoxItems
 from EvaluationTableModel import EvaluationTableModel
 
+
+def unique(seq):
+    seen = set()
+    return [ x for x in seq if x not in seen and not seen.add(x)]
+
 class EvaluationDefinition:
     def __init__(self):
         self.counter = None
@@ -70,9 +75,7 @@ class Scan:
         self.histogramBins = 50
         self.integrateHistogram = False
         self.counterChannel = 0
-        self.evalName = 'Mean'
-        self.evalParameters = dict()
-        self.evalDict = dict()
+        self.evalList = list()
         # Timestamps
         self.enableTimestamps = False
         self.binwidth =  mg(1,'us')
@@ -93,14 +96,12 @@ class Scan:
         self.__dict__.setdefault('scanRepeat', 0)
         self.__dict__.setdefault('loadPP', False)
         self.__dict__.setdefault('loadPPName', "")
-        self.__dict__.setdefault('evalName','Mean')
         self.__dict__.setdefault('stepSize',1)
         self.__dict__.setdefault('center',0)
         self.__dict__.setdefault('span',0)
         self.__dict__.setdefault('startCenter',0)        
         self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
-        self.__dict__.setdefault('evalParameters',dict())
-        self.__dict__.setdefault('evalDict',dict())
+        self.__dict__.setdefault('evalList',list())
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -112,12 +113,12 @@ class Scan:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
-                'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 'counterChannel', 'evalName',
+                'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 'counterChannel', 
                 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
-                'center', 'span', 'startCenter', 'evalParameters', 'evalDict']
+                'center', 'span', 'startCenter', 'evalList']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
-                'xUnit', 'loadPP', 'loadPPName', 'counterChannel', 'evalName' ]
+                'xUnit', 'loadPP', 'loadPPName', 'counterChannel' ]
         
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
@@ -150,6 +151,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings = Scan()
         self.gateSetUi = None
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
+        self.evalAlgorithmList = list()
 
     def setupUi(self, parent):
         ScanControlForm.setupUi(self,parent)
@@ -160,19 +162,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.reloadButton.clicked.connect( self.onReload )
         self.evalTableModel = EvaluationTableModel()
         self.evalTableView.setModel( self.evalTableModel )
+        self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
+        self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
+        self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
+        self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
         
-        self.algorithms = dict()
-        self.algorithmsUi = dict()
-        self.evalMethodCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
-        for name, algo in CountEvaluation.EvaluationAlgorithms.iteritems():
-            myalgo = algo()
-            myalgo.subscribe(self.updateSaveStatus)
-            treeWidget = ParameterTree()
-            treeWidget.setParameters(myalgo.parameter, showTop=False)
-            self.evalStackedWidget.addWidget( treeWidget )
-            self.algorithmsUi[name] = treeWidget
-            self.algorithms[name] = myalgo
-
         try:
             self.setSettings( self.settings )
         except AttributeError as e:
@@ -200,7 +194,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
         self.counterSpinBox.valueChanged.connect( functools.partial(self.onIntValueChanged,'counterChannel') )
-        self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onAlgorithmNameChanged )
+#        self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onAlgorithmNameChanged )
                 
         # Timestamps
         self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
@@ -242,8 +236,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.histogramBinsBox.setValue(self.settings.histogramBins)
         self.integrateHistogramButton.setChecked( self.settings.integrateHistogram )
         self.counterSpinBox.setValue( self.settings.counterChannel )
-        self.evalMethodCombo.setCurrentIndex( self.evalMethodCombo.findText(self.settings.evalName) )
-        self.evalStackedWidget.setCurrentIndex( self.evalMethodCombo.findText(self.settings.evalName) )
         # Timestamps
         self.enableCheckBox.setChecked(self.settings.enableTimestamps )
         self.saveRawDataCheckBox.setChecked(self.settings.saveRawData)
@@ -256,10 +248,36 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.gateSetUi:
             self.gateSetUi.setSettings( self.settings.gateSetSettings )
         self.updateSaveStatus()
-        for name in self.algorithms.keys():
-            self.settings.evalParameters.setdefault(name,dict())
-            self.algorithms[name].setSettings(self.settings.evalParameters[name])
-        self.evalTableModel.setEvalList( self.settings.evalDict )
+        self.evalTableModel.setEvalList( self.settings.evalList )
+        for eval in self.settings.evalList:
+            self.addEvaluation(eval)
+
+    def addEvaluation(self, eval):
+        algo =  CountEvaluation.EvaluationAlgorithms[eval.evaluation]()
+        algo.subscribe( self.updateSaveStatus )
+        algo.setSettings( eval.settings )
+        self.evalAlgorithmList.append(algo)      
+
+    def onAddEvaluation(self):
+        evaluation = EvaluationDefinition()
+        evaluation.counter = self.counterSelectSpinBox.value()
+        evaluation.evaluation = str(self.evalAlgorithmCombo.currentText())
+        self.settings.evalList.append( evaluation )
+        self.addEvaluation( evaluation )
+        self.evalTableModel.setEvalList( self.settings.evalList )
+
+    def removeEvaluation(self, index):
+         del self.evalAlgorithmList[index]
+
+    def onRemoveEvaluation(self):
+        for index in sorted(unique([ i.row() for i in self.evalTableView.selectedIndexes() ]),reverse=True):
+            del self.settings.evalList[index]
+            self.removeEvaluation(index)
+        self.evalTableModel.setEvalList( self.settings.evalList )
+        
+    def onActiveEvalChanged(self, modelIndex, modelIndex2 ):
+        print modelIndex.row()
+        self.evalParamTreeWidget.setParameters( self.evalAlgorithmList[modelIndex.row()].parameter)
 
     def updateSaveStatus(self):
         try:
@@ -509,7 +527,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
         scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps if scan.stepsSelect==0 else scan.stepSize, 
                                        scan.type, scan.stepsSelect )
-        scan.evalAlgo = self.algorithms[scan.evalName]
         scan.gateSetUi = self.gateSetUi
         scan.settingsName = self.settingsName
         self.onCommit()
@@ -572,7 +589,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def onAlgorithmValueChanged(self, algo, name, value):
         self.beginChange()
-        self.algorithms[algo].setParameter(name, value)
+#        self.algorithms[algo].setParameter(name, value)
         self.commitChange()
         self.updateSaveStatus()
 
@@ -590,8 +607,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def onAlgorithmNameChanged(self, name):
         self.beginChange()
-        self.settings.evalName = str(name)
-        self.evalStackedWidget.setCurrentIndex(self.evalMethodCombo.currentIndex())
         self.commitChange()
         self.updateSaveStatus()
         
