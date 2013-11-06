@@ -15,7 +15,8 @@ from PyQt4 import QtGui
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
     def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False,
-                 xColumnName='x',yColumnName='y',topColumnName='top',bottomColumnName='bottom',heightColumnName='height'):
+                 xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
+                 rawColumn='raw'):
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:
@@ -33,14 +34,60 @@ class PlottedTrace(object):
         self.childTraces = []
         self.curvePen = 0
         # we use pointers to the relevant columns in trace
-        self.xColumn = getattr(self.trace,xColumnName)
-        self.yColumn = getattr(self.trace,yColumnName)
-        if hasattr(self.trace, topColumnName):
-            self.topColumn = getattr(self.trace,topColumnName)
-        if hasattr(self.trace, bottomColumnName):
-            self.bottomColumn = getattr(self.trace,bottomColumnName)
-        if hasattr(self.trace, heightColumnName):
-            self.heightColumn = getattr(self.trace,heightColumnName)
+        self._xColumn = xColumn
+        self._yColumn = yColumn
+        self._topColumn = topColumn
+        self._bottomColumn = bottomColumn
+        self._heightColumn = heightColumn
+        self._rawColumn = rawColumn
+        
+    @property
+    def x(self):
+        return getattr(self.trace, self._xColumn)
+    
+    @x.setter
+    def x(self, column):
+        setattr(self.trace, self._xColumn, column)
+
+    @property
+    def y(self):
+        return getattr(self.trace, self._yColumn)
+    
+    @y.setter
+    def y(self, column):
+        setattr(self.trace, self._yColumn, column)
+
+    @property
+    def top(self):
+        return getattr(self.trace, self._topColumn)
+    
+    @top.setter
+    def top(self, column):
+        setattr(self.trace, self._topColumn, column)
+
+    @property
+    def bottom(self):
+        return getattr(self.trace, self._bottomColumn)
+    
+    @Column.setter
+    def bottom(self, column):
+        setattr(self.trace, self._bottomColumn, column)
+
+    @property
+    def height(self):
+        return getattr(self.trace, self._heightColumn)
+    
+    @height.setter
+    def height(self, column):
+        setattr(self.trace, self._heightColumn, column)
+
+    @property
+    def raw(self):
+        return getattr(self.trace, self._rawColumn)
+    
+    @raw.setter
+    def raw(self, column):
+       setattr(self.trace, self._rawColumn, column)
 
     def child(self, number):
         """Return the child at the specified number, from the trace's list of children."""

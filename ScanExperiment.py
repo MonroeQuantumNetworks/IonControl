@@ -420,29 +420,37 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.pulserHardware.ppWriteData(mycode)     
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
 
-    def updateMainGraph(self, x, mean, error, raw):
+    def updateMainGraph(self, x, evaluated): # evaluated is list of mean, error, raw
         print x, mean, error
-        if self.plottedTrace is None:
-            self.plottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
-            self.plottedTrace.trace.x = numpy.array([x])
-            self.plottedTrace.trace.y = numpy.array([mean])
-            self.plottedTrace.trace.raw = numpy.array([raw])
-            if error and self.scan.evalAlgo.settings['errorBars']:
-                self.plottedTrace.trace.bottom = numpy.array([error[0]])
-                self.plottedTrace.trace.top = numpy.array([error[1]])
-            self.plottedTrace.trace.name = self.scan.settingsName
-            self.plottedTrace.trace.vars.comment = ""
-            self.plottedTrace.trace.filenameCallback = functools.partial( self.plottedTrace.traceFilename, self.scan.filename )
-            xRange = self.generator.xRange()
-            if xRange:
-                self.graphicsView.setXRange( *xRange )     
-            if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
-                self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
-            else:
-                self.traceui.addTrace(self.plottedTrace, pen=-1)
-            pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-            scanHeader = stringutilit.commentarize( self.scan.documentationString() )
-            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader))
+        if not self.plottedTraceList:
+            trace = Trace()
+            self.plottedTraceList = list()
+            for index, result in enumerate(evaluated):
+                mean, error, raw = result
+                yColumnName = 'y{0}'.format(index)
+                rawColumnName = 'raw{0}'.fromat(index)
+                trace.addColumn( yColumnName )
+                if error and self.scan.evalAlgo.settings['errorBars']:
+                    topColumnName = 'top{0}'.format(index)
+                    bottomColumnName = 'bottom{0}'.format(index)
+                    trace.addColumn( topColumnName )
+                    trace.addColumn( bottomColumnName )                
+                self.plottedTraceList.append(  Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, 
+                                                            yColumnName=yColumnName, topColumnName=topColumnName, bottomColumnName=bottomColumnName) )                
+                self.plottedTrace.trace.name = self.scan.settingsName
+                self.plottedTrace.trace.vars.comment = ""
+                self.plottedTrace.trace.filenameCallback = functools.partial( self.plottedTrace.traceFilename, self.scan.filename )
+                self.generator.appendData(self.plottedTrace, x, mean, raw, error)
+                xRange = self.generator.xRange()
+                if xRange:
+                    self.graphicsView.setXRange( *xRange )     
+                if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
+                    self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
+                else:
+                    self.traceui.addTrace(self.plottedTrace, pen=-1)
+                pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
+                scanHeader = stringutilit.commentarize( self.scan.documentationString() )
+                self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader))
         else:
             self.generator.appendData(self.plottedTrace.trace, x, mean, raw, error)
             self.plottedTrace.replot()
