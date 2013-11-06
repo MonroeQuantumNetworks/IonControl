@@ -452,8 +452,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 scanHeader = stringutilit.commentarize( self.scan.documentationString() )
                 self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader))
         else:
-            self.generator.appendData(self.plottedTrace.trace, x, mean, raw, error)
-            self.plottedTrace.replot()
+            for plottedTrace, result in zip(self.plottedTraceList, evaluated):
+                mean, error, raw = result
+                self.generator.appendData(plottedTrace, x, mean, raw, error)
+                plottedTrace.replot()
 
     def finalizeData(self, reason='end of scan'):
         print "finalize Data"
