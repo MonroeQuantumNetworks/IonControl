@@ -14,7 +14,8 @@ from PyQt4 import QtGui
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
-    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False):
+    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False,
+                 xColumnName='x',yColumnName='y',topColumnName='top',bottomColumnName='bottom',heightColumnName='height'):
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:
@@ -31,6 +32,15 @@ class PlottedTrace(object):
         self.parentTrace = None
         self.childTraces = []
         self.curvePen = 0
+        # we use pointers to the relevant columns in trace
+        self.xColumn = getattr(self.trace,xColumnName)
+        self.yColumn = getattr(self.trace,yColumnName)
+        if hasattr(self.trace, topColumnName):
+            self.topColumn = getattr(self.trace,topColumnName)
+        if hasattr(self.trace, bottomColumnName):
+            self.bottomColumn = getattr(self.trace,bottomColumnName)
+        if hasattr(self.trace, heightColumnName):
+            self.heightColumn = getattr(self.trace,heightColumnName)
 
     def child(self, number):
         """Return the child at the specified number, from the trace's list of children."""
@@ -58,9 +68,9 @@ class PlottedTrace(object):
         
     def averageChildren(self):
         """Set the trace data to the average of its children's data."""
-        self.trace.x = self.childTraces[0].trace.x #All child traces should have the same x data!
-        childTraceYvalues = numpy.array([childTrace.trace.y for childTrace in self.childTraces]) #2D array of children's y data
-        self.trace.y = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
+        self.xColumn = self.childTraces[0].xColumn #All child traces should have the same x data!
+        childTraceYvalues = numpy.array([childTrace.yColumn for childTrace in self.childTraces]) #2D array of children's y data
+        self.yColumn = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
 
     def removePlots(self):
         if self.curve is not None:
@@ -76,30 +86,30 @@ class PlottedTrace(object):
                 
     def plotFitfunction(self,penindex):
         if hasattr(self.trace,'fitfunction'):
-            self.fitx = numpy.linspace(numpy.min(self.trace.x),numpy.max(self.trace.x),300)
+            self.fitx = numpy.linspace(numpy.min(self.xColumn),numpy.max(self.xColumn),300)
             self.fity = self.trace.fitfunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
     def plotErrorBars(self,penindex):
-        if hasattr(self.trace,'height'):
-            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, height=self.trace.height,
+        if hasattr(self,'heightColumn'):
+            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.xColumn, y=self.yColumn, height=self.heightColumn,
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
-        elif hasattr(self.trace,'top') and hasattr(self.trace,'bottom'):
-            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom,
+        elif hasattr(self,'topColumn') and hasattr(self,'bottomColumn'):
+            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.xColumn, y=self.yColumn, top=self.topColumn, bottom=self.bottomColumn,
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
             
 
     def plotLines(self,penindex):
-        self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=self.penList[penindex][0])
+        self.curve = self.graphicsView.plot(self.xColumn, self.yColumn, pen=self.penList[penindex][0])
     
     def plotPoints(self,penindex):
-        self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=None, symbol=self.penList[penindex][1],
+        self.curve = self.graphicsView.plot(self.xColumn, self.yColumn, pen=None, symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
     
     def plotLinespoints(self,penindex):
-        self.curve = self.graphicsView.plot(self.trace.x, self.trace.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+        self.curve = self.graphicsView.plot(self.xColumn, self.yColumn, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])                
     
     def plot(self,penindex,style=None):
@@ -118,12 +128,12 @@ class PlottedTrace(object):
         
     def replot(self):
         if hasattr(self,'curve') and self.curve is not None:
-            self.curve.setData( self.trace.x, self.trace.y )
+            self.curve.setData( self.xColumn, self.yColumn )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
             if hasattr(self.trace,'height'):
-                self.errorBarItem.setData(x=self.trace.x, y=self.trace.y, height=self.trace.height)
+                self.errorBarItem.setData(x=self.xColumn, y=self.yColumn, height=self.trace.height)
             else:
-                self.errorBarItem.setOpts(x=self.trace.x, y=self.trace.y, top=self.trace.top, bottom=self.trace.bottom)
+                self.errorBarItem.setOpts(x=self.xColumn, y=self.yColumn, top=self.topColumn, bottom=self.bottomColumn)
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
