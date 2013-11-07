@@ -189,8 +189,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
-        self.plottedTrace = None
-        self.averagePlottedTrace = None
+        self.plottedTraceList = list()
+        self.averagePlottedTraceList = list()
         self.currentIndex = 0
         self.activated = False
         self.histogramCurve = None
@@ -316,11 +316,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.startScan()
 
     def createAverageTrace(self):
-        self.averagePlottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
-        self.traceui.addTrace(self.averagePlottedTrace, pen=0)
-        self.averagePlottedTrace.trace.name = self.scan.settingsName + " Average"
-        self.averagePlottedTrace.trace.vars.comment = "Average Trace"
-        self.averagePlottedTrace.trace.filenameCallback = functools.partial( self.averagePlottedTrace.traceFilename, self.scan.filename)
+        trace = Trace()
+        self.averagePlottedTraceList = list()
+        for index, result in enumerate(evaluated):
+            yColumnName = 'y{0}'.format(index)
+            rawColumnName = 'raw{0}'.fromat(index)
+            trace.addColumn( yColumnName )
+            thisAveragePlottedTrace = Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, yColumnName=yColumnName)
+            self.averagePlottedTraceList.append( thisAveragePlottedTrace  )                
+            self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
+            thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
+            thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
+            thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
         
     def startScan(self):
         self.startTime = time.time()
@@ -445,7 +452,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if xRange:
                     self.graphicsView.setXRange( *xRange )     
                 if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
-                    self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
+                    self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTraceList[index])
                 else:
                     self.traceui.addTrace(self.plottedTrace, pen=-1)
                 pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
@@ -465,10 +472,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
-                self.averagePlottedTrace.averageChildren()
-                self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
-                self.averagePlottedTrace.plot(7) #average trace is plotted in black
-            self.averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
+                averagePlottedTrace = None
+                for averagePlottedTrace in self.averagePlottedTraceList:
+                    averagePlottedTrace.averageChildren()
+                    averagePlottedTrace.plot(7) #average trace is plotted in black
+                if averagePlottedTrace:
+                    self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(averagePlottedTrace.childCount()))
+                    averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
             
     def showTimestamps(self,data):
         bins = int( (self.scan.roiWidth/self.scan.binwidth).toval() )
@@ -500,7 +510,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
-            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+            self.plottedTimestampTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
     def showHistogram(self, data, channel):
