@@ -11,6 +11,8 @@ This is the class in which the data associated with a single trace is stored.
 import numpy
 from datetime import datetime
 import os.path
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify
 
 try:
     import FitFunctions
@@ -140,6 +142,43 @@ class Trace(object):
             print >>outfile, "# {0}\t{1}".format(var, value)
         if self.header is not None:
             print >>outfile, self.header
+            
+    def saveTraceHeaderXml(self,outfile):
+        root = ElementTree.Element('DataFileHeader')
+        varsElement = ElementTree.SubElement(root, 'Variables', {})
+        for var, value in sorted(self.vars.__dict__.iteritems()):
+            if hasattr(value,'toXmlElement'):
+                value.toXmlElement(varsElement)
+            e = ElementTree.SubElement(varsElement, 'Element', {'name': var})
+            e.text = str(value)
+        if self.header:
+            e = ElementTree.SubElement(varsElement, 'Header', {})
+            e.text = self.header        
+        outfile.write(prettify(root,'# '))
+
+    def saveTraceBare(self,filename):
+        if self.rawdata:
+            self.vars.rawdata = self.rawdata.save()
+        if hasattr(self,'fitfunction'):
+            #print 'fitfunction saved'
+            self.vars.fitfunction = self.fitfunction
+        if filename!='':
+            of = open(filename,'w')
+            columnlist = [self._x_]
+            columnspec = ['x']
+            if len(self._y_)>0:
+                columnlist += [self._y_]
+                columnspec += ['y']
+            for column in self.columnNames:
+                if hasattr(self, column):
+                    columnlist.append( getattr(self,column) )
+                    columnspec.append( column )
+            self.vars.columnspec = ",".join(columnspec)
+            self.saveTraceHeader(of)
+            for l in zip(*columnlist):
+                print >>of, "\t".join(map(repr,l))
+            self.filename = filename
+            of.close()
 
     def saveTrace(self,filename):
         if self.rawdata:
@@ -159,7 +198,7 @@ class Trace(object):
                     columnlist.append( getattr(self,column) )
                     columnspec.append( column )
             self.vars.columnspec = ",".join(columnspec)
-            self.saveTraceHeader(of)
+            self.saveTraceHeaderXml(of)
             for l in zip(*columnlist):
                 print >>of, "\t".join(map(repr,l))
             self.filename = filename
