@@ -12,6 +12,7 @@ from modules import dictutil
 from pyqtgraph.parametertree import Parameter
 from PyQt4 import QtCore
 from Observable import Observable
+import copy
 
 class EvaluationBase(Observable):
     def __init__(self,settings =  None):
@@ -38,6 +39,10 @@ class EvaluationBase(Observable):
     @property
     def parameter(self):
         return self._parameter
+    
+    def __deepcopy__(self, memo=None):
+        return type(self)( copy.deepcopy(self.settings,memo) )
+  
 
 class MeanEvaluation(EvaluationBase):
     """
@@ -53,6 +58,8 @@ class MeanEvaluation(EvaluationBase):
         self.settings.setdefault('errorBars',False)
          
     def evaluate(self, countarray, timestamps=None ):
+        if not countarray:
+            return 0, (0,0), 0
         summe = numpy.sum( countarray )
         l = float(len(countarray))
         mean = summe/l
@@ -101,7 +108,7 @@ class ThresholdEvaluation(EvaluationBase):
         return [{'name':'threshold','type':'int','value':1},
                 {'name':'errorBars', 'type': 'bool', 'value':False },
                 {'name':'invert', 'type': 'bool', 'value':False }]     
-
+        
    
 EvaluationAlgorithms = { 'Mean': MeanEvaluation, 'Threshold': ThresholdEvaluation }
 

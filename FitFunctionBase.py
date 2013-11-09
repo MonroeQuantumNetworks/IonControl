@@ -8,7 +8,7 @@ Created on Thu May 16 20:53:03 2013
 from scipy.optimize import leastsq
 import numpy
 from math import sqrt
-import magnitude
+from modules import magnitude
 
 class FitFunctionBase(object):
     name = 'None'

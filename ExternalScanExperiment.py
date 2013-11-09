@@ -21,10 +21,9 @@ from PyQt4 import QtCore
 from modules import enum
 
 class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
-    Status = enum.enum('Idle','Starting','Running','Stopping')
     def __init__(self,settings,pulserHardware,experimentName,parent=None):
         super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,parent)
-        self.status = self.Status.Idle        
+        self.state = self.OpStates.idle      
         
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
@@ -37,7 +36,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         self.enabledParameters = enabledParameters
         
     def startScan(self):
-        if self.status in [self.Status.Idle, self.Status.Stopping, self.Status.Running]:
+        if self.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running]:
             self.startTime = time.time()
             self.state = self.OpStates.running
             self.externalParameter = self.enabledParameters[self.scan.scanParameter]
@@ -50,15 +49,15 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             QtCore.QTimer.singleShot(100,self.startBottomHalf)
             self.displayUi.onClear()
-            self.status = self.Status.Starting
-            if self.plottedTrace is not None:
-                self.plottedTrace.plot(0) #unplot previous trace
-                if self.scan.autoSave:
-                    self.plottedTrace.trace.resave()
+            self.state = self.OpStates.starting
             self.plottedTrace = None #reset plotted trace
-        
+            if self.plottedTraceList:
+                for plottedTrace in self.plottedTraceList:
+                    plottedTrace.plot(0) #unplot previous trace
+            self.plottedTraceList = list() #reset plotted trace
+           
     def startBottomHalf(self):
-        if self.status == self.Status.Starting:
+        if self.state == self.OpStates.starting:
             if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
                 """We are done adjusting"""
                 self.pulserHardware.ppStart()
@@ -66,52 +65,63 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 self.updateProgressBar(0,max(len(self.scan.list),1))
                 self.timestampsNewRun = True
                 print "elapsed time", time.time()-self.startTime
-                self.status = self.Status.Running
+                self.state = self.OpStates.running
                 print "Status -> Running"
+                self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
             else:
                 QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
     def onStop(self):
-        print "Old Status", self.status
-        if self.status in [self.Status.Starting, self.Status.Running]:
+        print "Old Status", self.state
+        if self.state in [self.OpStates.starting, self.OpStates.running]:
             ScanExperiment.ScanExperiment.onStop(self)
-            self.status = self.Status.Stopping
-            self.stopBottomHalf()
+            self.state = self.OpStates.stopping
             print "Status -> Stopping"
+            self.stopBottomHalf()
             self.finalizeData(reason='stopped')
             self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
 
                     
     def stopBottomHalf(self):
-        if self.status==self.Status.Stopping:
+        if self.state==self.OpStates.stopping:
             if not self.externalParameter.restoreValue():
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
-                self.status = self.Status.Idle
+                self.state = self.OpStates.idle
                 self.updateProgressBar(0,max(len(self.scan.list),1))
+                print "Status -> Idle"
 
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "NewExternalScan onData", len(data.count[self.scan.counterChannel]), data.scanvalue
-        mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-        self.displayUi.add( mean )
-        x = self.generator.xValue(self.externalParameterIndex)
-        print "data", x, mean 
-        if mean is not None:
-            self.updateMainGraph(x, mean, error, raw)
-        self.currentIndex += 1
-        self.externalParameterIndex += 1
-        self.showHistogram(data)
-        if self.scan.enableTimestamps: 
-            self.showTimestamps(data)
-        if self.externalParameterIndex<len(self.scan.list) and self.status==self.Status.Running:
-            self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
-            self.pulserHardware.ppStart()
-            print "External Value:" , self.scan.list[self.externalParameterIndex]
+
+        if data.overrun:
+            print "Read Pipe Overrun"
+            self.onPause()
         else:
-            self.finalizeData(reason='end of scan')
-            if self.externalParameterIndex >= len(self.scan.list):
-                self.generator.dataOnFinal(self)
-        self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list),1))
+            print "NewExternalScan onData", len(data.count[self.scan.counterChannel]), data.scanvalue
+            x = self.generator.xValue(self.externalParameterIndex)
+            evaluated = list()
+            for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+                if data.count[eval.counter]:
+                    evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
+                else:
+                    print "No data for counter {0}, ignoring it.".format(eval.counter)
+            if len(evaluated)>0:
+                self.displayUi.add( evaluated[0][0][0] )
+                self.updateMainGraph(x, evaluated )
+                self.showHistogram(data, self.scan.evalList[0].counter )
+            self.currentIndex += 1
+            self.externalParameterIndex += 1
+            if self.scan.enableTimestamps: 
+                self.showTimestamps(data)
+            if self.externalParameterIndex<len(self.scan.list) and self.state==self.OpStates.running:
+                self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
+                self.pulserHardware.ppStart()
+                print "External Value:" , self.scan.list[self.externalParameterIndex]
+            else:
+                self.finalizeData(reason='end of scan')
+                if self.externalParameterIndex >= len(self.scan.list):
+                    self.generator.dataOnFinal(self)
+            self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list),1))
 

@@ -149,8 +149,11 @@ class Trace(object):
             self.vars.fitfunction = self.fitfunction
         if filename!='':
             of = open(filename,'w')
-            columnlist = [self._x_,self._y_]
-            columnspec = ['x', 'y']
+            columnlist = [self._x_]
+            columnspec = ['x']
+            if len(self._y_)>0:
+                columnlist += [self._y_]
+                columnspec += ['y']
             for column in self.columnNames:
                 if hasattr(self, column):
                     columnlist.append( getattr(self,column) )
