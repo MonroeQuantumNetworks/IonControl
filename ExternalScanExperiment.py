@@ -30,7 +30,9 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         self.scanControlWidget.setScanNames(ExternalScannedParameters.ExternalScannedParameters.keys())
         
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
+        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
+        self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
+        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
         
     def updateEnabledParameters(self, enabledParameters ):
         self.enabledParameters = enabledParameters
@@ -47,7 +49,6 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
-            QtCore.QTimer.singleShot(100,self.startBottomHalf)
             self.displayUi.onClear()
             self.state = self.OpStates.starting
             self.plottedTrace = None #reset plotted trace
@@ -55,6 +56,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 for plottedTrace in self.plottedTraceList:
                     plottedTrace.plot(0) #unplot previous trace
             self.plottedTraceList = list() #reset plotted trace
+            QtCore.QTimer.singleShot(100,self.startBottomHalf)
            
     def startBottomHalf(self):
         if self.state == self.OpStates.starting:
