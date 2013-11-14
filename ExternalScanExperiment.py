@@ -28,10 +28,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
         self.scanControlWidget.setScanNames(ExternalScannedParameters.ExternalScannedParameters.keys())
-        
-    def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName)
-        
+               
     def updateEnabledParameters(self, enabledParameters ):
         self.enabledParameters = enabledParameters
         
