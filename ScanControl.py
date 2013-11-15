@@ -176,8 +176,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
+        self.comboBox.editTextChanged.connect( lambda x: self.updateSaveStatus() ) 
         # update connections
-        self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )        
+        self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )
         self.startBox.valueChanged.connect( self.onStartChanged )
         self.stopBox.valueChanged.connect( self.onStopChanged )
         self.stepsBox.valueChanged.connect( self.onStepsValueChanged )
@@ -280,10 +281,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalParamTreeWidget.setParameters( self.evalAlgorithmList[modelIndex.row()].parameter)
 
     def updateSaveStatus(self):
+        currentText = str(self.comboBox.currentText())
         try:
-            if self.settingsName !='' and self.settingsName in self.settingsDict:
-                self.saveStatus = self.settingsDict[self.settingsName]==self.settings
-                self.saveButton.setEnabled( not self.saveStatus )
+            if not currentText:
+                self.saveStatus = False
+            elif self.settingsName !='' and self.settingsName in self.settingsDict:
+                self.saveStatus = self.settingsDict[self.settingsName]==self.settings and currentText==self.settingsName
+            else:
+                self.saveStatus = True
+            self.saveButton.setEnabled( not self.saveStatus )
         except MagnitudeError:
             pass
             
