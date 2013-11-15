@@ -104,7 +104,11 @@ class Scan:
         self.__dict__.setdefault('evalList',list())
 
     def __eq__(self,other):
-        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+        try:
+            equal = tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+        except MagnitudeError as e:
+            equal = False
+        return equal
 
     def __ne__(self, other):
         return not self == other
