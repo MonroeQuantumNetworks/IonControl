@@ -145,7 +145,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="page">
       <property name="geometry">
@@ -371,8 +371,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>241</width>
-        <height>275</height>
+        <width>274</width>
+        <height>330</height>
        </rect>
       </property>
       <attribute name="label">
@@ -425,6 +425,9 @@
        </item>
        <item row="6" column="0" colspan="4">
         <widget class="ParameterTree" name="evalParamTreeWidget">
+         <attribute name="headerVisible">
+          <bool>false</bool>
+         </attribute>
          <column>
           <property name="text">
            <string notr="true">1</string>
@@ -480,8 +483,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>172</width>
-        <height>171</height>
+        <width>274</width>
+        <height>330</height>
        </rect>
       </property>
       <attribute name="label">

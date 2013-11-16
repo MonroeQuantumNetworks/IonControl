@@ -10,7 +10,8 @@ from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import modules.magnitude as magnitude
 import math
-
+from pyqtgraph.parametertree import Parameter
+from PyQt4 import QtCore
 try:
     import visa
 except:
@@ -22,15 +23,23 @@ def nextValue( current, target, stepsize, jump ):
     return (target,True) if abs(current-target)<=stepsize or jump else (current + math.copysign(stepsize, target-current),False)  
             
 
-class ExternalParameterBase:
-    def __init__(self,name,config):
+class ExternalParameterBase(object):
+    def __init__(self,name,settings):
         self.name = name
-        self.config = config
-        self.baseConfigName = 'ExternalParameterBase.'+self.name
-        self.delay = self.config.get(self.baseConfigName+'.delay_mag',magnitude.mg(100,'ms') )      # s delay between subsequent updates
-        self.jump = self.config.get(self.baseConfigName+'.jump',False)       # if True go to the target value in one jump
-        self.value = 0      # the current value
+        self.settings = settings
         self.displayValueCallback = None
+        self.setDefaults()
+        self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
+        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        
+    @property
+    def parameter(self):
+        return self._parameter        
+        
+    def setDefaults(self):
+        self.settings.__dict__.setdefault('delay', magnitude.mg(100,'ms') )      # s delay between subsequent updates
+        self.settings.__dict__.setdefault('jump' , False)       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('value', None )      # the current value       
     
     def saveValue(self):
         """
@@ -52,7 +61,7 @@ class ExternalParameterBase:
         it should return False. The user should call repeatedly until the intended value is reached
         and True is returned.
         """
-        newvalue, arrived = nextValue(self.value, value, self.stepsize, self.jump)
+        newvalue, arrived = nextValue(self.value, value, self.settings.stepsize, self.settings.jump)
         self._setValue( newvalue )
         if self.displayValueCallback:
             self.displayValueCallback(value)
@@ -77,8 +86,8 @@ class ExternalParameterBase:
         """
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
-        return [{'name': 'delay', 'type': 'magnitude', 'value': self.delay, 'tip': "between steps"},
-                {'name': 'jump', 'type': 'bool', 'value': self.jump}]
+        return [{'name': 'delay', 'type': 'magnitude', 'value': self.settings.delay, 'tip': "between steps"},
+                {'name': 'jump', 'type': 'bool', 'value': self.settings.jump}]
         
     def update(self,param, changes):
         """
@@ -87,17 +96,14 @@ class ExternalParameterBase:
         print "ExternalParameterBase.update"
         for param, change, data in changes:
             print self, "update", param.name(), data
-            setattr( self, param.name(), data)
+            setattr( self.settings, param.name(), data)
             
-    def close(self):
-        self.config[self.baseConfigName+'.delay'] = self.delay
-        self.config[self.baseConfigName+'.jump'] = self.jump
-        self.config[self.baseConfigName+'.stepsize'] = self.stepsize
 
 class N6700BPowerSupply(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
+    className = "N6700 Powersupply"
     def __init__(self,name,config,instrument="QGABField"):
         ExternalParameterBase.__init__(self,name,config)
         print "trying to open '{0}'".format(instrument)
@@ -158,6 +164,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
     setValue is frequency of synthesizer
     currentValue and currentExternalValue are current frequency of synthesizer
     """
+    className = "Synthesizer"
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         #self.amplitudeString = "Z0K1L6O1"
@@ -203,6 +210,7 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
     """
     Scan the microwave frequency of microwave synthesizer 
     """
+    className = "Microwave Synthesizer"
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
@@ -235,6 +243,7 @@ class LaserVCOScan(ExternalParameterBase):
     setValue is voltage of vco
     currentValue and currentExternalValue are current applied voltage
     """
+    className = "Laser VCO"
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         ExternalParameterBase.__init__(self,name,config)
         self.powersupply = visa.instrument(instrument)#open visa session
@@ -257,15 +266,42 @@ class LaserVCOScan(ExternalParameterBase):
         superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.AOMFreq})
         return superior
         
-class LaserWavemeterLockScan(LaserVCOScan):
+class LaserWavemeterScan(LaserVCOScan):
+    """
+    Scan a laser by changing the voltage on a HP power supply. The frequency is controlled via a VCO. 
+    setValue is voltage of vco
+    currentValue is applied voltage
+    currentExternalValue are frequency read from wavemeter
+    """
+    
+    className = "Laser VCO Wavemeter"
+    def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
+        LaserVCOScan.__init__(self,name,config,instrument)
+        self.wavemeter = WavemeterGetFrequency()
+        self.channel = 6
+
+    def currentExternalValue(self):
+        self.lastExternalValue = self.wavemeter.get_frequency(self.channel) 
+        print self.lastExternalValue
+        self.detuning=(self.lastExternalValue)
+        counter = 0
+        while numpy.abs(self.detuning)>=1 and counter<10:
+            self.lastExternalValue = self.wavemeter.get_frequency(self.channel)    
+            self.detuning=(self.lastExternalValue-self.value)
+            counter += 1
+        return self.lastExternalValue       
+        
+class LaserWavemeterLockScan(ExternalParameterBase):
     """
     Scan a laser by setting the lock point on the wavemeter lock.
     setValue is laser frequency
     currentValue is currently set value
     currentExternalValue is frequency read from wavemeter
     """
+    
+    className = "Laser Wavemeter Lock"
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
-        LaserVCOScan.__init__(self,name,config,instrument)
+        ExternalParameterBase.__init__(self,name,config)
         self.wavemeter = WavemeterGetFrequency()
         self.savedValue = 0
         print "LaserWavemeterScan savedValue", self.savedValue
@@ -317,44 +353,34 @@ class DummyParameter(ExternalParameterBase):
     """
     DummyParameter, used to debug this part of the software.
     """
-    def __init__(self,name,config,instrument=''):
-        ExternalParameterBase.__init__(self,name,config)
+    className = "Dummy"
+    def __init__(self,name,settings,instrument=''):
+        ExternalParameterBase.__init__(self,name,settings)
         print "Opening DummyInstrument", instrument
-        self.savedValue = self.value
-        self.AOMFreq = magnitude.mg(123,'MHz')
-    
-    def setValue(self,value):
-        """
-        Move one steps towards the target, return current value
-        """
-        if isinstance(value,magnitude.Magnitude):
-            myvalue = round(value.ounit("kHz").toval())
-        else:
-            myvalue = round(value)
-        if abs(myvalue-self.value)<self.stepsize or self.jump:
-            self.value = myvalue 
-            ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"kHz") )
-            return True
-        else:
-            self.value = ( self.value + math.copysign(self.stepsize, myvalue-self.value) )
-            ExternalParameterBase.setValue(self, magnitude.mg(self.value,"kHz") )
-            return False
-        
+        self.setDefaults()
+        self.savedValue = self.settings.value
+
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('AOMFreq', magnitude.mg(123,'MHz') )      # s delay between subsequent updates
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+   
+    def _setValue(self,value):
+        print "Dummy output set to:", value
+         
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.AOMFreq})
-        #print superior
+        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.settings.AOMFreq})
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         return superior
 
     
         
-ExternalScannedParameters = { 'Laser Lock': LaserWavemeterLockScan, 
-                              'Laser Synthesizer': LaserSynthesizerScan,
-                              'Laser VCO': LaserVCOScan,
-                              'Laser VCO Wavemeter' : LaserWavemeterScan,
-                              'Dummy': DummyParameter,
-                              'B-Field Current X': N6700BPowerSupply,
-                              'B-Field Current Y': N6700BPowerSupply,
-                              'B-Field Current Z': N6700BPowerSupply,
-                              'Microwave Source' : MicrowaveSynthesizerScan }
+ExternalScannedParameters = { LaserWavemeterLockScan.className: LaserWavemeterLockScan, 
+                              LaserSynthesizerScan.className: LaserSynthesizerScan,
+                              LaserVCOScan.className: LaserVCOScan,
+                              LaserWavemeterScan.className : LaserWavemeterScan,
+                              DummyParameter.className: DummyParameter,
+                              N6700BPowerSupply.className: N6700BPowerSupply,
+                              MicrowaveSynthesizerScan.className : MicrowaveSynthesizerScan }
 
