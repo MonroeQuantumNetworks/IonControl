@@ -383,6 +383,48 @@ class Magnitude():
         self.oformat = None
         self.significantDigits = None
 
+    def copy_format(self, other):
+        """ copy the formatting options form other to self
+        self and other need to have the same unit
+        
+        >>> a = mg(123.345, 'MHz')
+        >>> a.significantDigits = 6
+        >>> print a
+        123.345 MHz
+        >>> b = mg( 1.23456789, 'GHz' )
+        >>> b.copy_format( a )
+        >>> print b
+        1234.57 MHz
+        """
+        if other.unit != self.unit:
+            raise MagnitudeError("Incompatible units: %s and %s" %
+                                 (other.unit, self.unit))
+        self.out_unit = other.out_unit
+        self.out_factor = other.out_factor
+        self.oprec = other.oprec
+        self.oformat = other.oformat
+        self.significantDigits = other.significantDigits
+        
+    def update_value(self, value, unitstr ):
+        """ update value and unit, leave formatting as is
+        
+        >>> a = mg(123.345, 'MHz')
+        >>> a.significantDigits = 6
+        >>> print a
+        123.345 MHz
+        >>> a.update_value( 0.234, 'GHz' )
+        >>> print a
+        234.0 MHz
+        >>> a.update_value( 234567.89, 'kHz' )
+        >>> print a
+        234.568 MHz
+        """
+        newval = mg(value, unitstr)
+        if newval.unit != self.unit:
+            raise MagnitudeError("Incompatible units: %s and %s" %
+                                 (newval.unit, self.unit))
+        self.val = newval.val        
+
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
         after unpickling. Only new class attributes need to be added here.
