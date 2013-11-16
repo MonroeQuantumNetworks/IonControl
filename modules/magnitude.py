@@ -1038,7 +1038,7 @@ class Magnitude():
         r.val = math.floor(r.val)
         return r
 
-    def round(self):
+    def round(self, unit=None):
         """Round a Magnitude's value in canonical units.
 
         >>> print mg(10.2, 'm/s').round()
@@ -1047,9 +1047,21 @@ class Magnitude():
         4.0000 m / s
         >>> print mg(50.3, 'km/h').round()
         14.0000 m / s
-        """
-        r = self.copy()
-        r.val = round(r.val)
+        
+        >>> print mg(50.3456789, 'kHz').round('kHz')
+        50.0000 kHz
+        >>> print mg(50.3456789, 'kHz').round('Hz')
+        50.3460 kHz
+        >>> print mg(50.3, 'km / h').round('km/h')
+        50.0000 km / h
+        """        
+        if unit:
+            r = self.copy(True)
+            u = self.sunit2mag(unit)
+            r.val = round(r.val/u.val) * u.val
+        else:
+            r = self.copy()
+            r.val = round(r.val)
         return r
 
     def to_bits(self):
