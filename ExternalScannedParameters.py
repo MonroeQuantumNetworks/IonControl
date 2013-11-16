@@ -357,7 +357,7 @@ class LaserWavemeterScan(ExternalParameterBase):
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
-        print superior
+        #print superior
         return superior
 
     def saveValue(self):
@@ -374,6 +374,7 @@ class DummyParameter(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         print "Opening DummyInstrument", instrument
         self.savedValue = self.value
+        self.AOMFreq = magnitude.mg(123,'MHz')
     
     def setValue(self,value):
         """
@@ -391,6 +392,13 @@ class DummyParameter(ExternalParameterBase):
             self.value = ( self.value + math.copysign(self.stepsize, myvalue-self.value) )
             ExternalParameterBase.setValue(self, magnitude.mg(self.value,"kHz") )
             return False
+        
+    def paramDef(self):
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.AOMFreq})
+        #print superior
+        return superior
+
     
         
 ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 
