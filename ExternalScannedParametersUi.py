@@ -30,13 +30,13 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
         """Create the combo box editor used to select which pen icon to use.
            The for loop adds each pen icon into the combo box."""
         editor = MagnitudeSpinBox(parent)
+        editor.valueChanged.connect( functools.partial( index.model().setValue, index.row() ))
         return editor
         
     def setEditorData(self, editor, index):
         print "setEditorData"
         value = index.model().data(index, QtCore.Qt.EditRole) 
         editor.setValue(value)
-        editor.valueChanged.connect( functools.partial( index.model().setValue, index.row() ))
         
     def setModelData(self, editor, model, index):
         value = editor.value()
