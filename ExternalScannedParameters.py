@@ -113,33 +113,20 @@ class N6700BPowerSupply(ExternalParameterBase):
         print "trying to open '{0}'".format(instrument)
         self.instrument = visa.instrument(instrument) #open visa session
         print "opend {0}".format(instrument)
-        self.stepsize = self.config.get('N6700BPowerSupply.'+self.name+'.stepsize_mg',magnitude.mg(1,'A'))   # the max step taken towards the target value if jump is False
-        self.channel = self.config.get('N6700BPowerSupply.'+self.name+'.channel',3)
-        self._getValue_()
-    
-    def setValue(self,value):
-        """
-        Move one steps towards the target, return current value
-        """
-        if isinstance(value,magnitude.Magnitude):
-            myvalue = value.ounit("A").toval()
-        else:
-            myvalue = value
-        if abs(myvalue-self.value)<self.stepsize:
-            self._setValue( myvalue )
-            ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"A") )
-            return True
-        else:
-            self._setValue( self.value + math.copysign(self.stepsize, myvalue-self.value) )
-            ExternalParameterBase.setValue(self, magnitude.mg(self.value + math.copysign(self.stepsize, myvalue-self.value),"A") )
-            return False
+        self.setDefaults()
+        self.value = self._getValue()
+
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('channel' , 0)       # if True go to the target value in one jump        
             
     def _setValue(self, v):
-        command = "Curr {0},(@{1})".format(v.ounit('A').toval(),self.channel)
+        command = "Curr {0},(@{1})".format(v.ounit('A').toval(),self.settings.channel)
         self.instrument.write(command)#set voltage
         self.value = v
         
-    def _getValue_(self):
+    def _getValue(self):
         command = "Curr? (@{0})".format(self.channel)
         self.value = magnitude.mg(float(self.instrument.ask(command)), 'A') #set voltage
         return self.value
@@ -158,9 +145,6 @@ class N6700BPowerSupply(ExternalParameterBase):
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.stepsize})
         return superior
         
-    def close(self):
-        ExternalParameterBase.close(self)
-        self.config['N6700BPowerSupply.'+self.name+'.channel'] = self.channel
 
 class LaserSynthesizerScan(ExternalParameterBase):
     """
@@ -168,22 +152,27 @@ class LaserSynthesizerScan(ExternalParameterBase):
     setValue is frequency of synthesizer
     currentValue and currentExternalValue are current frequency of synthesizer
     """
-    className = "Synthesizer"
+    className = "Laser Lock Synthesizer"
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         #self.amplitudeString = "Z0K1L6O1"
-        self.amplitudeString = "O3K0L0N0Z1"
+        #self.amplitudeString = "O3K0L0N0Z1"
         self.synthesizer = visa.instrument(instrument) #open visa session
         self.synthesizer.write(self.amplitudeString)
-        self.stepsize = magnitude.mg(1,'MHz')
-        self.value = self.config.get('LaserSynthesizerScan.'+self.name+'.frequency_mg',magnitude.mg(3000,'MHz'))
-        self.lockPoint = self.config.get('LaserSynthesizerScan.'+self.name+'.lockPoint_mg',magnitude.mg(384227.944,'GHz'))
-    
+        self.setDefaults()
+        self.value = self.settings.value
+
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('lockPoint', magnitude.mg(384227.944,'GHz') )      # s delay between subsequent updates
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('amplitudeStr' , "Z0K1L6O1" )       # if True go to the target value in one jump
+   
     def setValue(self,value):
         """
         Move one steps towards the target, return current value
         """
-        newvalue, arrived = nextValue(self.value, value, self.stepsize, self.jump)
+        newvalue, arrived = nextValue(self.value, value, self.settings.stepsize, self.settings.jump)
         self._setValue( newvalue )
         if self.displayValueCallback:
             self.displayValueCallback(value,"{0}".format( self.lockPoint - newvalue ) )
@@ -191,22 +180,18 @@ class LaserSynthesizerScan(ExternalParameterBase):
             
     def _setValue(self, value ):
         value = value.round('kHz')
-        command = "P{0:0>8.0f}".format(value.toval('kHz')) + self.amplitudeString
+        command = "P{0:0>8.0f}".format(value.toval('kHz')) + self.settings.amplitudeStr
         self.synthesizer.write(command)
         self.value = value
         
-    def close(self):
-        ExternalParameterBase.close(self)
-        self.config['LaserSynthesizerScan.'+self.name+'.frequency_mg'] = self.value
-        self.config['LaserSynthesizerScan.'+self.name+'.lockPoint_mg'] = self.lockPoint
-    
     def paramDef(self):
         """
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
         superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'lockpoint', 'type': 'magnitude', 'value': self.lockPoint})
-        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.stepsize})
+        superior.append({'name': 'lockpoint', 'type': 'magnitude', 'value': self.settings.lockPoint})
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
+        superior.append({'name': 'amplitudeStr', 'type': 'str', 'value': self.settings.amplitudeStr})
         return superior
 
 
@@ -218,27 +203,25 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
-        self.stepsize = magnitude.mg(1,'kHz')
-        self.value = self.config.get('MicrowaveSynthesizerScan.'+self.name+'.frequency',0)
+        self.setDefaults()
     
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+
     def _setValue(self, v):
         v = v.round('kHz')
         command = ":FREQ:CW {0:.0f}KHZ".format(v.toval('kHz'))
         self.synthesizer.write(command)
         self.value = v
         
-    def close(self):
-        ExternalParameterBase.close(self)
-        self.config['MicrowaveSynthesizerScan.'+self.name+'.frequency'] = self.value
-    
     def paramDef(self):
         """
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
-        return [{'name': 'stepsize', 'type': 'float', 'value': self.stepsize, 'tip': "in kHz"},
-        {'name': 'delay', 'type': 'float', 'value': self.delay, 'step': 0.1, 'tip': "between steps in s"},
-        {'name': 'jump', 'type': 'bool', 'value': self.jump}]
-
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
+        return superior
 
     
 class LaserVCOScan(ExternalParameterBase):
@@ -254,8 +237,12 @@ class LaserVCOScan(ExternalParameterBase):
         self.savedValue = magnitude.mg( float(self.powersupply.ask("volt?")), 'V')
         print "LaserVCOScan savedValue", self.savedValue
         self.value = self.savedValue
-        self.stepsize = magnitude.mg( 0.01, "V")
-        self.AOMFreq = magnitide.mg(110, 'MHz')
+        self.setDefaults()
+    
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(10,'mV'))       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('AOMFreq' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
     
     def _setValue(self,value):
         """
@@ -267,7 +254,8 @@ class LaserVCOScan(ExternalParameterBase):
             
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.AOMFreq})
+        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.settings.AOMFreq})
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         return superior
         
 class LaserWavemeterScan(LaserVCOScan):
