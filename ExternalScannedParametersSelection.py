@@ -11,6 +11,7 @@ from PyQt4 import QtGui, QtCore
 SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParametersSelection.ui')
 from ExternalScannedParameters import ExternalScannedParameters
 from ExternalParameterTableModel import ExternalParameterTableModel 
+from modules.PyqtUtility import updateComboBoxItems
 import functools
 
 def unique(seq):
@@ -35,6 +36,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         SelectionForm.__init__(self)
         self.config = config
         self.previouslyEnabledParameters = self.config.get("ExternalScannedParametersSelection.EnabledParameters",dict())
+        self.disabledParametersCache = self.config.get("ExternalScannedParametersSelection.DisabledParameters",dict())
         self.enabledParameters = dict()
         self.enabledParametersObjects = dict()
     
@@ -45,20 +47,25 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.classComboBox.addItems( ExternalScannedParameters.keys() )
         self.addParameterButton.clicked.connect( self.onAddParameter )
         self.removeParameterButton.clicked.connect( self.onRemoveParameter )
-        for parameter in self.previouslyEnabledParameters:
-            try:
-                instance = ExternalScannedParameters[name](name,parameter.settings,instrument)
-                self.enabledParametersObjects.append(instance)
-            except Exception as e:
-                pass
-        self.selectionChanged.emit( self.enabledParameters )
+        for parameter in self.previouslyEnabledParameters.values():
+            self.addInstrument(parameter)
+        self.selectionChanged.emit( self.enabledParametersObjects )
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
-            
+        updateComboBoxItems( self.nameEdit, self.disabledParametersCache.keys() )
+
+                    
     def onAddParameter(self):
-        parameter = EnabledParameter()
-        parameter.className = str(self.classComboBox.currentText())
-        parameter.instrument = str(self.instrumentLineEdit.text())
-        parameter.name = str(self.nameLineEdit.text())
+        name = str(self.nameEdit.currentText())
+        if name in self.disabledParametersCache:
+            parameter = self.disabledParametersCache[name]
+            if str(self.instrumentLineEdit.text()):
+                parameter.instrument = str(self.instrumentLineEdit.text())
+            print "Parameter from cache"
+        else:
+            parameter = EnabledParameter()
+            parameter.instrument = str(self.instrumentLineEdit.text())
+            parameter.className = str(self.classComboBox.currentText())
+        parameter.name = str(self.nameEdit.currentText())
         if parameter.name not in self.enabledParameters:
             self.addInstrument(parameter)
         
@@ -71,17 +78,19 @@ class SelectionUi(SelectionForm,SelectionBase):
         instance = ExternalScannedParameters[parameter.className](parameter.name,parameter.settings,parameter.instrument)
         self.enabledParametersObjects[parameter.name] = instance
         self.enabledParameters[parameter.name] = parameter
-        self.selectionChanged.emit( self.enabledParameters )
+        self.selectionChanged.emit( self.enabledParametersObjects )
         self.parameterTableModel.setParameterList( list(self.enabledParameters.values()) )
         self.tableView.resizeColumnsToContents()
+        self.tableView.horizontalHeader().setStretchLastSection(True)        
 #        except Exception as e:
 #            print "Initialization of instrument {0} with option '{1}' failed. Exception: {2}".format(parameter.name,parameter.instrument,e)
             
     def removeInstrument(self,name):
         self.enabledParametersObjects.pop( name )
-        self.enabledParameters.pop(name)
+        self.disabledParametersCache[name] = self.enabledParameters.pop(name)
         self.parameterTableModel.setParameterList( list(self.enabledParameters.values()) )
-        self.selectionChanged.emit( self.enabledParameters )
+        self.selectionChanged.emit( self.enabledParametersObjects )
+        updateComboBoxItems( self.nameEdit, self.disabledParametersCache.keys() )
         
     def onActiveInstrumentChanged(self, modelIndex, modelIndex2 ):
         print modelIndex.row()
@@ -89,6 +98,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         
     def onClose(self):
         self.config["ExternalScannedParametersSelection.EnabledParameters"] = self.enabledParameters
+        self.config["ExternalScannedParametersSelection.DisabledParameters"] = self.disabledParametersCache
         for inst in self.enabledParametersObjects:
             inst.close()
         

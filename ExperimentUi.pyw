@@ -144,7 +144,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersSelectionDock)
 
         self.ExternalParametersUi = ExternalScannedParametersUi.ControlUi()
-        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParameters, self.ExternalParametersUi )
+        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.ExternalParametersUi )
         self.ExternalScannedParametersDock = QtGui.QDockWidget("Params Control")
         self.ExternalScannedParametersDock.setWidget(self.ExternalParametersUi)
         self.ExternalScannedParametersDock.setObjectName("_ExternalScannedParametersDock")

@@ -20,7 +20,8 @@ except:
     
     
 def nextValue( current, target, stepsize, jump ):
-    return (target,True) if abs(current-target)<=stepsize or jump else (current + math.copysign(stepsize, target-current),False)  
+    temp = target-current
+    return (target,True) if abs(temp)<=stepsize or jump else (current + stepsize.copysign(temp), False)  
             
 
 class ExternalParameterBase(object):
@@ -67,7 +68,7 @@ class ExternalParameterBase(object):
         newvalue, arrived = nextValue(self.value, value, self.settings.stepsize, self.settings.jump)
         self._setValue( newvalue )
         if self.displayValueCallback:
-            self.displayValueCallback(value)
+            self.displayValueCallback( self.value )
         return arrived
     
     def _setValue(self, v):
@@ -361,7 +362,9 @@ class DummyParameter(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,settings)
         print "Opening DummyInstrument", instrument
         self.setDefaults()
+        self.settings.value = magnitude.mg( 12, 'kHz')
         self.savedValue = self.settings.value
+        self.value = self.settings.value
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -370,6 +373,7 @@ class DummyParameter(ExternalParameterBase):
    
     def _setValue(self,value):
         print "Dummy output set to:", value
+        self.value = value
          
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
