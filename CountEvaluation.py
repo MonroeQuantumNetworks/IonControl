@@ -38,6 +38,9 @@ class EvaluationBase(Observable):
 
     @property
     def parameter(self):
+        # re-create to prevent exception for signal not connected
+        self._parameter = Parameter.create(name='params', type='group',children=self.children())     
+        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         return self._parameter
     
     def __deepcopy__(self, memo=None):
