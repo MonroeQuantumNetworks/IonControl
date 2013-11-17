@@ -34,6 +34,9 @@ class ExternalParameterBase(object):
         
     @property
     def parameter(self):
+        # re-create the parameters each time to prevent a exception that says the signal is not connected
+        self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
+        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         return self._parameter        
         
     def setDefaults(self):
