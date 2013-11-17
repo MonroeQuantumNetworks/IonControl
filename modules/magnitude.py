@@ -425,6 +425,21 @@ class Magnitude():
                                  (newval.unit, self.unit))
         self.val = newval.val        
 
+    def copysign(self, other):
+        """ copy the sign from other
+        
+        >>> a = mg(-123, 'kHz')
+        >>> b = mg(250, 'kHz')
+        >>> print b
+        250.0000 kHz
+        >>> c = b.copysign(a)
+        >>> print c
+        -250.0000 kHz
+        """
+        r = self.copy(True)
+        r.val = math.copysign( self.val, other.val )
+        return r
+
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
         after unpickling. Only new class attributes need to be added here.
