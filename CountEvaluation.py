@@ -18,6 +18,7 @@ class EvaluationBase(Observable):
     def __init__(self,settings =  None):
         Observable.__init__(self)
         self.settings = settings if settings else dict()
+        self.setDefault()
         self._parameter = Parameter.create(name='params', type='group',children=self.children())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
                
@@ -55,9 +56,8 @@ class MeanEvaluation(EvaluationBase):
     tooltip = "Mean of observed counts" 
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
-        self.setdefault()
         
-    def setdefault(self):
+    def setDefault(self):
         self.settings.setdefault('errorBars',False)
          
     def evaluate(self, countarray, timestamps=None ):
@@ -70,7 +70,7 @@ class MeanEvaluation(EvaluationBase):
         return mean, (stderror/2. if summe>0 else 0, stderror/2. ), summe
 
     def children(self):
-        return [{'name':'errorBars', 'type': 'bool', 'value':False }]     
+        return [{'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] }]     
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -82,9 +82,8 @@ class ThresholdEvaluation(EvaluationBase):
     tooltip = "Obove threshold is bright"
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
-        self.setdefault()
         
-    def setdefault(self):
+    def setDefault(self):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         self.settings.setdefault('errorBars',False)
@@ -108,9 +107,9 @@ class ThresholdEvaluation(EvaluationBase):
         return p, (p-bottom, top-p), x
         
     def children(self):
-        return [{'name':'threshold','type':'int','value':1},
-                {'name':'errorBars', 'type': 'bool', 'value':False },
-                {'name':'invert', 'type': 'bool', 'value':False }]     
+        return [{'name':'threshold','type':'int','value':self.settings['threshold']},
+                {'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] },
+                {'name':'invert', 'type': 'bool', 'value':self.settings['invert'] }]     
         
    
 EvaluationAlgorithms = { 'Mean': MeanEvaluation, 'Threshold': ThresholdEvaluation }
