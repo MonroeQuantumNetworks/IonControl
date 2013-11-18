@@ -123,4 +123,5 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         return myvariables
  
     def getVariableValue(self,name):
-        return self.variabledict.get(name).value
+        var = self.variabledict.get(name)
+        return var.value if var.enabled else 0

@@ -18,6 +18,7 @@ This is the main gui program for the ExperimentalUi
 
 import ScanExperiment
 import ExternalScanExperiment
+import VoltageScanExperiment
 import SettingsDialog
 import testExperiment
 from persist import configshelve
@@ -97,6 +98,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
 
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment"), "Scan"),
                              (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan"), "External Scan"),
+                             (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,"VoltageScan"), "Voltage Scan"),
                              (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
@@ -111,7 +113,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             widget.StatusMessage.connect( self.statusbar.showMessage)
             
         self.ExternalScanExperiment = self.tabDict["External Scan"]
-               
+        self.voltageScanExperiment = self.tabDict["Voltage Scan"]
+        
         self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config)
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )

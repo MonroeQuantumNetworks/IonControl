@@ -10,6 +10,7 @@ def updateComboBoxItems( combo, items):
         combo.addItems( items )
         if oldState in items:
             combo.setCurrentIndex( combo.findText(oldState))
+    return combo.currentText()
 
 
 class BlockSignals:

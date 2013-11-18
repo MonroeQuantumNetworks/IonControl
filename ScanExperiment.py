@@ -81,9 +81,12 @@ class StepInPlaceGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi ):
-        self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
-        self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
-        return (pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue]*5) , [])
+        #self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
+        self.stepInPlaceValue = 0
+        self.scan.code = [4095, 0] # writing the last memory location
+        #self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
+        return (self.scan.code*5, []) # write 5 points to the fifo queue at start,
+                        # this prevents the Step in Place from stopping in case the computer lags behind evaluating by up to 5 points
 
     def restartCode(self,currentIndex):
         return self.scan.code * 5
@@ -304,7 +307,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onStart(self):
         self.scan = self.scanControlWidget.getScan()
-        if self.scan.scanRepeat == 1:
+        if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             self.createAverageTrace()
             self.scanControlWidget.scansAveraged.setText("Scans averaged: 0")
             self.scanControlWidget.scansAveraged.show()
@@ -431,7 +434,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             xRange = self.generator.xRange()
             if xRange:
                 self.graphicsView.setXRange( *xRange )     
-            if self.scan.scanRepeat == 1:           
+            if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
                 self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
             else:
                 self.traceui.addTrace(self.plottedTrace, pen=-1)
@@ -448,7 +451,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if trace:
                 trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
-        if self.scan.scanRepeat == 1:
+        if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
                 self.averagePlottedTrace.averageChildren()
                 self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
