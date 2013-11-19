@@ -309,7 +309,10 @@ class PulseProgram:
                         arglist = [ self.defines[x] if x in self.defines else x for x in arglist ] 
                         #check for dds commands so CHAN commands can be inserted
                         if (op[:3] == 'DDS'):
-                            board = self.adIndexList[int(arglist[0])][0]
+                            try:
+                                board = self.adIndexList[int(arglist[0])][0]
+                            except ValueError:
+                                raise ppexception("DDS argument does not resolve to integer", sourcename, lineno, arglist[0])
                             chan = self.adIndexList[int(arglist[0])][1]
                             if (self.adBoards[board].channelLimit != 1):
                                 #boards with more than one channel require an extra channel selection command
@@ -394,6 +397,8 @@ class PulseProgram:
             if self.debug:
                 print hex(line[0]),  ": ", line[1:], 
             bytedata = 0
+            if line[1] not in OPS:
+                raise ppexception("Unknown command {0}".format(line[1]), line[4], line[5], line[1]) 
             byteop = OPS[line[1]]
             try:
                 data = line[2]
