@@ -20,6 +20,12 @@ class PulseProgramSourceEdit(Form, Base):
         self.selections = list()
         self.findFlags = QtGui.QTextDocument.FindFlag()
         self.findText = None
+        self.errorFormat = QtGui.QTextCharFormat()
+        self.errorFormat.setBackground(QtCore.Qt.red)
+        self.defaultFormat = QtGui.QTextCharFormat()
+        self.defaultFormat.setBackground(QtCore.Qt.white)
+        self.errorCursor = None
+        self.cursorStack = list()
         
     def setupUi(self,parent):
         Form.setupUi(self,parent)
@@ -29,7 +35,9 @@ class PulseProgramSourceEdit(Form, Base):
         self.findNextButton.clicked.connect( self.onFind )
         self.findPreviousButton.clicked.connect( functools.partial(self.onFind , True))
         self.highlighter = PPHighlighter( self.textEdit, "Classic" )
-
+        self.errorDisplay.hide()
+        self.closeErrorButton.clicked.connect( self.clearHighlightError )
+        
     def onFindFlagsChanged(self):
         self.findFlags = QtGui.QTextDocument.FindCaseSensitively if self.findMatchCaseCheckBox.isChecked() else QtGui.QTextDocument.FindFlag()
         self.findFlags |= QtGui.QTextDocument.FindWholeWords if self.findWholeWordsCheckBox.isChecked() else QtGui.QTextDocument.FindFlag()
@@ -89,7 +97,31 @@ class PulseProgramSourceEdit(Form, Base):
         else:
             Base.keyReleaseEvent(self,event)
             
-    
+    def highlightError(self, message, line, text):
+        self.errorLabel.setText( message )
+        self.errorDisplay.show()
+        self.errorCursor = self.textEdit.textCursor()
+        self.errorCursor.setPosition(0)
+        if line>0:
+            self.errorCursor.movePosition( QtGui.QTextCursor.NextBlock,  QtGui.QTextCursor.MoveAnchor, line-1 )
+        self.errorCursor.movePosition( QtGui.QTextCursor.EndOfBlock, QtGui.QTextCursor.KeepAnchor );
+        line = str(self.errorCursor.selectedText())
+        errorcol = line.find(text)
+        if errorcol>=0:
+            self.errorCursor.movePosition( QtGui.QTextCursor.StartOfBlock, QtGui.QTextCursor.MoveAnchor)
+            self.errorCursor.movePosition( QtGui.QTextCursor.Right, QtGui.QTextCursor.MoveAnchor, errorcol)
+            self.errorCursor.movePosition( QtGui.QTextCursor.Right, QtGui.QTextCursor.KeepAnchor, len(text))
+        self.errorCursor.setCharFormat( self.errorFormat );
+        self.textEdit.setTextCursor( self.errorCursor )
+        temp = self.textEdit.textCursor()
+        temp.clearSelection()
+        self.textEdit.setTextCursor( temp )
+        
+    def clearHighlightError(self):
+        self.errorDisplay.hide()
+        if self.errorCursor:
+            self.errorCursor.setCharFormat( self.defaultFormat )
+                    
             
 if __name__ == "__main__":
     import sys

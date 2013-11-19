@@ -16,7 +16,11 @@ import collections
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
   
 class ppexception(Exception):
-    pass
+    def __init__(self, message, file, line, context):
+        super(ppexception,self).__init__(message)
+        self.file = file
+        self.line = line
+        self.context = context
   
 # Code definitions
 OPS = {'NOP'    : 0x00,
@@ -263,7 +267,7 @@ class PulseProgram:
         label, value = m.groups() #change lab to label for readability CWC 08162012
         if label in self.defines:
             print "Error parsing defs in file '{0}': attempted to redefine'{1}' to '{2}' from '{3}'".format(sourcename, label, value, self.defines[label]) #correct float to value CWC 08162012
-            raise ppexception("Redefining variable")    
+            raise ppexception("Redefining variable", sourcename, lineno, label)    
         else:
             self.defines[label] = float(value)
 
@@ -311,21 +315,22 @@ class PulseProgram:
                                 #boards with more than one channel require an extra channel selection command
                                 chanData = self.adBoards[board].addCMD(chan)
                                 chanData = (int(board) << 16) + chanData
-                                self.code.append((len(self.code)+addr_offset, 'DDSCHN', chanData, label, sourcename))
+                                self.code.append((len(self.code)+addr_offset, 'DDSCHN', chanData, label, sourcename, lineno))
                         data = arglist if len(arglist)>1 else arglist[0]
 
-                        self.addLabel( label, len(self.code))
-                        self.code.append((len(self.code)+addr_offset, op, data, label, sourcename))
+                        self.addLabel( label, len(self.code), sourcename, lineno)
+                        self.code.append((len(self.code)+addr_offset, op, data, label, sourcename, lineno))
                     else:
                         print "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno)
-                        raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno))
+                        raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno),
+                                          sourcename, lineno, text)
         self.appendVariableCode()
         return self.code
 
-    def addLabel(self,label,address):
+    def addLabel(self,label,address, sourcename, lineno):
         if label is not None:
             if label in self.defines:
-                raise ppexception("Redefining label: {0}".format(label))
+                raise ppexception("Redefining label: {0}".format(label), sourcename, lineno, label)
             else:
                 self.defines[label] = address
                 self.labeldict[label] = address
@@ -335,7 +340,7 @@ class PulseProgram:
         """
         for name, var in self.variabledict.iteritems():
             address = len(self.code)
-            self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin ))
+            self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin, 0 ))
             var.address = address        
 
     def addVariable(self, m, lineno, sourcename):
@@ -350,7 +355,7 @@ class PulseProgram:
         var.enabled = True
 
         if var.encoding not in encodings:
-            raise ppexception("unknown encoding {0} in file '{1}':{2}".format(var.encoding,sourcename,lineno))
+            raise ppexception("unknown encoding {0} in file '{1}':{2}".format(var.encoding,sourcename,lineno), sourcename, lineno, var.encoding)
 
         try:
             data = str(eval(data,globals(),self.defines))
@@ -369,7 +374,7 @@ class PulseProgram:
 
         if label in self.defines:
             print "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(sourcename,label,data,self.defines[label])
-            raise ppexception("variable redifinition")
+            raise ppexception("variable redifinition", sourcename, lineno, label)
         else:
             self.defines[label] = label # add the variable to the dictionary of definitions to prevent identifiers and variables from having the same name
                                         # however, we do not want it replaced with a number but keep the name for the last stage of compilation
@@ -411,7 +416,7 @@ class PulseProgram:
                 print "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) # raise
                 #print self.labeldict
                 #print self.variabledict
-                raise ppexception("{0}: Unknown variable {1}".format(line[4],data))
+                raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
             self.bytecode.append((byteop, bytedata))
             if self.debug:
                 print "--->", (hex(byteop), hex(bytedata))
