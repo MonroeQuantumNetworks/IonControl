@@ -68,7 +68,7 @@ class InputCalibrationChannel(SheetForm,SheetBase):
         self.settings.calibration = calibration
         self.callback( self.channel, self.myCalibration )
             
-    def onClose(self):
+    def saveConfig(self):
         if self.myCalibration:
             self.settings.parameters[self.settings.calibration] = self.myCalibration.parameters
         self.config["InputCalibration.{0}".format(self.channel)] = self.settings
@@ -98,10 +98,10 @@ class InputCalibrationUi(Form,Base):
     def updateCalibration(self, channel, calibration):
         self.calibrations[channel] = calibration
 
-    def onClose(self):
+    def saveConfig(self):
         self.config["InputCalibration.Settings"] = self.settings
         for widget in self.widgetList:
-            widget.onClose()
+            widget.saveConfig()
 
 if __name__=="__main__":
     import sys

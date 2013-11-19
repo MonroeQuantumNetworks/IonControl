@@ -227,7 +227,7 @@ class Traceui(TraceuiForm, TraceuiBase):
             trace.loadTrace(str(fname))
             self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1),-1)
 
-    def onClose(self):
+    def saveConfig(self):
         """Execute when the UI is closed. Save the settings to the config file."""
         self.config[self.configname+".settings"] = self.settings
         

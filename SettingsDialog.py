@@ -116,7 +116,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         if str(button.text())=="Apply":
             self.pulser.openBySerial( self.settings.deviceSerial )   
             
-    def close(self):
+    def saveConfig(self):
         self.config['SettingsDialog.Config'] = self.configSettings
         self.config['SettingsDialog.bitfileCache'] = self.bitfileCache
         #print self.configSettings.__dict__

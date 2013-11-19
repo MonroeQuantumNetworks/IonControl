@@ -52,7 +52,7 @@ class GlobalVariableUi(Form, Base ):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
             name = self.model.dropVariableByIndex(index)
         
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self._variables_
 
 if __name__=="__main__":

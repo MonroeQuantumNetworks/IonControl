@@ -203,7 +203,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onReject(self):
         pass
         
-    def close(self):
+    def saveConfig(self):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
@@ -278,11 +278,15 @@ class PulseProgramSetUi(QtGui.QDialog):
         QtGui.QDialog.show(self)
         self.isShown = True
         
-    def close(self):
+    def saveConfig(self):
+        self.config['PulseProgramSetUi.pos'] = self.pos()
+        self.config['PulseProgramSetUi.size'] = self.size()
         if self.isShown:
             for page in self.pulseProgramSet.values():
-                page.close()
-            self.reject()
+                page.saveConfig()
+                
+    def onClose(self):
+        self.reject()
 
 #    def resizeEvent(self, event):
 #        self.config['PulseProgramSetUi.size'] = event.size()

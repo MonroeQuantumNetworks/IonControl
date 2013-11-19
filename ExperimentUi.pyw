@@ -259,29 +259,38 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.textEditConsole.ensureCursorVisible()
         
     def closeEvent(self,e):
+        print "Saving Configuration"
+        self.saveConfig()
         print "closeEvent"
-        self.config['MainWindow.State'] = self.parent.saveState()
         for tab in self.tabList:
             tab.onClose()
+        self.saveConfig()
+        self.currentTab.deactivate()
+        self.pulseProgramDialog.done(0)
+        self.settingsDialog.done(0)
+        self.ExternalParametersSelectionUi.onClose()
+        self.voltageControlWindow.close()
+        self.dedicatedCountersWindow.close()
+        self.pulseProgramDialog.onClose()
+
+    def saveConfig(self):
+        self.config['MainWindow.State'] = self.parent.saveState()
+        for tab in self.tabList:
+            tab.saveConfig()
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
-        self.currentTab.deactivate()
-        self.pulseProgramDialog.close()
-        self.pulseProgramDialog.done(0)
-        self.settingsDialog.close()
-        self.settingsDialog.done(0)
-        self.DDSUi.closeEvent(None)
-        self.shutterUi.close()
-        self.triggerUi.close()
-        self.dedicatedCountersWindow.onClose()
-        self.dedicatedCountersWindow.close()
-        self.voltageControlWindow.onClose()
-        self.voltageControlWindow.close()
-        self.ExternalParametersSelectionUi.onClose()
-        self.globalVariablesUi.onClose()
+        self.pulseProgramDialog.saveConfig()
+        self.settingsDialog.saveConfig()
+        self.DDSUi.saveConfig()
+        self.shutterUi.saveConfig()
+        self.triggerUi.saveConfig()
+        self.dedicatedCountersWindow.saveConfig()
+        self.voltageControlWindow.saveConfig()
+        self.ExternalParametersSelectionUi.saveConfig()
+        self.globalVariablesUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()

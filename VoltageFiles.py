@@ -151,6 +151,6 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             self.files.localFile = path
             self.loadLocalAdjust.emit(path)
     
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self.files
         

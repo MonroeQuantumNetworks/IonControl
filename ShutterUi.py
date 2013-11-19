@@ -41,7 +41,7 @@ class ShutterUi(ShutterForm, ShutterBase):
         if dynupdate:    # we only want this connection for the shutter, not the trigger
             self.pulserHardware.shutterChanged.connect( self.shutterTableModel.updateShutter )
         
-    def close(self):
+    def saveConfig(self):
         self.config[self.configname+".dict"] = self.shutterdict
         self.config[self.configname+".SetAtStartup"] = self.checkBoxSetAtStartup.isChecked()
         self.config[(self.configname, 'Value')] = self.shutterTableModel.shutter

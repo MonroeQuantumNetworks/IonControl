@@ -96,9 +96,11 @@ class SelectionUi(SelectionForm,SelectionBase):
         print modelIndex.row()
         self.treeWidget.setParameters( self.enabledParametersObjects[self.parameterTableModel.parameterList[modelIndex.row()].name].parameter )
         
-    def onClose(self):
+    def saveConfig(self):
         self.config["ExternalScannedParametersSelection.EnabledParameters"] = self.enabledParameters
         self.config["ExternalScannedParametersSelection.DisabledParameters"] = self.disabledParametersCache
+        
+    def onClose(self):
         for inst in self.enabledParametersObjects:
             inst.close()
         
