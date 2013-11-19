@@ -47,13 +47,20 @@ class MeanEvaluation(EvaluationBase):
     tooltip = "Mean of observed counts" 
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
+        self.setdefault()
+        
+    def setdefault(self):
+        self.settings.setdefault('errorBars',False)
          
     def evaluate(self, countarray, timestamps=None ):
         summe = numpy.sum( countarray )
-        l = len(countarray)
-        mean = summe/float(l)
-        stderror = math.sqrt( mean/float(l) )
-        return mean, (stderror/2., stderror/2. ), summe
+        l = float(len(countarray))
+        mean = summe/l
+        stderror = math.sqrt( max(summe,1) )/l
+        return mean, (stderror/2. if summe>0 else 0, stderror/2. ), summe
+
+    def children(self):
+        return [{'name':'errorBars', 'type': 'bool', 'value':False }]     
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -70,27 +77,29 @@ class ThresholdEvaluation(EvaluationBase):
     def setdefault(self):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
+        self.settings.setdefault('errorBars',False)
         
     def evaluate(self, countarray, timestamps=None ):
         if not countarray:
             return None, None, None
-        N = len(countarray)
+        N = float(len(countarray))
         if self.settings['invert']:
             descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
         else:
             descriminated = [ 1 if count > self.settings['threshold'] else 0 for count in countarray ]
-        summe = numpy.sum( descriminated )
-        bottom = summe*(N-summe)
-        top = bottom
-        if summe==0:
-            top = (N-1)/2.
-        elif summe==N:
-            bottom = (N-1)/2.
-        norm = pow(float(N),-3.5)
-        return summe/float(N), (bottom*norm, top*norm), summe
+        x = numpy.sum( descriminated )
+        p = x/N
+        # Wilson score interval with continuity correction
+        # see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
+        rootp = 3-1/N -4*p+4*N*(1-p)*p
+        top = min( 1, (2 + 2*N*p + math.sqrt(rootp))/(2*(N+1)) ) if rootp>=0 else 1
+        rootb = -1-1/N +4*p+4*N*(1-p)*p
+        bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0            
+        return p, (p-bottom, top-p), x
         
     def children(self):
         return [{'name':'threshold','type':'int','value':1},
+                {'name':'errorBars', 'type': 'bool', 'value':False },
                 {'name':'invert', 'type': 'bool', 'value':False }]     
 
    

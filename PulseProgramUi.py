@@ -116,15 +116,16 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
+        compileexception = None
         try:
             self.pulseProgram.loadSource(path)
-        except PulseProgram.ppexception:
-            # compilation failed
+        except PulseProgram.ppexception as compileexception:
+            # compilation failed, we save the exception and pass to to updateDisplay
             pass
         self.variabledict = self.pulseProgram.variabledict.copy()
         if (self.configname,key) in self.config:
             self.variabledict.update( dictutil.subdict(self.config[(self.configname,key)], self.variabledict.keys() ) )
-        self.updateDisplay()
+        self.updateDisplay(compileexception)
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
@@ -144,15 +145,28 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.pulseProgram.saveSource()
     
     def onApply(self):
-        for name, textEdit in self.sourceCodeEdits.iteritems():
-            self.pulseProgram.source[name] = str(textEdit.toPlainText())
-        self.pulseProgram.loadFromMemory()
-        self.oldVariabledict = self.variabledict
-        self.variabledict = self.pulseProgram.variabledict.copy()
-        self.variabledict.update( dictutil.subdict(self.oldVariabledict, self.variabledict.keys() ) )
-        self.updateDisplay()
+        try:
+            positionCache = dict()
+            for name, textEdit in self.sourceCodeEdits.iteritems():
+                self.pulseProgram.source[name] = str(textEdit.toPlainText())
+                positionCache[name] = ( textEdit.textEdit.textCursor().position(),
+                                        textEdit.textEdit.verticalScrollBar().value() )
+            self.pulseProgram.loadFromMemory()
+            self.oldVariabledict = self.variabledict
+            self.variabledict = self.pulseProgram.variabledict.copy()
+            self.variabledict.update( dictutil.subdict(self.oldVariabledict, self.variabledict.keys() ) )
+            self.updateDisplay()
+            for name, textEdit in self.sourceCodeEdits.iteritems():
+                textEdit.clearHighlightError()
+                cursor = textEdit.textEdit.textCursor()
+                cursorpos, scrollpos = positionCache[name]
+                cursor.setPosition( cursorpos )
+                textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
+                textEdit.textEdit.setTextCursor( cursor )
+        except PulseProgram.ppexception as ppex:
+            textEdit = self.sourceCodeEdits[ ppex.file ].highlightError(str(ppex), ppex.line, ppex.context )
     
-    def updateDisplay(self):   # why does this not update the display?
+    def updateDisplay(self, compileexception=None):   # why does this not update the display?
         self.sourceTabs.clear()
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
@@ -179,6 +193,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
         self.pulseProgramChanged.emit()
+        if compileexception:
+            textEdit = self.sourceCodeEdits[ compileexception.file ].highlightError(str(compileexception), compileexception.line, compileexception.context )
+            
                     
     def onAccept(self):
         pass

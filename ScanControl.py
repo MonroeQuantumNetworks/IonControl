@@ -52,7 +52,6 @@ class Scan:
         self.counterChannel = 0
         self.evalName = 'Mean'
         self.evalParameters = dict()
-        self.errorBars = False
         # Timestamps
         self.enableTimestamps = False
         self.binwidth =  mg(1,'us')
@@ -92,7 +91,7 @@ class Scan:
         
     stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
                 'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 'counterChannel', 'evalName',
-                'errorBars', 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
+                'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
                 'center', 'span', 'startCenter', 'evalParameters']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
@@ -177,7 +176,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
         self.counterSpinBox.valueChanged.connect( functools.partial(self.onIntValueChanged,'counterChannel') )
         self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onAlgorithmNameChanged )
-        self.errorBarCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'errorBars') )
                 
         # Timestamps
         self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
@@ -220,7 +218,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateHistogramButton.setChecked( self.settings.integrateHistogram )
         self.counterSpinBox.setValue( self.settings.counterChannel )
         self.evalMethodCombo.setCurrentIndex( self.evalMethodCombo.findText(self.settings.evalName) )
-        self.errorBarCheckBox.setChecked( self.settings.errorBars)
         self.evalStackedWidget.setCurrentIndex( self.evalMethodCombo.findText(self.settings.evalName) )
         # Timestamps
         self.enableCheckBox.setChecked(self.settings.enableTimestamps )

@@ -72,7 +72,7 @@ class ParameterScanGenerator:
         trace.x = numpy.append(trace.x, x)
         trace.y = numpy.append(trace.y, y)
         trace.raw = numpy.append(trace.raw, raw)
-        if error and self.scan.errorBars:
+        if error and self.scan.evalAlgo.settings['errorBars']:
             trace.bottom = numpy.append(trace.bottom, error[0])
             trace.top = numpy.append(trace.top, error[1])
                 
@@ -105,7 +105,7 @@ class StepInPlaceGenerator:
             trace.x = numpy.append(trace.x, x)
             trace.y = numpy.append(trace.y, y)
             trace.raw = numpy.append(trace.raw, raw)
-            if error and self.scan.errorBars:
+            if error and self.scan.evalAlgo.settings['errorBars']:
                 trace.bottom = numpy.append(trace.bottom, error[0])
                 trace.top = numpy.append(trace.top, error[1])
         else:
@@ -113,7 +113,7 @@ class StepInPlaceGenerator:
             trace.x = numpy.append(trace.x[-steps+1:], x)
             trace.y = numpy.append(trace.y[-steps+1:], y)
             trace.raw = numpy.append(trace.raw[-steps+1:], raw)
-            if error and self.scan.errorBars:
+            if error and self.scan.evalAlgo.settings['errorBars']:
                 trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0]) 
                 trace.top = numpy.append(trace.top[-steps+1:], error[1]) 
 
@@ -162,7 +162,7 @@ class GateSetScanGenerator:
         trace.x = numpy.append(trace.x, x)
         trace.y = numpy.append(trace.y, y)
         trace.raw = numpy.append(trace.raw, raw)
-        if error and self.scan.errorBars:
+        if error and self.scan.evalAlgo.settings['errorBars']:
             trace.bottom = numpy.append(trace.bottom, error[0])
             trace.top = numpy.append(trace.top, error[1])
 
@@ -425,7 +425,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTrace.trace.x = numpy.array([x])
             self.plottedTrace.trace.y = numpy.array([mean])
             self.plottedTrace.trace.raw = numpy.array([raw])
-            if error and self.scan.errorBars:
+            if error and self.scan.evalAlgo.settings['errorBars']:
                 self.plottedTrace.trace.bottom = numpy.array([error[0]])
                 self.plottedTrace.trace.top = numpy.array([error[1]])
             self.plottedTrace.trace.name = self.scan.settingsName

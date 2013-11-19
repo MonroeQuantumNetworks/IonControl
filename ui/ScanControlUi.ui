@@ -139,7 +139,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="page">
       <property name="geometry">
@@ -365,8 +365,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>165</width>
-        <height>148</height>
+        <width>229</width>
+        <height>330</height>
        </rect>
       </property>
       <attribute name="label">
@@ -396,7 +396,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_7">
          <property name="text">
-          <string>Eval Counter</string>
+          <string>Histogram Counter</string>
          </property>
         </widget>
        </item>
@@ -407,7 +407,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0" colspan="2">
+       <item row="2" column="1">
         <widget class="QPushButton" name="integrateHistogramButton">
          <property name="text">
           <string>Integrate Histogram</string>
@@ -417,24 +417,17 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QCheckBox" name="errorBarCheckBox">
-         <property name="text">
-          <string>Error Bars</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="label_6">
          <property name="text">
           <string>Eval Method</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="3" column="1">
         <widget class="QComboBox" name="evalMethodCombo"/>
        </item>
-       <item row="5" column="0" colspan="2">
+       <item row="4" column="0" colspan="2">
         <widget class="QStackedWidget" name="evalStackedWidget">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
@@ -454,8 +447,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>172</width>
-        <height>171</height>
+        <width>229</width>
+        <height>330</height>
        </rect>
       </property>
       <attribute name="label">
@@ -643,7 +636,6 @@
   <tabstop>histogramBinsBox</tabstop>
   <tabstop>counterSpinBox</tabstop>
   <tabstop>integrateHistogramButton</tabstop>
-  <tabstop>errorBarCheckBox</tabstop>
   <tabstop>evalMethodCombo</tabstop>
   <tabstop>enableCheckBox</tabstop>
   <tabstop>saveRawDataCheckBox</tabstop>
