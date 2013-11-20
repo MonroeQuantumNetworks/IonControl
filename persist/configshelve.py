@@ -54,7 +54,7 @@ class configshelve:
     def saveConfig(self, copyTo=None ):
         self.session.commit()
         if copyTo:
-            self.configfile
+            copyfile( self.configfile, copyTo )
         self.session = self.Session()
 
     def __enter__(self):

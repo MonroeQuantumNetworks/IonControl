@@ -205,7 +205,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     def onSave(self):
         self.currentTab.onSave()
         print "Saving config"
-        self.config.saveConfig()
+        filename, components = DataDirectory.DataDirectory().sequencefile("configuration.db")
+        self.config.saveConfig(filename)
     
     def onStart(self):
         self.currentTab.onStart()
