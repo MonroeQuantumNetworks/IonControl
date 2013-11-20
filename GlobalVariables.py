@@ -7,6 +7,7 @@ import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 from GlobalVariableTableModel import GlobalVariableTableModel
 from collections import OrderedDict
+from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
        
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
@@ -44,6 +45,9 @@ class GlobalVariableUi(Form, Base ):
         self.dropButton.clicked.connect( self.onDropVariable )
         self.model = GlobalVariableTableModel(self.variables)
         self.tableView.setModel( self.model )
+        self.tableView.setItemDelegateForColumn(1,MagnitudeSpinBoxDelegate()) 
+        self.tableView.setSortingEnabled(True)
+
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))
