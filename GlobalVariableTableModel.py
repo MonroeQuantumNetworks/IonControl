@@ -128,6 +128,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     
     def sort(self, column, order ):
         if column==0:
-            self.variableKeys,self.variableList = zip( *sorted( zip(self.variableKeys,self.variableList), key=operator.itemgetter(column), 
+            k,l = zip( *sorted( zip(self.variableKeys,self.variableList), key=operator.itemgetter(column), 
                                                                 reverse=True if order==QtCore.Qt.DescendingOrder else False ) )
+            self.variableKeys = list(k)
+            self.variableList = list(l)
             self.dataChanged.emit(self.index(0,0),self.index(len(self.variableKeys) -1,1))
