@@ -350,8 +350,10 @@ class AutoLoad(UiForm,UiBase):
                 self.setTrapped(True)
             
     
-    def close(self):
+    def onClose(self):
         if not self.status==self.StatusOptions.Idle:
             self.setIdle()
+            
+    def saveConfig(self):
         self.config['AutoLoad.Settings'] = self.settings
         self.config['AutoLoad.History'] = self.loadingHistory

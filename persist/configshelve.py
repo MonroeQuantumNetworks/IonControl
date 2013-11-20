@@ -16,6 +16,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import pickle
 from sqlalchemy import Column, Integer, String
+from shutil import copyfile
 
 Base = declarative_base()
 defaultcategory = 'main'
@@ -49,6 +50,12 @@ class configshelve:
             os.makedirs(configdir)
         self.configfile = os.path.join(configdir,name+".config")
         self.engine = create_engine('sqlite:///'+self.configfile, echo=False)
+        
+    def saveConfig(self, copyTo=None ):
+        self.session.commit()
+        if copyTo:
+            self.configfile
+        self.session = self.Session()
 
     def __enter__(self):
         Base.metadata.create_all(self.engine)

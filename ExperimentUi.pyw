@@ -204,6 +204,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     
     def onSave(self):
         self.currentTab.onSave()
+        print "Saving config"
+        self.config.saveConfig()
     
     def onStart(self):
         self.currentTab.onStart()
