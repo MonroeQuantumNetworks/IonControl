@@ -535,14 +535,16 @@ class Magnitude():
         return _reverse_prefix[r4]               
 
     def __str__(self):
+        if _prn_units:
+            return " ".join( self.toStringTuple() )
+        return self.toStringTuple()[0]        
+    
+    def toStringTuple(self):
         unitTuple = tuple(self.unit)
         if self.out_unit:
             m = self.copy(True)
             m._div_by(self.out_factor)
-            st = m._formatNumber_()
-            if _prn_units:
-                return st + ' ' + self.out_unit.strip()
-            return st
+            return ( m._formatNumber_().strip(), self.out_unit.strip() )
         elif unitTuple in _outputDimensions:
             outmag = _mags[_outputDimensions[unitTuple]]
             m = self.copy(True)
@@ -552,15 +554,9 @@ class Magnitude():
                 m = self.copy(True)
                 outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
                 m._div_by(outmag)
-            st = m._formatNumber_()
-            if _prn_units:
-                return st + ' ' + prefix + _outputDimensions[unitTuple].strip()
-            return st                
+            return ( m._formatNumber_().strip(), (prefix + _outputDimensions[unitTuple]).strip() )
         else:
-            st = self._formatNumber_()
-            if _prn_units:
-                st += self._unitRepr_()
-            return st.strip()
+            return ( self._formatNumber_().strip(), self._unitRepr_().strip() )
 
     def term2mag(self, s):
         """Converts a string with units to a Magnitude.

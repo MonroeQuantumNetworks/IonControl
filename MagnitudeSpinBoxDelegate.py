@@ -23,10 +23,11 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
         return editor
         
     def setEditorData(self, editor, index):
-        print "setEditorData"
         value = index.model().data(index, QtCore.Qt.EditRole) 
         editor.setValue(value)
-        
+        editor.lineEdit().setCursorPosition(0)
+        editor.lineEdit().cursorWordForward(True)
+         
     def setModelData(self, editor, model, index):
         value = editor.value()
         model.setData(index, value, QtCore.Qt.EditRole)
