@@ -15,6 +15,8 @@ from modules import Expression
 from modules import MagnitudeParser
 from modules import magnitude
 import sip
+import sys
+import traceback
 
 debug = False
 api2 = sip.getapi("QString")==2
@@ -55,7 +57,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     def validate(self, inputstring, pos):
         #print "validate"
         try:
-            value = self.expression.evaluate(str(inputstring))
+            value = self.expression.evaluateAsMagnitude(str(inputstring))
             if api2:
                 if self._dimension is not None and value.unit != self._dimension.unit:
                     self.lineEdit().setPalette( self.orangeTextPalette )
@@ -108,11 +110,14 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def value(self):
         try:
-            value = self.expression.evaluate( str( self.lineEdit().text() ))
+            value = self.expression.evaluateAsMagnitude( str( self.lineEdit().text() ))
             if self._dimension is not None and value.unit != self._dimension.unit:
                 raise DimensionMismatch("Got unit {0} excpeted {1}".format(value.unit,self._dimension.unit))
         except Exception as e:
             self.lineEdit().setPalette( self.redTextPalette )
+            ex_type, ex, tb = sys.exc_info()
+            traceback.print_tb(tb)
+            del tb
             raise e
         self.lineEdit().setPalette( self.blackTextPalette )
         return value
