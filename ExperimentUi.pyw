@@ -16,6 +16,7 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QTime",2)
 #sip.setapi("QUrl",2)
 
+import MagnitudeParameter
 import ScanExperiment
 import ExternalScanExperiment
 import VoltageScanExperiment
@@ -35,6 +36,7 @@ from modules import DataDirectory
 from ExceptionLogButton import ExceptionLogButton
 import GlobalVariables 
 from PulserHardwareClient import PulserHardware 
+import ProjectSelection
 
 import VoltageControl
     
@@ -294,7 +296,6 @@ if __name__ == "__main__":
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
     parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
-    parser.add_argument('--config-dir', type=str, default=None, help='name of directory for configuration files')
     parser.add_argument('--project',type=str,default=None,help='project name')
     args = parser.parse_args()
     app = QtGui.QApplication(sys.argv)
@@ -313,16 +314,9 @@ if __name__ == "__main__":
     project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
     
     if project:
-        if args.config_dir:
-            configdir = args.config_dir
-        else:
-            configdir = os.path.join(projectDir, '.gui-config')
-            if not os.path.exists(configdir):
-                os.makedirs(configdir)
-            
         DataDirectory.DefaultProject = project
         
-        with configshelve.configshelve("experiment-gui.db",configdir) as config:
+        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
             with WidgetContainerUi(config) as ui:
                 ui.setupUi(ui)
                 logger.textWritten.connect(ui.onMessageWrite)

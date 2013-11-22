@@ -68,13 +68,15 @@ class ParameterScanGenerator:
     def xRange(self):
         return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
                                      
-    def appendData(self,trace,x,y,raw,error):                                     
-        trace.x = numpy.append(trace.x, x)
-        trace.y = numpy.append(trace.y, y)
-        trace.raw = numpy.append(trace.raw, raw)
-        if error and self.scan.evalAlgo.settings['errorBars']:
-            trace.bottom = numpy.append(trace.bottom, error[0])
-            trace.top = numpy.append(trace.top, error[1])
+    def appendData(self,traceList,x,evaluated):
+        if evaluated and traceList:
+            traceList[0].x = numpy.append(traceList[0].x, x)
+        for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+            trace.y = numpy.append(trace.y, y)
+            trace.raw = numpy.append(trace.raw, raw)
+            if error and showerror:
+                trace.bottom = numpy.append(trace.bottom, error[0])
+                trace.top = numpy.append(trace.top, error[1])
                 
 class StepInPlaceGenerator:
     def __init__(self, scan):
@@ -100,22 +102,25 @@ class StepInPlaceGenerator:
     def xRange(self):
         return []
 
-    def appendData(self,trace,x,y,raw,error):                                   
-        if len(trace.x)<self.scan.steps or self.scan.steps==0:
-            trace.x = numpy.append(trace.x, x)
-            trace.y = numpy.append(trace.y, y)
-            trace.raw = numpy.append(trace.raw, raw)
-            if error and self.scan.evalAlgo.settings['errorBars']:
-                trace.bottom = numpy.append(trace.bottom, error[0])
-                trace.top = numpy.append(trace.top, error[1])
-        else:
-            steps = int(self.scan.steps)
-            trace.x = numpy.append(trace.x[-steps+1:], x)
-            trace.y = numpy.append(trace.y[-steps+1:], y)
-            trace.raw = numpy.append(trace.raw[-steps+1:], raw)
-            if error and self.scan.evalAlgo.settings['errorBars']:
-                trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0]) 
-                trace.top = numpy.append(trace.top[-steps+1:], error[1]) 
+    def appendData(self,traceList,x,evaluated):
+        if evaluated and traceList:
+            if len(traceList[0].x)<self.scan.steps or self.scan.steps==0:
+                traceList[0].x = numpy.append(traceList[0].x, x)
+                for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+                    trace.y = numpy.append(trace.y, y)
+                    trace.raw = numpy.append(trace.raw, raw)
+                    if error and showerror:
+                        trace.bottom = numpy.append(trace.bottom, error[0])
+                        trace.top = numpy.append(trace.top, error[1])
+            else:
+                steps = int(self.scan.steps)
+                traceList[0].x = numpy.append(traceList[0].x[-steps+1:], x)
+                for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+                    trace.y = numpy.append(trace.y[-steps+1:], y)
+                    trace.raw = numpy.append(trace.raw[-steps+1:], raw)
+                    if error and showerror:
+                        trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0])
+                        trace.top = numpy.append(trace.top[-steps+1:], error[1])
 
     def dataOnFinal(self, experiment):
         experiment.onStop()                   
@@ -158,13 +163,15 @@ class GateSetScanGenerator:
     def xRange(self):
         return [0, len(self.scan.list)]
 
-    def appendData(self,trace,x,y,raw,error):                                     
-        trace.x = numpy.append(trace.x, x)
-        trace.y = numpy.append(trace.y, y)
-        trace.raw = numpy.append(trace.raw, raw)
-        if error and self.scan.evalAlgo.settings['errorBars']:
-            trace.bottom = numpy.append(trace.bottom, error[0])
-            trace.top = numpy.append(trace.top, error[1])
+    def appendData(self,traceList,x,evaluated):
+        if evaluated and traceList:
+            traceList[0].x = numpy.append(traceList[0].x, x)
+        for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+            trace.y = numpy.append(trace.y, y)
+            trace.raw = numpy.append(trace.raw, raw)
+            if error and showerror:
+                trace.bottom = numpy.append(trace.bottom, error[0])
+                trace.top = numpy.append(trace.top, error[1])
 
     def dataOnFinal(self, experiment):
         if self.scan.scanRepeat == 1:
@@ -181,7 +188,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
-    OpStates = enum.enum('idle','running','paused')
+    OpStates = enum.enum('idle','running','paused','starting','stopping')
     experimentName = 'Scan Sequence'
 
     def __init__(self,settings,pulserHardware,experimentName,parent=None):
@@ -189,8 +196,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
-        self.plottedTrace = None
-        self.averagePlottedTrace = None
+        self.plottedTraceList = list()
+        self.averagePlottedTraceList = list()
         self.currentIndex = 0
         self.activated = False
         self.histogramCurve = None
@@ -304,23 +311,34 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
             self.scanControlWidget.progressBar.setFormat("Paused")            
             self.setTimeLabel()
-    
+        elif self.state == self.OpStates.starting:
+            self.scanControlWidget.progressBar.setFormat("Starting")            
+        elif self.state == self.OpStates.stopping:
+            self.scanControlWidget.progressBar.setFormat("Stopping")            
+   
     def onStart(self):
         self.scan = self.scanControlWidget.getScan()
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
-            self.createAverageTrace()
+            self.createAverageTrace(self.scan.evalList)
             self.scanControlWidget.scansAveraged.setText("Scans averaged: 0")
             self.scanControlWidget.scansAveraged.show()
         else:
             self.scanControlWidget.scansAveraged.hide()
         self.startScan()
 
-    def createAverageTrace(self):
-        self.averagePlottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
-        self.traceui.addTrace(self.averagePlottedTrace, pen=0)
-        self.averagePlottedTrace.trace.name = self.scan.settingsName + " Average"
-        self.averagePlottedTrace.trace.vars.comment = "Average Trace"
-        self.averagePlottedTrace.trace.filenameCallback = functools.partial( self.averagePlottedTrace.traceFilename, self.scan.filename)
+    def createAverageTrace(self,evalList):
+        trace = Trace()
+        self.averagePlottedTraceList = list()
+        for index, result in enumerate(evalList):
+            yColumnName = 'y{0}'.format(index)
+            rawColumnName = 'raw{0}'.format(index)
+            trace.addColumn( yColumnName )
+            thisAveragePlottedTrace = Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, yColumn=yColumnName)
+            thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
+            thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
+            thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
+            self.averagePlottedTraceList.append( thisAveragePlottedTrace  )                
+            self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
         
     def startScan(self):
         self.startTime = time.time()
@@ -342,9 +360,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.onClear()
         self.updateProgressBar(0,max(len(self.scan.list),1))
         print "elapsed time", time.time()-self.startTime
-        if self.plottedTrace is not None:
-            self.plottedTrace.plot(0) #unplot previous trace
-        self.plottedTrace = None #reset plotted trace
+        if self.plottedTraceList:
+            for plottedTrace in self.plottedTraceList:
+                plottedTrace.plot(0) #unplot previous trace
+        self.plottedTraceList = list() #reset plotted trace
     
     def onPause(self):
         if self.state == self.OpStates.paused:
@@ -392,17 +411,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.onPause()
         else:
             print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
-            print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-            mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
-            self.displayUi.add( mean )
+            #print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+            # Evaluate as given in evalList
+            x = self.generator.xValue(self.currentIndex)
+            evaluated = list()
+            for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+                evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
             if data.other:
                 print "Other:", data.other
-            #mean = numpy.mean( data.count[self.scan.counterChannel] )
-            x = self.generator.xValue(self.currentIndex)
-            if mean is not None:
-                self.updateMainGraph(x, mean, error, raw)
+            if len(evaluated)>0:
+                self.displayUi.add( evaluated[0][0][0] )
+                self.updateMainGraph(x, evaluated )
+                self.showHistogram(data, self.scan.evalList[0].counter )
             self.currentIndex += 1
-            self.showHistogram(data)
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
             if data.final:
@@ -418,45 +439,63 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.pulserHardware.ppWriteData(mycode)     
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
 
-    def updateMainGraph(self, x, mean, error, raw):
-        print x, mean, error
-        if self.plottedTrace is None:
-            self.plottedTrace = Traceui.PlottedTrace(Trace(), self.graphicsView, pens.penList)
-            self.plottedTrace.trace.x = numpy.array([x])
-            self.plottedTrace.trace.y = numpy.array([mean])
-            self.plottedTrace.trace.raw = numpy.array([raw])
-            if error and self.scan.evalAlgo.settings['errorBars']:
-                self.plottedTrace.trace.bottom = numpy.array([error[0]])
-                self.plottedTrace.trace.top = numpy.array([error[1]])
-            self.plottedTrace.trace.name = self.scan.settingsName
-            self.plottedTrace.trace.vars.comment = ""
-            self.plottedTrace.trace.filenameCallback = functools.partial( self.plottedTrace.traceFilename, self.scan.filename )
-            xRange = self.generator.xRange()
-            if xRange:
-                self.graphicsView.setXRange( *xRange )     
-            if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
-                self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
-            else:
-                self.traceui.addTrace(self.plottedTrace, pen=-1)
-            pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-            scanHeader = stringutilit.commentarize( self.scan.documentationString() )
-            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader))
+    def updateMainGraph(self, x, evaluated): # evaluated is list of mean, error, raw
+        if not self.plottedTraceList:
+            trace = Trace()
+            self.plottedTraceList = list()
+            for index, result in enumerate(evaluated):
+                (mean, error, raw), showerror = result
+                showerror = error and self.scan.evalAlgorithmList[index].settings['errorBars']
+                yColumnName = 'y{0}'.format(index) 
+                #print yColumnName, x, mean, error
+                rawColumnName = 'raw{0}'.format(index)
+                trace.addColumn( yColumnName )
+                trace.addColumn( rawColumnName )
+                if showerror:
+                    topColumnName = 'top{0}'.format(index)
+                    bottomColumnName = 'bottom{0}'.format(index)
+                    trace.addColumn( topColumnName )
+                    trace.addColumn( bottomColumnName )                
+                    plottedTrace = Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, 
+                                                    yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, rawColumn=rawColumnName) 
+                else:                
+                    plottedTrace = Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, yColumn=yColumnName, rawColumn=rawColumnName)               
+                xRange = self.generator.xRange()
+                if xRange:
+                    self.graphicsView.setXRange( *xRange )     
+                pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
+                scanHeader = stringutilit.commentarize( self.scan.documentationString() )
+                self.plottedTraceList.append( plottedTrace )
+            self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
+            self.plottedTraceList[0].trace.name = self.scan.settingsName
+            self.plottedTraceList[0].trace.vars.comment = ""
+            self.plottedTraceList[0].trace.filenameCallback = functools.partial( self.plottedTraceList[0].traceFilename, self.scan.filename )
+            self.generator.appendData( self.plottedTraceList, x, evaluated )
+            for index, plottedTrace in enumerate(self.plottedTraceList):
+                if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
+                    self.traceui.addTrace( plottedTrace, pen=-1, parentTrace=self.averagePlottedTraceList[index])
+                else:
+                    self.traceui.addTrace( plottedTrace, pen=-1)
         else:
-            self.generator.appendData(self.plottedTrace.trace, x, mean, raw, error)
-            self.plottedTrace.replot()
+            self.generator.appendData(self.plottedTraceList, x, evaluated)
+            for plottedTrace in self.plottedTraceList:
+                plottedTrace.replot()
 
     def finalizeData(self, reason='end of scan'):
         print "finalize Data"
-        for trace in [self.plottedTrace.trace, self.currentTimestampTrace]:
+        for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
                 trace.vars.traceFinalized = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
-                self.averagePlottedTrace.averageChildren()
-                self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(self.averagePlottedTrace.childCount()))
-                self.averagePlottedTrace.plot(7) #average trace is plotted in black
-            self.averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
+                averagePlottedTrace = None
+                for averagePlottedTrace in self.averagePlottedTraceList:
+                    averagePlottedTrace.averageChildren()
+                    averagePlottedTrace.plot(7) #average trace is plotted in black
+                if averagePlottedTrace:
+                    self.scanControlWidget.scansAveraged.setText("Scans averaged: {0}".format(averagePlottedTrace.childCount()))
+                    averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
             
     def showTimestamps(self,data):
         bins = int( (self.scan.roiWidth/self.scan.binwidth).toval() )
@@ -488,11 +527,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
-            self.plottedTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
+            self.plottedTimestampTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
-    def showHistogram(self, data):
-        y, x = numpy.histogram( data.count[self.scan.counterChannel] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins)
+    def showHistogram(self, data, channel):
+        y, x = numpy.histogram( data.count[channel] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins)
         if self.scan.integrateHistogram and hasattr(self,'histx') and numpy.array_equal(self.histx,x):
             self.histy += y
         else:

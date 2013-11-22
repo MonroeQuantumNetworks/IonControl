@@ -20,21 +20,32 @@ class ProjectSelectionUi(Form, Base):
         self.project = None
         self.defaultProject = ProjectSelection.defaultProject()
         
-    def setupUi(self,parent):
+    def setupUi(self,parent, atProgramStart):
         Form.setupUi(self,parent)
         self.projects = ProjectSelection.projects()
         self.projectList.addItems( self.projects )
         self.createButton.clicked.connect( self.onCreateProject )
         self.defaultCheckBox.setChecked( bool(self.defaultProject) )
         self.baseDirectoryEdit.setText( ProjectSelection.ProjectsBaseDir )
+        self.configFileToolButton.clicked.connect( self.onOpenConfigFile )
+        self.configFileEdit.editingFinished.connect( self.onSetConfigFile )
         if self.defaultProject:
             try:
                 index = self.projects.index(self.defaultProject)
                 self.projectList.setCurrentRow( index )
             except ValueError:
                 pass
+        self.startupWidgets.setVisible( atProgramStart )
+        self.warningLabel.setVisible( not atProgramStart)
             
-        
+    def onSetConfigFile(self):
+        ProjectSelection.setSpecificConfigFile( str( self.configFileEdit.text()))
+            
+    def onOpenConfigFile(self): 
+        fname = QtGui.QFileDialog.getOpenFileName(self, 'Open config file', ProjectSelection.ProjectsBaseDir)
+        ProjectSelection.setSpecificConfigFile( str( fname ))
+        self.configFileEdit.setText(fname)
+                
     def onCreateProject(self):
         name = str(self.newProjectName.text())
         if name not in self.projects:
@@ -54,8 +65,7 @@ def GetProjectSelection(atProgramStart=False):
     project = ProjectSelection.defaultProject()
     if (not project) or (not atProgramStart):
         selectionui = ProjectSelectionUi()
-        selectionui.setupUi(selectionui)
-        selectionui.warningLabel.setVisible( not atProgramStart)
+        selectionui.setupUi(selectionui, atProgramStart)
         selectionui.exec_()
         project = selectionui.project
         ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)

@@ -148,11 +148,70 @@ class LaserSynthesizerScan(ExternalParameterBase):
     """
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
-        self.amplitudeString = "Z0K1L6O1"
+        #self.amplitudeString = "Z0K1L6O1"
+        self.amplitudeString = "O3K0L0N0Z1"
         self.synthesizer = visa.instrument(instrument) #open visa session
         self.synthesizer.write(self.amplitudeString)
         self.stepsize = 1000
         self.value = self.config.get('LaserSynthesizerScan.'+self.name+'.frequency',0)
+        self.lockPoint = self.config.get('LaserSynthesizerScan.'+self.name+'.lockPoint',384227.944)
+    
+    def setValue(self,value):
+        """
+        Move one steps towards the target, return current value
+        """
+        if isinstance(value,magnitude.Magnitude):
+            myvalue = round(value.ounit("kHz").toval())
+        else:
+            myvalue = round(value)
+        if abs(myvalue-self.value)<self.stepsize or self.jump:
+            self._setValue_( myvalue )
+            value = magnitude.mg(self.value/1000.,"MHz")
+            if self.displayValueCallback:
+                self.displayValueCallback(value,"{0}".format( (magnitude.mg(self.lockPoint,'GHz')-value).ounit("GHz") ) )
+            return True
+        else:
+            self._setValue_( self.value + math.copysign(self.stepsize, myvalue-self.value) )
+            value = magnitude.mg(self.value/1000.,"MHz")
+            if self.displayValueCallback:
+               self.displayValueCallback(value,"{0}".format( (magnitude.mg(self.lockPoint,'GHz')-value).ounit("GHz") ) )
+            return False
+            
+    def _setValue_(self, v):
+        command = "P{0:0>8.0f}".format(v) + self.amplitudeString
+        self.synthesizer.write(command)#set voltage
+        self.value = v
+        
+    def currentValue(self):
+        return magnitude.mg(self.value/1000.,"MHz")
+    
+    def currentExternalValue(self):
+        return self.value/1000.
+        
+    def close(self):
+        ExternalParameterBase.close(self)
+        self.config['LaserSynthesizerScan.'+self.name+'.frequency'] = self.value
+        self.config['LaserSynthesizerScan.'+self.name+'.lockPoint'] = self.lockPoint
+    
+    def paramDef(self):
+        """
+        return the parameter definition used by pyqtgraph parametertree to show the gui
+        """
+        return [{'name': 'stepsize', 'type': 'float', 'value': self.stepsize, 'tip': "in kHz"},
+        {'name': 'delay', 'type': 'float', 'value': self.delay, 'step': 0.1, 'tip': "between steps in s"},
+        {'name': 'jump', 'type': 'bool', 'value': self.jump},
+        {'name': 'lockpoint', 'type': 'float', 'value': self.lockPoint, 'tip':'in GHz'}]
+
+class MicrowaveSynthesizerScan(ExternalParameterBase):
+    """
+    Scan the microwave frequency by scanning 83830L. 
+    """
+    def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
+        ExternalParameterBase.__init__(self,name,config)
+        #self.amplitudeString = "Z0K1L6O1"
+        self.synthesizer = visa.instrument(instrument) #open visa session
+        self.stepsize = 1000
+        self.value = self.config.get('MicrowaveSynthesizerScan.'+self.name+'.frequency',0)
     
     def setValue(self,value):
         """
@@ -172,7 +231,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
             return False
             
     def _setValue_(self, v):
-        command = "P{0:0>8.0f}".format(v) + self.amplitudeString
+        command = ":FREQ:CW {0:.0f}KHZ".format(v)
         self.synthesizer.write(command)#set voltage
         self.value = v
         
@@ -184,7 +243,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
         
     def close(self):
         ExternalParameterBase.close(self)
-        self.config['LaserSynthesizerScan.'+self.name+'.frequency'] = self.value
+        self.config['MicrowaveSynthesizerScan.'+self.name+'.frequency'] = self.value
     
     def paramDef(self):
         """
@@ -298,7 +357,7 @@ class LaserWavemeterScan(ExternalParameterBase):
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
-        print superior
+        #print superior
         return superior
 
     def saveValue(self):
@@ -315,6 +374,7 @@ class DummyParameter(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         print "Opening DummyInstrument", instrument
         self.savedValue = self.value
+        self.AOMFreq = magnitude.mg(123,'MHz')
     
     def setValue(self,value):
         """
@@ -332,6 +392,13 @@ class DummyParameter(ExternalParameterBase):
             self.value = ( self.value + math.copysign(self.stepsize, myvalue-self.value) )
             ExternalParameterBase.setValue(self, magnitude.mg(self.value,"kHz") )
             return False
+        
+    def paramDef(self):
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.AOMFreq})
+        #print superior
+        return superior
+
     
         
 ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan, 
@@ -340,5 +407,6 @@ ExternalScannedParameters = { 'Laser Lock Scan': LaserVCOScan,
                               'Laser Wavemeter Scan': LaserWavemeterScan,
                               'B-Field Current X': N6700BPowerSupply,
                               'B-Field Current Y': N6700BPowerSupply,
-                              'B-Field Current Z': N6700BPowerSupply}
+                              'B-Field Current Z': N6700BPowerSupply,
+                              'Microwave Source' : MicrowaveSynthesizerScan }
 

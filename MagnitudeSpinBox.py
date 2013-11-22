@@ -13,10 +13,14 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 from modules import Expression
 from modules import MagnitudeParser
+from modules import magnitude
 import sip
 
 debug = False
 api2 = sip.getapi("QString")==2
+
+class DimensionMismatch(Exception):
+    pass
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
@@ -30,20 +34,44 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.lineEdit().setAcceptDrops(True)
         self.redTextPalette = QtGui.QPalette()
         self.redTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.red )
+        self.orangeTextPalette = QtGui.QPalette()
+        self.orangeTextPalette.setColor( QtGui.QPalette.Text, QtGui.QColor(0x7d,0x05,0x52) )
         self.blackTextPalette = QtGui.QPalette()
         self.blackTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.black )
+        self._dimension = None   # if not None enforces the dimension
 
+    @property
+    def dimension(self):
+        return _dimension
+    
+    @dimension.setter
+    def dimension(self, dim):
+        if isinstance(dim, magnitude.Magnitude):
+            self._dimension = dim
+        else:
+            self._dimension = magnitude.Magnitude(1)
+            self._dimension = self._dimension.sunit2mag(dim)
         
     def validate(self, inputstring, pos):
         #print "validate"
         try:
-            self.expression.evaluate(str(inputstring))
+            value = self.expression.evaluate(str(inputstring))
             if api2:
-                return (QtGui.QValidator.Acceptable,inputstring,pos)
+                if self._dimension is not None and value.unit != self._dimension.unit:
+                    self.lineEdit().setPalette( self.orangeTextPalette )
+                    return (QtGui.QValidator.Intermediate,inputstring,pos)
+                else: 
+                    self.lineEdit().setPalette( self.blackTextPalette )
+                    return (QtGui.QValidator.Acceptable,inputstring,pos)
             else:
-                return (QtGui.QValidator.Acceptable,pos)                
+                if self._dimension is not None and value.unit != self._dimension.unit:
+                    self.lineEdit().setPalette( self.orangeTextPalette )
+                    return (QtGui.QValidator.Intermediate,pos)
+                else: 
+                    self.lineEdit().setPalette( self.blackTextPalette )
+                    return (QtGui.QValidator.Acceptable,pos)                
         except Exception as e:
-            print e
+            self.lineEdit().setPalette( self.redTextPalette )
             if api2:
                 return (QtGui.QValidator.Intermediate,inputstring,pos)
             else:
@@ -81,6 +109,8 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     def value(self):
         try:
             value = self.expression.evaluate( str( self.lineEdit().text() ))
+            if self._dimension is not None and value.unit != self._dimension.unit:
+                raise DimensionMismatch("Got unit {0} excpeted {1}".format(value.unit,self._dimension.unit))
         except Exception as e:
             self.lineEdit().setPalette( self.redTextPalette )
             raise e
@@ -140,6 +170,7 @@ if __name__ == "__main__":
         def setupUi(self,parent):
             super(TestUi,self).setupUi(parent)
             self.updateButton.clicked.connect(self.onUpdate)
+            self.magnitudeSpinBox.dimension = "MHz"
             
         def onUpdate(self):
             self.lineEdit.setText( str(self.magnitudeSpinBox.value()) )

@@ -59,6 +59,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         #print "bitfileCacheLength" , len(self.bitfileCache)
         for item in self.bitfileCache:
             self.comboBoxBitfiles.addItem(item)
+        if self.configSettings.lastBitfile:
+            self.comboBoxBitfiles.setCurrentIndex( self.comboBoxBitfiles.findText(self.configSettings.lastBitfile))
         if self.configSettings.lastInstrument in self.deviceMap and not self.configSettings.showOnStartup:
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:

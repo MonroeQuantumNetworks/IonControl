@@ -14,6 +14,7 @@ ProjectsBaseDir = os.path.expanduser("~public\\Documents\\experiments")
 Project = None
 DefaultProject = None
 DefaultProjectCached = False
+SpecificConfigFile = None    # if nont none will be used instaed of the default
 
 class ProjectException(Exception):
     pass
@@ -78,7 +79,14 @@ def guiConfigDir():
     configDir = os.path.join(ProjectsBaseDir, Project, '.gui-config') 
     if not os.path.exists(configDir):
         os.makedirs(configDir)
-    return configDir 
+    return configDir
+
+def guiConfigFile():
+    global SpecificConfigFile
+    if SpecificConfigFile:
+        return SpecificConfigFile
+    else:
+        return os.path.join( guiConfigDir(), "experiment-gui.db.config" ) 
    
 def getBaseDir():
     return ProjectsBaseDir
@@ -91,5 +99,11 @@ def setProjectBaseDir(name,atStartup=False):
         ProjectsBaseDir = name
         DataDirectory.DataDirectoryBase = name
     
-    
+def setSpecificConfigFile(name):
+    global SpecificConfigFile
+    if name:
+        SpecificConfigFile = name
+    else: 
+        SpecificConfigFile = None
+
     

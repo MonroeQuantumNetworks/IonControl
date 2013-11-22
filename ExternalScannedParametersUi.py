@@ -80,9 +80,12 @@ class ControlUi(UiForm,UiBase):
         self.targetValue[name] = value
         self.setValueFollowup(name)
         
-    def showValue(self, display, value):
+    def showValue(self, display, value, tooltip=None):
         if display:
-            display.setText("{0}".format(value));       
+            display.setText("{0}".format(value))
+            print "tooltip", tooltip
+            if tooltip:
+                display.setToolTip( tooltip )      
     
     def setValueFollowup(self, name):
         print "setValueFollowup", self.enabledParameters[name].currentValue()

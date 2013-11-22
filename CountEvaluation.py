@@ -12,11 +12,13 @@ from modules import dictutil
 from pyqtgraph.parametertree import Parameter
 from PyQt4 import QtCore
 from Observable import Observable
+import copy
 
 class EvaluationBase(Observable):
     def __init__(self,settings =  None):
         Observable.__init__(self)
         self.settings = settings if settings else dict()
+        self.setDefault()
         self._parameter = Parameter.create(name='params', type='group',children=self.children())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
                
@@ -37,7 +39,14 @@ class EvaluationBase(Observable):
 
     @property
     def parameter(self):
+        # re-create to prevent exception for signal not connected
+        self._parameter = Parameter.create(name='params', type='group',children=self.children())     
+        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         return self._parameter
+    
+    def __deepcopy__(self, memo=None):
+        return type(self)( copy.deepcopy(self.settings,memo) )
+  
 
 class MeanEvaluation(EvaluationBase):
     """
@@ -47,12 +56,13 @@ class MeanEvaluation(EvaluationBase):
     tooltip = "Mean of observed counts" 
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
-        self.setdefault()
         
-    def setdefault(self):
+    def setDefault(self):
         self.settings.setdefault('errorBars',False)
          
     def evaluate(self, countarray, timestamps=None ):
+        if not countarray:
+            return 0, (0,0), 0
         summe = numpy.sum( countarray )
         l = float(len(countarray))
         mean = summe/l
@@ -60,7 +70,7 @@ class MeanEvaluation(EvaluationBase):
         return mean, (stderror/2. if summe>0 else 0, stderror/2. ), summe
 
     def children(self):
-        return [{'name':'errorBars', 'type': 'bool', 'value':False }]     
+        return [{'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] }]     
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -72,9 +82,8 @@ class ThresholdEvaluation(EvaluationBase):
     tooltip = "Obove threshold is bright"
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
-        self.setdefault()
         
-    def setdefault(self):
+    def setDefault(self):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         self.settings.setdefault('errorBars',False)
@@ -98,10 +107,10 @@ class ThresholdEvaluation(EvaluationBase):
         return p, (p-bottom, top-p), x
         
     def children(self):
-        return [{'name':'threshold','type':'int','value':1},
-                {'name':'errorBars', 'type': 'bool', 'value':False },
-                {'name':'invert', 'type': 'bool', 'value':False }]     
-
+        return [{'name':'threshold','type':'int','value':self.settings['threshold']},
+                {'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] },
+                {'name':'invert', 'type': 'bool', 'value':self.settings['invert'] }]     
+        
    
 EvaluationAlgorithms = { 'Mean': MeanEvaluation, 'Threshold': ThresholdEvaluation }
 
