@@ -563,10 +563,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.activated = False
             self.state = self.OpStates.idle
                 
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.experimentName+'.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.config[self.experimentName+'.pyqtgraph-dokareastate'] = self.area.saveState()
-        self.scanControlWidget.onClose()
-        self.traceui.onClose()
+        self.scanControlWidget.saveConfig()
+        self.traceui.saveConfig()
+        
+    def onClose(self):
+        pass
 
         

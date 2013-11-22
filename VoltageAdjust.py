@@ -147,6 +147,6 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         setattr(self.adjust,attribute,value.toval() if isinstance( value, magnitude.Magnitude) else value) 
         self.updateOutput.emit(self.adjust)
     
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self.settings
         

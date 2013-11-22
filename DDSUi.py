@@ -74,7 +74,7 @@ class DDSUi(DDSForm, DDSBase):
             self.onAmplitude( box, channel )
         if self.autoApply: self.onApply
         
-    def closeEvent(self, e):
+    def saveConfig(self):
         self.config['DDSUi.Frequency'] = self.frequency
         self.config['DDSUi.Phase'] = self.phase
         self.config['DDSUi.Amplitude'] = self.amplitude

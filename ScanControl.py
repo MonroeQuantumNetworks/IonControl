@@ -543,7 +543,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.onCommit()
         return scan
         
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self.settings
         self.config[self.configname+'.dict'] = self.settingsDict
         self.config[self.configname+'.settingsName'] = self.settingsName

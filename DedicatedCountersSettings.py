@@ -63,6 +63,6 @@ class DedicatedCountersSettings(DedicatedCountersSettingsForm,DedicatedCountersS
         self.settings.adcMask = (self.settings.adcMask & ~mask) | (mask if state==QtCore.Qt.Checked else 0)
         self.valueChanged.emit( self.settings )
 
-    def onClose(self):
+    def saveConfig(self):
         self.config['DedicatedCounterSettings.Settings2'] = self.settings
                

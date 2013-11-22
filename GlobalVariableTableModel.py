@@ -10,6 +10,7 @@ import functools
 import modules.magnitude as magnitude
 from modules import Expression
 import sip
+import operator
 
 api2 = sip.getapi("QVariant")==2
 
@@ -70,7 +71,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
        
     def setData(self,index, value, role):
         return { (QtCore.Qt.EditRole,0): functools.partial( self.setDataName, index, value ),
-                 (QtCore.Qt.EditRole,1): functools.partial( self.setDataValue, index, value ),
+                 (QtCore.Qt.EditRole,1): functools.partial( self.setValue, index.row(), value ),
                 }.get((role,index.column()), lambda: False )()
 
     def flags(self, index ):
@@ -86,7 +87,13 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                     1: 'value',
                      }.get(section)
         return None #QtCore.QVariant()
-        
+            
+    def setValue(self, index, value):
+        name = self.variableKeys[ index ] 
+        self.variabledict[name] = value
+        self.variableList[ index ] = self.variabledict[ name ]
+        self.valueChanged.emit()
+
     def getVariables(self):
         return self.variabledict
  
@@ -119,3 +126,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         print self.variabledict.keys()
         return name
     
+    def sort(self, column, order ):
+        if column==0:
+            self.variableKeys,self.variableList = zip( *sorted( zip(self.variableKeys,self.variableList), key=operator.itemgetter(column), 
+                                                                reverse=True if order==QtCore.Qt.DescendingOrder else False ) )
+            self.dataChanged.emit(self.index(0,0),self.index(len(self.variableKeys) -1,1))

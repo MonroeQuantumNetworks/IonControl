@@ -158,9 +158,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.StatusMessage.emit("test not active")
         MainWindowWidget.MainWindowWidget.deactivate(self)
         
-    def onClose(self):
+    def saveConfig(self):
         self.config['testWidget.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-        self.traceui.onClose()
+        self.traceui.saveConfig()
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()

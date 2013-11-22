@@ -71,13 +71,15 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.loadGlobalAdjust(str(path) )
         self.globalAdjustUi.setupGlobalAdjust( str(path), self.voltageBlender.adjustDict )
     
-    def onClose(self):
-        print "onClose()"
+    def saveConfig(self):
         self.settings.state = self.saveState()
         self.config[self.configname] = self.settings
-        self.voltageFilesUi.onClose()
-        self.adjustUi.onClose()
-        self.globalAdjustUi.onClose()
+        self.adjustUi.saveConfig()
+        self.globalAdjustUi.saveConfig()
+        self.voltageFilesUi.saveConfig()
+    
+    def onClose(self):
+        pass
         
     def closeEvent(self,e):
         self.onClose()

@@ -8,10 +8,79 @@ Created on Fri Apr 12 23:45:54 2013
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import functools
+from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParameterUi.ui')
 
-import MagnitudeSpinBox
+class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
+    valueChanged = QtCore.pyqtSignal(str, object)
+    def __init__(self, controlUi, parameterList=None, parent=None):
+        super(ExternalParameterControlTableModel, self).__init__(parent)
+        self.parameterList = list()
+        self.names = list()
+        self.controlUi = controlUi
+        
+    def setParameterList(self, parameterList):
+        self.beginResetModel()
+        self.parameterList = parameterList.values()
+        self.names = parameterList.keys()
+        self.targetValues = [inst.currentValue() for inst in self.parameterList]
+        self.externalValues = self.targetValues[:]
+        self.toolTips = [None]*len(self.externalValues )
+        for index,inst in enumerate(self.parameterList):
+            inst.displayValueCallback = functools.partial( self.showValue, index )
+        self.endResetModel()
+        
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return len(self.parameterList)
+    
+    def columnCount(self,  parent=QtCore.QModelIndex()):
+        return 3
+    
+    def data(self, index, role): 
+        if index.isValid():
+            return { (QtCore.Qt.DisplayRole,0): self.names[index.row()],
+                     (QtCore.Qt.DisplayRole,1): str(self.targetValues[index.row()]),
+                     (QtCore.Qt.EditRole,1): str(self.targetValues[index.row()]),
+                     (QtCore.Qt.DisplayRole,2): str(self.externalValues[index.row()]),
+                     (QtCore.Qt.ToolTipRole,2): str(self.toolTips[index.row()]),
+                     }.get((role,index.column()),None)
+        return None
+
+    def setData(self,index, value, role):
+        return { (QtCore.Qt.EditRole,1): functools.partial( self.setValue, index.row(), value ),
+                }.get((role,index.column()), lambda: False )() 
+                      
+    def flags(self, index ):
+        return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable if index.column()==1 else QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+
+    def headerData(self, section, orientation, role ):
+        if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
+            return {
+                0: 'Name',
+                1: 'Control',
+                2: 'External',
+                }.get(section)
+        return None #QtCore.QVariant()
+ 
+    def showValue(self, index, value, tooltip=None):
+        self.externalValues[index] = value
+        self.toolTips[index] = tooltip
+        leftInd = self.createIndex(index, 2)
+        rightInd = self.createIndex(index, 2)
+        self.dataChanged.emit(leftInd, rightInd) #Update all 5 columns
+            
+    def setValue(self, index, value):
+        print "setValue", value
+        self.targetValues[index] = value
+        self.setValueFollowup(index)
+        
+    def setValueFollowup(self, index):
+        print "setValueFollowup", self.parameterList[index].currentValue()
+        delay = int( self.parameterList[index].settings.delay.toval('ms') )
+        if not self.parameterList[index].setValue( self.targetValues[index] ):
+            QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,index) )
+
 
 class ControlUi(UiForm,UiBase):
     
@@ -25,72 +94,21 @@ class ControlUi(UiForm,UiBase):
         self.targetValue = dict()
         self.currentValue = dict()
         self.displayWidget = dict()
+        self.tagetValue = dict()
     
     def setupUi(self,EnabledParameters,MainWindow):
         UiForm.setupUi(self,MainWindow)
+        self.tableModel = ExternalParameterControlTableModel(self)
+        self.tableView.setModel( self.tableModel )
+        self.tableView.setItemDelegateForColumn(1,MagnitudeSpinBoxDelegate()) 
         self.setupParameters(EnabledParameters)
         
     def setupParameters(self,EnabledParameters):
         print "ControlUi.setupParameters", EnabledParameters
-        self.targetValue = dict()
         self.enabledParameters = EnabledParameters
-        if self.spacerItem:
-            self.gridLayout.removeItem( self.spacerItem )
-        else:
-            self.spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        for index, name in enumerate(self.enabledParameters.keys()):
-            if index<len(self.myLabelList):
-                self.myLabelList[index].setText(name)
-                self.myLabelList[index].show()
-            else:
-                label = QtGui.QLabel(self)
-                label.setText(name)
-                self.myLabelList.append(label)
-                self.gridLayout.addWidget( label, 1+index, 0, 1, 1 )
-            parameter = self.enabledParameters.get(name)
-            self.targetValue[name] = parameter.currentValue()
-            if index<len(self.myBoxList):
-                self.myBoxList[index].valueChanged.disconnect()
-                self.myBoxList[index].setValue( parameter.currentValue() )
-                self.myBoxList[index].valueChanged.connect( functools.partial(self.setValue, name) )
-                self.myBoxList[index].show()
-            else:
-                Box = MagnitudeSpinBox.MagnitudeSpinBox(self)
-                Box.setValue( parameter.currentValue()  )
-                Box.valueChanged.connect( functools.partial(self.setValue, name) )
-                self.gridLayout.addWidget( Box, 1+index, 1, 1, 1 )
-                self.myBoxList.append( Box )
-            if index<len(self.myDisplayList):
-                Display = self.myDisplayList[index]
-                Display.setText("")
-                Display.show()
-            else:
-                Display = QtGui.QLabel(self)
-                Display.setText("")
-                self.myDisplayList.append(Display)
-                self.gridLayout.addWidget( Display, 1+index, 2, 1, 1 )
-            self.enabledParameters[name].displayValueCallback = functools.partial(self.showValue,Display)
-        for index in range( len(self.enabledParameters), len(self.myLabelList)):
-            self.myLabelList[index].hide()
-            self.myBoxList[index].hide()
-        self.gridLayout.addItem(self.spacerItem, len(self.enabledParameters)+1, 1, 1, 1)
+        self.tableModel.setParameterList( self.enabledParameters )
+        self.tableView.resizeColumnsToContents()
+        self.tableView.horizontalHeader().setStretchLastSection(True)        
         
-    def setValue(self, name, value):
-        print "setValue", value
-        self.targetValue[name] = value
-        self.setValueFollowup(name)
-        
-    def showValue(self, display, value, tooltip=None):
-        if display:
-            display.setText("{0}".format(value))
-            print "tooltip", tooltip
-            if tooltip:
-                display.setToolTip( tooltip )      
-    
-    def setValueFollowup(self, name):
-        print "setValueFollowup", self.enabledParameters[name].currentValue()
-        delay = int( 1000* self.enabledParameters[name].__dict__.get('delay',0.1) )
-        if not self.enabledParameters[name].setValue( self.targetValue[name] ):
-            QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,name) )
 
     

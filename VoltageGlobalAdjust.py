@@ -88,7 +88,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.adjust[attribute]=value.toval() if isinstance(value, magnitude.Magnitude) else value
         self.updateOutput.emit(self.adjust)
     
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self.settings
         if self.adjustHistoryName:
             self.config[(self.historyCategory,self.adjustHistoryName)] = self.adjust
