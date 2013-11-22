@@ -83,6 +83,8 @@ OPS = {'NOP'    : 0x00,
        'CMPLE' : 0x48, 
        'CMPGREATER' : 0x4a,
        'ORW' : 0x4b,
+       'UPDATEINDF' : 0x4d,
+       'WAITDDSWRITEDONE' : 0x4e,
        'END'    : 0xFF }
 
 class Dimensions:
