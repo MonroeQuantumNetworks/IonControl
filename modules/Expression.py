@@ -121,6 +121,7 @@ class Expression:
     #        return float(op)
             try:
                 res = float(op)
+                res = magnitude.mg(res)
             except ValueError: # lets try whether it has a unit
                 fmag = fnumber + ZeroOrMore(ident)
                 l = fmag.parseString(op)
