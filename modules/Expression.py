@@ -121,13 +121,13 @@ class Expression:
     #        return float(op)
             try:
                 res = float(op)
-                res = magnitude.mg(res)
+                #res = magnitude.mg(res)
             except ValueError: # lets try whether it has a unit
-                fmag = fnumber + ZeroOrMore(ident)
+                fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
                 l = fmag.parseString(op)
                 #print l
-                m = magnitude.mg( float(l[0]),l[1])
-                m.significantDigits = len(list(filter( lambda s: s.isdigit(), l[0])))
+                m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
+                m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
                 return m
             return res
             
@@ -138,6 +138,11 @@ class Expression:
         value = self.evaluateStack( self.exprStack[:] )
         return value
         
+    def evaluateAsMagnitude(self, expression, variabledict=dict()):
+        res = self.evaluate(expression, variabledict)
+        if not isinstance(res, magnitude.Magnitude ):
+            res = magnitude.mg( res )
+        return res
 
 if __name__ == "__main__":
     
