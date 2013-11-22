@@ -43,11 +43,8 @@ class ShelveEntry(Base):
         self.pvalue = pickle.dumps(value)
 
 class configshelve:
-    def __init__(self,name,directory="~\\AppData\\Local\\python-control\\"):
-        configdir = os.path.expanduser(directory)        
-        if not os.path.exists(configdir):
-            os.makedirs(configdir)
-        self.configfile = os.path.join(configdir,name+".config")
+    def __init__(self,filename):
+        self.configfile = filename
         self.engine = create_engine('sqlite:///'+self.configfile, echo=False)
 
     def __enter__(self):
