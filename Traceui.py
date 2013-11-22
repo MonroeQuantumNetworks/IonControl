@@ -37,7 +37,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     config -- configuration data, saved in pickled form to file
     configname -- the name to use in the config file
     settings -- the plot settings: plot style and last used directory
-    graphicsView -- the actual plot window
+    graphicsView -- the actual plot window, only used for opened files, otherwise the graphics view in the plotted trace is used
     
     methods:
     __init__(self, penicons, config, parentname, graphicsView, parent=None, lastDir=None):

@@ -133,7 +133,7 @@ class Scan:
 class ScanControl(ScanControlForm, ScanControlBase ):
     ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSetScan')
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')    
-    def __init__(self,config,parentname,parent=None):
+    def __init__(self,config,parentname, plotnames=None, parent=None):
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
         self.config = config
@@ -156,6 +156,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.gateSetUi = None
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
         self.evalAlgorithmList = list()
+        self.plotnames = plotnames
 
     def setupUi(self, parent):
         ScanControlForm.setupUi(self,parent)
@@ -286,7 +287,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableModel.setEvalList( self.settings.evalList )
         
     def onActiveEvalChanged(self, modelIndex, modelIndex2 ):
-        print modelIndex.row()
         self.evalParamTreeWidget.setParameters( self.evalAlgorithmList[modelIndex.row()].parameter)
 
     def updateSaveStatus(self):

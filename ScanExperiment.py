@@ -214,6 +214,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.area = DockArea()
         self.setCentralWidget(self.area)
         # initialize all the plot windows we want
+        self.plotWidgets = dict()   # Plot widgets in which stuff can be plotted
         self.mainDock = Dock("Scan data")
         self.histogramDock = Dock("Histogram")
         self.timestampDock = Dock("timestamps")
@@ -223,13 +224,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.graphicsWidget = CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
         self.mainDock.addWidget(self.graphicsWidget)
         self.graphicsView = self.graphicsWidget.graphicsView
+        self.plotWidgets["Scan data"] =  self.graphicsView
         self.histogramWidget = CoordinatePlotWidget(self)
         self.histogramDock.addWidget(self.histogramWidget)
-        self.histogramView = self.histogramWidget.graphicsView        
+        self.histogramView = self.histogramWidget.graphicsView
+        self.plotWidgets["Histogram"] =  self.graphicsView
         self.histogramWidget.autoRange()
         self.timestampWidget = CoordinatePlotWidget(self) # pyqtgraph.PlotWidget()
         self.timestampDock.addWidget( self.timestampWidget )
         self.timestampView = self.timestampWidget.graphicsView
+        self.plotWidgets["Timestamps"] =  self.graphicsView
         self.timestampWidget.autoRange()
         try:
             if self.experimentName+'.pyqtgraph-dokareastate' in self.config:
@@ -250,7 +254,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
-        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName)
+        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotWidgets.keys() )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
         self.scanControlWidget.scansAveraged.hide()
