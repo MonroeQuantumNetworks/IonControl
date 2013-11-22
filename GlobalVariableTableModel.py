@@ -22,8 +22,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variabledict = variabledict
-        self.variableList = self.variabledict.values() 
-        self.variableKeys = self.variabledict.keys()
+        self.variableList = list(self.variabledict.values()) 
+        self.variableKeys = list(self.variabledict.keys())
         self.expression = Expression.Expression()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -127,7 +127,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return name
     
     def sort(self, column, order ):
-        if column==0:
-            self.variableKeys,self.variableList = zip( *sorted( zip(self.variableKeys,self.variableList), key=operator.itemgetter(column), 
-                                                                reverse=True if order==QtCore.Qt.DescendingOrder else False ) )
+        if column==0 and self.variableKeys:
+            self.variableKeys,self.variableList = [list(z) for z in zip( *sorted( zip(self.variableKeys,self.variableList), key=operator.itemgetter(column), 
+                                                                reverse=True if order==QtCore.Qt.DescendingOrder else False ) ) ]
             self.dataChanged.emit(self.index(0,0),self.index(len(self.variableKeys) -1,1))
