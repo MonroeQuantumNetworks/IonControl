@@ -34,6 +34,8 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.lineEdit().setAcceptDrops(True)
         self.redTextPalette = QtGui.QPalette()
         self.redTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.red )
+        self.orangeTextPalette = QtGui.QPalette()
+        self.orangeTextPalette.setColor( QtGui.QPalette.Text, QtGui.QColor(0x7d,0x05,0x52) )
         self.blackTextPalette = QtGui.QPalette()
         self.blackTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.black )
         self._dimension = None   # if not None enforces the dimension
@@ -56,16 +58,20 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             value = self.expression.evaluate(str(inputstring))
             if api2:
                 if self._dimension is not None and value.unit != self._dimension.unit:
+                    self.lineEdit().setPalette( self.orangeTextPalette )
                     return (QtGui.QValidator.Intermediate,inputstring,pos)
                 else: 
+                    self.lineEdit().setPalette( self.blackTextPalette )
                     return (QtGui.QValidator.Acceptable,inputstring,pos)
             else:
                 if self._dimension is not None and value.unit != self._dimension.unit:
+                    self.lineEdit().setPalette( self.orangeTextPalette )
                     return (QtGui.QValidator.Intermediate,pos)
                 else: 
+                    self.lineEdit().setPalette( self.blackTextPalette )
                     return (QtGui.QValidator.Acceptable,pos)                
         except Exception as e:
-            print e
+            self.lineEdit().setPalette( self.redTextPalette )
             if api2:
                 return (QtGui.QValidator.Intermediate,inputstring,pos)
             else:
