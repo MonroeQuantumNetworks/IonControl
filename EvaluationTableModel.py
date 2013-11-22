@@ -1,6 +1,8 @@
 from PyQt4 import QtGui, QtCore
+from functools import partial
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
+    dataChanged = QtCore.pyqtSignal()
     def __init__(self, evalList=None, parent=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
@@ -24,6 +26,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
             return { (QtCore.Qt.DisplayRole,0): self.evalList[index.row()].counter,
                      (QtCore.Qt.DisplayRole,1): self.evalList[index.row()].evaluation,
                      (QtCore.Qt.DisplayRole,2): self.evalList[index.row()].name,
+                     (QtCore.Qt.EditRole,2): self.evalList[index.row()].name,
                      }.get((role,index.column()),None)
         return None
         
@@ -39,3 +42,12 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                          1: 'Evaluation',
                          2: 'Name' }[section]
         return None 
+
+    def setData(self,index, value, role):
+        return { (QtCore.Qt.EditRole,2): partial( self.setDataName, index, value ),
+                }.get((role,index.column()), lambda: False )()
+
+    def setDataName(self, index, name):
+        self.evalList[index.row()].name = str(name.toString()).strip()
+        self.dataChanged.emit()
+        return True

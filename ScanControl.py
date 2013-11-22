@@ -165,6 +165,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.redoButton.clicked.connect( self.onRedo )
         self.reloadButton.clicked.connect( self.onReload )
         self.evalTableModel = EvaluationTableModel()
+        self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
         self.evalTableView.setModel( self.evalTableModel )
         self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
@@ -256,6 +257,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableModel.setEvalList( self.settings.evalList )
         for eval in self.settings.evalList:
             self.addEvaluation(eval)
+        self.evalTableView.resizeColumnsToContents()
+        self.evalTableView.horizontalHeader().setStretchLastSection(True)
 
     def addEvaluation(self, eval):
         algo =  CountEvaluation.EvaluationAlgorithms[eval.evaluation]()
@@ -270,6 +273,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.evalList.append( evaluation )
         self.addEvaluation( evaluation )
         self.evalTableModel.setEvalList( self.settings.evalList )
+        self.evalTableView.resizeColumnsToContents()
+        self.evalTableView.horizontalHeader().setStretchLastSection(True)
 
     def removeEvaluation(self, index):
          del self.evalAlgorithmList[index]
@@ -288,11 +293,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         currentText = str(self.comboBox.currentText())
         try:
             if not currentText:
-                self.saveStatus = False
-            elif self.settingsName !='' and self.settingsName in self.settingsDict:
+                self.saveStatus = True
+            elif self.settingsName and self.settingsName in self.settingsDict:
                 self.saveStatus = self.settingsDict[self.settingsName]==self.settings and currentText==self.settingsName
             else:
-                self.saveStatus = True
+                self.saveStatus = False
             self.saveButton.setEnabled( not self.saveStatus )
         except MagnitudeError:
             pass
