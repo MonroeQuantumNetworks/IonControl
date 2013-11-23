@@ -209,8 +209,8 @@ fitFunctionMap = { GaussianFit.name: GaussianFit,
                    RabiCarrierFunction.name: RabiCarrierFunction,
                    FullRabiCarrierFunction.name: FullRabiCarrierFunction,
                    LinearFit.name: LinearFit
-                 }
-
+                 }        
+        
 def fitFunctionFactory(text):
     """
     Creates a FitFunction Object from a saved string representation
@@ -230,6 +230,21 @@ def fitFunctionFactory(text):
             name, value = item.split('=')
             print "'{0}' '{1}' '{2}'".format(item,name.strip(),value.strip())
             setattr(function, name.strip(), MagnitudeParser.parse(value.strip()))
+    return function
+
+def fromXmlElement(element):
+    """
+    Creates a FitFunction Object from a saved string representation
+    """
+    name = element.attrib['name']
+    function = fitFunctionMap[name]()        
+    for index, parameter in enumerate(element.findall("Parameter")):
+        value = float(parameter.text)
+        function.parameters[index] = value
+        function.parameterNames[index] = parameter.attrib['name']
+    for index, parameter in enumerate(element.findall("Constant")):
+        value = float(parameter.text)
+        setattr( function, parameter.attrib['name'], value ) 
     return function
         
         

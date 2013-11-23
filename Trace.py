@@ -62,9 +62,20 @@ class TracePlottingList(list):
     
     @staticmethod
     def fromXmlElement(element):
-        return ColumnSpec( element.text.split(", ") )    
+        l = TracePlottingList()
+        for plottingelement in element.findall("TracePlotting"):
+            plotting = TracePlotting()
+            plotting.__dict__.update( plottingelement.attrib )
+            if plottingelement.find("FitFunction") is not None:
+                plotting.fitFunction = FitFunctions.fromXmlElement( plottingelement.find("FitFunction") )
+            l.append(plotting)
+        return l    
 
-
+varFactory = { 'str': str,
+               'datetime': lambda s: datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f'),
+               'float': float,
+               'int': int }
+    
 
 class Trace(object):
     
@@ -101,6 +112,12 @@ class Trace(object):
         self.columnNames = ['height', 'top', 'bottom','raw']
         self.vars.tracePlottingList = TracePlottingList()
         
+    def varFromXmlElement(self, element):
+        name = element.attrib['name']
+        mytype = element.attrib['type']
+        value = varFactory.get( mytype, str)( element.text )
+        setattr( self.vars, name, value )
+    
     @property
     def x(self):
         """Get x array"""
@@ -266,9 +283,13 @@ class Trace(object):
             else:
                 data.append( map(float,line.split()) )
         root = ElementTree.fromstringlist(xmlstringlist)
-        columnspec = ColumnSpec.fromXmlElement(root.findall("./Variables/ColumnSpec")[0])
+        columnspec = ColumnSpec.fromXmlElement(root.find("./Variables/ColumnSpec"))
         for attr,d in zip( columnspec, zip(*data) ):
             setattr( self, attr, numpy.array(d) )
+        tpelement = root.find("./Variables/TracePlottingList")
+        self.vars.tracePlottingList = TracePlottingList.fromXmlElement(tpelement) if tpelement is not None else None
+        for element in root.findall("./Variables/Element"):
+            self.varFromXmlElement(element)
         
     def loadTraceText(self, stream):    
         data = []
@@ -305,3 +326,7 @@ class Trace(object):
         
     def addTracePlotting(self, traceplotting):
         self.vars.tracePlottingList.append(traceplotting)
+        
+    @property 
+    def tracePlottingList(self):
+        return self.vars.tracePlottingList

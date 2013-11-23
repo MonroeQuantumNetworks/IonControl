@@ -17,7 +17,7 @@ class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
     def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
-                 rawColumn='raw'):
+                 rawColumn='raw', tracePlotting=None):
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:
@@ -35,22 +35,29 @@ class PlottedTrace(object):
         self.childTraces = []
         self.curvePen = 0
         # we use pointers to the relevant columns in trace
-        self._xColumn = xColumn
-        self._yColumn = yColumn
-        self._topColumn = topColumn
-        self._bottomColumn = bottomColumn
-        self._heightColumn = heightColumn
-        self._rawColumn = rawColumn
-        if self.trace:
+        if tracePlotting is not None:
+            self.tracePlotting = tracePlotting
+            self._xColumn = tracePlotting.xColumn
+            self._yColumn = tracePlotting.yColumn
+            self._topColumn = tracePlotting.topColumn
+            self._bottomColumn = tracePlotting.bottomColumn
+            self._heightColumn = tracePlotting.heightColumn
+            self._rawColumn = tracePlotting.rawColumn
+        elif self.trace:
+            self._xColumn = xColumn
+            self._yColumn = yColumn
+            self._topColumn = topColumn
+            self._bottomColumn = bottomColumn
+            self._heightColumn = heightColumn
+            self._rawColumn = rawColumn
+            self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
+                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn)
+            self.trace.addTracePlotting( self.tracePlotting )
             if not hasattr(self.trace,xColumn):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
                 self.trace.addColumn( yColumn )
-        if self.trace:
-            self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
-                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn)
-            self.trace.addTracePlotting( self.tracePlotting )
-     
+          
     @property
     def hasTopColumn(self):
         return hasattr(self.trace, self._topColumn)
