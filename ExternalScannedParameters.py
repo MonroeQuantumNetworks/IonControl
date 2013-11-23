@@ -102,6 +102,9 @@ class ExternalParameterBase(object):
             print self, "update", param.name(), data
             setattr( self.settings, param.name(), data)
             
+    def close(self):
+        pass
+            
 
 class N6700BPowerSupply(ExternalParameterBase):
     """
@@ -144,6 +147,9 @@ class N6700BPowerSupply(ExternalParameterBase):
         superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.stepsize})
         return superior
+    
+    def close(self):
+        del self.instrument
         
 
 class LaserSynthesizerScan(ExternalParameterBase):
@@ -194,6 +200,9 @@ class LaserSynthesizerScan(ExternalParameterBase):
         superior.append({'name': 'amplitudeStr', 'type': 'str', 'value': self.settings.amplitudeStr})
         return superior
 
+    def close(self):
+        del self.synthesizer
+
 
 class MicrowaveSynthesizerScan(ExternalParameterBase):
     """
@@ -222,6 +231,9 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         return superior
+
+    def close(self):
+        del self.synthesizer
 
     
 class LaserVCOScan(ExternalParameterBase):
@@ -257,6 +269,9 @@ class LaserVCOScan(ExternalParameterBase):
         superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.settings.AOMFreq})
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         return superior
+
+    def close(self):
+        del self.powersupply
         
 class LaserWavemeterScan(LaserVCOScan):
     """

@@ -101,7 +101,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.config["ExternalScannedParametersSelection.DisabledParameters"] = self.disabledParametersCache
         
     def onClose(self):
-        for inst in self.enabledParametersObjects:
+        for inst in self.enabledParametersObjects.values():
             inst.close()
         
 

@@ -22,7 +22,7 @@ from modules.enum import enum
 import GateSetUi
 from modules.PyqtUtility import BlockSignals, updateComboBoxItems
 from EvaluationTableModel import EvaluationTableModel
-
+from ComboBoxDelegate import ComboBoxDelegate
 
 def unique(seq):
     seen = set()
@@ -34,8 +34,13 @@ class EvaluationDefinition:
         self.evaluation = None
         self.settings = dict()
         self.name = None
+        self.plotname = None
         
-    stateFields = ['counter', 'evaluation', 'settings', 'name'] 
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault('plotname', None)        
+        
+    stateFields = ['counter', 'evaluation', 'settings', 'name', 'plotname'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -165,9 +170,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
         self.reloadButton.clicked.connect( self.onReload )
-        self.evalTableModel = EvaluationTableModel()
+        self.evalTableModel = EvaluationTableModel(plotnames=self.plotnames)
         self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
         self.evalTableView.setModel( self.evalTableModel )
+        self.evalTableView.setItemDelegateForColumn(3, ComboBoxDelegate() )
         self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )

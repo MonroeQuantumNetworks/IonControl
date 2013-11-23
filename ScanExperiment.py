@@ -36,6 +36,7 @@ from modules import MagnitudeUtilit
 import random
 import ScanControl
 from AverageView import AverageView
+from PlottedTrace import PlottedTrace
      
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -218,13 +219,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.mainDock = Dock("Scan data")
         self.histogramDock = Dock("Histogram")
         self.timestampDock = Dock("timestamps")
+        self.monitorDock = Dock("monitor")
         self.area.addDock(self.mainDock,'left')
         self.area.addDock(self.histogramDock,'right')
         self.area.addDock(self.timestampDock,'bottom',self.histogramDock)
+        self.area.addDock(self.monitorDock)
         self.graphicsWidget = CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
         self.mainDock.addWidget(self.graphicsWidget)
         self.graphicsView = self.graphicsWidget.graphicsView
         self.plotWidgets["Scan data"] =  self.graphicsView
+        self.plotWidgets[None] =  self.graphicsView      # this is the default plotwindow
+        self.monitorWidget = CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
+        self.monitorDock.addWidget(self.monitorWidget)
+        self.plotWidgets["Monitor"] =  self.monitorWidget.graphicsView        
         self.histogramWidget = CoordinatePlotWidget(self)
         self.histogramDock.addWidget(self.histogramWidget)
         self.histogramView = self.histogramWidget.graphicsView
@@ -236,8 +243,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.plotWidgets["Timestamps"] =  self.graphicsView
         self.timestampWidget.autoRange()
         try:
-            if self.experimentName+'.pyqtgraph-dokareastate' in self.config:
-                self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dokareastate'])
+            if self.experimentName+'.pyqtgraph-dockareastate' in self.config:
+                self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
         except:
             pass # Ignore errors on restoring the state. This might happen after a new dock is added
         self.penicons = pens.penicons().penicons()
@@ -337,7 +344,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             yColumnName = 'y{0}'.format(index)
             rawColumnName = 'raw{0}'.format(index)
             trace.addColumn( yColumnName )
-            thisAveragePlottedTrace = Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, yColumn=yColumnName)
+            thisAveragePlottedTrace = PlottedTrace(trace, self.graphicsView, pens.penList, yColumn=yColumnName)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
             thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
@@ -460,10 +467,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     bottomColumnName = 'bottom{0}'.format(index)
                     trace.addColumn( topColumnName )
                     trace.addColumn( bottomColumnName )                
-                    plottedTrace = Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, 
-                                                    yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, rawColumn=rawColumnName) 
+                    plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index].plotname], pens.penList, 
+                                                yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, rawColumn=rawColumnName) 
                 else:                
-                    plottedTrace = Traceui.PlottedTrace(trace, self.graphicsView, pens.penList, yColumn=yColumnName, rawColumn=rawColumnName)               
+                    plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index]], pens.penList, 
+                                                yColumn=yColumnName, rawColumn=rawColumnName)               
                 xRange = self.generator.xRange()
                 if xRange:
                     self.graphicsView.setXRange( *xRange )     
@@ -471,7 +479,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 scanHeader = stringutilit.commentarize( self.scan.documentationString() )
                 self.plottedTraceList.append( plottedTrace )
             self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
-            self.plottedTraceList[0].trace.name = self.scan.settingsName
+            self.plottedTraceList[0].trace.name = ", ".join([self.scan.settingsName,self.scan.evalList[index].name])
             self.plottedTraceList[0].trace.vars.comment = ""
             self.plottedTraceList[0].trace.filenameCallback = functools.partial( self.plottedTraceList[0].traceFilename, self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated )
@@ -527,7 +535,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTimestampTrace.name = self.scan.settingsName
             self.currentTimestampTrace.vars.comment = ""
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
-            self.plottedTimestampTrace = Traceui.PlottedTrace(self.currentTimestampTrace,self.timestampView,pens.penList)
+            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.timestampView,pens.penList)
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
@@ -569,7 +577,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 
     def saveConfig(self):
         self.config[self.experimentName+'.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-        self.config[self.experimentName+'.pyqtgraph-dokareastate'] = self.area.saveState()
+        self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
         self.scanControlWidget.saveConfig()
         self.traceui.saveConfig()
         
