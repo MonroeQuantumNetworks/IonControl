@@ -34,6 +34,37 @@ class ColumnSpec(list):
         myElement.text = ", ".join( self )
         return myElement
     
+    @staticmethod
+    def fromXmlElement(element):
+        return ColumnSpec( element.text.split(", ") )
+    
+class TracePlotting(object):
+    def __init__(self, xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None,
+                 rawColumn=None):
+        self.xColumn = xColumn
+        self.yColumn = yColumn
+        self.topColumn = topColumn
+        self.bottomColumn = bottomColumn
+        self.heightColumn = heightColumn
+        self.rawColumn = rawColumn
+        self.fitFunction = None
+        
+    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn']
+
+class TracePlottingList(list):        
+    def toXmlElement(self, root):
+        myElement = ElementTree.SubElement(root, 'TracePlottingList', {})
+        for traceplotting in self:
+            traceplottingElement = ElementTree.SubElement(myElement, 'TracePlotting', dict( (name,getattr(traceplotting,name)) for name in TracePlotting.attrFields))
+            if traceplotting.fitFunction:
+                traceplotting.fitFunction.toXmlElement(traceplottingElement)
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        return ColumnSpec( element.text.split(", ") )    
+
+
 
 class Trace(object):
     
@@ -68,6 +99,7 @@ class Trace(object):
         self.dataChangedCallback = None # used to update the gui table
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
+        self.vars.tracePlottingList = TracePlottingList()
         
     @property
     def x(self):
@@ -234,7 +266,7 @@ class Trace(object):
             else:
                 data.append( map(float,line.split()) )
         root = ElementTree.fromstringlist(xmlstringlist)
-        columnspec = root.findall("./Variables/ColumnSpec")[0].text.split(", ")
+        columnspec = ColumnSpec.fromXmlElement(root.findall("./Variables/ColumnSpec")[0])
         for attr,d in zip( columnspec, zip(*data) ):
             setattr( self, attr, numpy.array(d) )
         
@@ -270,3 +302,6 @@ class Trace(object):
     
     def setPlotfunction(self, callback):
         self.plotfunction = callback
+        
+    def addTracePlotting(self, traceplotting):
+        self.vars.tracePlottingList.append(traceplotting)

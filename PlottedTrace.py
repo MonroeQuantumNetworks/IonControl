@@ -11,6 +11,7 @@ import numpy
 from modules import DataDirectory 
 import os.path
 from PyQt4 import QtGui
+from Trace import TracePlotting
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
@@ -45,6 +46,10 @@ class PlottedTrace(object):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
                 self.trace.addColumn( yColumn )
+        if self.trace:
+            self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
+                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn)
+            self.trace.addTracePlotting( self.tracePlotting )
      
     @property
     def hasTopColumn(self):
@@ -153,9 +158,9 @@ class PlottedTrace(object):
                 self.fitcurve = None
                 
     def plotFitfunction(self,penindex):
-        if hasattr(self.trace,'fitfunction'):
+        if self.fitFunction:
             self.fitx = numpy.linspace(numpy.min(self.x),numpy.max(self.x),300)
-            self.fity = self.trace.fitfunction.value(self.fitx)
+            self.fity = self.fitFunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
     def plotErrorBars(self,penindex):
@@ -217,5 +222,13 @@ class PlottedTrace(object):
             filename, components = directory.sequencefile( os.path.split(parentFilename)[1] )
             return filename
             
-            
+    @property
+    def fitFunction(self):
+        return self.tracePlotting.fitFunction if self.tracePlotting else None
+    
+    @fitFunction.setter
+    def fitFunction(self, fitfunction):
+        self.tracePlotting.fitFunction = fitfunction
+        
+
                 
