@@ -9,6 +9,8 @@ from scipy.optimize import leastsq
 import numpy
 from math import sqrt
 from modules import magnitude
+import xml.etree.ElementTree as ElementTree
+
 
 class FitFunctionBase(object):
     name = 'None'
@@ -77,3 +79,13 @@ class FitFunctionBase(object):
         
     def finalize(self,parameters):
         pass
+    
+    def toXmlElement(self, parent):
+        myroot  = ElementTree.SubElement(parent, 'FitFunction', {'name': self.name, 'functionString': self.functionString})
+        for name, value in zip(self.parameterNames,self.parameters):
+            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name})
+            e.text = str(value)
+        for name in self.constantNames:
+            e = ElementTree.SubElement( myroot, 'Constant', {'name':name})
+            e.text = str(getattr(self,name))
+        return myroot

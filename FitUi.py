@@ -123,7 +123,7 @@ class FitUi(fitForm, QtGui.QWidget):
             elif plot.hasTopColumn and plot.hasBottomColumn:
                 sigma = abs(plot.top + plot.bottom)
             params = functionui.fitfunction.leastsq(plot.x,plot.y,functionui.startParameters,sigma=sigma)
-            plot.trace.fitfunction = copy.deepcopy(functionui.fitfunction)
+            plot.fitFunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
             for i,(p,conf,relconf) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
                 functionui.fittedParametersUi[i].setValue(roundToStdDev(p,conf))
@@ -143,7 +143,7 @@ class FitUi(fitForm, QtGui.QWidget):
         functionui = self.fitFunctions[index]
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             functionui.fitfunction.parameters = functionui.startParameters
-            plot.trace.fitfunction = functionui.fitfunction
+            plot.fitFunction = functionui.fitfunction
             plot.plot(-2)
             functionui.fitfunction.finalize(functionui.fitfunction.parameters)
             for index, name in enumerate(functionui.fitfunction.resultNames):
@@ -151,7 +151,7 @@ class FitUi(fitForm, QtGui.QWidget):
                 
     def onRemoveFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
-            del plot.trace.fitfunction
+            plot.fitFunction = None
             plot.plot(-2)
     
     def onExtractFit(self):
@@ -159,16 +159,14 @@ class FitUi(fitForm, QtGui.QWidget):
         print "onExtractFit {0} plots selected".format(len(plots) )
         if plots:
             plot = plots[0]
-            print "extracting plot"
-            if hasattr( plot.trace, 'fitfunction'):
-                print "plot has fitfunction"
-                for i, function in enumerate(self.fitFunctions):
-                    if function.fitfunction.name == plot.trace.fitfunction.name:
-                        print "compare names {0} == {1}".format(function.fitfunction.name,plot.trace.fitfunction.name)
-                        self.comboBox.setCurrentIndex(i)
-                        function.fitfunction.parameters = plot.trace.fitfunction.parameters
-                        print "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name)
-                        self.fitFunctions[i].fittedParameterSetValue()                
+            fitFunction = plot.fitFunction
+            for i, function in enumerate(self.fitFunctions):
+                if function.fitfunction.name == fitFunction.name:
+                    print "compare names {0} == {1}".format(function.fitfunction.name,fitFunction.name)
+                    self.comboBox.setCurrentIndex(i)
+                    function.fitfunction.parameters = fitFunction.parameters
+                    print "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name)
+                    self.fitFunctions[i].fittedParameterSetValue()                
     
     def onCopy(self):
         index = self.stackedWidget.currentIndex()
