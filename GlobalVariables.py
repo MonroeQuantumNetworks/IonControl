@@ -47,6 +47,7 @@ class GlobalVariableUi(Form, Base ):
         self.tableView.setModel( self.model )
         self.tableView.setItemDelegateForColumn(1,MagnitudeSpinBoxDelegate()) 
         self.tableView.setSortingEnabled(True)
+        self.tableView.clicked.connect(self.onViewClicked)
 
         
     def onAddVariable(self):
@@ -58,6 +59,10 @@ class GlobalVariableUi(Form, Base ):
         
     def saveConfig(self):
         self.config[self.configname] = self._variables_
+
+    def onViewClicked(self,index):
+        """If one of the editable columns is clicked, begin to edit it."""
+        self.tableView.edit(index)
 
 if __name__=="__main__":
     import sys
