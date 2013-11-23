@@ -13,6 +13,8 @@ from datetime import datetime
 import os.path
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify
+import xml.dom.minidom as dom
+import io
 
 try:
     import FitFunctions
@@ -25,6 +27,13 @@ class Empty:
 
 class TraceException(Exception):
     pass
+
+class ColumnSpec(list):
+    def toXmlElement(self, root):
+        myElement = ElementTree.SubElement(root, 'ColumnSpec', {})
+        myElement.text = ", ".join( self )
+        return myElement
+    
 
 class Trace(object):
     
@@ -50,7 +59,6 @@ class Trace(object):
         self._x_ = numpy.array([]) #array of x values
         self._y_ = numpy.array([]) #array of y values
         self.name = "noname" #name to display in table of traces
-#        self.curve = None
         self.vars = Empty()
         self.vars.comment = ""
         self.vars.traceCreation = datetime.now()
@@ -149,8 +157,9 @@ class Trace(object):
         for var, value in sorted(self.vars.__dict__.iteritems()):
             if hasattr(value,'toXmlElement'):
                 value.toXmlElement(varsElement)
-            e = ElementTree.SubElement(varsElement, 'Element', {'name': var})
-            e.text = str(value)
+            else:
+                e = ElementTree.SubElement(varsElement, 'Element', {'name': var, 'type': type(value).__name__})
+                e.text = str(value)
         if self.header:
             e = ElementTree.SubElement(varsElement, 'Header', {})
             e.text = self.header        
@@ -189,7 +198,7 @@ class Trace(object):
         if filename!='':
             of = open(filename,'w')
             columnlist = [self._x_]
-            columnspec = ['x']
+            columnspec = ColumnSpec(['x'])
             if len(self._y_)>0:
                 columnlist += [self._y_]
                 columnspec += ['y']
@@ -197,7 +206,7 @@ class Trace(object):
                 if hasattr(self, column):
                     columnlist.append( getattr(self,column) )
                     columnspec.append( column )
-            self.vars.columnspec = ",".join(columnspec)
+            self.vars.columnspec = columnspec #",".join(columnspec)
             self.saveTraceHeaderXml(of)
             for l in zip(*columnlist):
                 print >>of, "\t".join(map(repr,l))
@@ -205,26 +214,48 @@ class Trace(object):
             of.close()
     
     def loadTrace(self,filename):
-        infile = open(filename,'r')
+        with io.open(filename,'r') as instream:
+            position = instream.tell()
+            firstline = instream.readline()
+            instream.seek(position)
+            if firstline.find("<?xml version")>0:
+                self.loadTraceXml(instream)
+            else:
+                self.loadTraceText(instream)
+        self.filename = filename
+
+        
+    def loadTraceXml(self, stream):
+        xmlstringlist = []
+        data = []
+        for line in stream:
+            if line[0]=="#":
+                xmlstringlist.append(line.lstrip("# "))
+            else:
+                data.append( map(float,line.split()) )
+        root = ElementTree.fromstringlist(xmlstringlist)
+        columnspec = root.findall("./Variables/ColumnSpec")[0].text.split(", ")
+        for attr,d in zip( columnspec, zip(*data) ):
+            setattr( self, attr, numpy.array(d) )
+        
+    def loadTraceText(self, stream):    
         data = []
         self.vars.columnspec = "x,y"
-        with infile:
-            for line in infile:
-                line = line.strip()
-                if line[0]=='#':
-                    line = line.lstrip('# \t\r\n')
-                    if line.find('\t')<0:
-                        a = line.split(None,1)
-                    else:
-                        a = line.split('\t',1)
-                    if len(a)>1:
-                        self.vars.__dict__[a[0]] = a[1]  
+        for line in stream:
+            line = line.strip()
+            if line[0]=='#':
+                line = line.lstrip('# \t\r\n')
+                if line.find('\t')<0:
+                    a = line.split(None,1)
                 else:
-                    data.append( map(float,line.split()) )
+                    a = line.split('\t',1)
+                if len(a)>1:
+                    self.vars.__dict__[a[0]] = a[1]  
+            else:
+                data.append( map(float,line.split()) )
         columnspec =  self.vars.columnspec.split(',')
         for attr,d in zip( columnspec, zip(*data) ):
             setattr( self, attr, numpy.array(d) )
-        self.filename = filename
         if hasattr(self.vars,'fitfunction') and FitFunctionsAvailable:
             self.fitfunction = FitFunctions.fitFunctionFactory(self.vars.fitfunction)
             
