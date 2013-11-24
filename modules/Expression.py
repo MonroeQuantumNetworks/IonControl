@@ -125,7 +125,6 @@ class Expression:
             except ValueError: # lets try whether it has a unit
                 fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
                 l = fmag.parseString(op)
-                #print l
                 m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
                 m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
                 return m

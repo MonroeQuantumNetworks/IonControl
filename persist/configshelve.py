@@ -17,6 +17,7 @@ from sqlalchemy.orm import sessionmaker
 import pickle
 from sqlalchemy import Column, Integer, String
 from shutil import copyfile
+import logging
 
 Base = declarative_base()
 defaultcategory = 'main'
@@ -100,7 +101,7 @@ class configshelve:
             return default
         
     def next(self):
-        print "__next__ not implemented"
+        logging.getLogger(__name__).error("__next__ not implemented")
         
     def open(self):
         Base.metadata.create_all(self.engine)
