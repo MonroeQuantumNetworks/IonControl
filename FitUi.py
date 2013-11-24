@@ -14,6 +14,7 @@ import copy
 import MagnitudeSpinBox
 from modules.round import roundToNDigits
 from modules.round import roundToStdDev
+from itertools import izip_longest
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -30,10 +31,11 @@ class FitFunctionUi(object):
         self.parametersConfidenceLabel  = [None]* len(fitfunction.parameters)
         
     def fittedParameterSetValue(self):
-        for i,(p,conf) in enumerate(zip(self.fitfunction.parameters,self.fitfunction.parametersConfidence)):
+        for i,(p,conf) in enumerate(izip_longest(self.fitfunction.parameters,self.fitfunction.parametersConfidence)):
             self.fittedParametersUi[i].setValue(p)
             print repr(roundToNDigits(conf,2))
-            self.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2)))
+            if conf:
+                self.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2)))
 
     def startParameterSetValue(self):
         for i,p in enumerate(self.fitfunction.startParameters):
@@ -165,6 +167,7 @@ class FitUi(fitForm, QtGui.QWidget):
                     print "compare names {0} == {1}".format(function.fitfunction.name,fitFunction.name)
                     self.comboBox.setCurrentIndex(i)
                     function.fitfunction.parameters = fitFunction.parameters
+                    function.fitfunction.parametersConfidence = fitFunction.parametersConfidence
                     print "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name)
                     self.fitFunctions[i].fittedParameterSetValue()                
     

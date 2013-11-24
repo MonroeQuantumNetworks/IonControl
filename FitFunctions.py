@@ -237,11 +237,13 @@ def fromXmlElement(element):
     Creates a FitFunction Object from a saved string representation
     """
     name = element.attrib['name']
-    function = fitFunctionMap[name]()        
+    function = fitFunctionMap[name]()
+    function.parametersConfidence = [None]*len(function.parameters)
     for index, parameter in enumerate(element.findall("Parameter")):
         value = float(parameter.text)
         function.parameters[index] = value
         function.parameterNames[index] = parameter.attrib['name']
+        function.parametersConfidence[index] = float(parameter.attrib['confidence'])
     for index, parameter in enumerate(element.findall("Constant")):
         value = float(parameter.text)
         setattr( function, parameter.attrib['name'], value ) 

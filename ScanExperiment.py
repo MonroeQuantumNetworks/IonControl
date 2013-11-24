@@ -228,7 +228,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.mainDock.addWidget(self.graphicsWidget)
         self.graphicsView = self.graphicsWidget.graphicsView
         self.plotWidgets["Scan data"] =  self.graphicsView
-        self.plotWidgets[None] =  self.graphicsView      # this is the default plotwindow
         self.monitorWidget = CoordinatePlotWidget(self) # self.graphicsLayout.graphicsView
         self.monitorDock.addWidget(self.monitorWidget)
         self.plotWidgets["Monitor"] =  self.monitorWidget.graphicsView        
@@ -262,6 +261,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
         self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotWidgets.keys() )
+        self.plotWidgets[None] =  self.graphicsView      # this is the default plotwindow
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
         self.scanControlWidget.scansAveraged.hide()

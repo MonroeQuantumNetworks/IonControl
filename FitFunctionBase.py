@@ -10,7 +10,7 @@ import numpy
 from math import sqrt
 from modules import magnitude
 import xml.etree.ElementTree as ElementTree
-
+from itertools import izip_longest
 
 class FitFunctionBase(object):
     name = 'None'
@@ -82,10 +82,11 @@ class FitFunctionBase(object):
     
     def toXmlElement(self, parent):
         myroot  = ElementTree.SubElement(parent, 'FitFunction', {'name': self.name, 'functionString': self.functionString})
-        for name, value in zip(self.parameterNames,self.parameters):
-            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name})
+        for name, value, confidence in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence):
+            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence)})
             e.text = str(value)
         for name in self.constantNames:
             e = ElementTree.SubElement( myroot, 'Constant', {'name':name})
             e.text = str(getattr(self,name))
+           
         return myroot
