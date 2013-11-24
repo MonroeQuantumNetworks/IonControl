@@ -17,6 +17,7 @@ from modules import magnitude
 import sip
 import sys
 import traceback
+import logging
 
 debug = False
 api2 = sip.getapi("QString")==2
@@ -55,7 +56,6 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             self._dimension = self._dimension.sunit2mag(dim)
         
     def validate(self, inputstring, pos):
-        #print "validate"
         try:
             value = self.expression.evaluateAsMagnitude(str(inputstring))
             if api2:
@@ -83,9 +83,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     def stepBy(self, steps ):
         try:
             lineEdit = self.lineEdit()
-            #print steps, lineEdit.cursorPosition()
             value, delta, pos, decimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
-            #print value, delta
             newvalue = value + (steps * delta)
             newvalue.ounit( value.out_unit )
             newvalue.output_prec( value.oprec )
@@ -95,17 +93,15 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             self.valueChanged.emit( newvalue )
         except Exception:
             pass
-            #print e
             
         
     def interpretText(self):
-        print "interpret text"
+        logging.getLogger(__name__).debug("interpret text")
         
     def fixup(self,inputstring):
-        print "fixup" , inputstring
+        logging.getLogger(__name__).debug("fixup '{0}'".format(inputstring))
         
     def stepEnabled(self):
-        #print "stepEnabled"
         return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
         
     def value(self):
@@ -115,9 +111,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
                 raise DimensionMismatch("Got unit {0} excpeted {1}".format(value.unit,self._dimension.unit))
         except Exception as e:
             self.lineEdit().setPalette( self.redTextPalette )
-            ex_type, ex, tb = sys.exc_info()
-            traceback.print_tb(tb)
-            del tb
+            logger.exception("value")
             raise e
         self.lineEdit().setPalette( self.blackTextPalette )
         return value
@@ -138,7 +132,6 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return size
  
 #    def makeDrag(self):
-#        print "makeDrag"
 #        dr = QtGui.QDrag(self)
 #        # The data to be transferred by the drag and drop operation is contained in a QMimeData object
 #        data = QtCore.QMimeData()
@@ -149,18 +142,15 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
 #        dr.start()
 # 
 #    def dragMoveEvent(self, de):
-#        print "dragMove"
 #        # The event needs to be accepted here
 #        de.accept()
 #
 #    def dragEnterEvent(self, event):
-#        print "dragEnterEvent"
 #        # Set the drop action to be the proposed action.
 #        event.acceptProposedAction()
 #
 #    def dropEvent(de):
 #        # Unpack dropped data and handle it the way you want
-#        print "Contents: {0}".format(de.mimeData().text().toLatin1().data())
        
         
 if __name__ == "__main__":

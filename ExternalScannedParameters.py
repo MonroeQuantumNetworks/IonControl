@@ -12,10 +12,12 @@ import modules.magnitude as magnitude
 import math
 from pyqtgraph.parametertree import Parameter
 from PyQt4 import QtCore
+import logging
+
 try:
     import visa
 except:
-    print "visa loading failed. Proceeding without."
+    logging.getLogger(__name__).info( "visa loading failed. Proceeding without." )
     
     
     
@@ -98,9 +100,10 @@ class ExternalParameterBase(object):
         """
         update the parameter, called by the signal of pyqtgraph parametertree
         """
-        print "ExternalParameterBase.update"
+        logger = logging.getLogger(__name__)
+        logger.debug( "ExternalParameterBase.update" )
         for param, change, data in changes:
-            print self, "update", param.name(), data
+            logger.debug( " ".join( [str(self), "update", param.name(), str(data)] ) )
             setattr( self.settings, param.name(), data)
             
     def close(self):
@@ -114,10 +117,11 @@ class N6700BPowerSupply(ExternalParameterBase):
     className = "N6700 Powersupply"
     dimension = magnitude.mg(1,'A')
     def __init__(self,name,config,instrument="QGABField"):
+        logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
-        print "trying to open '{0}'".format(instrument)
+        logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = visa.instrument(instrument) #open visa session
-        print "opend {0}".format(instrument)
+        logger.info( "opend {0}".format(instrument) )
         self.setDefaults()
         self.value = self._getValue()
 
@@ -252,7 +256,6 @@ class LaserVCOScan(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         self.powersupply = visa.instrument(instrument)#open visa session
         self.savedValue = magnitude.mg( float(self.powersupply.ask("volt?")), 'V')
-        print "LaserVCOScan savedValue", self.savedValue
         self.value = self.savedValue
         self.setDefaults()
     
@@ -267,7 +270,8 @@ class LaserVCOScan(ExternalParameterBase):
         """
         self.powersupply.write("volt {0}".format(value.toval('V')))
         self.value = value
-        print "setValue volt {0}".format(value.toval('V'))
+        logger = logging.getLogger(__name__)
+        logger.debug( "setValue volt {0}".format(value.toval('V')) )
             
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
@@ -295,7 +299,7 @@ class LaserWavemeterScan(LaserVCOScan):
 
     def currentExternalValue(self):
         self.lastExternalValue = self.wavemeter.get_frequency(self.channel) 
-        print self.lastExternalValue
+        logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)
         counter = 0
         while numpy.abs(self.detuning)>=1 and counter<10:
@@ -315,10 +319,11 @@ class LaserWavemeterLockScan(ExternalParameterBase):
     className = "Laser Wavemeter Lock"
     dimension = magnitude.mg(1,'GHz')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
+        logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
         self.wavemeter = WavemeterGetFrequency()
         self.savedValue = 0
-        print "LaserWavemeterScan savedValue", self.savedValue
+        logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
         self.value = self.savedValue
         self.channel = 6
     
@@ -326,6 +331,7 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         """
         Move one steps towards the target, return current value
         """
+        logger = logging.getLogger(__name__)
         if isinstance(value,magnitude.Magnitude):
             myvalue = value.ounit("GHz").toval()
         else:
@@ -333,16 +339,17 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         
         self.wavemeter.set_frequency(myvalue, self.channel)
         self.value = myvalue
-        print "setValue", self.value 
+        logger.debug( "setValue {0}".format(self.value) )
         ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"GHz") )
         return numpy.abs(self.wavemeter.get_frequency(self.channel)-self.value)<.005
            
                 
     def currentExternalValue(self):
+        logger = logging.getLogger(__name__)
 #        self.lastExternalValue = self.wavemeter.get_frequency(4)
 #        while self.lastExternalValue <=0:
         self.lastExternalValue = self.wavemeter.get_frequency(self.channel) 
-        print self.lastExternalValue
+        logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)
         counter = 0
         while numpy.abs(self.detuning)>=1 and counter<10:
@@ -354,7 +361,6 @@ class LaserWavemeterLockScan(ExternalParameterBase):
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
-        #print superior
         return superior
 
     def saveValue(self):
@@ -370,8 +376,9 @@ class DummyParameter(ExternalParameterBase):
     className = "Dummy"
     dimension = magnitude.mg(1,'kHz')
     def __init__(self,name,settings,instrument=''):
+        logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,settings)
-        print "Opening DummyInstrument", instrument
+        logger.info( "Opening DummyInstrument {0}".format(instrument) )
         self.setDefaults()
         self.settings.value = magnitude.mg( 12, 'kHz')
         self.savedValue = self.settings.value
@@ -383,7 +390,8 @@ class DummyParameter(ExternalParameterBase):
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
    
     def _setValue(self,value):
-        print "Dummy output set to:", value
+        logger = logging.getLogger(__name__)
+        logger.debug( "Dummy output set to: {0}".format( value ) )
         self.value = value
          
     def paramDef(self):

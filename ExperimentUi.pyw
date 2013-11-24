@@ -16,6 +16,7 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QTime",2)
 #sip.setapi("QUrl",2)
 
+import LoggingSetup
 import MagnitudeParameter
 import ScanExperiment
 import ExternalScanExperiment
@@ -43,17 +44,7 @@ import VoltageControl
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
 import argparse
-
-class Logger(QtCore.QObject):    
-    textWritten = QtCore.pyqtSignal(str)
-    def __init__(self):
-        QtCore.QObject.__init__(self)
-        self.terminal = sys.stdout
-        self.terminal
-    
-    def write(self, message):
-        self.terminal.write(message)
-        self.textWritten.emit(str(message))
+import logging
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -75,6 +66,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         return False
     
     def setupUi(self, parent):
+        logger = logging.getLogger(__name__)
         super(WidgetContainerUi,self).setupUi(parent)
         self.toolBar.addWidget(ExceptionLogButton())
         
@@ -120,7 +112,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config)
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
-        print "ShutterUi representation:", repr(self.shutterUi)
+        logger.debug( "ShutterUi representation:" + repr(self.shutterUi) )
 
         self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config)
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
@@ -204,8 +196,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.currentTab.onClear()
     
     def onSave(self):
+        logger = logging.getLogger(__name__)
         self.currentTab.onSave()
-        print "Saving config"
+        logger.info( "Saving config" )
         filename, components = DataDirectory.DataDirectory().sequencefile("configuration.db")
         self.config.saveConfig(filename)
     
@@ -225,7 +218,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             self.statusbar.showMessage("continue not implemented")    
             
     def onReload(self):
-        print "OnReload"
+        logger = logging.getLogger(__name__)
+        logger.debug( "OnReload" )
         self.currentTab.onReload()
     
     def onCurrentChanged(self, index):
@@ -263,9 +257,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.textEditConsole.ensureCursorVisible()
         
     def closeEvent(self,e):
-        print "Saving Configuration"
+        logger = logging.getLogger(__name__)
+        logger.debug( "Saving Configuration" )
         self.saveConfig()
-        print "closeEvent"
         for tab in self.tabList:
             tab.onClose()
         self.saveConfig()
@@ -311,17 +305,11 @@ if __name__ == "__main__":
     parser.add_argument('--project',type=str,default=None,help='project name')
     args = parser.parse_args()
     app = QtGui.QApplication(sys.argv)
-    logger = Logger()    
-    sys.stdout = logger
-    sys.stderr = logger
-    
+
+    logger = logging.getLogger("")
     # the next two lines migrate old pickle files to use the new magnitude module
     import modules.magnitude as magnitude
     sys.modules['magnitude'] = magnitude
-
-#    import warnings
-#    with warnings.catch_warnings():
-#        warnings.simplefilter("error")
 
     project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
     
@@ -331,8 +319,8 @@ if __name__ == "__main__":
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
             with WidgetContainerUi(config) as ui:
                 ui.setupUi(ui)
-                logger.textWritten.connect(ui.onMessageWrite)
+                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()
                 sys.exit(app.exec_())
     else:
-        print "No project selected. Nothing I can do about that ;)"
+        logger.warning( "No project selected. Nothing I can do about that ;)" )
