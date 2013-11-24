@@ -48,7 +48,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     
     @dimension.setter
     def dimension(self, dim):
-        if isinstance(dim, magnitude.Magnitude):
+        if isinstance(dim, magnitude.Magnitude) or dim is None:
             self._dimension = dim
         else:
             self._dimension = magnitude.Magnitude(1)

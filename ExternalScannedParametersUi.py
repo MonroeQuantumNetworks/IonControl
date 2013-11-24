@@ -42,6 +42,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
             return { (QtCore.Qt.DisplayRole,0): self.names[index.row()],
                      (QtCore.Qt.DisplayRole,1): str(self.targetValues[index.row()]),
                      (QtCore.Qt.EditRole,1): str(self.targetValues[index.row()]),
+                     (QtCore.Qt.UserRole,1): self.parameterList[index.row()].dimension,
                      (QtCore.Qt.DisplayRole,2): str(self.externalValues[index.row()]),
                      (QtCore.Qt.ToolTipRole,2): str(self.toolTips[index.row()]),
                      }.get((role,index.column()),None)

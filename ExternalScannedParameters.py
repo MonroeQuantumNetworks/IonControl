@@ -25,6 +25,7 @@ def nextValue( current, target, stepsize, jump ):
             
 
 class ExternalParameterBase(object):
+    dimension = None
     def __init__(self,name,settings):
         self.name = name
         self.settings = settings
@@ -111,6 +112,7 @@ class N6700BPowerSupply(ExternalParameterBase):
     Adjust the current on the N6700B current supply
     """
     className = "N6700 Powersupply"
+    dimension = magnitude.mg(1,'A')
     def __init__(self,name,config,instrument="QGABField"):
         ExternalParameterBase.__init__(self,name,config)
         print "trying to open '{0}'".format(instrument)
@@ -159,6 +161,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
     currentValue and currentExternalValue are current frequency of synthesizer
     """
     className = "Laser Lock Synthesizer"
+    dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         #self.amplitudeString = "Z0K1L6O1"
@@ -209,6 +212,7 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
     Scan the microwave frequency of microwave synthesizer 
     """
     className = "Microwave Synthesizer"
+    dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
@@ -243,6 +247,7 @@ class LaserVCOScan(ExternalParameterBase):
     currentValue and currentExternalValue are current applied voltage
     """
     className = "Laser VCO"
+    dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         ExternalParameterBase.__init__(self,name,config)
         self.powersupply = visa.instrument(instrument)#open visa session
@@ -282,6 +287,7 @@ class LaserWavemeterScan(LaserVCOScan):
     """
     
     className = "Laser VCO Wavemeter"
+    dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         LaserVCOScan.__init__(self,name,config,instrument)
         self.wavemeter = WavemeterGetFrequency()
@@ -307,6 +313,7 @@ class LaserWavemeterLockScan(ExternalParameterBase):
     """
     
     className = "Laser Wavemeter Lock"
+    dimension = magnitude.mg(1,'GHz')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         ExternalParameterBase.__init__(self,name,config)
         self.wavemeter = WavemeterGetFrequency()
@@ -361,6 +368,7 @@ class DummyParameter(ExternalParameterBase):
     DummyParameter, used to debug this part of the software.
     """
     className = "Dummy"
+    dimension = magnitude.mg(1,'kHz')
     def __init__(self,name,settings,instrument=''):
         ExternalParameterBase.__init__(self,name,settings)
         print "Opening DummyInstrument", instrument
