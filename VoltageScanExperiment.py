@@ -18,6 +18,7 @@ import ScanExperiment
 import time
 from PyQt4 import QtCore
 from modules import enum
+import logging
 
 class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
     Status = enum.enum('Idle','Starting','Running','Stopping')
@@ -57,6 +58,7 @@ class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
             self.plottedTrace = None #reset plotted trace
         
     def startBottomHalf(self):
+        logger = logging.getLogger(__name__)
         if self.status == self.Status.Starting:
             if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
                 """We are done adjusting"""
@@ -64,19 +66,20 @@ class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
                 self.currentIndex = 0
                 self.updateProgressBar(0,max(len(self.scan.list),1))
                 self.timestampsNewRun = True
-                print "elapsed time", time.time()-self.startTime
+                logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
                 self.status = self.Status.Running
-                print "Status -> Running"
+                logger.info( "Status -> Running" )
             else:
                 QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
     def onStop(self):
-        print "Old Status", self.status
+        logger = logging.getLogger(__name__)        
+        logger.debug( "Old Status {0}".format( self.status ) )
         if self.status in [self.Status.Starting, self.Status.Running]:
             ScanExperiment.ScanExperiment.onStop(self)
             self.status = self.Status.Stopping
             self.stopBottomHalf()
-            print "Status -> Stopping"
+            logger.info( "Status -> Stopping" )
             self.finalizeData(reason='stopped')
             self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
 
@@ -92,11 +95,11 @@ class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
     def onData(self, data ):
         """ Called by worker with new data
         """
-        print "NewExternalScan onData", len(data.count[self.scan.counterChannel]), data.scanvalue
+        logger = logging.getLogger(__name__)
+        logger.info( "NewExternalScan onData {0} {1}".format( len(data.count[self.scan.counterChannel]), data.scanvalue ) )
         mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
         self.displayUi.add( mean )
         x = self.generator.xValue(self.externalParameterIndex)
-        print "data", x, mean 
         if mean is not None:
             self.updateMainGraph(x, mean, error, raw)
         self.currentIndex += 1
@@ -107,7 +110,7 @@ class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
         if self.externalParameterIndex<len(self.scan.list) and self.status==self.Status.Running:
             self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
             self.pulserHardware.ppStart()
-            print "External Value:" , self.scan.list[self.externalParameterIndex]
+            logger.info( "External Value: {0}".format( self.scan.list[self.externalParameterIndex] ) )
         else:
             self.finalizeData(reason='end of scan')
             if self.externalParameterIndex >= len(self.scan.list):

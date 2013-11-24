@@ -5,6 +5,7 @@ Created on Tue Mar 19 23:14:52 2013
 @author: pmaunz
 """
 from Chassis.itfParser import itfParser
+import logging
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -13,7 +14,8 @@ try:
 
     HardwareDriverLoaded = True
 except ImportError as e:
-    print "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e)
+    logger = logging.getLogger(__name__)
+    logger.error( "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e) )
     HardwareDriverLoaded = False
 
 from Chassis import DAQmxUtility     
@@ -66,18 +68,12 @@ class VoltageBlender(QtCore.QObject):
         self.mappingpath = path
         self.electrodes, self.aoNums, self.dsubNums = self.itf._getEmapData()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
-        #print "VoltageBlender emit"
-        #print "electrodes", self.electrodes
-        #print "aoNums", self.aoNums
-        #print "dsubNums", self.dsubNums
     
     def loadVoltage(self,path):
         self.itf.open(path)
-        #print "Number of lines in file", self.itf.getNumLines()
         self.lines = list()
         for i in range(self.itf.getNumLines()):
             line = self.itf.eMapReadLine() 
-            #print "line",i,line
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
             self.lines.append( line )
@@ -110,23 +106,23 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
+        logger = logging.getLogger(__name__)
         line = self.blendLines(lineno,lineGain)
         self.lineGain = lineGain
         self.globalGain = globalGain
         self.lineno = lineno
         line = self.adjustLine( line )
         line *= self.globalGain
-        #print "writeAoBuffer", line
         try:
             if HardwareDriverLoaded:
                 self.chassis.writeAoBuffer(line)
                 self.chassis.writeDoBuffer(self.DoLine)
             else:
-                print "Hardware Driver not loaded, cannot write voltages"
+                logger.error( "Hardware Driver not loaded, cannot write voltages" )
             self.outputVoltage = line
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         except PyDAQmx.DAQmxFunctions.DAQError as e:
-            print e
+            logger.exception("Exception")
             outOfRange = line>10
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
