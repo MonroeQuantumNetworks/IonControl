@@ -114,12 +114,7 @@ class SquareRabiFit(FitFunctionBase):
         T, C, A, O = self.parameters if p is None else p
         Rs = numpy.square(2*numpy.pi/T)
         Ds = numpy.square(2*numpy.pi*(x-C))
-        print T, C, A, O
-        print Rs
-        print Ds
         part = numpy.sqrt(Rs+Ds)*self.t/2.
-        print part
-        print numpy.cos, numpy.sin, numpy.sqrt
         return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))+O
     
 
@@ -222,13 +217,10 @@ def fitFunctionFactory(text):
     for index, arg in enumerate(components[2:]):
         value = float(arg.split('=')[1].strip())
         function.parameters[index] = value
-    print parts
     if len(parts)>1 and len(parts[1])>0:
         components = parts[1].split(',')
         for item in components:
-            print item
             name, value = item.split('=')
-            print "'{0}' '{1}' '{2}'".format(item,name.strip(),value.strip())
             setattr(function, name.strip(), MagnitudeParser.parse(value.strip()))
     return function
 

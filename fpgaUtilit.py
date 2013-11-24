@@ -4,6 +4,7 @@
 
 import ok
 from PyQt4 import QtCore
+import logging
 
 ModelStrings = {
 		0: 'Unknown',
@@ -129,8 +130,9 @@ class FPGAUtilit:
             return self.xem
 
     def openBySerial(self,serial):
+    	logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.Mutex):
-            print "Open Serial",serial
+            logger.info( "Open Serial {0}".format(serial) )
             if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:
                 self.xem = ok.FrontPanel()
                 check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )

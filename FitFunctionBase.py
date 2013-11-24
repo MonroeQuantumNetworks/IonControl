@@ -11,6 +11,7 @@ from math import sqrt
 from modules import magnitude
 import xml.etree.ElementTree as ElementTree
 from itertools import izip_longest
+import logging
 
 class FitFunctionBase(object):
     name = 'None'
@@ -24,13 +25,14 @@ class FitFunctionBase(object):
         self.RMSres = 0
 
     def leastsq(self, x, y, parameters=None, sigma=None):
+        logger = logging.getLogger(__name__)
         if parameters is None:
             parameters = self.parameters
         #self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn)
         
         self.parameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, parameters, args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
         self.finalize(self.parameters)
-        print "chisq", sum(self.infodict["fvec"]*self.infodict["fvec"])        
+        logger.info( "chisq {0}".format( sum(self.infodict["fvec"]*self.infodict["fvec"]) ) )        
         
         # calculate final chi square
         self.chisq=sum(self.infodict["fvec"]*self.infodict["fvec"])
@@ -39,12 +41,11 @@ class FitFunctionBase(object):
         self.RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
         self.RMSres.significantDigits = 3
         # chisq, sqrt(chisq/dof) agrees with gnuplot
-        print "success", self.ier
-        print "Converged with chi squared ",self.chisq
-        print "degrees of freedom, dof ", self.dof
-        print "RMS of residuals (i.e. sqrt(chisq/dof)) ", self.RMSres
-        print "Reduced chisq (i.e. variance of residuals) ", self.chisq/self.dof
-        print
+        logger.info(  "success {0}".format( self.ier ) )
+        logger.info(  "Converged with chi squared {0}".format(self.chisq) )
+        logger.info(  "degrees of freedom, dof {0}".format( self.dof ) )
+        logger.info(  "RMS of residuals (i.e. sqrt(chisq/dof)) {0}".format( self.RMSres ) )
+        logger.info(  "Reduced chisq (i.e. variance of residuals) {0}".format( self.chisq/self.dof ) )
         
         # uncertainties are calculated as per gnuplot, "fixing" the result
         # for non unit values of the reduced chisq.
@@ -52,21 +53,22 @@ class FitFunctionBase(object):
         if self.cov_x is not None:
             self.parametersConfidence = numpy.sqrt(numpy.diagonal(self.cov_x))*sqrt(self.chisq/self.dof)
             self.parametersRelConfidence = self.parametersConfidence/numpy.abs(self.parameters)*100
-            print "Fitted parameters at minimum, with 68% C.I.:"
+            logger.info(  "Fitted parameters at minimum, with 68% C.I.:" )
             for i,pmin in enumerate(self.parameters):
-                print "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(self.cov_x[i,i])*sqrt(self.chisq/self.dof))
-            print
+                logger.info(  "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(self.cov_x[i,i])*sqrt(self.chisq/self.dof)) )
         
-        print "Correlation matrix"
+        logger.info(  "Correlation matrix" )
         # correlation matrix close to gnuplot
-        print "               ",
-        for i in range(len(self.parameters)): print "%-10s"%(self.parameterNames[i],),
-        print
+        messagelist = ["               "]
+        for i in range(len(self.parameters)): messagelist.append( "%-10s"%(self.parameterNames[i],) )
+        logger.info( " ".join(messagelist))
+        messagelist = []
         for i in range(len(self.parameters)):
-            print "%10s"%self.parameterNames[i],
+            messagelist.append( "%10s"%self.parameterNames[i] )
             for j in range(i+1):
-                print "%10f"%(self.cov_x[i,j]/sqrt(self.cov_x[i,i]*self.cov_x[j,j]),),
-            print
+                messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(self.cov_x[i,i]*self.cov_x[j,j]),) )
+            logger.info( " ".join(messagelist))
+
             #-----------------------------------------------
         return self.parameters
                 

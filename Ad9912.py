@@ -6,6 +6,7 @@ Created on Tue Feb 19 14:53:26 2013
 """
 
 import math
+import logging
 from fpgaUtilit import check
 
 class Ad9912Exception(Exception):
@@ -33,7 +34,7 @@ class Ad9912:
         self.sendCommand(channel, 2, intAmplitude & 0x3ff )
         
     def sendCommand(self, channel, cmd, data):
-        #print "Ad9912.sendCommand", hex(channel), hex(cmd), hex(data)
+        logger = logging.getLogger(__name__)
         if self.pulser:
             check( self.pulser.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
             check( self.pulser.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
@@ -42,25 +43,25 @@ class Ad9912:
             check( self.pulser.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
             self.pulser.UpdateWireIns()
         else:
-            print "Pulser not available"
+            logger.error( "Pulser not available" )
         
     def update(self, channelmask):
-        #print "Apply DDS settings"
+        logger = logging.getLogger(__name__)
         if self.pulser:
             check( self.pulser.SetWireInValue(0x08, channelmask & 0x3f), "Ad9912 apply" )
             self.pulser.UpdateWireIns()
             self.pulser.ActivateTriggerIn(0x41,2)
         else:
-            print "Pulser not available"
+            logger.error( "Pulser not available" )
         
     def reset(self, mask):
-        #print "Resetting DDS"
+        logger = logging.getLogger(__name__)
         if self.pulser:
             if mask & 0x3: check( self.pulser.ActivateTriggerIn(0x42,0), "DDS Reset board 0" )
             if mask & 0xc: check( self.pulser.ActivateTriggerIn(0x42,1), "DDS Reset board 1" )
             if mask & 0x30: check( self.pulser.ActivateTriggerIn(0x42,2), "DDS Reset board 2" )
         else:
-            print "Pulser not available"
+            logger.error( "Pulser not available" )
 
         
 if __name__ == "__main__":

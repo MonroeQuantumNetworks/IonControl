@@ -15,6 +15,7 @@ import MagnitudeSpinBox
 from modules.round import roundToNDigits
 from modules.round import roundToStdDev
 from itertools import izip_longest
+import logging
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -31,9 +32,9 @@ class FitFunctionUi(object):
         self.parametersConfidenceLabel  = [None]* len(fitfunction.parameters)
         
     def fittedParameterSetValue(self):
+        logger = logging.getLogger(__name__)
         for i,(p,conf) in enumerate(izip_longest(self.fitfunction.parameters,self.fitfunction.parametersConfidence)):
             self.fittedParametersUi[i].setValue(p)
-            print repr(roundToNDigits(conf,2))
             if conf:
                 self.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2)))
 
@@ -68,7 +69,6 @@ class FitUi(fitForm, QtGui.QWidget):
             label.setWordWrap(True)
             fitfunction.gridLayout.addWidget(label, 0, 0, 1, 3)
             self.comboBox.addItem(fitfunction.fitfunction.name)
-            #print fitfunction.fitfunction.startParameters
             for line, paramname in enumerate(fitfunction.fitfunction.parameterNames):
                 label = QtGui.QLabel(paramname,fitfunction.page)
                 label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -116,8 +116,6 @@ class FitUi(fitForm, QtGui.QWidget):
     def onFit(self):
         index = self.stackedWidget.currentIndex()
         functionui = self.fitFunctions[index]
-        for name, value in zip(functionui.fitfunction.parameterNames, functionui.startParameters):
-            print name, value
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             sigma = None
             if plot.hasHeightColumn:
@@ -157,18 +155,19 @@ class FitUi(fitForm, QtGui.QWidget):
             plot.plot(-2)
     
     def onExtractFit(self):
+        logger = logging.getLogger(__name__)
         plots = self.traceui.selectedPlottedTraces(defaultToLastLine=True)
-        print "onExtractFit {0} plots selected".format(len(plots) )
+        logger.error( "onExtractFit {0} plots selected".format(len(plots) ) )
         if plots:
             plot = plots[0]
             fitFunction = plot.fitFunction
             for i, function in enumerate(self.fitFunctions):
                 if function.fitfunction.name == fitFunction.name:
-                    print "compare names {0} == {1}".format(function.fitfunction.name,fitFunction.name)
+                    logger.debug( "compare names {0} == {1}".format(function.fitfunction.name,fitFunction.name) )
                     self.comboBox.setCurrentIndex(i)
                     function.fitfunction.parameters = fitFunction.parameters
                     function.fitfunction.parametersConfidence = fitFunction.parametersConfidence
-                    print "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name)
+                    logger.info( "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name) )
                     self.fitFunctions[i].fittedParameterSetValue()                
     
     def onCopy(self):

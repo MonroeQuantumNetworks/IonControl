@@ -13,6 +13,7 @@ from ExternalScannedParameters import ExternalScannedParameters
 from ExternalParameterTableModel import ExternalParameterTableModel 
 from modules.PyqtUtility import updateComboBoxItems
 import functools
+import logging
 
 def unique(seq):
     seen = set()
@@ -55,12 +56,13 @@ class SelectionUi(SelectionForm,SelectionBase):
 
                     
     def onAddParameter(self):
+        logger = logging.getLogger(__name__)
         name = str(self.nameEdit.currentText())
         if name in self.disabledParametersCache:
             parameter = self.disabledParametersCache[name]
             if str(self.instrumentLineEdit.text()):
                 parameter.instrument = str(self.instrumentLineEdit.text())
-            print "Parameter from cache"
+            logger.debug( "Parameter from cache" )
         else:
             parameter = EnabledParameter()
             parameter.instrument = str(self.instrumentLineEdit.text())
@@ -93,7 +95,8 @@ class SelectionUi(SelectionForm,SelectionBase):
         updateComboBoxItems( self.nameEdit, self.disabledParametersCache.keys() )
         
     def onActiveInstrumentChanged(self, modelIndex, modelIndex2 ):
-        print modelIndex.row()
+        logger = logging.getLogger(__name__)
+        logger.debug( "activeInstrumentChanged {0}".format( modelIndex.row() ) )
         self.treeWidget.setParameters( self.enabledParametersObjects[self.parameterTableModel.parameterList[modelIndex.row()].name].parameter )
         
     def saveConfig(self):

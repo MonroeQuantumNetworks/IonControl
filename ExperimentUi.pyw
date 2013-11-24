@@ -257,7 +257,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.textEditConsole.ensureCursorVisible()
         
     def closeEvent(self,e):
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
         for tab in self.tabList:

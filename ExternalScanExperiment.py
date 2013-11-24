@@ -19,6 +19,7 @@ import time
 import ExternalScannedParameters
 from PyQt4 import QtCore
 from modules import enum
+import logging
 
 class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def __init__(self,settings,pulserHardware,experimentName,parent=None):
@@ -59,6 +60,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             QtCore.QTimer.singleShot(100,self.startBottomHalf)
            
     def startBottomHalf(self):
+        logger = logging.getLogger(__name__)
         if self.state == self.OpStates.starting:
             if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
                 """We are done adjusting"""
@@ -66,49 +68,52 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 self.currentIndex = 0
                 self.updateProgressBar(0,max(len(self.scan.list),1))
                 self.timestampsNewRun = True
-                print "elapsed time", time.time()-self.startTime
+                logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
                 self.state = self.OpStates.running
-                print "Status -> Running"
+                logger.info( "Status -> Running" )
                 self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
             else:
                 QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
     def onStop(self):
-        print "Old Status", self.state
+        logger = logging.getLogger(__name__)
+        logger.debug( "Old Status {0}".format( self.state ) )
         if self.state in [self.OpStates.starting, self.OpStates.running]:
             ScanExperiment.ScanExperiment.onStop(self)
             self.state = self.OpStates.stopping
-            print "Status -> Stopping"
+            logger.info( "Status -> Stopping" )
             self.stopBottomHalf()
             self.finalizeData(reason='stopped')
             self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
 
                     
     def stopBottomHalf(self):
+        logger = logging.getLogger(__name__)
         if self.state==self.OpStates.stopping:
             if not self.externalParameter.restoreValue():
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
                 self.state = self.OpStates.idle
                 self.updateProgressBar(0,max(len(self.scan.list),1))
-                print "Status -> Idle"
+                logger.info( "Status -> Idle" )
 
     def onData(self, data ):
         """ Called by worker with new data
         """
+        logger = logging.getLogger(__name__)
 
         if data.overrun:
-            print "Read Pipe Overrun"
+            logger.error( "Read Pipe Overrun" )
             self.onPause()
         else:
-            print "NewExternalScan onData", len(data.count[self.scan.counterChannel]), data.scanvalue
+            logger.info( "NewExternalScan onData {0} {1}".format( len(data.count[self.scan.counterChannel]), data.scanvalue ) )
             x = self.generator.xValue(self.externalParameterIndex)
             evaluated = list()
             for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
                 if data.count[eval.counter]:
                     evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
                 else:
-                    print "No data for counter {0}, ignoring it.".format(eval.counter)
+                    logger.info( "No data for counter {0}, ignoring it.".format(eval.counter) )
             if len(evaluated)>0:
                 self.displayUi.add( evaluated[0][0][0] )
                 self.updateMainGraph(x, evaluated )
@@ -120,7 +125,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             if self.externalParameterIndex<len(self.scan.list) and self.state==self.OpStates.running:
                 self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
                 self.pulserHardware.ppStart()
-                print "External Value:" , self.scan.list[self.externalParameterIndex]
+                logger.info( "External Value:" , self.scan.list[self.externalParameterIndex] )
             else:
                 self.finalizeData(reason='end of scan')
                 if self.externalParameterIndex >= len(self.scan.list):

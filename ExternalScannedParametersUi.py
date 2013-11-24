@@ -9,6 +9,7 @@ import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import functools
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+import logging
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParameterUi.ui')
 
@@ -72,12 +73,14 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.dataChanged.emit(leftInd, rightInd) #Update all 5 columns
             
     def setValue(self, index, value):
-        print "setValue", value
+        logger = logging.getLogger(__name__)
+        logger.debug( "setValue {0}".format( value ) )
         self.targetValues[index] = value
         self.setValueFollowup(index)
         
     def setValueFollowup(self, index):
-        print "setValueFollowup", self.parameterList[index].currentValue()
+        logger = logging.getLogger(__name__)
+        logger.debug( "setValueFollowup {0}".format( self.parameterList[index].currentValue() ) )
         delay = int( self.parameterList[index].settings.delay.toval('ms') )
         if not self.parameterList[index].setValue( self.targetValues[index] ):
             QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,index) )
@@ -105,7 +108,8 @@ class ControlUi(UiForm,UiBase):
         self.setupParameters(EnabledParameters)
         
     def setupParameters(self,EnabledParameters):
-        print "ControlUi.setupParameters", EnabledParameters
+        logger = logging.getLogger(__name__)
+        logger.debug( "ControlUi.setupParameters {0}".format( EnabledParameters ) ) 
         self.enabledParameters = EnabledParameters
         self.tableModel.setParameterList( self.enabledParameters )
         self.tableView.resizeColumnsToContents()
