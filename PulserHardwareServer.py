@@ -11,6 +11,8 @@ import time
 from multiprocessing import Process, Queue, Pipe
 import modules.magnitude as magnitude
 import ok
+from ServerLogging import configureServerLogging
+import logging
 
 ModelStrings = {
         0: 'Unknown',
@@ -110,13 +112,14 @@ class FinishException(Exception):
 
 class PulserHardwareServer(Process):
     timestep = magnitude.mg(20,'ns')
-    def __init__(self, dataQueue, commandPipe):
+    def __init__(self, dataQueue, commandPipe, loggingQueue):
         super(PulserHardwareServer,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
         self.running = True
         self.openModule = None
         self.xem = None
+        self.loggingQueue = loggingQueue
         
         # PipeReader stuff
         self.state = self.analyzingState.normal
@@ -131,19 +134,24 @@ class PulserHardwareServer(Process):
 
         
     def run(self):
+        configureServerLogging(self.loggingQueue)
         i = 0
+        logger = logging.getLogger(__name__)
         while (self.running):
             if self.commandPipe.poll(0.05):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
-                    #print "PulserHardwareServer:", commandstring
+                    logger.debug( "PulserHardwareServer {0}".format(commandstring) )
                     self.commandPipe.send(command(*argument))
                 except Exception as e:
                     self.commandPipe.send(e)
             self.readDataFifo()
         self.dataQueue.put(FinishException())
-        print "Pulser Hardware Server Process finished."
+        logger.info( "Pulser Hardware Server Process finished." )
+        self.loggingQueue.put(None)
+        self.loggingQueue.close()
+        self.loggingQueue.join_thread()
             
     def finish(self):
         self.running = False
@@ -160,6 +168,7 @@ class PulserHardwareServer(Process):
             0x3nxxxxxx timestamp gate start channel n
             0x4xxxxxxx other return
         """
+        logger = logging.getLogger(__name__)
         data, overrun = self.ppReadData(4)
         if data:
             self.data.overrun = self.data.overrun or overrun
@@ -183,7 +192,7 @@ class PulserHardwareServer(Process):
                     if token == 0xffffffff:    # end of run
                         self.data.final = True
                         self.dataQueue.put( self.data )
-                        print "End of Run marker received"
+                        loggerinfo( "End of Run marker received" )
                         self.data = Data()
                     elif token == 0xff000000:
                         self.timestampOffset += 1<<28
@@ -230,7 +239,7 @@ class PulserHardwareServer(Process):
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
             self._shutter = value
         else:
-            print "setShutter: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
         return self._shutter
             
     def setShutterBit(self, bit, value):
@@ -249,7 +258,7 @@ class PulserHardwareServer(Process):
             check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
             self._trigger = value
         else:
-            print "setTrigger: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
         return self._trigger
             
     def getCounterMask(self):
@@ -260,9 +269,9 @@ class PulserHardwareServer(Process):
             self._adcCounterMask = (self._adcCounterMask & 0xf00) | (value & 0xff)
             check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
-            print "set counterMask", hex(self._adcCounterMask)
+            logging.getLogger(__name__).info( "set counterMask {0}".format( hex(self._adcCounterMask) ) )
         else:
-            print "setCounterMask: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
         return self._adcCounterMask & 0xff
 
     def getAdcMask(self):
@@ -273,9 +282,9 @@ class PulserHardwareServer(Process):
             self._adcCounterMask = ((value<<8) & 0xf00) | (self._adcCounterMask & 0xff)
             check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )  
-            print "set adc mask", hex(self._adcCounterMask)
+            logging.getLogger(__name__).info( "set adc mask {0}".format(hex(self._adcCounterMask)) )
         else:
-            print "setAdcMask: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
         return (self._adcCounterMask >> 8) & 0xff
         
     def getIntegrationTime(self):
@@ -284,13 +293,13 @@ class PulserHardwareServer(Process):
     def setIntegrationTime(self, value):
         self.integrationTimeBinary = int( (value/self.timestep).toval() )
         if self.xem:
-            print "set dedicated integration time" , value, self.integrationTimeBinary
+            logging.getLogger(__name__).info(  "set dedicated integration time {0} {1}".format( value, self.integrationTimeBinary ) )
             check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.SetWireInValue(0x0c, self.integrationTimeBinary, 0xFFFF) , 'SetWireInValue' )	
             check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
             self._integrationTime = value
         else:
-            print "setIntegrationTime: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
         return self.integrationTimeBinary
             
     def getIntegrationTimeBinary(self, value):
@@ -298,19 +307,20 @@ class PulserHardwareServer(Process):
             
     def ppUpload(self,binarycode,startaddress=0):
         if self.xem:
-            print "starting PP upload",
+            logger = logging.getLogger(__name__)
+            logger.info(  "starting PP upload" )
             check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )	# start addr at zero
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
-            print len(binarycode), "bytes,",
+            logger.info(  "{0} bytes".format(len(binarycode)) )
             num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
             check(num, 'Write to program pipe' )
-            print "uploaded pp file {0} bytes".format(num),
+            logger.info(   "uploaded pp file {0} bytes".format(num) )
             num, data = self.ppDownload(0,num)
-            print "Verified {0} bytes. ".format(num),data==binarycode
+            logger.info(   "Verified {0} bytes. {1}".format(num,data==binarycode) )
             return True
         else:
-            print "ppUpload: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return False
             
     def ppDownload(self,startaddress,length):
@@ -323,7 +333,7 @@ class PulserHardwareServer(Process):
             num = self.xem.ReadFromPipeOut(0xA0, data)
             return num, data
         else:
-            print "ppDownload: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return 0,None
         
     def ppIsRunning(self):
@@ -331,14 +341,14 @@ class PulserHardwareServer(Process):
             data = '\x00'*32
             self.xem.ReadFromPipeOut(0xA1, data)
             if ((data[:2] != '\xED\xFE') or (data[-2:] != '\xED\x0F')):
-                print "Bad data string: ", map(ord, data)
+                logging.getLogger(__name__).warning( "Bad data string: {0}".fromat( map(ord, data) ) )
                 return True
             data = map(ord, data[2:-2])
             #Decode
             active =  bool(data[1] & 0x80)
             return active
         else:
-            print "ppIsRunning: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return False
             
 
@@ -346,9 +356,9 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.ActivateTriggerIn(0x40,0)
             self.xem.ActivateTriggerIn(0x41,0)
-            print "pp_reset is not working right now... CWC 08302012"
+            logging.getLogger(__name__).warning( "pp_reset is not working right now... CWC 08302012" )
         else:
-            print "ppReset: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
 
     def ppStart(self):#, widget = None, data = None):
         if self.xem:
@@ -357,7 +367,7 @@ class PulserHardwareServer(Process):
             self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
             return True
         else:
-            print "ppStart: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return False
 
     def ppStop(self):#, widget, data= None):
@@ -365,7 +375,7 @@ class PulserHardwareServer(Process):
             self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
             return True
         else:
-            print "ppStop: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return False
 
     def interruptRead(self):
@@ -394,21 +404,21 @@ class PulserHardwareServer(Process):
                 #print "ppWriteData length",len(code)
                 return self.xem.WriteToPipeIn(0x81,code)
         else:
-            print "ppWriteData: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return None
                 
     def ppWriteRam(self,data,address):
         if self.xem:
             appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
             data += bytearray([0]*appendlength)
-            print "set write address"
+            logging.getLogger(__name__).info( "set write address {0}".format(address) )
             self.xem.SetWireInValue( 0x01, address & 0xffff )
             self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
             self.xem.UpdateWireIns()
             self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
             return self.xem.WriteToPipeIn( 0x82, data )
         else:
-            print "ppWriteRam: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return None
             
     def wordListToBytearray(self, wordlist):
@@ -416,8 +426,6 @@ class PulserHardwareServer(Process):
         """
         self.binarycode = bytearray()
         for index, word in enumerate(wordlist):
-#            if self.debug:
-#                print hex(index), hex(word)
             self.binarycode += struct.pack('I', word)
         return self.binarycode        
 
@@ -429,15 +437,14 @@ class PulserHardwareServer(Process):
         return wordlist
             
     def ppWriteRamWordlist(self,wordlist,address):
+        logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(wordlist)
         self.ppWriteRam( data, address)
         testdata = bytearray([0]*len(data))
         self.ppReadRam( testdata, address)
-        print "ppWriteRamWordlist", len(data), len(testdata), data==testdata
+        logger.info( "ppWriteRamWordlist {0} {1} {2}".format( len(data), len(testdata), data==testdata ) )
         if data!=testdata:
-            print "Write unsuccessfull data does not match"
-            print len(data), self.bytearrayToWordList(data)
-            print len(testdata), self.bytearrayToWordList(testdata)
+            logger.error( "Write unsuccessfull data does not match write length {0} read length {1}".format(len(data),len(testdata)))
             raise PulserHardwareException("RAM write unsuccessful")
 
     def ppReadRam(self,data,address):
@@ -450,7 +457,7 @@ class PulserHardwareServer(Process):
             self.xem.ReadFromPipeOut( 0xa3, data )
 #           print "read", len(data)
         else:
-            print "ppReadRam: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             
     def ppReadRamWordList(self, wordlist, address):
         data = bytearray([0]*len(wordlist)*4)
@@ -462,20 +469,20 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.ActivateTriggerIn(0x41, 3)
         else:
-            print "ppClearWriteFifo: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             
     def ppFlushData(self):
         if self.xem:
             self.data = Data()
         else:
-            print "ppFlushData: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
         return None
 
     def ppClearReadFifo(self):
         if self.xem:
             self.xem.ActivateTriggerIn(0x41, 4)
         else:
-            print "ppClearReadFifo: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             
     def ppReadLog(self):
         if self.xem:
@@ -486,7 +493,7 @@ class PulserHardwareServer(Process):
                 f.write(data)
             return data
         else:
-            print "ppReadLog: Pulser Hardware not available"
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
             return None
         
         

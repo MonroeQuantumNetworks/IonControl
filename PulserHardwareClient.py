@@ -45,6 +45,30 @@ class QueueReader(QtCore.QThread):
         except Exception as e:
             logger.exception("Exception in QueueReader")
         logger.info( "PulserHardware client thread finished." )
+
+class LoggingReader(QtCore.QThread):
+    def __init__(self, loggingQueue, parent=None):
+        QtCore.QThread.__init__(self, parent)
+        self.running = False
+        self.loggingQueue = loggingQueue
+        
+    def run(self):
+        logger = logging.getLogger(__name__)
+        logger.debug("LoggingReader Thread running")
+        while True:
+            try:
+                record = self.loggingQueue.get()
+                if record is None: # We send this as a sentinel to tell the listener to quit.
+                    logger.debug("LoggingReader Thread shutdown requested")
+                    break
+                clientlogger = logging.getLogger(record.name)
+                clientlogger.handle(record) # No level or filter logic applied - just do it!
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                logger.exception("Exception in Logging Reader Thread")
+        logger.info("LoggingReader Thread finished")
+
                 
 
 class PulserHardware(QtCore.QObject):
@@ -67,17 +91,22 @@ class PulserHardware(QtCore.QObject):
         
         self.dataQueue = multiprocessing.Queue()
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
-        
-        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe )
-        self.serverProcess.start()
-        
+        self.loggingQueue = multiprocessing.Queue()
+                
         self.queueReader = QueueReader(self, self.dataQueue)
         self.queueReader.start()
+        
+        self.loggingReader = LoggingReader(self.loggingQueue)
+        self.loggingReader.start()
+
+        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue )
+        self.serverProcess.start()
 
     def shutdown(self):
         self.clientPipe.send( ('finish', () ) )
         self.serverProcess.join()
         self.queueReader.wait()
+        self.loggingReader.wait()
         
     def __getattr__(self,name):
         if name.startswith('__') and name.endswith('__'):
