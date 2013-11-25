@@ -128,7 +128,7 @@ class N6700BPowerSupply(ExternalParameterBase):
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('channel' , 0)       # if True go to the target value in one jump        
+        self.settings.__dict__.setdefault('channel' , 1)       # if True go to the target value in one jump        
             
     def _setValue(self, v):
         command = "Curr {0},(@{1})".format(v.ounit('A').toval(),self.settings.channel)
@@ -136,7 +136,7 @@ class N6700BPowerSupply(ExternalParameterBase):
         self.value = v
         
     def _getValue(self):
-        command = "Curr? (@{0})".format(self.channel)
+        command = "Curr? (@{0})".format(self.settings.channel)
         self.value = magnitude.mg(float(self.instrument.ask(command)), 'A') #set voltage
         return self.value
         
@@ -144,14 +144,14 @@ class N6700BPowerSupply(ExternalParameterBase):
         return self.value
     
     def currentExternalValue(self):
-        command = "MEAS:CURR? (@{0})".format(self.channel)
+        command = "MEAS:CURR? (@{0})".format(self.settings.channel)
         value = magnitude.mg( float( self.instrument.ask(command)), 'A' )
         return value 
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
-        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.stepsize})
+        superior.append({'name': 'channel', 'type': 'int', 'value': self.settings.channel})
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         return superior
     
     def close(self):

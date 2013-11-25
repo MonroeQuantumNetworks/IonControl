@@ -170,9 +170,9 @@ class VoltageBlender(QtCore.QObject):
         offset = numpy.array([0.0]*len(line))
         for name, value in self.adjust.iteritems():
             if name in self.adjustDict:
-                offset = offset + self.adjustLines[self.adjustDict[name]] * value
+                offset = offset + self.adjustLines[self.adjustDict[name]] * float(value)
         if "__GAIN__" in self.adjust:
-            offset *= self.adjust["__GAIN__"]
+            offset *= float(self.adjust["__GAIN__"])
         return (line+offset)
             
     def blendLines(self,lineno,lineGain):

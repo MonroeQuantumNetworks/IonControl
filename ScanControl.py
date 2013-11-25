@@ -24,6 +24,7 @@ from modules.PyqtUtility import BlockSignals, updateComboBoxItems
 from EvaluationTableModel import EvaluationTableModel
 from ComboBoxDelegate import ComboBoxDelegate
 import logging
+from modules.HashableDict import HashableDict
 
 def unique(seq):
     seen = set()
@@ -33,13 +34,14 @@ class EvaluationDefinition:
     def __init__(self):
         self.counter = None
         self.evaluation = None
-        self.settings = dict()
+        self.settings = HashableDict()
         self.name = None
         self.plotname = None
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('plotname', None)        
+        self.__dict__.setdefault('settings', HashableDict())        
         
     stateFields = ['counter', 'evaluation', 'settings', 'name', 'plotname'] 
         
@@ -50,6 +52,9 @@ class EvaluationDefinition:
         return not self == other
 
     def __hash__(self):
+        if not isinstance(self.settings,HashableDict):
+            logging.getLogger(__name__).info("Replacing dict with hashable dict")
+            self.settings = HashableDict(self.settings)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
  
 

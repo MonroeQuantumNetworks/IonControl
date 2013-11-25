@@ -192,7 +192,7 @@ class PulserHardwareServer(Process):
                     if token == 0xffffffff:    # end of run
                         self.data.final = True
                         self.dataQueue.put( self.data )
-                        loggerinfo( "End of Run marker received" )
+                        logger.info( "End of Run marker received" )
                         self.data = Data()
                     elif token == 0xff000000:
                         self.timestampOffset += 1<<28

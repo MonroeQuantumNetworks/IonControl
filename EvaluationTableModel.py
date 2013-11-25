@@ -60,7 +60,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return True
     
     def setPlotName(self, index, plotname):
-        self.evalList[index.row()].plotname = plotname
+        self.evalList[index.row()].plotname = str(plotname)
         self.dataChanged.emit()
         return True
         

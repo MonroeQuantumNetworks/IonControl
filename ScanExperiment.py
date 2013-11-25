@@ -427,7 +427,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             x = self.generator.xValue(self.currentIndex)
             evaluated = list()
             for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
-                evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
+                if len(data.count[eval.counter])>0:
+                    evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
+                else:
+                    evaluated.append( ((0,0,0),False) )
+                    logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(eval.counter))
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
@@ -455,28 +459,29 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             trace = Trace()
             self.plottedTraceList = list()
             for index, result in enumerate(evaluated):
-                (mean, error, raw), showerror = result
-                showerror = error and self.scan.evalAlgorithmList[index].settings['errorBars']
-                yColumnName = 'y{0}'.format(index) 
-                rawColumnName = 'raw{0}'.format(index)
-                trace.addColumn( yColumnName )
-                trace.addColumn( rawColumnName )
-                if showerror:
-                    topColumnName = 'top{0}'.format(index)
-                    bottomColumnName = 'bottom{0}'.format(index)
-                    trace.addColumn( topColumnName )
-                    trace.addColumn( bottomColumnName )                
-                    plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index].plotname], pens.penList, 
-                                                yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, rawColumn=rawColumnName) 
-                else:                
-                    plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index]], pens.penList, 
-                                                yColumn=yColumnName, rawColumn=rawColumnName)               
-                xRange = self.generator.xRange()
-                if xRange:
-                    self.graphicsView.setXRange( *xRange )     
-                pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-                scanHeader = stringutilit.commentarize( self.scan.documentationString() )
-                self.plottedTraceList.append( plottedTrace )
+                if result is not None:  # result is None if there were no counter results
+                    (mean, error, raw), showerror = result
+                    showerror = error and self.scan.evalAlgorithmList[index].settings['errorBars']
+                    yColumnName = 'y{0}'.format(index) 
+                    rawColumnName = 'raw{0}'.format(index)
+                    trace.addColumn( yColumnName )
+                    trace.addColumn( rawColumnName )
+                    if showerror:
+                        topColumnName = 'top{0}'.format(index)
+                        bottomColumnName = 'bottom{0}'.format(index)
+                        trace.addColumn( topColumnName )
+                        trace.addColumn( bottomColumnName )                
+                        plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index].plotname], pens.penList, 
+                                                    yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, rawColumn=rawColumnName) 
+                    else:                
+                        plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index].plotname], pens.penList, 
+                                                    yColumn=yColumnName, rawColumn=rawColumnName)               
+                    xRange = self.generator.xRange()
+                    if xRange:
+                        self.graphicsView.setXRange( *xRange )     
+                    pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
+                    scanHeader = stringutilit.commentarize( self.scan.documentationString() )
+                    self.plottedTraceList.append( plottedTrace )
             self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
             self.plottedTraceList[0].trace.name = ", ".join([self.scan.settingsName,self.scan.evalList[index].name])
             self.plottedTraceList[0].trace.vars.comment = ""
