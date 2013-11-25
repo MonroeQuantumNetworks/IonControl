@@ -37,6 +37,7 @@ import random
 import ScanControl
 from AverageView import AverageView
 from PlottedTrace import PlottedTrace
+import logging
      
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -45,13 +46,11 @@ class ParameterScanGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi ):
-        print self.scan.scanParameter
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, self.scan.list)
         return ( self.scan.code, [])
         
     def restartCode(self,currentIndex):
         mycode = self.scan.code[currentIndex*2:]
-        print "original length", len(self.scan.code), "remaining", len(mycode)
         return mycode
         
     def xValue(self, index):
@@ -131,10 +130,10 @@ class GateSetScanGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi):
+        logger = logging.getLogger(__name__)
         address, data, self.gateSetSettings = self.scan.gateSetUi.gateSetScanData()
         parameter = self.gateSetSettings.startAddressParam
-        if self.gateSetSettings.debug:
-            print "GateSetScan", address, parameter
+        logger.debug( "GateSetScan {0} {1}".format( address, parameter ) )
         self.scan.list = address
         self.scan.index = range(len(self.scan.list))
         if self.scan.scantype == 1:
@@ -145,14 +144,13 @@ class GateSetScanGenerator:
             random.shuffle(zipped)
             self.scan.index, self.scan.list = zip( *zipped )
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
-        if self.gateSetSettings.debug:
-            print "GateSetScanCode", self.scan.list, self.scan.code
+        logger.debug( "GateSetScanCode {0} {1}".format(self.scan.list, self.scan.code) )
         return (self.scan.code, data)
 
     def restartCode(self,currentIndex):
+        logger = logging.getLogger(__name__)
         mycode = self.scan.code[currentIndex*2:]
-        if self.gateSetSettings.debug:
-            print "original length", len(self.scan.code), "remaining", len(mycode)
+        logger.debug( "original length {0} remaining {1}".format( len(self.scan.code), len(mycode) ) )
         return mycode
 
     def xValue(self,index):
@@ -352,6 +350,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
         
     def startScan(self):
+        logger = logging.getLogger(__name__)
         self.startTime = time.time()
         self.state = self.OpStates.running
         PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
@@ -363,31 +362,32 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppUpload(PulseProgramBinary)
         self.pulserHardware.ppWriteData(mycode)
-        print "Starting"
+        logger.info( "Starting" )
         self.pulserHardware.ppStart()
         self.running = True
         self.currentIndex = 0
         self.timestampsNewRun = True
         self.displayUi.onClear()
         self.updateProgressBar(0,max(len(self.scan.list),1))
-        print "elapsed time", time.time()-self.startTime
+        logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
         if self.plottedTraceList:
             for plottedTrace in self.plottedTraceList:
                 plottedTrace.plot(0) #unplot previous trace
         self.plottedTraceList = list() #reset plotted trace
     
     def onPause(self):
+        logger = logging.getLogger(__name__)
         if self.state == self.OpStates.paused:
             self.state = self.OpStates.running
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
-            print "Starting"
+            logger.info( "Starting" )
             self.pulserHardware.ppStart()
             self.running = True
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
             self.timestampsNewRun = False
-            print "continued"
+            plogger.info( "continued" )
         elif self.state == self.OpStates.running:
             self.pulserHardware.ppStop()
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
@@ -417,19 +417,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onData(self, data ):
         """ Called by worker with new data
         """
+        logger = logging.getLogger(__name__)
         if data.overrun:
-            print "Read Pipe Overrun"
+            logger.error( "Read Pipe Overrun" )
             self.onPause()
         else:
-            print "onData", [len(data.count[i]) for i in range(16)], data.scanvalue
-            #print self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+            logger.info( "onData {0} {1}".format( [len(data.count[i]) for i in range(16)], data.scanvalue ) )
             # Evaluate as given in evalList
             x = self.generator.xValue(self.currentIndex)
             evaluated = list()
             for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
                 evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
             if data.other:
-                print "Other:", data.other
+                logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
                 self.displayUi.add( evaluated[0][0][0] )
                 self.updateMainGraph(x, evaluated )
@@ -439,7 +439,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.showTimestamps(data)
             if data.final:
                 self.finalizeData(reason='end of scan')
-                print "current index", self.currentIndex, "expected", len(self.scan.list)
+                logger.info( "current index {0} expected {1}".format(self.currentIndex, len(self.scan.list) ) )
                 if self.currentIndex >= len(self.scan.list):    # if all points were taken
                     self.generator.dataOnFinal(self)
                 else:
@@ -458,7 +458,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 (mean, error, raw), showerror = result
                 showerror = error and self.scan.evalAlgorithmList[index].settings['errorBars']
                 yColumnName = 'y{0}'.format(index) 
-                #print yColumnName, x, mean, error
                 rawColumnName = 'raw{0}'.format(index)
                 trace.addColumn( yColumnName )
                 trace.addColumn( rawColumnName )
@@ -494,7 +493,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 plottedTrace.replot()
 
     def finalizeData(self, reason='end of scan'):
-        print "finalize Data"
+        logger = logging.getLogger(__name__)
+        logger.info( "finalize Data" )
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
                 trace.vars.traceFinalized = datetime.now()
@@ -556,21 +556,23 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
         
     def activate(self):
+        logger = logging.getLogger(__name__)
         MainWindowWidget.MainWindowWidget.activate(self)
         if (self.deviceSettings is not None) and (not self.activated):
             try:
-                print "Scan activated"
+                logger.info( "Scan activated" )
                 self.pulserHardware.ppFlushData()
                 self.pulserHardware.dataAvailable.connect(self.onData)
                 self.activated = True
             except Exception as ex:
-                print ex
+                logger.exception("activate")
                 self.StatusMessage.emit( ex.message )
     
     def deactivate(self):
+        logger = logging.getLogger(__name__)
         MainWindowWidget.MainWindowWidget.deactivate(self)
         if self.activated :
-            print "Scan deactivated",
+            logger.info( "Scan deactivated" )
             self.pulserHardware.dataAvailable.disconnect(self.onData)
             self.activated = False
             self.state = self.OpStates.idle

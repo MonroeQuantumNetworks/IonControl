@@ -7,6 +7,7 @@ Created on Fri Jul 19 07:28:56 2013
 
 import xml.etree.ElementTree as etree
 from collections import OrderedDict
+import logging
 
 class Pulse(object):
     def __init__(self, name, pulsetype, encoding):
@@ -32,6 +33,7 @@ class GateDefinition(object):
         self.Gates = dict()
         
     def loadGateDefinition(self, filename):
+        logger = logging.getLogger(__name__)
         tree = etree.parse(filename)
         root = tree.getroot()
         
@@ -41,7 +43,7 @@ class GateDefinition(object):
         for pulse in PulseDefinitionElement:
             self.PulseDefinition.update( {pulse.attrib['name']: Pulse(pulse.attrib['name'],pulse.attrib['type'],pulse.text)} )
             
-        print self.PulseDefinition 
+        logger.info( self.PulseDefinition ) 
         
         #load gate definitions
         self.Gates = dict()
@@ -56,9 +58,10 @@ class GateDefinition(object):
         self.Gates.update( { element.attrib['name']: Gate(element.attrib['name'],pulsedict)} )
 
     def printGates(self):
-        print "Gates defined:"
+        logger = logging.getLogger(__name__)
+        logger.info( "Gates defined:" )
         for gate in self.Gates.values():
-            print gate
+            logger.info( gate )
         
 if __name__=="__main__":
     gatedef = GateDefinition()

@@ -11,6 +11,7 @@ import modules.magnitude as magnitude
 import struct
 import math
 import collections
+import logging
   
 # add deg to magnitude
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
@@ -174,19 +175,18 @@ class PulseProgram:
     def updateVariables(self, variables ):
         """ update the variable values in the bytecode
         """
-        #print "update variables:",variables
+        logger = logging.getLogger(__name__)
         for name, value in variables.iteritems():
             if name in self.variabledict:
                 var = self.variabledict[name]
                 address = var.address
                 var.value = value
-                if self.debug:
-                    print "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data))
+                logger.debug( "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data)) )
                 var.data = self.convertParameter(value, var.encoding )
                 self.bytecode[address] = (self.bytecode[address][0], var.data )
                 self.variabledict[name] = var
             else:
-                print "variable", name, "not found in dictionary."
+                logger.error( "variable {0} not found in dictionary.".format(name) )
         return self.bytecode
         
     def variables(self):
@@ -225,10 +225,10 @@ class PulseProgram:
     def toBinary(self):
         """ convert bytecode to binary
         """
+        logger = logging.getLogger(__name__)
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
-            if self.debug:
-                print hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg)))
+            logger.debug( "{0} {1} {2} {3}".fromat( hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg))) ) )
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
         
@@ -248,6 +248,7 @@ class PulseProgram:
         calls itself recursively to for #insert
         adds the contents of this file to the dictionary self.source
         """
+        logger = logging.getLogger(__name__)
         if pp_file not in self.source:
             with open(os.path.join(self.pp_dir,pp_file)) as f:
                 self.source[pp_file] = ''.join(f.readlines())
@@ -256,7 +257,7 @@ class PulseProgram:
             m = self.insertPattern.match(text)
             if m:
                 filename = m.group(1)
-                print "inserting code from ",filename,"..."
+                logger.info( "inserting code from {0}".fromat(filename) )
                 self.insertSource(filename)
             else:
                 if self.codelinePattern.match(text):
@@ -266,9 +267,10 @@ class PulseProgram:
     def addDefine(self, m, lineno, sourcename):
         """ add the define to the self.defines dictionary
         """
+        logger = logging.getLogger(__name__)
         label, value = m.groups() #change lab to label for readability CWC 08162012
         if label in self.defines:
-            print "Error parsing defs in file '{0}': attempted to redefine'{1}' to '{2}' from '{3}'".format(sourcename, label, value, self.defines[label]) #correct float to value CWC 08162012
+            logger.error( "Error parsing defs in file '{0}': attempted to redefine'{1}' to '{2}' from '{3}'".format(sourcename, label, value, self.defines[label]) )#correct float to value CWC 08162012
             raise ppexception("Redefining variable", sourcename, lineno, label)    
         else:
             self.defines[label] = float(value)
@@ -279,6 +281,7 @@ class PulseProgram:
     def parse(self):
         """ parse the code
         """
+        logger = logging.getLogger(__name__)
         self.code = []
         self.variabledict = dict()
         self.defines = dict()
@@ -326,7 +329,7 @@ class PulseProgram:
                         self.addLabel( label, len(self.code), sourcename, lineno)
                         self.code.append((len(self.code)+addr_offset, op, data, label, sourcename, lineno))
                     else:
-                        print "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno)
+                        logger.error( "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno) )
                         raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno),
                                           sourcename, lineno, text)
         self.appendVariableCode()
@@ -351,8 +354,8 @@ class PulseProgram:
     def addVariable(self, m, lineno, sourcename):
         """ add a variable to the self.variablesdict
         """
-        if self.debug:
-            print "Variable", m, lineno, sourcename
+        logger = logging.getLogger(__name__)
+        logger.debug( "Variable {0} {1} {2}".fromat( m, lineno, sourcename ) )
         var = Variable()
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
@@ -365,20 +368,18 @@ class PulseProgram:
         try:
             data = str(eval(data,globals(),self.defines))
         except Exception:
-            print "Evaluation error in file '{0}' on line: '{1}'".format(sourcename, data)
+            logger.exception( "Evaluation error in file '{0}' on line: '{1}'".format(sourcename, data) )
 
         if unit is not None:
             var.value = magnitude.mg( float(data), unit )
             data = self.convertParameter( var.value, var.encoding )
-            #print data, hex(data)
         else:
             var.value = magnitude.mg( float(data), '' )
             var.value.output_prec(0)   # without dimension the parameter has to be int. Thus, we do not want decimal places :)
             data = int(round(float(data)))
-            #print data, hex(data)
 
         if label in self.defines:
-            print "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(sourcename,label,data,self.defines[label])
+            logger.error( "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(sourcename,label,data,self.defines[label]) )
             raise ppexception("variable redifinition", sourcename, lineno, label)
         else:
             self.defines[label] = label # add the variable to the dictionary of definitions to prevent identifiers and variables from having the same name
@@ -392,12 +393,11 @@ class PulseProgram:
     def toBytecode(self):
         """ generate bytecode from code
         """
-        if self.debug:
-            print "\nCode ---> ByteCode:"
+        logger = logging.getLogger(__name__)
+        logger.debug( "\nCode ---> ByteCode:" )
         self.bytecode = []
         for index, line in enumerate(self.code):
-            if self.debug:
-                print hex(line[0]),  ": ", line[1:], 
+            logger.debug( hex(line[0]),  ": ", line[1:] ) 
             bytedata = 0
             if line[1] not in OPS:
                 raise ppexception("Unknown command {0}".format(line[1]), line[4], line[5], line[1]) 
@@ -420,13 +420,10 @@ class PulseProgram:
                         data = self.variabledict[data].address
                     bytedata = ((int(channel) & 0xf) << 16) | (int(data) & 0x0fff)
             except KeyError:
-                print "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) # raise
-                #print self.labeldict
-                #print self.variabledict
+                logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
             self.bytecode.append((byteop, bytedata))
-            if self.debug:
-                print "--->", (hex(byteop), hex(bytedata))
+            logger.debug( "---> {0} {1}".format(hex(byteop), hex(bytedata)) )
     
         return self.bytecode 
 
@@ -447,7 +444,6 @@ class PulseProgram:
                 result = int(round(mag/step)) & mask
             else:
                 result = mag
-        # print "convertParameter encoding", encoding, mag, result
         return result
 
     def compileCode(self):

@@ -1,5 +1,6 @@
 import logging
 from PyQt4 import QtCore
+import sys
 
 class QtLoggingHandler(logging.Handler, QtCore.QObject):    
     textWritten = QtCore.pyqtSignal(str)
@@ -16,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(name)s %(levelname)s (%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
-consoleHandler = logging.StreamHandler()
+consoleHandler = logging.StreamHandler(sys.stdout)
 consoleHandler.setFormatter(formatter)
 
 qtHandler = QtLoggingHandler()

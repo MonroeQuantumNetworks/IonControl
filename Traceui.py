@@ -12,6 +12,7 @@ import Trace
 import os.path
 import ProjectSelection
 from PlottedTrace import PlottedTrace
+import logging
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
 
@@ -178,6 +179,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         
            A warning message appears first, asking to confirm deletion. Traces with children cannot be deleted
            unless their children are deleted first."""
+        logger = logging.getLogger(__name__)
         selectedIndexes = self.uniqueSelectedIndexes()
         if selectedIndexes:
             warningResponse = self.warningMessage()
@@ -192,7 +194,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                         trace.trace.deleteFile()
                         self.model.dropTrace(parentIndex, row)
                     else:
-                        print "trace has children, please delete them first."
+                        logger.error( "trace has children, please delete them first." )
 
     def warningMessage(self):
         """Pop up a warning message asking to confirm deletion. Return the response."""
@@ -204,6 +206,7 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     def onRemove(self):
         """Execute when the remove button is clicked. Remove the selected traces from the model and view (but don't delete files)."""
+        logger = logging.getLogger(__name__)
         selectedIndexes = self.uniqueSelectedIndexes()
         if selectedIndexes:
             for traceIndex in selectedIndexes:
@@ -215,7 +218,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                         trace.plot(0)
                     self.model.dropTrace(parentIndex, row)
                 else:
-                    print "trace has children, please remove them first."
+                    logger.error( "trace has children, please remove them first." )
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""

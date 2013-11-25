@@ -40,11 +40,10 @@ class TableWidgetTest(Form, Base):
 
     def mycustomContextMenuRequested(self, point ):
         index =  self.tableWidget.indexAt(point)
-        print "custom context Menu", index.row(), index.column()
         self.menu.popup(self.mapToGlobal( point) )
             
     def onTriggered(self):
-        print "triggered", self.tableWidget.verticalHeader().currentIndex().row()
+        pass
                 
 
 if __name__ == "__main__":

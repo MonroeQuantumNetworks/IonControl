@@ -23,6 +23,7 @@ import GateSetUi
 from modules.PyqtUtility import BlockSignals, updateComboBoxItems
 from EvaluationTableModel import EvaluationTableModel
 from ComboBoxDelegate import ComboBoxDelegate
+import logging
 
 def unique(seq):
     seen = set()
@@ -137,7 +138,8 @@ class Scan:
 
 class ScanControl(ScanControlForm, ScanControlBase ):
     ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSetScan')
-    integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')    
+    integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
+    logger = logging.getLogger(__name__)
     def __init__(self,config,parentname, plotnames=None, parent=None):
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
@@ -147,16 +149,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
         except TypeError:
-            print "Unable to read scan control settings dictionary. Setting to empty dictionary."
+            logger.info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.settingsDict = dict()
-        #print self.settingsDict
         self.settingsHistory = list()
         self.settingsHistoryPointer = None
         self.historyFinalState = None
         try:
             self.settings = self.config.get(self.configname,Scan())
         except TypeError:
-            print "Unable to read scan control settings. Setting to new scan."
+            logger.info( "Unable to read scan control settings. Setting to new scan." )
             self.settings = Scan()
         self.gateSetUi = None
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
@@ -164,6 +165,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.plotnames = plotnames
 
     def setupUi(self, parent):
+        logger = logging.getLogger(__name__)
         ScanControlForm.setupUi(self,parent)
         # History and Dictionary
         self.saveButton.clicked.connect( self.onSave )
@@ -182,7 +184,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         try:
             self.setSettings( self.settings )
         except AttributeError as e:
-            print "Ignoring exception",e
+            logger.error( "Ignoring exception" )
         for name in self.settingsDict:
             self.comboBox.addItem(name)
         if self.settingsName and self.comboBox.findText(self.settingsName):
@@ -222,7 +224,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
-        #print "setSettings", id(self.settings), self.settings
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.setStartCenter()
         self.calculateSteps( self.settings )
@@ -378,30 +379,32 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
         
     def calculateSteps(self, settings):
-        #print "calculateSteps", settings.stepsSelect
+        logger = logging.getLogger(__name__)
         if settings.stepsSelect == 0:
             try:
                 settings.stepSize = abs(settings.stop - settings.start)/(settings.steps - 1)
                 valueAs( settings.stepSize, settings.start )
             except Exception as e:
-                print e
+                logger.exception("calculateSteps")
                 settings.stepSize = None
         else:
             try:
                 settings.steps = int( round( abs(settings.stop - settings.start)/settings.stepSize ) ) + 1
             except Exception as e:
-                print e
+                logger.exception("calculateSteps")
                 settings.steps = None
         
     def onLoadPP(self, ppname):
+        logger.exception("calculateSteps")
         self.settings.loadPPName = str(ppname)
-        print "ScanControl.onLoadPP", self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName
+        logger.debug( "ScanControl.onLoadPP {0} {1} {2}".format( self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName ) )
         if self.settings.loadPP and self.settings.loadPPName and hasattr(self,"pulseProgramUi"):
             self.pulseProgramUi.onFilenameChange( self.settings.loadPPName )
         self.updateSaveStatus()
             
     def onRecentPPFilesChanged(self, name):
-        print "ScanControl.onRecentPPFilesChanged"
+        logger.exception("calculateSteps")
+        logger.debug( "ScanControl.onRecentPPFilesChanged" )
         if self.loadPPComboBox.findText(name)<0:
             self.loadPPComboBox.addItem(name)
         self.updateSaveStatus()
@@ -409,7 +412,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 #            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         
     def setPulseProgramUi(self, pulseProgramUi ):
-        print "ScanControl.setPulseProgramUi", pulseProgramUi.configParams.recentFiles.keys()
+        logger = logging.getLogger(__name__)
+        logger.debug( "ScanControl.setPulseProgramUi {0}".format(pulseProgramUi.configParams.recentFiles.keys()) )
         self.pulseProgramUi = pulseProgramUi
         with BlockSignals(self.loadPPComboBox):
             self.loadPPComboBox.clear()
@@ -432,7 +436,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
-        #print id(self.settings), attribute, "->", str(edit.text())
         setattr( self.settings, attribute, str(edit.text())  )
         self.commitChange()
         self.updateSaveStatus()
@@ -479,7 +482,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
-        #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
         self.commitChange()
         self.updateSaveStatus()
         
@@ -492,7 +494,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.updateSaveStatus()
 
     def onStepsSelectChanged(self, select ):
-        #print "onStepsSelectChanged", select
         self.settings.stepsSelect = select
         self.calculateSteps( self.settings )
         self.setSteps( self.settings, True )
@@ -515,7 +516,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onIntValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, value )
-        #print id(self.settings), "Variable '{0}' set to {1}".format(attribute, MagnitudeUtilit.mg(value))
         self.commitChange()
         self.updateSaveStatus()
         
@@ -540,7 +540,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         for name in scannames:
             self.comboBoxParameter.addItem(name)
         self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
-        #print self.configname,"activating", self.settings.scanParameter
         self.updateSaveStatus()
                 
     def getScan(self):
@@ -578,19 +577,16 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     
     def onSave(self):
         self.settingsName = str(self.comboBox.currentText())
-        #print "onSave", name, id(self.settings), self.settings
         if self.settingsName != '':
             if self.settingsName not in self.settingsDict:
                 if self.comboBox.findText(self.settingsName)==-1:
                     self.comboBox.addItem(self.settingsName)
-                #print self.configname, "adding to combo", self.settingsName
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
         self.updateSaveStatus()
 
     
     def onLoad(self,name):
         self.settingsName = str(name)
-        #print self.configname, "onLoad", name
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
         self.updateSaveStatus()

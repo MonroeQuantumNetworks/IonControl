@@ -11,6 +11,7 @@ import modules.magnitude as magnitude
 from modules import Expression
 import sip
 import operator
+import logging
 
 api2 = sip.getapi("QVariant")==2
 
@@ -43,7 +44,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return None
         
     def setDataValue(self, index, value):
-        print "setDataValue", index.row(), index.column(), value
+        logger = logging.getLogger(__name__)
         try:
             strvalue = str(value if api2 else str(value.toString()))
             result = self.expression.evaluate(strvalue,self.variabledict)
@@ -53,11 +54,10 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             self.valueChanged.emit()
             return True    
         except Exception as e:
-            print e, "No match for", str(value.toString())
+            logger.exception( "No match for {0}".format( str(value.toString()) ) )
             return False
  
     def setDataName(self, index, value):
-        print "setDataName", index.row(), index.column(), value
         try:
             strvalue = str(value if api2 else str(value.toString())).strip()
             name = self.variableKeys[ index.row() ] 
@@ -66,7 +66,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             self.variabledict[strvalue] = value
             return True    
         except Exception as e:
-            print e, "No match for", str(value.toString())
+            logger.exception( "No match for {0}".format( str(value.toString()) ) )
             return False
        
     def setData(self,index, value, role):
@@ -102,7 +102,6 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     
     def addVariable(self,name):
         if name not in self.variabledict:
-            print "addVariable"
             self.beginInsertRows(QtCore.QModelIndex(),len(self.variabledict),len(self.variabledict))
             self.variabledict[name] = magnitude.mg(0,'')
             self.variableList = list(self.variabledict.values())
@@ -115,15 +114,12 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             self.dropVariableByIndex(self.variableKeys.index(name))        
         
     def dropVariableByIndex(self,index):
-        print self.variabledict.keys(), index
         self.beginRemoveRows(QtCore.QModelIndex(),index,index)
         name = self.variableKeys[index]
         self.variabledict.pop(name)
         self.variableList = list(self.variabledict.values())
         self.variableKeys = list(self.variabledict.keys())
-        print "dropCAlibration", self.variableKeys 
         self.endRemoveRows()
-        print self.variabledict.keys()
         return name
     
     def sort(self, column, order ):

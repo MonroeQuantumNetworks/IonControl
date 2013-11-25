@@ -56,7 +56,6 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetList.append(self.displayDock )
         if 'testWidget.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
-            print "restoreState"
 #start added
         self.scanControlWidget = ScanControl(config,self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)

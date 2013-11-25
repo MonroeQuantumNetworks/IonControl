@@ -33,6 +33,7 @@ class VoltageBlender(QtCore.QObject):
     shuttlingOnLine = QtCore.pyqtSignal(float)
     
     def __init__(self):
+        logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
         if HardwareDriverLoaded:
             self.chassis = WaveformChassis()
@@ -44,7 +45,7 @@ class VoltageBlender(QtCore.QObject):
             self.chassis.initFromFile( ConfigFilename )
             self.DoLine = self.chassis.createFalseDoBuffer()
             self.DoLine[0] = 1
-            print self.DoLine
+            logger.debug( str(self.DoLine) )
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = dict()  # names of the lines presented as possible adjusts
@@ -128,15 +129,16 @@ class VoltageBlender(QtCore.QObject):
             self.dataError.emit(outOfRange.tolist())
             
     def shuttle(self, definition, cont):
+        logger = logging.getLogger(__name__)
         if True:
             for edge in definition:
                 for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
                                            edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
                     self.applyLine(line,edge.lineGain,edge.globalGain)
-                    print "shuttling applied line", line
+                    logger.debug( "shuttling applied line {0}".format( line ) )
             self.shuttlingOnLine.emit(line)
         else:  # this stuff does not work yet
-            print "Starting finite shuttling"
+            logger.info( "Starting finite shuttling" )
             outputmatrix = list()
             globaladjust = [0]*len(self.lines[0])
             self.adjustLine(globaladjust)
@@ -152,12 +154,13 @@ class VoltageBlender(QtCore.QObject):
                     self.chassis.start()
                     self.shuttleTo = lineno
                 else:
-                    print "Hardware Driver not loaded, cannot write voltages"
+                    logger.error( "Hardware Driver not loaded, cannot write voltages" )
             except PyDAQmx.DAQmxFunctions.DAQError as e:
-                print e
+                logger.exception("")
             
     def onChassisDone( self, generator, value ):
-        print "onChassisDone", generator, value
+        logger = logging.getLogger(__name__)
+        logger.info( "onChassisDone {0} {1}".format(generator, value) )
         self.chassis.mode = DAQmxUtility.Mode.Static
         self.chassis.setOnDoneCallback( None )
         self.outputVoltage = self.shuttleTo
@@ -170,15 +173,15 @@ class VoltageBlender(QtCore.QObject):
                 offset = offset + self.adjustLines[self.adjustDict[name]] * value
         if "__GAIN__" in self.adjust:
             offset *= self.adjust["__GAIN__"]
-        #print "adjustLine", self.globalGain, self.adjust
         return (line+offset)
             
     def blendLines(self,lineno,lineGain):
-        #print "blendlines", left, right, convexc, lineGain
-        left = int(math.floor(lineno))
-        right = int(math.ceil(lineno))
-        convexc = lineno-left
-        return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
+        if self.lines:
+            left = int(math.floor(lineno))
+            right = int(math.ceil(lineno))
+            convexc = lineno-left
+            return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
+        return None
             
     def close(self):
         if HardwareDriverLoaded:

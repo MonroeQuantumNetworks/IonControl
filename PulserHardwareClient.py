@@ -13,6 +13,7 @@ import traceback
 import time
 import multiprocessing
 from PulserHardwareServer import PulserHardwareServer
+import logging
 
 class QueueReader(QtCore.QThread):
        
@@ -34,17 +35,16 @@ class QueueReader(QtCore.QThread):
     def flushData(self):
         with QtCore.QMutexLocker(self.dataMutex):
             self.data = Data()
-        print "flushData"
     
     def run(self):
+        logger = logging.getLogger(__name__)
         try:
             while not self.exiting:
                 data = self.dataQueue.get()
-                #print "QueueReader", data.__class__.__name__
                 self.dataHandler[ data.__class__.__name__ ]( data )
         except Exception as e:
-            print e
-        print "PulserHardware client thread finished."
+            logger.exception("Exception in QueueReader")
+        logger.info( "PulserHardware client thread finished." )
                 
 
 class PulserHardware(QtCore.QObject):
@@ -57,8 +57,6 @@ class PulserHardware(QtCore.QObject):
     timestep = magnitude.mg(20,'ns')
 
     def __init__(self):
-        #print "PulserHardware __init__" 
-        #traceback.print_stack()
         super(PulserHardware,self).__init__()
         self._shutter = 0
         self._trigger = 0
@@ -152,8 +150,6 @@ class PulserHardware(QtCore.QObject):
         """
         self.binarycode = bytearray()
         for index, word in enumerate(wordlist):
-#            if self.debug:
-#                print hex(index), hex(word)
             self.binarycode += struct.pack('I', word)
         return self.binarycode        
 

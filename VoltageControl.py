@@ -61,7 +61,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         try:
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
         except Exception as e:
-            logger.exception("cannot apply voltages. Ignored for now.")
+            logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.onShuttlingDone )
     

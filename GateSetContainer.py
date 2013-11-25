@@ -7,6 +7,7 @@ Created on Fri Jul 19 08:37:56 2013
 import xml.etree.ElementTree as etree
 from collections import OrderedDict
 import operator
+import logging
 
 class GateSetOrderedDict(OrderedDict):
     pass
@@ -49,9 +50,10 @@ class GateSetContainer(object):
         return gateset
 
     def validateGate(self, name, gate):
+        logger = logging.getLogger(__name__)
         if gate not in self.gateDefinition.Gates:
             if gate in self.GateSetDict:
-                print gate, self.GateSetDict[gate]
+                logger.info( "{0} {1}".format(gate, self.GateSetDict[gate] ) )
                 return self.validateGateSet( gate, self.GateSetDict[gate] )
             else:
                 raise GateSetException( "Gate '{0}' used in GateSet '{1}' is not defined".format(gate,name) )
