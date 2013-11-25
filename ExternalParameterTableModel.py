@@ -2,6 +2,8 @@ from PyQt4 import QtGui, QtCore
 from functools import partial
 
 class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
+    enableChanged = QtCore.pyqtSignal( object )
+    
     def __init__(self, parameterList=None, parent=None):
         super(ExternalParameterTableModel, self).__init__(parent)
         if parameterList:
@@ -35,6 +37,7 @@ class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
                 
     def setEnabled(self, index, value):
         self.parameterList[index.row()].enabled = value==QtCore.Qt.Checked
+        self.enableChanged.emit( str(self.parameterList[index.row()].name) )
         return True
         
     def flags(self, index ):
