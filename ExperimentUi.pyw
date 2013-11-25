@@ -66,7 +66,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         return False
     
     def setupUi(self, parent):
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger("")
         super(WidgetContainerUi,self).setupUi(parent)
         self.toolBar.addWidget(ExceptionLogButton())
         

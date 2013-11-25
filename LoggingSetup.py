@@ -9,7 +9,7 @@ class QtLoggingHandler(logging.Handler, QtCore.QObject):
         QtCore.QObject.__init__(self)
 
     def emit(self, record):
-        self.textWritten.emit(self.format(record))
+        self.textWritten.emit(self.format(record).rstrip()+"\n")
 
 
 logger = logging.getLogger("")
@@ -17,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(name)s %(levelname)s (%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
-consoleHandler = logging.StreamHandler(sys.stdout)
+consoleHandler = logging.StreamHandler() #(sys.stdout)
 consoleHandler.setFormatter(formatter)
 
 qtHandler = QtLoggingHandler()

@@ -395,7 +395,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 settings.steps = None
         
     def onLoadPP(self, ppname):
-        logger.exception("calculateSteps")
+        logger = logging.getLogger(__name__)
         self.settings.loadPPName = str(ppname)
         logger.debug( "ScanControl.onLoadPP {0} {1} {2}".format( self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName ) )
         if self.settings.loadPP and self.settings.loadPPName and hasattr(self,"pulseProgramUi"):
