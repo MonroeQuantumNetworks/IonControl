@@ -22,6 +22,8 @@ except:
     
     
 def nextValue( current, target, stepsize, jump ):
+    if current is None:
+        return (target,True)
     temp = target-current
     return (target,True) if abs(temp)<=stepsize or jump else (current + stepsize.copysign(temp), False)  
             
@@ -171,7 +173,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
         #self.amplitudeString = "Z0K1L6O1"
         #self.amplitudeString = "O3K0L0N0Z1"
         self.synthesizer = visa.instrument(instrument) #open visa session
-        self.synthesizer.write(self.amplitudeString)
+        self.synthesizer.write(self.settings.amplitudeStr)
         self.setDefaults()
         self.value = self.settings.value
 
@@ -188,7 +190,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
         newvalue, arrived = nextValue(self.value, value, self.settings.stepsize, self.settings.jump)
         self._setValue( newvalue )
         if self.displayValueCallback:
-            self.displayValueCallback(value,"{0}".format( self.lockPoint - newvalue ) )
+            self.displayValueCallback(value,"{0}".format( self.settings.lockPoint - newvalue ) )
         return arrived
             
     def _setValue(self, value ):

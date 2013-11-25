@@ -28,6 +28,11 @@ class EnabledParameter:
         self.name = None
         self.instrument = None
         self.settings = Settings()
+        self.enabled = False
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault('enabled', False)        
 
 class SelectionUi(SelectionForm,SelectionBase):
     selectionChanged = QtCore.pyqtSignal(object)
