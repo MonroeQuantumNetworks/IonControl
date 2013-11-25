@@ -70,7 +70,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             try:
                 self.loadFile( self.configParams.lastFilename )
             except Exception as e:
-                logger.error( "Ignoring exception {0}, pulse programming file {1} cannot be loaded." )
+                logger.error( "Ignoring exception {0}, pulse programming file '{1}' cannot be loaded.".format(str(e),self.configParams.lastFilename) )
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):

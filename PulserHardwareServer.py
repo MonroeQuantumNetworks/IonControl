@@ -341,7 +341,7 @@ class PulserHardwareServer(Process):
             data = '\x00'*32
             self.xem.ReadFromPipeOut(0xA1, data)
             if ((data[:2] != '\xED\xFE') or (data[-2:] != '\xED\x0F')):
-                logging.getLogger(__name__).warning( "Bad data string: {0}".fromat( map(ord, data) ) )
+                logging.getLogger(__name__).warning( "Bad data string: {0}".format( map(ord, data) ) )
                 return True
             data = map(ord, data[2:-2])
             #Decode

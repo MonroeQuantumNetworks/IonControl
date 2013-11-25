@@ -228,7 +228,7 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
-            logger.debug( "{0} {1} {2} {3}".fromat( hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg))) ) )
+            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg))) ) )
             self.binarycode += struct.pack('I', int((op<<24) + arg))
         return self.binarycode
         
@@ -257,7 +257,7 @@ class PulseProgram:
             m = self.insertPattern.match(text)
             if m:
                 filename = m.group(1)
-                logger.info( "inserting code from {0}".fromat(filename) )
+                logger.info( "inserting code from {0}".format(filename) )
                 self.insertSource(filename)
             else:
                 if self.codelinePattern.match(text):
@@ -355,7 +355,7 @@ class PulseProgram:
         """ add a variable to the self.variablesdict
         """
         logger = logging.getLogger(__name__)
-        logger.debug( "Variable {0} {1} {2}".fromat( m, lineno, sourcename ) )
+        logger.debug( "Variable {0} {1} {2}".format( m, lineno, sourcename ) )
         var = Variable()
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
@@ -397,7 +397,7 @@ class PulseProgram:
         logger.debug( "\nCode ---> ByteCode:" )
         self.bytecode = []
         for index, line in enumerate(self.code):
-            logger.debug( hex(line[0]),  ": ", line[1:] ) 
+            logger.debug( "{0}: {1}".format(hex(line[0]),  line[1:] )) 
             bytedata = 0
             if line[1] not in OPS:
                 raise ppexception("Unknown command {0}".format(line[1]), line[4], line[5], line[1]) 
