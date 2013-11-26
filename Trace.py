@@ -41,7 +41,7 @@ class ColumnSpec(list):
     
 class TracePlotting(object):
     def __init__(self, xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None,
-                 rawColumn=None):
+                 rawColumn=None,name=""):
         self.xColumn = xColumn
         self.yColumn = yColumn
         self.topColumn = topColumn
@@ -49,8 +49,9 @@ class TracePlotting(object):
         self.heightColumn = heightColumn
         self.rawColumn = rawColumn
         self.fitFunction = None
+        self.name = name
         
-    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn']
+    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name']
 
 class TracePlottingList(list):        
     def toXmlElement(self, root):

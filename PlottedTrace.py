@@ -17,7 +17,7 @@ class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
     def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
-                 rawColumn='raw', tracePlotting=None):
+                 rawColumn='raw', tracePlotting=None, name=""):
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:
@@ -51,7 +51,7 @@ class PlottedTrace(object):
             self._heightColumn = heightColumn
             self._rawColumn = rawColumn
             self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
-                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn)
+                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name)
             self.trace.addTracePlotting( self.tracePlotting )
             if not hasattr(self.trace,xColumn):
                 self.trace.addColumn( xColumn )

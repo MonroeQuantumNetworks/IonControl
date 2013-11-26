@@ -38,6 +38,7 @@ from ExceptionLogButton import ExceptionLogButton
 import GlobalVariables 
 from PulserHardwareClient import PulserHardware 
 import ProjectSelection
+from collections import OrderedDict
 
 import VoltageControl
     
@@ -50,12 +51,16 @@ WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.
 
 
 class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
+    levelNameList = ["debug", "info", "warning", "error", "critical"]
+    levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     def __init__(self,config):
         self.config = config
         super(WidgetContainerUi, self).__init__()
         self.settings = SettingsDialog.Settings()
         self.deviceSerial = config.get('Settings.deviceSerial')
         self.deviceDescription = config.get('Settings.deviceDescription')
+        self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
+        if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -69,6 +74,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         logger = logging.getLogger("")
         super(WidgetContainerUi,self).setupUi(parent)
         self.toolBar.addWidget(ExceptionLogButton())
+        
+        # Setup Console Dockwidget
+        self.levelComboBox.addItems(self.levelNameList)
+        self.levelComboBox.currentIndexChanged[int].connect( self.setLoggingLevel )            
+        self.levelComboBox.setCurrentIndex( self.levelValueList.index(self.loggingLevel) )
         
         self.parent = parent
         self.tabList = list()
@@ -180,6 +190,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
+        
+    def setLoggingLevel(self, index):
+        self.loggingLevel = self.levelValueList[index]
 
     def showDedicatedCounters(self):
         self.dedicatedCountersWindow.show()
@@ -249,12 +262,17 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     def onClose(self):
         self.parent.close()
         
-    def onMessageWrite(self,message):
-        cursor = self.textEditConsole.textCursor()
-        cursor.movePosition(QtGui.QTextCursor.End)
-        cursor.insertText(message)
-        self.textEditConsole.setTextCursor(cursor)
-        self.textEditConsole.ensureCursorVisible()
+    def onMessageWrite(self,message,level=logging.DEBUG):
+        if level>= self.loggingLevel:
+            cursor = self.textEditConsole.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.End)
+            if level < logging.ERROR:
+                self.textEditConsole.setTextColor(QtCore.Qt.black)
+            else:
+                self.textEditConsole.setTextColor(QtCore.Qt.red)
+            cursor.insertText(message)
+            self.textEditConsole.setTextCursor(cursor)
+            self.textEditConsole.ensureCursorVisible()
         
     def closeEvent(self,e):
         logger = logging.getLogger("")
@@ -280,6 +298,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
+        self.config['Settings.loggingLevel'] = self.loggingLevel
         self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()

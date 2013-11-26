@@ -472,15 +472,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         trace.addColumn( topColumnName )
                         trace.addColumn( bottomColumnName )                
                         plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index].plotname], pens.penList, 
-                                                    yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, rawColumn=rawColumnName) 
+                                                    yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
+                                                    rawColumn=rawColumnName, name=self.scan.evalList[index].name) 
                     else:                
                         plottedTrace = PlottedTrace(trace, self.plotWidgets[self.scan.evalList[index].plotname], pens.penList, 
-                                                    yColumn=yColumnName, rawColumn=rawColumnName)               
+                                                    yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name)               
                     xRange = self.generator.xRange()
                     if xRange:
                         self.graphicsView.setXRange( *xRange )     
-                    pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
-                    scanHeader = stringutilit.commentarize( self.scan.documentationString() )
+                    pulseProgramHeader = self.pulseProgramUi.documentationString()
+                    scanHeader = self.scan.documentationString()
                     self.plottedTraceList.append( plottedTrace )
             self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
             self.plottedTraceList[0].trace.name = ", ".join([self.scan.settingsName,self.scan.evalList[index].name])

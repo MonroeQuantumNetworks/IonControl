@@ -3,13 +3,13 @@ from PyQt4 import QtCore
 import sys
 
 class QtLoggingHandler(logging.Handler, QtCore.QObject):    
-    textWritten = QtCore.pyqtSignal(str)
+    textWritten = QtCore.pyqtSignal(object, object)
     def __init__(self):
         logging.Handler.__init__(self)
         QtCore.QObject.__init__(self)
 
     def emit(self, record):
-        self.textWritten.emit(self.format(record).rstrip()+"\n")
+        self.textWritten.emit(self.format(record).rstrip()+"\n", record.levelno)
 
 class LevelThresholdFilter(logging.Filter):
     def __init__(self, passlevel, reject):
