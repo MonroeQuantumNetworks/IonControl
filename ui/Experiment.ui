@@ -145,6 +145,20 @@
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QToolButton" name="consoleClearButton">
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="Experiment.qrc">
+           <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -192,6 +206,9 @@
    <property name="text">
     <string>Clear</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionExit">
    <property name="icon">
@@ -202,7 +219,7 @@
     <string>Exit</string>
    </property>
    <property name="toolTip">
-    <string>Exit</string>
+    <string> Exit Program</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
@@ -217,7 +234,7 @@
     <string>Save</string>
    </property>
    <property name="toolTip">
-    <string>Save</string>
+    <string>Save Configuration</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -232,7 +249,7 @@
     <string>Start</string>
    </property>
    <property name="toolTip">
-    <string>Start</string>
+    <string> Start Experiment</string>
    </property>
   </action>
   <action name="actionPause">
@@ -248,7 +265,7 @@
     <string>Pause</string>
    </property>
    <property name="toolTip">
-    <string>Pause</string>
+    <string>Pause Experiment</string>
    </property>
   </action>
   <action name="actionStop">
@@ -260,7 +277,7 @@
     <string>Stop</string>
    </property>
    <property name="toolTip">
-    <string>Stop</string>
+    <string>Stop Experiment</string>
    </property>
   </action>
   <action name="actionSettings">
@@ -272,10 +289,13 @@
     <string>Settings</string>
    </property>
    <property name="toolTip">
-    <string>Settings</string>
+    <string>FPGA Settings</string>
    </property>
   </action>
   <action name="actionContinue">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="Experiment.qrc">
      <normaloff>:/kde/icons/player_fwd.png</normaloff>:/kde/icons/player_fwd.png</iconset>
@@ -286,6 +306,9 @@
    <property name="toolTip">
     <string>Continue</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionPulses">
    <property name="icon">
@@ -294,6 +317,9 @@
    </property>
    <property name="text">
     <string>Pulses</string>
+   </property>
+   <property name="toolTip">
+    <string>Pulse Program Configuration</string>
    </property>
   </action>
   <action name="actionReload">
@@ -307,6 +333,9 @@
    <property name="toolTip">
     <string>Reload Pulse Definition</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionDedicatedCounters">
    <property name="icon">
@@ -316,6 +345,9 @@
    <property name="text">
     <string>DedicatedCounters</string>
    </property>
+   <property name="toolTip">
+    <string>Dedicated Counters</string>
+   </property>
   </action>
   <action name="actionVoltageControl">
    <property name="icon">
@@ -324,6 +356,9 @@
    </property>
    <property name="text">
     <string>VoltageControl</string>
+   </property>
+   <property name="toolTip">
+    <string>Voltage Control</string>
    </property>
   </action>
   <action name="actionProject">

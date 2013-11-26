@@ -60,6 +60,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.deviceSerial = config.get('Settings.deviceSerial')
         self.deviceDescription = config.get('Settings.deviceDescription')
         self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
+        self.consoleMaximumLines = config.get('Settings.consoleMaximumLines',0)
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         
     def __enter__(self):
@@ -79,6 +80,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.levelComboBox.addItems(self.levelNameList)
         self.levelComboBox.currentIndexChanged[int].connect( self.setLoggingLevel )            
         self.levelComboBox.setCurrentIndex( self.levelValueList.index(self.loggingLevel) )
+        self.consoleClearButton.clicked.connect( self.onClearConsole )
+        self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
         
         self.parent = parent
         self.tabList = list()
@@ -191,6 +194,12 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
+    def onClearConsole(self):
+        self.textEditConsole.clear()
+        
+    def onConsoleMaximumLinesChanged(self, maxlines):
+        self.consoleMaximumLines = maxlines
+        
     def setLoggingLevel(self, index):
         self.loggingLevel = self.levelValueList[index]
 
@@ -299,6 +308,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
         self.config['Settings.loggingLevel'] = self.loggingLevel
+        self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
         self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
