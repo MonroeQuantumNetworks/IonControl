@@ -6,7 +6,7 @@ Created on Sat Jan 19 14:52:23 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui, QtCore, QtSvg
 import FitFunctions
 import functools
 import pyqtgraph
@@ -65,8 +65,12 @@ class FitUi(fitForm, QtGui.QWidget):
         for fitfunction in self.fitFunctions:
             fitfunction.page = QtGui.QWidget()
             fitfunction.gridLayout = QtGui.QGridLayout(fitfunction.page)
-            label = QtGui.QLabel(fitfunction.fitfunction.functionString,fitfunction.page)
-            label.setWordWrap(True)
+            if hasattr(fitfunction.fitfunction,'labelIcon'):
+                label = QtGui.QLabel()
+                label.setPixmap(QtGui.QPixmap(fitfunction.fitfunction.labelIcon))
+            else:
+                label = QtGui.QLabel(fitfunction.fitfunction.functionString,fitfunction.page)
+                label.setWordWrap(True)
             fitfunction.gridLayout.addWidget(label, 0, 0, 1, 3)
             self.comboBox.addItem(fitfunction.fitfunction.name)
             for line, paramname in enumerate(fitfunction.fitfunction.parameterNames):
