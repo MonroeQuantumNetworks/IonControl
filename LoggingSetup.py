@@ -24,7 +24,7 @@ class LevelThresholdFilter(logging.Filter):
 
 
 logger = logging.getLogger("")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
