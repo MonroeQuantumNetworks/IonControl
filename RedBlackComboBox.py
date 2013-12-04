@@ -2,7 +2,7 @@
 from PyQt4 import QtCore, QtGui
        
 
-class ComboBoxWithUnselectable( QtGui.QComboBox ):       
+class RedBlackComboBox( QtGui.QComboBox ):       
     def __init__(self,parent=None):
         QtGui.QComboBox.__init__(self,parent)
         self.unselectableItems = set()
@@ -17,16 +17,29 @@ class ComboBoxWithUnselectable( QtGui.QComboBox ):
                 item = self.model().itemFromIndex( index )
                 item.setSelectable(False)
                 item.setForeground( QtGui.QBrush( QtCore.Qt.red ))
+        self.highlightCurrentAsUnselectable( str(self.currentText()) in self.unselectableItems )
                 
-    def onCurrentIndexChanged(self, item):
-        item = str(item)
-        print item
-        if item in self.unselectableItems:
+    def highlightCurrentAsUnselectable(self, unselectable=True):
+        if unselectable:
             self.setStyleSheet("QComboBox {color:red; }")
         else:
             self.setStyleSheet("")
-        
-        
+                
+    def onCurrentIndexChanged(self, item):
+        self.highlightCurrentAsUnselectable( str(item) in self.unselectableItems )
+            
+    def findText(self, text, flags = QtCore.Qt.MatchCaseSensitive | QtCore.Qt.MatchExactly ):
+        """Add searched item as unselectable item if it is not available in the regular items"""
+        index = super(RedBlackComboBox,self).findText(text,flags)
+        if index<0:
+            self.addUnselectableItems([text])
+            index = super(RedBlackComboBox,self).findText(text,flags)
+        return index
+    
+    def clear(self):
+        super(RedBlackComboBox,self).clear()
+        self.unselectableItems = set()
+        self.highlightCurrentAsUnselectable(False)
 
 if __name__=="__main__":
     import PyQt4.uic

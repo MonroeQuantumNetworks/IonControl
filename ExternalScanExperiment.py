@@ -21,6 +21,9 @@ from PyQt4 import QtCore
 from modules import enum
 import logging
 
+class ScanNotAvailableException(Exception):
+    pass
+
 class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def __init__(self,settings,pulserHardware,experimentName,parent=None):
         super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,parent)
@@ -28,7 +31,6 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
-        self.scanControlWidget.setScanNames(ExternalScannedParameters.ExternalScannedParameters.keys())
         
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
@@ -37,11 +39,17 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         
     def updateEnabledParameters(self, enabledParameters ):
         self.enabledParameters = enabledParameters
+        self.scanControlWidget.setScanNames( self.enabledParameters.keys() )
         
     def startScan(self):
+        logger = logging.getLogger(__name__)
         if self.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running]:
             self.startTime = time.time()
             self.state = self.OpStates.running
+            if self.scan.scanParameter not in self.enabledParameters:
+                message = "External Scan Parameter '{0}' is not enabled.".format(self.scan.scanParameter)
+                logger.error(message)
+                raise ScanNotAvailableException(message) 
             self.externalParameter = self.enabledParameters[self.scan.scanParameter]
             self.externalParameter.saveValue()
             self.externalParameterIndex = 0
