@@ -145,7 +145,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page">
       <property name="geometry">
@@ -180,7 +180,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="comboBoxParameter"/>
+        <widget class="RedBlackComboBox" name="comboBoxParameter"/>
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout">
@@ -646,6 +646,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>RedBlackComboBox</class>
+   <extends>QComboBox</extends>
+   <header>RedBlackComboBox</header>
+  </customwidget>
   <customwidget>
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>

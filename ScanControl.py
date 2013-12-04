@@ -25,6 +25,7 @@ from EvaluationTableModel import EvaluationTableModel
 from ComboBoxDelegate import ComboBoxDelegate
 import logging
 from modules.HashableDict import HashableDict
+from modules.PyqtUtility import updateComboBoxItems
 
 def unique(seq):
     seen = set()
@@ -541,9 +542,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.updateSaveStatus()
             
     def setScanNames(self, scannames):
-        self.comboBoxParameter.clear()
-        for name in scannames:
-            self.comboBoxParameter.addItem(name)
+        updateComboBoxItems( self.comboBoxParameter, scannames ) 
         self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         self.updateSaveStatus()
                 

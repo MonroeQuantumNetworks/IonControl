@@ -11,6 +11,7 @@ from modules import MagnitudeParser
 
 class CosFit(FitFunctionBase):
     name = "Cos"
+    labelIcon = ":/latex/icons/cos.png"
     def __init__(self):
         FitFunctionBase.__init__(self)
         self.functionString =  'A*cos(2*pi*k*x+theta)+O'
