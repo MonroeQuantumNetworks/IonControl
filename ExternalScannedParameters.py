@@ -187,6 +187,8 @@ class LaserSynthesizerScan(ExternalParameterBase):
         """
         Move one steps towards the target, return current value
         """
+        if value is None: 
+            return True
         newvalue, arrived = nextValue(self.value, value, self.settings.stepsize, self.settings.jump)
         self._setValue( newvalue )
         if self.displayValueCallback:
