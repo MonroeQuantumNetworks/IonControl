@@ -409,6 +409,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.updateSaveStatus()
             
     def onRecentPPFilesChanged(self, name):
+        logger = logging.getLogger(__name__)
         logger.exception("calculateSteps")
         logger.debug( "ScanControl.onRecentPPFilesChanged" )
         if self.loadPPComboBox.findText(name)<0:
