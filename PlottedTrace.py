@@ -60,19 +60,19 @@ class PlottedTrace(object):
           
     @property
     def hasTopColumn(self):
-        return hasattr(self.trace, self._topColumn)
+        return self._topColumn and hasattr(self.trace, self._topColumn)
 
     @property
     def hasBottomColumn(self):
-        return hasattr(self.trace, self._bottomColumn)
+        return self._bottomColumn and hasattr(self.trace, self._bottomColumn)
 
     @property
     def hasHeightColumn(self):
-        return hasattr(self.trace, self._heightColumn)
+        return self._heightColumn and hasattr(self.trace, self._heightColumn)
 
     @property
     def hasRawColumn(self):
-        return hasattr(self.trace, self._rawColumn)
+        return self._rawColumn and hasattr(self.trace, self._rawColumn)
         
     @property
     def x(self):
