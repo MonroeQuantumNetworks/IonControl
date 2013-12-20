@@ -541,6 +541,8 @@ class Magnitude():
     
     def toStringTuple(self):
         unitTuple = tuple(self.unit)
+        if math.isinf(self.val) or math.isnan(self.val):
+            return (str(self.val),"")
         if self.out_unit:
             m = self.copy(True)
             m._div_by(self.out_factor)
