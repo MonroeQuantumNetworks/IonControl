@@ -7,41 +7,18 @@ This is the main gui program for the ExperimentalUi
 @author: pmaunz
 """
 
-#import sip
-#sip.setapi("QString",2)
-#sip.setapi("QVariant",2)
-#sip.setapi("QDate",2)
-#sip.setapi("QDateTime",2)
-#sip.setapi("QTextStream",2)
-#sip.setapi("QTime",2)
-#sip.setapi("QUrl",2)
-
 import LoggingSetup
 import MagnitudeParameter
-import ScanExperiment
-import ExternalScanExperiment
-import VoltageScanExperiment
 import SettingsDialog
-import testExperiment
 from persist import configshelve
-import PulseProgramUi
-import ShutterUi
-import DDSUi
 import PulserHardware
-import DedicatedCounters
-import ExternalScannedParametersSelection
-import ExternalScannedParametersUi
-import ProjectSelectionUi
 import os
 from modules import DataDirectory
 from ExceptionLogButton import ExceptionLogButton
-import GlobalVariables 
 from PulserHardwareClient import PulserHardware 
 import ProjectSelection
 from collections import OrderedDict
 
-import VoltageControl
-    
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
 import argparse
