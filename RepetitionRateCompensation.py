@@ -23,8 +23,9 @@ import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
 import argparse
 import logging
+from ProjectSelectionUi import GetProjectSelection
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\RepetitionRate.ui')
 
 
 class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
@@ -63,82 +64,26 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.parent = parent
         self.tabList = list()
         self.tabDict = dict()
-        # initialize PulseProgramUi
-        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config)
-        self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
         self.settingsDialog = SettingsDialog.SettingsDialog(self.pulser, self.config, self.parent)
         self.settingsDialog.setupUi()
 
-        self.settings = self.settingsDialog.settings        
-
-        # Global Variables
-        self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
-        self.globalVariablesUi.setupUi(self.globalVariablesUi)
-        self.globalVariablesDock = QtGui.QDockWidget("Global Variables")
-        self.globalVariablesDock.setObjectName("Global Variables")
-        self.globalVariablesDock.setWidget( self.globalVariablesUi )
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
-
-        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment"), "Scan"),
-                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan"), "External Scan"),
-                             (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,"VoltageScan"), "Voltage Scan"),
-                             (testExperiment.test(),"test"),
-                             ]:
-            widget.setupUi( widget, self.config )
-            if hasattr(widget, 'setGlobalVariablesUi'):
-                widget.setGlobalVariablesUi( self.globalVariablesUi )
-            if hasattr(widget,'setPulseProgramUi'):
-                widget.setPulseProgramUi( self.pulseProgramDialog )
-            self.tabWidget.addTab(widget, name)
-            self.tabList.append(widget)
-            self.tabDict[name] = widget
-            widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
-            widget.StatusMessage.connect( self.statusbar.showMessage)
+        self.settings = self.settingsDialog.settings
+        
+        repRateWidget = RepetitionRateWidget( self.settings, self.pulser, "Repetition Rate")        
+        repRateWidget.setupUi( repRateWidget, self.config )
+        self.tabWidget.addTab(repRateWidget, "Repetition Rate")
+        self.tabList.append(widget)
+        self.tabDict[name] = widget
             
-        self.ExternalScanExperiment = self.tabDict["External Scan"]
-        self.voltageScanExperiment = self.tabDict["Voltage Scan"]
-        
-        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config)
-        self.shutterUi.setupUi(self.shutterUi, True)
-        self.shutterDockWidget.setWidget( self.shutterUi )
-        logger.debug( "ShutterUi representation:" + repr(self.shutterUi) )
+        self.repetitionRateTrace = RepetitionRateTrace(self.pulser, self.config)
+        self.repetitionRateTrace.setupUi(self.repetitionRateTrace)
+        self.traceControl.setWidget( self.shutterUi )
 
-        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config)
-        self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
-        self.triggerUi.setupUi(self.triggerUi)
-        self.triggerDockWidget.setWidget( self.triggerUi )
-
-        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser )
-        self.DDSUi.setupUi(self.DDSUi)
-        self.DDSDockWidget.setWidget( self.DDSUi )
-        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
-                
-        # tabify the dock widgets
-        self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
-        self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
-        self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
-        
-        self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
-        self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
-        self.ExternalScannedParametersSelectionDock = QtGui.QDockWidget("Params Selection")
-        self.ExternalScannedParametersSelectionDock.setObjectName("_ExternalScannedParametersSelectionDock")
-        self.ExternalScannedParametersSelectionDock.setWidget(self.ExternalParametersSelectionUi)
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersSelectionDock)
-
-        self.ExternalParametersUi = ExternalScannedParametersUi.ControlUi()
-        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.ExternalParametersUi )
-        self.ExternalScannedParametersDock = QtGui.QDockWidget("Params Control")
-        self.ExternalScannedParametersDock.setWidget(self.ExternalParametersUi)
-        self.ExternalScannedParametersDock.setObjectName("_ExternalScannedParametersDock")
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersDock)
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
-               
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
-        self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
-        #tabify 
-        self.tabifyDockWidget( self.ExternalScannedParametersSelectionDock, self.ExternalScannedParametersDock)
-        
+        self.repetitionRateLock = RepetitionRateLock(self.pulser, self.config)
+        self.repetitionRateLock.setupUi(self.repetitionRateLock)
+        self.lockControl.setWidget( self.shutterUi )
+              
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
         self.actionPause.triggered.connect(self.onPause)
@@ -268,12 +213,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             tab.onClose()
         self.saveConfig()
         self.currentTab.deactivate()
-        self.pulseProgramDialog.done(0)
         self.settingsDialog.done(0)
-        self.ExternalParametersSelectionUi.onClose()
-        self.voltageControlWindow.close()
-        self.dedicatedCountersWindow.close()
-        self.pulseProgramDialog.onClose()
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
@@ -286,15 +226,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.size'] = self.size()
         self.config['Settings.loggingLevel'] = self.loggingLevel
         self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
-        self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
-        self.DDSUi.saveConfig()
-        self.shutterUi.saveConfig()
-        self.triggerUi.saveConfig()
-        self.dedicatedCountersWindow.saveConfig()
-        self.voltageControlWindow.saveConfig()
-        self.ExternalParametersSelectionUi.saveConfig()
-        self.globalVariablesUi.saveConfig()
+        self.repetitionRateLock.saveConfig()
+        self.repetitionRateTrace.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
@@ -304,7 +238,7 @@ if __name__ == "__main__":
     import sys
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes
-    myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
+    myappid = 'TrappedIons.RepetitionRateControl' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
     parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
@@ -313,16 +247,13 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
     logger = logging.getLogger("")
-    # the next two lines migrate old pickle files to use the new magnitude module
-    import modules.magnitude as magnitude
-    sys.modules['magnitude'] = magnitude
 
-    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir = GetProjectSelection(True)
     
     if project:
         DataDirectory.DefaultProject = project
         
-        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+        with configshelve.configshelve( os.path.join( ProjectSelection.guiConfigDir(), "repetitionratecontrol.db.config" )  ) as config:
             with WidgetContainerUi(config) as ui:
                 ui.setupUi(ui)
                 LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
