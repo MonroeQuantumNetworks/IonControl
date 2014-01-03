@@ -34,6 +34,7 @@ class PlottedTrace(object):
         self.parentTrace = None
         self.childTraces = []
         self.curvePen = 0
+        self.name = name
         # we use pointers to the relevant columns in trace
         if tracePlotting is not None:
             self.tracePlotting = tracePlotting

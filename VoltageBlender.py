@@ -117,6 +117,7 @@ class VoltageBlender(QtCore.QObject):
         try:
             if HardwareDriverLoaded:
                 self.chassis.writeAoBuffer(line)
+                logger.debug( "Wrote voltages {0}".format(line))
                 self.chassis.writeDoBuffer(self.DoLine)
             else:
                 logger.error( "Hardware Driver not loaded, cannot write voltages" )

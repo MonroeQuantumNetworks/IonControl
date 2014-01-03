@@ -133,7 +133,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             if self.externalParameterIndex<len(self.scan.list) and self.state==self.OpStates.running:
                 self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
                 self.pulserHardware.ppStart()
-                logger.info( "External Value:" , self.scan.list[self.externalParameterIndex] )
+                logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )
             else:
                 self.finalizeData(reason='end of scan')
                 if self.externalParameterIndex >= len(self.scan.list):

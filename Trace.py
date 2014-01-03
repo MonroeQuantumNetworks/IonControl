@@ -270,6 +270,7 @@ class Trace(object):
                 self.loadTraceXml(instream)
             else:
                 self.loadTraceText(instream)
+                self.vars.tracePlottingList.append(TracePlotting())
         self.filename = filename
 
         

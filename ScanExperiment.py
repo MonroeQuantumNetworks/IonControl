@@ -484,7 +484,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     scanHeader = self.scan.documentationString()
                     self.plottedTraceList.append( plottedTrace )
             self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
-            self.plottedTraceList[0].trace.name = ", ".join([self.scan.settingsName,self.scan.evalList[index].name])
+            self.plottedTraceList[0].trace.name = self.scan.settingsName
             self.plottedTraceList[0].trace.vars.comment = ""
             self.plottedTraceList[0].trace.filenameCallback = functools.partial( self.plottedTraceList[0].traceFilename, self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated )

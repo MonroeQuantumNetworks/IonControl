@@ -160,20 +160,20 @@ class N6700BPowerSupply(ExternalParameterBase):
         del self.instrument
         
 
-class LaserSynthesizerScan(ExternalParameterBase):
+class HP8672A(ExternalParameterBase):
     """
     Scan the laser frequency by scanning a synthesizer HP8672A. (The laser is locked to a sideband)
     setValue is frequency of synthesizer
     currentValue and currentExternalValue are current frequency of synthesizer
     """
-    className = "Laser Lock Synthesizer"
+    className = "HP8672A"
     dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         #self.amplitudeString = "Z0K1L6O1"
         #self.amplitudeString = "O3K0L0N0Z1"
         self.synthesizer = visa.instrument(instrument) #open visa session
-        self.synthesizer.write(self.settings.amplitudeStr)
+        self.synthesizer.write(self.settings.additionalStr)
         self.setDefaults()
         self.value = self.settings.value
 
@@ -181,12 +181,15 @@ class LaserSynthesizerScan(ExternalParameterBase):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('lockPoint', magnitude.mg(384227.944,'GHz') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('amplitudeStr' , "Z0K1L6O1" )       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('additionalStr' , "Z0K1L6O1" )       # if True go to the target value in one jump
+        self.settings.__dict__.setdefaulr('amplitude', None)
    
     def setValue(self,value):
         """
         Move one steps towards the target, return current value
         """
+        if value is None: 
+            return True
         newvalue, arrived = nextValue(self.value, value, self.settings.stepsize, self.settings.jump)
         self._setValue( newvalue )
         if self.displayValueCallback:
@@ -195,7 +198,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
             
     def _setValue(self, value ):
         value = value.round('kHz')
-        command = "P{0:0>8.0f}".format(value.toval('kHz')) + self.settings.amplitudeStr
+        command = "P{0:0>8.0f}".format(value.toval('kHz')) + self.settings.additionalStr
         self.synthesizer.write(command)
         self.value = value
         
@@ -206,7 +209,7 @@ class LaserSynthesizerScan(ExternalParameterBase):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'lockpoint', 'type': 'magnitude', 'value': self.settings.lockPoint})
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-        superior.append({'name': 'amplitudeStr', 'type': 'str', 'value': self.settings.amplitudeStr})
+        superior.append({'name': 'additionalStr', 'type': 'str', 'value': self.settings.additionalStr})
         return superior
 
     def close(self):
@@ -246,13 +249,13 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
         del self.synthesizer
 
     
-class LaserVCOScan(ExternalParameterBase):
+class AgilentPowerSupply(ExternalParameterBase):
     """
     Scan a laser by changing the voltage on a HP power supply. The frequency is controlled via a VCO. 
     setValue is voltage of vco
     currentValue and currentExternalValue are current applied voltage
     """
-    className = "Laser VCO"
+    className = "Agilent Powersupply"
     dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         ExternalParameterBase.__init__(self,name,config)
@@ -284,7 +287,7 @@ class LaserVCOScan(ExternalParameterBase):
     def close(self):
         del self.powersupply
         
-class LaserWavemeterScan(LaserVCOScan):
+class LaserWavemeterScan(AgilentPowerSupply):
     """
     Scan a laser by changing the voltage on a HP power supply. The frequency is controlled via a VCO. 
     setValue is voltage of vco
@@ -405,8 +408,8 @@ class DummyParameter(ExternalParameterBase):
     
         
 ExternalScannedParameters = { LaserWavemeterLockScan.className: LaserWavemeterLockScan, 
-                              LaserSynthesizerScan.className: LaserSynthesizerScan,
-                              LaserVCOScan.className: LaserVCOScan,
+                              HP8672A.className: HP8672A,
+                              AgilentPowerSupply.className: AgilentPowerSupply,
                               LaserWavemeterScan.className : LaserWavemeterScan,
                               DummyParameter.className: DummyParameter,
                               N6700BPowerSupply.className: N6700BPowerSupply,
