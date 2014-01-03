@@ -30,30 +30,49 @@
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton">
+      <widget class="QToolButton" name="lockButton">
        <property name="text">
         <string>Lock</string>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_2">
-       <property name="text">
-        <string>Unlock</string>
+       <property name="icon">
+        <iconset resource="RepetitionRate.qrc">
+         <normaloff>:/openicon/icons/lock-4.png</normaloff>:/openicon/icons/lock-4.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton_3">
+      <widget class="QToolButton" name="unlockButton">
        <property name="text">
-        <string>Single</string>
+        <string>Unlock</string>
+       </property>
+       <property name="icon">
+        <iconset resource="RepetitionRate.qrc">
+         <normaloff>:/openicon/icons/media-playback-stop-7.png</normaloff>:/openicon/icons/media-playback-stop-7.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
     </layout>
    </item>
    <item row="8" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_9">
+    <widget class="MagnitudeSpinBox" name="magNumAvg">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -63,15 +82,12 @@
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
      </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
-     </property>
     </widget>
    </item>
    <item row="7" column="0">
     <widget class="QLabel" name="label_7">
      <property name="text">
-      <string>integrator Coefficient</string>
+      <string>Integrator Coefficient</string>
      </property>
     </widget>
    </item>
@@ -86,13 +102,10 @@
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
      </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
-     </property>
     </widget>
    </item>
    <item row="3" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_4">
+    <widget class="MagnitudeSpinBox" name="magOutputAmpl">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -102,15 +115,12 @@
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
      </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
-     </property>
     </widget>
    </item>
    <item row="5" column="0">
     <widget class="QLabel" name="label_8">
      <property name="text">
-      <string>offset</string>
+      <string>Offset</string>
      </property>
     </widget>
    </item>
@@ -122,7 +132,7 @@
     </widget>
    </item>
    <item row="6" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_7">
+    <widget class="MagnitudeSpinBox" name="magPCoeff">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -131,9 +141,6 @@
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
      </property>
     </widget>
    </item>
@@ -145,7 +152,7 @@
     </widget>
    </item>
    <item row="7" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_8">
+    <widget class="MagnitudeSpinBox" name="magICoeff">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -154,14 +161,11 @@
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
      </property>
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_2">
+    <widget class="MagnitudeSpinBox" name="magReferenceAmpl">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -170,9 +174,6 @@
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
      </property>
     </widget>
    </item>
@@ -198,7 +199,7 @@
     </widget>
    </item>
    <item row="5" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_6">
+    <widget class="MagnitudeSpinBox" name="magOffset">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -207,14 +208,11 @@
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
      </property>
     </widget>
    </item>
    <item row="4" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_5">
+    <widget class="MagnitudeSpinBox" name="magHarmonic">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -223,21 +221,18 @@
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
      </property>
     </widget>
    </item>
    <item row="6" column="0">
     <widget class="QLabel" name="label_6">
      <property name="text">
-      <string>prop Coefficient</string>
+      <string>Prop Coefficient</string>
      </property>
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="MagnitudeSpinBox" name="doubleSpinBox_3">
+    <widget class="MagnitudeSpinBox" name="magOutputFreq">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -246,9 +241,6 @@
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-     <property name="maximum">
-      <double>10000.000000000000000</double>
      </property>
     </widget>
    </item>
@@ -281,6 +273,8 @@
    <header>MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="RepetitionRate.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -25,6 +25,10 @@ import argparse
 import logging
 from ProjectSelectionUi import GetProjectSelection
 
+from RepetitionRateWidget import RepetitionRateWidget
+from RepetitionRateLock import RepetitionRateLock
+from RepetitionRateTrace import RepetitionRateTrace
+
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\RepetitionRate.ui')
 
 
@@ -70,19 +74,19 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
 
         self.settings = self.settingsDialog.settings
         
-        repRateWidget = RepetitionRateWidget( self.settings, self.pulser, "Repetition Rate")        
-        repRateWidget.setupUi( repRateWidget, self.config )
+        repRateWidget = RepetitionRateWidget( self.settings, self.pulser, self.config )        
+        repRateWidget.setupUi()
         self.tabWidget.addTab(repRateWidget, "Repetition Rate")
-        self.tabList.append(widget)
-        self.tabDict[name] = widget
+        self.tabList.append(repRateWidget)
+        self.tabDict["Repetition Rate"] = repRateWidget
             
         self.repetitionRateTrace = RepetitionRateTrace(self.pulser, self.config)
-        self.repetitionRateTrace.setupUi(self.repetitionRateTrace)
-        self.traceControl.setWidget( self.shutterUi )
+        self.repetitionRateTrace.setupUi()
+        self.traceControl.setWidget( self.repetitionRateTrace )
 
         self.repetitionRateLock = RepetitionRateLock(self.pulser, self.config)
-        self.repetitionRateLock.setupUi(self.repetitionRateLock)
-        self.lockControl.setWidget( self.shutterUi )
+        self.repetitionRateLock.setupUi()
+        self.lockControl.setWidget( self.repetitionRateLock )
               
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
@@ -100,7 +104,6 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
-        self.currentTab.activate()
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
@@ -109,12 +112,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
             
-        self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulser)
-        self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
-        
-        self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
-        self.voltageControlWindow.setupUi(self.voltageControlWindow)
-        self.setWindowTitle("Experimental Control ({0})".format(project) )
+        self.setWindowTitle("Repetition Rate Control ({0})".format(project) )
         
     def onClearConsole(self):
         self.textEditConsole.clear()
@@ -176,9 +174,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock, self.globalVariablesDock ]:
-            self.menuView.addAction(dock.toggleViewAction())
+#         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
+#                      self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock, self.globalVariablesDock ]:
+#             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
         self.settingsDialog.show()
