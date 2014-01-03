@@ -38,13 +38,14 @@ class QueueReader(QtCore.QThread):
     
     def run(self):
         logger = logging.getLogger(__name__)
-        try:
-            while not self.exiting:
-                data = self.dataQueue.get()
-                self.dataHandler[ data.__class__.__name__ ]( data )
-        except Exception as e:
-            logger.exception("Exception in QueueReader")
-        logger.info( "PulserHardware client thread finished." )
+        while not self.exciting:
+            try:
+                while not self.exiting:
+                    data = self.dataQueue.get()
+                    self.dataHandler[ data.__class__.__name__ ]( data )
+            except Exception as e:
+                logger.exception("Exception in QueueReader")
+            logger.info( "PulserHardware client thread finished." )
 
 class LoggingReader(QtCore.QThread):
     def __init__(self, loggingQueue, parent=None):

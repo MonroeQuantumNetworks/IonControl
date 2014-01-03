@@ -43,29 +43,29 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         
     def startScan(self):
         logger = logging.getLogger(__name__)
-        if self.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running]:
-            self.startTime = time.time()
-            self.state = self.OpStates.running
-            if self.scan.scanParameter not in self.enabledParameters:
-                message = "External Scan Parameter '{0}' is not enabled.".format(self.scan.scanParameter)
-                logger.error(message)
-                raise ScanNotAvailableException(message) 
-            self.externalParameter = self.enabledParameters[self.scan.scanParameter]
-            self.externalParameter.saveValue()
-            self.externalParameterIndex = 0
-            self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
-                    
-            self.pulserHardware.ppFlushData()
-            self.pulserHardware.ppClearWriteFifo()
-            self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
-            self.displayUi.onClear()
-            self.state = self.OpStates.starting
-            self.plottedTrace = None #reset plotted trace
-            if self.plottedTraceList:
-                for plottedTrace in self.plottedTraceList:
-                    plottedTrace.plot(0) #unplot previous trace
-            self.plottedTraceList = list() #reset plotted trace
-            QtCore.QTimer.singleShot(100,self.startBottomHalf)
+        #if self.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running]:
+        self.startTime = time.time()
+        self.state = self.OpStates.running
+        if self.scan.scanParameter not in self.enabledParameters:
+            message = "External Scan Parameter '{0}' is not enabled.".format(self.scan.scanParameter)
+            logger.error(message)
+            raise ScanNotAvailableException(message) 
+        self.externalParameter = self.enabledParameters[self.scan.scanParameter]
+        self.externalParameter.saveValue()
+        self.externalParameterIndex = 0
+        self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
+                
+        self.pulserHardware.ppFlushData()
+        self.pulserHardware.ppClearWriteFifo()
+        self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+        self.displayUi.onClear()
+        self.state = self.OpStates.starting
+        self.plottedTrace = None #reset plotted trace
+        if self.plottedTraceList:
+            for plottedTrace in self.plottedTraceList:
+                plottedTrace.plot(0) #unplot previous trace
+        self.plottedTraceList = list() #reset plotted trace
+        QtCore.QTimer.singleShot(100,self.startBottomHalf)
            
     def startBottomHalf(self):
         logger = logging.getLogger(__name__)
@@ -86,13 +86,13 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def onStop(self):
         logger = logging.getLogger(__name__)
         logger.debug( "Old Status {0}".format( self.state ) )
-        if self.state in [self.OpStates.starting, self.OpStates.running]:
-            ScanExperiment.ScanExperiment.onStop(self)
-            self.state = self.OpStates.stopping
-            logger.info( "Status -> Stopping" )
-            self.stopBottomHalf()
-            self.finalizeData(reason='stopped')
-            self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
+        #if self.state in [self.OpStates.starting, self.OpStates.running]:
+        ScanExperiment.ScanExperiment.onStop(self)
+        self.state = self.OpStates.stopping
+        logger.info( "Status -> Stopping" )
+        self.stopBottomHalf()
+        self.finalizeData(reason='stopped')
+        self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
 
                     
     def stopBottomHalf(self):
