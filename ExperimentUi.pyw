@@ -50,7 +50,7 @@ class Logger(QtCore.QObject):
         self.terminal
     
     def write(self, message):
-#        self.terminal.write(message)
+        self.terminal.write(message)
         self.textWritten.emit(str(message))
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')

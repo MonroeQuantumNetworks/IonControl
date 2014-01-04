@@ -45,10 +45,14 @@ class RabiCarrierFunction(FitFunctionBase):
         self.eta2 = pow(self.eta,2)
 
         
-    def residuals(self,p, y, x):
+    def residuals(self,p, y, x, sigma):
         A,n,omega = p
         #return y-(A*s2/(s2+numpy.square(x-x0))+O)
-        return y-( A/2*(1-1/(n+1)*(cos(2*omega*x)*(1-n/(n+1)*cos(2*omega*x*self.eta2))+(n/(n+1))*sin(2*omega*x)*sin(2*omega*x*self.eta2))/(1+(n/(n+1))**2
+        if sigma is not None:
+            return (y-( A/2*(1-1/(n+1)*(cos(2*omega*x)*(1-n/(n+1)*cos(2*omega*x*self.eta2))+(n/(n+1))*sin(2*omega*x)*sin(2*omega*x*self.eta2))/(1+(n/(n+1))**2
+                -2*(n/(n+1))*cos(2*omega*x*self.eta2))) ))/sigma
+        else:
+            return y-( A/2*(1-1/(n+1)*(cos(2*omega*x)*(1-n/(n+1)*cos(2*omega*x*self.eta2))+(n/(n+1))*sin(2*omega*x)*sin(2*omega*x*self.eta2))/(1+(n/(n+1))**2
                 -2*(n/(n+1))*cos(2*omega*x*self.eta2))) )
         
     def value(self,x,p=None):
@@ -105,18 +109,18 @@ class FullRabiCarrierFunction(FitFunctionBase):
     def updateTables(self,beta):
         if self.eta2 != self.laguerreCacheEta2:
             print "Calculating Laguerre Table for eta^2", self.eta2
-            self.laguerreTable = array([ laguerre(n)(self.eta2) for n in range(100) ])
+            self.laguerreTable = array([ laguerre(n)(self.eta2) for n in range(200) ])
             self.laguerreCacheEta2 = self.eta2
             print "done."
         if self.pnCacheBeta != beta:
             print "Calculating Probability Table for beta", beta
-            self.pnTable = array([ exp(-(n+1)*beta)*(exp(beta)-1) for n in range(100)])
+            self.pnTable = array([ exp(-(n+1)*beta)*(exp(beta)-1) for n in range(200)])
             self.pnCacheBeta = beta
             print "done."
             print 1-sum(self.pnTable)
             
         
-    def residuals(self,p, y, x):
+    def residuals(self,p, y, x, sigma):
         A,nbar,omega = p
         beta = log(1+1./nbar)
         self.updateTables(beta)
@@ -129,7 +133,10 @@ class FullRabiCarrierFunction(FitFunctionBase):
         else:
             valueList = sin(omega * self.laguerreTable * x)**2
             result = A*dot( self.pnTable, valueList )
-        return y-result
+        if sigma is not None:
+            return (y-result)/sigma
+        else:
+            return y-result
         
     def value(self,x,p=None):
         A,nbar,omega  = self.parameters if p is None else p
