@@ -181,6 +181,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableModel = EvaluationTableModel(plotnames=self.plotnames)
         self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
         self.evalTableView.setModel( self.evalTableModel )
+        self.evalTableView.clicked.connect( self.editEvaluationTable )
         self.evalTableView.setItemDelegateForColumn(3, ComboBoxDelegate() )
         self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
@@ -635,6 +636,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def documentationString(self):
         return self.settings.documentationString()
+    
+    def editEvaluationTable(self, index):
+        if index.column() in [2,3]:
+            self.evalTableView.edit(index)
 
 if __name__=="__main__":
     import sys

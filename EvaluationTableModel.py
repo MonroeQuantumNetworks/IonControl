@@ -54,6 +54,9 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                  (QtCore.Qt.EditRole,3): partial( self.setPlotName, index, value ),
                 }.get((role,index.column()), lambda: False )()
                 
+    def setValue(self, index, value):
+        self.setData( index, value, QtCore.Qt.EditRole)
+                
     def setDataName(self, index, name):
         self.evalList[index.row()].name = str(name.toString()).strip()
         self.dataChanged.emit()
@@ -63,5 +66,4 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.evalList[index.row()].plotname = str(plotname)
         self.dataChanged.emit()
         return True
-        
         
