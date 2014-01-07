@@ -338,11 +338,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def createAverageTrace(self,evalList):
         trace = Trace()
         self.averagePlottedTraceList = list()
-        for index, result in enumerate(evalList):
+        for index, eval in enumerate(evalList):
             yColumnName = 'y{0}'.format(index)
             rawColumnName = 'raw{0}'.format(index)
             trace.addColumn( yColumnName )
-            thisAveragePlottedTrace = PlottedTrace(trace, self.graphicsView, pens.penList, yColumn=yColumnName)
+            thisAveragePlottedTrace = PlottedTrace(trace, self.plotWidgets[eval.plotname], pens.penList, yColumn=yColumnName)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
             thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
