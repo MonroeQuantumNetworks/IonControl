@@ -105,13 +105,14 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
         
     def value(self):
+        logger = logging.getLogger(__name__)
         try:
             value = self.expression.evaluateAsMagnitude( str( self.lineEdit().text() ))
             if self._dimension is not None and value.unit != self._dimension.unit:
-                raise DimensionMismatch("Got unit {0} excpeted {1}".format(value.unit,self._dimension.unit))
+                raise DimensionMismatch("Got unit {0} expected {1}".format(value.unit,self._dimension.unit))
         except Exception as e:
             self.lineEdit().setPalette( self.redTextPalette )
-            logger.exception("value")
+            logging.getLogger(__name__).exception("value")
             raise e
         self.lineEdit().setPalette( self.blackTextPalette )
         return value

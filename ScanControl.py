@@ -147,6 +147,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
     def __init__(self,config,parentname, plotnames=None, parent=None):
+        logger = logging.getLogger(__name__)
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
         self.config = config
@@ -181,6 +182,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableModel = EvaluationTableModel(plotnames=self.plotnames)
         self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
         self.evalTableView.setModel( self.evalTableModel )
+        self.evalTableView.clicked.connect( self.editEvaluationTable )
         self.evalTableView.setItemDelegateForColumn(3, ComboBoxDelegate() )
         self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
@@ -544,7 +546,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             
     def setScanNames(self, scannames):
         updateComboBoxItems( self.comboBoxParameter, scannames ) 
-        self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
+        if self.settings.scanParameter:
+            self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         self.updateSaveStatus()
                 
     def getScan(self):
@@ -635,6 +638,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def documentationString(self):
         return self.settings.documentationString()
+    
+    def editEvaluationTable(self, index):
+        if index.column() in [2,3]:
+            self.evalTableView.edit(index)
 
 if __name__=="__main__":
     import sys
