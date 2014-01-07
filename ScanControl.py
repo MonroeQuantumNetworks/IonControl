@@ -147,6 +147,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
     def __init__(self,config,parentname, plotnames=None, parent=None):
+        logger = logging.getLogger(__name__)
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
         self.config = config
@@ -544,7 +545,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             
     def setScanNames(self, scannames):
         updateComboBoxItems( self.comboBoxParameter, scannames ) 
-        self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
+        if self.settings.scanParameter:
+            self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         self.updateSaveStatus()
                 
     def getScan(self):
