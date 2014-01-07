@@ -105,6 +105,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
         
     def value(self):
+        logger = logging.getLogger(__name__)
         try:
             value = self.expression.evaluateAsMagnitude( str( self.lineEdit().text() ))
             if self._dimension is not None and value.unit != self._dimension.unit:

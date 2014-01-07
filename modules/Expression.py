@@ -15,14 +15,17 @@ import operator
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )
-fnumber = Combine( Word( "+-"+nums, nums ) + 
+plus  = Literal( "+" )
+minus = Literal( "-" )
+dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
+                   Optional( e + Word( "+-"+nums, nums ) ) )
+numfnumber = Combine( Word( "+-"+nums, nums ) + 
                    Optional( point + Optional( Word( nums ) ) ) +
                    Optional( e + Word( "+-"+nums, nums ) ) )
+fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 funit = Combine( fnumber + Optional(Word(" "," ")) + ident )
  
-plus  = Literal( "+" )
-minus = Literal( "-" )
 mult  = Literal( "*" )
 div   = Literal( "/" )
 lpar  = Literal( "(" ).suppress()
@@ -181,6 +184,9 @@ if __name__ == "__main__":
     test( "2^3^2", 2**3**2 )
     test( "2^3+2", 2**3+2 )
     test( "2^9", 2**9 )
+    test( ".5", 0.5)
+    test( "-.7", -0.7)
+    test( "-.7ms", magnitude.mg(-0.7,"ms"))
     test( "sgn(-2)", -1 )
     test( "sgn(0)", 0 )
     test( "sgn(0.1)", 1 )
