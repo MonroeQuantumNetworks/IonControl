@@ -15,7 +15,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variabledict = variabledict
-        self.variablelist = sorted([ x for x in self.variabledict.values() if x.type=='counter' ], key=attrgetter('index')) 
+        self.variablelist = [ x for x in self.variabledict.values() if x.type=='counter' ]
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.variablelist) 

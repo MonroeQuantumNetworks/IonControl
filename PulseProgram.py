@@ -132,7 +132,7 @@ class PulseProgram:
     the procedure updateVariables( dictionary )  updates variable values in the bytecode
     """    
     def __init__(self):
-        self.variabledict = dict()       # keeps information on all variables to easily change them later
+        self.variabledict = collections.OrderedDict()        # keeps information on all variables to easily change them later
         self.labeldict = dict()          # keep information on all labels
         self.source = collections.OrderedDict()             # dictionary of source code files (stored as strings)
         self.code = []                   # this is a list of lines
@@ -283,7 +283,7 @@ class PulseProgram:
         """
         logger = logging.getLogger(__name__)
         self.code = []
-        self.variabledict = dict()
+        self.variabledict = collections.OrderedDict() 
         self.defines = dict()
         addr_offset = 0
     
@@ -385,7 +385,6 @@ class PulseProgram:
             self.defines[label] = label # add the variable to the dictionary of definitions to prevent identifiers and variables from having the same name
                                         # however, we do not want it replaced with a number but keep the name for the last stage of compilation
             pass
-        var.index = len(self.variabledict)
         var.data = data
         self.variabledict.update({ label: var})
 

@@ -11,6 +11,7 @@ import modules.magnitude as magnitude
 from modules import Expression
 import sip
 import logging
+from collections import OrderedDict
 
 api2 = sip.getapi("QVariant")==2
 
@@ -20,11 +21,11 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = dict()
+        self.variabledict = OrderedDict()
         for name,var in variabledict.iteritems():
             if var.type in ['parameter','address',None]:
                 self.variabledict[name] = var
-        self.variablelist = sorted([ x for x in self.variabledict.values() if x.type=='parameter' ], key=attrgetter('index')) 
+        self.variablelist = [ x for x in self.variabledict.values() if x.type=='parameter' ]
         self.expression = Expression.Expression()
         self.parameterdict = parameterdict
         self.onParameterChanged()   # make sure we update all global variables

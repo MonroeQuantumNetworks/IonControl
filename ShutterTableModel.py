@@ -25,7 +25,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
                     self.variablelist.append(var)
                     if m.group(1) is not None and m.group(1) in self.variabledict:
                         self.maskdict[name] = self.variabledict[m.group(1)]
-        self.variablelist = sorted(self.variablelist, key=attrgetter('index')) 
+        #self.variablelist = sorted(self.variablelist, key=attrgetter('index')) 
         #print self.variablelist 
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
