@@ -1,6 +1,7 @@
 from MagnitudeSpinBox import MagnitudeSpinBox
 from PyQt4 import QtGui, QtCore
 from functools import partial
+import re
 
 class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
   
@@ -27,7 +28,11 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
         value = index.model().data(index, QtCore.Qt.EditRole) 
         editor.setValue(value)
         editor.lineEdit().setCursorPosition(0)
-        editor.lineEdit().cursorWordForward(True)
+        try:
+            numberlen = len(re.split("([+-]?[0-9\.]+(?:[eE][0-9]+)?)(.*)",str(value))[1])
+            editor.lineEdit().cursorForward(True,numberlen)
+        except:
+            editor.lineEdit().cursorWordForward(True)
          
     def setModelData(self, editor, model, index):
         value = editor.value()
