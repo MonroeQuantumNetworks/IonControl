@@ -182,7 +182,7 @@ class HP8672A(ExternalParameterBase):
         self.settings.__dict__.setdefault('lockPoint', magnitude.mg(384227.944,'GHz') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('additionalStr' , "Z0K1L6O1" )       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('amplitude', None)
+        self.settings.__dict__.setdefault('amplitude_dBm', -6)
    
     def setValue(self,value):
         """
@@ -210,6 +210,7 @@ class HP8672A(ExternalParameterBase):
         superior.append({'name': 'lockpoint', 'type': 'magnitude', 'value': self.settings.lockPoint})
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         superior.append({'name': 'additionalStr', 'type': 'str', 'value': self.settings.additionalStr})
+        superior.append({'name': 'amplitude_dBm', 'type': 'magnitude', 'value': self.settings.amplitude_dBm})
         return superior
 
     def close(self):
