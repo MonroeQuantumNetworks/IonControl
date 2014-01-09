@@ -37,9 +37,11 @@ class QueueHandler(logging.Handler):
 # Note that on Windows you can't rely on fork semantics, so each process
 # will run the logging configuration code when it starts.
 def configureServerLogging(queue):
-    h = QueueHandler(queue) # Just the one handler needed
+    MyQueueHandler = QueueHandler(queue) # Just the one handler needed
     root = logging.getLogger()
-    root.addHandler(h)
+    for oldhandler in root.handlers[:]:   # remove other handlers we just want to send it to the other process
+        root.removeHandler(oldhandler)
+    root.addHandler(MyQueueHandler)
     root.setLevel(logging.DEBUG) # send all messages, for demo; no other level or filter logic applied.
 
 #

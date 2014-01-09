@@ -149,9 +149,10 @@ class PulserHardwareServer(Process):
             self.readDataFifo()
         self.dataQueue.put(FinishException())
         logger.info( "Pulser Hardware Server Process finished." )
+        self.dataQueue.close()
         self.loggingQueue.put(None)
         self.loggingQueue.close()
-        self.loggingQueue.join_thread()
+#         self.loggingQueue.join_thread()
             
     def finish(self):
         self.running = False
@@ -545,7 +546,8 @@ class PulserHardwareServer(Process):
         return self.xem
 
     def openBySerial(self,serial):
-        print "Open Serial",serial
+        logger = logging.getLogger(__name__)
+        logger.debug("Open Serial {0}".format(serial) )
         if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:
             self.xem = ok.FrontPanel()
             check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )

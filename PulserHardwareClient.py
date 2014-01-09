@@ -12,40 +12,42 @@ import math
 import traceback
 import time
 import multiprocessing
-from PulserHardwareServer import PulserHardwareServer
+from PulserHardwareServer import PulserHardwareServer, FinishException
 import logging
 
-class QueueReader(QtCore.QThread):
-       
+
+
+class QueueReader(QtCore.QThread):      
     def __init__(self, pulserHardware, dataQueue, parent = None):
         QtCore.QThread.__init__(self, parent)
         self.exiting = False
         self.pulserHardware = pulserHardware
-        self.Mutex = pulserHardware.Mutex          # the mutex is to protect the ok library
         self.running = False
         self.dataMutex = QtCore.QMutex()           # protects the thread data
         self.dataQueue = dataQueue
         self.dataHandler = { 'Data': lambda data : self.pulserHardware.dataAvailable.emit(data),
                              'DedicatedData': lambda data: self.pulserHardware.dedicatedDataAvailable.emit(data),
-                             'FinishException': lambda data: self.finish() }
+                             'FinishException': lambda data: self.raise_(data) }
    
-    def finish(self):
-        self.exiting = True
-        
+    def raise_(self, ex):
+        raise ex
+   
     def flushData(self):
         with QtCore.QMutexLocker(self.dataMutex):
             self.data = Data()
     
     def run(self):
         logger = logging.getLogger(__name__)
-        while not self.exciting:
+        logger.info( "QueueReader thread started." )
+        while True:
             try:
-                while not self.exiting:
-                    data = self.dataQueue.get()
-                    self.dataHandler[ data.__class__.__name__ ]( data )
+                data = self.dataQueue.get()
+                self.dataHandler[ data.__class__.__name__ ]( data )
+            except (KeyboardInterrupt, SystemExit, FinishException):
+                break
             except Exception as e:
                 logger.exception("Exception in QueueReader")
-            logger.info( "PulserHardware client thread finished." )
+        logger.info( "QueueReader thread finished." )
 
 class LoggingReader(QtCore.QThread):
     def __init__(self, loggingQueue, parent=None):
@@ -94,20 +96,22 @@ class PulserHardware(QtCore.QObject):
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
         self.loggingQueue = multiprocessing.Queue()
                 
+        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue )
+        self.serverProcess.start()
+
         self.queueReader = QueueReader(self, self.dataQueue)
         self.queueReader.start()
         
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
 
-        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue )
-        self.serverProcess.start()
 
     def shutdown(self):
         self.clientPipe.send( ('finish', () ) )
         self.serverProcess.join()
         self.queueReader.wait()
         self.loggingReader.wait()
+        logging.getLogger(__name__).debug("PulseHardwareClient Shutdown completed")
         
     def __getattr__(self,name):
         if name.startswith('__') and name.endswith('__'):
