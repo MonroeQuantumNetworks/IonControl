@@ -91,7 +91,6 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.state = self.OpStates.stopping
             logger.info( "Status -> Stopping" )
             self.stopBottomHalf()
-            self.finalizeData(reason='stopped')
             self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
 
                     
@@ -130,13 +129,14 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.externalParameterIndex += 1
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
-            if self.externalParameterIndex<len(self.scan.list) and self.state==self.OpStates.running:
-                self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
-                self.pulserHardware.ppStart()
-                logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )
-            else:
-                self.finalizeData(reason='end of scan')
-                if self.externalParameterIndex >= len(self.scan.list):
+            if self.state == self.OpStates.running:
+                if self.externalParameterIndex < len(self.scan.list):
+                    self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
+                    self.pulserHardware.ppStart()
+                    logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )
+                else:
+                    self.finalizeData(reason='end of scan')
                     self.generator.dataOnFinal(self)
+                    logger.info("Scan Completed")
             self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list),1))
 
