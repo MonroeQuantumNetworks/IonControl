@@ -53,6 +53,9 @@ class ShutterUi(ShutterForm, ShutterBase):
         for key in ['outputname', 'shutterdict', 'configname']:
             r += "{0}: {1}\n".format(key, getattr(self,key))
         return r
+    
+    def setDisabled(self, disabled):
+        self.shutterTableView.setEnabled( not disabled )
 
 class TriggerUi(ShutterUi):
     def __init__(self,pulserHardware,outputname,parent=None):

@@ -125,16 +125,19 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config)
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
+        self.pulser.ppActiveChanged.connect( self.shutterUi.setDisabled )
         logger.debug( "ShutterUi representation:" + repr(self.shutterUi) )
 
         self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config)
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
+        self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
         self.triggerDockWidget.setWidget( self.triggerUi )
 
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulser )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
+        self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
                 
         # tabify the dock widgets

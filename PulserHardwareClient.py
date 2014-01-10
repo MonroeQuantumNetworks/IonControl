@@ -80,6 +80,7 @@ class PulserHardware(QtCore.QObject):
     dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     dedicatedDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )
+    ppActiveChanged = QtCore.pyqtSignal( object )
     
     timestep = magnitude.mg(20,'ns')
 
@@ -172,6 +173,18 @@ class PulserHardware(QtCore.QObject):
     def integrationTime(self, value):
         self.clientPipe.send( ('setIntegrationTime', (value,) ) )        
         return processReturn( self.clientPipe.recv() )
+            
+    def ppStart(self):
+        self.clientPipe.send( ('ppStart', () ) )
+        value = processReturn( self.clientPipe.recv() )
+        self.ppActiveChanged.emit(True)
+        return value
+            
+    def ppStop(self):
+        self.clientPipe.send( ('ppStop', () ) )
+        value = processReturn( self.clientPipe.recv() )
+        self.ppActiveChanged.emit(False)
+        return value
             
     def setShutterBit(self, bit, value):
         self.clientPipe.send( ('setShutterBit', (bit, value) ) )  

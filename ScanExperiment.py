@@ -301,7 +301,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def setTimeLabel(self):
         elapsed = time.time()-self.startTime
-        expected = elapsed / ((self.currentIndex)/float(len(self.scan.list))) if self.currentIndex>0 else 0
+        expected = elapsed / ((self.currentIndex)/float(max(len(self.scan.list),1))) if self.currentIndex>0 else 0
         self.scanControlWidget.timeLabel.setText( "{0} / {1}".format(timedelta(seconds=round(elapsed)),
                                                  timedelta(seconds=round(expected)))) 
  
