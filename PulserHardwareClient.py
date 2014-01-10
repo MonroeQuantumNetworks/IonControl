@@ -2,19 +2,19 @@
 """
 Encapsulation of the Pulse Programmer Hardware 
 """
-from fpgaUtilit import check
 from PyQt4 import QtCore 
 import struct
 from Queue import Queue, Empty
 import modules.magnitude as magnitude
 from modules import enum
 import math
-import traceback
-import time
 import multiprocessing
 from PulserHardwareServer import PulserHardwareServer, FinishException
 import logging
 
+def check(number, command):
+    if number is not None and number<0:
+        raise FPGAException("OpalKelly exception '{0}' in command {1}".format(ErrorMessages.get(number,number),command))
 
 
 class QueueReader(QtCore.QThread):      

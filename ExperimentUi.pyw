@@ -40,7 +40,6 @@ from PulserHardwareClient import PulserHardware
 import ProjectSelection
 from collections import OrderedDict
 
-import VoltageControl
     
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
@@ -328,6 +327,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
 if __name__ == "__main__":
     import sys
+    import VoltageControl
+
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes
     myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
