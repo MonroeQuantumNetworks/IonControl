@@ -30,7 +30,9 @@ class LoggerLevelsTableModel(QtCore.QAbstractTableModel):
             logger.setLevel(level)
         self.levelList = list(self.levelDict.iteritems())
         self.update()
-        self.plotnames = levelNumbers.keys()
+        
+    def choice(self, index):
+        return levelNumbers.keys()
 
     def update(self):
         self.beginResetModel()

@@ -1,5 +1,6 @@
 from PyQt4 import QtGui, QtCore
 from functools import partial
+from CountEvaluation import EvaluationAlgorithms
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal()
@@ -10,6 +11,9 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         else:
             self.evalList = list()
         self.plotnames = plotnames
+        
+    def choice(self, index):
+        return {1:EvaluationAlgorithms.keys(),3:self.plotnames}[index]
         
     def setEvalList(self, evalList):
         self.beginResetModel()
@@ -50,7 +54,8 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return None 
 
     def setData(self, index, value, role):
-        return { (QtCore.Qt.EditRole,2): partial( self.setDataName, index, value ),
+        return { (QtCore.Qt.EditRole,1): partial( self.setAlgorithm, index, value ),
+                 (QtCore.Qt.EditRole,2): partial( self.setDataName, index, value ),
                  (QtCore.Qt.EditRole,3): partial( self.setPlotName, index, value ),
                 }.get((role,index.column()), lambda: False )()
                 
@@ -67,3 +72,5 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.dataChanged.emit()
         return True
         
+    def setAlgorithm(self, index, algorithm):
+        pass # don't know what to do'
