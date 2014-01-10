@@ -65,7 +65,8 @@ class LoggingReader(QtCore.QThread):
                     logger.debug("LoggingReader Thread shutdown requested")
                     break
                 clientlogger = logging.getLogger(record.name)
-                clientlogger.handle(record) # No level or filter logic applied - just do it!
+                if record.levelno>=clientlogger.getEffectiveLevel():
+                    clientlogger.handle(record) # No level or filter logic applied - just do it!
             except (KeyboardInterrupt, SystemExit):
                 raise
             except:

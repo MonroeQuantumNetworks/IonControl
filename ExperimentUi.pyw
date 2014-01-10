@@ -39,6 +39,7 @@ import GlobalVariables
 from PulserHardwareClient import PulserHardware 
 import ProjectSelection
 from collections import OrderedDict
+from LoggerLevelsUi import LoggerLevelsUi
 
     
 import PyQt4.uic
@@ -71,8 +72,15 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         return False
     
     def setupUi(self, parent):
-        logger = logging.getLogger("")
         super(WidgetContainerUi,self).setupUi(parent)
+        self.loggerUi = LoggerLevelsUi(self.config)
+        self.loggerUi.setupUi(self.loggerUi)
+        self.loggerDock = QtGui.QDockWidget("Logging")
+        self.loggerDock.setWidget(self.loggerUi)
+        self.loggerDock.setObjectName("_LoggerDock")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.loggerDock)
+                
+        logger = logging.getLogger()        
         self.toolBar.addWidget(ExceptionLogButton())
         
         # Setup Console Dockwidget
@@ -138,7 +146,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.DDSDockWidget.setWidget( self.DDSUi )
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
-                
+        
         # tabify the dock widgets
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
@@ -257,7 +265,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock, self.globalVariablesDock ]:
+                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock, self.globalVariablesDock,
+                     self.loggerDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
@@ -320,6 +329,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.saveConfig()
         self.ExternalParametersSelectionUi.saveConfig()
         self.globalVariablesUi.saveConfig()
+        self.loggerUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
