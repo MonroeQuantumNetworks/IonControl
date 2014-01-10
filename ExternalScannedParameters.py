@@ -165,24 +165,24 @@ class HP8672A(ExternalParameterBase):
     Scan the laser frequency by scanning a synthesizer HP8672A. (The laser is locked to a sideband)
     setValue is frequency of synthesizer
     currentValue and currentExternalValue are current frequency of synthesizer
+    
+    This class programs the 8672A using the directions in the manual, p. 3-17: cp.literature.agilent.com/litweb/pdf/08672-90086.pdf
     """
     className = "HP8672A"
     dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
-        #self.amplitudeString = "Z0K1L6O1"
-        #self.amplitudeString = "O3K0L0N0Z1"
-        self.synthesizer = visa.instrument(instrument) #open visa session
-        self.synthesizer.write(self.settings.additionalStr)
         self.setDefaults()
+        initialAmplitudeString = self.createAmplitudeString()
+        self.synthesizer = visa.instrument(instrument) #open visa session
+        self.synthesizer.write(initialAmplitudeString)
         self.value = self.settings.value
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('lockPoint', magnitude.mg(384227.944,'GHz') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('additionalStr' , "Z0K1L6O1" )       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('amplitude_dBm', -6)
+        self.settings.__dict__.setdefault('amplitude_dBm', -13)
    
     def setValue(self,value):
         """
@@ -197,11 +197,32 @@ class HP8672A(ExternalParameterBase):
         return arrived
             
     def _setValue(self, value ):
+        """Send the command string to the HP8672A to set the frequency to 'value'."""
         value = value.round('kHz')
-        command = "P{0:0>8.0f}".format(value.toval('kHz')) + self.settings.additionalStr
+        command = "P{0:0>8.0f}".format(value.toval('kHz')) + 'Z0' + self.createAmplitudeString()
+        #Example string: P03205000Z0K1L6O1 would set the oscillator to 3.205 GHz, -13 dBm
         self.synthesizer.write(command)
         self.value = value
+    
+    def createAmplitudeString(self):
+        """Create the string for setting the HP8672A amplitude.
         
+        The string is of the form K_L_O_, where _ is a number or symbol indicating an amplitude."""
+        KDict = {0:'0', -10:'1', -20:'2', -30:'3', -40:'4', -50:'5', -60:'6', -70:'7', -80:'8', -90:'9', -100:':', -110:';'}
+        LDict = {3:'0', 2:'1', 1:'2', 0:'3', -1:'4', -2:'5', -3:'6', -4:'7', -5:'8', -6:'9', -7:':', -8:';', -9:'<', -10:'='}
+        amp = round(self.settings.amplitude_dBm.toval()) #convert the amplitude to a number, and round it to the nearest integer
+        amp = max(-120, min(amp, 13)) #clamp the amplitude to be between -120 and +13
+        Opart = '1' if amp <= 3 else '3' #Determine if the +10 dBm range option is necessary
+        if Opart == '3':
+            amp -= 10
+        if amp >= 0:
+            Kpart = KDict[0]
+            Lpart = LDict[amp]
+        else:
+            Kpart = KDict[10*(divmod(amp, 10)[0]+1)]
+            Lpart = LDict[divmod(amp, 10)[1]-10]
+        return 'K' + Kpart + 'L' + Lpart + 'O' + Opart
+    
     def paramDef(self):
         """
         return the parameter definition used by pyqtgraph parametertree to show the gui
@@ -209,13 +230,20 @@ class HP8672A(ExternalParameterBase):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'lockpoint', 'type': 'magnitude', 'value': self.settings.lockPoint})
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-        superior.append({'name': 'additionalStr', 'type': 'str', 'value': self.settings.additionalStr})
         superior.append({'name': 'amplitude_dBm', 'type': 'magnitude', 'value': self.settings.amplitude_dBm})
         return superior
 
     def close(self):
         del self.synthesizer
-
+        
+    def update(self, param, changes):
+        """update the parameter. If the amplitude was changed, write the new value to the HP8672A."""
+        super(HP8672A, self).update(param, changes) #call parent method
+        logger = logging.getLogger(__name__)
+        for param, change, data in changes:
+            if param.name() == 'amplitude_dBm':
+                self.synthesizer.write(self.createAmplitudeString())
+                logger.info("HP8672A output amplitude set to {0} dBm".format(data))
 
 class MicrowaveSynthesizerScan(ExternalParameterBase):
     """
