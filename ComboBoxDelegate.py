@@ -18,8 +18,9 @@ class ComboBoxDelegate(QtGui.QItemDelegate):
         """Create the combo box editor used to select which pen icon to use.
            The for loop adds each pen icon into the combo box."""
         editor = QtGui.QComboBox(parent)
-        if index.model().choice:
-            editor.addItems( index.model().choice(index.column()) )
+        choice = index.model().choice(index.column()) if hasattr(index.model(),'choice') else None
+        if choice:
+            editor.addItems( choice )
         editor.currentIndexChanged['QString'].connect( partial( index.model().setValue, index ))
         return editor
         
