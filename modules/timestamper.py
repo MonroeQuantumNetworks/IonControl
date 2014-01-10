@@ -18,6 +18,7 @@ import Queue
 import math
 import sys
 import copy
+import logging
 
 MessageQueue = Queue.Queue()
 clockfrequency = 50000000.0
@@ -99,12 +100,14 @@ class TimestampWorker(QThread):
             self.exiting = True
 
     def startRecording(self):
+        logger = logging.getLogger(__name__)
         with QMutexLocker(self.Mutex):
-            print "command {0:x}".format(0xff & ( 1<<self.channel | 1<<self.triggerchannel))
+            logger.info( "command {0:x}".format(0xff & ( 1<<self.channel | 1<<self.triggerchannel)) )
             command = struct.pack('>BB', 0x12, 0xff & ( 1<<self.channel | 1<<self.triggerchannel)  )
             self.Connection.write(command)    
 
     def startNewRecording(self, countchannel, triggerchannel, binwidth, roistart, roistop, filename=None):
+        logger = logging.getLogger(__name__)
         with QMutexLocker(self.Mutex):
             command = struct.pack('>BB', 0x12, 0  )
             self.Connection.write(command)    
@@ -115,7 +118,7 @@ class TimestampWorker(QThread):
             self.roistop = roistop
             self.numberOfBins = (roistop-roistart)/binwidth+1
             self.histogram = numpy.zeros(self.numberOfBins)
-            print "command {0:x}".format(0xff & ( 1<<self.channel | 1<<self.triggerchannel))
+            logging.info( "command {0:x}".format(0xff & ( 1<<self.channel | 1<<self.triggerchannel)) )
             self.clearStatus()
             command = struct.pack('>BB', 0x12, 0xff & ( 1<<self.channel | 1<<self.triggerchannel)  )
             self.Connection.write(command)
@@ -149,10 +152,11 @@ class TimestampWorker(QThread):
         self.wait()
         
     def histadd(self, delta):
+        logger = logging.getLogger(__name__)
         try:
             self.histogram[(delta-self.roistart)/self.binwidth] += 1
         except:
-            print "out of range"
+            logging.debug( "out of range" )
 
     def run(self):
         try:
@@ -196,14 +200,15 @@ class TimestampWorker(QThread):
                         else:  # badcrc
                             self.status.badcrc += 1
                             data = data[1:]
-            print "Worker Thread done."
+            logging.getLogger(__name__).info( "Worker Thread done." )
         except Exception as err:
-            print err
+            logging.getLogger(__name__).exception( "Worker Thread", err )
 
 
 
 class timestamper:
     def __init__(self, countchannel, triggerchannel, binwidth, roistart, roistop, filename=None, parent = None, FPGASerial="A6VTOYBO" ):
+        logger = logging.getLogger(__name__)
         self.clockstep = 0.000020    # 1/50MHz in ms
         self.channel = countchannel
         self.triggerchannel = triggerchannel
@@ -216,7 +221,7 @@ class timestamper:
         self.worker = TimestampWorker(countchannel, triggerchannel, self.qbinwidth, self.qroistart, self.qroistop, 
                                       filename=filename, parent=parent, FPGASerial=FPGASerial )
         self.worker.start()
-        print "Worker start called."
+        logger.info( "Worker start called." )
         
     def readXValues(self):
         return numpy.arange(self.qroistart*self.clockstep, self.qroistop*self.clockstep, self.qbinwidth*self.clockstep)        

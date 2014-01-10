@@ -6,6 +6,7 @@ Created on Fri Jul 19 09:22:24 2013
 """
 from modules.Expression import Expression
 import modules.magnitude as magnitude
+import logging
 
 class GateSetCompiler(object):
     def __init__(self, pulseProgram ):
@@ -16,7 +17,8 @@ class GateSetCompiler(object):
     """Compile all gate sets into binary representation
         returns tuple of start address list and bytearray data"""
     def gateSetsCompile(self, gatesets ):
-        print "compiling {0} gateSets.".format(len(gatesets.GateSetDict))
+        logger = logging.getLogger(__name__)
+        logger.info( "compiling {0} gateSets.".format(len(gatesets.GateSetDict)) )
         self.gateCompile( gatesets.gateDefinition )
         addresses = list()
         data = list()
@@ -26,7 +28,6 @@ class GateSetCompiler(object):
             addresses.append(index)
             data.append(gatesetdata)
             index += len(gatesetdata)*4
-            #print name, index, len(data), len(addresses), len(gatesetdata)
         return addresses, [item for sublist in data for item in sublist]
     
     """Compile one gateset into its binary representation"""
@@ -38,18 +39,18 @@ class GateSetCompiler(object):
 
     """Compile each gate definition into its binary representation"""
     def gateCompile(self, gateDefinition ):
+        logger = logging.getLogger(__name__)
         variables = self.pulseProgram.variables()
         for name, gate in gateDefinition.Gates.iteritems():  # for all defined gates
             data = list()
             for pulsename, pulse in gateDefinition.PulseDefinition.iteritems():
                 strvalue = gate.pulsedict[pulsename]
                 result = self.expression.evaluate(strvalue, variables )      
-                #print strvalue, result, variables[strvalue] if strvalue in variables else None
                 if isinstance(result, magnitude.Magnitude) and result.dimensionless():
                     result.output_prec(0)
                 data.append( self.pulseProgram.convertParameter( result, pulse.encoding ) )
             self.compiledGates[name] = data
-            print "compiled {0} to {1}".format(name,data)
+            logger.info( "compiled {0} to {1}".format(name,data) )
                 
         
 if __name__=="__main__":

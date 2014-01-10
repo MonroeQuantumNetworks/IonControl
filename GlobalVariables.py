@@ -7,6 +7,7 @@ import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 from GlobalVariableTableModel import GlobalVariableTableModel
 from collections import OrderedDict
+from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
        
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
@@ -44,6 +45,10 @@ class GlobalVariableUi(Form, Base ):
         self.dropButton.clicked.connect( self.onDropVariable )
         self.model = GlobalVariableTableModel(self.variables)
         self.tableView.setModel( self.model )
+        self.tableView.setItemDelegateForColumn(1,MagnitudeSpinBoxDelegate()) 
+        self.tableView.setSortingEnabled(True)
+        self.tableView.clicked.connect(self.onViewClicked)
+
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))
@@ -52,8 +57,12 @@ class GlobalVariableUi(Form, Base ):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
             name = self.model.dropVariableByIndex(index)
         
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self._variables_
+
+    def onViewClicked(self,index):
+        """If one of the editable columns is clicked, begin to edit it."""
+        self.tableView.edit(index)
 
 if __name__=="__main__":
     import sys

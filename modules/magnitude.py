@@ -383,6 +383,63 @@ class Magnitude():
         self.oformat = None
         self.significantDigits = None
 
+    def copy_format(self, other):
+        """ copy the formatting options form other to self
+        self and other need to have the same unit
+        
+        >>> a = mg(123.345, 'MHz')
+        >>> a.significantDigits = 6
+        >>> print a
+        123.345 MHz
+        >>> b = mg( 1.23456789, 'GHz' )
+        >>> b.copy_format( a )
+        >>> print b
+        1234.57 MHz
+        """
+        if other.unit != self.unit:
+            raise MagnitudeError("Incompatible units: %s and %s" %
+                                 (other.unit, self.unit))
+        self.out_unit = other.out_unit
+        self.out_factor = other.out_factor
+        self.oprec = other.oprec
+        self.oformat = other.oformat
+        self.significantDigits = other.significantDigits
+        
+    def update_value(self, value, unitstr ):
+        """ update value and unit, leave formatting as is
+        
+        >>> a = mg(123.345, 'MHz')
+        >>> a.significantDigits = 6
+        >>> print a
+        123.345 MHz
+        >>> a.update_value( 0.234, 'GHz' )
+        >>> print a
+        234.0 MHz
+        >>> a.update_value( 234567.89, 'kHz' )
+        >>> print a
+        234.568 MHz
+        """
+        newval = mg(value, unitstr)
+        if newval.unit != self.unit:
+            raise MagnitudeError("Incompatible units: %s and %s" %
+                                 (newval.unit, self.unit))
+        self.val = newval.val        
+
+    def copysign(self, other):
+        """ copy the sign from other
+        
+        >>> a = mg(-123, 'kHz')
+        >>> b = mg(250, 'kHz')
+        >>> print b
+        250.0000 kHz
+        >>> c = b.copysign(a)
+        >>> print c
+        -250.0000 kHz
+        """
+        r = self.copy(True)
+        r.val = math.copysign( self.val, other.val )
+        return r
+
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
         after unpickling. Only new class attributes need to be added here.
@@ -478,14 +535,18 @@ class Magnitude():
         return _reverse_prefix[r4]               
 
     def __str__(self):
+        if _prn_units:
+            return " ".join( self.toStringTuple() )
+        return self.toStringTuple()[0]        
+    
+    def toStringTuple(self):
         unitTuple = tuple(self.unit)
+        if math.isinf(self.val) or math.isnan(self.val):
+            return (str(self.val),"")
         if self.out_unit:
             m = self.copy(True)
             m._div_by(self.out_factor)
-            st = m._formatNumber_()
-            if _prn_units:
-                return st + ' ' + self.out_unit.strip()
-            return st
+            return ( m._formatNumber_().strip(), self.out_unit.strip() )
         elif unitTuple in _outputDimensions:
             outmag = _mags[_outputDimensions[unitTuple]]
             m = self.copy(True)
@@ -495,15 +556,9 @@ class Magnitude():
                 m = self.copy(True)
                 outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
                 m._div_by(outmag)
-            st = m._formatNumber_()
-            if _prn_units:
-                return st + ' ' + prefix + _outputDimensions[unitTuple].strip()
-            return st                
+            return ( m._formatNumber_().strip(), (prefix + _outputDimensions[unitTuple]).strip() )
         else:
-            st = self._formatNumber_()
-            if _prn_units:
-                st += self._unitRepr_()
-            return st.strip()
+            return ( self._formatNumber_().strip(), self._unitRepr_().strip() )
 
     def term2mag(self, s):
         """Converts a string with units to a Magnitude.
@@ -996,7 +1051,7 @@ class Magnitude():
         r.val = math.floor(r.val)
         return r
 
-    def round(self):
+    def round(self, unit=None):
         """Round a Magnitude's value in canonical units.
 
         >>> print mg(10.2, 'm/s').round()
@@ -1005,9 +1060,21 @@ class Magnitude():
         4.0000 m / s
         >>> print mg(50.3, 'km/h').round()
         14.0000 m / s
-        """
-        r = self.copy()
-        r.val = round(r.val)
+        
+        >>> print mg(50.3456789, 'kHz').round('kHz')
+        50.0000 kHz
+        >>> print mg(50.3456789, 'kHz').round('Hz')
+        50.3460 kHz
+        >>> print mg(50.3, 'km / h').round('km/h')
+        50.0000 km / h
+        """        
+        if unit:
+            r = self.copy(True)
+            u = self.sunit2mag(unit)
+            r.val = round(r.val/u.val) * u.val
+        else:
+            r = self.copy()
+            r.val = round(r.val)
         return r
 
     def to_bits(self):

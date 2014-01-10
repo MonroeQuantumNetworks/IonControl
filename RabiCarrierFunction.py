@@ -10,6 +10,7 @@ from scipy import constants
 from numpy import pi, cos, sqrt, sin, exp, dot, array, log
 from modules.magnitude import mg
 from scipy.special import laguerre
+import logging
 
 class RabiCarrierFunction(FitFunctionBase):
     name = "RabiCarrier"
@@ -107,17 +108,16 @@ class FullRabiCarrierFunction(FitFunctionBase):
         self.eta2 = pow(self.eta,2)
         
     def updateTables(self,beta):
+        logger = logging.getLogger(__name__)
         if self.eta2 != self.laguerreCacheEta2:
-            print "Calculating Laguerre Table for eta^2", self.eta2
+            logger.info( "Calculating Laguerre Table for eta^2={0}".format(self.eta2) )
             self.laguerreTable = array([ laguerre(n)(self.eta2) for n in range(200) ])
             self.laguerreCacheEta2 = self.eta2
-            print "done."
         if self.pnCacheBeta != beta:
-            print "Calculating Probability Table for beta", beta
+            logger.info( "Calculating Probability Table for beta {0}".format(beta) )
             self.pnTable = array([ exp(-(n+1)*beta)*(exp(beta)-1) for n in range(200)])
             self.pnCacheBeta = beta
-            print "done."
-            print 1-sum(self.pnTable)
+            logger.info( 1-sum(self.pnTable) )
             
         
     def residuals(self,p, y, x, sigma):

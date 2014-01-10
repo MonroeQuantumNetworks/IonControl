@@ -9,6 +9,7 @@ import PyQt4.uic
 import ShutterHardwareTableModel
 from modules import configshelve
 import ProjectSelection
+import logging
 
 ShutterForm, ShutterBase = PyQt4.uic.loadUiType(r'ui\Shutter.ui')
 
@@ -25,13 +26,14 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.configname = 'ShutterUi.'+self.outputname
         
     def setupUi(self,parent,dynupdate=False):
+        logger = logging.getLogger(__name__)
         ShutterForm.setupUi(self,parent)
         self.setAtStartup = self.config.get(self.configname+".SetAtStartup",False)
         self.checkBoxSetAtStartup.setChecked(self.setAtStartup)
         self.shutterdict = self.config.get(self.configname+".dict",dict())
         self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.shutterdict,self.pulserHardware,self.outputname)
         if self.setAtStartup:
-            print "Set old shutter values", (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0)
+            logger.info( "Set old shutter values {0} {1}".format( (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0) ) )
             self.shutterTableModel.shutter = self.config.get((self.configname, 'Value'),0) 
         self.shutterTableModel.offColor = self.offColor
         self.shutterTableView.setModel(self.shutterTableModel)
@@ -41,7 +43,7 @@ class ShutterUi(ShutterForm, ShutterBase):
         if dynupdate:    # we only want this connection for the shutter, not the trigger
             self.pulserHardware.shutterChanged.connect( self.shutterTableModel.updateShutter )
         
-    def close(self):
+    def saveConfig(self):
         self.config[self.configname+".dict"] = self.shutterdict
         self.config[self.configname+".SetAtStartup"] = self.checkBoxSetAtStartup.isChecked()
         self.config[(self.configname, 'Value')] = self.shutterTableModel.shutter
@@ -51,6 +53,9 @@ class ShutterUi(ShutterForm, ShutterBase):
         for key in ['outputname', 'shutterdict', 'configname']:
             r += "{0}: {1}\n".format(key, getattr(self,key))
         return r
+    
+    def setDisabled(self, disabled):
+        self.shutterTableView.setEnabled( not disabled )
 
 class TriggerUi(ShutterUi):
     def __init__(self,pulserHardware,outputname,parent=None):
@@ -61,7 +66,6 @@ class TriggerUi(ShutterUi):
         self.applyButton.clicked.connect( self.onApply )
         
     def onApply(self):
-        print "apply triggers"
         self.pulserHardware.xem.ActivateTriggerIn(0x41,2)
         
 if __name__ == "__main__":

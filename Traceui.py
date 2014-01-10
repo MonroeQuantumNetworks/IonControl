@@ -12,6 +12,7 @@ import Trace
 import os.path
 import ProjectSelection
 from PlottedTrace import PlottedTrace
+import logging
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
 
@@ -37,7 +38,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     config -- configuration data, saved in pickled form to file
     configname -- the name to use in the config file
     settings -- the plot settings: plot style and last used directory
-    graphicsView -- the actual plot window
+    graphicsView -- the actual plot window, only used for opened files, otherwise the graphics view in the plotted trace is used
     
     methods:
     __init__(self, penicons, config, parentname, graphicsView, parent=None, lastDir=None):
@@ -86,6 +87,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.plotButton.clicked.connect(self.onPlot)
         self.shredderButton.clicked.connect(self.onShredder)
+        self.selectAllButton.clicked.connect(self.traceTreeView.selectAll)
 
     def uniqueSelectedIndexes(self, useLastIfNoSelection=True):
         """From the selected elements, return one index from each row.
@@ -105,14 +107,11 @@ class Traceui(TraceuiForm, TraceuiBase):
             else:
                 return None #If there were no traces added, return None. This happens if no trace was ever added.
         else:
-            uniqueRowIndexes = []
-            uniqueRows = []
+            uniqueIndexes = []
             for traceIndex in selectedIndexes:
-                row = traceIndex.row()
-                if row not in uniqueRows:
-                    uniqueRows.append(row)
-                    uniqueRowIndexes.append(traceIndex)
-            return uniqueRowIndexes
+                if traceIndex.column() == 0:
+                    uniqueIndexes.append(traceIndex)
+            return uniqueIndexes
 
     def addTrace(self, trace, pen, parentTrace=None):
         """Add a trace to the model, plot it, and resize the view appropriately."""
@@ -176,11 +175,11 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onShredder(self):
         """Execute when the shredder button is clicked. Remove the selected plots, and delete the files from disk.
         
-           A warning message appears first, asking to confirm deletion. Traces with children cannot be deleted
-           unless their children are deleted first."""
+           A warning message appears first, asking to confirm deletion. Traces with children cannot be deleted from disk until their children are deleted."""
+        logger = logging.getLogger(__name__)
         selectedIndexes = self.uniqueSelectedIndexes()
         if selectedIndexes:
-            warningResponse = self.warningMessage()
+            warningResponse = self.warningMessage("Are you sure you want to delete the selected trace file(s) from disk?", "Press OK to continue with deletion.")
             if warningResponse == QtGui.QMessageBox.Ok:
                 for traceIndex in selectedIndexes:
                     trace = self.model.getTrace(traceIndex)
@@ -192,13 +191,13 @@ class Traceui(TraceuiForm, TraceuiBase):
                         trace.trace.deleteFile()
                         self.model.dropTrace(parentIndex, row)
                     else:
-                        print "trace has children, please delete them first."
+                        logger.error( "trace has children, please delete them first." )
 
-    def warningMessage(self):
-        """Pop up a warning message asking to confirm deletion. Return the response."""
+    def warningMessage(self, warningText, informativeText):
+        """Pop up a warning message. Return the response."""
         warningMessage = QtGui.QMessageBox()
-        warningMessage.setText("Are you sure you want to delete the selected trace file(s) from disk?")
-        warningMessage.setInformativeText("Press OK to continue with deletion.")
+        warningMessage.setText(warningText)
+        warningMessage.setInformativeText(informativeText)
         warningMessage.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
         return warningMessage.exec_()        
 
@@ -206,16 +205,25 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Execute when the remove button is clicked. Remove the selected traces from the model and view (but don't delete files)."""
         selectedIndexes = self.uniqueSelectedIndexes()
         if selectedIndexes:
-            for traceIndex in selectedIndexes:
-                trace = self.model.getTrace(traceIndex)
-                parentIndex = self.model.parent(traceIndex)
-                row = trace.childNumber()
-                if trace.childCount() == 0:
+            thereAreParents = False
+            for traceIndex in selectedIndexes: #Loop through selection and find out if any of the traces have children
+                if self.model.getTrace(traceIndex).childCount() != 0:
+                    thereAreParents = True
+                    warningResponse = self.warningMessage("Some of the selected traces have child traces. Removal will also remove the child traces.", "Press OK to proceed with removal.")
+                    break
+            if (not thereAreParents) or (warningResponse == QtGui.QMessageBox.Ok):
+                for traceIndex in selectedIndexes: #Loop through each trace and remove it
+                    trace = self.model.getTrace(traceIndex)
+                    parentIndex = self.model.parent(traceIndex)
+                    row = trace.childNumber()
+                    if trace.childCount() != 0: #If the trace has children, remove them first
+                        while trace.childCount() != 0:
+                            if trace.child(0).curvePen != 0:
+                                trace.child(0).plot(0)
+                            self.model.dropTrace(traceIndex, 0) #Repeatedly remove row zero until there are no more child traces
                     if trace.curvePen != 0:
                         trace.plot(0)
                     self.model.dropTrace(parentIndex, row)
-                else:
-                    print "trace has children, please remove them first."
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
@@ -225,9 +233,10 @@ class Traceui(TraceuiForm, TraceuiBase):
             trace.filename = str(fname)
             self.settings.lastDir, trace.name = os.path.split(str(fname))
             trace.loadTrace(str(fname))
-            self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1),-1)
+            for plotting in trace.tracePlottingList:
+                self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1,tracePlotting=plotting),-1)
 
-    def onClose(self):
+    def saveConfig(self):
         """Execute when the UI is closed. Save the settings to the config file."""
         self.config[self.configname+".settings"] = self.settings
         
@@ -240,7 +249,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                 trace = self.model.getTrace(traceIndex)
                 traceList.append(trace)
         return traceList
-
+        
 #if __name__ == '__main__':
 #    import sys
 #    import pyqtgraph as pg

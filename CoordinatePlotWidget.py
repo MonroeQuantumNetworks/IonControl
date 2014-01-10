@@ -17,6 +17,7 @@ import pyqtgraph as pg
 from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
+import logging
 
 grid_opacity = 0.3
 icons_dir = '.\\ui\\icons\\'
@@ -122,7 +123,8 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
 #        #self.onMouseClicked(ev)
         
     def copyPointsToClipboard(self, modifiers):
-        print "copyPointsToClipboard"
+        logger = logging.getLogger(__name__)
+        logger.debug( "copyPointsToClipboard" )
         if modifiers & QtCore.Qt.ControlModifier:
             if modifiers & QtCore.Qt.ShiftModifier:
                 QtGui.QApplication.clipboard().setText(" ".join(["{0}".format(p.x()) for p in self.mousePointList]))
@@ -132,7 +134,8 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
                 QtGui.QApplication.clipboard().setText(" ".join(["{0} {1}".format(p.x(),p.y()) for p in self.mousePointList]))
         
     def keyReleaseEvent(self, ev):
-        print "Key released", ev.key(), ev.modifiers()
+        logger = logging.getLogger(__name__)
+        logger.debug(  "Key released {0} {1}".format( ev.key(), ev.modifiers() ) )
         { 67: self.copyPointsToClipboard }.get(ev.key(),lambda x:None)(ev.modifiers())
         
     def mouseReleaseEvent(self,ev):

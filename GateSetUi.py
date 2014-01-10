@@ -10,6 +10,7 @@ from PyQt4 import QtCore, QtGui
 import operator
 from modules.enum import enum
 import os.path
+import logging
 
 from GateDefinition import GateDefinition
 from GateSetContainer import GateSetContainer
@@ -106,14 +107,14 @@ class GateSetUi(Form,Base):
         self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
         
     def getSettings(self):
-        if self.settings.debug:
-            print "GateSetUi GetSettings", self.settings.__dict__
+        logger = logging.getLogger(__name__)
+        logger.debug( "GateSetUi GetSettings {0}".format(self.settings.__dict__) )
         return self.settings
         
     def setSettings(self,settings):
-        if self.settings.debug:
-            print settings
-            print "GateSetUi SetSettings", settings.__dict__
+        logger = logging.getLogger(__name__)
+        logger.debug( str( settings) )
+        logger.debug( "GateSetUi SetSettings {0}".format( settings.__dict__ ) )
         self.settings = settings
         self.GateSetEnableCheckBox.setChecked( self.settings.enabled )
         self.GateSetFrame.setEnabled( self.settings.enabled )
@@ -141,7 +142,7 @@ class GateSetUi(Form,Base):
                 self.loadGateSetList( self.settings.gateSetCache[self.settings.gateSet] )
                 self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(self.settings.gateSet))
         except IOError as err:
-            print err, "during loading of GateSet Files, ignored."
+            logger.error( "{0} during loading of GateSet Files, ignored.".format(err) )
 
     def documentationString(self):
         return repr(self.settings)        
@@ -211,9 +212,9 @@ class GateSetUi(Form,Base):
         self.valueChanged.emit()          
             
     def loadGateSetList(self, path):
+        logger = logging.getLogger(__name__)
         self.gateSetContainer.loadXml(path)
-        if self.settings.debug:
-            print "loaded {0} gateSets from {1}.".format(len(self.gateSetContainer.GateSetDict), path)
+        logger.debug( "loaded {0} gateSets from {1}.".format(len(self.gateSetContainer.GateSetDict), path) )
         filedir, filename = os.path.split(path)
         self.settings.gateSet = filename
         self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(filename))
@@ -237,9 +238,6 @@ class GateSetUi(Form,Base):
             self.gateSetCompiler.gateCompile( self.gateSetContainer.gateDefinition )
             data = self.gateSetCompiler.gateSetCompile( self.settings.gate )
             address = [0]*self.settings.thisSequenceRepetition
-        if self.settings.debug:
-            with open("GateSetData.debug","w") as of:
-                print >>of, data
         return address, data, self.settings
         
     def setVariables(self, variabledict):

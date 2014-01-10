@@ -6,6 +6,7 @@ Created on Fri Feb 08 22:02:08 2013
 """
 from PyQt4 import QtCore, QtGui
 import sip
+import logging
 api2 = sip.getapi("QVariant")==2
 
 
@@ -32,12 +33,13 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         return 2
  
     def setData(self,index,value,role):
+        logger = logging.getLogger(__name__)
         value = str(value if api2 else str(value.toString()))
         if index.column()==0 and role==QtCore.Qt.EditRole:
             if value in self.shutterNameDict and index.column()==self.shutterNameDict[value]: # no change
                 return True
             elif value in self.shutterNameDict: # duplicate
-                print "cannot have the same name twice"
+                logger.error( "cannot have the same name twice" )
                 return False
             else:
                 old = self.shutterdict.get(index.row())

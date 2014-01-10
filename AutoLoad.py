@@ -15,6 +15,7 @@ import functools
 from modules import enum
 from modules.formatDelta import formatDelta
 from datetime import datetime
+import logging
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -48,7 +49,6 @@ class AutoLoadSettings:
 
 def invert( logic, channel):
     """ returns logic for positive channel number, inverted for negative channel number """
-    #print "invert", logic, channel, logic if channel>0 else not logic
     return (logic if channel>0 else not logic)
 
 class LoadingEvent:
@@ -168,7 +168,7 @@ class AutoLoad(UiForm,UiBase):
 
     def onWavemeterError(self, error):
         """Print out received error"""
-        print "Error {0}".format(error)
+        logging.getLogger(__name__).error( "Error {0}".format(error) )
 
     def getWavemeterData(self, channel, addressStart="http://132.175.165.36:8082/wavemeter/wavemeter/wavemeter-status?channel="):
         """Get the data from the wavemeter at the specified channel."""
@@ -183,7 +183,7 @@ class AutoLoad(UiForm,UiBase):
             self.channelLabelGui[channel].setStyleSheet(
             "QLabel {background-color: transparent}")
         else:
-            print "invalid wavemeter channel"
+            logging.getLogger(__name__).error( "Error {0}".format(error) )
 
     def onWavemeterData(self, channel, data):
         """Execute when data is received from the wavemeter. Display it on the
@@ -246,7 +246,8 @@ class AutoLoad(UiForm,UiBase):
 
     def onStop(self):
         """Execute when stop button is clicked. Stop loading."""
-        print "Loading Idle"
+        logger = logging.getLogger(__name__)
+        logger.info(  "Loading Idle" )
         self.setIdle()
 
     def setIdle(self):
@@ -265,7 +266,8 @@ class AutoLoad(UiForm,UiBase):
     
     def setPreheat(self):
         """Execute when the loading process begins. Turn on timer, turn on oven."""
-        print "Loading Preheat"
+        logger = logging.getLogger(__name__)
+        logger.info( "Loading Preheat" )
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect( self.onTimer )
         self.timer.start(100)
@@ -279,7 +281,8 @@ class AutoLoad(UiForm,UiBase):
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
            monitoring count rate."""
-        print "Loading Load"
+        logger = logging.getLogger(__name__)
+        logger.info( "Loading Load" )
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
         self.status = self.StatusOptions.Load
         self.statusLabel.setText("Loading")
@@ -290,7 +293,8 @@ class AutoLoad(UiForm,UiBase):
     
     def setCheck(self):
         """Execute when count rate goes over threshold."""
-        print "Loading Check"
+        logger = logging.getLogger(__name__)
+        logger.info(  "Loading Check" )
         self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
         self.status = self.StatusOptions.Check
         self.checkStarted = datetime.now()
@@ -300,7 +304,8 @@ class AutoLoad(UiForm,UiBase):
         
     def setTrapped(self,reappeared=False):
         if not reappeared:
-            print "Loading Trapped"
+            logger = logging.getLogger(__name__)
+            logger.info(  "Loading Trapped" )
             self.loadingTime = datetime.now() - self.started
             self.started = self.checkStarted
             self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
@@ -350,8 +355,10 @@ class AutoLoad(UiForm,UiBase):
                 self.setTrapped(True)
             
     
-    def close(self):
+    def onClose(self):
         if not self.status==self.StatusOptions.Idle:
             self.setIdle()
+            
+    def saveConfig(self):
         self.config['AutoLoad.Settings'] = self.settings
         self.config['AutoLoad.History'] = self.loadingHistory

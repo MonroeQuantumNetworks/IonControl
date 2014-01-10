@@ -16,6 +16,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import pickle
 from sqlalchemy import Column, Integer, String
+from shutil import copyfile
+import logging
 
 Base = declarative_base()
 defaultcategory = 'main'
@@ -43,12 +45,15 @@ class ShelveEntry(Base):
         self.pvalue = pickle.dumps(value)
 
 class configshelve:
-    def __init__(self,name,directory="~\\AppData\\Local\\python-control\\"):
-        configdir = os.path.expanduser(directory)        
-        if not os.path.exists(configdir):
-            os.makedirs(configdir)
-        self.configfile = os.path.join(configdir,name+".config")
+    def __init__(self,filename):
+        self.configfile = filename
         self.engine = create_engine('sqlite:///'+self.configfile, echo=False)
+        
+    def saveConfig(self, copyTo=None ):
+        self.session.commit()
+        if copyTo:
+            copyfile( self.configfile, copyTo )
+        self.session = self.Session()
 
     def __enter__(self):
         Base.metadata.create_all(self.engine)
@@ -96,7 +101,7 @@ class configshelve:
             return default
         
     def next(self):
-        print "__next__ not implemented"
+        logging.getLogger(__name__).error("__next__ not implemented")
         
     def open(self):
         Base.metadata.create_all(self.engine)

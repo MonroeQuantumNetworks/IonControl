@@ -13,6 +13,7 @@ from VoltageAdjust import VoltageAdjust
 from VoltageGlobalAdjust import VoltageGlobalAdjust
 import VoltageBlender
 import VoltageTableModel
+import logging
        
 VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
 
@@ -30,6 +31,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender = VoltageBlender.VoltageBlender()
 
     def setupUi(self, parent):
+        logger = logging.getLogger(__name__)
         VoltageControlForm.setupUi(self,parent)
         self.voltageFilesUi = VoltageFiles(self.config)
         self.voltageFilesUi.setupUi( self.voltageFilesUi )
@@ -58,8 +60,8 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         adjust = self.adjustUi.adjust
         try:
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
-        except:
-            print "cannot apply voltages. Ignored for now."
+        except Exception as e:
+            logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.onShuttlingDone )
     
@@ -67,17 +69,18 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
                      
     def onLoadGlobalAdjust(self, path):
-        #print "onLoadGlobalAdjust", path
         self.voltageBlender.loadGlobalAdjust(str(path) )
         self.globalAdjustUi.setupGlobalAdjust( str(path), self.voltageBlender.adjustDict )
     
-    def onClose(self):
-        print "onClose()"
+    def saveConfig(self):
         self.settings.state = self.saveState()
         self.config[self.configname] = self.settings
-        self.voltageFilesUi.onClose()
-        self.adjustUi.onClose()
-        self.globalAdjustUi.onClose()
+        self.adjustUi.saveConfig()
+        self.globalAdjustUi.saveConfig()
+        self.voltageFilesUi.saveConfig()
+    
+    def onClose(self):
+        pass
         
     def closeEvent(self,e):
         self.onClose()

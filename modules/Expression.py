@@ -15,14 +15,17 @@ import operator
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )
-fnumber = Combine( Word( "+-"+nums, nums ) + 
+plus  = Literal( "+" )
+minus = Literal( "-" )
+dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
+                   Optional( e + Word( "+-"+nums, nums ) ) )
+numfnumber = Combine( Word( "+-"+nums, nums ) + 
                    Optional( point + Optional( Word( nums ) ) ) +
                    Optional( e + Word( "+-"+nums, nums ) ) )
+fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 funit = Combine( fnumber + Optional(Word(" "," ")) + ident )
  
-plus  = Literal( "+" )
-minus = Literal( "-" )
 mult  = Literal( "*" )
 div   = Literal( "/" )
 lpar  = Literal( "(" ).suppress()
@@ -52,7 +55,16 @@ opn = { "+" : operator.add,
 fn  = { "sin" : math.sin,
         "cos" : math.cos,
         "tan" : math.tan,
+        "log" : math.log,
+        "acos" : math.acos,
+        "asin" : math.asin,
+        "atan" : math.atan,
+        "degrees" : math.degrees,
+        "radians" : math.radians,
+        "erf" : math.erf,
+        "erfc" : math.erfc,
         "abs" : abs,
+        "exp" : math.exp,
         "trunc" : lambda a: int(a),
         "round" : myround,
         "sgn" : lambda a: abs(a)>epsilon and cmp(a,0) or 0,
@@ -121,12 +133,12 @@ class Expression:
     #        return float(op)
             try:
                 res = float(op)
+                #res = magnitude.mg(res)
             except ValueError: # lets try whether it has a unit
-                fmag = fnumber + ZeroOrMore(ident)
+                fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
                 l = fmag.parseString(op)
-                #print l
-                m = magnitude.mg( float(l[0]),l[1])
-                m.significantDigits = len(list(filter( lambda s: s.isdigit(), l[0])))
+                m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
+                m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
                 return m
             return res
             
@@ -137,6 +149,11 @@ class Expression:
         value = self.evaluateStack( self.exprStack[:] )
         return value
         
+    def evaluateAsMagnitude(self, expression, variabledict=dict()):
+        res = self.evaluate(expression, variabledict)
+        if not isinstance(res, magnitude.Magnitude ):
+            res = magnitude.mg( res )
+        return res
 
 if __name__ == "__main__":
     
@@ -176,6 +193,9 @@ if __name__ == "__main__":
     test( "2^3^2", 2**3**2 )
     test( "2^3+2", 2**3+2 )
     test( "2^9", 2**9 )
+    test( ".5", 0.5)
+    test( "-.7", -0.7)
+    test( "-.7ms", magnitude.mg(-0.7,"ms"))
     test( "sgn(-2)", -1 )
     test( "sgn(0)", 0 )
     test( "sgn(0.1)", 1 )

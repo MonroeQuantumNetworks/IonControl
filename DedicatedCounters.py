@@ -117,12 +117,20 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 self.graphicsView.removeItem( self.curves[index] )
                 self.curves[index] = None
                 
-    def onClose(self):
+    def saveConfig(self):
+        self.config['DedicatedCounter.pos'] = self.pos()
+        self.config['DedicatedCounter.size'] = self.size()
         self.config['DedicatedCounter.Settings'] = self.settings
         self.config['DedicatedCounter.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-        self.settingsUi.onClose()
-        self.calibrationUi.onClose()
-        self.autoLoad.close()
+        self.autoLoad.saveConfig()
+        self.calibrationUi.saveConfig()
+        self.settingsUi.saveConfig()
+
+    def onClose(self):
+        self.autoLoad.onClose()
+
+    def closeEvent(self,e):
+        self.onClose()
         
     def reject(self):
         self.config['DedicatedCounter.pos'] = self.pos()
@@ -164,7 +172,6 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         
     def onData(self, data):
         self.tick += 1
-        #print self.tick, data.data
         self.displayUi.values = data.data[0:4]
         self.displayUi2.values = data.data[4:8]
         self.displayUiADC.values = self.convertAnalog(data.data[8:12])
@@ -186,3 +193,4 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         for channel, cal in enumerate(self.analogCalbrations):
             converted.append( cal.convertMagnitude(data[channel]) )
         return converted
+    

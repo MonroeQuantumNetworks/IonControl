@@ -22,10 +22,14 @@
     <file>icons/player_play.png</file>
     <file>icons/player_stop.png</file>
   </qresource>
+  <qresource prefix="latex">
+    <file>icons/cos.png</file>
+  </qresource>
   <qresource prefix="other">
     <file>icons/ions.jpg</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/update_misc.png</file>
     <file>icons/arrow-left-2.png</file>
     <file>icons/archive-extract-2.png</file>
     <file>icons/go-down-4.png</file>

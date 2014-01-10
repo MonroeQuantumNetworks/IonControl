@@ -13,9 +13,14 @@ import modules.magnitude as magnitude
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )
-fnumber = Combine( Word( "+-"+nums, nums ) + 
+plus  = Literal( "+" )
+minus = Literal( "-" )
+dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
+                   Optional( e + Word( "+-"+nums, nums ) ) )
+numfnumber = Combine( Word( "+-"+nums, nums ) + 
                    Optional( point + Optional( Word( nums ) ) ) +
                    Optional( e + Word( "+-"+nums, nums ) ) )
+fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 
 valueexpr = ( fnumber + Optional(ident)  )

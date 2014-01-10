@@ -10,6 +10,8 @@ from PyQt4 import QtGui, QtCore
 import sys
 import functools
 from modules.enum import enum
+import logging
+import inspect
 
 ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
 
@@ -54,8 +56,10 @@ class ExceptionLogButton( QtGui.QToolButton ):
             self.setIcon(self.NoExceptionsIcon)
         
     def myexcepthook(self, type, value, tback):
+        logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__)
         self.addMessage(value)
-        sys.__excepthook__(type, value, tback)
+        logger.error( str(value), exc_info=(type, value, tback) )
+        #sys.__excepthook__(type, value, tback)
         
     def mouseDoubleClickEvent(self, event):
         self.myMenu.clear()

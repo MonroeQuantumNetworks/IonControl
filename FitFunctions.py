@@ -11,6 +11,7 @@ from modules import MagnitudeParser
 
 class CosFit(FitFunctionBase):
     name = "Cos"
+    labelIcon = ":/latex/icons/cos.png"
     def __init__(self):
         FitFunctionBase.__init__(self)
         self.functionString =  'A*cos(2*pi*k*x+theta)+O'
@@ -114,12 +115,7 @@ class SquareRabiFit(FitFunctionBase):
         T, C, A, O = self.parameters if p is None else p
         Rs = numpy.square(2*numpy.pi/T)
         Ds = numpy.square(2*numpy.pi*(x-C))
-        print T, C, A, O
-        print Rs
-        print Ds
         part = numpy.sqrt(Rs+Ds)*self.t/2.
-        print part
-        print numpy.cos, numpy.sin, numpy.sqrt
         return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))+O
     
 
@@ -209,8 +205,8 @@ fitFunctionMap = { GaussianFit.name: GaussianFit,
                    RabiCarrierFunction.name: RabiCarrierFunction,
                    FullRabiCarrierFunction.name: FullRabiCarrierFunction,
                    LinearFit.name: LinearFit
-                 }
-
+                 }        
+        
 def fitFunctionFactory(text):
     """
     Creates a FitFunction Object from a saved string representation
@@ -222,14 +218,28 @@ def fitFunctionFactory(text):
     for index, arg in enumerate(components[2:]):
         value = float(arg.split('=')[1].strip())
         function.parameters[index] = value
-    print parts
     if len(parts)>1 and len(parts[1])>0:
         components = parts[1].split(',')
         for item in components:
-            print item
             name, value = item.split('=')
-            print "'{0}' '{1}' '{2}'".format(item,name.strip(),value.strip())
             setattr(function, name.strip(), MagnitudeParser.parse(value.strip()))
+    return function
+
+def fromXmlElement(element):
+    """
+    Creates a FitFunction Object from a saved string representation
+    """
+    name = element.attrib['name']
+    function = fitFunctionMap[name]()
+    function.parametersConfidence = [None]*len(function.parameters)
+    for index, parameter in enumerate(element.findall("Parameter")):
+        value = float(parameter.text)
+        function.parameters[index] = value
+        function.parameterNames[index] = parameter.attrib['name']
+        function.parametersConfidence[index] = float(parameter.attrib['confidence'])
+    for index, parameter in enumerate(element.findall("Constant")):
+        value = float(parameter.text)
+        setattr( function, parameter.attrib['name'], value ) 
     return function
         
         

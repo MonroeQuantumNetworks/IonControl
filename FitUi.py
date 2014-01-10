@@ -6,7 +6,7 @@ Created on Sat Jan 19 14:52:23 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui, QtCore, QtSvg
 import FitFunctions
 import functools
 import pyqtgraph
@@ -14,6 +14,8 @@ import copy
 import MagnitudeSpinBox
 from modules.round import roundToNDigits
 from modules.round import roundToStdDev
+from itertools import izip_longest
+import logging
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -30,10 +32,11 @@ class FitFunctionUi(object):
         self.parametersConfidenceLabel  = [None]* len(fitfunction.parameters)
         
     def fittedParameterSetValue(self):
-        for i,(p,conf) in enumerate(zip(self.fitfunction.parameters,self.fitfunction.parametersConfidence)):
+        logger = logging.getLogger(__name__)
+        for i,(p,conf) in enumerate(izip_longest(self.fitfunction.parameters,self.fitfunction.parametersConfidence)):
             self.fittedParametersUi[i].setValue(p)
-            print repr(roundToNDigits(conf,2))
-            self.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2)))
+            if conf:
+                self.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2)))
 
     def startParameterSetValue(self):
         for i,p in enumerate(self.fitfunction.startParameters):
@@ -62,11 +65,14 @@ class FitUi(fitForm, QtGui.QWidget):
         for fitfunction in self.fitFunctions:
             fitfunction.page = QtGui.QWidget()
             fitfunction.gridLayout = QtGui.QGridLayout(fitfunction.page)
-            label = QtGui.QLabel(fitfunction.fitfunction.functionString,fitfunction.page)
-            label.setWordWrap(True)
+            if hasattr(fitfunction.fitfunction,'labelIcon'):
+                label = QtGui.QLabel()
+                label.setPixmap(QtGui.QPixmap(fitfunction.fitfunction.labelIcon))
+            else:
+                label = QtGui.QLabel(fitfunction.fitfunction.functionString,fitfunction.page)
+                label.setWordWrap(True)
             fitfunction.gridLayout.addWidget(label, 0, 0, 1, 3)
             self.comboBox.addItem(fitfunction.fitfunction.name)
-            #print fitfunction.fitfunction.startParameters
             for line, paramname in enumerate(fitfunction.fitfunction.parameterNames):
                 label = QtGui.QLabel(paramname,fitfunction.page)
                 label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -114,16 +120,14 @@ class FitUi(fitForm, QtGui.QWidget):
     def onFit(self):
         index = self.stackedWidget.currentIndex()
         functionui = self.fitFunctions[index]
-        for name, value in zip(functionui.fitfunction.parameterNames, functionui.startParameters):
-            print name, value
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             sigma = None
-            if hasattr(plot.trace,'height'):
-                sigma = plot.trace.height
-            elif hasattr(plot.trace,'top') and hasattr(plot.trace,'bottom'):
-                sigma = abs(plot.trace.top + plot.trace.bottom)
-            params = functionui.fitfunction.leastsq(plot.trace.x,plot.trace.y,functionui.startParameters,sigma=sigma)
-            plot.trace.fitfunction = copy.deepcopy(functionui.fitfunction)
+            if plot.hasHeightColumn:
+                sigma = plot.height
+            elif plot.hasTopColumn and plot.hasBottomColumn:
+                sigma = abs(plot.top + plot.bottom)
+            params = functionui.fitfunction.leastsq(plot.x,plot.y,functionui.startParameters,sigma=sigma)
+            plot.fitFunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
             for i,(p,conf,relconf) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
                 functionui.fittedParametersUi[i].setValue(roundToStdDev(p,conf))
@@ -143,7 +147,7 @@ class FitUi(fitForm, QtGui.QWidget):
         functionui = self.fitFunctions[index]
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
             functionui.fitfunction.parameters = functionui.startParameters
-            plot.trace.fitfunction = functionui.fitfunction
+            plot.fitFunction = functionui.fitfunction
             plot.plot(-2)
             functionui.fitfunction.finalize(functionui.fitfunction.parameters)
             for index, name in enumerate(functionui.fitfunction.resultNames):
@@ -151,24 +155,24 @@ class FitUi(fitForm, QtGui.QWidget):
                 
     def onRemoveFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
-            del plot.trace.fitfunction
+            plot.fitFunction = None
             plot.plot(-2)
     
     def onExtractFit(self):
+        logger = logging.getLogger(__name__)
         plots = self.traceui.selectedPlottedTraces(defaultToLastLine=True)
-        print "onExtractFit {0} plots selected".format(len(plots) )
+        logger.error( "onExtractFit {0} plots selected".format(len(plots) ) )
         if plots:
             plot = plots[0]
-            print "extracting plot"
-            if hasattr( plot.trace, 'fitfunction'):
-                print "plot has fitfunction"
-                for i, function in enumerate(self.fitFunctions):
-                    if function.fitfunction.name == plot.trace.fitfunction.name:
-                        print "compare names {0} == {1}".format(function.fitfunction.name,plot.trace.fitfunction.name)
-                        self.comboBox.setCurrentIndex(i)
-                        function.fitfunction.parameters = plot.trace.fitfunction.parameters
-                        print "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name)
-                        self.fitFunctions[i].fittedParameterSetValue()                
+            fitFunction = plot.fitFunction
+            for i, function in enumerate(self.fitFunctions):
+                if function.fitfunction.name == fitFunction.name:
+                    logger.debug( "compare names {0} == {1}".format(function.fitfunction.name,fitFunction.name) )
+                    self.comboBox.setCurrentIndex(i)
+                    function.fitfunction.parameters = fitFunction.parameters
+                    function.fitfunction.parametersConfidence = fitFunction.parametersConfidence
+                    logger.info( "Extracted parameters {0} for '{1}'".format(function.fitfunction.parameters,function.fitfunction.name) )
+                    self.fitFunctions[i].fittedParameterSetValue()                
     
     def onCopy(self):
         index = self.stackedWidget.currentIndex()

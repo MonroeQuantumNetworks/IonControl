@@ -9,6 +9,7 @@ from PyQt4 import QtGui, QtCore
 import os.path
 import functools
 import modules.magnitude as magnitude
+import logging
        
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
 ShuttlingEdgeForm, ShuttlingEdgeBase = PyQt4.uic.loadUiType(r'ui\ShuttlingEdge.ui')
@@ -97,7 +98,8 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
 #        self.lineLabel.addAction( DSubNumberVoltageAction )
 
     def onShuttleSequence(self, cont=False):
-        print "ShuttleSequence"
+        logger = logging.getLogger(__name__)
+        logger.info( "ShuttleSequence" )
         first = self.shuttlingEdges[0].definition.fromLine
         last = self.shuttlingEdges[-1].definition.toLine
         if self.adjust.line==first:
@@ -118,7 +120,8 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.adjust.line = currentline
 
     def onShuttleEdge(self, index):
-        print "ShuttleEdge", index
+        logger = logging.getLogger(__name__)
+        logger.info( "ShuttleEdge {0}".format( index ) )
         definition = self.shuttlingEdges[index].definition
         if self.adjust.line==definition.fromLine:
             definition.reverse = False
@@ -147,6 +150,6 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         setattr(self.adjust,attribute,value.toval() if isinstance( value, magnitude.Magnitude) else value) 
         self.updateOutput.emit(self.adjust)
     
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self.settings
         

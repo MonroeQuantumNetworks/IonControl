@@ -10,6 +10,8 @@ import functools
 import modules.magnitude as magnitude
 from modules import Expression
 import sip
+import logging
+from collections import OrderedDict
 
 api2 = sip.getapi("QVariant")==2
 
@@ -19,23 +21,20 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = dict()
+        self.variabledict = OrderedDict()
         for name,var in variabledict.iteritems():
             if var.type in ['parameter','address',None]:
                 self.variabledict[name] = var
-        self.variablelist = sorted([ x for x in self.variabledict.values() if x.type=='parameter' ], key=attrgetter('index')) 
-        #print self.variablelist 
+        self.variablelist = [ x for x in self.variabledict.values() if x.type=='parameter' ]
         self.expression = Expression.Expression()
         self.parameterdict = parameterdict
         self.onParameterChanged()   # make sure we update all global variables
 
     def setVisible(self, visibledict ):
-        #print self.rowCount()
         self.beginRemoveRows(QtCore.QModelIndex(),0,self.rowCount()-1)
         self.variablelist = []
         self.endRemoveRows()
         variablelist = sorted([ x for x in self.variabledict.values() if x.type in visibledict and visibledict[x.type] ], key=attrgetter('index'))
-        #print variablelist, len(variablelist)
         self.beginInsertRows(QtCore.QModelIndex(),0,len(variablelist)-1)
         self.variablelist = variablelist
         self.endInsertRows()
@@ -70,7 +69,8 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             var.strvalue = strvalue
             return True    
         except Exception as e:
-            print e, "No match for", str(value.toString())
+            logger = logging.getLogger(__name__)
+            logger.error( "No match for {0}".format(value.toString()) )
             return False
         
     def onParameterChanged(self):

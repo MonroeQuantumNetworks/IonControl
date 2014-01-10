@@ -153,7 +153,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         if trace == self.rootTrace:
             return None
         col = traceIndex.column()
-        return { (QtCore.Qt.DisplayRole,2): trace.trace.name,
+        return { (QtCore.Qt.DisplayRole,2): ", ".join([str(trace.trace.name), str(trace.name)]),
                  (QtCore.Qt.DisplayRole,3): trace.trace.vars.comment,
                  (QtCore.Qt.DisplayRole,4): getattr( trace.trace, 'fileleaf', None ),
                  (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if trace.curvePen > 0 else QtCore.Qt.Unchecked,

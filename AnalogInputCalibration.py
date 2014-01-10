@@ -47,7 +47,6 @@ class AnalogInputCalibration:
         update the parameter, called by the signal of pyqtgraph parametertree
         """
         for param, change, data in changes:
-            print self, "update", param.name(), data
             setattr( self.parameters, param.name(), data)
 
         

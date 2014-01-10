@@ -8,6 +8,7 @@ import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import os.path
 import ProjectSelection
+import logging
        
 VoltageFilesForm, VoltageFilesBase = PyQt4.uic.loadUiType(r'ui\VoltageFiles.ui')
 
@@ -79,27 +80,31 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             
         
     def onMappingChanged(self,value):
+        logger = logging.getLogger(__name__)
         self.files.mappingFile = self.files.mappingHistory[str(value)]
         self.loadMapping.emit(self.files.mappingFile)
-        print "onMappingChanged",self.files.mappingFile
+        logger.info( "onMappingChanged {0}".format(self.files.mappingFile) )
         
     def onDefinitionChanged(self,value):
+        logger = logging.getLogger(__name__)
         self.files.definitionFile = self.files.definitionHistory[str(value)]
         self.loadDefinition.emit(self.files.definitionFile)
-        print "onDefinitionChanged",self.files.definitionFile
+        logger.info( "onDefinitionChanged {0}".format(self.files.definitionFile) )
         
     def onGlobalChanged(self,value):
+        logger = logging.getLogger(__name__)
         value = str(value)
         if  value in self.files.globalHistory:
             self.files.globalFile = self.files.globalHistory[value]
         self.loadGlobalAdjust.emit(self.files.globalFile)
-        print "onGlobalChanged",self.files.globalFile
+        logger.info( "onGlobalChanged {0}".format(self.files.globalFile) )
         
     def onLocalChanged(self,value):
         pass
 
     def onLoadMapping(self):
-        print "onLoadMapping"
+        logger = logging.getLogger(__name__)
+        logger.debug( "onLoadMapping" )
         path = str(QtGui.QFileDialog.getOpenFileName(self, "Open mapping file:", self.lastDir ))
         if path!="":
             filedir, filename = os.path.split(path)
@@ -151,6 +156,6 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
             self.files.localFile = path
             self.loadLocalAdjust.emit(path)
     
-    def onClose(self):
+    def saveConfig(self):
         self.config[self.configname] = self.files
         

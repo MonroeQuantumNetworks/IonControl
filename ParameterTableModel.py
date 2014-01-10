@@ -6,6 +6,7 @@ Created on Fri Feb 08 22:02:08 2013
 """
 from PyQt4 import QtCore
 from modules import Expression
+import logging
 
 class Parameter:
     def __init__(self,name, value, strvalue=None):
@@ -52,7 +53,8 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
             self.parameterdict[var.name] = result
             return True    
         except Exception as e:
-            print e, "No match for", str(value.toString())
+            logger = logging.getLogger(__name__)
+            logger.exception("No match for {0}".format(value.toString()) )
             return False
         
     def setData(self, index, value, role):

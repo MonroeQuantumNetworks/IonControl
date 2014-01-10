@@ -56,7 +56,6 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.dockWidgetList.append(self.displayDock )
         if 'testWidget.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
-            print "restoreState"
 #start added
         self.scanControlWidget = ScanControl(config,self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)
@@ -158,9 +157,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.StatusMessage.emit("test not active")
         MainWindowWidget.MainWindowWidget.deactivate(self)
         
-    def onClose(self):
+    def saveConfig(self):
         self.config['testWidget.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
-        self.traceui.onClose()
+        self.traceui.saveConfig()
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()

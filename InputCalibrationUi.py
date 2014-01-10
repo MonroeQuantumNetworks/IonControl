@@ -7,6 +7,7 @@ Created on Thu Sep 05 20:31:16 2013
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
+import logging
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InputCalibrationUi.ui')
 SheetForm, SheetBase = PyQt4.uic.loadUiType(r'ui\InputCalibrationChannel.ui')
@@ -44,15 +45,10 @@ class InputCalibrationChannel(SheetForm,SheetBase):
       
     def onCalibrationChanged(self,calibration):  
         calibration = str(calibration)
-        print "calibration changed to '{0}'".format(calibration)
-        print AnalogInputCalibration.AnalogInputCalibrationMap
-        print calibration in AnalogInputCalibration.AnalogInputCalibrationMap
         if self.myCalibration:
-            print "save parameters", self.myCalibration.parameters.__dict__
             self.settings.parameters[self.settings.calibration] = self.myCalibration.parameters
         self.myCalibration = AnalogInputCalibration.AnalogInputCalibrationMap[calibration]() 
         if calibration in self.settings.parameters:
-            print "restore parameters", self.settings.parameters[calibration].__dict__
             self.myCalibration.parameters = self.settings.parameters[calibration]
         if not self.treeWidget:
             self.param = Parameter.create(name='params', type='group', children=self.myCalibration.paramDef())
@@ -61,14 +57,13 @@ class InputCalibrationChannel(SheetForm,SheetBase):
             self.verticalLayout.insertWidget(2,self.treeWidget)
             self.param.sigTreeStateChanged.connect(self.myCalibration.update, QtCore.Qt.UniqueConnection)
         else:
-            print self.myCalibration.paramDef()
             self.param = Parameter.create(name='params', type='group', children=self.myCalibration.paramDef())
             self.treeWidget.setParameters(self.param, showTop=False)
             self.param.sigTreeStateChanged.connect(self.myCalibration.update, QtCore.Qt.UniqueConnection)
         self.settings.calibration = calibration
         self.callback( self.channel, self.myCalibration )
             
-    def onClose(self):
+    def saveConfig(self):
         if self.myCalibration:
             self.settings.parameters[self.settings.calibration] = self.myCalibration.parameters
         self.config["InputCalibration.{0}".format(self.channel)] = self.settings
@@ -98,10 +93,10 @@ class InputCalibrationUi(Form,Base):
     def updateCalibration(self, channel, calibration):
         self.calibrations[channel] = calibration
 
-    def onClose(self):
+    def saveConfig(self):
         self.config["InputCalibration.Settings"] = self.settings
         for widget in self.widgetList:
-            widget.onClose()
+            widget.saveConfig()
 
 if __name__=="__main__":
     import sys

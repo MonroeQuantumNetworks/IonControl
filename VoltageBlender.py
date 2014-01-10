@@ -5,6 +5,7 @@ Created on Tue Mar 19 23:14:52 2013
 @author: pmaunz
 """
 from Chassis.itfParser import itfParser
+import logging
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -13,7 +14,8 @@ try:
 
     HardwareDriverLoaded = True
 except ImportError as e:
-    print "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e)
+    logger = logging.getLogger(__name__)
+    logger.error( "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e) )
     HardwareDriverLoaded = False
 
 from Chassis import DAQmxUtility     
@@ -31,6 +33,7 @@ class VoltageBlender(QtCore.QObject):
     shuttlingOnLine = QtCore.pyqtSignal(float)
     
     def __init__(self):
+        logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
         if HardwareDriverLoaded:
             self.chassis = WaveformChassis()
@@ -42,7 +45,7 @@ class VoltageBlender(QtCore.QObject):
             self.chassis.initFromFile( ConfigFilename )
             self.DoLine = self.chassis.createFalseDoBuffer()
             self.DoLine[0] = 1
-            print self.DoLine
+            logger.debug( str(self.DoLine) )
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = dict()  # names of the lines presented as possible adjusts
@@ -66,18 +69,12 @@ class VoltageBlender(QtCore.QObject):
         self.mappingpath = path
         self.electrodes, self.aoNums, self.dsubNums = self.itf._getEmapData()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
-        #print "VoltageBlender emit"
-        #print "electrodes", self.electrodes
-        #print "aoNums", self.aoNums
-        #print "dsubNums", self.dsubNums
     
     def loadVoltage(self,path):
         self.itf.open(path)
-        #print "Number of lines in file", self.itf.getNumLines()
         self.lines = list()
         for i in range(self.itf.getNumLines()):
             line = self.itf.eMapReadLine() 
-            #print "line",i,line
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
             self.lines.append( line )
@@ -110,37 +107,39 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
+        logger = logging.getLogger(__name__)
         line = self.blendLines(lineno,lineGain)
         self.lineGain = lineGain
         self.globalGain = globalGain
         self.lineno = lineno
         line = self.adjustLine( line )
         line *= self.globalGain
-        #print "writeAoBuffer", line
         try:
             if HardwareDriverLoaded:
                 self.chassis.writeAoBuffer(line)
+                logger.debug( "Wrote voltages {0}".format(line))
                 self.chassis.writeDoBuffer(self.DoLine)
             else:
-                print "Hardware Driver not loaded, cannot write voltages"
+                logger.error( "Hardware Driver not loaded, cannot write voltages" )
             self.outputVoltage = line
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         except PyDAQmx.DAQmxFunctions.DAQError as e:
-            print e
+            logger.exception("Exception")
             outOfRange = line>10
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
             
     def shuttle(self, definition, cont):
+        logger = logging.getLogger(__name__)
         if True:
             for edge in definition:
                 for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
                                            edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
                     self.applyLine(line,edge.lineGain,edge.globalGain)
-                    print "shuttling applied line", line
+                    logger.debug( "shuttling applied line {0}".format( line ) )
             self.shuttlingOnLine.emit(line)
         else:  # this stuff does not work yet
-            print "Starting finite shuttling"
+            logger.info( "Starting finite shuttling" )
             outputmatrix = list()
             globaladjust = [0]*len(self.lines[0])
             self.adjustLine(globaladjust)
@@ -156,12 +155,13 @@ class VoltageBlender(QtCore.QObject):
                     self.chassis.start()
                     self.shuttleTo = lineno
                 else:
-                    print "Hardware Driver not loaded, cannot write voltages"
+                    logger.error( "Hardware Driver not loaded, cannot write voltages" )
             except PyDAQmx.DAQmxFunctions.DAQError as e:
-                print e
+                logger.exception("")
             
     def onChassisDone( self, generator, value ):
-        print "onChassisDone", generator, value
+        logger = logging.getLogger(__name__)
+        logger.info( "onChassisDone {0} {1}".format(generator, value) )
         self.chassis.mode = DAQmxUtility.Mode.Static
         self.chassis.setOnDoneCallback( None )
         self.outputVoltage = self.shuttleTo
@@ -171,18 +171,18 @@ class VoltageBlender(QtCore.QObject):
         offset = numpy.array([0.0]*len(line))
         for name, value in self.adjust.iteritems():
             if name in self.adjustDict:
-                offset = offset + self.adjustLines[self.adjustDict[name]] * value
+                offset = offset + self.adjustLines[self.adjustDict[name]] * float(value)
         if "__GAIN__" in self.adjust:
-            offset *= self.adjust["__GAIN__"]
-        #print "adjustLine", self.globalGain, self.adjust
+            offset *= float(self.adjust["__GAIN__"])
         return (line+offset)
             
     def blendLines(self,lineno,lineGain):
-        #print "blendlines", left, right, convexc, lineGain
-        left = int(math.floor(lineno))
-        right = int(math.ceil(lineno))
-        convexc = lineno-left
-        return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
+        if self.lines:
+            left = int(math.floor(lineno))
+            right = int(math.ceil(lineno))
+            convexc = lineno-left
+            return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
+        return None
             
     def close(self):
         if HardwareDriverLoaded:

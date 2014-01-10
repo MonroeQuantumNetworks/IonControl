@@ -16,6 +16,7 @@ from modules import configshelve
 from modules import dictutil
 from PulseProgramSourceEdit import PulseProgramSourceEdit
 import ProjectSelection
+import logging
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -45,6 +46,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.parameterChangedSignal = None
    
     def setupUi(self,experimentname,parent):
+        logger = logging.getLogger(__name__)
         super(PulseProgramUi,self).setupUi(parent)
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
@@ -68,7 +70,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             try:
                 self.loadFile( self.configParams.lastFilename )
             except Exception as e:
-                print "Ignoring exception {0}, pulse programming file {1} cannot be loaded."
+                logger.error( "Ignoring exception {0}, pulse programming file '{1}' cannot be loaded.".format(str(e),self.configParams.lastFilename) )
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
@@ -111,7 +113,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
-        print "loadFile", path
+        logger = logging.getLogger(__name__)
+        logger.debug( "loadFile {0}".format( path ) )
         if self.variabledict is not None and self.configParams.lastFilename is not None:
             self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
         self.configParams.lastFilename = path
@@ -129,7 +132,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
-            print "self.recentFilesChanged.emit({0})".format(filename)
+            logger.debug( "self.recentFilesChanged.emit({0})".format(filename) )
             self.recentFilesChanged.emit(filename)
         self.configParams.recentFiles[filename]=path
         self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
@@ -203,7 +206,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onReject(self):
         pass
         
-    def close(self):
+    def saveConfig(self):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
@@ -278,11 +281,15 @@ class PulseProgramSetUi(QtGui.QDialog):
         QtGui.QDialog.show(self)
         self.isShown = True
         
-    def close(self):
+    def saveConfig(self):
+        self.config['PulseProgramSetUi.pos'] = self.pos()
+        self.config['PulseProgramSetUi.size'] = self.size()
         if self.isShown:
             for page in self.pulseProgramSet.values():
-                page.close()
-            self.reject()
+                page.saveConfig()
+                
+    def onClose(self):
+        self.reject()
 
 #    def resizeEvent(self, event):
 #        self.config['PulseProgramSetUi.size'] = event.size()

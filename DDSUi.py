@@ -44,6 +44,12 @@ class DDSUi(DDSForm, DDSBase):
             self.onWriteAll()
             self.onApply()
             
+    def setDisabled(self, disabled):
+        for widget  in [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5,
+                        self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5,
+                        self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]:
+            widget.setEnabled( not disabled )        
+            
     def onStateChanged(self, state ):
         self.autoApply = self.autoApplyBox.isChecked()
 
@@ -74,7 +80,7 @@ class DDSUi(DDSForm, DDSBase):
             self.onAmplitude( box, channel )
         if self.autoApply: self.onApply
         
-    def closeEvent(self, e):
+    def saveConfig(self):
         self.config['DDSUi.Frequency'] = self.frequency
         self.config['DDSUi.Phase'] = self.phase
         self.config['DDSUi.Amplitude'] = self.amplitude

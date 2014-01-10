@@ -8,6 +8,7 @@ Created on Sat Dec 22 22:34:06 2012
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 from functools import partial
+import logging
 
 class Settings:
     def __init__(self):
@@ -56,9 +57,10 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.checkBoxAutoUpload.stateChanged.connect( partial(self.onStateChanged, 'autoUpload') )
         self.showOnStartupCheckBox.setChecked( self.configSettings.showOnStartup )
         self.showOnStartupCheckBox.stateChanged.connect( partial(self.onStateChanged, 'showOnStartup') )
-        #print "bitfileCacheLength" , len(self.bitfileCache)
         for item in self.bitfileCache:
             self.comboBoxBitfiles.addItem(item)
+        if self.configSettings.lastBitfile:
+            self.comboBoxBitfiles.setCurrentIndex( self.comboBoxBitfiles.findText(self.configSettings.lastBitfile))
         if self.configSettings.lastInstrument in self.deviceMap and not self.configSettings.showOnStartup:
             self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
             if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
@@ -78,14 +80,16 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(newIdentifier) )
         
     def scanInstruments(self):
+        logger = logging.getLogger(__name__)
         self.comboBoxInstruments.clear()
         self.deviceMap = self.pulser.listBoards()
         self.comboBoxInstruments.addItems( self.deviceMap.keys() )
-        print self.deviceMap
+        logger.info( "Opal Kelly Devices found {0}".format(self.deviceMap ) )
         
     def onIndexChanged(self,description):
+        logger = logging.getLogger(__name__)
         if description!='':
-            print "New instrument", description, self.deviceMap[str(description)]
+            logger.info( "New instrument {0} {1}".format(description, self.deviceMap[str(description)]) )
             self.settings.deviceSerial = self.deviceMap[str(description)].serial
             self.settings.deviceDescription = str(description)
             self.settings.deviceInfo = self.deviceMap[str(description)]
@@ -95,12 +99,10 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
                 self.settings.pulser = self.pulser
         
     def accept(self):
-        print "accept"
         self.lastPos = self.pos()
         self.hide()
         
     def reject(self):
-        print "reject"
         self.lastPos = self.pos()
         self.hide()
         
@@ -110,15 +112,12 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         QtGui.QDialog.show(self)
         
     def apply(self,button):
-        #print button.text(), "button pressed"
         if str(button.text())=="Apply":
             self.pulser.openBySerial( self.settings.deviceSerial )   
             
-    def close(self):
+    def saveConfig(self):
         self.config['SettingsDialog.Config'] = self.configSettings
         self.config['SettingsDialog.bitfileCache'] = self.bitfileCache
-        #print self.configSettings.__dict__
-        #print len(self.bitfileCache), self.bitfileCache
         
     def onLoadBitfile(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open bitfile'))
@@ -130,8 +129,9 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.configSettings.lastBitfile = path
             
     def onUploadBitfile(self):
+        logger = logging.getLogger(__name__)
         bitfile = str(self.comboBoxBitfiles.currentText())
-        print "Uploading file '{0}'".format(bitfile),
+        logger.info( "Uploading file '{0}'".format(bitfile) )
         if bitfile!="":
             self.pulser.openBySerial( self.settings.deviceSerial )
             self.pulser.uploadBitfile(self.bitfileCache[bitfile])
