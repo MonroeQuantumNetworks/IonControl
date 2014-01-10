@@ -40,7 +40,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return None
         
     def flags(self, index ):
-        if index.column() in [2,3]:
+        if index.column() in [1,2,3]:
             return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
         return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
@@ -77,4 +77,14 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return True
         
     def setAlgorithm(self, index, algorithm):
-        pass # don't know what to do'
+        algorithm = str(algorithm)
+        eval = self.evalList[index.row()]
+        if algorithm!=eval.evaluation:
+            eval.settingsCache[eval.evaluation] = eval.settings
+            eval.evaluation = algorithm
+            algo = EvaluationAlgorithms[eval.evaluation]()
+            algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
+            if eval.evaluation in eval.settingsCache:
+                eval.settings = eval.settingsCache[eval.evaluation]
+            algo.setSettings( eval.settings, eval.name )
+            self.evalAlgoList[index.row()] = algo      

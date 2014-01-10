@@ -38,13 +38,15 @@ class EvaluationDefinition:
         self.settings = HashableDict()
         self.name = None
         self.plotname = None
+        self.settingsCache = HashableDict()
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('plotname', None)        
         self.__dict__.setdefault('settings', HashableDict())        
+        self.__dict__.setdefault('settingsCache', HashableDict())        
         
-    stateFields = ['counter', 'evaluation', 'settings', 'name', 'plotname'] 
+    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -183,6 +185,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
         self.evalTableView.setModel( self.evalTableModel )
         self.evalTableView.clicked.connect( self.editEvaluationTable )
+        self.evalTableView.setItemDelegateForColumn(2, ComboBoxDelegate() )
         self.evalTableView.setItemDelegateForColumn(3, ComboBoxDelegate() )
         self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
@@ -292,7 +295,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.addEvaluation( evaluation )
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
         self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
-        self.evalTableView.resizeColumnsToContents()
+#         self.evalTableView.resizeColumnsToContents()
         self.evalTableView.horizontalHeader().setStretchLastSection(True)
 
     def removeEvaluation(self, index):
