@@ -10,14 +10,16 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
             self.evalList = evalList
         else:
             self.evalList = list()
+        self.evalAlgoList = list()
         self.plotnames = plotnames
         
     def choice(self, index):
         return {1:EvaluationAlgorithms.keys(),3:self.plotnames}[index]
         
-    def setEvalList(self, evalList):
+    def setEvalList(self, evalList, evalAlgoList):
         self.beginResetModel()
         self.evalList = evalList
+        self.evalAlgoList = evalAlgoList
         self.endResetModel()
         
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -63,7 +65,9 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.setData( index, value, QtCore.Qt.EditRole)
                 
     def setDataName(self, index, name):
-        self.evalList[index.row()].name = str(name.toString()).strip()
+        name = str(name.toString()).strip()
+        self.evalList[index.row()].name = name
+        self.evalAlgoList[index.row()].setSettingsName(name)
         self.dataChanged.emit()
         return True
     

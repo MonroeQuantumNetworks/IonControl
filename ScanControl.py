@@ -270,16 +270,18 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.gateSetUi:
             self.gateSetUi.setSettings( self.settings.gateSetSettings )
         self.updateSaveStatus()
-        self.evalTableModel.setEvalList( self.settings.evalList )
+        self.evalAlgorithmList = []
         for eval in self.settings.evalList:
             self.addEvaluation(eval)
+        assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
+        self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
         self.evalTableView.resizeColumnsToContents()
         self.evalTableView.horizontalHeader().setStretchLastSection(True)
 
     def addEvaluation(self, eval):
         algo =  CountEvaluation.EvaluationAlgorithms[eval.evaluation]()
-        algo.subscribe( self.updateSaveStatus )
-        algo.setSettings( eval.settings )
+        algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
+        algo.setSettings( eval.settings, eval.name )
         self.evalAlgorithmList.append(algo)      
 
     def onAddEvaluation(self):
@@ -288,7 +290,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         evaluation.evaluation = str(self.evalAlgorithmCombo.currentText())
         self.settings.evalList.append( evaluation )
         self.addEvaluation( evaluation )
-        self.evalTableModel.setEvalList( self.settings.evalList )
+        assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
+        self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
         self.evalTableView.resizeColumnsToContents()
         self.evalTableView.horizontalHeader().setStretchLastSection(True)
 
@@ -299,7 +302,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         for index in sorted(unique([ i.row() for i in self.evalTableView.selectedIndexes() ]),reverse=True):
             del self.settings.evalList[index]
             self.removeEvaluation(index)
-        self.evalTableModel.setEvalList( self.settings.evalList )
+        assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
+        self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
         
     def onActiveEvalChanged(self, modelIndex, modelIndex2 ):
         self.evalParamTreeWidget.setParameters( self.evalAlgorithmList[modelIndex.row()].parameter)

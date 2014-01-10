@@ -21,6 +21,7 @@ class EvaluationBase(Observable):
         self.setDefault()
         self._parameter = Parameter.create(name='params', type='group',children=self.children())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        self.settingsName = None
                
     def update(self, param, changes):
         for param, change, data in changes:
@@ -30,17 +31,21 @@ class EvaluationBase(Observable):
     def children(self):
         return []    
     
-    def setSettings(self, settings):
+    def setSettings(self, settings, settingsName):
         for name, value in self.settings.iteritems():
             settings.setdefault(name, value)
         self.settings = settings
         for name, value in settings.iteritems():
             self._parameter[name] = value
+        self.settingsName = settingsName if settingsName else "unnamed"
+        
+    def setSettingsName(self, settingsName):
+        self.settingsName = settingsName
 
     @property
     def parameter(self):
         # re-create to prevent exception for signal not connected
-        self._parameter = Parameter.create(name='params', type='group',children=self.children())     
+        self._parameter = Parameter.create(name=self.settingsName, type='group',children=self.children())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         return self._parameter
     
