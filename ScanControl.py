@@ -39,14 +39,16 @@ class EvaluationDefinition:
         self.name = None
         self.plotname = None
         self.settingsCache = HashableDict()
+        self.showHistogram = False
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('plotname', None)        
         self.__dict__.setdefault('settings', HashableDict())        
-        self.__dict__.setdefault('settingsCache', HashableDict())        
+        self.__dict__.setdefault('settingsCache', HashableDict())
+        self.__dict__.setdefault('showHistogram', False)   
         
-    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname'] 
+    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -194,6 +196,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
+        self.evalTableView.resizeColumnsToContents()
         
         try:
             self.setSettings( self.settings )

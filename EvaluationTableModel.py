@@ -27,7 +27,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return len(self.evalList)
     
     def columnCount(self,  parent=QtCore.QModelIndex()):
-        return 4
+        return 5
     
     def data(self, index, role): 
         if index.isValid():
@@ -38,12 +38,15 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                      (QtCore.Qt.EditRole,1): self.evalList[index.row()].evaluation,
                      (QtCore.Qt.EditRole,2): self.evalList[index.row()].name,
                      (QtCore.Qt.EditRole,3): self.evalList[index.row()].plotname,
+                     (QtCore.Qt.CheckStateRole,4): QtCore.Qt.Checked if self.evalList[index.row()].showHistogram else QtCore.Qt.Unchecked,
                      }.get((role,index.column()),None)
         return None
         
     def flags(self, index ):
         if index.column() in [1,2,3]:
             return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
+        if index.column()==4:
+            return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
         return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     def headerData(self, section, orientation, role ):
@@ -54,14 +57,20 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                 return { 0: 'Counter',
                          1: 'Evaluation',
                          2: 'Name',
-                         3: 'Plot' }[section]
+                         3: 'Plot',
+                         4: 'Hist' }[section]
         return None 
 
     def setData(self, index, value, role):
         return { (QtCore.Qt.EditRole,1): partial( self.setAlgorithm, index, value ),
                  (QtCore.Qt.EditRole,2): partial( self.setDataName, index, value ),
                  (QtCore.Qt.EditRole,3): partial( self.setPlotName, index, value ),
+                 (QtCore.Qt.CheckStateRole,4): partial( self.setShowHistogram, index, value ),
                 }.get((role,index.column()), lambda: False )()
+
+    def setShowHistogram(self,index,value):
+        self.evalList[index.row()].showHistogram = (value == QtCore.Qt.Checked )
+        return True      
                 
     def setValue(self, index, value):
         self.setData( index, value, QtCore.Qt.EditRole)
