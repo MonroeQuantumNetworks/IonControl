@@ -30,16 +30,48 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="saveButton">
-       <property name="toolTip">
-        <string>Save current</string>
+      <widget class="QToolButton" name="removeButton">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
        </property>
        <property name="text">
         <string>...</string>
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>16</width>
+         <height>16</height>
+        </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="saveButton">
+       <property name="toolTip">
+        <string>Save current</string>
+       </property>
+       <property name="text">
+        <string notr="true">...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
          <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>16</width>
+         <height>16</height>
+        </size>
        </property>
        <property name="autoRaise">
         <bool>true</bool>
@@ -153,7 +185,7 @@
         <x>0</x>
         <y>0</y>
         <width>274</width>
-        <height>404</height>
+        <height>402</height>
        </rect>
       </property>
       <attribute name="label">
@@ -487,7 +519,7 @@
         <x>0</x>
         <y>0</y>
         <width>274</width>
-        <height>404</height>
+        <height>402</height>
        </rect>
       </property>
       <attribute name="label">

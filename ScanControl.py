@@ -180,6 +180,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.saveButton.clicked.connect( self.onSave )
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
+        self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
         self.evalTableModel = EvaluationTableModel( self.updateSaveStatus, plotnames=self.plotnames )
         self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
@@ -601,6 +602,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
         self.updateSaveStatus()
 
+    def onRemove(self):
+        name = str(self.comboBox.currentText())
+        if name != '':
+            if name in self.settingsDict:
+                self.settingsDict.pop(name)
+            idx = self.comboBox.findText(name)
+            if idx>=0:
+                self.comboBox.removeItem(idx)
+        
     
     def onLoad(self,name):
         self.settingsName = str(name)
