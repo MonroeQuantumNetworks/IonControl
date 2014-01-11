@@ -131,12 +131,12 @@ class Scan:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
-                'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 'counterChannel', 
+                'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
                 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
                 'center', 'span', 'startCenter', 'evalList']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
-                'xUnit', 'loadPP', 'loadPPName', 'counterChannel' ]
+                'xUnit', 'loadPP', 'loadPPName' ]
         
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
@@ -221,9 +221,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.startCenterCombo.currentIndexChanged[int].connect( self.onStartCenterChanged )
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
-        self.integrateHistogramButton.clicked.connect( self.onIntegrateHistogramClicked )
-        self.counterSpinBox.valueChanged.connect( functools.partial(self.onIntValueChanged,'counterChannel') )
-#        self.evalMethodCombo.currentIndexChanged['QString'].connect( self.onAlgorithmNameChanged )
+        self.integrateHistogramCheckBox.stateChanged.connect( self.onIntegrateHistogramClicked )
                 
         # Timestamps
         self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
@@ -262,8 +260,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.onLoadPP(self.settings.loadPPName)
         # Evaluation
         self.histogramBinsBox.setValue(self.settings.histogramBins)
-        self.integrateHistogramButton.setChecked( self.settings.integrateHistogram )
-        self.counterSpinBox.setValue( self.settings.counterChannel )
+        self.integrateHistogramCheckBox.setChecked( self.settings.integrateHistogram )
         # Timestamps
         self.enableCheckBox.setChecked(self.settings.enableTimestamps )
         self.saveRawDataCheckBox.setChecked(self.settings.saveRawData)
@@ -638,9 +635,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.commitChange()
         self.updateSaveStatus()
 
-    def onIntegrateHistogramClicked(self):
+    def onIntegrateHistogramClicked(self, state):
         self.beginChange()
-        self.settings.integrateHistogram = self.integrateHistogramButton.isChecked()
+        self.settings.integrateHistogram = self.integrateHistogramCheckBox.isChecked()
         self.commitChange()
         self.updateSaveStatus()
  

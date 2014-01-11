@@ -113,7 +113,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             logger.error( "Read Pipe Overrun" )
             self.onPause()
         else:
-            logger.info( "NewExternalScan onData {0} {1}".format( len(data.count[self.scan.counterChannel]), data.scanvalue ) )
+            logger.info( "NewExternalScan onData {0}".format( data.scanvalue ) )
             x = self.generator.xValue(self.externalParameterIndex)
             evaluated = list()
             for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):

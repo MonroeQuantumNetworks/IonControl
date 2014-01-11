@@ -96,8 +96,8 @@ class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
         """ Called by worker with new data
         """
         logger = logging.getLogger(__name__)
-        logger.info( "NewExternalScan onData {0} {1}".format( len(data.count[self.scan.counterChannel]), data.scanvalue ) )
-        mean, error, raw = self.scan.evalAlgo.evaluate( data.count[self.scan.counterChannel] )
+        logger.info( "NewExternalScan onData {0}".format( data.scanvalue ) )
+        mean, error, raw = self.scan.evalAlgo.evaluate( data.count[0] )
         self.displayUi.add( mean )
         x = self.generator.xValue(self.externalParameterIndex)
         if mean is not None:
