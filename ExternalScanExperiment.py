@@ -25,8 +25,8 @@ class ScanNotAvailableException(Exception):
     pass
 
 class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
-    def __init__(self,settings,pulserHardware,experimentName,parent=None):
-        super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,parent)
+    def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
+        super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,toolBar=toolBar,parent=parent)
         self.state = self.OpStates.idle      
         
     def setupUi(self,MainWindow,config):

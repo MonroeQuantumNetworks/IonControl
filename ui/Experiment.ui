@@ -198,6 +198,17 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_4"/>
   </widget>
+  <widget class="QToolBar" name="experimentToolBar">
+   <property name="windowTitle">
+    <string>Experiment Tool Bar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
   <action name="actionClear">
    <property name="icon">
     <iconset resource="Experiment.qrc">

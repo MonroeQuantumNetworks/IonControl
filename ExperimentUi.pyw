@@ -110,8 +110,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment"), "Scan"),
-                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan"), "External Scan"),
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
+                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan", toolBar=self.experimentToolBar), "External Scan"),
                              (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,"VoltageScan"), "Voltage Scan"),
                              (testExperiment.test(),"test"),
                              ]:

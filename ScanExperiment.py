@@ -190,8 +190,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     OpStates = enum.enum('idle','running','paused','starting','stopping')
     experimentName = 'Scan Sequence'
 
-    def __init__(self,settings,pulserHardware,experimentName,parent=None):
-        MainWindowWidget.MainWindowWidget.__init__(self,parent)
+    def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
+        MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
@@ -277,6 +277,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
         self.updateProgressBar(0,1)
+        
+        #toolBar actions
+        self.copyHistogram = QtGui.QAction( QtGui.QIcon(":/openicon/icons/office-chart-bar.png"), "Copy histogram to traces", self ) 
+        self.copyHistogram.setToolTip("Copy histogram to traces")
+        self.copyHistogram.triggered.connect( self.onCopyHistogram )
+        self.actionList.append( self.copyHistogram )
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
@@ -559,7 +565,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.histogramView.addItem(self.histogramCurve)
         else:
             self.histogramCurve.setData( self.histx, self.histy )
-        
+
+    def onCopyHistogram(self):
+        if hasattr(self, 'histx') and hasattr(self,'histy'):
+            histogramTrace = Trace.Trace()
+            histogramTrace.x = self.histx
+            histogramTrace.y = self.histy
+            plottedHistogramTrace = PlottedTrace(histogramTrace,self.histogramView,pens.penList)
+            self.traceui.addTrace(plottedHistogramTrace,pen=-1)        
         
     def activate(self):
         logger = logging.getLogger(__name__)
