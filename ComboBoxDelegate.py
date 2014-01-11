@@ -35,3 +35,5 @@ class ComboBoxDelegate(QtGui.QItemDelegate):
          
     def updateEditorGeometry(self, editor, option, index ):
         editor.setGeometry(option.rect)
+
+

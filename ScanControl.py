@@ -181,12 +181,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.undoButton.clicked.connect( self.onUndo )
         self.redoButton.clicked.connect( self.onRedo )
         self.reloadButton.clicked.connect( self.onReload )
-        self.evalTableModel = EvaluationTableModel(plotnames=self.plotnames)
+        self.evalTableModel = EvaluationTableModel( self.updateSaveStatus, plotnames=self.plotnames )
         self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
+        self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.setModel( self.evalTableModel )
         self.evalTableView.clicked.connect( self.editEvaluationTable )
-        self.evalTableView.setItemDelegateForColumn(2, ComboBoxDelegate() )
-        self.evalTableView.setItemDelegateForColumn(3, ComboBoxDelegate() )
+        delegate = ComboBoxDelegate()
+        self.evalTableView.setItemDelegateForColumn(1, delegate  )
+        self.evalTableView.setItemDelegateForColumn(3, delegate )
         self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
@@ -295,9 +297,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.addEvaluation( evaluation )
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
         self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
-#         self.evalTableView.resizeColumnsToContents()
+        self.evalTableView.resizeColumnsToContents()
         self.evalTableView.horizontalHeader().setStretchLastSection(True)
-
+ 
     def removeEvaluation(self, index):
          del self.evalAlgorithmList[index]
 
@@ -647,7 +649,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         return self.settings.documentationString()
     
     def editEvaluationTable(self, index):
-        if index.column() in [2,3]:
+        if index.column() in [1,2,3]:
             self.evalTableView.edit(index)
 
 if __name__=="__main__":

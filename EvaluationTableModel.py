@@ -3,23 +3,24 @@ from functools import partial
 from CountEvaluation import EvaluationAlgorithms
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
-    dataChanged = QtCore.pyqtSignal()
-    def __init__(self, plotnames=None, evalList=None, parent=None):
+    dataChanged = QtCore.pyqtSignal( object, object )
+    def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
             self.evalList = evalList
         else:
             self.evalList = list()
-        self.evalAlgoList = list()
         self.plotnames = plotnames
+        self.updateSaveStatus = updateSaveStatus
+        self.evalAlgorithmList = list()
         
     def choice(self, index):
         return {1:EvaluationAlgorithms.keys(),3:self.plotnames}[index]
         
-    def setEvalList(self, evalList, evalAlgoList):
+    def setEvalList(self, evalList, evalAlgorithmList):
         self.beginResetModel()
         self.evalList = evalList
-        self.evalAlgoList = evalAlgoList
+        self.evalAlgorithmList = evalAlgorithmList
         self.endResetModel()
         
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -34,6 +35,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                      (QtCore.Qt.DisplayRole,1): self.evalList[index.row()].evaluation,
                      (QtCore.Qt.DisplayRole,2): self.evalList[index.row()].name,
                      (QtCore.Qt.DisplayRole,3): self.evalList[index.row()].plotname,
+                     (QtCore.Qt.EditRole,1): self.evalList[index.row()].evaluation,
                      (QtCore.Qt.EditRole,2): self.evalList[index.row()].name,
                      (QtCore.Qt.EditRole,3): self.evalList[index.row()].plotname,
                      }.get((role,index.column()),None)
@@ -67,13 +69,13 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
     def setDataName(self, index, name):
         name = str(name.toString()).strip()
         self.evalList[index.row()].name = name
-        self.evalAlgoList[index.row()].setSettingsName(name)
-        self.dataChanged.emit()
+        self.evalAlgorithmList[index.row()].setSettingsName(name)
+        self.dataChanged.emit( index, index )
         return True
     
     def setPlotName(self, index, plotname):
         self.evalList[index.row()].plotname = str(plotname)
-        self.dataChanged.emit()
+        self.dataChanged.emit( index, index )
         return True
         
     def setAlgorithm(self, index, algorithm):
@@ -86,5 +88,8 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
             algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
             if eval.evaluation in eval.settingsCache:
                 eval.settings = eval.settingsCache[eval.evaluation]
+            else:
+                eval.settings = dict()
             algo.setSettings( eval.settings, eval.name )
-            self.evalAlgoList[index.row()] = algo      
+            self.evalAlgorithmList[index.row()] = algo     
+            self.dataChanged.emit(index, index) 
