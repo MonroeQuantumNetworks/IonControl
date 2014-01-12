@@ -570,15 +570,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         del self.histogramList[index+1:]   # remove elements that are not needed any more
         for index, histogram in enumerate(self.histogramList):
             if len(self.histogramCurveList)>index:
-                self.histogramCurveList[index].setData( *histogram )
+                self.histogramCurveList[index].x = histogram[1]
+                self.histogramCurveList[index].y = histogram[0]  
+                self.histogramCurveList[index].replot()
             else:
                 #curve = pyqtgraph.PlotCurveItem(self.histx, self.histy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
-                histogramTrace = Trace.Trace(style=Trace.Style.steps)
+                histogramTrace = Trace()
                 histogramTrace.x = histogram[1]
                 histogramTrace.y = histogram[0]
-                plottedHistogramTrace = PlottedTrace(histogramTrace,self.histogramView,pens.penList)
+                plottedHistogramTrace = PlottedTrace(histogramTrace,self.histogramView,pens.penList,type=PlottedTrace.Types.steps)
+                histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
                 #self.histogramView.addItem(curve)
                 self.histogramCurveList.append(plottedHistogramTrace)
+                plottedHistogramTrace.plot()
         for i in range(index+1,len(self.histogramCurveList)):
             self.histogramCurveList[i].removePlot()
         del self.histogramCurveList[index+1:]

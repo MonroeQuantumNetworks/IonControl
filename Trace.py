@@ -16,6 +16,9 @@ from modules.XmlUtilit import prettify
 import xml.dom.minidom as dom
 import io
 import logging
+from modules.enum import enum
+from itertools import izip_longest
+import math
 
 try:
     import FitFunctions
@@ -40,8 +43,10 @@ class ColumnSpec(list):
         return ColumnSpec( element.text.split(", ") )
     
 class TracePlotting(object):
+    Types = enum('default','steps')
     def __init__(self, xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None,
-                 rawColumn=None,name=""):
+                 rawColumn=None,name="",type =None):
+        
         self.xColumn = xColumn
         self.yColumn = yColumn
         self.topColumn = topColumn
@@ -50,14 +55,15 @@ class TracePlotting(object):
         self.rawColumn = rawColumn
         self.fitFunction = None
         self.name = name
+        self.type = TracePlotting.Types.default if type is None else type
         
-    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name']
+    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name', 'type']
 
 class TracePlottingList(list):        
     def toXmlElement(self, root):
         myElement = ElementTree.SubElement(root, 'TracePlottingList', {})
         for traceplotting in self:
-            traceplottingElement = ElementTree.SubElement(myElement, 'TracePlotting', dict( (name,getattr(traceplotting,name)) for name in TracePlotting.attrFields))
+            traceplottingElement = ElementTree.SubElement(myElement, 'TracePlotting', dict( (name,str(getattr(traceplotting,name))) for name in TracePlotting.attrFields))
             if traceplotting.fitFunction:
                 traceplotting.fitFunction.toXmlElement(traceplottingElement)
         return myElement
@@ -68,6 +74,7 @@ class TracePlottingList(list):
         for plottingelement in element.findall("TracePlotting"):
             plotting = TracePlotting()
             plotting.__dict__.update( plottingelement.attrib )
+            plotting.type = int(plotting.type)
             if plottingelement.find("FitFunction") is not None:
                 plotting.fitFunction = FitFunctions.fromXmlElement( plottingelement.find("FitFunction") )
             l.append(plotting)
@@ -256,7 +263,7 @@ class Trace(object):
                     columnspec.append( column )
             self.vars.columnspec = columnspec #",".join(columnspec)
             self.saveTraceHeaderXml(of)
-            for l in zip(*columnlist):
+            for l in izip_longest(*columnlist, fillvalue=float('NaN')):
                 print >>of, "\t".join(map(repr,l))
             self.filename = filename
             of.close()
@@ -285,7 +292,11 @@ class Trace(object):
         root = ElementTree.fromstringlist(xmlstringlist)
         columnspec = ColumnSpec.fromXmlElement(root.find("./Variables/ColumnSpec"))
         for attr,d in zip( columnspec, zip(*data) ):
-            setattr( self, attr, numpy.array(d) )
+            if math.isnan(d[-1]):
+                a = numpy.array( d[0:-1])
+            else:
+                a = numpy.array(d)
+            setattr( self, attr, a )
         tpelement = root.find("./Variables/TracePlottingList")
         self.vars.tracePlottingList = TracePlottingList.fromXmlElement(tpelement) if tpelement is not None else None
         for element in root.findall("./Variables/Element"):

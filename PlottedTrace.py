@@ -14,8 +14,9 @@ from PyQt4 import QtGui
 from Trace import TracePlotting
 
 class PlottedTrace(object):
-    Styles = enum.enum('lines','points','linespoints','steps')
-    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False,
+    Styles = enum.enum('lines','points','linespoints')
+    Types = enum.enum('default','steps')
+    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,type=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name=""):
         self.penList = penList
@@ -29,6 +30,7 @@ class PlottedTrace(object):
         self.fitcurve = None
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
+        self.type = self.Types.default if type is None else type
 #Tree related data. Parent and children are set in the model's addTrace method, but declared here
         self.isRootTrace = isRootTrace
         self.parentTrace = None
@@ -44,6 +46,7 @@ class PlottedTrace(object):
             self._bottomColumn = tracePlotting.bottomColumn
             self._heightColumn = tracePlotting.heightColumn
             self._rawColumn = tracePlotting.rawColumn
+            self.type = tracePlotting.type
         elif self.trace:
             self._xColumn = xColumn
             self._yColumn = yColumn
@@ -52,7 +55,7 @@ class PlottedTrace(object):
             self._heightColumn = heightColumn
             self._rawColumn = rawColumn
             self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
-                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name)
+                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name, type=self.type)
             self.trace.addTracePlotting( self.tracePlotting )
             if not hasattr(self.trace,xColumn):
                 self.trace.addColumn( xColumn )
@@ -193,10 +196,12 @@ class PlottedTrace(object):
         self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])                
     
-    def plotSteps(selfself,penindex):
-        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
-                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3],
-                                            stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))                
+    def plotSteps(self,penindex):
+        self.curve = pyqtgraph.PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+        self.graphicsView.addItem( self.curve )
+#        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+#                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3],
+#                                            stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))                
     
     def plot(self,penindex=-1,style=None):
         self.style = self.style if style is None else style
@@ -204,12 +209,14 @@ class PlottedTrace(object):
         penindex = { -2: self.__dict__.get('curvePen',0),
                      -1: sorted(zip(self.penUsageDict, range(len(self.penUsageDict))))[1][1] }.get(penindex, penindex)
         if penindex>0:
-            self.plotFitfunction(penindex)
-            self.plotErrorBars(penindex)
-            { self.Styles.lines: self.plotLines,
-              self.Styles.points: self.plotPoints,
-              self.Styles.linespoints: self.plotLinespoints,
-              self.Styles.steps: self.plotSteps }.get(self.style,self.plotLines)(penindex)
+            if self.type==self.Types.default:
+                self.plotFitfunction(penindex)
+                self.plotErrorBars(penindex)
+                { self.Styles.lines: self.plotLines,
+                  self.Styles.points: self.plotPoints,
+                  self.Styles.linespoints: self.plotLinespoints }.get(self.style,self.plotLines)(penindex)
+            elif self.type ==self.Types.steps:
+                self.plotSteps(penindex)
             self.penUsageDict[penindex] += 1
         self.curvePen = penindex
         
