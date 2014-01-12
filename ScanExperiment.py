@@ -199,13 +199,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.averagePlottedTraceList = list()
         self.currentIndex = 0
         self.activated = False
-        self.histogramCurve = None
+        self.histogramCurveList = list()
         self.timestampCurve = None
         self.running = False
         self.currentTimestampTrace = None
         self.experimentName = experimentName
         self.globalVariables = dict()
         self.state = self.OpStates.idle
+        self.histogramList = list()
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -443,7 +444,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if len(evaluated)>0:
                 self.displayUi.add( evaluated[0][0][0] )
                 self.updateMainGraph(x, evaluated )
-                self.showHistogram(data, self.scan.evalList[0].counter )
+                self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
@@ -554,25 +555,37 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTimestampTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
-    def showHistogram(self, data, channel):
-        y, x = numpy.histogram( data.count[channel] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins)
-        if self.scan.integrateHistogram and hasattr(self,'histx') and numpy.array_equal(self.histx,x):
-            self.histy += y
-        else:
-            self.histx, self.histy = x, y
-        if self.histogramCurve is None:
-            self.histogramCurve = pyqtgraph.PlotCurveItem(self.histx, self.histy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
-            self.histogramView.addItem(self.histogramCurve)
-        else:
-            self.histogramCurve.setData( self.histx, self.histy )
+    def showHistogram(self, data, evalList ):
+        index = 0
+        for eval in evalList:
+            if eval.showHistogram:
+                y, x = numpy.histogram( data.count[eval.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
+                if self.scan.integrateHistogram and len(self.histogramList)>index:
+                    self.histogramList[index] = (self.histogramList[index][1] + y, self.histogramList[index][1] + x)
+                elif len(self.histogramList)>index:
+                    self.histogramList[index] = (y,x)
+                else:
+                    self.histogramList.append( (y,x) )
+                index += 1
+        del self.histogramList[index+1:]   # remove elements that are not needed any more
+        for index, histogram in enumerate(self.histogramList):
+            if len(self.histogramCurveList)>index:
+                self.histogramCurveList[index].setData( *histogram )
+            else:
+                #curve = pyqtgraph.PlotCurveItem(self.histx, self.histy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+                histogramTrace = Trace.Trace(style=Trace.Style.steps)
+                histogramTrace.x = histogram[1]
+                histogramTrace.y = histogram[0]
+                plottedHistogramTrace = PlottedTrace(histogramTrace,self.histogramView,pens.penList)
+                #self.histogramView.addItem(curve)
+                self.histogramCurveList.append(plottedHistogramTrace)
+        for i in range(index+1,len(self.histogramCurveList)):
+            self.histogramCurveList[i].removePlot()
+        del self.histogramCurveList[index+1:]
 
     def onCopyHistogram(self):
-        if hasattr(self, 'histx') and hasattr(self,'histy'):
-            histogramTrace = Trace.Trace()
-            histogramTrace.x = self.histx
-            histogramTrace.y = self.histy
-            plottedHistogramTrace = PlottedTrace(histogramTrace,self.histogramView,pens.penList)
-            self.traceui.addTrace(plottedHistogramTrace,pen=-1)        
+        for plottedtrace in self.histogramCurveList:
+            self.traceui.addTrace(plottedtrace,pen=-1)        
         
     def activate(self):
         logger = logging.getLogger(__name__)

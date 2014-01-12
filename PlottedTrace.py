@@ -14,7 +14,7 @@ from PyQt4 import QtGui
 from Trace import TracePlotting
 
 class PlottedTrace(object):
-    Styles = enum.enum('lines','points','linespoints')
+    Styles = enum.enum('lines','points','linespoints','steps')
     def __init__(self,Trace,graphicsView,penList,pen=0,style=None,isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name=""):
@@ -193,7 +193,12 @@ class PlottedTrace(object):
         self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])                
     
-    def plot(self,penindex,style=None):
+    def plotSteps(selfself,penindex):
+        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3],
+                                            stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))                
+    
+    def plot(self,penindex=-1,style=None):
         self.style = self.style if style is None else style
         self.removePlots()
         penindex = { -2: self.__dict__.get('curvePen',0),
@@ -203,7 +208,8 @@ class PlottedTrace(object):
             self.plotErrorBars(penindex)
             { self.Styles.lines: self.plotLines,
               self.Styles.points: self.plotPoints,
-              self.Styles.linespoints: self.plotLinespoints }.get(self.style,self.plotLines)(penindex)
+              self.Styles.linespoints: self.plotLinespoints,
+              self.Styles.steps: self.plotSteps }.get(self.style,self.plotLines)(penindex)
             self.penUsageDict[penindex] += 1
         self.curvePen = penindex
         
