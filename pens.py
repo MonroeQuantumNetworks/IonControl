@@ -32,9 +32,9 @@ magenta = (255,0,255,255)
 black = (0,0,0,255)
 white = (255,255,255,255)
 aquamarine = (0,200,145,255)
-lightblue = (0,191,255)
-purple = (144,0,255)
-darkpink = (255,0,157)
+lightblue = (0,191,255,255)
+purple = (144,0,255,255)
+darkpink = (255,0,157,255)
 
 blank = QtGui.QColor(0,0,0,0)
 penWidth = 2
@@ -65,24 +65,24 @@ solidPurplePen = mkPen(purple, width=penWidth, style=solid)
 solidDarkPinkPen = mkPen(darkpink, width=penWidth, style=solid)
 
 penList = [ (solidYellowPen,),
-            (solidOrangePen, 's', solidOrangePen, blank),
-            (solidRedPen, 'o', solidRedPen, blank),
-            (solidGreenPen, 't', solidGreenPen, blank),
-            (solidBluePen, 'd', solidBluePen, blank),
-            (solidCyanPen, 's', None, cyanBrush),
-            (solidMagentaPen, 'o', None, magentaBrush),
-            (solidBlackPen,'t',None, blackBrush),
-            (solidAquamarinePen, 's', solidAquamarinePen, blank),
-            (solidLightBluePen, 'o', solidLightBluePen, blank),
-            (solidPurplePen, 't', solidPurplePen, blank),
-            (solidDarkPinkPen, 'd', solidDarkPinkPen, blank),
-            (dashedYellowPen, 's', dashedYellowPen, blank),
-            (dashedRedPen, 'o', solidRedPen, blank),
-            (dashedGreenPen, 't', solidGreenPen, blank),
-            (dashedBluePen, 'd', solidBluePen, blank),
-            (dashedCyanPen, 's', None, cyanBrush),
-            (dashedMagentaPen, 'o', None, magentaBrush),
-            (dashedBlackPen, 't', None, blackBrush) ]
+            (solidOrangePen, 's', solidOrangePen, blank, yellow),
+            (solidRedPen, 'o', solidRedPen, blank, red),
+            (solidGreenPen, 't', solidGreenPen, blank, green),
+            (solidBluePen, 'd', solidBluePen, blank, blue),
+            (solidCyanPen, 's', None, cyanBrush, cyan),
+            (solidMagentaPen, 'o', None, magentaBrush, magenta),
+            (solidBlackPen,'t',None, blackBrush, black),
+            (solidAquamarinePen, 's', solidAquamarinePen, blank, aquamarine),
+            (solidLightBluePen, 'o', solidLightBluePen, blank, lightblue),
+            (solidPurplePen, 't', solidPurplePen, blank, purple),
+            (solidDarkPinkPen, 'd', solidDarkPinkPen, blank, darkpink),
+            (dashedYellowPen, 's', dashedYellowPen, blank, yellow),
+            (dashedRedPen, 'o', solidRedPen, blank, red),
+            (dashedGreenPen, 't', solidGreenPen, blank, green),
+            (dashedBluePen, 'd', solidBluePen, blank, blue),
+            (dashedCyanPen, 's', None, cyanBrush, cyan),
+            (dashedMagentaPen, 'o', None, magentaBrush, magenta),
+            (dashedBlackPen, 't', None, blackBrush, black) ]
 
 class penicons:
     def penicons(self):

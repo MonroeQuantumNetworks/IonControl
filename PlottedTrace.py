@@ -197,11 +197,10 @@ class PlottedTrace(object):
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])                
     
     def plotSteps(self,penindex):
-        self.curve = pyqtgraph.PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+        mycolor = list(self.penList[penindex][4])
+        mycolor[3] = 80
+        self.curve = pyqtgraph.PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor)
         self.graphicsView.addItem( self.curve )
-#        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
-#                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3],
-#                                            stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))                
     
     def plot(self,penindex=-1,style=None):
         self.style = self.style if style is None else style
