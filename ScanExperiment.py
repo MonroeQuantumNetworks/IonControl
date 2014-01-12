@@ -207,6 +207,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.globalVariables = dict()
         self.state = self.OpStates.idle
         self.histogramList = list()
+        self.histogramTrace = None
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -563,24 +564,27 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if self.scan.integrateHistogram and len(self.histogramList)>index:
                     self.histogramList[index] = (self.histogramList[index][1] + y, self.histogramList[index][1] + x)
                 elif len(self.histogramList)>index:
-                    self.histogramList[index] = (y,x)
+                    self.histogramList[index] = (y,x,eval.name)
                 else:
-                    self.histogramList.append( (y,x) )
+                    self.histogramList.append( (y,x,eval.name) )
                 index += 1
         del self.histogramList[index+1:]   # remove elements that are not needed any more
+        if not self.histogramTrace:
+            self.histogramTrace = Trace()            
         for index, histogram in enumerate(self.histogramList):
             if len(self.histogramCurveList)>index:
                 self.histogramCurveList[index].x = histogram[1]
                 self.histogramCurveList[index].y = histogram[0]  
                 self.histogramCurveList[index].replot()
             else:
-                #curve = pyqtgraph.PlotCurveItem(self.histx, self.histy, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
-                histogramTrace = Trace()
-                histogramTrace.x = histogram[1]
-                histogramTrace.y = histogram[0]
-                plottedHistogramTrace = PlottedTrace(histogramTrace,self.histogramView,pens.penList,type=PlottedTrace.Types.steps)
-                histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
-                #self.histogramView.addItem(curve)
+                yColumnName = 'y{0}'.format(index) 
+                self.histogramTrace.addColumn( yColumnName )
+                plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.histogramView,pens.penList,type=PlottedTrace.Types.steps,
+                                                     yColumn=yColumnName, name="Histogram "+histogram[2])
+                self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
+                plottedHistogramTrace.x = histogram[1]
+                plottedHistogramTrace.y = histogram[0]
+                plottedHistogramTrace.trace.name = self.scan.settingsName
                 self.histogramCurveList.append(plottedHistogramTrace)
                 plottedHistogramTrace.plot()
         for i in range(index+1,len(self.histogramCurveList)):

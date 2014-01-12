@@ -199,7 +199,7 @@ class PlottedTrace(object):
     def plotSteps(self,penindex):
         mycolor = list(self.penList[penindex][4])
         mycolor[3] = 80
-        self.curve = pyqtgraph.PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor)
+        self.curve = pyqtgraph.PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor, pen=self.penList[penindex][0])
         self.graphicsView.addItem( self.curve )
     
     def plot(self,penindex=-1,style=None):
