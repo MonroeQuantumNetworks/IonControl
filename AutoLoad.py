@@ -16,8 +16,14 @@ from modules import enum
 from modules.formatDelta import formatDelta
 from datetime import datetime
 import logging
+from collections import OrderedDict
+from WavemeterInterlockTableModel import WavemeterInterlockTableModel, InterlockChannel
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
+
+def unique(seq):
+    seen = set()
+    return [ x for x in seq if x not in seen and not seen.add(x)]
 
 import MagnitudeSpinBox
 from LoadingHistoryModel import LoadingHistoryModel 
@@ -33,19 +39,17 @@ class AutoLoadSettings:
         self.thresholdOven = 0
         self.checkTime = 0
         self.useInterlock = False
-        self.useChannel = [False]*8
-        self.channelMin = [0.0]*8
-        self.channelMax = [0.0]*8
+        self.interlockDict = OrderedDict()
+        self.wavemeterAddress = ""
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
         after unpickling. Only new class attributes need to be added here.
         """
         self.__dict__ = state
-        self.__dict__.setdefault('useChannel', [False]*8)
-        self.__dict__.setdefault('channelMin', [0.0]*8)
-        self.__dict__.setdefault('channelMax', [0.0]*8)
         self.__dict__.setdefault('useInterlock', False)
+        self.__dict__.setdefault('interlockDict', OrderedDict() )
+        self.__dict__.setdefault('wavemeterAddress', "" )
 
 def invert( logic, channel):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -69,6 +73,7 @@ class AutoLoad(UiForm,UiBase):
         self.timer = None
         self.pulser = pulser
         self.dataSignalConnected = False
+        self.outOfRangeCount=0
     
     def setupUi(self,widget):
         UiForm.setupUi(self,widget)
@@ -96,139 +101,89 @@ class AutoLoad(UiForm,UiBase):
         self.historyTableView.setModel(self.historyTableModel)
         #Wavemeter interlock setup        
         self.am = QtNetwork.QNetworkAccessManager()
-        self.useChannelGui = [self.useChannelGui0, #These are the checkboxes
-                              self.useChannelGui1,
-                              self.useChannelGui2,
-                              self.useChannelGui3,
-                              self.useChannelGui4,
-                              self.useChannelGui5,
-                              self.useChannelGui6,
-                              self.useChannelGui7]
-        self.channelResultGui = [self.channelResultGui0, #Frequency result display
-                                 self.channelResultGui1, 
-                                 self.channelResultGui2, 
-                                 self.channelResultGui3,
-                                 self.channelResultGui4, 
-                                 self.channelResultGui5, 
-                                 self.channelResultGui6, 
-                                 self.channelResultGui7]
-        self.channelMinGui  = [self.channelMinGui0, #Min frequency value
-                               self.channelMinGui1,
-                               self.channelMinGui2,
-                               self.channelMinGui3,
-                               self.channelMinGui4,
-                               self.channelMinGui5,
-                               self.channelMinGui6,
-                               self.channelMinGui7]
-        self.channelMaxGui  = [self.channelMaxGui0, #Max frequency value
-                               self.channelMaxGui1,
-                               self.channelMaxGui2,
-                               self.channelMaxGui3,
-                               self.channelMaxGui4,
-                               self.channelMaxGui5,
-                               self.channelMaxGui6,
-                               self.channelMaxGui7]
-        self.channelLabelGui = [self.channelLabelGui0, #Labels, turn green/red if in range/out of range
-                                self.channelLabelGui1,
-                                self.channelLabelGui2,
-                                self.channelLabelGui3,
-                                self.channelLabelGui4,
-                                self.channelLabelGui5,
-                                self.channelLabelGui6,
-                                self.channelLabelGui7]
-        self.channelInRange = [True]*8 #indicates whether each channel is in range
-        self.channelResult = [0.0]*8 #The frequency measured on each channel
         self.useInterlockGui.setChecked(self.settings.useInterlock)
         self.useInterlockGui.stateChanged.connect(self.onUseInterlockClicked)
-        for channel in range(0,8): #Connect each GUI signal
-            #For checkboxes, connection is made before setting from file, so that onUseChannelClicked is executed
-            self.useChannelGui[channel].stateChanged.connect(functools.partial(self.onUseChannelClicked,channel))
-            self.useChannelGui[channel].setChecked(self.settings.useChannel[channel])
-            self.channelMinGui[channel].setValue(self.settings.channelMin[channel])            
-            self.channelMinGui[channel].valueChanged.connect(functools.partial(self.onArrayValueChanged,channel, 'channelMin'))
-            self.channelMaxGui[channel].setValue(self.settings.channelMax[channel])            
-            self.channelMaxGui[channel].valueChanged.connect(functools.partial(self.onArrayValueChanged,channel, 'channelMax'))
+        self.wavemeterAddressLineEdit.setText( self.settings.wavemeterAddress )
+        self.wavemeterAddressLineEdit.editingFinished.connect( self.onWavemeterAddress )
+        self.tableModel = WavemeterInterlockTableModel( self.settings.interlockDict )
+        self.tableModel.getWavemeterData.connect( self.getWavemeterData )
+        self.interlockTableView.setModel( self.tableModel )
+        self.interlockTableView.resizeColumnsToContents()
+        self.addChannelButton.clicked.connect( self.tableModel.addChannel )        
+        self.removeChannelButton.clicked.connect( self.onRemoveChannel )        
         self.checkFreqsInRange() #Begins the loop which continually checks if frequencies are in range
+        for ilChannel in self.settings.interlockDict.values():
+            self.getWavemeterData(ilChannel.channel)
         #end wavemeter interlock setup      
         self.setIdle()
+        
+    def onRemoveChannel(self):
+        for index in sorted(unique([ i.row() for i in self.interlockTableView.selectedIndexes() ]),reverse=True):
+            self.tableModel.removeChannel(index)
+        
+    def onWavemeterAddress(self):
+        self.settings.wavemeterAddress =  self.wavemeterAddressLineEdit.text()
         
     def onUseInterlockClicked(self):
         """Run if useInterlock button is clicked. Change settings to match."""
         self.settings.useInterlock = self.useInterlockGui.isChecked()
 
-    def onUseChannelClicked(self, channel):
-        """Run if one of the wavemeter channel checkboxes is clicked. Begin reading that channel."""
-        self.settings.useChannel[channel] = self.useChannelGui[channel].isChecked()
-        if self.settings.useChannel[channel] == True:
-            self.getWavemeterData(channel)
-        else:
-            self.channelInRange[channel] = True #deactivated channel should be considered in range
-            self.channelLabelGui[channel].setStyleSheet(
-            "QLabel {background-color: transparent}") #remove green/red coloring on label
-
     def onWavemeterError(self, error):
         """Print out received error"""
         logging.getLogger(__name__).error( "Error {0}".format(error) )
 
-    def getWavemeterData(self, channel, addressStart="http://132.175.165.36:8082/wavemeter/wavemeter/wavemeter-status?channel="):
+    def getWavemeterData(self, channel):
         """Get the data from the wavemeter at the specified channel."""
-        intchannel= int(channel) #makes sure the channel is an integer
-        if 0 <= intchannel <= 7 and self.settings.useChannel[channel] == True:
-            address = addressStart + "{0}".format(intchannel)
-            reply = self.am.get( QtNetwork.QNetworkRequest(QtCore.QUrl(address)))
-            reply.error.connect(self.onWavemeterError)
-            reply.finished.connect(functools.partial(self.onWavemeterData, intchannel, reply))
-        elif self.settings.useChannel[channel] == False:
-            self.channelInRange[channel] = True
-            self.channelLabelGui[channel].setStyleSheet(
-            "QLabel {background-color: transparent}")
-        else:
-            logging.getLogger(__name__).error( "Error {0}".format(error) )
+        if channel in self.settings.interlockDict:
+            if self.settings.interlockDict[channel].enable:
+                address = "http://" + self.settings.wavemeterAddress + "/wavemeter/wavemeter/wavemeter-status?channel={0}".format(int(channel))
+                reply = self.am.get( QtNetwork.QNetworkRequest(QtCore.QUrl(address)))
+                reply.error.connect(self.onWavemeterError)
+                reply.finished.connect(functools.partial(self.onWavemeterData, int(channel), reply))
 
     def onWavemeterData(self, channel, data):
         """Execute when data is received from the wavemeter. Display it on the
            GUI, and check whether it is in range."""
-        self.channelResult[channel] = round(float(data.readAll()), 4)
-        freq_string = "{0:.4f}".format(self.channelResult[channel]) + " GHz"
-        self.channelResultGui[channel].setText(freq_string) #Display freq on GUI
-        if self.settings.channelMin[channel] < self.channelResult[channel] < self.settings.channelMax[channel]:
-            self.channelLabelGui[channel].setStyleSheet("QLabel {background-color: rgb(133, 255, 124)}") #set label bg to green
-            self.channelInRange[channel] = True
-        else:
-            self.channelLabelGui[channel].setStyleSheet("QLabel {background-color: rgb(255, 123, 123)}") #set label bg to red
-            self.channelInRange[channel] = False
+        if channel in self.settings.interlockDict:
+            ilChannel = self.settings.interlockDict[channel]
+            if data.error()==0:
+                ilChannel.current = round(float(data.readAll()), 4)
+            #freq_string = "{0:.4f}".format(self.channelResult[channel]) + " GHz"
+            ilChannel.inRange = ilChannel.min < ilChannel.current < ilChannel.max
         #read the wavemeter channel once per second
-        QtCore.QTimer.singleShot(1000,functools.partial(self.getWavemeterData, channel))
+            if ilChannel.enable:
+                QtCore.QTimer.singleShot(1000,functools.partial(self.getWavemeterData, channel))
+        self.checkFreqsInRange()
         
-    def checkFreqsInRange(self, outOfRangeCount=0):
+    def checkFreqsInRange(self):
         """Check whether all laser frequencies being used by the interlock are in range.
         
             If they are not, loading is stopped/prevented, and the lock status bar turns
             from green to red. If the lock is not being used, the status bar is black."""
-        if all([not self.settings.useChannel[channel] for channel in range(0,8)]):
+        enabledChannels = sum(1 if x.enable else 0 for x in self.settings.interlockDict.values() )
+        outOfRangeChannels = sum(1 if x.enable and not x.inRange else 0 for x in self.settings.interlockDict.values() )
+        if enabledChannels==0:
             #if no channels are checked, set bar on GUI to black
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
             self.allFreqsInRange.setToolTip("No channels are selected")
-            outOfRangeCount = 0
-        elif all(self.channelInRange):
+            self.outOfRangeCount = 0
+        elif outOfRangeChannels>0:
             #if all channels are in range, set bar on GUI to green
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
             self.allFreqsInRange.setToolTip("All laser frequencies are in range")
-            outOfRangeCount = 0
+            self.outOfRangeCount = 0
         else:
             #Because of the bug where the wavemeter reads incorrectly after calibration,
             #Loading is only inhibited after 10 consecutive bad measurements
-            if outOfRangeCount < 20: #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
-                outOfRangeCount += 1
-            if (outOfRangeCount >= 10):
+            if self.outOfRangeCount < 20: #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
+                self.outOfRangeCount += 1
+            if (self.outOfRangeCount >= 10):
                 #set bar on GUI to red
                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
                 self.allFreqsInRange.setToolTip("There are laser frequencies out of range")
                 #This is the interlock: loading is inhibited if frequencies are out of range
                 if ((self.status != self.StatusOptions.Idle) & self.settings.useInterlock):
                     self.setIdle() 
-        #check if channels are in range once per second
-        QtCore.QTimer.singleShot(300, functools.partial(self.checkFreqsInRange, outOfRangeCount))
         
     def onValueChanged(self,attr,value):
         """Change the value of attr in settings to value"""
