@@ -37,12 +37,13 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         if index.isValid():
             return { (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if self.channelList[index.row()].enable else QtCore.Qt.Unchecked,
                      (QtCore.Qt.DisplayRole,1): self.channelList[index.row()].channel,
-                     (QtCore.Qt.DisplayRole,2): self.channelList[index.row()].current,
+                     (QtCore.Qt.DisplayRole,2): "{0:.4f} GHz".format(self.channelList[index.row()].current),
+                     (QtCore.Qt.BackgroundColorRole,2): QtGui.QColor(QtCore.Qt.white) if not self.channelList[index.row()].enable else QtGui.QColor(QtCore.Qt.green) if self.channelList[index.row()].inRange else QtGui.QColor(QtCore.Qt.red),
                      (QtCore.Qt.DisplayRole,3): "{0:.4f} GHz".format(self.channelList[index.row()].min),
                      (QtCore.Qt.DisplayRole,4): "{0:.4f} GHz".format(self.channelList[index.row()].max),
                      (QtCore.Qt.EditRole,1): self.channelList[index.row()].channel,
-                     (QtCore.Qt.EditRole,3): self.channelList[index.row()].min,
-                     (QtCore.Qt.EditRole,4): self.channelList[index.row()].max,                    
+                     (QtCore.Qt.EditRole,3): "{0:.4f}".format(self.channelList[index.row()].min),
+                     (QtCore.Qt.EditRole,4): "{0:.4f}".format(self.channelList[index.row()].max),                    
                      }.get((role,index.column()),None)
         return None
         
@@ -77,16 +78,23 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         if channel not in self.channelDict:
             self.channelDict.pop(self.channelList[index.row()].channel)  # pop the old one from the dict
             self.channelList[index.row()].channel = channel
-            self.channelDict[channel] = self.channelList[index.row()].channel
+            self.channelDict[channel] = self.channelList[index.row()]
             return True
         return False      
                 
+    def setCurrent(self, channel, value):
+        ilChannel = self.channelDict[channel]
+        index = self.channelList.index(ilChannel)
+        ilChannel.current = value
+        self.dataChanged.emit( self.createIndex(index,2), self.createIndex(index,2) ) 
+        ilChannel.inRange = ilChannel.min < ilChannel.current < ilChannel.max
+                
     def setMin(self, index, value):
-        self.channelList[index.row()].min = value.toFloat()[0]
+        self.channelList[index.row()].min = float(value.toString())
         return True
 
     def setMax(self, index, value):
-        self.channelList[index.row()].max = value.toFloat()[0]
+        self.channelList[index.row()].max = float(value.toString())
         return True
                 
     def setEnable(self, index, value):

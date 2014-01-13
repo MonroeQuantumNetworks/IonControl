@@ -106,6 +106,7 @@ class AutoLoad(UiForm,UiBase):
         self.wavemeterAddressLineEdit.editingFinished.connect( self.onWavemeterAddress )
         self.tableModel = WavemeterInterlockTableModel( self.settings.interlockDict )
         self.tableModel.getWavemeterData.connect( self.getWavemeterData )
+        self.tableModel.getWavemeterData.connect( self.checkFreqsInRange )
         self.interlockTableView.setModel( self.tableModel )
         self.interlockTableView.resizeColumnsToContents()
         self.addChannelButton.clicked.connect( self.tableModel.addChannel )        
@@ -121,7 +122,9 @@ class AutoLoad(UiForm,UiBase):
             self.tableModel.removeChannel(index)
         
     def onWavemeterAddress(self):
-        self.settings.wavemeterAddress =  self.wavemeterAddressLineEdit.text()
+        value = str(self.wavemeterAddressLineEdit.text())
+        self.settings.wavemeterAddress = value if value.find("http://")==0 else "http://" +value
+        self.wavemeterAddressLineEdit.setText(self.settings.wavemeterAddress)
         
     def onUseInterlockClicked(self):
         """Run if useInterlock button is clicked. Change settings to match."""
@@ -129,13 +132,13 @@ class AutoLoad(UiForm,UiBase):
 
     def onWavemeterError(self, error):
         """Print out received error"""
-        logging.getLogger(__name__).error( "Error {0}".format(error) )
+        logging.getLogger(__name__).error( "Error {0} accessing wavemeter at '{1}'".format(error, self.settings.wavemeterAddress) )
 
     def getWavemeterData(self, channel):
         """Get the data from the wavemeter at the specified channel."""
         if channel in self.settings.interlockDict:
             if self.settings.interlockDict[channel].enable:
-                address = "http://" + self.settings.wavemeterAddress + "/wavemeter/wavemeter/wavemeter-status?channel={0}".format(int(channel))
+                address = self.settings.wavemeterAddress + "/wavemeter/wavemeter/wavemeter-status?channel={0}".format(int(channel))
                 reply = self.am.get( QtNetwork.QNetworkRequest(QtCore.QUrl(address)))
                 reply.error.connect(self.onWavemeterError)
                 reply.finished.connect(functools.partial(self.onWavemeterData, int(channel), reply))
@@ -146,9 +149,8 @@ class AutoLoad(UiForm,UiBase):
         if channel in self.settings.interlockDict:
             ilChannel = self.settings.interlockDict[channel]
             if data.error()==0:
-                ilChannel.current = round(float(data.readAll()), 4)
+                self.tableModel.setCurrent( channel, round(float(data.readAll()), 4) )
             #freq_string = "{0:.4f}".format(self.channelResult[channel]) + " GHz"
-            ilChannel.inRange = ilChannel.min < ilChannel.current < ilChannel.max
         #read the wavemeter channel once per second
             if ilChannel.enable:
                 QtCore.QTimer.singleShot(1000,functools.partial(self.getWavemeterData, channel))
@@ -166,7 +168,7 @@ class AutoLoad(UiForm,UiBase):
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
             self.allFreqsInRange.setToolTip("No channels are selected")
             self.outOfRangeCount = 0
-        elif outOfRangeChannels>0:
+        elif outOfRangeChannels==0:
             #if all channels are in range, set bar on GUI to green
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
             self.allFreqsInRange.setToolTip("All laser frequencies are in range")
@@ -176,6 +178,8 @@ class AutoLoad(UiForm,UiBase):
             #Loading is only inhibited after 10 consecutive bad measurements
             if self.outOfRangeCount < 20: #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
                 self.outOfRangeCount += 1
+                self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 255, 0)}")
+                self.allFreqsInRange.setToolTip("There are laser frequencies temporarily of range")
             if (self.outOfRangeCount >= 10):
                 #set bar on GUI to red
                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
