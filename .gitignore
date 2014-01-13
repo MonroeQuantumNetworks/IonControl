@@ -19,3 +19,5 @@ __pycache__
 tags
 Rabi_analysis.pdf
 messages
+manual/*.aux
+manual/*.synctex.gz
