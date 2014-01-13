@@ -16,7 +16,6 @@ from modules import enum
 from modules.formatDelta import formatDelta
 from datetime import datetime
 import logging
-from collections import OrderedDict
 from WavemeterInterlockTableModel import WavemeterInterlockTableModel, InterlockChannel
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
@@ -39,7 +38,7 @@ class AutoLoadSettings:
         self.thresholdOven = 0
         self.checkTime = 0
         self.useInterlock = False
-        self.interlockDict = OrderedDict()
+        self.interlockDict = dict()
         self.wavemeterAddress = ""
 
     def __setstate__(self, state):
@@ -48,7 +47,7 @@ class AutoLoadSettings:
         """
         self.__dict__ = state
         self.__dict__.setdefault('useInterlock', False)
-        self.__dict__.setdefault('interlockDict', OrderedDict() )
+        self.__dict__.setdefault('interlockDict', dict() )
         self.__dict__.setdefault('wavemeterAddress', "" )
 
 def invert( logic, channel):
