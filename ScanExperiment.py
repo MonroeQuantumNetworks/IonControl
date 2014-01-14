@@ -201,7 +201,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.activated = False
         self.histogramCurveList = list()
         self.timestampCurve = None
-        self.running = False
         self.currentTimestampTrace = None
         self.experimentName = experimentName
         self.globalVariables = dict()
@@ -372,7 +371,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppWriteData(mycode)
         logger.info( "Starting" )
         self.pulserHardware.ppStart()
-        self.running = True
+        self.state = self.OpStates.running
         self.currentIndex = 0
         self.timestampsNewRun = True
         self.displayUi.onClear()
@@ -386,13 +385,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onPause(self):
         logger = logging.getLogger(__name__)
         if self.state == self.OpStates.paused:
-            self.state = self.OpStates.running
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
             logger.info( "Starting" )
             self.pulserHardware.ppStart()
-            self.running = True
+            self.state = self.OpStates.running
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
             self.timestampsNewRun = False
             plogger.info( "continued" )
@@ -402,11 +400,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.state = self.OpStates.paused
     
     def onStop(self):
-        if self.running:
+        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
-            self.running = False
             if self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
             self.state = self.OpStates.idle

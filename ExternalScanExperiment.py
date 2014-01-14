@@ -32,6 +32,9 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
         
+    def updatePulseProgram(self):
+        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
@@ -88,10 +91,10 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         logger.debug( "Old Status {0}".format( self.state ) )
         if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused]:
             ScanExperiment.ScanExperiment.onStop(self)
-            self.state = self.OpStates.stopping
             logger.info( "Status -> Stopping" )
             self.stopBottomHalf()
             self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
+            self.state = self.OpStates.stopping
 
                     
     def stopBottomHalf(self):
