@@ -33,18 +33,20 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 5
  
+    dataLookup =   { (QtCore.Qt.CheckStateRole,0): lambda self, row: QtCore.Qt.Checked if self.channelList[row].enable else QtCore.Qt.Unchecked,
+                     (QtCore.Qt.DisplayRole,1): lambda self, row: self.channelList[row].channel,
+                     (QtCore.Qt.DisplayRole,2): lambda self, row: "{0:.4f} GHz".format(self.channelList[row].current),
+                     (QtCore.Qt.BackgroundColorRole,2): lambda self, row: QtGui.QColor(QtCore.Qt.white) if not self.channelList[row].enable else QtGui.QColor(QtCore.Qt.green) if self.channelList[row].inRange else QtGui.QColor(QtCore.Qt.red),
+                     (QtCore.Qt.DisplayRole,3): lambda self, row: "{0:.4f} GHz".format(self.channelList[row].min),
+                     (QtCore.Qt.DisplayRole,4): lambda self, row: "{0:.4f} GHz".format(self.channelList[row].max),
+                     (QtCore.Qt.EditRole,1): lambda self, row: self.channelList[row].channel,
+                     (QtCore.Qt.EditRole,3): lambda self, row: "{0:.4f}".format(self.channelList[row].min),
+                     (QtCore.Qt.EditRole,4): lambda self, row: "{0:.4f}".format(self.channelList[row].max),                    
+                     }
+ 
     def data(self, index, role): 
         if index.isValid():
-            return { (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if self.channelList[index.row()].enable else QtCore.Qt.Unchecked,
-                     (QtCore.Qt.DisplayRole,1): self.channelList[index.row()].channel,
-                     (QtCore.Qt.DisplayRole,2): "{0:.4f} GHz".format(self.channelList[index.row()].current),
-                     (QtCore.Qt.BackgroundColorRole,2): QtGui.QColor(QtCore.Qt.white) if not self.channelList[index.row()].enable else QtGui.QColor(0xa6,0xff,0xa6,0xff) if self.channelList[index.row()].inRange else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                     (QtCore.Qt.DisplayRole,3): "{0:.4f} GHz".format(self.channelList[index.row()].min),
-                     (QtCore.Qt.DisplayRole,4): "{0:.4f} GHz".format(self.channelList[index.row()].max),
-                     (QtCore.Qt.EditRole,1): self.channelList[index.row()].channel,
-                     (QtCore.Qt.EditRole,3): "{0:.4f}".format(self.channelList[index.row()].min),
-                     (QtCore.Qt.EditRole,4): "{0:.4f}".format(self.channelList[index.row()].max),                    
-                     }.get((role,index.column()),None)
+            return self.dataLookup.get((role,index.column()),lambda self, row: None)(self,index.row())
         return None
         
     def flags(self, index ):
