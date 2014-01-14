@@ -70,7 +70,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.toolTips[index] = tooltip
         leftInd = self.createIndex(index, 2)
         rightInd = self.createIndex(index, 2)
-        self.dataChanged.emit(leftInd, rightInd) #Update all 5 columns
+        self.dataChanged.emit(leftInd, rightInd) 
             
     def setValue(self, index, value):
         logger = logging.getLogger(__name__)

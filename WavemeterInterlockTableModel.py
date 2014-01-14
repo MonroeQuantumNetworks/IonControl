@@ -38,7 +38,7 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
             return { (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if self.channelList[index.row()].enable else QtCore.Qt.Unchecked,
                      (QtCore.Qt.DisplayRole,1): self.channelList[index.row()].channel,
                      (QtCore.Qt.DisplayRole,2): "{0:.4f} GHz".format(self.channelList[index.row()].current),
-                     (QtCore.Qt.BackgroundColorRole,2): QtGui.QColor(QtCore.Qt.white) if not self.channelList[index.row()].enable else QtGui.QColor(QtCore.Qt.green) if self.channelList[index.row()].inRange else QtGui.QColor(QtCore.Qt.red),
+                     (QtCore.Qt.BackgroundColorRole,2): QtGui.QColor(QtCore.Qt.white) if not self.channelList[index.row()].enable else QtGui.QColor(0xa6,0xff,0xa6,0xff) if self.channelList[index.row()].inRange else QtGui.QColor(0xff,0xa6,0xa6,0xff),
                      (QtCore.Qt.DisplayRole,3): "{0:.4f} GHz".format(self.channelList[index.row()].min),
                      (QtCore.Qt.DisplayRole,4): "{0:.4f} GHz".format(self.channelList[index.row()].max),
                      (QtCore.Qt.EditRole,1): self.channelList[index.row()].channel,

@@ -193,7 +193,7 @@ class HP8672A(ExternalParameterBase):
         newvalue, arrived = nextValue(self.value, value, self.settings.stepsize, self.settings.jump)
         self._setValue( newvalue )
         if self.displayValueCallback:
-            self.displayValueCallback(value,"{0}".format( self.settings.lockPoint - newvalue ) )
+            self.displayValueCallback(self.value,"{0}".format( self.settings.lockPoint - self.value ) )
         return arrived
             
     def _setValue(self, value ):

@@ -124,7 +124,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             if len(evaluated)>0:
                 self.displayUi.add( evaluated[0][0][0] )
                 self.updateMainGraph(x, evaluated )
-                self.showHistogram(data, self.scan.evalList[0].counter )
+                self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
             self.externalParameterIndex += 1
             if self.scan.enableTimestamps: 

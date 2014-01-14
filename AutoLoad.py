@@ -178,8 +178,8 @@ class AutoLoad(UiForm,UiBase):
             #Loading is only inhibited after 10 consecutive bad measurements
             if self.outOfRangeCount < 20: #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
                 self.outOfRangeCount += 1
-                self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 255, 0)}")
-                self.allFreqsInRange.setToolTip("There are laser frequencies temporarily of range")
+#                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 255, 0)}")
+#                 self.allFreqsInRange.setToolTip("There are laser frequencies temporarily of range")
             if (self.outOfRangeCount >= 10):
                 #set bar on GUI to red
                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
