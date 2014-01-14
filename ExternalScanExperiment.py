@@ -32,6 +32,9 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
         
+    def updatePulseProgram(self):
+        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
