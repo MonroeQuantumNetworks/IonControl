@@ -56,25 +56,22 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
             return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
         return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
-    headerDataLookup = ['Enable',
-                        'Channel',
-                        'Current',
-                        'Minimum',
-                        'Maximum' ]
-
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return self.headerDataLookup[section]
+                return { 0: 'Enable',
+                         1: 'Channel',
+                         2: 'Current',
+                         4: 'Minimum',
+                         3: 'Maximum' }[section]
         return None 
 
-    setDataLookup =  { (QtCore.Qt.EditRole,1): WavemeterInterlockTableModel.setChannel,
-                       (QtCore.Qt.EditRole,3): WavemeterInterlockTableModel.setMin,
-                       (QtCore.Qt.EditRole,4): WavemeterInterlockTableModel.setMax,
-                       (QtCore.Qt.CheckStateRole,0): WavemeterInterlockTableModel.setEnable }
-
     def setData(self, index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda self, index, value: False )(self, index, value)
+        return { (QtCore.Qt.EditRole,1): partial( self.setChannel, index, value ),
+                 (QtCore.Qt.EditRole,3): partial( self.setMin, index, value ),
+                 (QtCore.Qt.EditRole,4): partial( self.setMax, index, value ),
+                 (QtCore.Qt.CheckStateRole,0): partial( self.setEnable, index, value ),
+                }.get((role,index.column()), lambda: False )()
 
     def setChannel(self,index,value):
         channel, ok  = value.toInt()
