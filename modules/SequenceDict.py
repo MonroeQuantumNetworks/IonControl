@@ -81,7 +81,8 @@ class SequenceDict(dict, MutableMapping):
         temp = sorted( self.iteritems(), key=lambda a: getattr(a[1],attribute), reverse=reverse )
         self._keys = [itemgetter(0)(t) for t in temp]
     
-    
+    def index(self, key):
+        return self._keys.index(key)
     
 if __name__=="__main__":
     a = SequenceDict()

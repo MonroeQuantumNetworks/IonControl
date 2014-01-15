@@ -7,6 +7,7 @@ Created on Fri Feb 08 22:02:08 2013
 from PyQt4 import QtCore, QtGui
 from operator import attrgetter
 from functools import partial
+from modules.SequenceDict import SequenceDict
 
 class InterlockChannel:
     def __init__(self):
@@ -20,28 +21,28 @@ class InterlockChannel:
 class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     getWavemeterData = QtCore.pyqtSignal( object )
     headerDataLookup = [ 'Enable', 'Channel', 'Current','Minimum', 'Maximum']
+    attributeLookup = ['enable', 'channel', 'current', 'min', 'max']
     def __init__(self, channeldict, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.channelDict = channeldict
-        self.channelList = channeldict.values()
         self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setChannel,
                                  (QtCore.Qt.EditRole,3): self.setMin,
                                  (QtCore.Qt.EditRole,4): self.setMax,
                                  (QtCore.Qt.CheckStateRole,0): self.setEnable,
                                 }
 
-    dataLookup =   { (QtCore.Qt.CheckStateRole,0): lambda self, row: QtCore.Qt.Checked if self.channelList[row].enable else QtCore.Qt.Unchecked,
-                     (QtCore.Qt.DisplayRole,1): lambda self, row: self.channelList[row].channel,
-                     (QtCore.Qt.DisplayRole,2): lambda self, row: "{0:.4f} GHz".format(self.channelList[row].current),
-                     (QtCore.Qt.BackgroundColorRole,2): lambda self, row: QtGui.QColor(QtCore.Qt.white) if not self.channelList[row].enable else QtGui.QColor(QtCore.Qt.green) if self.channelList[row].inRange else QtGui.QColor(QtCore.Qt.red),
-                     (QtCore.Qt.DisplayRole,3): lambda self, row: "{0:.4f} GHz".format(self.channelList[row].min),
-                     (QtCore.Qt.DisplayRole,4): lambda self, row: "{0:.4f} GHz".format(self.channelList[row].max),
-                     (QtCore.Qt.EditRole,1): lambda self, row: self.channelList[row].channel,
-                     (QtCore.Qt.EditRole,3): lambda self, row: "{0:.4f}".format(self.channelList[row].min),
-                     (QtCore.Qt.EditRole,4): lambda self, row: "{0:.4f}".format(self.channelList[row].max),                    
+    dataLookup =   { (QtCore.Qt.CheckStateRole,0): lambda self, row: QtCore.Qt.Checked if self.channelDict.at(row).enable else QtCore.Qt.Unchecked,
+                     (QtCore.Qt.DisplayRole,1): lambda self, row: self.channelDict.at(row).channel,
+                     (QtCore.Qt.DisplayRole,2): lambda self, row: "{0:.4f} GHz".format(self.channelDict.at(row).current),
+                     (QtCore.Qt.BackgroundColorRole,2): lambda self, row: QtGui.QColor(QtCore.Qt.white) if not self.channelDict.at(row).enable else QtGui.QColor(QtCore.Qt.green) if self.channelDict.at(row).inRange else QtGui.QColor(QtCore.Qt.red),
+                     (QtCore.Qt.DisplayRole,3): lambda self, row: "{0:.4f} GHz".format(self.channelDict.at(row).min),
+                     (QtCore.Qt.DisplayRole,4): lambda self, row: "{0:.4f} GHz".format(self.channelDict.at(row).max),
+                     (QtCore.Qt.EditRole,1): lambda self, row: self.channelDict.at(row).channel,
+                     (QtCore.Qt.EditRole,3): lambda self, row: "{0:.4f}".format(self.channelDict.at(row).min),
+                     (QtCore.Qt.EditRole,4): lambda self, row: "{0:.4f}".format(self.channelDict.at(row).max),                    
                      }
  
     def data(self, index, role): 
@@ -67,36 +68,36 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
 
     def setChannel(self,index,value):
         channel, ok  = value.toInt()
-        if channel==self.channelList[index.row()].channel:  # no change
+        if channel==self.channelDict.at(index.row()).channel:  # no change
             return True
         if channel not in self.channelDict:
-            self.channelDict.pop(self.channelList[index.row()].channel)  # pop the old one from the dict
-            self.channelList[index.row()].channel = channel
-            self.channelDict[channel] = self.channelList[index.row()]
+            self.channelDict.pop(self.channelDict.at(index.row()).channel)  # pop the old one from the dict
+            self.channelDict.at(index.row()).channel = channel
+            self.channelDict[channel] = self.channelDict.at(index.row())
             return True
         return False      
                 
     def setCurrent(self, channel, value):
         ilChannel = self.channelDict[channel]
-        index = self.channelList.index(ilChannel)
+        index = self.channelDict.index(channel)
         ilChannel.current = value
         self.dataChanged.emit( self.createIndex(index,2), self.createIndex(index,2) ) 
         ilChannel.inRange = ilChannel.min < ilChannel.current < ilChannel.max
                 
     def setMin(self, index, value):
-        self.channelList[index.row()].min = float(value.toString())
+        self.channelDict.at(index.row()).min = float(value.toString())
         return True
 
     def setMax(self, index, value):
-        self.channelList[index.row()].max = float(value.toString())
+        self.channelDict.at(index.row()).max = float(value.toString())
         return True
                 
     def setEnable(self, index, value):
         enable = value == QtCore.Qt.Checked
-        if self.channelList[index.row()].enable != enable:  # it changed
-            self.channelList[index.row()].enable = value == QtCore.Qt.Checked
+        if self.channelDict.at(index.row()).enable != enable:  # it changed
+            self.channeDict.at(index.row()).enable = value == QtCore.Qt.Checked
             if enable:
-                self.getWavemeterData.emit(self.channelList[index.row()].channel)
+                self.getWavemeterData.emit(self.channelDict.at(index.row()).channel)
         return True
     
     def addChannel(self):
@@ -109,13 +110,11 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         ilChannel = InterlockChannel()
         ilChannel.channel = ch
         self.channelDict[ch] = ilChannel
-        self.channelList.append(ilChannel)
         self.endInsertRows()
     
     def removeChannel(self, index):
         self.beginRemoveRows(QtCore.QModelIndex(), index, index)
-        self.channelDict.pop( self.channelList[index].channel )
-        del self.channelList[index]
+        self.channelDict.pop( self.channelDict.at(index).channel )
         self.endRemoveRows()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -125,4 +124,6 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         return 5
  
     def sort(self, column, order ):
-        pass
+        self.beginResetModel()
+        self.channelDict.sortByAttribute( self.attributeLookup[column], order==QtCore.Qt.DescendingOrder )
+        self.endResetModel()

@@ -17,6 +17,7 @@ from modules.formatDelta import formatDelta
 from datetime import datetime
 import logging
 from WavemeterInterlockTableModel import WavemeterInterlockTableModel, InterlockChannel
+from modules.SequenceDict import SequenceDict
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -38,7 +39,7 @@ class AutoLoadSettings:
         self.thresholdOven = 0
         self.checkTime = 0
         self.useInterlock = False
-        self.interlockDict = dict()
+        self.interlock = SequenceDict()
         self.wavemeterAddress = ""
 
     def __setstate__(self, state):
@@ -47,7 +48,7 @@ class AutoLoadSettings:
         """
         self.__dict__ = state
         self.__dict__.setdefault('useInterlock', False)
-        self.__dict__.setdefault('interlockDict', dict() )
+        self.__dict__.setdefault('interlock', SequenceDict() )
         self.__dict__.setdefault('wavemeterAddress', "" )
 
 def invert( logic, channel):
@@ -104,7 +105,7 @@ class AutoLoad(UiForm,UiBase):
         self.useInterlockGui.stateChanged.connect(self.onUseInterlockClicked)
         self.wavemeterAddressLineEdit.setText( self.settings.wavemeterAddress )
         self.wavemeterAddressLineEdit.editingFinished.connect( self.onWavemeterAddress )
-        self.tableModel = WavemeterInterlockTableModel( self.settings.interlockDict )
+        self.tableModel = WavemeterInterlockTableModel( self.settings.interlock )
         self.tableModel.getWavemeterData.connect( self.getWavemeterData )
         self.tableModel.getWavemeterData.connect( self.checkFreqsInRange )
         self.interlockTableView.setModel( self.tableModel )
@@ -113,7 +114,7 @@ class AutoLoad(UiForm,UiBase):
         self.addChannelButton.clicked.connect( self.tableModel.addChannel )        
         self.removeChannelButton.clicked.connect( self.onRemoveChannel )        
         self.checkFreqsInRange() #Begins the loop which continually checks if frequencies are in range
-        for ilChannel in self.settings.interlockDict.values():
+        for ilChannel in self.settings.interlock.values():
             self.getWavemeterData(ilChannel.channel)
         #end wavemeter interlock setup      
         self.setIdle()
@@ -137,8 +138,8 @@ class AutoLoad(UiForm,UiBase):
 
     def getWavemeterData(self, channel):
         """Get the data from the wavemeter at the specified channel."""
-        if channel in self.settings.interlockDict:
-            if self.settings.interlockDict[channel].enable:
+        if channel in self.settings.interlock:
+            if self.settings.interlock[channel].enable:
                 address = self.settings.wavemeterAddress + "/wavemeter/wavemeter/wavemeter-status?channel={0}".format(int(channel))
                 reply = self.am.get( QtNetwork.QNetworkRequest(QtCore.QUrl(address)))
                 reply.error.connect(self.onWavemeterError)
@@ -147,8 +148,8 @@ class AutoLoad(UiForm,UiBase):
     def onWavemeterData(self, channel, data):
         """Execute when data is received from the wavemeter. Display it on the
            GUI, and check whether it is in range."""
-        if channel in self.settings.interlockDict:
-            ilChannel = self.settings.interlockDict[channel]
+        if channel in self.settings.interlock:
+            ilChannel = self.settings.interlock[channel]
             if data.error()==0:
                 self.tableModel.setCurrent( channel, round(float(data.readAll()), 4) )
             #freq_string = "{0:.4f}".format(self.channelResult[channel]) + " GHz"
@@ -162,8 +163,8 @@ class AutoLoad(UiForm,UiBase):
         
             If they are not, loading is stopped/prevented, and the lock status bar turns
             from green to red. If the lock is not being used, the status bar is black."""
-        enabledChannels = sum(1 if x.enable else 0 for x in self.settings.interlockDict.values() )
-        outOfRangeChannels = sum(1 if x.enable and not x.inRange else 0 for x in self.settings.interlockDict.values() )
+        enabledChannels = sum(1 if x.enable else 0 for x in self.settings.interlock.values() )
+        outOfRangeChannels = sum(1 if x.enable and not x.inRange else 0 for x in self.settings.interlock.values() )
         if enabledChannels==0:
             #if no channels are checked, set bar on GUI to black
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
