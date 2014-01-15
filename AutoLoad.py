@@ -109,6 +109,7 @@ class AutoLoad(UiForm,UiBase):
         self.tableModel.getWavemeterData.connect( self.checkFreqsInRange )
         self.interlockTableView.setModel( self.tableModel )
         self.interlockTableView.resizeColumnsToContents()
+        self.interlockTableView.setSortingEnabled(True)
         self.addChannelButton.clicked.connect( self.tableModel.addChannel )        
         self.removeChannelButton.clicked.connect( self.onRemoveChannel )        
         self.checkFreqsInRange() #Begins the loop which continually checks if frequencies are in range

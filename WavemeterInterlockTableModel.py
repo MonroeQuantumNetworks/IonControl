@@ -19,6 +19,7 @@ class InterlockChannel:
 
 class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     getWavemeterData = QtCore.pyqtSignal( object )
+    headerDataLookup = [ 'Enable', 'Channel', 'Current','Minimum', 'Maximum']
     def __init__(self, channeldict, parent=None, *args): 
         """ datain: a list where each item is a row
         
@@ -26,13 +27,12 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.channelDict = channeldict
         self.channelList = channeldict.values()
+        self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setChannel,
+                                 (QtCore.Qt.EditRole,3): self.setMin,
+                                 (QtCore.Qt.EditRole,4): self.setMax,
+                                 (QtCore.Qt.CheckStateRole,0): self.setEnable,
+                                }
 
-    def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.channelDict) 
-        
-    def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 5
- 
     dataLookup =   { (QtCore.Qt.CheckStateRole,0): lambda self, row: QtCore.Qt.Checked if self.channelList[row].enable else QtCore.Qt.Unchecked,
                      (QtCore.Qt.DisplayRole,1): lambda self, row: self.channelList[row].channel,
                      (QtCore.Qt.DisplayRole,2): lambda self, row: "{0:.4f} GHz".format(self.channelList[row].current),
@@ -49,29 +49,21 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
             return self.dataLookup.get((role,index.column()),lambda self, row: None)(self,index.row())
         return None
         
+    def headerData(self, section, orientation, role ):
+        if (role == QtCore.Qt.DisplayRole):
+            if (orientation == QtCore.Qt.Horizontal): 
+                return self.headerDataLookup[section]
+        return None 
+
+    def setData(self, index, value, role):
+        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
+
     def flags(self, index ):
         if index.column() in [1,3,4]:
             return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
         if index.column()==0:
             return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
         return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-
-    def headerData(self, section, orientation, role ):
-        if (role == QtCore.Qt.DisplayRole):
-            if (orientation == QtCore.Qt.Horizontal): 
-                return { 0: 'Enable',
-                         1: 'Channel',
-                         2: 'Current',
-                         4: 'Minimum',
-                         3: 'Maximum' }[section]
-        return None 
-
-    def setData(self, index, value, role):
-        return { (QtCore.Qt.EditRole,1): partial( self.setChannel, index, value ),
-                 (QtCore.Qt.EditRole,3): partial( self.setMin, index, value ),
-                 (QtCore.Qt.EditRole,4): partial( self.setMax, index, value ),
-                 (QtCore.Qt.CheckStateRole,0): partial( self.setEnable, index, value ),
-                }.get((role,index.column()), lambda: False )()
 
     def setChannel(self,index,value):
         channel, ok  = value.toInt()
@@ -125,4 +117,12 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         self.channelDict.pop( self.channelList[index].channel )
         del self.channelList[index]
         self.endRemoveRows()
+
+    def rowCount(self, parent=QtCore.QModelIndex()): 
+        return len(self.channelDict) 
         
+    def columnCount(self, parent=QtCore.QModelIndex()): 
+        return 5
+ 
+    def sort(self, column, order ):
+        pass
