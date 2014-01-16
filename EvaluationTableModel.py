@@ -4,6 +4,7 @@ from CountEvaluation import EvaluationAlgorithms
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )
+    headerDataLookup = ['Counter','Evaluation','Name','Hist', 'Plot' ]
     def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
@@ -13,7 +14,26 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.plotnames = plotnames
         self.updateSaveStatus = updateSaveStatus
         self.evalAlgorithmList = list()
+        self.setDataLookup =  {  (QtCore.Qt.EditRole,0): self.setCounter,
+                                 (QtCore.Qt.EditRole,1): self.setAlgorithm,
+                                 (QtCore.Qt.EditRole,2): self.setDataName,
+                                 (QtCore.Qt.EditRole,4): self.setPlotName,
+                                 (QtCore.Qt.CheckStateRole,3): self.setShowHistogram,
+                                }
+        self.dataLookup = {  (QtCore.Qt.DisplayRole,0): lambda self, row: self.evalList[row].counter,
+                             (QtCore.Qt.DisplayRole,1): lambda self, row: self.evalList[row].evaluation,
+                             (QtCore.Qt.DisplayRole,2): lambda self, row: self.evalList[row].name,
+                             (QtCore.Qt.DisplayRole,4): lambda self, row: self.evalList[row].plotname,
+                             (QtCore.Qt.EditRole,0):    lambda self, row: self.evalList[row].counter,
+                             (QtCore.Qt.EditRole,1):    lambda self, row: self.evalList[row].evaluation,
+                             (QtCore.Qt.EditRole,2):    lambda self, row: self.evalList[row].name,
+                             (QtCore.Qt.EditRole,4):    lambda self, row: self.evalList[row].plotname,
+                             (QtCore.Qt.CheckStateRole,3): lambda self, row: QtCore.Qt.Checked if self.evalList[row].showHistogram else QtCore.Qt.Unchecked,
+                             }
         
+    def setData(self, index, value, role):
+        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
+
     def choice(self, index):
         return {1:EvaluationAlgorithms.keys(),4:self.plotnames}[index]
         
@@ -31,16 +51,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
     
     def data(self, index, role): 
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,0): self.evalList[index.row()].counter,
-                     (QtCore.Qt.DisplayRole,1): self.evalList[index.row()].evaluation,
-                     (QtCore.Qt.DisplayRole,2): self.evalList[index.row()].name,
-                     (QtCore.Qt.DisplayRole,4): self.evalList[index.row()].plotname,
-                     (QtCore.Qt.EditRole,0): self.evalList[index.row()].counter,
-                     (QtCore.Qt.EditRole,1): self.evalList[index.row()].evaluation,
-                     (QtCore.Qt.EditRole,2): self.evalList[index.row()].name,
-                     (QtCore.Qt.EditRole,4): self.evalList[index.row()].plotname,
-                     (QtCore.Qt.CheckStateRole,3): QtCore.Qt.Checked if self.evalList[index.row()].showHistogram else QtCore.Qt.Unchecked,
-                     }.get((role,index.column()),None)
+            return self.dataLookup.get((role,index.column()),lambda self, row: None)(self,index.row())
         return None
         
     def flags(self, index ):
@@ -55,20 +66,8 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
             if (orientation == QtCore.Qt.Vertical): 
                 return str(section)
             elif (orientation == QtCore.Qt.Horizontal): 
-                return { 0: 'Counter',
-                         1: 'Evaluation',
-                         2: 'Name',
-                         4: 'Plot',
-                         3: 'Hist' }[section]
+                return self.headerDataLookup[section]
         return None 
-
-    def setData(self, index, value, role):
-        return { (QtCore.Qt.EditRole,0): partial( self.setCounter, index, value ),
-                 (QtCore.Qt.EditRole,1): partial( self.setAlgorithm, index, value ),
-                 (QtCore.Qt.EditRole,2): partial( self.setDataName, index, value ),
-                 (QtCore.Qt.EditRole,4): partial( self.setPlotName, index, value ),
-                 (QtCore.Qt.CheckStateRole,3): partial( self.setShowHistogram, index, value ),
-                }.get((role,index.column()), lambda: False )()
 
     def setCounter(self,index,value):
         self.evalList[index.row()].counter, ok = value.toInt()
