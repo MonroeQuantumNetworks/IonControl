@@ -177,7 +177,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page">
       <property name="geometry">
@@ -448,14 +448,11 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <widget class="QSpinBox" name="counterSelectSpinBox">
-           <property name="maximum">
-            <number>15</number>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Evaluations:</string>
            </property>
           </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="evalAlgorithmCombo"/>
          </item>
          <item>
           <widget class="QToolButton" name="addEvaluationButton">

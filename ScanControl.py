@@ -192,7 +192,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         delegate = ComboBoxDelegate()
         self.evalTableView.setItemDelegateForColumn(1, delegate  )
         self.evalTableView.setItemDelegateForColumn(4, delegate )
-        self.evalAlgorithmCombo.addItems( CountEvaluation.EvaluationAlgorithms.keys() )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
@@ -292,8 +291,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
     def onAddEvaluation(self):
         evaluation = EvaluationDefinition()
-        evaluation.counter = self.counterSelectSpinBox.value()
-        evaluation.evaluation = str(self.evalAlgorithmCombo.currentText())
+        evaluation.counter = 0
+        evaluation.evaluation = CountEvaluation.EvaluationAlgorithms.keys()[0]
         self.settings.evalList.append( evaluation )
         self.addEvaluation( evaluation )
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
