@@ -144,6 +144,8 @@ class AutoLoad(UiForm,UiBase):
                 reply = self.am.get( QtNetwork.QNetworkRequest(QtCore.QUrl(address)))
                 reply.error.connect(self.onWavemeterError)
                 reply.finished.connect(functools.partial(self.onWavemeterData, int(channel), reply))
+            else:
+                self.checkFreqsInRange()
 
     def onWavemeterData(self, channel, data):
         """Execute when data is received from the wavemeter. Display it on the
