@@ -8,24 +8,31 @@ from functools import partial
 Form, Base = PyQt4.uic.loadUiType(r'ui\AverageViewTable.ui')
 
 class AverageViewTableModel(QtCore.QAbstractTableModel):
-    headerDataLookup = [ 'Mean', 'Std err', 'Name']
+    headerDataLookup = [ 'Sample Mean', 'Standard error', 'Name']
     def __init__(self, stats, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.stats = stats
-
-    dataLookup =   { (QtCore.Qt.DisplayRole,0): lambda self, row: self.stats[row].mean,
-                     (QtCore.Qt.DisplayRole,1): lambda self, row: self.stats[row].stderr,
-                     (QtCore.Qt.DisplayRole,2): lambda self, row: None,
-                     }
+        self.dataLookup = { (QtCore.Qt.DisplayRole,0): lambda row: str(roundToStdDev(self.stats[row].mean,self.stats[row].stderr)),
+                         (QtCore.Qt.DisplayRole,1): lambda row: str(roundToNDigits(self.stats[row].stderr,2)),
+                         (QtCore.Qt.DisplayRole,2): lambda row: self.names[row] if self.names and len(self.names>row) else None,
+                         (QtCore.Qt.FontRole,0):    lambda row: self.dataFont(row),
+                         (QtCore.Qt.FontRole,1):    lambda row: self.dataFont(row)
+                         }
+        self.names = None
  
     def data(self, index, role): 
         if index.isValid():
-            return self.dataLookup.get((role,index.column()),lambda self, row: None)(self,index.row())
+            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
         return None
         
+    def dataFont(self, row):
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        return font
+    
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
@@ -53,11 +60,13 @@ class AverageViewTableModel(QtCore.QAbstractTableModel):
             self.resize( len(stats) )
         for index, element in enumerate(stats):
             self.stats[index].add(element)
-        self.dataChanged.emit(self.index(0,0),self.index(len(stats)-1,1))
-
+        self.dataChanged.emit(self.index(0,0),self.index(len(stats)-1,2))
+                
+    def setNames(self, names):
+        self.names = names if names else None
+ 
 
 class AverageViewTable(Form,Base):
-   
     def __init__(self):
         Form.__init__(self)
         Base.__init__(self)
@@ -67,13 +76,18 @@ class AverageViewTable(Form,Base):
         super(AverageViewTable,self).setupUi(self)
         self.model = AverageViewTableModel(self.stats)
         self.tableView.setModel(self.model)
-        self.add( [1,2,3])
+        self.tableView.resizeColumnsToContents()
+        self.tableView.verticalHeader().hide()
+        self.tableView.horizontalHeader().setStretchLastSection(True)
+        self.clearButton.clicked.connect( self.onClear)
 
     def add(self, data):
         self.model.add(data)
         
     def onClear(self):
-        pass
+        for stat in self.stats:
+            stat.clear()
+        self.model.dataChanged.emit( self.model.createIndex(0,0), self.model.createIndex(1,len(self.stats)-1))
 
 
 if __name__=="__main__":

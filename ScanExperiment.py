@@ -35,7 +35,7 @@ import RawData
 from modules import MagnitudeUtilit
 import random
 import ScanControl
-from AverageView import AverageView
+from AverageViewTable import AverageViewTable
 from PlottedTrace import PlottedTrace
 import logging
      
@@ -268,8 +268,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
         # Average View
-        self.displayUi = AverageView(self.config,"testExperiment")
-        self.displayUi.setupUi(self.displayUi)
+        self.displayUi = AverageViewTable()
+        self.displayUi.setupUi()
         self.displayDock = QtGui.QDockWidget("Average")
         self.displayDock.setObjectName("Average")
         self.displayDock.setWidget( self.displayUi )
@@ -334,6 +334,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
    
     def onStart(self):
         self.scan = self.scanControlWidget.getScan()
+        self.displayUi.setNames( [eval.name for eval in self.scan.evalList ])
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             self.createAverageTrace(self.scan.evalList)
             self.scanControlWidget.scansAveraged.setText("Scans averaged: 0")
@@ -440,7 +441,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
-                self.displayUi.add( evaluated[0][0][0] )
+                self.displayUi.add( [ e[0][0] for e in evaluated ] )
                 self.updateMainGraph(x, evaluated )
                 self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
