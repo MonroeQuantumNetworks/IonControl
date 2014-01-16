@@ -124,7 +124,8 @@ class AutoLoad(UiForm,UiBase):
         self.setIdle()
         
     def deleteFromHistory(self):
-        print "deleteKey pressed"
+        for index in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=True):
+            self.historyTableModel.removeRow(index)
         
     def onRemoveChannel(self):
         for index in sorted(unique([ i.row() for i in self.interlockTableView.selectedIndexes() ]),reverse=True):
