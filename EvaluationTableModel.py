@@ -15,7 +15,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.evalAlgorithmList = list()
         
     def choice(self, index):
-        return {1:EvaluationAlgorithms.keys(),3:self.plotnames}[index]
+        return {1:EvaluationAlgorithms.keys(),4:self.plotnames}[index]
         
     def setEvalList(self, evalList, evalAlgorithmList):
         self.beginResetModel()
@@ -35,6 +35,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                      (QtCore.Qt.DisplayRole,1): self.evalList[index.row()].evaluation,
                      (QtCore.Qt.DisplayRole,2): self.evalList[index.row()].name,
                      (QtCore.Qt.DisplayRole,4): self.evalList[index.row()].plotname,
+                     (QtCore.Qt.EditRole,0): self.evalList[index.row()].counter,
                      (QtCore.Qt.EditRole,1): self.evalList[index.row()].evaluation,
                      (QtCore.Qt.EditRole,2): self.evalList[index.row()].name,
                      (QtCore.Qt.EditRole,4): self.evalList[index.row()].plotname,
@@ -43,7 +44,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return None
         
     def flags(self, index ):
-        if index.column() in [1,2,4]:
+        if index.column() in [0,1,2,4]:
             return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
         if index.column()==3:
             return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
@@ -62,14 +63,21 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return None 
 
     def setData(self, index, value, role):
-        return { (QtCore.Qt.EditRole,1): partial( self.setAlgorithm, index, value ),
+        return { (QtCore.Qt.EditRole,0): partial( self.setCounter, index, value ),
+                 (QtCore.Qt.EditRole,1): partial( self.setAlgorithm, index, value ),
                  (QtCore.Qt.EditRole,2): partial( self.setDataName, index, value ),
                  (QtCore.Qt.EditRole,4): partial( self.setPlotName, index, value ),
                  (QtCore.Qt.CheckStateRole,3): partial( self.setShowHistogram, index, value ),
                 }.get((role,index.column()), lambda: False )()
 
+    def setCounter(self,index,value):
+        self.evalList[index.row()].counter, ok = value.toInt()
+        self.dataChanged.emit( index, index )
+        return True      
+
     def setShowHistogram(self,index,value):
         self.evalList[index.row()].showHistogram = (value == QtCore.Qt.Checked )
+        self.dataChanged.emit( index, index )
         return True      
                 
     def setValue(self, index, value):
