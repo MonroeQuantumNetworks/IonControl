@@ -31,23 +31,20 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setChannel,
                                  (QtCore.Qt.EditRole,3): self.setMin,
                                  (QtCore.Qt.EditRole,4): self.setMax,
-                                 (QtCore.Qt.CheckStateRole,0): self.setEnable,
-                                }
-
-    dataLookup =   { (QtCore.Qt.CheckStateRole,0): lambda self, row: QtCore.Qt.Checked if self.channelDict.at(row).enable else QtCore.Qt.Unchecked,
-                     (QtCore.Qt.DisplayRole,1): lambda self, row: self.channelDict.at(row).channel,
-                     (QtCore.Qt.DisplayRole,2): lambda self, row: "{0:.4f} GHz".format(self.channelDict.at(row).current),
-                     (QtCore.Qt.BackgroundColorRole,2): lambda self, row: QtGui.QColor(QtCore.Qt.white) if not self.channelDict.at(row).enable else QtGui.QColor(0xa6,0xff,0xa6,0xff) if self.channelDict.at(row).inRange else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                     (QtCore.Qt.DisplayRole,3): lambda self, row: "{0:.4f} GHz".format(self.channelDict.at(row).min),
-                     (QtCore.Qt.DisplayRole,4): lambda self, row: "{0:.4f} GHz".format(self.channelDict.at(row).max),
-                     (QtCore.Qt.EditRole,1): lambda self, row: self.channelDict.at(row).channel,
-                     (QtCore.Qt.EditRole,3): lambda self, row: "{0:.4f}".format(self.channelDict.at(row).min),
-                     (QtCore.Qt.EditRole,4): lambda self, row: "{0:.4f}".format(self.channelDict.at(row).max),                    
-                     }
+                                 (QtCore.Qt.CheckStateRole,0): self.setEnable, }
+        self.dataLookup =  { (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.channelDict.at(row).enable else QtCore.Qt.Unchecked,
+                             (QtCore.Qt.DisplayRole,1):    lambda row: self.channelDict.at(row).channel,
+                             (QtCore.Qt.DisplayRole,2):    lambda row: "{0:.4f} GHz".format(self.channelDict.at(row).current),
+                             (QtCore.Qt.BackgroundColorRole,2): lambda row: QtGui.QColor(QtCore.Qt.white) if not self.channelDict.at(row).enable else QtGui.QColor(0xa6,0xff,0xa6,0xff) if self.channelDict.at(row).inRange else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.DisplayRole,3):    lambda row: "{0:.4f} GHz".format(self.channelDict.at(row).min),
+                             (QtCore.Qt.DisplayRole,4):    lambda row: "{0:.4f} GHz".format(self.channelDict.at(row).max),
+                             (QtCore.Qt.EditRole,1):       lambda row: self.channelDict.at(row).channel,
+                             (QtCore.Qt.EditRole,3):       lambda row: "{0:.4f}".format(self.channelDict.at(row).min),
+                             (QtCore.Qt.EditRole,4):       lambda row: "{0:.4f}".format(self.channelDict.at(row).max),   }
  
     def data(self, index, role): 
         if index.isValid():
-            return self.dataLookup.get((role,index.column()),lambda self, row: None)(self,index.row())
+            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
         return None
         
     def headerData(self, section, orientation, role ):
