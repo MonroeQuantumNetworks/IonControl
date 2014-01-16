@@ -268,7 +268,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
         # Average View
-        self.displayUi = AverageViewTable()
+        self.displayUi = AverageViewTable(self.config)
         self.displayUi.setupUi()
         self.displayDock = QtGui.QDockWidget("Average")
         self.displayDock.setObjectName("Average")
@@ -620,6 +620,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
         self.scanControlWidget.saveConfig()
         self.traceui.saveConfig()
+        self.displayUi.saveConfig()
         
     def onClose(self):
         pass
