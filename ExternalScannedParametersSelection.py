@@ -14,6 +14,8 @@ from ExternalParameterTableModel import ExternalParameterTableModel
 from modules.PyqtUtility import updateComboBoxItems
 import functools
 import logging
+from modules.SequenceDict import SequenceDict
+from KeyboardFilter import KeyListFilter
 
 def unique(seq):
     seen = set()
@@ -41,17 +43,20 @@ class SelectionUi(SelectionForm,SelectionBase):
         SelectionBase.__init__(self,parent)
         SelectionForm.__init__(self)
         self.config = config
-        self.parameters = self.config.get("ExternalScannedParametersSelection.Parameters",dict())
+        self.parameters = self.config.get("ExternalScannedParametersSelection.ParametersSequence",SequenceDict())
         self.enabledParametersObjects = dict()
     
     def setupUi(self,MainWindow):
         logger = logging.getLogger(__name__)
         SelectionForm.setupUi(self,MainWindow)
-        self.parameterTableModel = ExternalParameterTableModel( list(self.parameters.values()) )
+        self.parameterTableModel = ExternalParameterTableModel( self.parameters )
         self.parameterTableModel.enableChanged.connect( self.onEnableChanged )
         self.tableView.setModel( self.parameterTableModel )
         self.tableView.resizeColumnsToContents()
-        self.tableView.horizontalHeader().setStretchLastSection(True)        
+        self.tableView.horizontalHeader().setStretchLastSection(True)   
+        self.filter = KeyListFilter( [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down] )
+        self.filter.keyPressed.connect( self.onReorder )
+        self.tableView.insertEventFilter(self.filter)
         self.classComboBox.addItems( ExternalScannedParameters.keys() )
         self.addParameterButton.clicked.connect( self.onAddParameter )
         self.removeParameterButton.clicked.connect( self.onRemoveParameter )
@@ -65,6 +70,9 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.selectionChanged.emit( self.enabledParametersObjects )
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
 
+    def onReorder(self, key):
+        print "onReorder"
+
     def onEnableChanged(self, name):
         logger = logging.getLogger(__name__)
         parameter = self.parameters[name]
@@ -74,7 +82,7 @@ class SelectionUi(SelectionForm,SelectionBase):
             except Exception as e:
                 logger.exception( "{0} while enabling instrument {1}".format(e,name))
                 parameter.enabled = False                    
-                self.parameterTableModel.setParameterList( list(self.parameters.values()) )
+                self.parameterTableModel.setParameterDict( self.parameters )
         else:
             self.disableInstrument(name)
                       
@@ -87,17 +95,17 @@ class SelectionUi(SelectionForm,SelectionBase):
         parameter.name = str(self.nameEdit.currentText())
         if parameter.name not in self.parameters:
             self.parameters[parameter.name] = parameter
-            self.parameterTableModel.setParameterList( list(self.parameters.values()) )
+            self.parameterTableModel.setParameterDict( self.parameters )
             self.tableView.resizeColumnsToContents()
             self.tableView.horizontalHeader().setStretchLastSection(True)        
         
     def onRemoveParameter(self):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
-            parameter = self.parameterTableModel.parameterList[index]
+            parameter = self.parameters.at(index)
             parameter.enabled=False
             self.disableInstrument(parameter.name)
             self.parameters.pop( parameter.name )
-        self.parameterTableModel.setParameterList( list(self.parameters.values()) )
+        self.parameterTableModel.setParameterDict( self.parameters )
             
     def enableInstrument(self,parameter):
         if parameter.name not in self.enabledParametersObjects:
@@ -105,7 +113,7 @@ class SelectionUi(SelectionForm,SelectionBase):
             instance = ExternalScannedParameters[parameter.className](parameter.name,parameter.settings,parameter.instrument)
             self.enabledParametersObjects[parameter.name] = instance
             self.selectionChanged.emit( self.enabledParametersObjects )
-            self.parameterTableModel.setParameterList( list(self.parameters.values()) )
+            self.parameterTableModel.setParameterDict( self.parameters )
             logger.info("Enabled Instrument {0} as {1}".format(parameter.className,parameter.name))
             
     def disableInstrument(self,name):
@@ -119,11 +127,11 @@ class SelectionUi(SelectionForm,SelectionBase):
     def onActiveInstrumentChanged(self, modelIndex, modelIndex2 ):
         logger = logging.getLogger(__name__)
         logger.debug( "activeInstrumentChanged {0}".format( modelIndex.row() ) )
-        if self.parameterTableModel.parameterList[modelIndex.row()].enabled:
-            self.treeWidget.setParameters( self.enabledParametersObjects[self.parameterTableModel.parameterList[modelIndex.row()].name].parameter )
+        if self.parameters.at(modelIndex.row()).enabled:
+            self.treeWidget.setParameters( self.enabledParametersObjects[self.parameters.at(modelIndex.row()).name].parameter )
         
     def saveConfig(self):
-        self.config["ExternalScannedParametersSelection.Parameters"] = self.parameters
+        self.config["ExternalScannedParametersSelection.ParametersSequence"] = self.parameters
         
     def onClose(self):
         for inst in self.enabledParametersObjects.values():
