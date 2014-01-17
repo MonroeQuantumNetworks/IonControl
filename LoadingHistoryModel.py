@@ -68,3 +68,8 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
     def updateLast(self,attr,value):
         setattr(self.history[-1], attr, value)
         self.dataChanged.emit(self.createIndex(0,0),self.createIndex(0,2))
+        
+    def removeRow(self,index):
+        self.beginRemoveRows( QtCore.QModelIndex(), index, index   )
+        self._history.pop(index)
+        self.endRemoveRows()

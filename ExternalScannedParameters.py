@@ -203,6 +203,7 @@ class HP8672A(ExternalParameterBase):
         #Example string: P03205000Z0K1L6O1 would set the oscillator to 3.205 GHz, -13 dBm
         self.synthesizer.write(command)
         self.value = value
+        self.settings.value = value
     
     def createAmplitudeString(self):
         """Create the string for setting the HP8672A amplitude.

@@ -46,7 +46,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         
     def startScan(self):
         logger = logging.getLogger(__name__)
-        if self.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused]:
+        if self.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
             self.state = self.OpStates.running
             if self.scan.scanParameter not in self.enabledParameters:
@@ -89,7 +89,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def onStop(self):
         logger = logging.getLogger(__name__)
         logger.debug( "Old Status {0}".format( self.state ) )
-        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused]:
+        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             ScanExperiment.ScanExperiment.onStop(self)
             logger.info( "Status -> Stopping" )
             self.stopBottomHalf()
@@ -133,7 +133,10 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
             if self.state == self.OpStates.running:
-                if self.externalParameterIndex < len(self.scan.list):
+                if data.final and data.exitcode != 0:
+                    self.state = self.OpStates.interrupted
+                    self.interruptReason = self.pulseProgramUi.exitcode(data.exitcode)
+                elif self.externalParameterIndex < len(self.scan.list):
                     self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
                     self.pulserHardware.ppStart()
                     logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )

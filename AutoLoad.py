@@ -18,6 +18,7 @@ from datetime import datetime
 import logging
 from WavemeterInterlockTableModel import WavemeterInterlockTableModel, InterlockChannel
 from modules.SequenceDict import SequenceDict
+from KeyboardFilter import KeyFilter
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -99,6 +100,9 @@ class AutoLoad(UiForm,UiBase):
         self.stopButton.clicked.connect( self.onStop )
         self.historyTableModel = LoadingHistoryModel(self.loadingHistory)
         self.historyTableView.setModel(self.historyTableModel)
+        self.keyFilter = KeyFilter(QtCore.Qt.Key_Delete)
+        self.keyFilter.keyPressed.connect( self.deleteFromHistory )
+        self.historyTableView.installEventFilter( self.keyFilter )
         #Wavemeter interlock setup        
         self.am = QtNetwork.QNetworkAccessManager()
         self.useInterlockGui.setChecked(self.settings.useInterlock)
@@ -118,6 +122,10 @@ class AutoLoad(UiForm,UiBase):
             self.getWavemeterData(ilChannel.channel)
         #end wavemeter interlock setup      
         self.setIdle()
+        
+    def deleteFromHistory(self):
+        for index in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=True):
+            self.historyTableModel.removeRow(index)
         
     def onRemoveChannel(self):
         for index in sorted(unique([ i.row() for i in self.interlockTableView.selectedIndexes() ]),reverse=True):

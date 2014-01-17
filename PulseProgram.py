@@ -139,6 +139,7 @@ class PulseProgram:
         self.bytecode = []               # list of op, argument tuples
         self.binarycode = bytearray()    # binarycode to be uploaded
         self.debug = False
+        self._exitcodes = dict()          # generate a reverse dictionary of variables of type exitcode
 
         
         class Board:
@@ -219,6 +220,7 @@ class PulseProgram:
         only this routine loads from self.source
         """
         self.sourcelines = []
+        self._exitcodes = dict()
         self.insertSource(self.pp_filename)
         self.compileCode()
 
@@ -355,7 +357,7 @@ class PulseProgram:
         """ add a variable to the self.variablesdict
         """
         logger = logging.getLogger(__name__)
-        logger.debug( "Variable {0} {1} {2}".format( m, lineno, sourcename ) )
+        logger.debug( "Variable {0} {1} {2}".format( m.groups(), lineno, sourcename ) )
         var = Variable()
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
@@ -387,6 +389,8 @@ class PulseProgram:
             pass
         var.data = data
         self.variabledict.update({ label: var})
+        if var.type == "exitcode":
+            self._exitcodes[data & 0x0000ffff] = var
 
     # code is (address, operation, data, label or variablename, currentfile)
     def toBytecode(self):
@@ -449,7 +453,15 @@ class PulseProgram:
         self.parse()
         self.toBytecode()
         
-
+    def exitcode(self, code):
+        if code in self._exitcodes:
+            var = self._exitcodes[code]
+            if var.comment:
+                return var.comment
+            else:
+                return var.name
+        else:
+            return "Exitcode Not found"
 
 if __name__ == "__main__":
     pp = PulseProgram()

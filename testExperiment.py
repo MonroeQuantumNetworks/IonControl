@@ -17,7 +17,7 @@ import MainWindowWidget
 import FitUi
 import functools
 from modules import DataDirectory
-from AverageView import AverageView
+from AverageViewTable import AverageViewTable
 from ScanControl import ScanControl
 
 testForm, testBase = PyQt4.uic.loadUiType(r'ui\testExperiment.ui')
@@ -47,8 +47,8 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
-        self.displayUi = AverageView(self.config,"testExperiment")
-        self.displayUi.setupUi(self.displayUi)
+        self.displayUi = AverageViewTable(self.config)
+        self.displayUi.setupUi()
         self.displayDock = QtGui.QDockWidget("Average")
         self.displayDock.setObjectName("Average")
         self.displayDock.setWidget( self.displayUi )
@@ -130,7 +130,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.plottedTrace.trace.y = numpy.append( self.plottedTrace.trace.y, value )
         self.plottedTrace.trace.top = numpy.append( self.plottedTrace.trace.top, 0.05)
         self.plottedTrace.trace.bottom = numpy.append( self.plottedTrace.trace.bottom, 0.05)
-        self.displayUi.add(value)
+        self.displayUi.add( [value] )
         self.plottedTrace.replot()
         if self.xvalue > 3.5:
             if self.scanType == 0:

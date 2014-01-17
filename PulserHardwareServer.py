@@ -90,6 +90,7 @@ class Data:
         self.final = False
         self.other = list()
         self.overrun = False
+        self.exitcode = 0
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -192,9 +193,14 @@ class PulserHardwareServer(Process):
                 elif token & 0xff000000 == 0xff000000:
                     if token == 0xffffffff:    # end of run
                         self.data.final = True
+                        self.data.exitcode = 0xffff
                         self.dataQueue.put( self.data )
                         logger.info( "End of Run marker received" )
                         self.data = Data()
+                    elif token & 0xffff0000 == 0xfffe0000:  # exitparameter
+                        self.data.final = True
+                        self.data.exitcode = token & 0x0000ffff
+                        logger.info( "Exitcode {0} received".format(self.data.exitcode) )
                     elif token == 0xff000000:
                         self.timestampOffset += 1<<28
                     elif token & 0xffff0000 == 0xffff0000:  # new scan parameter

@@ -1,59 +1,68 @@
 from PyQt4 import QtGui, QtCore
 from functools import partial
+from modules.SequenceDict import SequenceDict
 
 class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
     enableChanged = QtCore.pyqtSignal( object )
-    
-    def __init__(self, parameterList=None, parent=None):
+    headerDataLookup = [ 'E', 'Name', 'Class', 'Instrument' ]
+    def __init__(self, parameterDict=None, parent=None):
         super(ExternalParameterTableModel, self).__init__(parent)
-        if parameterList:
-            self.parameterList = parameterList
-        else:
-            self.parameterList = list()
+        self.parameterDict = parameterDict if parameterDict else SequenceDict()
+        self.dataLookup = {  (QtCore.Qt.DisplayRole,2):    lambda row: self.parameterDict.at(row).className,
+                             (QtCore.Qt.DisplayRole,3):    lambda row: self.parameterDict.at(row).instrument,
+                             (QtCore.Qt.DisplayRole,1):    lambda row: self.parameterDict.at(row).name,
+                             (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.parameterDict.at(row).enabled else QtCore.Qt.Unchecked }
+        self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setEnabled  }
         
-    def setParameterList(self, parameterList):
+    def setParameterDict(self, parameterDict):
         self.beginResetModel()
-        self.parameterList = parameterList
+        self.parameterDict = parameterDict
         self.endResetModel()
         
     def rowCount(self, parent=QtCore.QModelIndex()):
-        return len(self.parameterList)
+        return len(self.parameterDict) if self.parameterDict else 0
     
     def columnCount(self,  parent=QtCore.QModelIndex()):
         return 4
     
     def data(self, index, role): 
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,2): self.parameterList[index.row()].className,
-                     (QtCore.Qt.DisplayRole,3): self.parameterList[index.row()].instrument,
-                     (QtCore.Qt.DisplayRole,1): self.parameterList[index.row()].name,
-                     (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if self.parameterList[index.row()].enabled else QtCore.Qt.Unchecked,
-                     }.get((role,index.column()),None)
+            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
         return None
         
     def setData(self, index, value, role):
-        return { (QtCore.Qt.CheckStateRole,0): partial( self.setEnabled, index, value )
-                }.get((role,index.column()), lambda: False )()
+        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
                 
     def setEnabled(self, index, value):
-        self.parameterList[index.row()].enabled = value==QtCore.Qt.Checked
-        self.enableChanged.emit( str(self.parameterList[index.row()].name) )
+        self.parameterDict.at(index.row()).enabled = value==QtCore.Qt.Checked
+        self.enableChanged.emit( str(self.parameterDict.at(index.row()).name) )
         return True
         
     def flags(self, index ):
-        return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-                 1: QtCore.Qt.ItemIsSelectable |   QtCore.Qt.ItemIsEnabled,
-                 2: QtCore.Qt.ItemIsSelectable |   QtCore.Qt.ItemIsEnabled,
-                 3: QtCore.Qt.ItemIsSelectable |   QtCore.Qt.ItemIsEnabled
-                 }.get(index.column(),QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
+        if index.column()==0:
+            return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+        return QtCore.Qt.ItemIsSelectable |   QtCore.Qt.ItemIsEnabled
+    
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Vertical): 
                 return str(section)
             elif (orientation == QtCore.Qt.Horizontal): 
-                return { 0: 'E',
-                         1: 'Name',
-                         2: 'Class',
-                         3: 'Instrument' }[section]
+                return self.headerDataLookup[section]
         return None 
+    
+    def moveRowUp(self, indexes):
+        for index in indexes:
+            if index.row()>0:
+                self.parameterDict.swap(index.row(), index.row()-1 )
+                self.dataChanged.emit( self.createIndex(index.row()-1,0), self.createIndex(index.row(),3) )
+                return self.createIndex(index.row()-1,index.column())
+        return indexes[0]
+    
+    def moveRowDown(self, indexes):
+        for index in indexes:
+            if index.row()<len(self.parameterDict)-1:
+                self.parameterDict.swap(index.row(), index.row()+1 )
+                self.dataChanged.emit( self.createIndex(index.row(),0), self.createIndex(index.row()+1,3) )
+                return self.createIndex(index.row()+1,index.column())
+        return indexes[0]

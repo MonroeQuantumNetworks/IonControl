@@ -35,7 +35,7 @@ import RawData
 from modules import MagnitudeUtilit
 import random
 import ScanControl
-from AverageView import AverageView
+from AverageViewTable import AverageViewTable
 from PlottedTrace import PlottedTrace
 import logging
      
@@ -187,7 +187,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
-    OpStates = enum.enum('idle','running','paused','starting','stopping')
+    OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
     experimentName = 'Scan Sequence'
 
     def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
@@ -207,6 +207,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.state = self.OpStates.idle
         self.histogramList = list()
         self.histogramTrace = None
+        self.interruptReason = ""
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -268,8 +269,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
         # Average View
-        self.displayUi = AverageView(self.config,"testExperiment")
-        self.displayUi.setupUi(self.displayUi)
+        self.displayUi = AverageViewTable(self.config)
+        self.displayUi.setupUi()
         self.displayDock = QtGui.QDockWidget("Average")
         self.displayDock.setObjectName("Average")
         self.displayDock.setWidget( self.displayUi )
@@ -327,6 +328,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
             self.scanControlWidget.progressBar.setFormat("Paused")            
             self.setTimeLabel()
+        elif self.state == self.OpStates.interrupted:
+            self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            self.scanControlWidget.progressBar.setFormat("Interrupted ({0})".format(self.interruptReason))            
+            self.setTimeLabel()
         elif self.state == self.OpStates.starting:
             self.scanControlWidget.progressBar.setFormat("Starting")            
         elif self.state == self.OpStates.stopping:
@@ -334,6 +339,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
    
     def onStart(self):
         self.scan = self.scanControlWidget.getScan()
+        self.displayUi.setNames( [eval.name for eval in self.scan.evalList ])
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             self.createAverageTrace(self.scan.evalList)
             self.scanControlWidget.scansAveraged.setText("Scans averaged: 0")
@@ -384,7 +390,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onPause(self):
         logger = logging.getLogger(__name__)
-        if self.state == self.OpStates.paused:
+        if self.state in [self.OpStates.paused,self.OpStates.interrupted]:
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
@@ -400,7 +406,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.state = self.OpStates.paused
     
     def onStop(self):
-        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused]:
+        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
@@ -440,7 +446,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
-                self.displayUi.add( evaluated[0][0][0] )
+                self.displayUi.add( [ e[0][0] for e in evaluated ] )
                 self.updateMainGraph(x, evaluated )
                 self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
@@ -452,7 +458,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if self.currentIndex >= len(self.scan.list):    # if all points were taken
                     self.generator.dataOnFinal(self)
                 else:
-                    self.state = self.OpStates.paused
+                    self.state = self.OpStates.interrupted
+                    self.interruptReason = self.pulseProgramUi.exitcode(data.exitcode)
             else:
                 mycode = self.generator.dataNextCode(self)
                 if mycode:
@@ -619,6 +626,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
         self.scanControlWidget.saveConfig()
         self.traceui.saveConfig()
+        self.displayUi.saveConfig()
         
     def onClose(self):
         pass
