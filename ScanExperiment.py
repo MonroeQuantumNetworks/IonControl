@@ -393,7 +393,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.state = self.OpStates.running
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
             self.timestampsNewRun = False
-            plogger.info( "continued" )
+            logger.info( "continued" )
         elif self.state == self.OpStates.running:
             self.pulserHardware.ppStop()
             self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
