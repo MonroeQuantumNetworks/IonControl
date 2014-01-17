@@ -220,6 +220,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             substitutes.update( model.getVariables() )
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
+    
+    def exitcode(self, number):
+        return self.pulseProgram.exitcode(number)
         
     def getVariableValue(self,name):
         return self.variableTableModel.getVariableValue(name)

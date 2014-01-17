@@ -187,7 +187,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
-    OpStates = enum.enum('idle','running','paused','starting','stopping')
+    OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
     experimentName = 'Scan Sequence'
 
     def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
@@ -207,6 +207,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.state = self.OpStates.idle
         self.histogramList = list()
         self.histogramTrace = None
+        self.interruptReason = ""
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -327,6 +328,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
             self.scanControlWidget.progressBar.setFormat("Paused")            
             self.setTimeLabel()
+        elif self.state == self.OpStates.interrupted:
+            self.scanControlWidget.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
+            self.scanControlWidget.progressBar.setFormat("Interrupted ({0})".format(self.interruptReason))            
+            self.setTimeLabel()
         elif self.state == self.OpStates.starting:
             self.scanControlWidget.progressBar.setFormat("Starting")            
         elif self.state == self.OpStates.stopping:
@@ -385,7 +390,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onPause(self):
         logger = logging.getLogger(__name__)
-        if self.state == self.OpStates.paused:
+        if self.state in [self.OpStates.paused,self.OpStates.interrupted]:
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
@@ -401,7 +406,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.state = self.OpStates.paused
     
     def onStop(self):
-        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused]:
+        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
@@ -453,7 +458,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if self.currentIndex >= len(self.scan.list):    # if all points were taken
                     self.generator.dataOnFinal(self)
                 else:
-                    self.state = self.OpStates.paused
+                    self.state = self.OpStates.interrupted
+                    self.interruptReason = self.pulseProgramUi.exitcode(data.exitcode)
             else:
                 mycode = self.generator.dataNextCode(self)
                 if mycode:
