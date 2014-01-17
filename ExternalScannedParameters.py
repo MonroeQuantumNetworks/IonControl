@@ -182,7 +182,7 @@ class HP8672A(ExternalParameterBase):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('lockPoint', magnitude.mg(384227.944,'GHz') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('amplitude_dBm', -13)
+        self.settings.__dict__.setdefault('amplitude_dBm', magnitude.mg(-13) )
    
     def setValue(self,value):
         """

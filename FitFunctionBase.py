@@ -41,7 +41,7 @@ class FitFunctionBase(object):
         self.RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
         self.RMSres.significantDigits = 3
         # chisq, sqrt(chisq/dof) agrees with gnuplot
-        logger.info(  "success {0}".format( self.ier ) )
+        logger.info(  "success {0} {1}".format( self.ier, self.mesg ) )
         logger.info(  "Converged with chi squared {0}".format(self.chisq) )
         logger.info(  "degrees of freedom, dof {0}".format( self.dof ) )
         logger.info(  "RMS of residuals (i.e. sqrt(chisq/dof)) {0}".format( self.RMSres ) )
@@ -57,19 +57,23 @@ class FitFunctionBase(object):
             for i,pmin in enumerate(self.parameters):
                 logger.info(  "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(self.cov_x[i,i])*sqrt(self.chisq/self.dof)) )
         
-        logger.info(  "Correlation matrix" )
-        # correlation matrix close to gnuplot
-        messagelist = ["               "]
-        for i in range(len(self.parameters)): messagelist.append( "%-10s"%(self.parameterNames[i],) )
-        logger.info( " ".join(messagelist))
-        messagelist = []
-        for i in range(len(self.parameters)):
-            messagelist.append( "%10s"%self.parameterNames[i] )
-            for j in range(i+1):
-                messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(self.cov_x[i,i]*self.cov_x[j,j]),) )
+            logger.info(  "Correlation matrix" )
+            # correlation matrix close to gnuplot
+            messagelist = ["               "]
+            for i in range(len(self.parameters)): messagelist.append( "%-10s"%(self.parameterNames[i],) )
             logger.info( " ".join(messagelist))
+            messagelist = []
+            for i in range(len(self.parameters)):
+                messagelist.append( "%10s"%self.parameterNames[i] )
+                for j in range(i+1):
+                    messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(self.cov_x[i,i]*self.cov_x[j,j]),) )
+                logger.info( " ".join(messagelist))
+    
+                #-----------------------------------------------
+        else:
+            self.parametersConfidence = None
+            self.parametersRelConfidence = None
 
-            #-----------------------------------------------
         return self.parameters
                 
     def __str__(self):

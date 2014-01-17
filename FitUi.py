@@ -12,6 +12,7 @@ import functools
 import pyqtgraph
 import copy
 import MagnitudeSpinBox
+import modules.MagnitudeUtilit as MagnitudeUtilit
 from modules.round import roundToNDigits
 from modules.round import roundToStdDev
 from itertools import izip_longest
@@ -54,10 +55,10 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitFunctions.append( FitFunctionUi(fitclass()) )
             
     def setParameter(self,fitfunction,index,value):
-        fitfunction.startParameters[index] = value
+        fitfunction.startParameters[index] = MagnitudeUtilit.value(value)
         
     def setConstant(self,fitfunction,parametername,value):
-        fitfunction.fitfunction.setConstant(parametername,value)
+        fitfunction.fitfunction.setConstant(parametername,MagnitudeUtilit.value(value))
 
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
@@ -129,9 +130,10 @@ class FitUi(fitForm, QtGui.QWidget):
             params = functionui.fitfunction.leastsq(plot.x,plot.y,functionui.startParameters,sigma=sigma)
             plot.fitFunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
-            for i,(p,conf,relconf) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
-                functionui.fittedParametersUi[i].setValue(roundToStdDev(p,conf))
-                functionui.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2))+'%')
+            if functionui.fitfunction.parametersRelConfidence is not None:
+                for i,(p,conf,relconf) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
+                    functionui.fittedParametersUi[i].setValue(roundToStdDev(p,conf))
+                    functionui.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2))+'%')
 
             for index, name in enumerate(functionui.fitfunction.resultNames):
                 functionui.resultsUi[index].setValue(getattr(functionui.fitfunction,name))

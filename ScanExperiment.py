@@ -402,8 +402,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             logger.info( "continued" )
         elif self.state == self.OpStates.running:
             self.pulserHardware.ppStop()
-            self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
             self.state = self.OpStates.paused
+            self.updateProgressBar(self.currentIndex,max(len(self.scan.list),1))
     
     def onStop(self):
         if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:

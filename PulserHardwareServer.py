@@ -201,6 +201,8 @@ class PulserHardwareServer(Process):
                         self.data.final = True
                         self.data.exitcode = token & 0x0000ffff
                         logger.info( "Exitcode {0} received".format(self.data.exitcode) )
+                        self.dataQueue.put( self.data )
+                        self.data = Data()
                     elif token == 0xff000000:
                         self.timestampOffset += 1<<28
                     elif token & 0xffff0000 == 0xffff0000:  # new scan parameter

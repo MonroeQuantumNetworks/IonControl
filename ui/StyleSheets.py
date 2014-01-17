@@ -8,7 +8,7 @@ Created on Wed May 22 06:53:20 2013
 RedProgressBar = """
 QProgressBar {
 border: 1px solid black;
-text-align: right;
+text-align: center;
 padding: 1px;
 border-top-left-radius: 3px;
 border-bottom-left-radius: 3px;
