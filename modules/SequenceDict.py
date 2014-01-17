@@ -1,6 +1,7 @@
 # A list that also works as a dict
 from collections import MutableMapping
 from operator import itemgetter
+from itertools import izip_longest
 
 class SequenceDict(dict, MutableMapping):
 
@@ -66,8 +67,8 @@ class SequenceDict(dict, MutableMapping):
         return d
 
     def __eq__(self, other):
-        if isinstance(other, OrderedDict):
-            return all(p==q for p, q in  _zip_longest(self.items(), other.items()))
+        if isinstance(other, SequenceDict):
+            return all(p==q for p, q in  izip_longest(self.items(), other.items()))
         return dict.__eq__(self, other)
     
     def at(self, index):

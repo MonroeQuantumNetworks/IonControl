@@ -10,13 +10,13 @@ the wavemeter.
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore, QtNetwork
+from PyQt4 import QtCore, QtNetwork
 import functools
 from modules import enum
 from modules.formatDelta import formatDelta
 from datetime import datetime
 import logging
-from WavemeterInterlockTableModel import WavemeterInterlockTableModel, InterlockChannel
+from WavemeterInterlockTableModel import WavemeterInterlockTableModel
 from modules.SequenceDict import SequenceDict
 from KeyboardFilter import KeyFilter
 
@@ -26,7 +26,6 @@ def unique(seq):
     seen = set()
     return [ x for x in seq if x not in seen and not seen.add(x)]
 
-import MagnitudeSpinBox
 from LoadingHistoryModel import LoadingHistoryModel 
 
 class AutoLoadSettings:

@@ -96,7 +96,7 @@ if __name__ == "__main__":
             super(MyMainWindow,self).closeEvent(e)   
     
     import sys
-    from modules import configshelve
+    from persist import configshelve
     with configshelve.configshelve("VoltageControl-test") as config:
         app = QtGui.QApplication(sys.argv)
         MainWindow = MyMainWindow()

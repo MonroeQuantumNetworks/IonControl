@@ -27,7 +27,6 @@ from persist import configshelve
 import PulseProgramUi
 import ShutterUi
 import DDSUi
-import PulserHardware
 import DedicatedCounters
 import ExternalScannedParametersSelection
 import ExternalScannedParametersUi

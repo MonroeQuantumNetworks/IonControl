@@ -52,7 +52,7 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
             var.strvalue = strvalue
             self.parameterdict[var.name] = result
             return True    
-        except Exception as e:
+        except Exception:
             logger = logging.getLogger(__name__)
             logger.exception("No match for {0}".format(value.toString()) )
             return False
@@ -86,4 +86,3 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
         
     def getVariableValue(self,name):
         return self.variabledict.get(name).value
- 

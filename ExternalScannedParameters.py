@@ -9,7 +9,6 @@ Created on Tue Mar 12 15:22:09 2013
 from WavemeterGetFrequency import WavemeterGetFrequency
 import numpy
 import modules.magnitude as magnitude
-import math
 from pyqtgraph.parametertree import Parameter
 from PyQt4 import QtCore
 import logging
@@ -328,11 +327,12 @@ class LaserWavemeterScan(AgilentPowerSupply):
     className = "Laser VCO Wavemeter"
     dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
-        LaserVCOScan.__init__(self,name,config,instrument)
+        AgilentPowerSupply.__init__(self,name,config,instrument)
         self.wavemeter = WavemeterGetFrequency()
         self.channel = 6
 
     def currentExternalValue(self):
+        logger = logging.getLogger(__name__)
         self.lastExternalValue = self.wavemeter.get_frequency(self.channel) 
         logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)

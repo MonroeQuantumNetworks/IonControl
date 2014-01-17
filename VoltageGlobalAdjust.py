@@ -9,8 +9,6 @@ from PyQt4 import QtGui, QtCore
 import functools
 from MagnitudeSpinBox import MagnitudeSpinBox
 import modules.magnitude as magnitude
-from modules import configshelve
-import ProjectSelection
        
 VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')
 
