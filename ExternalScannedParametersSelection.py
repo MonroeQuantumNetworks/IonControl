@@ -54,9 +54,9 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.tableView.setModel( self.parameterTableModel )
         self.tableView.resizeColumnsToContents()
         self.tableView.horizontalHeader().setStretchLastSection(True)   
-        self.filter = KeyListFilter( [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down] )
+        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
-        self.tableView.insertEventFilter(self.filter)
+        self.tableView.installEventFilter(self.filter)
         self.classComboBox.addItems( ExternalScannedParameters.keys() )
         self.addParameterButton.clicked.connect( self.onAddParameter )
         self.removeParameterButton.clicked.connect( self.onRemoveParameter )
@@ -71,7 +71,13 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
 
     def onReorder(self, key):
-        print "onReorder"
+        indexes = self.tableView.selectedIndexes()
+        if len(indexes)==1:
+            if key==QtCore.Qt.Key_PageUp:
+                index = self.parameterTableModel.moveRowUp( indexes )
+            elif key==QtCore.Qt.Key_PageDown:
+                index = self.parameterTableModel.moveRowDown( indexes )
+            self.tableView.setCurrentIndex( index )
 
     def onEnableChanged(self, name):
         logger = logging.getLogger(__name__)

@@ -21,7 +21,7 @@ class KeyListFilter(QtCore.QObject):
         self.keys = keys
     
     def eventFilter(self, obj, event):
-        if event.type()==QtCore.QEvent.KeyRelease and event.key() in self.keys:
+        if event.type()==QtCore.QEvent.KeyPress and event.key() in self.keys:
             self.keyPressed.emit(event.key())
             return True
         return False

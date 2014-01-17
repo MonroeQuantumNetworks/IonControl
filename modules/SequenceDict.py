@@ -84,6 +84,9 @@ class SequenceDict(dict, MutableMapping):
     def index(self, key):
         return self._keys.index(key)
     
+    def swap(self,index1,index2):
+        self._keys[index1], self._keys[index2] = self._keys[index2], self._keys[index1]
+    
 if __name__=="__main__":
     a = SequenceDict()
     a[12] = 1

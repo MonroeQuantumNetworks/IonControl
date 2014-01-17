@@ -50,3 +50,17 @@ class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
             elif (orientation == QtCore.Qt.Horizontal): 
                 return self.headerDataLookup[section]
         return None 
+    
+    def moveRowUp(self, indexes):
+        for index in indexes:
+            if index.row()>0:
+                self.parameterDict.swap(index.row(), index.row()-1 )
+        self.dataChanged.emit( self.createIndex(index.row()-1,0), self.createIndex(index.row(),3) )
+        return self.createIndex(index.row()-1,index.column())
+    
+    def moveRowDown(self, indexes):
+        for index in indexes:
+            if index.row()<len(self.parameterDict)-1:
+                self.parameterDict.swap(index.row(), index.row()+1 )
+        self.dataChanged.emit( self.createIndex(index.row(),0), self.createIndex(index.row()+1,3) )
+        return self.createIndex(index.row()+1,index.column())
