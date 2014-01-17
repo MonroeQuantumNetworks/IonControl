@@ -12,6 +12,7 @@ import functools
 from modules.enum import enum
 import logging
 import inspect
+from KeyboardFilter import MouseFilter
 
 ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
 
@@ -37,6 +38,20 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.NoExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-default.png")
         self.ExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-important-4.png")
         self.setIcon( self.NoExceptionsIcon )
+        self.filter = MouseFilter( QtCore.Qt.Key_Delete )
+        self.filter.keyPressed.connect( self.removeAll )
+        self.filter.hover.connect( self.hover )
+        self.installEventFilter( self.filter )
+        
+    def hover(self, over):
+        if over:
+            self.grabKeyboard()
+        else:
+            self.releaseKeyboard()
+              
+    def removeAll(self):
+        self.myMenu.clear()
+        self.setIcon(self.NoExceptionsIcon)
         
     def addMessage(self, message):
         myMenuItem = ExceptionMessage(message,self.myMenu)
@@ -61,8 +76,6 @@ class ExceptionLogButton( QtGui.QToolButton ):
         logger.error( str(value), exc_info=(type, value, tback) )
         #sys.__excepthook__(type, value, tback)
         
-    def mouseDoubleClickEvent(self, event):
-        self.myMenu.clear()
     
         
 

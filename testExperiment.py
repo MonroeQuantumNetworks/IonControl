@@ -47,7 +47,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
-        self.displayUi = AverageViewTable()
+        self.displayUi = AverageViewTable(self.config)
         self.displayUi.setupUi()
         self.displayDock = QtGui.QDockWidget("Average")
         self.displayDock.setObjectName("Average")
