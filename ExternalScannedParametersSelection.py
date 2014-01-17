@@ -44,7 +44,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         SelectionForm.__init__(self)
         self.config = config
         self.parameters = self.config.get("ExternalScannedParametersSelection.ParametersSequence",SequenceDict())
-        self.enabledParametersObjects = dict()
+        self.enabledParametersObjects = SequenceDict()
     
     def setupUi(self,MainWindow):
         logger = logging.getLogger(__name__)
@@ -66,7 +66,8 @@ class SelectionUi(SelectionForm,SelectionBase):
                     self.enableInstrument(parameter)
                 except Exception as e:
                     logger.error( "{0} while enabling instrument {1}".format(e,parameter.name))
-                    parameter.enabled = False                    
+                    parameter.enabled = False     
+        self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
         self.selectionChanged.emit( self.enabledParametersObjects )
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
 
@@ -78,6 +79,8 @@ class SelectionUi(SelectionForm,SelectionBase):
             elif key==QtCore.Qt.Key_PageDown:
                 index = self.parameterTableModel.moveRowDown( indexes )
             self.tableView.setCurrentIndex( index )
+            self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
+            self.selectionChanged.emit( self.enabledParametersObjects )
 
     def onEnableChanged(self, name):
         logger = logging.getLogger(__name__)
@@ -118,6 +121,7 @@ class SelectionUi(SelectionForm,SelectionBase):
             logger = logging.getLogger(__name__)
             instance = ExternalScannedParameters[parameter.className](parameter.name,parameter.settings,parameter.instrument)
             self.enabledParametersObjects[parameter.name] = instance
+            self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
             self.selectionChanged.emit( self.enabledParametersObjects )
             self.parameterTableModel.setParameterDict( self.parameters )
             logger.info("Enabled Instrument {0} as {1}".format(parameter.className,parameter.name))
@@ -126,6 +130,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         if name in self.enabledParametersObjects:
             logger = logging.getLogger(__name__)
             self.enabledParametersObjects.pop( name )
+            self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
             self.selectionChanged.emit( self.enabledParametersObjects )
             parameter = self.parameters[name]
             logger.info("Disabled Instrument {0} as {1}".format(parameter.className,parameter.name))

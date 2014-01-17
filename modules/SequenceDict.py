@@ -86,7 +86,11 @@ class SequenceDict(dict, MutableMapping):
     
     def swap(self,index1,index2):
         self._keys[index1], self._keys[index2] = self._keys[index2], self._keys[index1]
-    
+        
+    def sortToMatch(self, keylist):
+        reverse = dict([ (value,index) for index,value in enumerate(keylist) ])
+        self._keys = sorted( self._keys, key=lambda x: reverse[x])
+            
 if __name__=="__main__":
     a = SequenceDict()
     a[12] = 1
@@ -114,5 +118,8 @@ if __name__=="__main__":
     print a.at(0)
     a.sortByAttribute('t', reverse=True)
     print a.at(0)
+    
+    a.sortToMatch([3,5,7,9,1])
+    print a
     
     
