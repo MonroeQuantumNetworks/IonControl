@@ -51,7 +51,7 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         self.dataChanged.emit( self.index(0,0), self.index(len(self._history)-1,2) )
         
     def append(self,value):
-        self.beginInsertRows(QtCore.QModelIndex(),len(self.history),len(self.history))
+        self.beginInsertRows(QtCore.QModelIndex(),0,0)
         self.history.append(value)
         self.endInsertRows()
  
@@ -69,7 +69,8 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         setattr(self.history[-1], attr, value)
         self.dataChanged.emit(self.createIndex(0,0),self.createIndex(0,2))
         
-    def removeRow(self,index):
+    def removeRow(self,row):
+        index = len(self.history)-row-1
         self.beginRemoveRows( QtCore.QModelIndex(), index, index   )
-        self._history.pop(index)
+        del self._history[0]
         self.endRemoveRows()

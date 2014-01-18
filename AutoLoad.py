@@ -123,8 +123,8 @@ class AutoLoad(UiForm,UiBase):
         self.setIdle()
         
     def deleteFromHistory(self):
-        for index in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=True):
-            self.historyTableModel.removeRow(index)
+        for row in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=True):
+            self.historyTableModel.removeRow(row)
         
     def onRemoveChannel(self):
         for index in sorted(unique([ i.row() for i in self.interlockTableView.selectedIndexes() ]),reverse=True):
