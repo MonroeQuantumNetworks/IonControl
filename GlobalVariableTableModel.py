@@ -66,6 +66,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             self.variabledict[strvalue] = value
             return True    
         except Exception as e:
+            logger = logging.getLogger(__name__)
             logger.exception( "No match for {0}".format( str(value.toString()) ) )
             return False
        

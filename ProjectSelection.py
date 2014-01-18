@@ -7,7 +7,7 @@ Created on Fri May 10 21:02:42 2013
 
 import os.path
 import __main__
-from modules.configshelve import configshelve
+from persist.configshelve import configshelve
 from modules import DataDirectory
 
 ProjectsBaseDir = os.path.expanduser("~public\\Documents\\experiments")
@@ -20,7 +20,7 @@ class ProjectException(Exception):
     pass
 
 if hasattr(__main__,'__file__'):
-    with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
+    with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
         DefaultProject = config.get('DefaultProject')
         ProjectsBaseDir = config.get('ProjectBaseDir',ProjectsBaseDir)
         DataDirectory.DataDirectoryBase = ProjectsBaseDir
@@ -41,7 +41,7 @@ def defaultProject():
     global DefaultProjectCached
     if not DefaultProjectCached:
         if hasattr(__main__,'__file__'):
-            with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
+            with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
                 DefaultProject = config.get('DefaultProject')
             DefaultProjectCached = True
     return DefaultProject
@@ -54,7 +54,7 @@ def setDefaultProject(name):
     global DefaultProject
     DefaultProject = name
     if hasattr(__main__,'__file__'):
-        with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
+        with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
             config['DefaultProject'] = name
     DefaultProjectCached = True
 
@@ -92,7 +92,7 @@ def getBaseDir():
     return ProjectsBaseDir
     
 def setProjectBaseDir(name,atStartup=False):
-    with configshelve(os.path.basename(__main__.__file__)+"-project") as config:
+    with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
         config['ProjectBaseDir'] = name
     if atStartup:
         global ProjectsBaseDir

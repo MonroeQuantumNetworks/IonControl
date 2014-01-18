@@ -13,6 +13,7 @@ debug/
 -Mini*
 .this_s*
 .DS_Store
+*-project.db
 __pycache__/*
 __pycache__
 .gitignore.*

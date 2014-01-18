@@ -45,7 +45,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
 
     @property
     def dimension(self):
-        return _dimension
+        return self._dimension
     
     @dimension.setter
     def dimension(self, dim):
