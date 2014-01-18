@@ -44,19 +44,31 @@ ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperimen
 class ParameterScanGenerator:
     def __init__(self, scan):
         self.scan = scan
+        self.nextIndexToWrite = 0
         
     def prepare(self, pulseProgramUi ):
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, self.scan.list)
+        if len(self.scan.code)>2040:
+            self.nextIndexToWrite = 2040
+            return ( self.scan.code[:2040], [])
+        self.nextIndexToWrite = len(self.scan.code)
         return ( self.scan.code, [])
         
     def restartCode(self,currentIndex):
         mycode = self.scan.code[currentIndex*2:]
-        return mycode
+        if len(self.scan.code)-2*currentIndex>2040:
+            self.nextIndexToWrite = 2040+currentIndex*2
+            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite], [])
+        self.nextIndexToWrite = len(self.scan.code)
+        return ( self.scan.code[currentIndex*2:], [])
         
     def xValue(self, index):
         return self.scan.list[index].ounit(self.scan.xUnit).toval()
         
     def dataNextCode(self, experiment):
+        if self.nextIndexToWrite<len(self.scan.code):
+            self.nextIndexToWrite += 2
+            return self.scan.code[self.nextIndexToWrite-2:self.nextIndexToWrite]
         return []
         
     def dataOnFinal(self, experiment):
