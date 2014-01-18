@@ -12,7 +12,6 @@ import functools
 from modules.enum import enum
 import logging
 import inspect
-from KeyboardFilter import MouseFilter
 
 ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
 
@@ -38,30 +37,29 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.NoExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-default.png")
         self.ExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-important-4.png")
         self.setIcon( self.NoExceptionsIcon )
-        self.filter = MouseFilter( QtCore.Qt.Key_Delete )
-        self.filter.keyPressed.connect( self.removeAll )
-        self.filter.hover.connect( self.hover )
-        self.installEventFilter( self.filter )
         
-    def hover(self, over):
-        if over:
-            self.grabKeyboard()
-        else:
-            self.releaseKeyboard()
-              
     def removeAll(self):
         self.myMenu.clear()
         self.setIcon(self.NoExceptionsIcon)
         
+    def addClearAllAction(self):
+        myMenuItem = ExceptionMessage("Clear All exceptions",self.myMenu)
+        myMenuItem.setupUi(myMenuItem)
+        action = QtGui.QWidgetAction(self.myMenu)
+        action.setDefaultWidget( myMenuItem )
+        self.myMenu.addAction(action)
+        myMenuItem.deleteButton.clicked.connect( self.removeAll )
+                
     def addMessage(self, message):
         myMenuItem = ExceptionMessage(message,self.myMenu)
         myMenuItem.setupUi(myMenuItem)
         action = QtGui.QWidgetAction(self.myMenu)
         action.setDefaultWidget(myMenuItem )
-        self.myMenu.addAction(action)
-        myMenuItem.deleteButton.clicked.connect( functools.partial(self.removeMessage, action) )
         if self.exceptionsListed==0:
             self.setIcon(self.ExceptionsIcon)
+            self.addClearAllAction()
+        self.myMenu.addAction(action)
+        myMenuItem.deleteButton.clicked.connect( functools.partial(self.removeMessage, action) )
         self.exceptionsListed += 1
         
     def removeMessage(self, action):
