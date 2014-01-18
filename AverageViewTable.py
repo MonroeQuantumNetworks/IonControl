@@ -77,7 +77,12 @@ class AverageViewTableModel(QtCore.QAbstractTableModel):
         
     def saveConfig(self):
         self.config["AverageViewTableModel"] = self.settings
- 
+        
+    def clear(self):
+        for stat in self.stats:
+            stat.clear()
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(1,len(self.stats)-1))
+
 
 class AverageViewTable(Form,Base):
     def __init__(self, config):
@@ -104,20 +109,23 @@ class AverageViewTable(Form,Base):
         self.tableView.resizeRowsToContents()
         self.tableView.resizeColumnsToContents()
 
-
     def add(self, data):
         self.model.add(data)
+        self.setCountLabel()
         
     def onClear(self):
-        for stat in self.stats:
-            stat.clear()
-        self.model.dataChanged.emit( self.model.createIndex(0,0), self.model.createIndex(1,len(self.stats)-1))
+        self.model.clear()
+        self.setCountLabel()
 
     def setNames(self, names):
         self.model.setNames(names)
         
     def saveConfig(self):
         self.model.saveConfig()
+
+    def setCountLabel(self):
+        self.countLabel.setText( "{0}".format( self.stats[0].count if self.stats else 0))
+ 
 
 if __name__=="__main__":
     import sys

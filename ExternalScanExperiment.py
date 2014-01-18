@@ -27,7 +27,6 @@ class ScanNotAvailableException(Exception):
 class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
         super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,toolBar=toolBar,parent=parent)
-        self.state = self.OpStates.idle      
         
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
@@ -46,9 +45,8 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         
     def startScan(self):
         logger = logging.getLogger(__name__)
-        if self.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
+        if self.progressUi.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
-            self.state = self.OpStates.running
             if self.scan.scanParameter not in self.enabledParameters:
                 message = "External Scan Parameter '{0}' is not enabled.".format(self.scan.scanParameter)
                 logger.error(message)
@@ -62,7 +60,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
             self.displayUi.onClear()
-            self.state = self.OpStates.starting
+            self.progressUi.setStarting()
             self.plottedTrace = None #reset plotted trace
             if self.plottedTraceList:
                 for plottedTrace in self.plottedTraceList:
@@ -72,39 +70,34 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
            
     def startBottomHalf(self):
         logger = logging.getLogger(__name__)
-        if self.state == self.OpStates.starting:
+        if self.progressUi.state == self.OpStates.starting:
             if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
                 """We are done adjusting"""
                 self.pulserHardware.ppStart()
                 self.currentIndex = 0
-                self.updateProgressBar(0,max(len(self.scan.list),1))
                 self.timestampsNewRun = True
                 logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
-                self.state = self.OpStates.running
                 logger.info( "Status -> Running" )
-                self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
+                self.progressUi.setRunning( max(len(self.scan.list),1) ) 
             else:
                 QtCore.QTimer.singleShot(100,self.startBottomHalf)
 
     def onStop(self):
         logger = logging.getLogger(__name__)
-        logger.debug( "Old Status {0}".format( self.state ) )
-        if self.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
+        if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             ScanExperiment.ScanExperiment.onStop(self)
             logger.info( "Status -> Stopping" )
+            self.progressUi.setStopping()
             self.stopBottomHalf()
-            self.updateProgressBar(self.currentIndex+1,max(len(self.scan.list),1))
-            self.state = self.OpStates.stopping
 
                     
     def stopBottomHalf(self):
         logger = logging.getLogger(__name__)
-        if self.state==self.OpStates.stopping:
+        if self.progressUi.state==self.OpStates.stopping:
             if not self.externalParameter.restoreValue():
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
-                self.state = self.OpStates.idle
-                self.updateProgressBar(0,max(len(self.scan.list),1))
+                self.progressUi.setIdle()
                 logger.info( "Status -> Idle" )
 
     def onData(self, data ):
@@ -125,24 +118,23 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 else:
                     logger.info( "No data for counter {0}, ignoring it.".format(eval.counter) )
             if len(evaluated)>0:
-                self.displayUi.add( evaluated[0][0][0] )
+                self.displayUi.add(  [ e[0][0] for e in evaluated ] )
                 self.updateMainGraph(x, evaluated )
                 self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
             self.externalParameterIndex += 1
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
-            if self.state == self.OpStates.running:
-                if data.final and data.exitcode != 0:
-                    self.state = self.OpStates.interrupted
-                    self.interruptReason = self.pulseProgramUi.exitcode(data.exitcode)
+            if self.progressUi.state == self.OpStates.running:
+                if data.final and data.exitcode not in [0,0xffff]:
+                    self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
                 elif self.externalParameterIndex < len(self.scan.list):
                     self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
                     self.pulserHardware.ppStart()
                     logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )
+                    self.progressUi.onData( self.currentIndex )  
                 else:
                     self.finalizeData(reason='end of scan')
                     self.generator.dataOnFinal(self)
                     logger.info("Scan Completed")
-            self.updateProgressBar(self.externalParameterIndex+1,max(len(self.scan.list),1))
 

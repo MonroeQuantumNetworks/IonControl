@@ -41,7 +41,8 @@ class ExceptionLogButton( QtGui.QToolButton ):
     def removeAll(self):
         self.myMenu.clear()
         self.setIcon(self.NoExceptionsIcon)
-        
+        self.exceptionsListed =0
+         
     def addClearAllAction(self):
         myMenuItem = ExceptionMessage("Clear All exceptions",self.myMenu)
         myMenuItem.setupUi(myMenuItem)
