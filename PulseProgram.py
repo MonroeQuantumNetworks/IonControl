@@ -461,7 +461,7 @@ class PulseProgram:
             else:
                 return var.name
         else:
-            return "Exitcode Not found"
+            return "Exitcode {0} Not found".format(code)
 
 if __name__ == "__main__":
     pp = PulseProgram()
