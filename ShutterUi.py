@@ -7,8 +7,6 @@ Created on Sat Feb 09 22:00:58 2013
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 import ShutterHardwareTableModel
-from modules import configshelve
-import ProjectSelection
 import logging
 
 ShutterForm, ShutterBase = PyQt4.uic.loadUiType(r'ui\Shutter.ui')

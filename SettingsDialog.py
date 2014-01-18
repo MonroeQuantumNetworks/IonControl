@@ -141,7 +141,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
 if __name__ == "__main__":
     import sys
     class Recipient:
-        def onSettingsApply():
+        def onSettingsApply(self):
             pass
         
     config = dict()

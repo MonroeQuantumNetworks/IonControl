@@ -9,7 +9,7 @@ import modules.magnitude as magnitude
 from modules import enum
 import math
 import multiprocessing
-from PulserHardwareServer import PulserHardwareServer, FinishException
+from PulserHardwareServer import PulserHardwareServer, FinishException, ErrorMessages, FPGAException
 import logging
 
 def check(number, command):
@@ -32,10 +32,6 @@ class QueueReader(QtCore.QThread):
     def raise_(self, ex):
         raise ex
    
-    def flushData(self):
-        with QtCore.QMutexLocker(self.dataMutex):
-            self.data = Data()
-    
     def run(self):
         logger = logging.getLogger(__name__)
         logger.info( "QueueReader thread started." )
@@ -117,7 +113,7 @@ class PulserHardware(QtCore.QObject):
         
     def __getattr__(self,name):
         if name.startswith('__') and name.endswith('__'):
-            return super(PulserHardware, self).__getattr__(key)
+            return super(PulserHardware, self).__getattr__(name)
         def wrapper(*args):
             self.clientPipe.send( (name, args) )
             return processReturn( self.clientPipe.recv() )

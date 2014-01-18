@@ -226,7 +226,7 @@ class PulserHardwareServer(Process):
     def __getattr__(self, name):
         """delegate not available procedures to xem"""
         if name.startswith('__') and name.endswith('__'):
-            return super(PulserHardwareServer, self).__getattr__(key)
+            return super(PulserHardwareServer, self).__getattr__(name)
         def wrapper(*args):
             if self.xem:
                 return getattr( self.xem, name )(*args)

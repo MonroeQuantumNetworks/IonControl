@@ -16,7 +16,7 @@ from Trace import TracePlotting
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
     Types = enum.enum('default','steps')
-    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,type=None, isRootTrace=False,
+    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name=""):
         self.penList = penList
@@ -30,7 +30,7 @@ class PlottedTrace(object):
         self.fitcurve = None
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
-        self.type = self.Types.default if type is None else type
+        self.type = self.Types.default if plotType is None else plotType
 #Tree related data. Parent and children are set in the model's addTrace method, but declared here
         self.isRootTrace = isRootTrace
         self.parentTrace = None

@@ -67,4 +67,3 @@ if __name__=="__main__":
     timer.timeout.connect( add )
     timer.start(100)
     sys.exit(app.exec_())
- 

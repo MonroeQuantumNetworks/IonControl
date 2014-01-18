@@ -1,7 +1,6 @@
 from PyQt4 import QtGui
 import PyQt4.uic
 import functools
-from modules import configshelve
 import Ad9912
 from modules.magnitude import mg
 
@@ -96,6 +95,7 @@ class DDSUi(DDSForm, DDSBase):
              
 if __name__ == "__main__":
     import sys
+    from persist import configshelve
     app = QtGui.QApplication(sys.argv)
     with configshelve.configshelve("test") as config:
         ui = DDSUi(config,None)

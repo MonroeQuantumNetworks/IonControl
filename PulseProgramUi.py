@@ -12,7 +12,6 @@ import ShutterTableModel
 import TriggerTableModel
 import CounterTableModel
 import os.path
-from modules import configshelve
 from modules import dictutil
 from PulseProgramSourceEdit import PulseProgramSourceEdit
 import ProjectSelection

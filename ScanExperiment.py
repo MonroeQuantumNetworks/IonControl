@@ -544,7 +544,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.currentTimestampTrace.rawdata:
                 self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.scan.timestampsChannel])
         else:    
-            self.currentTimestampTrace = Trace.Trace()
+            self.currentTimestampTrace = Trace()
             if self.scan.saveRawData:
                 self.currentTimestampTrace.rawdata = RawData()
                 self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.scan.timestampsChannel])
