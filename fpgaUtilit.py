@@ -130,7 +130,7 @@ class FPGAUtilit:
             return self.xem
 
     def openBySerial(self,serial):
-    	logger = logging.getLogger(__name__)
+        logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.Mutex):
             logger.info( "Open Serial {0}".format(serial) )
             if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:

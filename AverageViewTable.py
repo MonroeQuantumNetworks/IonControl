@@ -61,8 +61,7 @@ class AverageViewTableModel(QtCore.QAbstractTableModel):
     def resize(self, length):
         self.beginResetModel()
         del self.stats[0:]
-        for i in range(length):
-            self.stats.append(RunningStat())
+        self.stats += [RunningStat()]*length
         self.endResetModel()
         
     def add(self, stats):
@@ -141,4 +140,3 @@ if __name__=="__main__":
     MainWindow.setCentralWidget(ui)
     MainWindow.show()
     sys.exit(app.exec_())
- 

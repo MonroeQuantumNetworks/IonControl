@@ -6,10 +6,9 @@ Created on Fri Apr 12 20:15:47 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 import sys
 import functools
-from modules.enum import enum
 import logging
 import inspect
 
@@ -69,11 +68,11 @@ class ExceptionLogButton( QtGui.QToolButton ):
         if self.exceptionsListed==0:
             self.setIcon(self.NoExceptionsIcon)
         
-    def myexcepthook(self, type, value, tback):
+    def myexcepthook(self, excepttype, value, tback):
         logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__)
         self.addMessage(value)
-        logger.error( str(value), exc_info=(type, value, tback) )
-        #sys.__excepthook__(type, value, tback)
+        logger.error( str(value), exc_info=(excepttype, value, tback) )
+        #sys.__excepthook__(excepttype, value, tback)
         
     
         

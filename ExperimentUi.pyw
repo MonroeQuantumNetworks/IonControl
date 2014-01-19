@@ -17,7 +17,6 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QUrl",2)
 
 import LoggingSetup
-import MagnitudeParameter
 import ScanExperiment
 import ExternalScanExperiment
 import VoltageScanExperiment
@@ -31,13 +30,11 @@ import DedicatedCounters
 import ExternalScannedParametersSelection
 import ExternalScannedParametersUi
 import ProjectSelectionUi
-import os
 from modules import DataDirectory
 from ExceptionLogButton import ExceptionLogButton
 import GlobalVariables 
 from PulserHardwareClient import PulserHardware 
 import ProjectSelection
-from collections import OrderedDict
 from LoggerLevelsUi import LoggerLevelsUi
 
     
@@ -66,7 +63,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser = PulserHardware()
         return self
     
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, excepttype, value, traceback):
         self.pulser.shutdown()
         return False
     
@@ -230,7 +227,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         logger = logging.getLogger(__name__)
         self.currentTab.onSave()
         logger.info( "Saving config" )
-        filename, components = DataDirectory.DataDirectory().sequencefile("configuration.db")
+        filename, _ = DataDirectory.DataDirectory().sequencefile("configuration.db")
         self.config.saveConfig(filename)
     
     def onStart(self):

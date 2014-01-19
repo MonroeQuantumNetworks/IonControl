@@ -27,7 +27,7 @@ class TraceAverage(Trace):
         
     def calculateAverage(self):
         m = numpy.matrix( [trace.x for trace in self.tracelist] )
-        w = numpy.matrix( [trace.height for trace in self.tracelist if hasattr(trace,'height') else 1] )
+        w = numpy.matrix( [trace.height if hasattr(trace,'height') else 1 for trace in self.tracelist ] )
         numpy.mean(m, axis=0, weight=w)
         
         

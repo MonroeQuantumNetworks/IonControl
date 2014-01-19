@@ -1,5 +1,4 @@
-from PyQt4 import QtGui, QtCore
-from functools import partial
+from PyQt4 import QtCore
 from CountEvaluation import EvaluationAlgorithms
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
@@ -70,7 +69,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return None 
 
     def setCounter(self,index,value):
-        self.evalList[index.row()].counter, ok = value.toInt()
+        self.evalList[index.row()].counter, _ = value.toInt()
         self.dataChanged.emit( index, index )
         return True      
 
@@ -96,16 +95,16 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         
     def setAlgorithm(self, index, algorithm):
         algorithm = str(algorithm)
-        eval = self.evalList[index.row()]
-        if algorithm!=eval.evaluation:
-            eval.settingsCache[eval.evaluation] = eval.settings
-            eval.evaluation = algorithm
-            algo = EvaluationAlgorithms[eval.evaluation]()
+        evaluation = self.evalList[index.row()]
+        if algorithm!=evaluation.evaluation:
+            evaluation.settingsCache[evaluation.evaluation] = evaluation.settings
+            evaluation.evaluation = algorithm
+            algo = EvaluationAlgorithms[evaluation.evaluation]()
             algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
-            if eval.evaluation in eval.settingsCache:
-                eval.settings = eval.settingsCache[eval.evaluation]
+            if evaluation.evaluation in evaluation.settingsCache:
+                evaluation.settings = evaluation.settingsCache[evaluation.evaluation]
             else:
-                eval.settings = dict()
-            algo.setSettings( eval.settings, eval.name )
+                evaluation.settings = dict()
+            algo.setSettings( evaluation.settings, evaluation.name )
             self.evalAlgorithmList[index.row()] = algo     
             self.dataChanged.emit(index, index) 

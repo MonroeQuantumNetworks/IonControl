@@ -4,9 +4,9 @@ Created on Sat Feb 16 16:56:57 2013
 @author: pmaunz
 """
 import PyQt4.uic
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtGui
 from GlobalVariableTableModel import GlobalVariableTableModel
-from collections import OrderedDict
+from modules.SequenceDict import SequenceDict
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
        
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
@@ -19,7 +19,12 @@ def unique(seq):
 
 class GlobalVariables(object):
     def __init__(self):
-        self.variabledict = OrderedDict()
+        self.variabledict = SequenceDict()
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        if not isinstance(self.variabledict,SequenceDict):
+            self.variabledict = SequenceDict(self.variabledict)
 
 
 class GlobalVariableUi(Form, Base ):
@@ -55,7 +60,7 @@ class GlobalVariableUi(Form, Base ):
     
     def onDropVariable(self):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
-            name = self.model.dropVariableByIndex(index)
+            self.model.dropVariableByIndex(index)
         
     def saveConfig(self):
         self.config[self.configname] = self._variables_

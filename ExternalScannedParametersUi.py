@@ -6,7 +6,7 @@ Created on Fri Apr 12 23:45:54 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import functools
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 import logging

@@ -103,7 +103,7 @@ class ExternalParameterBase(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug( "ExternalParameterBase.update" )
-        for param, change, data in changes:
+        for param, _, data in changes:
             logger.debug( " ".join( [str(self), "update", param.name(), str(data)] ) )
             setattr( self.settings, param.name(), data)
             
@@ -240,7 +240,7 @@ class HP8672A(ExternalParameterBase):
         """update the parameter. If the amplitude was changed, write the new value to the HP8672A."""
         super(HP8672A, self).update(param, changes) #call parent method
         logger = logging.getLogger(__name__)
-        for param, change, data in changes:
+        for param, _, data in changes:
             if param.name() == 'amplitude_dBm':
                 self.synthesizer.write(self.createAmplitudeString())
                 logger.info("HP8672A output amplitude set to {0} dBm".format(data))

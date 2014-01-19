@@ -6,10 +6,9 @@ Created on Sat Jan 19 14:52:23 2013
 """
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore, QtSvg
+from PyQt4 import QtGui, QtCore
 import FitFunctions
 import functools
-import pyqtgraph
 import copy
 import MagnitudeSpinBox
 import modules.MagnitudeUtilit as MagnitudeUtilit
@@ -17,6 +16,7 @@ from modules.round import roundToNDigits
 from modules.round import roundToStdDev
 from itertools import izip_longest
 import logging
+from pyqtgraph.widgets import SpinBox
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -33,7 +33,6 @@ class FitFunctionUi(object):
         self.parametersConfidenceLabel  = [None]* len(fitfunction.parameters)
         
     def fittedParameterSetValue(self):
-        logger = logging.getLogger(__name__)
         for i,(p,conf) in enumerate(izip_longest(self.fitfunction.parameters,self.fitfunction.parametersConfidence)):
             self.fittedParametersUi[i].setValue(p)
             if conf:
@@ -78,12 +77,12 @@ class FitUi(fitForm, QtGui.QWidget):
                 label = QtGui.QLabel(paramname,fitfunction.page)
                 label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
                 fitfunction.gridLayout.addWidget(label, line+1, 0, 1, 1)
-                doubleSpinBox = pyqtgraph.SpinBox(fitfunction.page,dec=True)
+                doubleSpinBox = SpinBox(fitfunction.page,dec=True)
                 doubleSpinBox.setValue(fitfunction.fitfunction.startParameters[line])
                 fitfunction.gridLayout.addWidget(doubleSpinBox, line+1, 1, 1, 1)
                 doubleSpinBox.valueChanged.connect( functools.partial( self.setParameter, fitfunction, line ) )
                 fitfunction.startParametersUi[line] = doubleSpinBox
-                doubleSpinBox = pyqtgraph.SpinBox(fitfunction.page,dec=True)
+                doubleSpinBox = SpinBox(fitfunction.page,dec=True)
                 doubleSpinBox.setReadOnly(True)
                 doubleSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
                 fitfunction.gridLayout.addWidget(doubleSpinBox, line+1,2, 1, 1)   
@@ -131,7 +130,7 @@ class FitUi(fitForm, QtGui.QWidget):
             plot.fitFunction = copy.deepcopy(functionui.fitfunction)
             plot.plot(-2)
             if functionui.fitfunction.parametersRelConfidence is not None:
-                for i,(p,conf,relconf) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
+                for i,(p,conf,_) in enumerate(zip(params,functionui.fitfunction.parametersConfidence,functionui.fitfunction.parametersRelConfidence)):
                     functionui.fittedParametersUi[i].setValue(roundToStdDev(p,conf))
                     functionui.parametersConfidenceLabel[i].setText(repr(roundToNDigits(conf,2))+'%')
 

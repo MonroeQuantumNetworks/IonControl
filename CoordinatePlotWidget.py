@@ -14,6 +14,8 @@ Buttons added by jmizrahi on 10/15/2013.
 """
 
 import pyqtgraph as pg
+from pyqtgraph.graphicsItems import ButtonItem, LabelItem
+from pyqtgraph.graphicsItems.PlotItem import PlotItem
 from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
@@ -24,7 +26,7 @@ icons_dir = '.\\ui\\icons\\'
 grid_icon_file = icons_dir + 'grid'
 range_icon_file = icons_dir + 'unityrange'
 
-class CustomPlotItem(pg.PlotItem):
+class CustomPlotItem(PlotItem):
     """
     Plot using pyqtgraph.PlotItem, with a few modifications:
     Add a grid button which turns the grid on/off.
@@ -40,8 +42,8 @@ class CustomPlotItem(pg.PlotItem):
         super(CustomPlotItem,self).__init__(parent)
         pg.setConfigOption('background', 'w') #set background to white
         pg.setConfigOption('foreground', 'k') #set foreground to black
-        self.gridBtn = pg.ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
-        self.unityRangeBtn = pg.ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
+        self.gridBtn = ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
+        self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
         self.gridBtn.clicked.connect(self.onGrid)
         self.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
@@ -52,7 +54,7 @@ class CustomPlotItem(pg.PlotItem):
         borrowed from the same code applied to autoBtn in the parent method in 
         PlotItem.py.
         """
-        pg.PlotItem.resizeEvent(self,ev)
+        PlotItem.resizeEvent(self,ev)
         gridBtnRect = self.mapRectFromItem(self.gridBtn, self.gridBtn.boundingRect())
         unityRangeBtnRect = self.mapRectFromItem(self.unityRangeBtn, self.unityRangeBtn.boundingRect())
         yGrid = self.size().height() - gridBtnRect.height()
@@ -76,7 +78,7 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
        to display/hide the grid."""
     def __init__(self,parent=None):
         super(CoordinatePlotWidget,self).__init__(parent)
-        self.coordinateLabel = pg.LabelItem(justify='right')
+        self.coordinateLabel = LabelItem(justify='right')
         self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2)
         self.addItem(self.coordinateLabel,row=1,col=1)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)

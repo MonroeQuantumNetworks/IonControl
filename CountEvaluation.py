@@ -8,7 +8,6 @@ algorithms are expected to defined the fileds as stated in MeanEvaluation
 """
 import numpy
 import math
-from modules import dictutil
 from pyqtgraph.parametertree import Parameter
 from PyQt4 import QtCore
 from Observable import Observable
@@ -24,7 +23,7 @@ class EvaluationBase(Observable):
         self.settingsName = None
                
     def update(self, param, changes):
-        for param, change, data in changes:
+        for param, _, data in changes:
             self.settings[param.name()] = data
         self.firebare()
             

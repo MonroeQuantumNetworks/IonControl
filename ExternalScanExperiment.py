@@ -16,9 +16,7 @@ It reports the count values during each experiment and finishes by sending the e
 
 import ScanExperiment 
 import time
-import ExternalScannedParameters
 from PyQt4 import QtCore
-from modules import enum
 import logging
 
 class ScanNotAvailableException(Exception):
@@ -112,11 +110,11 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             logger.info( "NewExternalScan onData {0}".format( data.scanvalue ) )
             x = self.generator.xValue(self.externalParameterIndex)
             evaluated = list()
-            for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
-                if data.count[eval.counter]:
-                    evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
+            for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+                if data.count[evaluation.counter]:
+                    evaluated.append( (algo.evaluate( data.count[evaluation.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
                 else:
-                    logger.info( "No data for counter {0}, ignoring it.".format(eval.counter) )
+                    logger.info( "No data for counter {0}, ignoring it.".format(evaluation.counter) )
             if len(evaluated)>0:
                 self.displayUi.add(  [ e[0][0] for e in evaluated ] )
                 self.updateMainGraph(x, evaluated )

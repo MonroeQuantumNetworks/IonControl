@@ -115,7 +115,6 @@ class SquareRabiFit(FitFunctionBase):
         T, C, A, O = self.parameters if p is None else p
         Rs = numpy.square(2*numpy.pi/T)
         Ds = numpy.square(2*numpy.pi*(x-C))
-        part = numpy.sqrt(Rs+Ds)*self.t/2.
         return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*self.t/2.)))+O
     
 

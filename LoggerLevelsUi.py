@@ -6,7 +6,6 @@ Created on Sat Feb 09 22:00:58 2013
 """
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
-from modules import configshelve
 import logging
 from ComboBoxDelegate import ComboBoxDelegate
 from functools import partial

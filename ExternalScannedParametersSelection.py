@@ -11,8 +11,6 @@ from PyQt4 import QtGui, QtCore
 SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParametersSelection.ui')
 from ExternalScannedParameters import ExternalScannedParameters
 from ExternalParameterTableModel import ExternalParameterTableModel 
-from modules.PyqtUtility import updateComboBoxItems
-import functools
 import logging
 from modules.SequenceDict import SequenceDict
 from KeyboardFilter import KeyListFilter
@@ -96,8 +94,6 @@ class SelectionUi(SelectionForm,SelectionBase):
             self.disableInstrument(name)
                       
     def onAddParameter(self):
-        logger = logging.getLogger(__name__)
-        name = str(self.nameEdit.currentText())
         parameter = Parameter()
         parameter.instrument = str(self.instrumentLineEdit.text())
         parameter.className = str(self.classComboBox.currentText())
@@ -151,7 +147,6 @@ class SelectionUi(SelectionForm,SelectionBase):
 
 if __name__ == "__main__":
     import sys
-    import MagnitudeParameter
     config = dict()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()

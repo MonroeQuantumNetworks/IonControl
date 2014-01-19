@@ -1,5 +1,4 @@
-from PyQt4 import QtGui, QtCore
-from functools import partial
+from PyQt4 import QtCore
 from modules.SequenceDict import SequenceDict
 
 class ExternalParameterTableModel( QtCore.QAbstractTableModel ):

@@ -23,7 +23,7 @@ class GateSetCompiler(object):
         addresses = list()
         data = list()
         index = 0
-        for name, gateset in gatesets.GateSetDict.iteritems():
+        for gateset in gatesets.GateSetDict.values():
             gatesetdata = self.gateSetCompile( gateset )
             addresses.append(index)
             data.append(gatesetdata)

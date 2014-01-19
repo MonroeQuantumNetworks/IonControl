@@ -8,14 +8,12 @@ It also includes default directory for storing of config files.
 @author: pmaunz
 """
 
-import os
-
-import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
 import pickle
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, String
 from shutil import copyfile
 import logging
 
@@ -61,7 +59,7 @@ class configshelve:
         self.session = self.Session()
         return self
         
-    def __exit__(self, type, value, tb):
+    def __exit__(self, exittype, value, tb):
         self.session.commit()
         
     def __setitem__(self, key, value):
@@ -71,7 +69,7 @@ class configshelve:
             category, key = defaultcategory, key
         try:
             elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             elem = ShelveEntry(key,value,category)
             self.session.add(elem)
         elem.value = value
@@ -97,7 +95,7 @@ class configshelve:
             category, key = defaultcategory, key
         try:
             return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             return default
         
     def next(self):

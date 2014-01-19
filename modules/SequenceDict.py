@@ -30,7 +30,13 @@ class SequenceDict(dict, MutableMapping):
 
     def __reversed__(self):
         return reversed(self._keys)
-
+    
+    def renameAt(self, index, new):
+        if new in self:
+            raise KeyError('renameAt: "{0}" key already exists')
+        dict[new] = dict.pop(self, self._keys[index] )
+        self._keys[index] = new
+        
     def popitem(self):
         if not self:
             raise KeyError('dictionary is empty')
@@ -73,7 +79,10 @@ class SequenceDict(dict, MutableMapping):
     
     def at(self, index):
         return dict.__getitem__(self, self._keys[index])
-
+    
+    def keyAt(self, index):
+        return self._keys[index]
+    
     def sort(self, key=itemgetter(0), reverse=False):
         temp = sorted( self.iteritems(), key=key, reverse=reverse )
         self._keys = [itemgetter(0)(t) for t in temp]

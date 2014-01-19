@@ -193,7 +193,7 @@ class GateSetUi(Form,Base):
 
     def loadGateDefinition(self, path):
         self.gatedef.loadGateDefinition(path)    
-        filedir, filename = os.path.split(path)
+        _, filename = os.path.split(path)
         self.settings.gateDefinition = filename
         self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(filename))
         self.gatedef.printGates()
@@ -215,7 +215,7 @@ class GateSetUi(Form,Base):
         logger = logging.getLogger(__name__)
         self.gateSetContainer.loadXml(path)
         logger.debug( "loaded {0} gateSets from {1}.".format(len(self.gateSetContainer.GateSetDict), path) )
-        filedir, filename = os.path.split(path)
+        _, filename = os.path.split(path)
         self.settings.gateSet = filename
         self.GateSetBox.setCurrentIndex(self.GateSetBox.findText(filename))
     
@@ -244,7 +244,7 @@ class GateSetUi(Form,Base):
         self.variabledict = variabledict
         #oldParameterName = self.StartAddressBox.currentText()
         self.StartAddressBox.clear()
-        for name, var in iter(sorted(variabledict.iteritems())):
+        for _, var in iter(sorted(variabledict.iteritems())):
             if var.type == "address":
                 self.StartAddressBox.addItem(var.name)
         if self.settings.startAddressParam:
