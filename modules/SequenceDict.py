@@ -84,12 +84,35 @@ class SequenceDict(dict, MutableMapping):
         return dict.__eq__(self, other)
     
     def at(self, index):
+        """return the element at position index
+        >>> s = SequenceDict([(4,44),(2,22),(3,33),(1,11)])
+        >>> print s.at(2)
+        33
+        >>> print s.at(0)
+        44
+        """
         return dict.__getitem__(self, self._keys[index])
     
     def keyAt(self, index):
+        """return the key of the element at position index
+        >>> s = SequenceDict([(4,44),(2,22),(3,33),(1,11)])
+        >>> print s.keyAt(2)
+        3
+        >>> print s.keyAt(0)
+        4
+        """
         return self._keys[index]
     
     def sort(self, key=itemgetter(0), reverse=False):
+        """sort the order by the given key
+        >>> s = SequenceDict([(4,4),(2,2),(3,3),(1,1)])
+        >>> s.sort()
+        >>> print s
+        SequenceDict([(1, 1), (2, 2), (3, 3), (4, 4)])
+        >>> s.sort( reverse=True )
+        >>> print s
+        SequenceDict([(4, 4), (3, 3), (2, 2), (1, 1)])
+        """
         temp = sorted( self.iteritems(), key=key, reverse=reverse )
         self._keys = [itemgetter(0)(t) for t in temp]
         
@@ -101,9 +124,23 @@ class SequenceDict(dict, MutableMapping):
         return self._keys.index(key)
     
     def swap(self,index1,index2):
+        """Swap the two indexes given
+        >>> s = SequenceDict([(1,1),(2,2),(3,3),(4,4)])
+        >>> s.swap( 0, 3 )
+        >>> print s
+        SequenceDict([(4, 4), (2, 2), (3, 3), (1, 1)])
+        """
         self._keys[index1], self._keys[index2] = self._keys[index2], self._keys[index1]
         
     def sortToMatch(self, keylist):
+        """Sort the Sequence to match the order of the keys given in keylist
+        keylist may contain additional keys that are not in the SequenceDict
+        all keys of the SequenceDict must be in keylist
+        >>> s = SequenceDict([(1,1),(2,2),(3,3),(4,4)])
+        >>> s.sortToMatch( [4,1,7,2,3] )
+        >>> print s
+        SequenceDict([(4, 4), (1, 1), (2, 2), (3, 3)])
+        """
         reverse = dict([ (value,index) for index,value in enumerate(keylist) ])
         self._keys = sorted( self._keys, key=lambda x: reverse[x])
             
