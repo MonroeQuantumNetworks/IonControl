@@ -11,6 +11,7 @@ import math
 from pyqtgraph.parametertree import Parameter
 from PyQt4 import QtCore
 from Observable import Observable
+from modules.enum import enum 
 import copy
 
 class EvaluationBase(Observable):
@@ -58,23 +59,56 @@ class MeanEvaluation(EvaluationBase):
     """
     name = 'Mean'
     tooltip = "Mean of observed counts" 
+    errorBarType = enum('shotnoise','statistical')
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
+        self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical ]
         
     def setDefault(self):
         self.settings.setdefault('errorBars',False)
+        self.settings.setdefault('errorBarType',0)
          
-    def evaluate(self, countarray, timestamps=None ):
-        if not countarray:
-            return 0, (0,0), 0
+    def evaluateShotnoise(self, countarray ):
         summe = numpy.sum( countarray )
         l = float(len(countarray))
         mean = summe/l
         stderror = math.sqrt( max(summe,1) )/l
         return mean, (stderror/2. if summe>0 else 0, stderror/2. ), summe
 
+    def evaluateStatistical(self, countarray):
+        mean = numpy.mean( countarray )
+        stderr = numpy.std( countarray, ddof=1 ) / math.sqrt( max( len(countarray)-1, 1) )
+        return mean, (stderr/2.,stderr/2.), numpy.sum( countarray )
+    
+    def evaluate(self, countarray, timestamps=None ):
+        if not countarray:
+            return 0, (0,0), 0
+        return self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
+
     def children(self):
-        return [{'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] }]     
+        return [{'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] },
+                {'name':'errorBarType', 'type': 'list', 'values':self.errorBarType.mapping, 'value': self.settings['errorBarType'] } ]     
+
+class NumberEvaluation(EvaluationBase):
+    """
+    returns mean and shot noise error
+    """
+    name = 'Number'
+    tooltip = "Number of results" 
+    def __init__(self,settings=None):
+        EvaluationBase.__init__(self,settings)
+        
+    def setDefault(self):
+        pass
+         
+    def evaluate(self, countarray, timestamps=None ):
+        if not countarray:
+            return 0, (0,0), 0
+        return len(countarray), (0,0), len(countarray)
+
+    def children(self):
+        return []     
+
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -116,5 +150,7 @@ class ThresholdEvaluation(EvaluationBase):
                 {'name':'invert', 'type': 'bool', 'value':self.settings['invert'] }]     
         
    
-EvaluationAlgorithms = { 'Mean': MeanEvaluation, 'Threshold': ThresholdEvaluation }
+EvaluationAlgorithms = { MeanEvaluation.name: MeanEvaluation, 
+                         ThresholdEvaluation.name: ThresholdEvaluation,
+                         NumberEvaluation.name: NumberEvaluation }
 

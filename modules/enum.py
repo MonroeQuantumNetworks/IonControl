@@ -27,3 +27,4 @@ if __name__ == "__main__":
     print Numbers.mapping['ZERO']
     print Numbers.reverse_mapping[2]
     print Numbers.mapping.keys()
+    print Numbers.mapping
