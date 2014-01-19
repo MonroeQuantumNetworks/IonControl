@@ -601,7 +601,7 @@ class Magnitude():
                     u = Magnitude(1.0)
                 else:
                     raise MagnitudeError("Don't know about unit %s" % u)
-                for i in range(exp):
+                for _ in range(exp):
                     m._mult_by(u)
         return m
 

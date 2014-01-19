@@ -80,8 +80,8 @@ class PulserHardwareException(Exception):
 
 class Data:
     def __init__(self):
-        self.count = [list()]*16
-        self.timestamp = [list()]*8
+        self.count = [list() for _ in range(16)]
+        self.timestamp = [list() for _ in range(8)]
         self.timestampZero = [0]*8
         self.scanvalue = None
         self.final = False
