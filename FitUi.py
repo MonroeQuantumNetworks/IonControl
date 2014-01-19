@@ -16,7 +16,7 @@ from modules.round import roundToNDigits
 from modules.round import roundToStdDev
 from itertools import izip_longest
 import logging
-from pyqtgraph.widgets import SpinBox
+from pyqtgraph.widgets.SpinBox import SpinBox
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 

@@ -2,8 +2,7 @@ import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import time
 from modules.enum import enum
-from datetime import datetime, timedelta
-from ui import StyleSheets
+from datetime import timedelta
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ScanProgress.ui')
 
@@ -50,10 +49,10 @@ class ScanProgress(Form,Base):
         self.previouslyElapsedTime = time.time()-self.startTime
         self.widget.setStyleSheet( "QWidget { background: #ffffff; }")
     
-    def setRunning(self,range):
+    def setRunning(self,total):
         self.statusLabel.setText("Running")    
-        self.range = range
-        self.progressBar.setRange(0,range)
+        self.range = total
+        self.progressBar.setRange(0,total)
         self.progressBar.setValue(0)
         #self.progressBar.setStyleSheet("")
         self.setTimeLabel()
@@ -121,4 +120,3 @@ if __name__=="__main__":
     MainWindow.setCentralWidget(ui)
     MainWindow.show()
     sys.exit(app.exec_())
- 

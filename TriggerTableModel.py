@@ -5,7 +5,6 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore, QtGui
-from operator import attrgetter
 import functools
 
 class TriggerTableModel(QtCore.QAbstractTableModel):
@@ -69,4 +68,3 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
         for var in self.variablelist:
             myvariables[var.name] = var.data
         return myvariables
- 

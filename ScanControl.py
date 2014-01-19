@@ -9,9 +9,7 @@ import copy
 import functools
 from PyQt4 import QtCore, QtGui
 import CountEvaluation
-from MagnitudeSpinBox import MagnitudeSpinBox
 from modules.MagnitudeUtilit import valueAs
-from pyqtgraph.parametertree import ParameterTree
  
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -20,7 +18,7 @@ from modules import MagnitudeUtilit
 from modules.magnitude import mg, MagnitudeError
 from modules.enum import enum
 import GateSetUi
-from modules.PyqtUtility import BlockSignals, updateComboBoxItems
+from modules.PyqtUtility import BlockSignals
 from EvaluationTableModel import EvaluationTableModel
 from ComboBoxDelegate import ComboBoxDelegate
 import logging
@@ -122,7 +120,7 @@ class Scan:
     def __eq__(self,other):
         try:
             equal = tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
-        except MagnitudeError as e:
+        except MagnitudeError:
             equal = False
         return equal
 
@@ -199,7 +197,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
         try:
             self.setSettings( self.settings )
-        except AttributeError as e:
+        except AttributeError:
             logger.error( "Ignoring exception" )
         for name in self.settingsDict:
             self.comboBox.addItem(name)
@@ -276,17 +274,17 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.gateSetUi.setSettings( self.settings.gateSetSettings )
         self.updateSaveStatus()
         self.evalAlgorithmList = []
-        for eval in self.settings.evalList:
-            self.addEvaluation(eval)
+        for evaluation in self.settings.evalList:
+            self.addEvaluation(evaluation)
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
         self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
         self.evalTableView.resizeColumnsToContents()
         self.evalTableView.horizontalHeader().setStretchLastSection(True)
 
-    def addEvaluation(self, eval):
-        algo =  CountEvaluation.EvaluationAlgorithms[eval.evaluation]()
+    def addEvaluation(self, evaluation):
+        algo =  CountEvaluation.EvaluationAlgorithms[evaluation.evaluation]()
         algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
-        algo.setSettings( eval.settings, eval.name )
+        algo.setSettings( evaluation.settings, evaluation.name )
         self.evalAlgorithmList.append(algo)      
 
     def onAddEvaluation(self):
@@ -301,7 +299,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableView.horizontalHeader().setStretchLastSection(True)
  
     def removeEvaluation(self, index):
-         del self.evalAlgorithmList[index]
+        del self.evalAlgorithmList[index]
 
     def onRemoveEvaluation(self):
         for index in sorted(unique([ i.row() for i in self.evalTableView.selectedIndexes() ]),reverse=True):
@@ -378,7 +376,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.stopBox.setStyleSheet("")
             self.calculateSteps(self.settings)
             self.setSteps(self.settings, False)
-        except Exception as e:
+        except Exception:
             self.startBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
             self.stopBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
             
@@ -401,13 +399,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             try:
                 settings.stepSize = abs(settings.stop - settings.start)/(settings.steps - 1)
                 valueAs( settings.stepSize, settings.start )
-            except Exception as e:
+            except Exception:
                 logger.exception("calculateSteps")
                 settings.stepSize = None
         else:
             try:
                 settings.steps = int( round( abs(settings.stop - settings.start)/settings.stepSize ) ) + 1
-            except Exception as e:
+            except Exception:
                 logger.exception("calculateSteps")
                 settings.steps = None
         
@@ -539,10 +537,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
-        oldParameterName = self.settings.scanParameter
+#         oldParameterName = self.settings.scanParameter
         with BlockSignals(self.comboBoxParameter):
             self.comboBoxParameter.clear()
-            for name, var in iter(sorted(variabledict.iteritems())):
+            for _, var in iter(sorted(variabledict.iteritems())):
                 if var.type == "parameter":
                     self.comboBoxParameter.addItem(var.name)
         if self.settings.scanParameter:

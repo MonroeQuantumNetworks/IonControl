@@ -17,9 +17,9 @@ import logging
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
   
 class ppexception(Exception):
-    def __init__(self, message, file, line, context):
+    def __init__(self, message, filename, line, context):
         super(ppexception,self).__init__(message)
-        self.file = file
+        self.file = filename
         self.line = line
         self.context = context
   
@@ -348,7 +348,7 @@ class PulseProgram:
     def appendVariableCode(self):
         """ append all variables to the instruction part of the code
         """
-        for name, var in self.variabledict.iteritems():
+        for var in self.variabledict.values():
             address = len(self.code)
             self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin, 0 ))
             var.address = address        
@@ -399,7 +399,7 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         logger.debug( "\nCode ---> ByteCode:" )
         self.bytecode = []
-        for index, line in enumerate(self.code):
+        for line in self.code:
             logger.debug( "{0}: {1}".format(hex(line[0]),  line[1:] )) 
             bytedata = 0
             if line[1] not in OPS:
@@ -439,11 +439,11 @@ class PulseProgram:
             if tuple(mag.dimension())==Dimensions.time:
                 result = int((mag/self.timestep).round()) 
             else:
-                step, unit, dimension, mask = encodings[encoding]
+                step, unit, _, mask = encodings[encoding]
                 result = int(round(mag.toval(unit)/step)) & mask
         else:
             if encoding:
-                step, unit, dimension, mask = encodings[encoding]
+                step, unit, _, mask = encodings[encoding]
                 result = int(round(mag/step)) & mask
             else:
                 result = mag

@@ -41,8 +41,8 @@ class TraceComboDelegate(QtGui.QItemDelegate):
         editor.setCurrentIndex(value)
         
     def setModelData(self,editor, model, index):
-         value = editor.currentIndex()
-         model.setData(index, value, QtCore.Qt.EditRole)
+        value = editor.currentIndex()
+        model.setData(index, value, QtCore.Qt.EditRole)
          
     def updateEditorGeometry(self,editor, option, index ):
         editor.setGeometry(option.rect)

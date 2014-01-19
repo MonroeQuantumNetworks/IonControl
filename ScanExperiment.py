@@ -23,7 +23,6 @@ import MainWindowWidget
 import FitUi
 from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
-import pyqtgraph
 from modules import DataDirectory
 import time
 from CoordinatePlotWidget import CoordinatePlotWidget
@@ -31,7 +30,6 @@ import functools
 from modules import stringutilit
 from datetime import datetime, timedelta
 import RawData
-from modules import MagnitudeUtilit
 import random
 import ScanControl
 from AverageViewTable import AverageViewTable
@@ -332,7 +330,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
  
     def onStart(self):
         self.scan = self.scanControlWidget.getScan()
-        self.displayUi.setNames( [eval.name for eval in self.scan.evalList ])
+        self.displayUi.setNames( [evaluation.name for evaluation in self.scan.evalList ])
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             self.createAverageTrace(self.scan.evalList)
             self.progressUi.setAveraged(0)
@@ -343,11 +341,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def createAverageTrace(self,evalList):
         trace = Trace()
         self.averagePlottedTraceList = list()
-        for index, eval in enumerate(evalList):
+        for index, evaluation in enumerate(evalList):
             yColumnName = 'y{0}'.format(index)
-            rawColumnName = 'raw{0}'.format(index)
+#             rawColumnName = 'raw{0}'.format(index)
             trace.addColumn( yColumnName )
-            thisAveragePlottedTrace = PlottedTrace(trace, self.plotWidgets[eval.plotname], pens.penList, yColumn=yColumnName)
+            thisAveragePlottedTrace = PlottedTrace(trace, self.plotWidgets[evaluation.plotname], pens.penList, yColumn=yColumnName)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
             thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
@@ -410,7 +408,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
         if pattern and pattern!='':
-            filename, components = directory.sequencefile(pattern)
+            filename, _ = directory.sequencefile(pattern)
             return filename
         else:
             path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
@@ -428,12 +426,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             # Evaluate as given in evalList
             x = self.generator.xValue(self.currentIndex)
             evaluated = list()
-            for eval, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
-                if len(data.count[eval.counter])>0:
-                    evaluated.append( (algo.evaluate( data.count[eval.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
+            for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+                if len(data.count[evaluation.counter])>0:
+                    evaluated.append( (algo.evaluate( data.count[evaluation.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
                 else:
                     evaluated.append( ((0,0,0),False) )
-                    logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(eval.counter))
+                    logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
@@ -462,7 +460,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList = list()
             for index, result in enumerate(evaluated):
                 if result is not None:  # result is None if there were no counter results
-                    (mean, error, raw), showerror = result
+                    (_, error, _), showerror = result
                     showerror = error and self.scan.evalAlgorithmList[index].settings['errorBars']
                     yColumnName = 'y{0}'.format(index) 
                     rawColumnName = 'raw{0}'.format(index)
@@ -552,15 +550,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
     def showHistogram(self, data, evalList ):
         index = 0
-        for eval in evalList:
-            if eval.showHistogram:
-                y, x = numpy.histogram( data.count[eval.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
+        for evaluation in evalList:
+            if evaluation.showHistogram:
+                y, x = numpy.histogram( data.count[evaluation.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
                 if self.scan.integrateHistogram and len(self.histogramList)>index:
                     self.histogramList[index] = (self.histogramList[index][1] + y, self.histogramList[index][1] + x)
                 elif len(self.histogramList)>index:
-                    self.histogramList[index] = (y,x,eval.name)
+                    self.histogramList[index] = (y,x,evaluation.name)
                 else:
-                    self.histogramList.append( (y,x,eval.name) )
+                    self.histogramList.append( (y,x,evaluation.name) )
                 index += 1
         del self.histogramList[index+1:]   # remove elements that are not needed any more
         if not self.histogramTrace:

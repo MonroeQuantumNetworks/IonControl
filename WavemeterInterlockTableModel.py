@@ -5,9 +5,6 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore, QtGui
-from operator import attrgetter
-from functools import partial
-from modules.SequenceDict import SequenceDict
 
 class InterlockChannel:
     def __init__(self):
@@ -64,7 +61,7 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     def setChannel(self,index,value):
-        channel, ok  = value.toInt()
+        channel, _  = value.toInt()
         if channel==self.channelDict.at(index.row()).channel:  # no change
             return True
         if channel not in self.channelDict:

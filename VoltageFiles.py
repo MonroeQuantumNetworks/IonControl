@@ -49,19 +49,19 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         self.loadGlobalButton.clicked.connect( self.onLoadGlobal )
         self.loadLocalButton.clicked.connect( self.onLoadLocal )
         if self.files.mappingFile is not None:
-            filedir, filename = os.path.split(self.files.mappingFile)
+            _, filename = os.path.split(self.files.mappingFile)
             self.mappingCombo.setCurrentIndex( self.mappingCombo.findText(filename))
         self.definitionCombo.addItems( self.files.definitionHistory.keys() )
         if self.files.definitionFile is not None:
-            filedir, filename = os.path.split(self.files.definitionFile)
+            _, filename = os.path.split(self.files.definitionFile)
             self.definitionCombo.setCurrentIndex( self.definitionCombo.findText(filename))
         self.globalCombo.addItems( self.files.globalHistory.keys() )
         if self.files.globalFile is not None:
-            filedir, filename = os.path.split(self.files.globalFile)
+            _, filename = os.path.split(self.files.globalFile)
             self.globalCombo.setCurrentIndex( self.globalCombo.findText(filename))
         self.localCombo.addItems( self.files.localHistory.keys() )
         if self.files.localFile is not None:
-            filedir, filename = os.path.split(self.files.localFile)
+            _, filename = os.path.split(self.files.localFile)
             self.localCombo.setCurrentIndex( self.localCombo.findText(filename))
         self.mappingCombo.currentIndexChanged['QString'].connect( self.onMappingChanged )
         self.definitionCombo.currentIndexChanged['QString'].connect( self.onDefinitionChanged )

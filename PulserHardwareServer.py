@@ -3,12 +3,9 @@
 Encapsulation of the Pulse Programmer Hardware 
 """
 import struct
-from Queue import Queue, Empty
 from modules import enum
 import math
-import traceback
-import time
-from multiprocessing import Process, Queue, Pipe
+from multiprocessing import Process
 import modules.magnitude as magnitude
 import ok
 from ServerLogging import configureServerLogging
@@ -83,8 +80,8 @@ class PulserHardwareException(Exception):
 
 class Data:
     def __init__(self):
-        self.count = [list() for i in range(16)]
-        self.timestamp = [list() for i in range(8)]
+        self.count = [list()]*16
+        self.timestamp = [list()]*8
         self.timestampZero = [0]*8
         self.scanvalue = None
         self.final = False
@@ -136,7 +133,6 @@ class PulserHardwareServer(Process):
         
     def run(self):
         configureServerLogging(self.loggingQueue)
-        i = 0
         logger = logging.getLogger(__name__)
         while (self.running):
             if self.commandPipe.poll(0.05):
@@ -434,7 +430,7 @@ class PulserHardwareServer(Process):
         """ convert list of words to binary bytearray
         """
         self.binarycode = bytearray()
-        for index, word in enumerate(wordlist):
+        for word in wordlist:
             self.binarycode += struct.pack('I', word)
         return self.binarycode        
 
@@ -495,7 +491,7 @@ class PulserHardwareServer(Process):
             
     def ppReadLog(self):
         if self.xem:
-     		#Commented CWC 04032012
+            #Commented CWC 04032012
             data = bytearray('\x00'*32)
             self.xem.ReadFromPipeOut(0xA1, data)
             with open(r'debug\log','wb') as f:
@@ -578,7 +574,7 @@ if __name__ == "__main__":
     fpga = fpgaUtilit.FPGAUtilit()
     xem = fpga.openBySerial('12320003V5')
     fpga.uploadBitfile(r'FPGA_ions\fpgafirmware.bit')
-    hw = PulserHardware(fpga,startReader=False)
+    hw = PulserHardwareServer(fpga,startReader=False)
     data = bytearray( struct.pack('IIIIIIII',0x12345678,0xabcdef,0x1,0x10,0x100,0x1000,0x567,0x67) )
     length = len(data)
     hw.ppWriteRam( data, 8 )

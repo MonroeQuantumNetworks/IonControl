@@ -6,7 +6,7 @@ Created on Fri Dec 28 18:40:30 2012
 """
 from modules import enum
 import pens
-import pyqtgraph
+from  pyqtgraph.graphicsItems import ErrorBarItem, PlotCurveItem
 import numpy
 from modules import DataDirectory 
 import os.path
@@ -124,7 +124,7 @@ class PlottedTrace(object):
     
     @raw.setter
     def raw(self, column):
-       setattr(self.trace, self._rawColumn, column)
+        setattr(self.trace, self._rawColumn, column)
 
     def child(self, number):
         """Return the child at the specified number, from the trace's list of children."""
@@ -176,11 +176,11 @@ class PlottedTrace(object):
  
     def plotErrorBars(self,penindex):
         if self.hasHeightColumn:
-            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.x, y=self.y, height=self.height,
+            self.errorBarItem = ErrorBarItem(x=self.x, y=self.y, height=self.height,
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
         elif self.hasTopColumn and self.hasBottomColumn:
-            self.errorBarItem = pyqtgraph.ErrorBarItem(x=self.x, y=self.y, top=self.top, bottom=self.bottom,
+            self.errorBarItem = ErrorBarItem(x=self.x, y=self.y, top=self.top, bottom=self.bottom,
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
             
@@ -199,7 +199,7 @@ class PlottedTrace(object):
     def plotSteps(self,penindex):
         mycolor = list(self.penList[penindex][4])
         mycolor[3] = 80
-        self.curve = pyqtgraph.PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor, pen=self.penList[penindex][0])
+        self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor, pen=self.penList[penindex][0])
         self.graphicsView.addItem( self.curve )
     
     def plot(self,penindex=-1,style=None):
@@ -232,14 +232,14 @@ class PlottedTrace(object):
         directory = DataDirectory.DataDirectory()
         if self.parent().isRootTrace: 
             if pattern and pattern!='':
-                filename, components = directory.sequencefile(pattern)
+                filename, _ = directory.sequencefile(pattern)
                 return filename
             else:
                 path = str(QtGui.QFileDialog.getSaveFileName(None, 'Save file',directory.path()))
                 return path
         else:
             parentFilename = self.parent().trace.getFilename() 
-            filename, components = directory.sequencefile( os.path.split(parentFilename)[1] )
+            filename, _ = directory.sequencefile( os.path.split(parentFilename)[1] )
             return filename
             
     @property

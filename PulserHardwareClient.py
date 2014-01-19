@@ -4,10 +4,8 @@ Encapsulation of the Pulse Programmer Hardware
 """
 from PyQt4 import QtCore 
 import struct
-from Queue import Queue, Empty
+from Queue import Queue
 import modules.magnitude as magnitude
-from modules import enum
-import math
 import multiprocessing
 from PulserHardwareServer import PulserHardwareServer, FinishException, ErrorMessages, FPGAException
 import logging
@@ -41,7 +39,7 @@ class QueueReader(QtCore.QThread):
                 self.dataHandler[ data.__class__.__name__ ]( data )
             except (KeyboardInterrupt, SystemExit, FinishException):
                 break
-            except Exception as e:
+            except Exception:
                 logger.exception("Exception in QueueReader")
         logger.info( "QueueReader thread finished." )
 
@@ -193,7 +191,7 @@ class PulserHardware(QtCore.QObject):
         """ convert list of words to binary bytearray
         """
         self.binarycode = bytearray()
-        for index, word in enumerate(wordlist):
+        for word in wordlist:
             self.binarycode += struct.pack('I', word)
         return self.binarycode        
 
@@ -241,19 +239,19 @@ if __name__ == "__main__":
     Finished = False
     while not Finished:#for j in range(60):
         data, overrun = hw.ppReadData(4,1.0)
-        if printdata:
-            for i in sliceview(data,4):
-                (num,) = struct.unpack('I',i)
-                Finished |= (num==0xffffffff)
-                print "data", hex(num)
-        else:
-            for i in sliceview(data,4):
-                (num,) = struct.unpack('I',i)
-                Finished |= (num==0xffffffff)
-            if len(data)>0:
-                print "read {0} bytes".format(len(data))
-            else:
-                print ".",
+#         if printdata:
+#             for i in sliceview(data,4):
+#                 (num,) = struct.unpack('I',i)
+#                 Finished |= (num==0xffffffff)
+#                 print "data", hex(num)
+#         else:
+#             for i in sliceview(data,4):
+#                 (num,) = struct.unpack('I',i)
+#                 Finished |= (num==0xffffffff)
+#             if len(data)>0:
+#                 print "read {0} bytes".format(len(data))
+#             else:
+#                 print ".",
             
     xem.UpdateWireOuts()
     print "DataOutPipe",hex(xem.GetWireOutValue(0x25))

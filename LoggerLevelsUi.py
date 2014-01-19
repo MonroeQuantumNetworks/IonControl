@@ -7,6 +7,7 @@ Created on Sat Feb 09 22:00:58 2013
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 import logging
+from logging import Logger
 from ComboBoxDelegate import ComboBoxDelegate
 from functools import partial
 from collections import OrderedDict
@@ -35,8 +36,8 @@ class LoggerLevelsTableModel(QtCore.QAbstractTableModel):
 
     def update(self):
         self.beginResetModel()
-        for name, logger in logging.Logger.manager.loggerDict.iteritems():
-            if isinstance(logger,logging.Logger):
+        for name, logger in Logger.manager.loggerDict.iteritems():
+            if isinstance(logger,Logger):
                 self.levelDict[name] = logger.getEffectiveLevel()
         self.levelList = list(self.levelDict.iteritems())
         self.endResetModel()
@@ -94,7 +95,6 @@ class LoggerLevelsUi(Form, Base):
         self.levelsDict = self.config.get( self.configname + '.levels', dict() )
         
     def setupUi(self,parent,dynupdate=False):
-        logger = logging.getLogger(__name__)
         Form.setupUi(self,parent)
         self.tableModel = LoggerLevelsTableModel(self.config)
         self.tableView.setModel(self.tableModel)

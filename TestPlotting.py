@@ -8,27 +8,30 @@ PlotWidget that adds the coordinates of the cursor position
 as a second element also allows one to copy the coordinates to the clipboard
 """
 
-import pyqtgraph as pg
+from pyqtgraph.graphicsItems.PlotItem import PlotItem
+from pyqtgraph.graphicsItems.ButtonItem import ButtonItem
+from pyqtgraph.graphicsItems.LabelItem import LabelItem
 from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
+import pyqtgraph
 
 grid_opacity = 0.3
 grid_icon_file = 'C:\\Users\\jamizra\\Programming\\aaAQC_FPGA\\ui\\icons\\grid2'
 range_icon_file = 'C:\\Users\\jamizra\\Programming\\aaAQC_FPGA\\ui\\icons\\unityrange2'
 
-class PlotItemWithButtons(pg.PlotItem):
+class PlotItemWithButtons(PlotItem):
     def __init__(self,parent=None):
         super(PlotItemWithButtons,self).__init__(parent)
-        self.gridBtn = pg.ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
-        self.unityRangeBtn = pg.ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
+        self.gridBtn = ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
+        self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
         self.gridBtn.clicked.connect(self.onGrid)
         self.setYRange(0,1) #Range defaults to 0 to 1
         self.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         
     def resizeEvent(self, ev):
-        pg.PlotItem.resizeEvent(self,ev)
+        PlotItem.resizeEvent(self,ev)
         gridBtnRect = self.mapRectFromItem(self.gridBtn, self.gridBtn.boundingRect())
         unityRangeBtnRect = self.mapRectFromItem(self.unityRangeBtn, self.unityRangeBtn.boundingRect())
         yGrid = self.size().height() - gridBtnRect.height()
@@ -46,13 +49,13 @@ class PlotItemWithButtons(pg.PlotItem):
         yChecked = self.ctrl.yGridCheck.isChecked()
         self.showGrid(x = not xChecked, y = not yChecked)
 
-class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
+class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, a button to set the y scale to 0-1, and a button
        to display/hide the grid."""
     def __init__(self,parent=None):
         super(CoordinatePlotWidget,self).__init__(parent)
-        self.coordinateLabel = pg.LabelItem(justify='right')
+        self.coordinateLabel = LabelItem(justify='right')
         self.graphicsView = self.addPlotWithButtons(row=0,col=0,colspan=2)
         self.addItem(self.coordinateLabel,row=1,col=1)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
@@ -105,7 +108,7 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         { 67: self.copyPointsToClipboard }.get(ev.key(),lambda x:None)(ev.modifiers())
         
     def mouseReleaseEvent(self,ev):
-        pg.GraphicsLayoutWidget.mouseReleaseEvent(self,ev)
+        pyqtgraph.GraphicsLayoutWidget.mouseReleaseEvent(self,ev)
         if ev.modifiers()&QtCore.Qt.ShiftModifier:
             self.mousePointList.append(self.mousePoint)
         else:
@@ -115,8 +118,8 @@ if __name__ == '__main__':
     import sys    
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    pg.setConfigOption('background', 'w')
-    pg.setConfigOption('foreground', 'k')
+    pyqtgraph.setConfigOption('background', 'w')
+    pyqtgraph.setConfigOption('foreground', 'k')
     MainWindow.setCentralWidget(CoordinatePlotWidget())
     MainWindow.show()
     sys.exit(app.exec_())

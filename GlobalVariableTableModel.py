@@ -5,12 +5,9 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore
-from operator import attrgetter
-import functools
 import modules.magnitude as magnitude
 from modules import Expression
 import sip
-import operator
 import logging
 
 api2 = sip.getapi("QVariant")==2
@@ -110,6 +107,6 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return name
     
     def sort(self, column, order ):
-        if column==0 and self.variableKeys:
+        if column==0 and self.variables:
             self.variables.sort()
-            self.dataChanged.emit(self.index(0,0),self.index(len(self.variableKeys) -1,1))
+            self.dataChanged.emit(self.index(0,0),self.index(len(self.variables) -1,1))

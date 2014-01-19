@@ -13,9 +13,7 @@ from datetime import datetime
 import os.path
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify
-import xml.dom.minidom as dom
 import io
-import logging
 from modules.enum import enum
 from itertools import izip_longest
 import math

@@ -70,7 +70,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             var.value = result
             var.strvalue = strvalue
             return True    
-        except Exception as e:
+        except Exception:
             logger = logging.getLogger(__name__)
             logger.error( "No match for {0}".format(value.toString()) )
             return False

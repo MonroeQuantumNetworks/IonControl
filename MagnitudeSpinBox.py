@@ -15,8 +15,6 @@ from modules import Expression
 from modules import MagnitudeParser
 from modules import magnitude
 import sip
-import sys
-import traceback
 import logging
 
 debug = False
@@ -72,7 +70,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
                 else: 
                     self.lineEdit().setPalette( self.blackTextPalette )
                     return (QtGui.QValidator.Acceptable,pos)                
-        except Exception as e:
+        except Exception:
             self.lineEdit().setPalette( self.redTextPalette )
             if api2:
                 return (QtGui.QValidator.Intermediate,inputstring,pos)
@@ -88,7 +86,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             newvalue.ounit( value.out_unit )
             newvalue.output_prec( value.oprec )
             self.setValue( newvalue )
-            value, delta, newpos, newdecimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
+            value, delta, _, newdecimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
             lineEdit.setCursorPosition( pos + newdecimalpos - decimalpos )
             self.valueChanged.emit( newvalue )
         except Exception:
@@ -105,7 +103,6 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return QtGui.QAbstractSpinBox.StepUpEnabled | QtGui.QAbstractSpinBox.StepDownEnabled
         
     def value(self):
-        logger = logging.getLogger(__name__)
         try:
             value = self.expression.evaluateAsMagnitude( str( self.lineEdit().text() ))
             if self._dimension is not None and value.unit != self._dimension.unit:

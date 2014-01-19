@@ -5,8 +5,7 @@ Created on Sat Feb 16 16:56:57 2013
 @author: pmaunz
 """
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
-import os.path
+from PyQt4 import QtGui
        
 from VoltageFiles import VoltageFiles
 from VoltageAdjust import VoltageAdjust
@@ -60,7 +59,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         adjust = self.adjustUi.adjust
         try:
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
-        except Exception as e:
+        except Exception:
             logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.onShuttlingDone )

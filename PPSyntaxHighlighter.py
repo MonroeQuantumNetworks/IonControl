@@ -55,9 +55,9 @@ class PPHighlighter( QSyntaxHighlighter ):
         self.setCurrentBlockState( 0 )
 
 class HighlightingRule():
-    def __init__( self, pattern, format ):
+    def __init__( self, pattern, myformat ):
         self.pattern = pattern
-        self.format = format
+        self.format = myformat
     
 
 

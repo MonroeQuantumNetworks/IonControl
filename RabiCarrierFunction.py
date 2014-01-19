@@ -63,7 +63,7 @@ class RabiCarrierFunction(FitFunctionBase):
         return value
                 
     def finalize(self,parameters):
-        A,n,omega = parameters
+        _,n,omega = parameters
         self.nstart=2*n
         self.taufinal= mg( (1/omega)/(self.eta), 'us')
         self.scTimeInit = mg( (1/omega)/(self.eta*sqrt(n)), 'us')
@@ -154,7 +154,7 @@ class FullRabiCarrierFunction(FitFunctionBase):
         return result
                 
     def finalize(self,parameters):
-        A,beta,omega = parameters
+        _,beta,omega = parameters
         self.nbar = exp(beta)/(exp(beta)-1)**2
         self.nstart=2*self.nbar
         self.taufinal= mg( (1/omega)/(self.eta), 'us')

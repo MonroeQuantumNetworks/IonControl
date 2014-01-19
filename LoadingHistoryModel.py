@@ -4,7 +4,7 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore
 
 class LoadingHistoryModel(QtCore.QAbstractTableModel):
     def __init__(self, history, parent=None, *args): 

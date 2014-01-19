@@ -20,7 +20,7 @@ class RawData(object):
     
     def _add(self,data,datatype):
         if not self.datafile:
-            self.datafilename, components = DataDirectory.DataDirectory().sequencefile( "RawData.bin" )
+            self.datafilename, _ = DataDirectory.DataDirectory().sequencefile( "RawData.bin" )
             self.datafile = open( self.datafilename, 'wb' )
         data_array = array(datatype, data)
         self.hash.update(data_array)
@@ -35,7 +35,7 @@ class RawData(object):
     def save(self,name=None):
         if name and not self.filenametemplate:   # we are currently on a temp file
             self.datafile.close()
-            newdatafilename, components = DataDirectory.DataDirectory().sequencefile( name )
+            newdatafilename, _ = DataDirectory.DataDirectory().sequencefile( name )
             shutil.move( self.datafilename, newdatafilename )
             self.datafilename = newdatafilename
             self.datafile = open( self.datafilename, 'wb+' )

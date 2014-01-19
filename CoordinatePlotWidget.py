@@ -14,8 +14,9 @@ Buttons added by jmizrahi on 10/15/2013.
 """
 
 import pyqtgraph as pg
-from pyqtgraph.graphicsItems import ButtonItem, LabelItem
-from pyqtgraph.graphicsItems.PlotItem import PlotItem
+from pyqtgraph.graphicsItems.LabelItem import LabelItem
+from pyqtgraph.graphicsItems.ButtonItem import ButtonItem
+from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits

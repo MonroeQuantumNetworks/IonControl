@@ -5,8 +5,7 @@ Created on Sat Feb 16 16:56:57 2013
 @author: pmaunz
 """
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
-import os.path
+from PyQt4 import QtCore
 import functools
 import modules.magnitude as magnitude
 import logging

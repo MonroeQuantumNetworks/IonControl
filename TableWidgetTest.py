@@ -8,7 +8,6 @@ Created on Fri May 31 15:09:52 2013
 from PyQt4 import uic, QtGui, QtCore
 from MagnitudeSpinBox import MagnitudeSpinBox
 from modules.magnitude import mg
-import functools
 
 Form, Base = uic.loadUiType(r'ui\TableWidgetTest.ui')
 
@@ -39,7 +38,7 @@ class TableWidgetTest(Form, Base):
         self.menu.addAction( action )
 
     def mycustomContextMenuRequested(self, point ):
-        index =  self.tableWidget.indexAt(point)
+#         index =  self.tableWidget.indexAt(point)
         self.menu.popup(self.mapToGlobal( point) )
             
     def onTriggered(self):

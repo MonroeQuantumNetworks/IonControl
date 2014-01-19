@@ -7,7 +7,6 @@ Created on Thu Sep 05 20:31:16 2013
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-import logging
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InputCalibrationUi.ui')
 SheetForm, SheetBase = PyQt4.uic.loadUiType(r'ui\InputCalibrationChannel.ui')
