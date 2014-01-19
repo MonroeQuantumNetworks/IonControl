@@ -32,9 +32,15 @@ class SequenceDict(dict, MutableMapping):
         return reversed(self._keys)
     
     def renameAt(self, index, new):
+        """Rename the element given by its index
+        >>> s = SequenceDict([(1,1),(2,2),(3,3),(4,4)])
+        >>> s.renameAt(2, 20)
+        >>> print s
+        SequenceDict([(1, 1), (2, 2), (20, 3), (4, 4)])
+        """
         if new in self:
             raise KeyError('renameAt: "{0}" key already exists')
-        dict[new] = dict.pop(self, self._keys[index] )
+        dict.__setitem__(self,new, dict.pop(self, self._keys[index] ) )
         self._keys[index] = new
         
     def popitem(self):
@@ -101,35 +107,7 @@ class SequenceDict(dict, MutableMapping):
         reverse = dict([ (value,index) for index,value in enumerate(keylist) ])
         self._keys = sorted( self._keys, key=lambda x: reverse[x])
             
-if __name__=="__main__":
-    a = SequenceDict()
-    a[12] = 1
-    a.update( {1:13, 3:14})
-    print a.at(0)
-    a.sort()
-    print a.at(0)
-    a.sort( key=itemgetter(1) )
-    print a.at(0)
-    
-    class T:
-        def __init__(self, i):
-            self.t = i
-            
-        def __repr__(self):
-            return "T({0})".format(self.t)
-            
-    a = SequenceDict()
-    a[5] = T(42)
-    a[3] = T(13)
-    a[1] = T(7)
-    
-    print a.at(0)
-    a.sortByAttribute('t')
-    print a.at(0)
-    a.sortByAttribute('t', reverse=True)
-    print a.at(0)
-    
-    a.sortToMatch([3,5,7,9,1])
-    print a
-    
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
     

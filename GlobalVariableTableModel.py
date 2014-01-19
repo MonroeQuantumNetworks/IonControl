@@ -25,7 +25,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.variables.keyAt(row),
                              (QtCore.Qt.DisplayRole,1): lambda row: str(self.variables.at(row)),
                              (QtCore.Qt.EditRole,0):    lambda row: self.variables.keyAt(row),
-                             (QtCore.Qt.EditRole,1):    lambda row: str(self.variables[row]),
+                             (QtCore.Qt.EditRole,1):    lambda row: str(self.variables.at(row)),
                              }
         self.setDataLookup = { (QtCore.Qt.EditRole,0): self.setDataName,
                                (QtCore.Qt.EditRole,1): self.setValue,
@@ -100,13 +100,13 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             self.dropVariableByIndex(self.variables.index(name))        
         
     def dropVariableByIndex(self,row):
-        self.beginRemoveRows(QtCore.QModelIndex(), self.createIndex(row,0),self.createIndex(row,1))
-        name = self.keyAt(row)
+        self.beginRemoveRows(QtCore.QModelIndex(), row, row )
+        name = self.variables.keyAt(row)
         self.variables.pop(name)
         self.endRemoveRows()
         return name
     
     def sort(self, column, order ):
         if column==0 and self.variables:
-            self.variables.sort()
+            self.variables.sort(reverse=order==QtCore.Qt.DescendingOrder)
             self.dataChanged.emit(self.index(0,0),self.index(len(self.variables) -1,1))
