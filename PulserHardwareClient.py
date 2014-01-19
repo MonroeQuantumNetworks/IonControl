@@ -25,7 +25,7 @@ class QueueReader(QtCore.QThread):
         self.dataQueue = dataQueue
         self.dataHandler = { 'Data': lambda data : self.pulserHardware.dataAvailable.emit(data),
                              'DedicatedData': lambda data: self.pulserHardware.dedicatedDataAvailable.emit(data),
-                             'FinishException': lambda data: self.raise_(data) }
+                             'FinishException': lambda data: self.raise_(FinishException()) }
    
     def raise_(self, ex):
         raise ex

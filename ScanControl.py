@@ -24,10 +24,7 @@ from ComboBoxDelegate import ComboBoxDelegate
 import logging
 from modules.HashableDict import HashableDict
 from modules.PyqtUtility import updateComboBoxItems
-
-def unique(seq):
-    seen = set()
-    return [ x for x in seq if x not in seen and not seen.add(x)]
+from modules.Utility import unique
 
 class EvaluationDefinition:
     def __init__(self):

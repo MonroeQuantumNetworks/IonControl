@@ -14,10 +14,7 @@ from ExternalParameterTableModel import ExternalParameterTableModel
 import logging
 from modules.SequenceDict import SequenceDict
 from KeyboardFilter import KeyListFilter
-
-def unique(seq):
-    seen = set()
-    return [ x for x in seq if x not in seen and not seen.add(x)]
+from modules.Utility import unique
 
 class Settings:
     pass
@@ -71,14 +68,15 @@ class SelectionUi(SelectionForm,SelectionBase):
 
     def onReorder(self, key):
         indexes = self.tableView.selectedIndexes()
-        if len(indexes)==1:
-            if key==QtCore.Qt.Key_PageUp:
-                index = self.parameterTableModel.moveRowUp( indexes )
-            elif key==QtCore.Qt.Key_PageDown:
-                index = self.parameterTableModel.moveRowDown( indexes )
-            self.tableView.setCurrentIndex( index )
-            self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
-            self.selectionChanged.emit( self.enabledParametersObjects )
+        if key==QtCore.Qt.Key_PageUp:
+            rows = sorted(unique([ i.row() for i in indexes ]),reverse=False)
+            self.parameterTableModel.moveRowUp( rows )
+        elif key==QtCore.Qt.Key_PageDown:
+            rows = sorted(unique([ i.row() for i in indexes ]),reverse=True)
+            self.parameterTableModel.moveRowDown( rows )
+        self.tableView.setCurrentIndex( indexes )
+        self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
+        self.selectionChanged.emit( self.enabledParametersObjects )
 
     def onEnableChanged(self, name):
         logger = logging.getLogger(__name__)

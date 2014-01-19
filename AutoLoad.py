@@ -19,12 +19,9 @@ import logging
 from WavemeterInterlockTableModel import WavemeterInterlockTableModel
 from modules.SequenceDict import SequenceDict
 from KeyboardFilter import KeyFilter
+from modules.Utility import unique
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
-
-def unique(seq):
-    seen = set()
-    return [ x for x in seq if x not in seen and not seen.add(x)]
 
 from LoadingHistoryModel import LoadingHistoryModel 
 

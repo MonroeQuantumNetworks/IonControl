@@ -8,14 +8,9 @@ from PyQt4 import QtGui
 from GlobalVariableTableModel import GlobalVariableTableModel
 from modules.SequenceDict import SequenceDict
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from modules.Utility import unique 
        
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
-
-
-def unique(seq):
-    seen = set()
-    return [ x for x in seq if x not in seen and not seen.add(x)]
-
 
 class GlobalVariables(object):
     def __init__(self):
