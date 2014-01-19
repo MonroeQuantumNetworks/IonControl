@@ -67,16 +67,18 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
 
     def onReorder(self, key):
-        indexes = self.tableView.selectedIndexes()
-        if key==QtCore.Qt.Key_PageUp:
-            rows = sorted(unique([ i.row() for i in indexes ]),reverse=False)
-            self.parameterTableModel.moveRowUp( rows )
-        elif key==QtCore.Qt.Key_PageDown:
-            rows = sorted(unique([ i.row() for i in indexes ]),reverse=True)
-            self.parameterTableModel.moveRowDown( rows )
-        self.tableView.setCurrentIndex( indexes )
-        self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
-        self.selectionChanged.emit( self.enabledParametersObjects )
+        if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
+            indexes = self.tableView.selectedIndexes()
+            up = key==QtCore.Qt.Key_PageUp
+            delta = -1 if up else 1
+            rows = sorted(unique([ i.row() for i in indexes ]),reverse=not up)
+            if self.parameterTableModel.moveRow( rows, up=up ):
+                selectionModel = self.tableView.selectionModel()
+                selectionModel.clearSelection()
+                for index in indexes:
+                    selectionModel.select( self.parameterTableModel.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
+            self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
+            self.selectionChanged.emit( self.enabledParametersObjects )
 
     def onEnableChanged(self, name):
         logger = logging.getLogger(__name__)

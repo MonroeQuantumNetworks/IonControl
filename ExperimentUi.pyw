@@ -17,6 +17,7 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QUrl",2)
 
 import LoggingSetup
+import MagnitudeParameter
 import ScanExperiment
 import ExternalScanExperiment
 import VoltageScanExperiment

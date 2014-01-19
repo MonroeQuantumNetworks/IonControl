@@ -4,11 +4,12 @@ Created on Sat Feb 16 16:56:57 2013
 @author: pmaunz
 """
 import PyQt4.uic
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from GlobalVariableTableModel import GlobalVariableTableModel
 from modules.SequenceDict import SequenceDict
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.Utility import unique 
+from KeyboardFilter import KeyListFilter
        
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
@@ -48,6 +49,9 @@ class GlobalVariableUi(Form, Base ):
         self.tableView.setItemDelegateForColumn(1,MagnitudeSpinBoxDelegate()) 
         self.tableView.setSortingEnabled(True)
         self.tableView.clicked.connect(self.onViewClicked)
+        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
+        self.filter.keyPressed.connect( self.onReorder )
+        self.tableView.installEventFilter(self.filter)
 
         
     def onAddVariable(self):
@@ -63,6 +67,18 @@ class GlobalVariableUi(Form, Base ):
     def onViewClicked(self,index):
         """If one of the editable columns is clicked, begin to edit it."""
         self.tableView.edit(index)
+
+    def onReorder(self, key):
+        if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
+            indexes = self.tableView.selectedIndexes()
+            up = key==QtCore.Qt.Key_PageUp
+            delta = -1 if up else 1
+            rows = sorted(unique([ i.row() for i in indexes ]),reverse=not up)
+            if self.model.moveRow( rows, up=up ):
+                selectionModel = self.tableView.selectionModel()
+                selectionModel.clearSelection()
+                for index in indexes:
+                    selectionModel.select( self.model.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
 
 if __name__=="__main__":
     import sys
