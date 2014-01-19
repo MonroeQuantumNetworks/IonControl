@@ -17,30 +17,32 @@ api2 = sip.getapi("QVariant")==2
 
 class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal()
-    def __init__(self, variabledict, parent=None, *args): 
+    headerDataLookup = ['Name', 'Value']
+    def __init__(self, variables, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = variabledict
-        self.variableList = list(self.variabledict.values()) 
-        self.variableKeys = list(self.variabledict.keys())
+        self.variables = variables
         self.expression = Expression.Expression()
+        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.variables.keyAt(row),
+                             (QtCore.Qt.DisplayRole,1): lambda row: str(self.variables.at(row)),
+                             (QtCore.Qt.EditRole,0):    lambda row: self.variables.keyAt(row),
+                             (QtCore.Qt.EditRole,1):    lambda row: str(self.variables[row]),
+                             }
+        self.setDataLookup = { (QtCore.Qt.EditRole,0): self.setDataName,
+                               (QtCore.Qt.EditRole,1): self.setValue,
+                               }
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.variableList) 
+        return len(self.variables) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
  
     def data(self, index, role): 
         if index.isValid():
-            var = self.variableList[index.row()]
-            return { (QtCore.Qt.DisplayRole,0): self.variableKeys[index.row()],
-                     (QtCore.Qt.DisplayRole,1): str(self.variableList[index.row()]),
-                     (QtCore.Qt.EditRole,0): self.variableKeys[index.row()],
-                     (QtCore.Qt.EditRole,1): str(self.variableList[index.row()]),
-                     }.get((role,index.column()))
+            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
         return None
         
     def setDataValue(self, index, value):
@@ -48,83 +50,66 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         try:
             strvalue = str(value if api2 else str(value.toString()))
             result = self.expression.evaluate(strvalue,self.variabledict)
-            name = self.variableKeys[ index.row() ] 
-            self.variabledict[name] = result
-            self.variableList[ index.row() ] = self.variabledict[ name ]
+            name = self.variables.keyAt(index.row())
+            self.variables[name] = result
             self.valueChanged.emit()
             return True    
-        except Exception as e:
+        except Exception:
             logger.exception( "No match for {0}".format( str(value.toString()) ) )
             return False
  
-    def setDataName(self, index, value):
+    def setDataName(self, row, value):
         try:
             strvalue = str(value if api2 else str(value.toString())).strip()
-            name = self.variableKeys[ index.row() ] 
-            self.variableKeys[ index.row() ] = strvalue
-            value = self.variabledict.pop(name)
-            self.variabledict[strvalue] = value
+            self.variables.renameAt(row, strvalue)
             return True    
-        except Exception as e:
+        except Exception:
             logger = logging.getLogger(__name__)
             logger.exception( "No match for {0}".format( str(value.toString()) ) )
             return False
        
     def setData(self,index, value, role):
-        return { (QtCore.Qt.EditRole,0): functools.partial( self.setDataName, index, value ),
-                 (QtCore.Qt.EditRole,1): functools.partial( self.setValue, index.row(), value ),
-                }.get((role,index.column()), lambda: False )()
+        return self.setDataLookup.get((role,index.column()), lambda row, value: False )(index.row(), value)
 
     def flags(self, index ):
-        return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 }.get(index.column(),QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return {
-                    0: 'Name',
-                    1: 'value',
-                     }.get(section)
+                return self.headerDataLookup[section]
         return None #QtCore.QVariant()
             
-    def setValue(self, index, value):
-        name = self.variableKeys[ index ] 
-        self.variabledict[name] = value
-        self.variableList[ index ] = self.variabledict[ name ]
+    def setValue(self, row, value):
+        name = self.variables.keyAt(row) 
+        self.variables[name] = value
         self.valueChanged.emit()
 
     def getVariables(self):
-        return self.variabledict
+        return self.variables
  
     def getVariableValue(self,name):
-        return self.variabledict[name]
+        return self.variables[name]
     
     def addVariable(self,name):
-        if name not in self.variabledict:
-            self.beginInsertRows(QtCore.QModelIndex(),len(self.variabledict),len(self.variabledict))
-            self.variabledict[name] = magnitude.mg(0,'')
-            self.variableList = list(self.variabledict.values())
-            self.variableKeys = list(self.variabledict.keys())
+        if name not in self.variables:
+            self.beginInsertRows(QtCore.QModelIndex(),len(self.variables),len(self.variables))
+            self.variables[name] = magnitude.mg(0,'')
             self.endInsertRows()
-        return len(self.variableKeys)-1
+        return len(self.variables)-1
         
     def dropVariableByName(self, name):
-        if name in self.calibrations:
-            self.dropVariableByIndex(self.variableKeys.index(name))        
+        if name in self.variables:
+            self.dropVariableByIndex(self.variables.index(name))        
         
-    def dropVariableByIndex(self,index):
-        self.beginRemoveRows(QtCore.QModelIndex(),index,index)
-        name = self.variableKeys[index]
-        self.variabledict.pop(name)
-        self.variableList = list(self.variabledict.values())
-        self.variableKeys = list(self.variabledict.keys())
+    def dropVariableByIndex(self,row):
+        self.beginRemoveRows(QtCore.QModelIndex(), self.createIndex(row,0),self.createIndex(row,1))
+        name = self.keyAt(row)
+        self.variables.pop(name)
         self.endRemoveRows()
         return name
     
     def sort(self, column, order ):
         if column==0 and self.variableKeys:
-            self.variableKeys,self.variableList = [list(z) for z in zip( *sorted( zip(self.variableKeys,self.variableList), key=operator.itemgetter(column), 
-                                                                reverse=True if order==QtCore.Qt.DescendingOrder else False ) ) ]
+            self.variables.sort()
             self.dataChanged.emit(self.index(0,0),self.index(len(self.variableKeys) -1,1))
