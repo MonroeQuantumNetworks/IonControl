@@ -21,5 +21,5 @@ class BlockSignals:
     def __enter__(self):
         self.oldstate = self.widget.blockSignals(True)
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exittype, value, traceback):
         self.widget.blockSignals(self.oldstate)

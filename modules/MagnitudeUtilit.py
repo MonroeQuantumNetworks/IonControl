@@ -6,7 +6,6 @@ Created on Tue Jul 02 14:25:44 2013
 """
 
 import modules.magnitude as magnitude
-import math
 
 def value( obj, tounit=None ):
     """ return the value of a magnitude object, or float"""
