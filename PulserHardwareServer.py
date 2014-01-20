@@ -190,7 +190,7 @@ class PulserHardwareServer(Process):
                 elif token & 0xff000000 == 0xff000000:
                     if token == 0xffffffff:    # end of run
                         self.data.final = True
-                        self.data.exitcode = 0xffff
+                        self.data.exitcode = 0x0000
                         self.dataQueue.put( self.data )
                         logger.info( "End of Run marker received" )
                         self.data = Data()

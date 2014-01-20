@@ -6,7 +6,8 @@ Created on Fri Dec 28 18:40:30 2012
 """
 from modules import enum
 import pens
-from  pyqtgraph.graphicsItems import ErrorBarItem, PlotCurveItem
+from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
+from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 import numpy
 from modules import DataDirectory 
 import os.path
