@@ -99,7 +99,7 @@ class NumberEvaluation(EvaluationBase):
         EvaluationBase.__init__(self,settings)
         
     def setDefault(self):
-        pass
+        self.settings.setdefault('errorBars',False)
          
     def evaluate(self, countarray, timestamps=None ):
         if not countarray:
