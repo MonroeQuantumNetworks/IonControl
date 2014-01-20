@@ -1,14 +1,17 @@
-\documentclass{scrartcl}
+\documentclass[11pt]{scrartcl}
 
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{wrapfig}
 \usepackage{color}
 \usepackage{sidecap}
+\usepackage{listings}
+\usepackage{syntax}
 \usepackage[format=plain,indention=1em,margin=0.05\textwidth]{caption}
 
 \newcommand{\unit}[1]{\ensuremath{\operatorname{#1}}}
 \newcommand{\um}{\unit{\mu m}}
+\newcommand{\declaration}[2]{\vspace*{2ex}#1\begin{addmargin}{1cm}{#2}\end{addmargin}}
 
 \author{Peter Maunz}
 \title{MQCO: Iontrapping experimental control software}
@@ -17,6 +20,424 @@
 \maketitle
 
 \section{Overview}
+The Trapped Ion Quantum Control System (TIQCS) consists of FPGA controller hardware and a python computer frontend. On the FPGA (Opal Kelly XEM-6010) an enhanced van Neumann machine is executed which allows the user to control the experimental procedure in a powerful assembler like language.
+
+\section{FPGA firmware}
+
+%{\tiny
+%\lstset{numbers=left, numberstyle=\tiny}
+%\lstinputlisting{../prog/Ions-samples/ExternalScan.pp}
+%}
+
+The FPGA firmware executes a {\it Pulse Program}. The Pulse Program can be at most $4096$ words long where each command and variable take $1$ word of memory. In addition the Pulse Program has access to the FPGA internal memory in which variables are stored. Via simple commands there is also access to the on-board SDRAM (128 MByte). This memory can be written to and read from the host computer. In addition there are two pipes implemented between the host computer and the FPGA Pulse Program. Values can be read from and written to these pipes.
+
+Counters to count incoming pulses are implemented in a gates fashion. The Pulse Program sets the gates for the $24$ different counters, the counting is then done in parallel to the execution of the Pulse Program. When the gate is lowered, the accumulated counter value (24 bit) is transfered to the computer via the outgoing pipe without the intervention of the Pulse Program. The counter value can also be read from the Pulse Program.
+
+The are $8$ timestamping channels implemented.
+
+\subsection{Pulse Program Basics}
+The Pulse Program uses \lit{\#} as the rest of line comment character. Exceptions are the following:
+
+\declaration{\lit*{\#insert} \synt{filename}}{is used to insert the contents of one file at the position of the insert command.}
+
+\declaration{\lit*{\#define} \synt{constant}}{is used to define constants. Constants have to be used for the \synt{channel} arguments of the DDS commands. In general if a command takes two arguments, the first argument has to be a constant.}
+
+\declaration{\lit*{var} \synt{name}  \synt{value}, [\synt{type}], [\synt{unit}], [\synt{encoding}]}{ is used to declare variables.  For the Pulse Program only the \synt{name} and \synt{value} arguments are used. The additional arguments are interpreted by the graphical front-end to enable the control of the variable values. The \synt{type} defines what the intended use of the variable. The \synt{unit} describes it default dimension and unit. The \synt{encoding} determines how a variable value which on the front-end side can be a floating point value with physical quantity is converted into the 32 bit binary value used on the FPGA.
+The possible types are 
+\begin{description}
+\item[\lit*{parameter}] The variable will be used as a parameter variable.
+\item[\lit*{exitcode}] The variable will be used as an exitcode transmitted to the computer at the end of program execution.
+\item[\lit*{trigger}] The variable will be used for trigger values.
+\item[\lit*{mask}] The variable will be used as a bitmask to mark significant bits for a shutter value.
+\item[\lit*{shutter} \synt{mask variable name}] The variable will be used as a shutter variable together with the bitmask \synt{mask variable name}.
+\end{description}
+Possible encodings are
+\begin{description}
+\item[\lit*{AD9912_FRQ}] The frequency value will be converted into the coarse frequency word for the AD9912 (32 most significant bits)
+\item[\lit*{AD9912_FRQFINE}] The frequency value will be converted into the fine frequency word for the AD9912 (16 least significant bits)
+\item[\lit*{AD9912_PHASE}] The value in degree will be converted  to the AD9912 phase word
+\item[\lit*{CURRENT}]
+\item[\lit*{VOLTAGE}]
+\item[\lit*{TIME}] The time duration value will be converted into clock cycles.
+\end{description}
+Independent of the definition, variables with dimension time will always be converted to clock cycles.}
+
+\declaration{\synt{label}\lit*{:}}{Is the declaration of a label. Jump command can set the next command to a label.}
+
+\subsection{Basic commands}
+The van Neumann machine uses two main internal registers. The W register is used to hold values while the INDF register holds the address of a variable. Basic command are available to load and store values from the memory into these registers. There are also commands to manipulate the W register.
+
+\begin{addmargin}{1cm}
+\begin{description}
+\item[\lit*{NOP}] \hfill\\ 
+  No operation
+
+\item[\lit*{END}]  \hfill\\  
+End execution.
+
+\item[\lit*{LDWR} \synt{variable}] \hfill\\ 
+ load value from variable into W register.
+
+\item[\lit*{LDWI}]\hfill\\ 
+load value from the address pointed to by INDF register into W register.
+
+\item[\lit*{STWR} \synt{variable}] \hfill\\  
+store value in W register into variable.
+
+\item[\lit*{STWI}] \hfill\\  
+store value from W register into address pointed to by INDF register.
+
+\item[\lit*{LDINDF} \synt{variable}] \hfill\\  
+load the contents of {\it variable} into the INDF register.
+
+\item[\lit*{ANDW} \synt{variable}]  \hfill\\ 
+ $W = W \& \text{{\it variable}}$.
+
+\item[\lit*{ADDW} \synt{variable}]  \hfill\\  
+$W = W +  \text{{\it variable}}$.
+
+\item[\lit*{INC} \synt{variable}]  \hfill\\
+$  W = \text{{\it variable}} + 1$.
+
+\item[\lit*{DEC} \synt{variable}]  \hfill\\  
+$W = \text{{\it variable}} - 1 $.
+
+\item[\lit*{CLRW}]  \hfill\\  
+$W = 0$.
+
+\item[\lit*{ORW} \synt{variable}]\hfill\\  
+Bitwise or. $ W = W | \text{\it variable}$.
+\end{description}
+\end{addmargin}
+
+\subsection{Comparison and jumps}
+Jumps can redirect the program flow to a \synt{label}. Depending on the jump command, a jump is conditioned either on the value of the W register or on the value of an internal compare bit. The internal compare bit is set by a comparison command.
+
+\begin{addmargin}{1cm}
+\begin{description}
+\item[\lit*{CMP} \synt{variable}]  \hfill\\  
+Set W to 0 if $W \le \text{{\it variable}}$ .
+
+\item[\lit*{CMPEQUAL} \synt{variable}]  \hfill\\  
+compare W and \synt{variable} and set the internal compare bit to true if W=\synt{variable}.
+
+\item[\lit*{CMPGE} \synt{variable}]\hfill\\  
+compare W and \synt{variable} and set the internal compare bit to true if $W \ge \text{\it variable}$.
+
+\item[\lit*{CMPLE} \synt{variable}]\hfill\\  
+compare W and \synt{variable} and set the internal compare bit to true if $W \le \text{\it variable}$.
+
+\item[\lit*{CMPGREATER} \synt{variable}]\hfill\\  
+compare W and \synt{variable} and set the internal compare bit to true if $W > \text{\it variable}$.
+
+\item[\lit*{JMP} \synt{label}] \hfill\\   
+Jump to {\it label}.
+
+\item[\lit*{JMPZ} \synt{label}]  \hfill\\  
+Jump to {\it label} if W = 0.
+
+\item[\lit*{JMPNZ} \synt{label}] \hfill\\   
+Jump to {\it label} if W != 0.
+
+\item[\lit*{JMPCMP} {\it label}] \hfill\\   
+Jump to label if the internal compare bit is set.
+
+\item[\lit*{JMPNCMP} {\it label}] \hfill\\   
+Jump to label if the internal compare bit is not set.
+\end{description}
+\end{addmargin}
+
+\subsection{Shutter and counter-gate subsystem}
+There are $32$ shutter channels (digital output bits) and $32$ trigger channels (trigger digital output bits). Both are digital output bits with the difference that the trigger bits will be reset by the firmware after one clock cycle, while the shutter bits have to be set by the Pulse Program. In addition there are $32$ bits of counter gates. These are used to gate the $24$ counter and $8$ timestamping channels.
+
+Shutter, trigger and counter gates are buffered in the Pulse Program. The commands setting the values only set an internal buffer. One of the two \lit{UPDATE} commands is then used to apply all the values of shutters, triggers and counter gates simultaneously.
+
+For setting the shutter bits an internal mask is used. In this way it is possible to define a mask of bits that will be changed.
+\begin{addmargin}{1cm}
+\begin{description}
+\item[\lit*{SHUTTERMASK} \synt{variable}]  \hfill\\  
+Set internal register shutter\_mask to {\it variable}.
+
+\item[\lit*{ASYNCSHUTTER} \synt{ variable}]  \hfill\\  
+Update internal shutter register, bits set in shutter\_mask are updated with the bits from {\it variable}.
+
+\item[\lit*{COUTERMASK} \synt{ variable}]  \hfill\\  
+Set the internal register with gate signals for the 24 counters and 8 timestampers. Bits 23:0 gate counters 23:0, bits 31:24 gate  timestamping on channels 7:0. The $8$ external input channels are used repeatedly. External input channel $0$ is routed to counter channels $0$, $8$, and $15$. The counts from channels $0 - 15$ are transmitted to the computer after the counter is gated low. Channels $16-24$ are only accessible from the Pulse Program. The timestamping channels are also operated by a gate. On the enabling edge of the gate the current values of a global counter (running at $50\unit{MHz}$) is transfered to the computer. Each detection event will then trigger the transmission of the current counter value. On counter overrun a overrun marker is written to the host computer. In this way, the total time of the gate is not limited.
+
+\item[\lit*{TRIGGER} \synt{variable}] \hfill\\   
+Set internal trigger register.
+
+\item[\lit*{UPDATE}  \synt{variable}]  \hfill\\  
+Update shutters, counter gates, triggers and start the delay counter with the value in\synt{variable}. The delay counter runs in the background while the following commands of the Pulse Program are executed. It is necessary to wait for the expiration of the counter with the \lit{WAIT} command before the next \lit{UPDATE}.
+
+\item[\lit*{UPDATEINDF}]\hfill\\  
+As update, use the value pointed to by th INDF register for the wait time.
+
+\item[\lit*{WAIT}] \hfill\\   
+wait until the delay counter expires. Waits until the counter is expired. If no counter is running it will not wait. If the counter expired before reaching this command, execution continues.
+
+\item[\lit*{LDCOUNT} \synt{counterchannel}]  \hfill\\  
+load the last counter value from \synt{counterchannel} (needs to be \lit{define}d) into W register.
+
+\item[\lit*{LDTDCCOUNT}]  \hfill\\  
+load the value from the global timestamping counter into W.
+
+\end{description}
+\end{addmargin}
+
+\subsection{Pipe from and to host computer}
+The pipe to and from the computer allow efficient control of the Pulse Program and efficient transmission of results to the host computer. The pipes use $32$ bit words. In the case of the pipe to the computer, the most significant $8$ bits of the value are a marker for the $24$ data bits.
+
+The following marker values are used:
+\begin{addmargin}{1cm}
+\begin{description}
+\item[\lit*{0xffffffff}] end of experiment marker
+\item[\lit*{0xfffexxxx}] exitcode marker with 16 bit exitcode 
+\item[\lit*{0xff000000}] timestamping overflow marker
+\item[\lit*{0xffffxxxx}] scan parameter with 12 bit address, is followed by additional scanparameter word.
+\item[\lit*{0x1nxxxxxx}] $24$ bit count result from channel n (4 bit)
+\item[\lit*{0x2nxxxxxx}] $24$ bit timestamp result channel n (4 bit)
+\item[\lit*{0x3nxxxxxx}] $24$ bit timestamp gate start channel n (4 bit)
+\item[\lit*{0x4xxxxxxx}] other return
+\end{description}
+\end{addmargin}
+
+The following commands are used to interact with these pipes. Two consecutive commands accessing pipes need to be separated by commands that do not access pipes (e.g. \lit{NOP}).
+
+\begin{addmargin}{1cm}
+\begin{description}
+\item[\lit*{WRITEPIPE}]  \hfill\\  
+write the value in W into the pipe to the host computer. 
+
+\item[\lit*{READPIPE}]  \hfill\\  
+read a value from the pipe from the host computer into the W register. If there is no new data in the pipe, the last value in the pipe is used.
+
+\item[\lit*{READPIPEINDF}]  \hfill\\  
+Read the value from the pipe from the host computer in the INDF register.
+
+\item[\lit*{WRITEPIPEINDF}]  \hfill\\  
+Write the value from the INDF register into the pipe to the host computer.
+
+\item[\lit*{JMPPIPEAVAIL}  \synt{label}]  \hfill\\  
+Jump to \synt{label} if the pipe from the host computer has data.
+
+\item[\lit*{JMPPIPEEMPTY} \synt{label}]  \hfill\\  
+Jump to \synt{label} if the pipe from the host computer is empty.
+\end{description}
+\end{addmargin}
+
+\subsection{Memory access}
+It is possible to use the $128 \unit{MByte}$ of on-board SDRAM of the Opal Kelly module. However, while the FPGA block ram allows for random access in one clock cycle, the SDRAM has longer read and write latencies. As variables can be used for fast random access values, the use of the external memory is motivated by the need for large amount of memory. Usually, this memory is accessed in large junks. 
+
+The memory framework thus uses a FIFO between SDRAM and Pulse Program. Consecutive values can be read from the FIFO in one clock cycle. Repositioning the memory pointer to a new (non-consecutive) values will clear the FIFO and start reading at the new location. There is a delay before the new data is available.
+
+\begin{addmargin}{1cm}
+\begin{description}
+\item[\lit*{SETRAMADDR} \synt{variable}] \hfill\\  
+Set the memory pointer to the address in {\it variable}.
+
+\item[\lit*{RAMREADINDF}] \hfill\\  
+Read one value from the RAM to the INDF register.
+
+\item[\lit*{RAMREAD}]\hfill\\  
+Read one value from the RAM to the W register.
+
+\item[\lit*{JMPRAMVALID} \synt{label}]\hfill\\  
+Jump to {\it label} if the RAM FIFO is valid.
+
+\item[\lit*{JMPRAMINVALID} \synt{label}]\hfill\\  
+Jump to {\it label} if the RAM FIFO is invalid.
+\end{description}
+\end{addmargin}
+
+\subsection{Direct digital synthesizers}
+The subsystem for the direct digital synthesizer  also uses a FIFO to allow for parallel data transmission to all DDS chips. The commands in the Pulse Program execute in one clock cycle. However, after execution, the command is not yet written to the DDS. For the AD9912 it takes approximately $2\unit{\mu s}$ to transmit one value (Phase, Frequency or Amplitude).
+
+\begin{addmargin}{1cm}
+\begin{description}
+\item[\lit*{DDSFRQ} \synt{channel}, \synt{variable}] \hfill\\ 
+write frequency (32 most significant bits) from variable to DDS channel. \synt{channel} has to be a define. The value is sent to the DDS in the background. It is only updated after an io\_update. 
+
+\item[\lit*{DDSFRQFINE} \synt{channel}, \synt{variable}] \hfill\\ 
+ write frequency (16 least significant bits) from variable to DDS channel.  \synt{channel} has to be a define. The value is sent to the DDS in the background. It is only updated after an io\_update. 
+
+\item[\lit*{DDSAMP} \synt{channel}, \synt{variable}] \hfill\\ 
+ write amplitude from variable to DDS channel. The value is sent to the DDS in the background and takes effect without io\_update. 
+
+\item[\lit*{DDSPHS} \synt{channel}, \synt{variable}] \hfill\\ 
+write phase from variable to DDS channel.  \synt{channel} has to be a define. The value is sent to the DDS in the background. It is only updated after an io\_update. 
+
+\item[\lit*{WAITDDSWRITEDONE}]\hfill\\
+Wait for the DDS writes to complete.
+
+\end{description}
+\end{addmargin}
+
+\subsection{Deprecated commands}
+These commands are only present for backwards compatibility and are not recommended to be used.
+\begin{addmargin}{1cm}
+\lit*{DDSCHN}, \lit*{SHUTTER}, \lit*{COUNT}, \lit*{COUNT1}, \lit*{COUNTBOTH}, \lit*{DELAY}, \lit*{STWR1}, \lit*{LDWR1}, \lit*{JMPZ1 }, \lit*{JMPNZ1}, \lit*{CLRW1}, \lit*{[CMP1}
+\end{addmargin}
+
+\subsection{Common idioms}
+\definecolor{green}{rgb}{0,0.6,0}
+\lstdefinelanguage{pp}  
+  { morekeywords={NOP,JMPPIPEEMPTY,READPIPEINDF,WRITEPIPEINDF,READPIPE,WRITEPIPE,STWI,LDWR,STWR,END,
+    JMP,JMPNZ,DEC,TRIGGER,SHUTTERMASK,ASYNCSHUTTER,WAIT,UPDATE,COUNTERMASK},
+ morecomment=[l]{\#}
+}
+\newcommand*{\Comment}[1]{\hfill\makebox[0.5\textwidth][l]{\parbox{0.5\textwidth}{\color{green}#1}}}%
+\lstset{language=pp, columns=flexible, numbers=left, breaklines=true, commentstyle=\color{green}, breakindent=15em, escapechar=\&}
+Here I will list and describe common idioms used in Pulse Programs.
+
+The idiom for generating a digital pulse pattern is the following:
+\begin{lstlisting}
+TRIGGER triggervariable   &\Comment{\# write the inteernal trigger buffer}&
+SHUTTERMASK  maskvariable &\Comment{\# write the shutter mask}&
+ASYNCSHUTTER shuttervariable &\Comment{\# update the shutter bits enabled in mask}&
+COUNTERMASK countergates &\Comment{\# set the value for counter gates}&
+WAIT &\Comment{\# wait for the last counter to expire}&
+UPDATE timevariable &\Comment{\# update trigger, shutter and countermask and start the counter}&
+
+TRIGGER triggervariable2   &\Comment{\# write the inteernal trigger buffer}&
+SHUTTERMASK  maskvariable2 &\Comment{\# write the shutter mask}&
+ASYNCSHUTTER shuttervariable2 &\Comment{\# update the shutter bits enabled in mask}&
+COUNTERMASK countergates2 &\Comment{\# set the value for counter gates}&
+WAIT &\Comment{\# wait for the last counter to expire}&
+UPDATE timevariable2 &\Comment{\# update trigger, shutter and countermask and start the counter}&
+\end{lstlisting}
+
+The execution continues from line 6 to line 7 without waiting. Lines 8 to 11 do not affect the output of the FPGA. In line 12 we wait for the last counter of duration \lit*{timevariable} to expire. Then we continue to line 13.
+
+An idiom to skip timesteps is realized in the following example. The example is for a step of waiting without changing any external settings.
+\begin{lstlisting}
+QubitWait: NOP	
+	LDWR QubitWaitTime  &\Comment{\# load QubitWaitTime}&
+	JMPZ QubitAnalyze    &\Comment{\# if time is 0 jump to next step}&
+	WAIT   &\Comment{\# otherwise wait for last timer to expire}&
+	UPDATE QubitWaitTime &\Comment{\# and update and set the new timer duration}&
+
+QubitAnalyze: NOP
+\end{lstlisting}
+
+The jump commands can be used to condition the program execution on the measured results. In the following example for a ion cooling step, we are checking for the ion fluorescence. If we see enough counts, we continue, otherwise we repeat the cooling step. If the ion is not detected after a maximal number of steps we stop program execution.
+
+\begin{lstlisting}
+	LDWR MaxInitRepeat
+	STWR initRemaining
+cool: NOP
+	SHUTTERMASK  CoolingOnMask &\Comment{\# set the mask of shutter to be changed for cooling}&
+	ASYNCSHUTTER CoolingOn  &\Comment{\# set the shutter values}&
+	COUNTERMASK CheckIonCounters &\Comment{\# set the counter gates}&
+	WAIT &\Comment{\# wait for the last counter to expire}&
+	UPDATE      CoolingTime &\Comment{\# update all values and start the cooling counter}&
+	COUNTERMASK Null &\Comment{\# close all counter gates, leave cooling on}&
+	WAIT  &\Comment{\# wait for end of cooling interval}&
+	LDCOUNT	PMTChannel &\Comment{\# load the counter values (PMTChannel was defined as the number of the counter)}&
+	CMP      	PresenceThreshold 	&\Comment{\# if counts greater than threshold W=W else W=0}&
+	JMPNZ     	pump  		&\Comment{\# if ion detected go on in the sequence}&
+	LDWR MaxInitRepeat &\Comment{\# Load the maximum number of repetitions}&
+	JMPZ pump                       &\Comment{\#if MaxInitRepeat=0 disable the checking for an ion }&
+	DEC initRemaining &\Comment{\# Decrease the number of cooling loops left}&
+	STWR initRemaining &\Comment{\#Store the result}&
+	JMPNZ cool  &\Comment{\# Retry if initRemaining is > 0}&
+	LDWR IonLeftExitCode     &\Comment{\# Ion left, load the exitcode}&
+	WRITEPIPE &\Comment{\# write the exitcode to the computer}&
+	END &\Comment{\# End program execution}&
+pump: NOP &\Comment{\# Here comes the next step}&
+\end{lstlisting}
+
+
+\section{Interfacing the Pulse Program with the frontend}
+Currently the front-end uses two ways for scanning values between different experimental points. In the first case the FPGA is able to control all values that have to be changed during a scan. I will call this an {\em internal scan}, in the other case some external equipment controlled by the host computer has to be changed between between experimental points ({\em external scan}).
+
+\subsection{Internal scan}
+Because no host intervention is necessary for the internal scan, the whole scan can be executed with under Pulse Program control while the communication of results and scan values is done using the pipes. A typical Pulse Program would use the following idiom:
+
+\begin{lstlisting}
+scanloop: NOP
+	JMPPIPEEMPTY endlabel   &\Comment{\# if no additional data is available in the pipe we are done with the scan}&
+	READPIPEINDF  &\Comment{\# read the address of the variable to be changed from the pipe}&
+	NOP
+	WRITEPIPEINDF  &\Comment{\# write the address back to the computer as marker between different points}&
+	NOP
+	READPIPE   &\Comment{\# read the new variable value from the pipe}&
+	NOP
+	WRITEPIPE    &\Comment{\# write it back to the computer}&
+	NOP
+	STWI      &\Comment{\# store the new value in the variable}&
+	LDWR experiments    &\Comment{\# load he number of experiments to do for this value}&
+	STWR experimentsleft   &\Comment{\# store it in the loop parameter}&
+experimentloop: NOP
+\end{lstlisting}
+ here goes everything that makes a single experiment.
+
+\begin{lstlisting}[numbers=left, firstnumber=last]
+	DEC experimentsleft    &\Comment{\# decrease the number of experiments left to do, result is in W}&
+	STWR experimentsleft &\Comment{\# store the result}&
+	JMPNZ experimentloop        &\Comment{\# if experimentsleft>0 jump to experimentloop}&
+	JMP scanloop     &\Comment{\# jump to scanloop}&
+endlabel:
+	LDWR myexitcode &\Comment{\# load exitcode into W register}&
+	WRITEPIPE  &\Comment{\# write exitcode to pipe}&
+	END &\Comment{\# end execution}&
+\end{lstlisting}
+
+\subsection{External scan}
+For an external scan the FPGA only has to execute the experiments to be averaged into one result point. The Pulse Program is restarted for every point, however the Pulse Program is not overwritten for each point. Thus one needs to take care to not overwrite variables that will be needed in the next program run.
+
+A minimal program could look like this:
+\begin{lstlisting}
+&\#&define COOLDDS 0
+var startupMask       1, mask
+var startup           1, shutter startupMask
+var startupTime       1, parameter, ms
+var coolingOnMask     1, mask
+var coolingOn         1, shutter coolingOnMask
+var coolingCounter    1, counter
+var coolingOffMask    1, mask
+var coolingOff        0, shutter coolingOffMask
+var coolingOffCounter 0, counter
+var coolingTime       10, parameter, ms
+var experiments     350, parameter
+var experimentsleft 350
+var epsilon        500, parameter, ns
+var endLabel 0xffffffff
+
+	SHUTTERMASK startupMask
+	ASYNCSHUTTER startup
+	UPDATE startupTime
+	LDWR experiments
+	STWR experimentsleft
+cooling: NOP
+	SHUTTERMASK coolingOnMask
+	ASYNCSHUTTER coolingOn
+	COUNTERMASK coolingCounter
+	WAIT                             # for end of startup or last
+	UPDATE coolingTime
+
+	SHUTTERMASK coolingOffMask
+	ASYNCSHUTTER coolingOff
+	COUNTERMASK coolingOffCounter
+	WAIT
+	UPDATE epsilon
+
+	DEC experimentsleft
+	STWR experimentsleft
+	JMPNZ cooling	
+
+	# write the end indicator
+	LDWR endLabel
+	WRITEPIPE	
+	END
+
+\end{lstlisting}
+
+
+\section{Front-end}
+The front-end is used to interact with the Pulse Program. It repares the data to be written and analyzes the results from the Pulse Program. The main window (figure~\ref{MainWindow}) has controls for instruments while the Pulse Program is {\em not} running. The windows for the DDS, Shutters, Triggers and external instruments are all in separate dockwidgets. These dockwidgets can be re-arranged, torn out into an independent window or closed. Once closed they can be re-opend via the View menu or the contect menu of any dockwidget.
+
+In addition to the Main window the program has non-modal windows for the Pulse Program configuration (wrench icon), the voltage control (Voltage icon) and FPGA settings (gear icon). Furthermore, there is a "dedicated counters" window available from the graph icon. The separate windows are described in detail below.
 
 \begin{figure}[htbp]
 \begin{center}
@@ -25,13 +446,14 @@
 \caption{\label{MainWindow} Main window.}
 \end{figure}
 
-\section{Project Selection}
+\subsection{Project Selection}
 
 \begin{SCfigure}
 \centering
 \includegraphics[width=0.48\textwidth]{ProjectSelection}
-\caption{\label{ProjectSelection} Project Selection. Folders in the base directory afre considered projects. All configuration data and result data is saved in the project folder.}
+\caption{\label{ProjectSelection} Project Selection. Folders in the base directory are considered projects. All configuration data and result data is saved in the project folder.}
 \end{SCfigure}
+
 The control program defines a "Base directory". The folders in the Base directory are considered Projects. Each Project has dedicated gui settings and data directories. The configuration data of the control program is saved in the folder .gui-config in the Project directory. It is recommended to create a folder "config" for the pulse program files and other configuration files. Data is saved by default in a directory structure consiting of year, month and day directories. This window is shown on first startup of the control program.
 
 If "Set as default" is checked the control program will start with the default project. In this case the project can be changed by selecting File $\rightarrow$ Project.
@@ -41,16 +463,18 @@ If "Set as default" is checked the control program will start with the default p
 \begin{center}
 \includegraphics[width=0.7\textwidth]{FPGASettings}
 \end{center}
-\caption{\label{FPGASettings} Main window.}
+\caption{\label{FPGASettings} FPGA settings window.}
 \end{figure}
+The FPGA settings window (figure\ref{FPGASettings}) is sown on start-up. If "Automatically upload bitfile" is checked, the bitfile will be uploaded on "OK". The bitfile can also be uploaded manually. In the case the Instrument selection is empty, please make sure previous processes have been closed (and orphans have been closed). Disconnecting and re-connecting the USB cable should help too. After fixing the problem press "Scan".
 
-\section{Plot display}
+\subsection{Plot display}
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=0.8\textwidth]{ScanData}
 \end{center}
-\caption{\label{ScanData} Main window.}
+\caption{\label{ScanData} Plot widget. The A button autoscales the axis, the grid button toggles the grid lines and the "1 0" button scales the vertical axis to a unity range.}
 \end{figure}
+All plots are displayed using the pyqtgraph library. A typical window is shown in figure~\ref{ScanData}. The scales can be changed dynamically using the mouse. The middle mouse button can be used for panning, the mouse wheel for zooming in and out. If the wheel is used left of the vertical axis (or below the horizontal axis) the vertical axis, (horizontal axis) is zoomed while the other axis remains in autoscale. The "1 0"button on the left sets the vertical axis to a unity scale. The grid symbol toggles the grid display. The current cursor position is shown on the bottom right. The precision of this display can be increased by first zoomin in.
 
 
 \section{Dedicated Counters}
@@ -58,15 +482,19 @@ If "Set as default" is checked the control program will start with the default p
 \begin{center}
 \includegraphics[width=\textwidth]{DedicatedCounters}
 \end{center}
-\caption{\label{DedicatedCounters} Main window.}
+\caption{\label{DedicatedCounters} Dedicated counters window. The left dock widget controls the Auto-loading feature. The right dock widgets display the last counter values and analog input values as well as the counter control and input calibration widgets. Dock widgets can be re-arranged, torn out or closed if not needed. }
 \end{figure}
+In addition to the Pulse Program, the FPGA has dedicated counters for all $8$ digital input lines and $4$ analog inputs. These counters are {\em not} synchronized with the execution of the Pulse Program, nor do they stop during the Pulse Program execution. The analog input channels can be calibrated to voltage or any function can be used to map the values to different quantities. Currently there is a conversion function for reading the Mini-Circuits rf-power detectors. Others can be added easily.
 
-\begin{figure}[htbp]
-\begin{center}
+The dedicated counters and  the Auto-load feature building upon it are controlled from the "dedicated counters" window (figure~\ref{DedicatedCounters}). 
+
+The counter channels can be selected from the 
+
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{DedicatedCountersSettings}
-\end{center}
-\caption{\label{DedicatedCountersSettings} Main window.}
-\end{figure}
+\caption{\label{DedicatedCountersSettings} Counter control widget. The $8$ digital and $4$ analog input channels can be selected independently. The integration time (to be entered with unit) determines the integration time per point. The minimal recommended value is $10\unit{ms}$. }
+\end{SCfigure}
 
 
 
