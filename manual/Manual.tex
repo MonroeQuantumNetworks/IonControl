@@ -7,6 +7,7 @@
 \usepackage{sidecap}
 \usepackage{listings}
 \usepackage{syntax}
+\usepackage{enumitem}
 \usepackage[format=plain,indention=1em,margin=0.05\textwidth]{caption}
 
 \newcommand{\unit}[1]{\ensuremath{\operatorname{#1}}}
@@ -458,7 +459,7 @@ The control program defines a "Base directory". The folders in the Base director
 
 If "Set as default" is checked the control program will start with the default project. In this case the project can be changed by selecting File $\rightarrow$ Project.
 
-\section{FPGA settings}
+\subsection{FPGA settings}
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=0.7\textwidth]{FPGASettings}
@@ -477,7 +478,7 @@ The FPGA settings window (figure\ref{FPGASettings}) is sown on start-up. If "Aut
 All plots are displayed using the pyqtgraph library. A typical window is shown in figure~\ref{ScanData}. The scales can be changed dynamically using the mouse. The middle mouse button can be used for panning, the mouse wheel for zooming in and out. If the wheel is used left of the vertical axis (or below the horizontal axis) the vertical axis, (horizontal axis) is zoomed while the other axis remains in autoscale. The "1 0"button on the left sets the vertical axis to a unity scale. The grid symbol toggles the grid display. The current cursor position is shown on the bottom right. The precision of this display can be increased by first zoomin in.
 
 
-\section{Dedicated Counters}
+\subsection{Dedicated Counters}
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=\textwidth]{DedicatedCounters}
@@ -497,85 +498,117 @@ The counter channels can be selected from the
 \end{SCfigure}
 
 
-
 \subsection{Autoload}
 \begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=0.5\textwidth]{Autoload}
-\end{center}
-\caption{\label{Autoload} Main window.}
+\centering
+\includegraphics[width=0.48\textwidth]{Autoload}\hfill
+\includegraphics[width=0.48\textwidth]{AutoloadSettings}
+\caption{\label{Autoload} Autoload top window (left) and settings window (right). The timer counts the time from beginning of loading during loading. Then it switches to the time since the ion was first detected. A list of historic times is kept. Loading time is the time from switching on the oven to the detection of an ion. Trapping time the time between first detection and the last time the ion was detected.}
 \end{figure}
+The auto-load feature allows automated loading where the counts on one counter and optionally the wavelength from a Highfinesse wavemeter are checked.
 
-\subsubsection{Settings}
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=0.5\textwidth]{AutoloadSettings}
-\end{center}
-\caption{\label{AutoloadSettings} Main window.}
-\end{figure}
+\paragraph{Settings}
+The Auto-loading feature takes the input of one counter channel as plotted in the dedicated counters window. The main loading window is shown in figure~\ref{Autoload}. The settings controlling the auto-load feature are entered in the Settings tab. The loading is done with the following steps: 
+\begin{description}
+\item[\lit{Preheat}] The oven is on, the loading laser blocked. No ion detection is performed. After \lit{Laser delay} time, it will proceed to \lit{Load}.
+\item[\lit{Load}] The oven and loading lasers are on. Is the ion detected the state will proceed to \lit{Check}. Is \lit{Max time} reached, auto-loading fails and is stopped.
+\item[\lit{Check}] Oven and laser are off, if the ion is not detected, the state is set to \lit{Load}. After the \lit{Check time}, the state proceeds to \lit{Trapped}.
+\item[\lit{Trapped}] If the ion is not detected the state is set to \lit{Disappeared}.
+\item[\lit{Disappeared}] If the ion is found back during \lit{Check time} the state is set to \lit{Trapped}.
+\end{description}
+These settings are as follows:
+\begin{description}
+\item[\lit{Th. oven}] Threshold for detecting an ion while the oven is on (allows to compensate in case oven operation leads to additional scatter). The threshold is given in counts per integration time. To be entered with frequency unit.
+\item[\lit{Th. bare}] Threshold bare. This is the threshold used if the oven is off.
+\item[\lit{Check time}] After an ion is detected, the ion has to be detected for at least this time. If the ion leaves during this time
+\item[\lit{Max Time}] Maximum time the oven is on. Even with multiple cycles between \lit{Check} and \lit{Load} states, this time is not exceeded.
+\item[\lit{Laser delay}] Delay time after which the loading laser is switched on (preheat time).
+\item[\lit{Oven}] Shutter bit number of the oven enable bit. 
+\item[\lit{Shutter}] Shutter enable bit of the loading laser shutter.
+\item[\lit{Counter}] Counter channel to be used for ion detection.
+\end{description}
 
+\paragraph{Interlock}
+In addition to observing the counts it is possible to monitor relevant laser frequencies and stop the loading process if a laser is out of lock. The interface is shown in figure~\ref{WavemeterInterlock}.
+\begin{SCfigure}
+\centering
+\includegraphics[width=0.6\textwidth]{WavemeterInterlock}
+\caption{\label{WavemeterInterlock} Wavemeter interlock. The address of the wavemeter control computer is entered at the bottom, it has to contain only the host name and optionally the port number. Individual channels can be added or removed with the plus or minus button, respectively. Maximum and Minimum are always entered in GHz.}
+\end{SCfigure}
 
+The inerlock queres the wavemeter periodically. Is the wavelength out of the given range for $10$ consecutively queries, the loading process is stopped if the Interlock is enabled (checkbox on lower right). The bar at the bottom of the window is black for disable interlock, red if at least one laser is out of range and green if all lasers are in range.
 
-\subsubsection{Interlock}
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=0.7\textwidth]{WavemeterInterlock}
-\end{center}
-\caption{\label{WavemeterInterlock} Main window.}
-\end{figure}
+\subsubsection{Analog Inputs}
+The voltages at the analog inputs can be either displayed in Volt or converted. This is used for example to convert the reading from a Mini-Circuits power detector from voltage into rf power. The configuration of these input calibrations is controlled by the window shown in figure~\ref{AnalogInputCalibration}. The fit parameters for the Mini-Circuits power detector can be entered here. Additional input calibrations can be easily defined by deriving a class from the class \lit{AnalogInputCalibration} in the file \lit{AnalogInputCalibration.py} and adding the new class to the dictionary \lit{AnalogInputCalibrationMap} also defined in the same file. There is no additional gui programming necessary to add additional calibrations.
 
-\subsection{Analog Inputs}
-\begin{figure}[htbp]
-\begin{center}
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{AnalogInputCalibration}
-\end{center}
-\caption{\label{WavemeterInterlock} Main window.}
-\end{figure}
+\caption{\label{AnalogInputCalibration} Analog input calibration. The calibration can be selected for each channel. Additionally, the calibration can define parameters which are entered here.}
+\end{SCfigure}
 
-\section{Global Variables}
-\begin{figure}[htbp]
-\begin{center}
+\subsection{Global Variables}
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{GlobalVariables}
-\end{center}
-\caption{\label{GlobalVariables} Main window.}
-\end{figure}
+\caption{\label{GlobalVariables} Global variables window. Global variables can be defined here. The value should be entered with dimensions. Entering of mathematical expressions is possible, however the expression will only be evaluated once and replace with the result. The variables can be sorted by name, or re-ordered be hand: selected rows can be moved up or down by pressing the Page-Up and Page-Down keys, respectively. New variables are added by entering the name and clicking the plus icon.}
+\end{SCfigure}
 
+Global variables can be defined as shown in figure~\ref{GlobalVariables}. These variables can then be used in all Pulse Program controls.
 
-\section{Static settings}
-\subsection{DDS}
-\begin{figure}[htbp]
-\begin{center}
+\subsection{Static settings}
+Static settings are the settings that are applied while no Pulse Program is running. In this case the shutter values, trigger values and DDS settings can be controlled by the respective control dock windows.
+
+\subsubsection{DDS}
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{DDS}
-\end{center}
-\caption{\label{DDS} Main window.}
-\end{figure}
+\caption{\label{DDS} DDS control window for 6 DDS channels. The channel names are only for the memory of the user. These values are {\em not} used anywhere else. The frequency has to be entered with a frequency unit. The Phase has to be entered with the unit rad. (Please excuse that in most other parts the phase is entered in degree and without unit). The amplitude is entered as an integer between 0 and 1023. If apply directly is checked, the io-update signals are generated after each change. If it is not checked, the apply button has to be clicked. Reset triggers a channel reset, values have to be written explicitly thereafter. }
+\end{SCfigure}
+The DDS settings are entered in the window show in figure~\ref{DDS}.  The channel names are only for the memory of the user. These values are {\em not} used anywhere else. The frequency has to be entered with a frequency unit. The Phase has to be entered with the unit rad. (Please excuse that in most other parts the phase is entered in degree and without unit). The amplitude is entered as an integer between 0 and 1023. If apply directly is checked, the io-update signals are generated after each change. If it is not checked, the apply button has to be clicked. Reset triggers a channel reset, values have to be written explicitly thereafter. The controls are disabled while a Pulse Program is running. After the execution of a Pulse Program, the DDS chips might be left at different settings. In the configuration of Pulse Program scans an option to automatically write the static settings can be selected.
 
-\subsection{Shutters}
-\begin{figure}[htbp]
-\begin{center}
+The fields for frequency and phase can be changed by pressing the up and down keys. The value is then increased or reduced by the value of the digit left of the cursor.
+
+\subsubsection{Shutters}
+Shutters are the digital outputs of the system. These can be toggled by clicking the red (off, low) or green (on, high) field. The channel name that can be entered in the left column is only for the reference of the user. It is not used anywhere else.
+
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.4\textwidth]{Shutters}
-\end{center}
-\caption{\label{Shutters} Main window.}
-\end{figure}
+\caption{\label{Shutters} Shutter control. Channel names can be entered on the left, the output toggled on the right. The control is disabled while a Pulse Program is running.}
+\end{SCfigure}
 
-\subsection{Triggers}
+\subsubsection{Triggers}
+The triggers are digital outputs that are low by default and only switched to high for one clock cycle. The control window is similar to the Shutter window. Only here "not triggered" is represented by a white field. Triggers are applied by clicking Apply.
 
-\section{External Instruments}
-\subsection{External Instrument Selection}
-\begin{figure}[htbp]
-\begin{center}
+\subsection{External Instruments}
+External instruments includes all external instruments connected via GPIB, USB, Serial, IP-network to the host computer. The external instruments have one value that can be controlled and used for scans. In addition each instrument can define a number of Parameters which can be controlled from the gui. The External parameter interface consists of two windows: "Params selection" and "Params control". Params selection serves to establish a connection to the device and control the Parameters. The Paras control window combines the main channels of all enabled External Instruments.
+
+\subsubsection{External Instrument Selection}
+
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{ParamsSelection}
-\end{center}
-\caption{\label{ParamsSelection} Main window.}
-\end{figure}
+\caption{\label{ParamsSelection} Parameter selection window. The top selection box lists the available instrument classes. The connection information has to be entered in the \protect\lit{Instrument} field. The \protect\lit{name} serves to identify the devices and has to be unique. Clicking the plus icon will add a new instrument with these settings to the list. When the checkbox in the first column is checked a connection is established.}
+\end{SCfigure}
 
-\subsection{External Instrument Control}
-\begin{figure}[htbp]
-\begin{center}
+The available instruments are configured in "Params Selection" (figure~\ref{ParamsSelection}). A connection to the device is only established once the check box in the first column is checked. When clicking on an active row, the parameters of the device can be changed in the lower list. All instruments inherit the \lit{stepsize}, \lit{delay}, and \lit{jump} settings. These are meant for values (as for example lasers locked to sideband generated by a synthesizer) that may only be changed in steps. The generated steps are of size \lit{stepsize} and are executed with a delay of \lit{delay} between consecutive steps. Checking \lit{jump} will deactivate this feature and apply values directly.
+
+The \lit{dummy} instrument is used for debugging.
+
+The order of the instruments can be changed by selecting rows and pressing the \lit{Page-Up} or \lit{Page-Down} keys to move the selected row up or down, respectively.
+
+Additional instruments can be added without gui programming by deriving a class from the class \lit{ExternalParameterBase} in file \lit{ExternalScannedParameters.py}. The newly generated class has to be added to the \lit{ExternalScannedParameters} dictionary which is defined at the bottom of the the same file.
+
+\subsubsection{External Instrument Control}
+
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{ParamsControl}
-\end{center}
-\caption{\label{GlobalVariables} Main window.}
-\end{figure}
+\caption{\label{GlobalVariables} Parameter control window. The main value of all active instruments is controlled from here. The order follows the order of the instruments in the "Params selection" window. The control column is editable and used to change the current value. The External column reports the value as last written or reported by the device (if possible).}
+\end{SCfigure}
+This window combines the main values of all external instruments. The order follows the order of the instruments in the "Params selection" window. The control column is editable and used to change the current value. The External column reports the value as last written or reported by the device (if possible). Should a connection be lost, try disabling and enabling the instrument in the "Params selection" window.
+
 
 \section{Pulse Program}
 \begin{figure}[htbp]

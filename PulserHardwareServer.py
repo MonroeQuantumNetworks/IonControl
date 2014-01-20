@@ -159,6 +159,7 @@ class PulserHardwareServer(Process):
     def readDataFifo(self):
         """ run is responsible for reading the data back from the FPGA
             0xffffffff end of experiment marker
+            0xfffexxxx exitcode marker
             0xff000000 timestamping overflow marker
             0xffffxxxx scan parameter, followed by scanparameter value
             0x1nxxxxxx count result from channel n
