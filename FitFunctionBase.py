@@ -55,7 +55,7 @@ class FitFunctionBase(object):
             self.parametersRelConfidence = self.parametersConfidence/numpy.abs(self.parameters)*100
             logger.info(  "Fitted parameters at minimum, with 68% C.I.:" )
             for i,pmin in enumerate(self.parameters):
-                logger.info(  "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(self.cov_x[i,i])*sqrt(self.chisq/self.dof)) )
+                logger.info(  "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(max(self.cov_x[i,i],0))*sqrt(self.chisq/self.dof)) )
         
             logger.info(  "Correlation matrix" )
             # correlation matrix close to gnuplot

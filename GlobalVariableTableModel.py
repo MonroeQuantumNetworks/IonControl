@@ -58,6 +58,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     def setDataName(self, row, value):
         try:
             strvalue = str(value if api2 else str(value.toString())).strip()
+            
             self.variables.renameAt(row, strvalue)
             return True    
         except Exception:

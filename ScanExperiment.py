@@ -381,7 +381,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.progressUi.state in [self.OpStates.paused,self.OpStates.interrupted]:
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
-            self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
+            (mycode, _) = self.generator.restartCode(self.currentIndex)
+            self.pulserHardware.ppWriteData(mycode)
             logger.info( "Starting" )
             self.pulserHardware.ppStart()
             self.progressUi.resumeRunning(self.currentIndex)

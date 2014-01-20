@@ -107,7 +107,7 @@ class NumberEvaluation(EvaluationBase):
         return len(countarray), (0,0), len(countarray)
 
     def children(self):
-        return []     
+        return [{'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'], 'readonly':True }]     
 
 
 class ThresholdEvaluation(EvaluationBase):
