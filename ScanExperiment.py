@@ -243,12 +243,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramWidget = CoordinatePlotWidget(self)
         self.histogramDock.addWidget(self.histogramWidget)
         self.histogramView = self.histogramWidget.graphicsView
-        self.plotWidgets["Histogram"] =  self.graphicsView
+        self.plotWidgets["Histogram"] =  self.histogramView
         self.histogramWidget.autoRange()
         self.timestampWidget = CoordinatePlotWidget(self) # pyqtgraph.PlotWidget()
         self.timestampDock.addWidget( self.timestampWidget )
         self.timestampView = self.timestampWidget.graphicsView
-        self.plotWidgets["Timestamps"] =  self.graphicsView
+        self.plotWidgets["Timestamps"] =  self.timestampView
         self.timestampWidget.autoRange()
         try:
             if self.experimentName+'.pyqtgraph-dockareastate' in self.config:
