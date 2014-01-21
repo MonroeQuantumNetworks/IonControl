@@ -670,7 +670,7 @@ class Magnitude():
         for i in range(len(self.unit)):
             self.unit[i] = self.unit[i] + m.unit[i]
         self.out_unit = None
-        self.significantDigits = max( self.significantDigits, m.significantDigits )
+        self.significantDigits = max( self.significantDigits, 1) + max(m.significantDigits,1 )
 
     def _div_by(self, m):
         self.val /= m.val
