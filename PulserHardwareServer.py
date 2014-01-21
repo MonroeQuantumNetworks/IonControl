@@ -168,9 +168,8 @@ class PulserHardwareServer(Process):
             0x4xxxxxxx other return
         """
         logger = logging.getLogger(__name__)
-        data, overrun = self.ppReadData(4)
+        data, self.data.overrun = self.ppReadData(4)
         if data:
-            self.data.overrun = self.data.overrun or overrun
             for s in sliceview(data,4):
                 (token,) = struct.unpack('I',s)
                 if self.state == self.analyzingState.scanparameter:
@@ -219,6 +218,12 @@ class PulserHardwareServer(Process):
                         self.data.other.append(value)
                     else:
                         pass
+            if self.data.overrun:
+                logger.info( "Overrun detected, triggered data queue" )
+                self.dataQueue.put( self.data )
+                self.data = Data()
+                
+            
      
     def __getattr__(self, name):
         """delegate not available procedures to xem"""
