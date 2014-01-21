@@ -58,7 +58,7 @@ class ParameterScanGenerator:
             self.nextIndexToWrite = 2040+currentIndex*2
             return ( self.scan.code[currentIndex*2:self.nextIndexToWrite], [])
         self.nextIndexToWrite = len(self.scan.code)
-        return ( self.scan.code[currentIndex*2:], [])
+        return self.scan.code[currentIndex*2:]
         
     def xValue(self, index):
         return self.scan.list[index].ounit(self.scan.xUnit).toval()
@@ -381,8 +381,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.progressUi.state in [self.OpStates.paused,self.OpStates.interrupted]:
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
-            (mycode, _) = self.generator.restartCode(self.currentIndex)
-            self.pulserHardware.ppWriteData(mycode)
+            self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
             logger.info( "Starting" )
             self.pulserHardware.ppStart()
             self.progressUi.resumeRunning(self.currentIndex)
