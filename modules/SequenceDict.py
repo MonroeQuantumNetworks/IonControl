@@ -37,9 +37,15 @@ class SequenceDict(dict, MutableMapping):
         >>> s.renameAt(2, 20)
         >>> print s
         SequenceDict([(1, 1), (2, 2), (20, 3), (4, 4)])
+        >>> s.renameAt(2, 20)
+        >>> print s
+        SequenceDict([(1, 1), (2, 2), (20, 3), (4, 4)])
         """
         if new in self:
-            raise KeyError('renameAt: "{0}" key already exists')
+            if self._keys[index]==new:
+                return 
+            else:
+                raise KeyError('renameAt: "{0}" key already exists')
         dict.__setitem__(self,new, dict.pop(self, self._keys[index] ) )
         self._keys[index] = new
         
