@@ -66,7 +66,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.myMenu.removeAction(action)
         self.exceptionsListed -= 1
         if self.exceptionsListed==0:
-            self.setIcon(self.NoExceptionsIcon)
+            self.removeAll()
         
     def myexcepthook(self, excepttype, value, tback):
         logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__)
