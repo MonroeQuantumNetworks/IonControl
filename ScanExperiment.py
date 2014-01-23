@@ -23,6 +23,7 @@ import MainWindowWidget
 import FitUi
 from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
+from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from modules import DataDirectory
 import time
 from CoordinatePlotWidget import CoordinatePlotWidget
@@ -480,7 +481,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                                                     yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name)               
                     xRange = self.generator.xRange()
                     if xRange:
-                        self.graphicsView.setXRange( *xRange )     
+                        self.graphicsView.setXRange( *xRange ) 
+                    else:
+                        self.graphicsView.enableAutoRange(axis=ViewBox.XAxis)
                     pulseProgramHeader = self.pulseProgramUi.documentationString()
                     scanHeader = self.scan.documentationString()
                     self.plottedTraceList.append( plottedTrace )
