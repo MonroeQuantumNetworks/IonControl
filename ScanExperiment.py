@@ -53,10 +53,9 @@ class ParameterScanGenerator:
         return ( self.scan.code, [])
         
     def restartCode(self,currentIndex):
-        mycode = self.scan.code[currentIndex*2:]
         if len(self.scan.code)-2*currentIndex>2040:
             self.nextIndexToWrite = 2040+currentIndex*2
-            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite], [])
+            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentIndex*2:]
         

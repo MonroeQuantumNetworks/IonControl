@@ -17,6 +17,7 @@ class ScanProgress(Form,Base):
         self.previouslyElapsedTime = 0      # time spent on run before last start 
         self.averagingMode = False
         self.expected = 0
+        self.timer = None
     
     def setupUi(self):
         super(ScanProgress,self).setupUi(self)
@@ -40,7 +41,8 @@ class ScanProgress(Form,Base):
         self.timer.start(1000)
         
     def stopTimer(self):
-        del self.timer
+        if self.timer:
+            del self.timer
             
     def setIdle(self):
         self.statusLabel.setText("Idle")    
