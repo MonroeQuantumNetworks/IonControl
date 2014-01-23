@@ -552,7 +552,8 @@ class PulserHardwareServer(Process):
     def uploadBitfile(self,bitfile):
         if self.xem is not None and self.xem.IsOpen():
             check( self.xem.ConfigureFPGA(bitfile), "Configure bitfile {0}".format(bitfile))
-        
+            self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
+
     def openByName(self,name):
         self.xem = ok.FrontPanel()
         check( self.xem.OpenBySerial( self.modules[name].serial ), "OpenByName {0}".format(name) )

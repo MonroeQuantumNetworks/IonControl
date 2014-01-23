@@ -216,6 +216,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramList = list()
         self.histogramTrace = None
         self.interruptReason = ""
+        self.scan = None
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -399,10 +400,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
-            if self.scan.rewriteDDS:
+            if self.scan and self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
             self.progressUi.setIdle()
-        self.finalizeData(reason='stopped')
+        if self.scan:
+            self.finalizeData(reason='stopped')
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
