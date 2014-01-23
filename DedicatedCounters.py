@@ -24,6 +24,7 @@ class Settings:
     pass
 
 class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
+    dataAvailable = QtCore.pyqtSignal( object )
     OpStates = enum.enum('idle','running','paused')
     def __init__(self,config,pulserHardware,parent=None):
         DedicatedCountersForm.__init__(self)
@@ -87,7 +88,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.displayDockADC.setWidget(self.displayUiADC)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDockADC)
         # AutoLoad
-        self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware)
+        self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware, self.dataAvailable)
         self.autoLoad.setupUi(self.autoLoad)
         self.autoLoadDock = QtGui.QDockWidget("Auto Loader")
         self.autoLoadDock.setObjectName("Auto Loader")
@@ -173,18 +174,21 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.displayUi.values = data.data[0:4]
         self.displayUi2.values = data.data[4:8]
         self.displayUiADC.values = self.convertAnalog(data.data[8:12])
+        data.analogValues = self.displayUiADC.values
         if data.data[12] is not None and data.data[12] in self.integrationTimeLookup:
             self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
         else:
             self.dataIntegrationTime = self.settings.integrationTime
+        data.integrationTime = self.dataIntegrationTime 
         for counter in range(8):
             if data.data[counter] is not None:
-                y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval()) 
+                y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval())
                 Start = max( 1+len(self.xData[counter])-self.settings.pointsToKeep, 0)
                 self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
                 self.xData[counter] = numpy.append(self.xData[counter][Start:], self.tick )
                 if self.curves[counter] is not None:
                     self.curves[counter].setData(self.xData[counter],self.yData[counter])
+        self.dataAvailable.emit(data)
  
     def convertAnalog(self,data):
         converted = list()
