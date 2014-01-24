@@ -38,7 +38,7 @@ class VariableDictionary(SequenceDict):
         self.globaldict = globaldict
         self.valueView = VariableDictionaryView(self)
         for name,var in variabledict.iteritems():
-            if var.type in ['parameter','address',None]:
+            if var.type in ['parameter','address']:
                 super(VariableDictionary,self).__setitem__(name, var)
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):

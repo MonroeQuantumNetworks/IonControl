@@ -56,10 +56,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.loadButton.setDefaultAction( self.actionOpen )
         self.saveButton.setDefaultAction( self.actionSave )
         self.resetButton.setDefaultAction( self.actionReset )
-        self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
-        self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
-        self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
-        self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         
         if hasattr(self.configParams,'recentFiles'):
@@ -89,15 +85,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadFile(self.configParams.recentFiles[name])
             if str(self.filenameComboBox.currentText())!=name:
                 self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
-        
-    def onVariableSelectionChanged(self):
-        visibledict = dict()
-        for tag in [self.checkBoxParameter,self.checkBoxAddress,self.checkBoxOther]:
-            visibledict[str(tag.text())] = tag.isChecked()
-        self.variableTableModel.setVisible(visibledict)
-
-    def onDebugChanged(self):
-        self.pulseProgram.debug = self.debugCheckBox.isChecked()
         
     def onOk(self):
         pass
