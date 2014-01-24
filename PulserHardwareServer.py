@@ -374,8 +374,11 @@ class PulserHardwareServer(Process):
     def ppStart(self):#, widget = None, data = None):
         if self.xem:
             self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
-            self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
             self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
+            self.readDataFifo()
+            self.readDataFifo()   # after the first time the could still be data in the FIFO not reported by the fifo count
+            self.data = Data()    # flush data that might have been accumulated
+            self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
             return True
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
@@ -549,7 +552,8 @@ class PulserHardwareServer(Process):
     def uploadBitfile(self,bitfile):
         if self.xem is not None and self.xem.IsOpen():
             check( self.xem.ConfigureFPGA(bitfile), "Configure bitfile {0}".format(bitfile))
-        
+            self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
+
     def openByName(self,name):
         self.xem = ok.FrontPanel()
         check( self.xem.OpenBySerial( self.modules[name].serial ), "OpenByName {0}".format(name) )

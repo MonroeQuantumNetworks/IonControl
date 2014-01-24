@@ -23,6 +23,7 @@ import MainWindowWidget
 import FitUi
 from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
+from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from modules import DataDirectory
 import time
 from CoordinatePlotWidget import CoordinatePlotWidget
@@ -53,12 +54,11 @@ class ParameterScanGenerator:
         return ( self.scan.code, [])
         
     def restartCode(self,currentIndex):
-        mycode = self.scan.code[currentIndex*2:]
         if len(self.scan.code)-2*currentIndex>2040:
             self.nextIndexToWrite = 2040+currentIndex*2
-            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite], [])
+            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
-        return ( self.scan.code[currentIndex*2:], [])
+        return self.scan.code[currentIndex*2:]
         
     def xValue(self, index):
         return self.scan.list[index].ounit(self.scan.xUnit).toval()
@@ -217,6 +217,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramList = list()
         self.histogramTrace = None
         self.interruptReason = ""
+        self.scan = None
 
     def setupUi(self,MainWindow,config):
         ScanExperimentForm.setupUi(self,MainWindow)
@@ -381,8 +382,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.progressUi.state in [self.OpStates.paused,self.OpStates.interrupted]:
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
-            (mycode, _) = self.generator.restartCode(self.currentIndex)
-            self.pulserHardware.ppWriteData(mycode)
+            self.pulserHardware.ppWriteData(self.generator.restartCode(self.currentIndex))
             logger.info( "Starting" )
             self.pulserHardware.ppStart()
             self.progressUi.resumeRunning(self.currentIndex)
@@ -401,10 +401,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
-            if self.scan.rewriteDDS:
+            if self.scan and self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
             self.progressUi.setIdle()
-        self.finalizeData(reason='stopped')
+        if self.scan:
+            self.finalizeData(reason='stopped')
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
@@ -480,7 +481,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                                                     yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name)               
                     xRange = self.generator.xRange()
                     if xRange:
-                        self.graphicsView.setXRange( *xRange )     
+                        self.graphicsView.setXRange( *xRange ) 
+                    else:
+                        self.graphicsView.enableAutoRange(axis=ViewBox.XAxis)
                     pulseProgramHeader = self.pulseProgramUi.documentationString()
                     scanHeader = self.scan.documentationString()
                     self.plottedTraceList.append( plottedTrace )
