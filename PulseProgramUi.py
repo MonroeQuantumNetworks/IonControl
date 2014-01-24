@@ -7,7 +7,8 @@ Created on Thu Feb 07 22:55:28 2013
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import PulseProgram
-import VariableTableModel
+from VariableDictionary import VariableDictionary
+from VariableTableModel import VariableTableModel
 import ShutterTableModel
 import TriggerTableModel
 import CounterTableModel
@@ -66,10 +67,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 if os.path.exists(path):
                     self.filenameComboBox.addItem(key)
         if self.configParams.lastFilename is not None:
-            try:
-                self.loadFile( self.configParams.lastFilename )
-            except Exception as e:
-                logger.error( "Ignoring exception {0}, pulse programming file '{1}' cannot be loaded.".format(str(e),self.configParams.lastFilename) )
+#             try:
+            self.loadFile( self.configParams.lastFilename )
+#             except Exception as e:
+#                 logger.error( "Ignoring exception {0}, pulse programming file '{1}' cannot be loaded.".format(str(e),self.configParams.lastFilename) )
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
@@ -108,7 +109,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             
     def onReset(self):
         if self.configParams.lastFilename is not None:
-            self.variabledict = self.pulseProgram.variabledict.copy()
+            self.variabledict = VariableDictionary( self.pulseProgram.variabledict, self.parameterdict )
             self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
@@ -124,7 +125,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         except PulseProgram.ppexception as compileexception:
             # compilation failed, we save the exception and pass to to updateDisplay
             pass
-        self.variabledict = self.pulseProgram.variabledict.copy()
+        self.variabledict = VariableDictionary( self.pulseProgram.variabledict, self.parameterdict )
+        self.shutterCounterDict = self.pulseProgram.variabledict
         if (self.configname,key) in self.config:
             self.variabledict.update( dictutil.subdict(self.config[(self.configname,key)], self.variabledict.keys() ) )
         self.updateDisplay(compileexception)
@@ -155,7 +157,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                                         textEdit.textEdit.verticalScrollBar().value() )
             self.pulseProgram.loadFromMemory()
             self.oldVariabledict = self.variabledict
-            self.variabledict = self.pulseProgram.variabledict.copy()
+            self.variabledict = VariableDictionary( self.pulseProgram.variabledict, self.parameterdict )
             self.variabledict.update( dictutil.subdict(self.oldVariabledict, self.variabledict.keys() ) )
             self.updateDisplay()
             for name, textEdit in self.sourceCodeEdits.iteritems():
@@ -177,20 +179,20 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
-        self.variableTableModel = VariableTableModel.VariableTableModel( self.variabledict, self.parameterdict )
+        self.variableTableModel = VariableTableModel( self.variabledict )
         if self.parameterChangedSignal:
-            self.parameterChangedSignal.connect(self.variableTableModel.onParameterChanged)
+            self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
         self.variableView.setModel(self.variableTableModel)
         self.variableView.resizeColumnToContents(0)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.variabledict )
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.shutterCounterDict )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
-        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.variabledict )
+        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.shutterCounterDict )
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-        self.counterTableModel = CounterTableModel.CounterTableModel( self.variabledict )
+        self.counterTableModel = CounterTableModel.CounterTableModel( self.shutterCounterDict )
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
@@ -210,7 +212,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
         if self.configParams.lastFilename:
-            self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
+            self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict.bareDictionaryCopy()
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)

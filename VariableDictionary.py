@@ -39,11 +39,18 @@ class VariableDictionary(SequenceDict):
         self.valueView = VariableDictionaryView(self)
         for name,var in variabledict.iteritems():
             if var.type in ['parameter','address',None]:
-                self[name] = var
+                super(VariableDictionary,self).__setitem__(name, var)
         for name, var in self.iteritems():
-            var.value, dependencies = self.expression.evaluate(var.strvalue, self.valueView, listDependencies=True)
-            self.addDependencies(self.dependencyGraph, dependencies, name)
+            if hasattr(var,'strvalue'):
+                var.value, dependencies = self.expression.evaluate(var.strvalue, self.valueView, listDependencies=True)
+                self.addDependencies(self.dependencyGraph, dependencies, name)
         self.recalculateAll()
+        
+    def __setitem__(self, key, value):
+        super(VariableDictionary,self).__setitem__(key, value)
+        if hasattr(value,'strvalue'):
+            self.setStrValue( key, value.strvalue )
+
                 
     def addDependencies(self, graph, dependencies, name):
         """add all the dependencies to name"""
@@ -58,7 +65,7 @@ class VariableDictionary(SequenceDict):
             raise CyclicDependencyException(cycle)
                 
     def setStrValueIndex(self, index, strvalue):
-        self.setStrValue( self.keyAt(index), strvalue)
+        return self.setStrValue( self.keyAt(index), strvalue)
         
     def setStrValue(self, name, strvalue):
         """update the variable value with strvalue and recalculate as necessary"""  
@@ -73,11 +80,23 @@ class VariableDictionary(SequenceDict):
         var.value = result
         var.strvalue = strvalue
         self.dependencyGraph = graph
-        self.recalculateDependent(name)
+        return self.recalculateDependent(name)
         
+    def setEncodingIndex(self, index, encoding):
+        self.variabledict.at(index).encoding = None if encoding == 'None' else str(encoding)
+    
+    def setEnabledIndex(self, index, enabled):
+        self.variabledict.at(index).enabled = enabled
+       
     def recalculateDependent(self, node):
-        for node in dfs_preorder_nodes(self.dependencyGraph,node):
-            self.recalculateNode(node)
+        if self.dependencyGraph.has_node(node):
+            generator = dfs_preorder_nodes(self.dependencyGraph,node)
+            next(generator )   # skip the first, that is us
+            nodelist = list(generator)  # make a list, we need it twice 
+            for node in nodelist:
+                self.recalculateNode(node)
+            return nodelist     # return which ones were re-calculated, so gui can be updated 
+        return list()
 
     def recalculateNode(self, node):
         if node in self:
@@ -91,6 +110,9 @@ class VariableDictionary(SequenceDict):
             if indegree==0:
                 for calcnode in dfs_postorder_nodes(g, node):
                     self.recalculateNode(calcnode)
+                    
+    def bareDictionaryCopy(self):
+        return SequenceDict( self )
 
 if __name__=="__main__":
     class variable:

@@ -5,128 +5,90 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore
-from operator import attrgetter
 import functools
 import modules.magnitude as magnitude
-from modules import Expression
 import sip
 import logging
-from collections import OrderedDict
+from VariableDictionary import CyclicDependencyException
 
 api2 = sip.getapi("QVariant")==2
 
 class VariableTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, variabledict, parameterdict, parent=None, *args): 
-        """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
-            parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
-        """
-        QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = OrderedDict()
-        for name,var in variabledict.iteritems():
-            if var.type in ['parameter','address',None]:
-                self.variabledict[name] = var
-        self.variablelist = [ x for x in self.variabledict.values() if x.type=='parameter' ]
-        self.expression = Expression.Expression()
-        self.parameterdict = parameterdict
-        self.onParameterChanged()   # make sure we update all global variables
-
-    def setVisible(self, visibledict ):
-        self.beginRemoveRows(QtCore.QModelIndex(),0,self.rowCount()-1)
-        self.variablelist = []
-        self.endRemoveRows()
-        variablelist = sorted([ x for x in self.variabledict.values() if x.type in visibledict and visibledict[x.type] ], key=attrgetter('index'))
-        self.beginInsertRows(QtCore.QModelIndex(),0,len(variablelist)-1)
-        self.variablelist = variablelist
-        self.endInsertRows()
+    flagsLookup = [ QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable |  QtCore.Qt.ItemIsEnabled,
+                    QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
+                    QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+                    QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+                    QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled ]
+    headerDataLookup = ['use','variable','value','encoding','evaluated']
+    def __init__(self, variabledict, parent=None, *args): 
+        QtCore.QAbstractTableModel.__init__(self, parent, *args)
+        self.variabledict = variabledict
+        self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda var: QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
+                             (QtCore.Qt.DisplayRole,1):    lambda var: var.name,
+                             (QtCore.Qt.DisplayRole,2):    lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                             (QtCore.Qt.DisplayRole,3):    lambda var: str(var.encoding),
+                             (QtCore.Qt.DisplayRole,4):    lambda var: str(var.value),
+                             (QtCore.Qt.EditRole,2):       lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                             (QtCore.Qt.EditRole,3):       lambda var: str(var.encoding),
+                             }
+        self.setDataLookup ={    (QtCore.Qt.CheckStateRole,0): self.setVarEnabled,
+                                 (QtCore.Qt.EditRole,2):       self.setDataValue,
+                                 (QtCore.Qt.EditRole,3):       self.setDataEncoding,
+                                }
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.variablelist) 
+        return len(self.variabledict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 5
  
     def data(self, index, role): 
         if index.isValid():
-            var = self.variablelist[index.row()]
-            return { (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
-                     (QtCore.Qt.DisplayRole,1): var.name,
-                     (QtCore.Qt.DisplayRole,2): str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                     (QtCore.Qt.DisplayRole,3): str(var.encoding),
-                     (QtCore.Qt.DisplayRole,4): str(var.value),
-                     (QtCore.Qt.EditRole,2): str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                     (QtCore.Qt.EditRole,3): str(var.encoding),
-                     }.get((role,index.column()))
+            var = self.variabledict.at(index.row())
+            return self.dataLookup.get((role,index.column()),lambda var: None)(var)
         return None
         
     def setDataValue(self, index, value):
         try:
             strvalue = str(value if api2 else str(value.toString()))
-            variables = self.getVariables()
-            variables.update( self.parameterdict )
-            result = self.expression.evaluate(strvalue,variables)           
-            if isinstance(result, magnitude.Magnitude) and result.dimensionless():
-                result.output_prec(0)
-            var = self.variablelist[index.row()]
-            var.value = result
-            var.strvalue = strvalue
-            return True    
+            updatednames = self.variabledict.setStrValueIndex(index.row(),strvalue)
+            for name in updatednames:
+                index = self.variabledict.index(name)
+                self.dataChanged.emit( self.createIndex(index,0), self.createIndex(index,4) )
+            return True
+        except CyclicDependencyException as e:
+            logger = logging.getLogger(__name__)
+            logger.error( "Cyclic dependency {0}".format(str(e)) )
+            return False           
         except Exception:
             logger = logging.getLogger(__name__)
             logger.error( "No match for {0}".format(value.toString()) )
             return False
         
-    def createDependencyGraph(self):
-        pass
-        
-    def onParameterChanged(self):
-        for row, var in enumerate(self.variablelist):
-            if hasattr(var,'strvalue'):
-                result = self.expression.evaluate(var.strvalue, self.parameterdict)
-                var.value = result
-                self.dataChanged.emit( self.index(row,4), self.index(row,4) )
+    def recalculateDependent(self, name):
+        updatednames = self.variabledict.recalculateDependent(name)
+        for name in updatednames:
+            index = self.variabledict.index(name)
+            self.dataChanged.emit( self.createIndex(index,0), self.createIndex(index,4) )
         
     def setDataEncoding(self,index, value):
         value = str(value.toString())
-        self.variablelist[index.row()].encoding = None if value == 'None' else str(value)
+        self.variabledict.setEncodingIndex(index.row(), value)
         return True
         
     def setVarEnabled(self,index,value):
-        print "parameter enabled", value==QtCore.Qt.Checked
-        self.variablelist[index.row()].enabled = value == QtCore.Qt.Checked
+        self.variabledict.setEnabledIndex(index.row(), value == QtCore.Qt.Checked)
         return True      
 
     def setData(self,index, value, role):
-        return { (QtCore.Qt.CheckStateRole,0): functools.partial( self.setVarEnabled, index, value ),
-                 (QtCore.Qt.EditRole,2): functools.partial( self.setDataValue, index, value ),
-                 (QtCore.Qt.EditRole,3): functools.partial( self.setDataEncoding, index, value ),
-                }.get((role,index.column()), lambda: False )()
+        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
 
     def flags(self, index ):
-        return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable |  QtCore.Qt.ItemIsEnabled,
-                 1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
-                 2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 4: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
-                 }.get(index.column(),QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        return self.flagsLookup[index.column()]
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return {
-                    0: 'use',
-                    1: 'variable',
-                    2: 'value',
-                    3: 'encoding',
-                    4: 'evaluated'
-                    }.get(section)
+                return self.headerDataLookup[section]
         return None #QtCore.QVariant()
         
-    def getVariables(self):
-        myvariables = dict()
-        for name,var in self.variabledict.iteritems():
-            myvariables[name] = var.value if var.enabled else 0
-        return myvariables
- 
-    def getVariableValue(self,name):
-        var = self.variabledict.get(name)
-        return var.value if var.enabled else 0
