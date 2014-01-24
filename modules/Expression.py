@@ -111,21 +111,23 @@ class Expression:
             #~ exprStack.append( '*' )
 
     # map operator symbols to corresponding arithmetic operations
-    def evaluateStack(self, s):
+    def evaluateStack(self, s, dependencies ):
+        dependencies = set()
         op = s.pop()
         if op == 'unary -':
-            return -self.evaluateStack( s )
+            return -self.evaluateStack( s, dependencies )
         if op in "+-*/^":
-            op2 = self.evaluateStack( s )
-            op1 = self.evaluateStack( s )
+            op2 = self.evaluateStack( s, dependencies )
+            op1 = self.evaluateStack( s, dependencies )
             return opn[op]( op1, op2 )
         elif op == "PI":
             return math.pi # 3.1415926535
         elif op == "E":
             return math.e  # 2.718281828
         elif op in fn:
-            return fn[op]( self.evaluateStack( s ) )
+            return fn[op]( self.evaluateStack( s, dependencies ) )
         elif op in self.variabledict:
+            dependencies.add(op)
             return self.variabledict[op]
         elif op[0].isalpha():
             return 0
@@ -142,11 +144,14 @@ class Expression:
                 return m
             return res
             
-    def evaluate(self, expression, variabledict=dict()):
+    def evaluate(self, expression, variabledict=dict(), listDependencies=False ):
         self.variabledict.update( variabledict )
         self.exprStack = []
         self.results = self.bnf.parseString(expression)
-        value = self.evaluateStack( self.exprStack[:] )
+        dependencies = set()
+        value, dependencies = self.evaluateStack( self.exprStack[:], dependencies )
+        if listDependencies:
+            return value, dependencies
         return value
         
     def evaluateAsMagnitude(self, expression, variabledict=dict()):

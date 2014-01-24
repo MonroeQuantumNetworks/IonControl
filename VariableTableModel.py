@@ -75,6 +75,9 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             logger.error( "No match for {0}".format(value.toString()) )
             return False
         
+    def createDependencyGraph(self):
+        pass
+        
     def onParameterChanged(self):
         for row, var in enumerate(self.variablelist):
             if hasattr(var,'strvalue'):
