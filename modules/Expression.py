@@ -112,7 +112,6 @@ class Expression:
 
     # map operator symbols to corresponding arithmetic operations
     def evaluateStack(self, s, dependencies ):
-        dependencies = set()
         op = s.pop()
         if op == 'unary -':
             return -self.evaluateStack( s, dependencies )
@@ -120,7 +119,7 @@ class Expression:
             op2 = self.evaluateStack( s, dependencies )
             op1 = self.evaluateStack( s, dependencies )
             return opn[op]( op1, op2 )
-        elif op == "PI":
+        elif op == "PI" or op=='pi':
             return math.pi # 3.1415926535
         elif op == "E":
             return math.e  # 2.718281828
@@ -145,11 +144,11 @@ class Expression:
             return res
             
     def evaluate(self, expression, variabledict=dict(), listDependencies=False ):
-        self.variabledict.update( variabledict )
+        self.variabledict = variabledict
         self.exprStack = []
         self.results = self.bnf.parseString(expression)
         dependencies = set()
-        value, dependencies = self.evaluateStack( self.exprStack[:], dependencies )
+        value = self.evaluateStack( self.exprStack[:], dependencies )
         if listDependencies:
             return value, dependencies
         return value
