@@ -80,7 +80,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             
     def setValue(self, row, value):
         name = self.variables.keyAt(row)
-        if self.variables[name]!=value:
+        old = self.variables[name]
+        if not old.isIdenticalTo(value):
             self.variables[name] = value
             self.valueChanged.emit(name)
 

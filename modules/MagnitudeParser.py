@@ -43,7 +43,8 @@ def parseDelta( string, deltapos=0, parseAll=True ):
     mydeltapos = max( 2 if precres[0][0]=='-' else 1, min( deltapos-(1 if deltapos>decimalpos else 0), decimalpos+prec ))
     unit = val[1] if len(val)>1 else ''
     retval = magnitude.mg(float(val[0]),unit)
-    retval.output_prec( prec )
+#     retval.output_prec( prec )
+    retval.significantDigits = len(list(filter( lambda s: s.isdigit(), val[0] )))
     delta = decimalpos-mydeltapos
     return retval, magnitude.mg(pow(10,delta),unit), deltapos, decimalpos
     
