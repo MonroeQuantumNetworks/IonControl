@@ -28,6 +28,7 @@ import PulseProgramUi
 import ShutterUi
 import DDSUi
 import DedicatedCounters
+from LogicAnalyzer import LogicAnalyzer
 import ExternalScannedParametersSelection
 import ExternalScannedParametersUi
 import ProjectSelectionUi
@@ -183,6 +184,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
+        self.actionLogic.triggered.connect(self.showLogicAnalyzer)
         self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
@@ -196,6 +198,9 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
             
         self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulser)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
+        
+        self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser)
+        self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
         self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
@@ -215,6 +220,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
         self.dedicatedCountersWindow.raise_()
         self.dedicatedCountersWindow.onStart() #Start displaying data immediately
+
+    def showLogicAnalyzer(self):
+        self.logicAnalyzerWindow.show()
+        self.logicAnalyzerWindow.setWindowState(QtCore.Qt.WindowActive)
+        self.logicAnalyzerWindow.raise_()
 
     def onVoltageControl(self):
         self.voltageControlWindow.show()
@@ -305,6 +315,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.close()
         self.dedicatedCountersWindow.close()
         self.pulseProgramDialog.onClose()
+        self.logicAnalyzerWindow.close()
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
@@ -323,6 +334,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.shutterUi.saveConfig()
         self.triggerUi.saveConfig()
         self.dedicatedCountersWindow.saveConfig()
+        self.logicAnalyzerWindow.saveConfig()
         self.voltageControlWindow.saveConfig()
         self.ExternalParametersSelectionUi.saveConfig()
         self.globalVariablesUi.saveConfig()

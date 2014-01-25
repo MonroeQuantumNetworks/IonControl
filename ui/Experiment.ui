@@ -57,6 +57,7 @@
    <addaction name="actionVoltageControl"/>
    <addaction name="actionReload"/>
    <addaction name="actionSettings"/>
+   <addaction name="actionLogic"/>
    <addaction name="separator"/>
    <addaction name="actionExit"/>
   </widget>
@@ -378,6 +379,11 @@
    </property>
    <property name="toolTip">
     <string>Select Project for next program start</string>
+   </property>
+  </action>
+  <action name="actionLogic">
+   <property name="text">
+    <string>Logic</string>
    </property>
   </action>
  </widget>

@@ -129,7 +129,9 @@ class PulserHardwareServer(Process):
         self._trigger = 0
         self._adcCounterMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
-
+        
+        self.logicAnalyzerEnabled = False
+        self.logicAnalyzerFile = None
         
     def run(self):
         configureServerLogging(self.loggingQueue)
@@ -169,6 +171,11 @@ class PulserHardwareServer(Process):
         """
         logger = logging.getLogger(__name__)
         data, self.data.overrun = self.ppReadData(4)
+        if (self.logicAnalyzerEnabled):
+            logicAnalyzerData, logicAnalyzerOverrun = self.ppReadLogicAnalyzerData(8)
+            if logicAnalyzerData is not None:
+                logging.getLogger(__name__).debug("LogicAnalyzer recieved {0} bytes".format(len(logicAnalyzerData)))
+                self.logicAnalyzerFile.write(logicAnalyzerData)
         if data:
             for s in sliceview(data,4):
                 (token,) = struct.unpack('I',s)
@@ -407,6 +414,18 @@ class PulserHardwareServer(Process):
                 return data, overrun
         return None, False
                         
+    def ppReadLogicAnalyzerData(self,minbytes=8):
+        if self.xem:
+            self.xem.UpdateWireOuts()
+            wirevalue = self.xem.GetWireOutValue(0x27)   # pipe_out_available
+            byteswaiting = (wirevalue & 0xffe)*2
+            if byteswaiting:
+                data = bytearray('\x00'*byteswaiting)
+                self.xem.ReadFromPipeOut(0xa1, data)
+                overrun = (wirevalue & 0x4000)!=0
+                return data, overrun
+        return None, False
+                        
     def ppWriteData(self,data):
         if self.xem:
             if isinstance(data,bytearray):
@@ -568,6 +587,21 @@ class PulserHardwareServer(Process):
             self.openModule = self.getDeviceDescription(self.xem)
         return None
 
+    def enableLogicAnalyzer(self, enable):
+        if enable != self.logicAnalyzerEnabled:
+            self.logicAnalyzerEnabled = enable
+            if enable:
+                self.logicAnalyzerFile = open('logic.bin','wb')
+                if self.xem:
+                    self.xem.SetWireInValue(0x0d, 1, 0x01)    # set logic analyzer enabled
+                    self.xem.UpdateWireIns()
+            else:
+                self.logicAnalyzerFile.close()
+                self.logicAnalyzerFile = None
+                if self.xem:
+                    self.xem.SetWireInValue(0x0d, 0, 0x01)    # set logic analyzer disabled
+                    self.xem.UpdateWireIns()
+       
         
 def sliceview(view,length):
     return tuple(buffer(view, i, length) for i in range(0, len(view), length))    
