@@ -24,6 +24,9 @@ class VariableDictionaryView(object):
             return self.variableDictionary.globaldict.get(key)
         raise KeyError()
     
+    def iteritems(self):
+        return [ (key, var.value if var.enabled else 0 ) for key, var in self.variableDictionary.iteritems() ]
+    
     def __contains__(self, key):
         return key in self.variableDictionary or key in self.variableDictionary.globaldict       
     
@@ -83,10 +86,10 @@ class VariableDictionary(SequenceDict):
         return self.recalculateDependent(name)
         
     def setEncodingIndex(self, index, encoding):
-        self.variabledict.at(index).encoding = None if encoding == 'None' else str(encoding)
+        self.at(index).encoding = None if encoding == 'None' else str(encoding)
     
     def setEnabledIndex(self, index, enabled):
-        self.variabledict.at(index).enabled = enabled
+        self.at(index).enabled = enabled
        
     def recalculateDependent(self, node):
         if self.dependencyGraph.has_node(node):
@@ -140,5 +143,9 @@ if __name__=="__main__":
     vd.setStrValue('L1', '12')
     print
     vd.setStrValue('L2', '1')
+    
+    print vd.valueView['L1']
+    print vd.iteritems()
+    
   
     

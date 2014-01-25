@@ -203,8 +203,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
-        substitutes = dict()
-        for model in [self.variableTableModel, self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
+        substitutes = dict( self.variabledict.valueView.iteritems() )
+        for model in [self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
             substitutes.update( model.getVariables() )
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
