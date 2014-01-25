@@ -423,6 +423,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.overrun:
             logger.error( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
+        elif data.final and data.exitcode!=0:
+            self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
             logger.info( "onData {0} {1}".format( [len(data.count[i]) for i in range(16)], data.scanvalue ) )
             # Evaluate as given in evalList
