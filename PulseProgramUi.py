@@ -145,7 +145,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.pulseProgram.loadFromMemory()
             self.oldcombinedDict = self.combinedDict
             self.combinedDict = self.pulseProgram.variabledict.copy()
-            self.combinedDict.update( dictutil.subdict(self.oldVariabledict, self.combinedDict.keys() ) )
+            self.combinedDict.update( dictutil.subdict(self.oldcombinedDict, self.combinedDict.keys() ) )
             self.updateDisplay()
             for name, textEdit in self.sourceCodeEdits.iteritems():
                 textEdit.clearHighlightError()
