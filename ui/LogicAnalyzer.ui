@@ -33,6 +33,7 @@
    <addaction name="actionRun"/>
    <addaction name="actionStop"/>
    <addaction name="actionSingle"/>
+   <addaction name="actionClear"/>
   </widget>
   <action name="actionExpand">
    <property name="text">
@@ -60,6 +61,15 @@
   <action name="actionSingle">
    <property name="text">
     <string>Single</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear</string>
    </property>
   </action>
  </widget>

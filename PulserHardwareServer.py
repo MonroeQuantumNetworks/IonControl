@@ -179,11 +179,11 @@ class PulserHardwareServer(Process):
         """
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
-            logicAnalyzerData, logicAnalyzerOverrun = self.ppReadLogicAnalyzerData(8)
+            logicAnalyzerData, _ = self.ppReadLogicAnalyzerData(8)
             if logicAnalyzerData is not None:
                 for s in sliceview(logicAnalyzerData,8):
                     (code, ) = struct.unpack('Q',s)
-                    time = code&0xffffff + self.logicAnalyzerData.countOffset
+                    time = (code&0xffffff) + self.logicAnalyzerData.countOffset
                     pattern = (code >> 24) & 0x3fffffffff
                     header = (code >> 62 )
                     if code==0x8000000000000000:  # overrun marker
@@ -191,13 +191,13 @@ class PulserHardwareServer(Process):
                     elif code&0xffffffffff000000==0x800000000f000000:  # end marker
                         self.logicAnalyzerData.stopMarker = time
                         self.dataQueue.put( self.logicAnalyzerData )
-                        logger.debug("Sending data back {0}, {1} {2}".format(self.logicAnalyzerData.data,self.logicAnalyzerData.trigger,time))
                         self.logicAnalyzerData = LogicAnalyzerData()
                     elif header==0: # trigger
                         self.logicAnalyzerData.trigger.append( (time,pattern) )
                     elif header==1: # standard
                         self.logicAnalyzerData.data.append( (time,pattern) )                                            
-                    
+                    #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+                   
         data, self.data.overrun = self.ppReadData(4)
         if data:
             for s in sliceview(data,4):
@@ -615,13 +615,10 @@ class PulserHardwareServer(Process):
         if enable != self.logicAnalyzerEnabled:
             self.logicAnalyzerEnabled = enable
             if enable:
-                self.logicAnalyzerFile = open('logic.bin','wb')
                 if self.xem:
                     self.xem.SetWireInValue(0x0d, 1, 0x01)    # set logic analyzer enabled
                     self.xem.UpdateWireIns()
             else:
-                self.logicAnalyzerFile.close()
-                self.logicAnalyzerFile = None
                 if self.xem:
                     self.xem.SetWireInValue(0x0d, 0, 0x01)    # set logic analyzer disabled
                     self.xem.UpdateWireIns()
