@@ -382,6 +382,10 @@
    </property>
   </action>
   <action name="actionLogic">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/petersIcons/icons/ChipScope.png</normaloff>:/petersIcons/icons/ChipScope.png</iconset>
+   </property>
    <property name="text">
     <string>Logic</string>
    </property>

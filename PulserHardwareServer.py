@@ -105,6 +105,13 @@ class DedicatedData:
     def integration(self):
         return self.data[12]
 
+class LogicAnalyzerData:
+    def __init__(self):
+        self.data = list()
+        self.trigger = list()
+        self.stopMarker = None
+        self.countOffset = 0
+
 class FinishException(Exception):
     pass
 
@@ -131,7 +138,8 @@ class PulserHardwareServer(Process):
         self._integrationTime = magnitude.mg(100,'ms')
         
         self.logicAnalyzerEnabled = False
-        self.logicAnalyzerFile = None
+        self.logicAnalyzerStopAtEnd = False
+        self.logicAnalyzerData = LogicAnalyzerData()
         
     def run(self):
         configureServerLogging(self.loggingQueue)
@@ -170,12 +178,27 @@ class PulserHardwareServer(Process):
             0x4xxxxxxx other return
         """
         logger = logging.getLogger(__name__)
-        data, self.data.overrun = self.ppReadData(4)
         if (self.logicAnalyzerEnabled):
             logicAnalyzerData, logicAnalyzerOverrun = self.ppReadLogicAnalyzerData(8)
             if logicAnalyzerData is not None:
-                logging.getLogger(__name__).debug("LogicAnalyzer recieved {0} bytes".format(len(logicAnalyzerData)))
-                self.logicAnalyzerFile.write(logicAnalyzerData)
+                for s in sliceview(logicAnalyzerData,8):
+                    (code, ) = struct.unpack('Q',s)
+                    time = code&0xffffff + self.logicAnalyzerData.countOffset
+                    pattern = (code >> 24) & 0x3fffffffff
+                    header = (code >> 62 )
+                    if code==0x8000000000000000:  # overrun marker
+                        self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
+                    elif code&0xffffffffff000000==0x800000000f000000:  # end marker
+                        self.logicAnalyzerData.stopMarker = time
+                        self.dataQueue.put( self.logicAnalyzerData )
+                        logger.debug("Sending data back {0}, {1} {2}".format(self.logicAnalyzerData.data,self.logicAnalyzerData.trigger,time))
+                        self.logicAnalyzerData = LogicAnalyzerData()
+                    elif header==0: # trigger
+                        self.logicAnalyzerData.trigger.append( (time,pattern) )
+                    elif header==1: # standard
+                        self.logicAnalyzerData.data.append( (time,pattern) )                                            
+                    
+        data, self.data.overrun = self.ppReadData(4)
         if data:
             for s in sliceview(data,4):
                 (token,) = struct.unpack('I',s)
@@ -385,6 +408,7 @@ class PulserHardwareServer(Process):
             self.readDataFifo()
             self.readDataFifo()   # after the first time the could still be data in the FIFO not reported by the fifo count
             self.data = Data()    # flush data that might have been accumulated
+            logging.getLogger(__name__).debug("Sending start trigger")
             self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
             return True
         else:
@@ -601,6 +625,13 @@ class PulserHardwareServer(Process):
                 if self.xem:
                     self.xem.SetWireInValue(0x0d, 0, 0x01)    # set logic analyzer disabled
                     self.xem.UpdateWireIns()
+                    
+    def logicAnalyzerTrigger(self):
+        self.logicAnalyzerEnabled = True
+        self.logicAnalyzerStopAtEnd = True
+        if self.xem:
+            self.xem.ActivateTriggerIn( 0x40, 12 ) # Ram set read address
+
        
         
 def sliceview(view,length):

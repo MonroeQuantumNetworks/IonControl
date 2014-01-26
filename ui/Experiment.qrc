@@ -22,6 +22,9 @@
     <file>icons/player_play.png</file>
     <file>icons/player_stop.png</file>
   </qresource>
+  <qresource prefix="petersIcons">
+    <file>icons/ChipScope.png</file>
+  </qresource>
   <qresource prefix="latex">
     <file>icons/cos.png</file>
   </qresource>

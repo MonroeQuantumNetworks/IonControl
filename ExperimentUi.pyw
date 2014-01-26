@@ -307,7 +307,6 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.saveConfig()
         for tab in self.tabList:
             tab.onClose()
-        self.saveConfig()
         self.currentTab.deactivate()
         self.pulseProgramDialog.done(0)
         self.settingsDialog.done(0)
