@@ -108,6 +108,7 @@ class DedicatedData:
 class LogicAnalyzerData:
     def __init__(self):
         self.data = list()
+        self.auxData = list()
         self.trigger = list()
         self.stopMarker = None
         self.countOffset = 0
@@ -195,7 +196,9 @@ class PulserHardwareServer(Process):
                     elif header==0: # trigger
                         self.logicAnalyzerData.trigger.append( (time,pattern) )
                     elif header==1: # standard
-                        self.logicAnalyzerData.data.append( (time,pattern) )                                            
+                        self.logicAnalyzerData.data.append( (time,pattern) )  
+                    elif header==3: # aux data
+                        self.logicAnalyzerData.auxData.append( (time,pattern))                                          
                     #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
                    
         data, self.data.overrun = self.ppReadData(4)
