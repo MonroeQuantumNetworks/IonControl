@@ -35,6 +35,7 @@
    <addaction name="actionSingle"/>
    <addaction name="actionClear"/>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionExpand">
    <property name="text">
     <string>Expand</string>

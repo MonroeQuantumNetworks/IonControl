@@ -28,7 +28,7 @@ class Settings:
                 
 
 class LogicAnalyzer(Form, Base ):
-    OpStates = enum('idle','running','single')
+    OpStates = enum('stopped','running','single')
     def __init__(self,config,pulserHardware,parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
@@ -86,6 +86,8 @@ class LogicAnalyzer(Form, Base ):
                 for i in range(self.settings.numTriggerChannels):
                     self.yTriggerBundle[i].append(nextChannel+i+self.settings.height if value&(1<<i) else nextChannel+i )
         self.plotData()
+        if self.state==self.OpStates.single:
+            self.setStatusStopped()
            
     def plotData(self):
         if self.yDataBundle:
@@ -125,16 +127,32 @@ class LogicAnalyzer(Form, Base ):
         logger = logging.getLogger(__name__)
         logger.debug("Starting Logic Analyzer")
         self.pulserHardware.enableLogicAnalyzer(True)
+        self.setStatusRunning()
         
     def onStop(self):
         logger = logging.getLogger(__name__)
         logger.debug("Stopping Logic Analyzer")
         self.pulserHardware.enableLogicAnalyzer(False)
+        self.setStatusStopped()
         
     def onSingle(self):
         logger = logging.getLogger(__name__)
         logger.debug("Logic Analyzer Single Shot")
+        self.pulserHardware.enableLogicAnalyzer(False)
         self.pulserHardware.logicAnalyzerTrigger()
+        self.setStatusSingle()
+        
+    def setStatusStopped(self):
+        self.state = self.OpStates.idle
+        self.statusBar.showMessage("Stopped")
+        
+    def setStatusRunning(self):
+        self.state = self.OpStates.idle
+        self.statusBar.showMessage("Running")
+
+    def setStatusSingle(self):
+        self.state = self.OpStates.idle
+        self.statusBar.showMessage("Single shot")
         
     def saveConfig(self):
         self.config["LogicAnalyzerSettings"] = self.settings
