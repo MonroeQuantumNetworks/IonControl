@@ -13,16 +13,18 @@ class Settings:
         self.numChannels = 38
         self.height = 0.75
         self.scaling = 0.000020
-        self.numTriggerChannels = 6
+        self.numTriggerChannels = 7
         self.triggerWidth = 0.0001   # only rising edge counts
+        self.numAuxChannels = 4
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('numChannels', 38 )
         self.__dict__.setdefault('height', 0.75 )
         self.__dict__.setdefault('scaling', 0.000020 )
-        self.__dict__.setdefault('numTriggerChannels', 6 )
+        self.__dict__.setdefault('numTriggerChannels', 7 )
         self.__dict__.setdefault('triggerWidth', 0.0001 )
+        self.__dict__.setdefault('numAuxChannels', 4 )
                 
 
 class LogicAnalyzer(Form, Base ):
@@ -43,6 +45,10 @@ class LogicAnalyzer(Form, Base ):
         self.xData = None
         self.yData = None
         self.yDataBundle = None
+        self.xAuxData = None
+        self.yAuxData = None
+        self.yAuxDataBundle = None
+        self.curveAuxBundle = None
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
@@ -60,6 +66,16 @@ class LogicAnalyzer(Form, Base ):
             for value in self.yData:
                 for i in range(self.settings.numChannels):
                     self.yDataBundle[i].append(i+self.settings.height if value&(1<<i) else i )
+        nextChannel = self.settings.numChannels
+        if logicData.data:
+            self.xAuxData, self.yAuxData = zip( *logicData.auxData )
+            self.xAuxData = [ x * self.settings.scaling for x in self.xAuxData ]  # convert tuple to list
+            self.xAuxData.append( logicData.stopMarker * self.settings.scaling )
+            self.yAuxDataBundle = [list() for _ in range(self.settings.numAuxChannels)]
+            for value in self.yAuxData:
+                for i in range(self.settings.numAuxChannels):
+                    self.yAuxDataBundle[i].append(nextChannel+i+self.settings.height if value&(1<<i) else nextChannel+i )
+        nextChannel += self.settings.numAuxChannels
         if logicData.trigger:
             self.xTrigger, self.yTrigger = zip( *logicData.trigger )
             self.xTrigger = list(flatten([ (x* self.settings.scaling,x* self.settings.scaling+self.settings.triggerWidth)  for x in self.xTrigger ]))  # convert tuple to list
@@ -68,7 +84,7 @@ class LogicAnalyzer(Form, Base ):
             self.yTriggerBundle = [list() for _ in range(self.settings.numTriggerChannels)]
             for value in self.yTrigger:
                 for i in range(self.settings.numTriggerChannels):
-                    self.yTriggerBundle[i].append(self.settings.numChannels+i+self.settings.height if value&(1<<i) else self.settings.numChannels+i )
+                    self.yTriggerBundle[i].append(nextChannel+i+self.settings.height if value&(1<<i) else nextChannel+i )
         self.plotData()
            
     def plotData(self):
@@ -82,11 +98,23 @@ class LogicAnalyzer(Form, Base ):
             else:
                 for curve, yData in zip(self.curveBundle, self.yDataBundle):
                     curve.setData(x=self.xData,y=yData)
+        nextChannel = self.settings.numChannels
+        if self.yAuxDataBundle:
+            if self.curveAuxBundle is None:
+                self.curveAuxBundle = list()
+                for i, yAuxData in enumerate(self.yAuxDataBundle):
+                    curve = PlotCurveItem(self.xAuxData, yAuxData, stepMode=True, fillLevel=i+nextChannel, brush=penList[2][4], pen=penList[2][0]) 
+                    self.graphicsView.addItem( curve )
+                    self.curveBundle.append( curve )
+            else:
+                for curve, yData in zip(self.curveBundle, self.yDataBundle):
+                    curve.setData(x=self.xData,y=yData)
+        nextChannel += self.settings.numAuxChannels
         if self.yTriggerBundle:
             if self.curveTriggerBundle is None:
                 self.curveTriggerBundle = list()
                 for i, yTrigger in enumerate(self.yTriggerBundle):
-                    curve = PlotCurveItem(self.xTrigger, yTrigger, stepMode=True, fillLevel=i+self.settings.numChannels, brush=penList[2][4], pen=penList[2][0]) 
+                    curve = PlotCurveItem(self.xTrigger, yTrigger, stepMode=True, fillLevel=i+nextChannel, brush=penList[3][4], pen=penList[3][0]) 
                     self.graphicsView.addItem( curve )
                     self.curveTriggerBundle.append( curve )
             else:
