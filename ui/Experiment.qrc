@@ -32,12 +32,12 @@
     <file>icons/ions.jpg</file>
   </qresource>
   <qresource prefix="openicon">
-    <file>icons/rename-plot.png</file>
     <file>icons/view-bottom-new.png</file>
     <file>icons/office-chart-bar.png</file>
+    <file>icons/update_misc.png</file>
     <file>icons/add-plot.png</file>
     <file>icons/remove-plot.png</file>
-    <file>icons/update_misc.png</file>
+    <file>icons/rename-plot.png</file>
     <file>icons/arrow-left-2.png</file>
     <file>icons/archive-extract-2.png</file>
     <file>icons/go-down-4.png</file>

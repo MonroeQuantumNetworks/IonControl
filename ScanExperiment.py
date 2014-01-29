@@ -491,7 +491,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                                                     yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name)               
                     xRange = self.generator.xRange()
                     if xRange:
-                        self.plotDict["Scan Data"]["view"].setXRange( *xRange )     
+                        self.plotDict["Scan Data"]["view"].setXRange( *xRange )
+                    else:
+                        self.plotDict["Scan Data"]["view"].enableAutoRange(axis=ViewBox.XAxis)     
                     pulseProgramHeader = self.pulseProgramUi.documentationString()
                     scanHeader = self.scan.documentationString()
                     self.plottedTraceList.append( plottedTrace )
@@ -602,6 +604,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onAddPlot(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Plot Name', 'Please enter a plot name: ')
         if ok:
+            name = str(name)
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
             view = widget.graphicsView
@@ -620,6 +623,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if names.count() > 0:
             name, ok = QtGui.QInputDialog.getItem(self, "Select Plot", "Please select which plot to remove: ", names, editable=False)
             if ok:
+                name = str(name)
                 self.plotDict[name]["dock"].close()
                 self.scanControlWidget.plotnames.remove(name)
                 del self.plotDict[name]
@@ -642,6 +646,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if ok:
                 newName, newOk = QtGui.QInputDialog.getText(self, 'New Plot Name', 'Please enter a new plot name: ')
                 if newOk:
+                    name = str(name)
+                    newName = str(newName)
                     self.plotDict[name]["dock"].label.setText(QtCore.QString(newName))
                     self.plotDict[newName] = self.plotDict[name]
                     del self.plotDict[name]
