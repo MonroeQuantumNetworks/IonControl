@@ -223,10 +223,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.area = DockArea()
         self.setCentralWidget(self.area)
         self.plotDict = dict()
-#        if self.experimentName+'.plotNames' in self.config:
-#            plotNames = self.config[self.experimentName+'.plotNames']
-#        else:
-        plotNames = {"Scan Data", "Histogram", "Timestamps"}
+        if self.experimentName+'.plotNames' in self.config:
+            plotNames = self.config[self.experimentName+'.plotNames']
+        else:
+            plotNames = {"Scan Data", "Histogram", "Timestamps"}
         if "Scan Data" not in plotNames:
             plotNames.append("Scan Data")
         if "Histogram" not in plotNames:
@@ -240,19 +240,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
-            self.plotDict[name] = [dock, widget, view]
+            self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
             del dock, widget, view #This is probably unnecessary, but can't hurt
         del plotNames #I don't want to leave this list around, as it is not updated and may cause confusion.
-        self.plotDict[None] = self.plotDict["Scan Data"] # this is the default plotwindow
-        self.plotDict["Histogram"][1].autoRange()
-        self.plotDict["Timestamps"][1].autoRange()
-#        try:
-#            if self.experimentName+'.pyqtgraph-dockareastate' in self.config:
-#                self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
-#        except Exception as e:
-#            logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+        self.plotDict["Histogram"]["widget"].autoRange()
+        self.plotDict["Timestamps"]["widget"].autoRange()
+        try:
+            if self.experimentName+'.pyqtgraph-dockareastate' in self.config:
+                self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
+        except Exception as e:
+            logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict["Scan Data"][2])
+        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict["Scan Data"]["view"])
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
@@ -265,7 +264,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.progressDock)
         self.dockWidgetList.append( self.progressDock )
         # traceui for timestamps
-        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict["Timestamps"][2])
+        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict["Timestamps"]["view"])
         self.timestampTraceui.setupUi(self.timestampTraceui)
         self.timestampDockWidget.setWidget( self.timestampTraceui )
         self.dockWidgetList.append(self.timestampDockWidget)       
@@ -355,7 +354,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             yColumnName = 'y{0}'.format(index)
 #             rawColumnName = 'raw{0}'.format(index)
             trace.addColumn( yColumnName )
-            thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname][2], pens.penList, yColumn=yColumnName)
+            thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
             thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
@@ -481,15 +480,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         bottomColumnName = 'bottom{0}'.format(index)
                         trace.addColumn( topColumnName )
                         trace.addColumn( bottomColumnName )                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname][2], pens.penList, 
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
                                                     yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
                                                     rawColumn=rawColumnName, name=self.scan.evalList[index].name) 
                     else:                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname][2], pens.penList, 
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
                                                     yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name)               
                     xRange = self.generator.xRange()
                     if xRange:
-                        self.plotDict["Scan Data"][2].setXRange( *xRange )     
+                        self.plotDict["Scan Data"]["view"].setXRange( *xRange )     
                     pulseProgramHeader = self.pulseProgramUi.documentationString()
                     scanHeader = self.scan.documentationString()
                     self.plottedTraceList.append( plottedTrace )
@@ -551,7 +550,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTimestampTrace.name = self.scan.settingsName
             self.currentTimestampTrace.vars.comment = ""
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
-            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"][2],pens.penList)
+            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList)
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
@@ -581,7 +580,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             else:
                 yColumnName = 'y{0}'.format(index) 
                 self.histogramTrace.addColumn( yColumnName )
-                plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"][2],pens.penList,plotType=PlottedTrace.Types.steps,
+                plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps,
                                                      yColumn=yColumnName, name="Histogram "+histogram[2])
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
                 plottedHistogramTrace.x = histogram[1]
@@ -605,7 +604,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
-            self.plotDict[name] = [dock, widget, view]
+            self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
             self.scanControlWidget.plotnames.append(name)
             self.saveConfig() #In case the program suddenly shuts down
             
@@ -613,14 +612,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         names = QtCore.QStringList()
         for name in self.plotDict.keys():
-            if name not in [None, 'Scan Data', 'Histogram', 'Timestamps']:
+            if name not in ['Scan Data', 'Histogram', 'Timestamps']:
                 names.append(name)
         if names.count() > 0:
             name, ok = QtGui.QInputDialog.getItem(self, "Select Plot", "Please select which plot to remove: ", names, editable=False)
             if ok:
-                self.plotDict[name][0].close()
+                self.plotDict[name]["dock"].close()
                 self.scanControlWidget.plotnames.remove(name)
                 del self.plotDict[name]
+                for evaluation in self.scanControlWidget.settings.evalList: #Change any instance of the removed plot in the current scan evaluation to the default scan ("Scan Data")
+                    if evaluation.plotname == name:
+                        evaluation.plotname = "Scan Data"
+                self.saveConfig() #In case the program suddenly shuts down
         else:
             logger.info("There are no plots which can be removed")
         self.saveConfig()
@@ -629,21 +632,28 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         names = QtCore.QStringList()
         for name in self.plotDict.keys():
-            if name not in [None, 'Scan Data', 'Histogram', 'Timestamps']:
+            if name not in ['Scan Data', 'Histogram', 'Timestamps']:
                 names.append(name)
         if names.count() > 0:
             name, ok = QtGui.QInputDialog.getItem(self, "Select Plot", "Please select which plot to rename: ", names, editable=False)
             if ok:
                 newName, newOk = QtGui.QInputDialog.getText(self, 'New Plot Name', 'Please enter a new plot name: ')
                 if newOk:
-                    self.plotDict[name][0].label.setText(QtCore.QString(newName))
+                    self.plotDict[name]["dock"].label.setText(QtCore.QString(newName))
                     self.plotDict[newName] = self.plotDict[name]
                     del self.plotDict[name]
                     self.scanControlWidget.plotnames.append(newName)
                     self.scanControlWidget.plotnames.remove(name)
+                    for evaluation in self.scanControlWidget.settings.evalList: #Update the current evaluation plot names, whether or not it has been saved
+                        if evaluation.plotname == name:
+                            evaluation.plotname = newName
+                    for settingsName in self.scanControlWidget.settingsDict.keys(): #Update all the saved evaluation plot names
+                        for evaluation in self.scanControlWidget.settingsDict[settingsName].evalList:
+                            if evaluation.plotname == name:
+                                evaluation.plotname = newName
+                    self.saveConfig() #In case the program suddenly shuts down
         else:
             logger.info("There are no plots which can be renamed")
-        
 
     def activate(self):
         logger = logging.getLogger(__name__)
@@ -668,13 +678,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.progressUi.setIdle()
                 
     def saveConfig(self):
-        plotNames = []
-        for name in self.plotDict.keys():
-            if name: #We don't want None to be saved as a plot name
-                plotNames.append(name)
         self.config[self.experimentName+'.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
-        self.config[self.experimentName+'.plotNames'] = plotNames
+        self.config[self.experimentName+'.plotNames'] = self.plotDict.keys()
         self.scanControlWidget.saveConfig()
         self.traceui.saveConfig()
         self.displayUi.saveConfig()
