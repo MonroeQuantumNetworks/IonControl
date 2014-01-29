@@ -29,6 +29,7 @@
     <file>icons/ions.jpg</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/rename-plot.png</file>
     <file>icons/view-bottom-new.png</file>
     <file>icons/office-chart-bar.png</file>
     <file>icons/add-plot.png</file>
