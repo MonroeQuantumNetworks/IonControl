@@ -94,12 +94,15 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.settings.deviceDescription = str(description)
             self.settings.deviceInfo = self.deviceMap[str(description)]
             self.identifierEdit.setText( description )
-            if self.settings.deviceSerial not in [None,'',0]:
-                self.pulser.openBySerial(self.settings.deviceSerial)
-                self.settings.pulser = self.pulser
         
     def accept(self):
         self.lastPos = self.pos()
+        if self.settings.deviceSerial not in [None,'',0]:
+            if self.configSettings.autoUpload:
+                self.onUploadBitfile()
+            else:
+                self.pulser.openBySerial(self.settings.deviceSerial)
+            self.settings.pulser = self.pulser
         self.hide()
         
     def reject(self):

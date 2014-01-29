@@ -7,7 +7,8 @@ Created on Thu Feb 07 22:55:28 2013
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import PulseProgram
-import VariableTableModel
+from VariableDictionary import VariableDictionary
+from VariableTableModel import VariableTableModel
 import ShutterTableModel
 import TriggerTableModel
 import CounterTableModel
@@ -16,6 +17,7 @@ from modules import dictutil
 from PulseProgramSourceEdit import PulseProgramSourceEdit
 import ProjectSelection
 import logging
+from modules.SequenceDict import SequenceDict
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -39,13 +41,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.pulseProgram = PulseProgram.PulseProgram()
         self.sourceCodeEdits = dict()
         self.config = config
-        self.parameterdict = parameterdict
-        self.variabledict = None
+        self.parameterdict = parameterdict     # dictionary of globals
+        self.combinedDict = None               # dictionary containing all PP variables
+        self.variabledict = None               # dictionary containing only the 'parameters'
         self.variableTableModel = None
         self.parameterChangedSignal = None
    
     def setupUi(self,experimentname,parent):
-        logger = logging.getLogger(__name__)
         super(PulseProgramUi,self).setupUi(parent)
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
@@ -55,10 +57,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.loadButton.setDefaultAction( self.actionOpen )
         self.saveButton.setDefaultAction( self.actionSave )
         self.resetButton.setDefaultAction( self.actionReset )
-        self.checkBoxParameter.stateChanged.connect( self.onVariableSelectionChanged )
-        self.checkBoxAddress.stateChanged.connect( self.onVariableSelectionChanged )
-        self.checkBoxOther.stateChanged.connect( self.onVariableSelectionChanged )
-        self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         
         if hasattr(self.configParams,'recentFiles'):
@@ -66,10 +64,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 if os.path.exists(path):
                     self.filenameComboBox.addItem(key)
         if self.configParams.lastFilename is not None:
-            try:
-                self.loadFile( self.configParams.lastFilename )
-            except Exception as e:
-                logger.error( "Ignoring exception {0}, pulse programming file '{1}' cannot be loaded.".format(str(e),self.configParams.lastFilename) )
+#             try:
+            self.loadFile( self.configParams.lastFilename )
+#             except Exception as e:
+#                 logger.error( "Ignoring exception {0}, pulse programming file '{1}' cannot be loaded.".format(str(e),self.configParams.lastFilename) )
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
@@ -89,15 +87,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             if str(self.filenameComboBox.currentText())!=name:
                 self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
         
-    def onVariableSelectionChanged(self):
-        visibledict = dict()
-        for tag in [self.checkBoxParameter,self.checkBoxAddress,self.checkBoxOther]:
-            visibledict[str(tag.text())] = tag.isChecked()
-        self.variableTableModel.setVisible(visibledict)
-
-    def onDebugChanged(self):
-        self.pulseProgram.debug = self.debugCheckBox.isChecked()
-        
     def onOk(self):
         pass
     
@@ -108,14 +97,14 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             
     def onReset(self):
         if self.configParams.lastFilename is not None:
-            self.variabledict = self.pulseProgram.variabledict.copy()
+            self.variabledict = VariableDictionary( self.pulseProgram.variabledict, self.parameterdict )
             self.loadFile(self.configParams.lastFilename)
     
     def loadFile(self, path):
         logger = logging.getLogger(__name__)
         logger.debug( "loadFile {0}".format( path ) )
-        if self.variabledict is not None and self.configParams.lastFilename is not None:
-            self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
+        if self.combinedDict is not None and self.configParams.lastFilename is not None:
+            self.config[(self.configname,self.configParams.lastFilename)] = self.combinedDict
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
         compileexception = None
@@ -124,9 +113,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         except PulseProgram.ppexception as compileexception:
             # compilation failed, we save the exception and pass to to updateDisplay
             pass
-        self.variabledict = self.pulseProgram.variabledict.copy()
+        self.combinedDict = self.pulseProgram.variabledict.copy()
         if (self.configname,key) in self.config:
-            self.variabledict.update( dictutil.subdict(self.config[(self.configname,key)], self.variabledict.keys() ) )
+            self.combinedDict.update( dictutil.subdict(self.config[(self.configname,key)], self.combinedDict.keys() ) )
         self.updateDisplay(compileexception)
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
@@ -154,9 +143,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 positionCache[name] = ( textEdit.textEdit.textCursor().position(),
                                         textEdit.textEdit.verticalScrollBar().value() )
             self.pulseProgram.loadFromMemory()
-            self.oldVariabledict = self.variabledict
-            self.variabledict = self.pulseProgram.variabledict.copy()
-            self.variabledict.update( dictutil.subdict(self.oldVariabledict, self.variabledict.keys() ) )
+            self.oldcombinedDict = self.combinedDict
+            self.combinedDict = self.pulseProgram.variabledict.copy()
+            self.combinedDict.update( dictutil.subdict(self.oldcombinedDict, self.combinedDict.keys() ) )
             self.updateDisplay()
             for name, textEdit in self.sourceCodeEdits.iteritems():
                 textEdit.clearHighlightError()
@@ -177,20 +166,21 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
-        self.variableTableModel = VariableTableModel.VariableTableModel( self.variabledict, self.parameterdict )
+        self.variabledict = VariableDictionary( self.combinedDict, self.parameterdict )
+        self.variableTableModel = VariableTableModel( self.variabledict )
         if self.parameterChangedSignal:
-            self.parameterChangedSignal.connect(self.variableTableModel.onParameterChanged)
+            self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
         self.variableView.setModel(self.variableTableModel)
         self.variableView.resizeColumnToContents(0)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.variabledict )
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.combinedDict )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
-        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.variabledict )
+        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.combinedDict )
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-        self.counterTableModel = CounterTableModel.CounterTableModel( self.variabledict )
+        self.counterTableModel = CounterTableModel.CounterTableModel( self.combinedDict )
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
@@ -206,16 +196,18 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
         
     def saveConfig(self):
+        logger = logging.getLogger(__name__)
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
         if self.configParams.lastFilename:
-            self.config[(self.configname,self.configParams.lastFilename)] = self.variabledict
+            self.config[(self.configname,self.configParams.lastFilename)] = self.combinedDict
+        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,self.configParams.lastFilename))
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
-        substitutes = dict()
-        for model in [self.variableTableModel, self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
+        substitutes = dict( self.variabledict.valueView.iteritems() )
+        for model in [self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
             substitutes.update( model.getVariables() )
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()

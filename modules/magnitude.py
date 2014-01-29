@@ -364,6 +364,12 @@ def roundToNDigits(value,n):
         n=0
     return round( value,  -int(math.floor(math.log10(abs(value) ))) + (n - 1))
 
+def digitsToPrecision(value, n):
+    """convert the number of significant digits into the precision (number of digits after the period"""
+    if value is None or math.isnan(value) or math.isinf(value) or value==0:
+        return 0
+    return max(0, -int(math.floor(math.log10(abs(value) ))) + (n - 1) )
+
 # Definition of the magnitude type.  Includes operator overloads.
 
 def _numberp(n):  ## Python has to have a decent way to do this!
@@ -517,7 +523,8 @@ class Magnitude():
 
     def _formatNumber_(self):
         if self.significantDigits:
-            st = repr( roundToNDigits(self.val,self.significantDigits) )
+            #st = repr( roundToNDigits(self.val,self.significantDigits) )
+            st = "{{0:.{0}f}}".format( digitsToPrecision(self.val, self.significantDigits)).format( roundToNDigits(self.val,self.significantDigits) )
         else:
             oformat = self.oformat if self.oformat is not None else _prn_format
             oprec = self.oprec if self.oprec is not None else _prn_prec
@@ -1002,6 +1009,12 @@ class Magnitude():
             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
                                  (m.unit, self.unit))
         return cmp(self.val, m.val)
+
+    def isIdenticalTo(self, other):
+        """compare the magnitudes with all the metadata"""
+        return ((self.val, self.unit, self.out_unit, self.out_factor, self.oprec, self.oformat, self.significantDigits)
+                ==(other.val, other.unit, other.out_unit, other.out_factor, other.oprec, other.oformat, other.significantDigits))
+
 
     def __int__(self):
         """Return the value of a Magnitude coerced to integer.

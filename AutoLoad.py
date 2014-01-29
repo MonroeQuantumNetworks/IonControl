@@ -20,6 +20,7 @@ from WavemeterInterlockTableModel import WavemeterInterlockTableModel
 from modules.SequenceDict import SequenceDict
 from KeyboardFilter import KeyFilter
 from modules.Utility import unique
+from modules.magnitude import Magnitude
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -60,7 +61,7 @@ class LoadingEvent:
 
 class AutoLoad(UiForm,UiBase):
     StatusOptions = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared')
-    def __init__(self, config, pulser, parent=None):
+    def __init__(self, config, pulser, dataAvailableSignal, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
         self.config = config
@@ -71,6 +72,7 @@ class AutoLoad(UiForm,UiBase):
         self.pulser = pulser
         self.dataSignalConnected = False
         self.outOfRangeCount=0
+        self.dataSignal = dataAvailableSignal
     
     def setupUi(self,widget):
         UiForm.setupUi(self,widget)
@@ -83,14 +85,19 @@ class AutoLoad(UiForm,UiBase):
         self.ovenChannelBox.setValue( self.settings.ovenChannel )
         self.ovenChannelBox.valueChanged.connect( functools.partial( self.onValueChanged, 'ovenChannel' ))
         self.laserDelayBox.setValue( self.settings.laserDelay )
+        self.laserDelayBox.dimension = Magnitude(1,s=1)
         self.laserDelayBox.valueChanged.connect( functools.partial( self.onValueChanged, 'laserDelay' ))
         self.maxTimeBox.setValue( self.settings.maxTime )
+        self.maxTimeBox.dimension = Magnitude(1,s=1)
         self.maxTimeBox.valueChanged.connect( functools.partial( self.onValueChanged, 'maxTime' ))
         self.thresholdBareBox.setValue( self.settings.thresholdBare )
+        self.thresholdBareBox.dimension = Magnitude(1,s=-1)
         self.thresholdBareBox.valueChanged.connect( functools.partial( self.onValueChanged, 'thresholdBare' ))
         self.thresholdOvenBox.setValue( self.settings.thresholdOven )
+        self.thresholdOvenBox.dimension = Magnitude(1,s=-1)
         self.thresholdOvenBox.valueChanged.connect( functools.partial( self.onValueChanged, 'thresholdOven' ))
         self.checkTimeBox.setValue( self.settings.checkTime )
+        self.checkTimeBox.dimension = Magnitude(1,s=1)
         self.checkTimeBox.valueChanged.connect( functools.partial( self.onValueChanged, 'checkTime' ))
         self.startButton.clicked.connect( self.onStart )
         self.stopButton.clicked.connect( self.onStop )
@@ -225,7 +232,7 @@ class AutoLoad(UiForm,UiBase):
         self.status = self.StatusOptions.Idle
         self.statusLabel.setText("Idle")
         if self.dataSignalConnected:
-            self.pulser.dedicatedDataAvailable.disconnect( self.onData )
+            self.dataSignal.disconnect( self.onData )
             self.dataSignalConnected = False
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel ))
@@ -252,7 +259,7 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
         self.status = self.StatusOptions.Load
         self.statusLabel.setText("Loading")
-        self.pulser.dedicatedDataAvailable.connect( self.onData )
+        self.dataSignal.connect( self.onData )
         self.dataSignalConnected = True
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(True,self.settings.shutterChannel) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(True,self.settings.ovenChannel) )
@@ -306,18 +313,18 @@ class AutoLoad(UiForm,UiBase):
     def onData(self, data ):
         """Execute when count rate data is received. Change state based on count rate."""
         if self.status==self.StatusOptions.Load:
-            if data.data[self.settings.counterChannel] > self.settings.thresholdOven:
+            if data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven:
                 self.setCheck()
         elif self.status==self.StatusOptions.Check:
-            if data.data[self.settings.counterChannel] < self.settings.thresholdBare:
+            if data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare:
                 self.setLoad()
             elif (datetime.now()-self.checkStarted).total_seconds() > self.settings.checkTime.toval('s'):
                 self.setTrapped()
         elif self.status==self.StatusOptions.Trapped:
-            if data.data[self.settings.counterChannel] < self.settings.thresholdBare:
+            if data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare:
                 self.setDisappeared()
         elif self.status==self.StatusOptions.Disappeared:
-            if data.data[self.settings.counterChannel] > self.settings.thresholdBare:
+            if data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare:
                 self.setTrapped(True)
             
     

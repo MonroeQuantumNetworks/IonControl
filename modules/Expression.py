@@ -104,6 +104,7 @@ class Expression:
 
     def pushFirst(self, strg, loc, toks ):
         self.exprStack.append( toks[0] )
+        
     def pushUMinus(self, strg, loc, toks ):
         if toks and toks[0]=='-': 
             self.exprStack.append( 'unary -' )
@@ -111,48 +112,47 @@ class Expression:
             #~ exprStack.append( '*' )
 
     # map operator symbols to corresponding arithmetic operations
-    def evaluateStack(self, s):
+    def evaluateStack(self, s, dependencies, useFloat=True ):
         op = s.pop()
         if op == 'unary -':
-            return -self.evaluateStack( s )
+            return -self.evaluateStack( s, dependencies, useFloat )
         if op in "+-*/^":
-            op2 = self.evaluateStack( s )
-            op1 = self.evaluateStack( s )
+            op2 = self.evaluateStack( s, dependencies, useFloat )
+            op1 = self.evaluateStack( s, dependencies, useFloat )
             return opn[op]( op1, op2 )
-        elif op == "PI":
+        elif op == "PI" or op=='pi':
             return math.pi # 3.1415926535
         elif op == "E":
             return math.e  # 2.718281828
         elif op in fn:
-            return fn[op]( self.evaluateStack( s ) )
+            return fn[op]( self.evaluateStack( s, dependencies, useFloat ) )
         elif op in self.variabledict:
+            dependencies.add(op)
             return self.variabledict[op]
         elif op[0].isalpha():
             return 0
         else:
-    #        return float(op)
-            try:
-                res = float(op)
-                #res = magnitude.mg(res)
-            except ValueError: # lets try whether it has a unit
-                fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
-                l = fmag.parseString(op)
-                m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
-                m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
-                return m
-            return res
+            fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
+            l = fmag.parseString(op)
+            m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
+            m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
+            if useFloat and m.dimensionless():
+                return m.val
+            return m
+        return res
             
-    def evaluate(self, expression, variabledict=dict()):
-        self.variabledict.update( variabledict )
+    def evaluate(self, expression, variabledict=dict(), listDependencies=False, useFloat=True ):
+        self.variabledict = variabledict
         self.exprStack = []
         self.results = self.bnf.parseString(expression)
-        value = self.evaluateStack( self.exprStack[:] )
+        dependencies = set()
+        value = self.evaluateStack( self.exprStack[:], dependencies, useFloat )
+        if listDependencies:
+            return value, dependencies
         return value
         
     def evaluateAsMagnitude(self, expression, variabledict=dict()):
-        res = self.evaluate(expression, variabledict)
-        if not isinstance(res, magnitude.Magnitude ):
-            res = magnitude.mg( res )
+        res = self.evaluate(expression, variabledict, useFloat=False)
         return res
 
 if __name__ == "__main__":

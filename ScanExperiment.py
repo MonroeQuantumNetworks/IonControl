@@ -23,7 +23,7 @@ import MainWindowWidget
 import FitUi
 from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
-from pyqtgraph.dockarea.Dock import DockLabel
+from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from modules import DataDirectory
 import time
 from CoordinatePlotWidget import CoordinatePlotWidget
@@ -54,10 +54,9 @@ class ParameterScanGenerator:
         return ( self.scan.code, [])
         
     def restartCode(self,currentIndex):
-        mycode = self.scan.code[currentIndex*2:]
         if len(self.scan.code)-2*currentIndex>2040:
             self.nextIndexToWrite = 2040+currentIndex*2
-            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite], [])
+            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentIndex*2:]
         
@@ -215,6 +214,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramList = list()
         self.histogramTrace = None
         self.interruptReason = ""
+        self.scan = None
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -409,10 +409,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
-            if self.scan.rewriteDDS:
+            if self.scan and self.scan.rewriteDDS:
                 self.NeedsDDSRewrite.emit()
             self.progressUi.setIdle()
-        self.finalizeData(reason='stopped')
+        if self.scan:
+            self.finalizeData(reason='stopped')
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
@@ -430,6 +431,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.overrun:
             logger.error( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
+        elif data.final and data.exitcode!=0:
+            self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
             logger.info( "onData {0} {1}".format( [len(data.count[i]) for i in range(16)], data.scanvalue ) )
             # Evaluate as given in evalList

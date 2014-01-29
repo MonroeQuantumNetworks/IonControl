@@ -25,8 +25,12 @@ class QueueReader(QtCore.QThread):
         self.dataQueue = dataQueue
         self.dataHandler = { 'Data': lambda data : self.pulserHardware.dataAvailable.emit(data),
                              'DedicatedData': lambda data: self.pulserHardware.dedicatedDataAvailable.emit(data),
-                             'FinishException': lambda data: self.raise_(FinishException()) }
+                             'FinishException': lambda data: self.raise_(FinishException()),
+                             'LogicAnalyzerData': lambda data: self.onLogicAnalyzerData(data) }
    
+    def onLogicAnalyzerData(self, data): 
+        self.pulserHardware.logicAnalyzerDataAvailable.emit(data)
+        
     def raise_(self, ex):
         raise ex
    
@@ -74,6 +78,7 @@ class PulserHardware(QtCore.QObject):
 
     dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     dedicatedDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
+    logicAnalyzerDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )
     ppActiveChanged = QtCore.pyqtSignal( object )
     

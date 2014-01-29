@@ -138,7 +138,6 @@ class PulseProgram:
         self.code = []                   # this is a list of lines
         self.bytecode = []               # list of op, argument tuples
         self.binarycode = bytearray()    # binarycode to be uploaded
-        self.debug = False
         self._exitcodes = dict()          # generate a reverse dictionary of variables of type exitcode
 
         

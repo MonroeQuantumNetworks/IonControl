@@ -13,7 +13,7 @@ import logging
 api2 = sip.getapi("QVariant")==2
 
 class GlobalVariableTableModel(QtCore.QAbstractTableModel):
-    valueChanged = QtCore.pyqtSignal()
+    valueChanged = QtCore.pyqtSignal( object )
     headerDataLookup = ['Name', 'Value']
     def __init__(self, variables, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
@@ -49,7 +49,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             result = self.expression.evaluate(strvalue,self.variabledict)
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
-            self.valueChanged.emit()
+            self.valueChanged.emit(name)
             return True    
         except Exception:
             logger.exception( "No match for {0}".format( str(value.toString()) ) )
@@ -79,9 +79,11 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return None #QtCore.QVariant()
             
     def setValue(self, row, value):
-        name = self.variables.keyAt(row) 
-        self.variables[name] = value
-        self.valueChanged.emit()
+        name = self.variables.keyAt(row)
+        old = self.variables[name]
+        if not old.isIdenticalTo(value):
+            self.variables[name] = value
+            self.valueChanged.emit(name)
 
     def getVariables(self):
         return self.variables
