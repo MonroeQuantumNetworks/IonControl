@@ -287,6 +287,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onAddEvaluation(self):
         evaluation = EvaluationDefinition()
         evaluation.counter = 0
+        evaluation.plotname = "Scan Data" #Default to "Scan Data" plot
         evaluation.evaluation = CountEvaluation.EvaluationAlgorithms.keys()[0]
         self.settings.evalList.append( evaluation )
         self.addEvaluation( evaluation )
