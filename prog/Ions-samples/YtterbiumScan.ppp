@@ -8,121 +8,98 @@ const DDSMicrowave 2
 const PMTChannel 9
 
 # 397 beam frequencies and amplitudes
-var DetectFreq 100, parameter, MHz, AD9912_FRQ
-var DetectAmp 1023, parameter
-var MicrowaveFreq 40, parameter, MHz, AD9912_FRQ
-var MicrowaveInitPhase 0, parameter, , AD9912_PHASE
-var MicrowaveAnalyzePhase 0, parameter, , AD9912_PHASE
+parameter<AD9912_FRQ> DetectFreq = 100 MHz
+parameter DetectAmp = 1023
+parameter<AD9912_FRQ> MicrowaveFreq = 40 MHz
+parameter<AD9912_PHASE> MicrowaveInitPhase = 0
+parameter<AD9912_PHASE> MicrowaveAnalyzePhase = 0
 
 # masks and shutters
-struct unmasked_shutter InitializationShutter
-struct masked_shutter CoolingOn
-struct masked_shutter CoolingOff
-struct masked_shutter PumpingOn
-struct masked_shutter PumpingOff
-struct masked_shutter MicrowaveOn
-struct masked_shutter MicrowaveOff
-struct masked_shutter DetectOn
-struct masked_shutter DetectOff
+shutter InitializationShutter 
+masked_shutter CoolingOn
+masked_shutter CoolingOff
+masked_shutter PumpingOn
+masked_shutter PumpingOff
+masked_shutter MicrowaveOn
+masked_shutter MicrowaveOff
+masked_shutter DetectOn
+masked_shutter DetectOff
 
 # times
-var CoolingTime       1, parameter, ms
-var PumpTime         0, parameter, ms
-var QubitInitTime 0,parameter, ms
-var QubitWaitTime 0,parameter, ms
-var QubitAnalyzeTime 0,parameter, ms
-var DetectTime      1, parameter, ms
-var Epsilon          500, parameter, ns
-var AmplitudeSettlingTime 100, parameter, us
+parameter CoolingTime = 1 ms
+parameter PumpTime = 0 ms
+parameter QubitInitTime = 0 ms
+parameter QubitWaitTime = 0 ms
+parameter QubitAnalyzeTime = 0 ms
+parameter DetectTime = 1 ms
+parameter AmplitudeSettlingTime = 100 us
 
 # control parameters
-var MaxInitRepeat 10, parameter
-var experiments   100, parameter
-var CheckIonCounters 0, counter
-var DetectCounters 0, counter
-var ddsApplyTrigger   3,trigger
-var ddsMicrowaveApply 0,trigger
-var PresenceThreshold 6, parameter
+parameter MaxInitRepeat = 10
+parameter experiments = 100
+parameter CheckIonCounters = 0
+parameter DetectCounters = 0
+trigger ddsApplyTrigger =  3
+trigger ddsMicrowaveApply = 3
+parameter PresenceThreshold = 6
 
 # internal variables
-var experimentsleft 100
-var Null 0
-var endLabel 0xffffffff
-var initRemaining 0
+var experimentsleft = 100
+var Null = 0
+var endLabel = 0xffffffff
+var initRemaining = 0
+
+procedure cool {
+	set_shutter( CoolingOn )
+	set_counter( CheckIonCounters )
+	update( CoolingTime )
+	set_counter( Null )
+	update()
+	W = load_count( PMTChannel )
+}
+
+procedure pump {
+	set_shutter( PumpingOn )
+	update( PumpingTime )
+	set_shutter( PumpingOff )
+}
+
+procedure qubitInit {
+	set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
+	set_trigger( ddsMicrowaveApply )
+	set_shutter( MicrowaveOn )
+	update( QubitInitTime )
+	set_shutter( MicrowaveOff )
+}
 
 # startup switching on cooling quickly
-	shutter( InitializationShutter )
-	dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
-	trigger( ddsApplyTrigger )
+	set_shutter( InitializationShutter )
+	set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
+	set_trigger( ddsApplyTrigger )
 	update()
 
-scanloop: NOP
-	# Read the scan parameter from the input data if there is nothing else jump to stop
-	# the parameters are echoed to the output stream as separators
-	JMPPIPEEMPTY endlabel
-	READPIPEINDF
-	NOP
-	WRITEPIPEINDF 
-	NOP
-	READPIPE
-	NOP
-	WRITEPIPE
-	NOP
-	STWI
-	# reload the number of experiments
-	LDWR experiments
-	STWR experimentsleft
+while ( not pipe_empty() ) {
+	P = read_pipe()
+	write_pipe( P ) 
+	w = read_pipe()
+	write_pipe( W )
+	*P = W
+	experimentsleft = experiments
 	
-init: NOP
-	LDWR MaxInitRepeat
-	STWR initRemaining
-	
-cool: NOP
-	# Cool ion and check it is there
-	SHUTTERMASK  CoolingOnMask
-	ASYNCSHUTTER CoolingOn
-	COUNTERMASK CheckIonCounters
-	WAIT
-	UPDATE      CoolingTime
-	COUNTERMASK Null
-	WAIT
-	UPDATE	Epsilon
-	# check the number of counts seen, if > threshold go to Pump
-	LDCOUNT	PMTChannel
-	CMP      	PresenceThreshold 	# if counts greater than threshold w=w else W=0
-	JMPNZ     	pump  		# if w!=0 go on
-	LDWR MaxInitRepeat
-	JMPZ pump                       # if MaxInitRepeat=0 go on to pump
-	DEC initRemaining
-	STWR initRemaining
-	JMPNZ cool
-	JMP endlabel              # id the ion did not show up after MaxInitRepeat tries we will give up for good
-	
-pump: NOP
-	LDWR PumpTime
-	JMPZ QubitInit
-	SHUTTERMASK  PumpingOnMask
-	ASYNCSHUTTER PumpingOn
-	WAIT
-	UPDATE      PumpTime
-	
-	SHUTTERMASK  PumpingOffMask
-	ASYNCSHUTTER PumpingOff	
-
-	
-QubitInit: NOP  
-	LDWR QubitInitTime
-	JMPZ QubitWait
-	DDSFRQ DDSMicrowave, MicrowaveFreq
-	DDSPHS DDSMicrowave, MicrowaveInitPhase
-	TRIGGER ddsMicrowaveApply
-	SHUTTERMASK  MicrowaveOnMask
-	ASYNCSHUTTER MicrowaveOn
-	WAIT
-	UPDATE QubitInitTime
-	
-	SHUTTERMASK  MicrowaveOffMask
-	ASYNCSHUTTER MicrowaveOff
+	while (experimentsleft>0) {
+		cool()
+		if (MaxInitRepeat>0) {
+			initRemaining = MaxInitRepeat
+			while (W<PresenceThreshold) {
+				if (initRemaining==0) { exit( IonLostExiutcode ) }
+				cool()
+			}
+		if (PumpingTime>0) {
+			pump()
+		}
+		if (QubitInitTime>0) {
+			qubitInit()
+		}
 	
 QubitWait: NOP	
 	LDWR QubitWaitTime
