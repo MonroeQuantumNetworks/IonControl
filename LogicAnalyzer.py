@@ -28,7 +28,7 @@ class Settings:
                 
 
 class LogicAnalyzer(Form, Base ):
-    OpStates = enum('stopped','running','single')
+    OpStates = enum('stopped','running','single','idle') #added idle in response to exception
     def __init__(self,config,pulserHardware,parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
