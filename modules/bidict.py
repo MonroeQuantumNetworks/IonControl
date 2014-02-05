@@ -593,6 +593,15 @@ def namedbidict(mapname, fwdname, invname):
     custombidict.__name__ = mapname
     return custombidict
 
+ChannelNameMap = namedbidict('ChannelNameMap', 'channels', 'names')
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod(optionflags=doctest.ELLIPSIS)
+    
+    ChannelNameMap = namedbidict('ChannelNameMap', 'channels', 'names')
+    cnm = ChannelNameMap()
+    cnm.names[1] = 'Peter'
+    cnm.channels['Peter'] = 7
+    print cnm

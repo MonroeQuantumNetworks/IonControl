@@ -14,23 +14,21 @@ ShutterForm, ShutterBase = PyQt4.uic.loadUiType(r'ui\Shutter.ui')
 class ShutterUi(ShutterForm, ShutterBase):
     onColor =  QtGui.QColor(QtCore.Qt.green)
     offColor =  QtGui.QColor(QtCore.Qt.red)
-    def __init__(self,pulserHardware,outputname,config,parent=None):
+    def __init__(self,pulserHardware,outputname,config, dataContainer, parent=None):
         ShutterBase.__init__(self,parent)
         ShutterForm.__init__(self)
-        self.shutterdict = dict()
         self.pulserHardware = pulserHardware
         self.outputname = outputname
         self.config = config
         self.configname = 'ShutterUi.'+self.outputname
+        self.dataContainer = dataContainer
         
     def setupUi(self,parent,dynupdate=False):
         logger = logging.getLogger(__name__)
         ShutterForm.setupUi(self,parent)
         self.setAtStartup = self.config.get(self.configname+".SetAtStartup",False)
         self.checkBoxSetAtStartup.setChecked(self.setAtStartup)
-        self.shutterdict = self.config.get(self.configname+".dict",dict())
-        self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.shutterdict,self.pulserHardware,self.outputname)
-        self.labelsChanged = self.shutterTableModel.labelsChanged
+        self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.pulserHardware,self.outputname, self.dataContainer )
         if self.setAtStartup:
             logger.info( "Set old shutter values {0} {1}".format( (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0) ) )
             self.shutterTableModel.shutter = self.config.get((self.configname, 'Value'),0) 
@@ -43,13 +41,12 @@ class ShutterUi(ShutterForm, ShutterBase):
             self.pulserHardware.shutterChanged.connect( self.shutterTableModel.updateShutter )
         
     def saveConfig(self):
-        self.config[self.configname+".dict"] = self.shutterdict
         self.config[self.configname+".SetAtStartup"] = self.checkBoxSetAtStartup.isChecked()
         self.config[(self.configname, 'Value')] = self.shutterTableModel.shutter
         
     def __repr__(self):
         r = "{0}\n".format(self.__class__)
-        for key in ['outputname', 'shutterdict', 'configname']:
+        for key in ['outputname', 'configname']:
             r += "{0}: {1}\n".format(key, getattr(self,key))
         return r
     
@@ -57,8 +54,8 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.shutterTableView.setEnabled( not disabled )
 
 class TriggerUi(ShutterUi):
-    def __init__(self,pulserHardware,outputname,parent=None):
-        super(TriggerUi,self).__init__(pulserHardware,outputname,parent)
+    def __init__(self,pulserHardware,outputname,dataContainer, parent=None):
+        super(TriggerUi,self).__init__(pulserHardware,outputname,dataContainer, parent)
         
     def setupUi(self,parent):
         super(TriggerUi,self).setupUi(parent)

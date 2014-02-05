@@ -18,6 +18,7 @@ from PulseProgramSourceEdit import PulseProgramSourceEdit
 import ProjectSelection
 import logging
 from modules.SequenceDict import SequenceDict
+from RotatedHeaderView import RotatedHeaderView
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -35,7 +36,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
     recentFilesChanged = QtCore.pyqtSignal(str)
     
-    def __init__(self,config,parameterdict):
+    def __init__(self,config,parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
@@ -46,6 +47,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.variabledict = None               # dictionary containing only the 'parameters'
         self.variableTableModel = None
         self.parameterChangedSignal = None
+        self.channelNameData = channelNameData
    
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -58,6 +60,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.saveButton.setDefaultAction( self.actionSave )
         self.resetButton.setDefaultAction( self.actionReset )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
+        self.shutterTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal, self.shutterTableView) )
+        self.triggerTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal,self.triggerTableView ) )
         
         if hasattr(self.configParams,'recentFiles'):
             for key, path in self.configParams.recentFiles.iteritems():
@@ -172,11 +176,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
         self.variableView.setModel(self.variableTableModel)
         self.variableView.resizeColumnToContents(0)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.combinedDict )
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.combinedDict, self.channelNameData[0:2] )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
-        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.combinedDict )
+        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.combinedDict, self.channelNameData[2:4] )
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
@@ -222,12 +226,13 @@ class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
         pass
     
-    def __init__(self,config):
+    def __init__(self,config, channelNameData):
         super(PulseProgramSetUi,self).__init__()
         self.config = config
         self.pulseProgramSet = dict()        # ExperimentName -> PulseProgramUi
         self.lastExperimentFile = dict()     # ExperimentName -> last pp file used for this experiment
         self.isShown = False
+        self.channelNameData = channelNameData
     
     def setupUi(self,parent):
         self.horizontalLayout = QtGui.QHBoxLayout(parent)
@@ -238,7 +243,7 @@ class PulseProgramSetUi(QtGui.QDialog):
 
     def addExperiment(self, experiment, parameterdict=dict(), parameterChangedSignal=None):
         if not experiment in self.pulseProgramSet:
-            programUi = PulseProgramUi(self.config, parameterdict)
+            programUi = PulseProgramUi(self.config, parameterdict, self.channelNameData )
             programUi.parameterChangedSignal = parameterChangedSignal
             programUi.setupUi(experiment,programUi)
             programUi.myindex = self.tabWidget.addTab(programUi,experiment)
