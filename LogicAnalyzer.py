@@ -81,7 +81,7 @@ class LogicAnalyzer(Form, Base ):
                         self.yDataBundle[i].append(offset+self.settings.height if value&(1<<i) else offset )
                     offset += 1
         nextChannel = self.settings.numChannels
-        if logicData.data:
+        if logicData.auxData:
             self.xAuxData, self.yAuxData = zip( *logicData.auxData )
             self.xAuxData = [ x * self.settings.scaling for x in self.xAuxData ]  # convert tuple to list
             self.xAuxData.append( logicData.stopMarker * self.settings.scaling )

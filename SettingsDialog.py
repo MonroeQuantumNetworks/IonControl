@@ -9,6 +9,7 @@ import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 from functools import partial
 import logging
+import os
 
 class Settings:
     def __init__(self):
@@ -62,11 +63,15 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         if self.configSettings.lastBitfile:
             self.comboBoxBitfiles.setCurrentIndex( self.comboBoxBitfiles.findText(self.configSettings.lastBitfile))
         if self.configSettings.lastInstrument in self.deviceMap and not self.configSettings.showOnStartup:
-            self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
-            if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
-                self.onUploadBitfile()
-            else:
-                self.pulser.OpenBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
+            try:
+                self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
+                if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
+                    self.onUploadBitfile()
+                else:
+                    self.pulser.OpenBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
+            except IOError as e:
+                logging.getLogger(__name__).error( e.strerror )
+                self.exec_()
         else:
             self.exec_()
                 
@@ -136,6 +141,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
         bitfile = str(self.comboBoxBitfiles.currentText())
         logger.info( "Uploading file '{0}'".format(bitfile) )
         if bitfile!="":
+            if not os.path.exists(self.bitfileCache[bitfile]):
+                raise IOError( "bitfile '{0}' not found".format(self.bitfileCache[bitfile]))
             self.pulser.openBySerial( self.settings.deviceSerial )
             self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
