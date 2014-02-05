@@ -30,6 +30,7 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.checkBoxSetAtStartup.setChecked(self.setAtStartup)
         self.shutterdict = self.config.get(self.configname+".dict",dict())
         self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.shutterdict,self.pulserHardware,self.outputname)
+        self.labelsChanged = self.shutterTableModel.labelsChanged
         if self.setAtStartup:
             logger.info( "Set old shutter values {0} {1}".format( (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0) ) )
             self.shutterTableModel.shutter = self.config.get((self.configname, 'Value'),0) 
