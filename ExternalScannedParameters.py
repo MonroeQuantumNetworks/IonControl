@@ -255,6 +255,7 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
         self.setDefaults()
+        self.value = self.settings.value if hasattr(self.settings,'value') else None
     
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -265,6 +266,7 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
         command = ":FREQ:CW {0:.0f}KHZ".format(v.toval('kHz'))
         self.synthesizer.write(command)
         self.value = v
+        self.settings.value = v
         
     def paramDef(self):
         """

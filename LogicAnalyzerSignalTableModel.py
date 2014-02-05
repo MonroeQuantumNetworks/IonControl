@@ -29,7 +29,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
         elif index<self.dataSignals+self.auxSignals:
             return self.auxChannelName(index - self.dataSignals)
         else:
-            self.triggerChannelName(index-self.dataSignals-self.auxSignals)
+            return self.triggerChannelName(index-self.dataSignals-self.auxSignals)
                 
     def auxChannelName(self, index):
         return self.auxChannelNames[index]
