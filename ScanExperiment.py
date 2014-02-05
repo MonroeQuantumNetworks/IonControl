@@ -69,8 +69,8 @@ class ParameterScanGenerator:
             return self.scan.code[self.nextIndexToWrite-2:self.nextIndexToWrite]
         return []
         
-    def dataOnFinal(self, experiment):
-        if self.scan.scanRepeat == 1:
+    def dataOnFinal(self, experiment, currentState):
+        if self.scan.scanRepeat == 1 and currentState == ScanExperiment.OpStates.running:
             experiment.startScan()
         else:
             experiment.onStop()                   
@@ -132,7 +132,7 @@ class StepInPlaceGenerator:
                         trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0])
                         trace.top = numpy.append(trace.top[-steps+1:], error[1])
 
-    def dataOnFinal(self, experiment):
+    def dataOnFinal(self, experiment, currentState):
         experiment.onStop()                   
 
 class GateSetScanGenerator:
@@ -182,8 +182,8 @@ class GateSetScanGenerator:
                 trace.bottom = numpy.append(trace.bottom, error[0])
                 trace.top = numpy.append(trace.top, error[1])
 
-    def dataOnFinal(self, experiment):
-        if self.scan.scanRepeat == 1:
+    def dataOnFinal(self, experiment, currentState):
+        if self.scan.scanRepeat == 1 and currentState==ScanExperiment.OpStates.running:
             experiment.startScan()
         else:
             experiment.onStop()                   
@@ -457,7 +457,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.finalizeData(reason='end of scan')
                 logger.info( "current index {0} expected {1}".format(self.currentIndex, len(self.scan.list) ) )
                 if self.currentIndex >= len(self.scan.list):    # if all points were taken
-                    self.generator.dataOnFinal(self)
+                    self.generator.dataOnFinal(self, self.progressUi.state )
                 else:
                     self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
             else:
