@@ -99,7 +99,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
         
         # initialize PulseProgramUi
-        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config, (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal) )
+        self.channelNameData = (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal)
+        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
         self.settingsDialog = SettingsDialog.SettingsDialog(self.pulser, self.config, self.parent)
@@ -206,7 +207,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulser)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
-        self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser)
+        self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser, self.channelNameData )
         self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
         self.voltageControlWindow = VoltageControl.VoltageControl(self.config)

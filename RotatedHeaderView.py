@@ -6,31 +6,25 @@ class RotatedHeaderView( QtGui.QHeaderView ):
         self.setMinimumSectionSize(20)
         
     def paintSection(self, painter, rect, logicalIndex ):
-        #print rect, logicalIndex
         painter.save()
         painter.translate(rect.x()+rect.width(), rect.y())
         painter.rotate(90)
         newrect = QtCore.QRect(0,0,rect.height(),rect.width())
-        #print newrect
         super(RotatedHeaderView, self).paintSection(painter,newrect,logicalIndex)
         painter.restore()
                
     def sectionSizeHint(self, logicalIndex):
-        print "sectionSizeHint"
         return 10
     
     def minimumSizeHint(self):
-        print "minimumSizeHint"
         size = super(RotatedHeaderView, self).minimumSizeHint()
         size.transpose()
         return size
 
     def sizeHintForColumn(self, logicalIndex):
-        print "sizeHintForColumn"
         return 10
     
     def sectionSizeFromContents(self, logicalIndex):
-        print "sectionSizeFromContents"
         size = super(RotatedHeaderView, self).sectionSizeFromContents(logicalIndex)
         size.transpose()
         return size
