@@ -189,7 +189,7 @@ class LinearFit(FitFunctionBase):
         self.halfpoint = 0        
         self.parameterEnabled = [True]*2
         self.parametersConfidence = [None]*2
-        self.results['halfpoint'] = ResultRecord(name='halfpoint', function=lambda: self.halfpoint)
+        self.results['halfpoint'] = ResultRecord(name='halfpoint')
         
     def residuals(self,p, y, x, sigma):
         m,b = self.allFitParameters(p)
@@ -202,7 +202,7 @@ class LinearFit(FitFunctionBase):
         m, b = self.parameters if p is None else p
         return m*x + b
         
-    def finalize(self,parameters):
+    def update(self,parameters):
         m, b = parameters
         self.halfpoint= (0.5-b)/m
 

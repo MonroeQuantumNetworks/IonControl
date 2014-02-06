@@ -112,6 +112,8 @@ class FitUiTables(fitForm, QtGui.QWidget):
         self.fitfunctionTableModel.startDataChanged()
     
     def saveConfig(self):
+        if self.fitfunction is not None:
+            self.fitfunctionCache[self.fitfunction.name] = self.fitfunction
         self.config["FitUi.FitfunctionCache"] = self.fitfunctionCache
             
         

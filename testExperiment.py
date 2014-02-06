@@ -160,7 +160,8 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def saveConfig(self):
         self.config['testWidget.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.traceui.saveConfig()
-
+        self.fitWidget.saveConfig()
+        
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
         path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))

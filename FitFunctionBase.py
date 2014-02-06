@@ -16,20 +16,12 @@ from modules.MagnitudeUtilit import value
 
 
 class ResultRecord(object):
-    def __init__(self, name=None, definition=None, value=None, globalname=None, push=False, function=None ):
+    def __init__(self, name=None, definition=None, value=None, globalname=None, push=False ):
         self.name = name
         self.definition = definition
-        self._value = value
+        self.value = value
         self.globalname = globalname
         self.push = push
-        self.function = function
-        
-    @property
-    def value(self):
-        if self.function:
-            return self.function()
-        else:
-            return value
 
 
 class FitFunctionBase(object):
@@ -41,8 +33,9 @@ class FitFunctionBase(object):
         self.startParameters = []
         self.parameterEnabled = []
         self.parametersConfidence = []
+        self.units = None
         self.RMSres = 0
-        self.results = dict({'RMSres': ResultRecord(name='RMSres', function=lambda: self.RMSres)})
+        self.results = dict({'RMSres': ResultRecord(name='RMSres')})
 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -111,7 +104,7 @@ class FitFunctionBase(object):
         
         enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
         self.setEnabledFitParameters(enabledOnlyParameters)
-        self.finalize(self.parameters)
+        self.update(self.parameters)
         logger.info( "chisq {0}".format( sum(self.infodict["fvec"]*self.infodict["fvec"]) ) )        
         
         # calculate final chi square
@@ -162,7 +155,7 @@ class FitFunctionBase(object):
     def setConstant(self, name, value):
         setattr(self,name,value)
         
-    def finalize(self,parameters):
+    def update(self,parameters):
         pass
     
     def toXmlElement(self, parent):

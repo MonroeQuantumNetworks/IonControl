@@ -11,6 +11,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
                             (QtCore.Qt.DisplayRole,1): lambda row: self.fitfunction.parameterNames[row],
                             (QtCore.Qt.DisplayRole,2): lambda row: str(self.fitfunction.startParameters[row]),
                             (QtCore.Qt.EditRole,2):    lambda row: str(self.fitfunction.startParameters[row]),
+                            (QtCore.Qt.UserRole,2):    lambda row: self.fitfunction.units[row] if self.fitfunction.units else None,
                             (QtCore.Qt.DisplayRole,3): self.fitValue,
                             (QtCore.Qt.DisplayRole,4): self.confidenceValue,
                             (QtCore.Qt.DisplayRole,5): self.relConfidenceValue  }
