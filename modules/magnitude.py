@@ -1210,7 +1210,11 @@ def new_mag(indicator, mag, isDimensionIndicator=False ):
     if isDimensionIndicator:
         _outputDimensions[tuple(mag.unit)] = indicator
 
+def is_magnitude(m):
+    return isinstance(m,Magnitude)
+
 # Finally, define the Magnitudes and initialize _mags.
+
 
 def _init_mags():
     # Magnitudes for the base SI units
