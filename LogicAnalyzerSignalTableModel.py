@@ -5,7 +5,7 @@ api2 = sip.getapi("QVariant")==2
 
     
 class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
-    
+    enableChanged = QtCore.pyqtSignal()
     def __init__(self, config, channelNameData, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
@@ -65,6 +65,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
     def setData(self,index, value, role):
         if (role, index.column()) == (QtCore.Qt.CheckStateRole,0): 
             self.enabledList[index.row()] = value==QtCore.Qt.Checked
+            self.enableChanged.emit()
             return True
         return False
 

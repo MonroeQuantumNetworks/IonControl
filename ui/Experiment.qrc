@@ -23,6 +23,8 @@
     <file>icons/player_stop.png</file>
   </qresource>
   <qresource prefix="petersIcons">
+    <file>icons/pulser1.png</file>
+    <file>icons/pulser.png</file>
     <file>icons/ChipScope.png</file>
   </qresource>
   <qresource prefix="latex">

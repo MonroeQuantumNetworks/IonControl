@@ -8,6 +8,9 @@ from itertools import chain, izip
 from modules.Utility import flatten
 from LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
 
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
+
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
 class Settings:
@@ -67,8 +70,14 @@ class LogicAnalyzer(Form, Base ):
         self.signalTableView.resizeColumnsToContents()
         if 'LogicAnalyzer.State' in self.config:
             self.restoreState(self.config['LogicAnalyzer.State'])
+        self.signalTableModel.enableChanged.connect( self.refresh )
         
     def onData(self, logicData ):
+        #with PyCallGraph(output=GraphvizOutput()):
+        self.onDataProfile(logicData)
+        
+    def onDataProfile(self, logicData):
+        self.logicData = logicData
         offset = 0
         if logicData.data:
             self.xData, self.yData = zip( *logicData.data )
@@ -185,6 +194,9 @@ class LogicAnalyzer(Form, Base ):
                         if curve:
                             curve.setData(x=self.xTrigger,y=yTrigger)
         self.lastEnabledChannels = list( self.signalTableModel.enabledList )
+             
+    def refresh(self):
+        self.onData(self.logicData)
                 
     def onRun(self):
         logger = logging.getLogger(__name__)

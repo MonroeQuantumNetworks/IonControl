@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Logic Analyzer</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="Experiment.qrc">
+    <normaloff>:/petersIcons/icons/ChipScope.png</normaloff>:/petersIcons/icons/ChipScope.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">

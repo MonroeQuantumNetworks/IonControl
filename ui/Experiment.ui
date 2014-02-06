@@ -325,7 +325,7 @@
   <action name="actionPulses">
    <property name="icon">
     <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/configure.png</normaloff>:/kde/icons/configure.png</iconset>
+     <normaloff>:/petersIcons/icons/pulser1.png</normaloff>:/petersIcons/icons/pulser1.png</iconset>
    </property>
    <property name="text">
     <string>Pulses</string>

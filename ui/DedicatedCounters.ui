@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Dedicated Counters</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="Experiment.qrc">
+    <normaloff>:/openicon/icons/gnome-power-statistics.png</normaloff>:/openicon/icons/gnome-power-statistics.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
