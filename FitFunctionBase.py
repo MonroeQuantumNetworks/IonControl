@@ -14,6 +14,24 @@ from itertools import izip_longest
 import logging
 from modules.MagnitudeUtilit import value
 
+
+class ResultRecord(object):
+    def __init__(self, name=None, definition=None, value=None, globalname=None, push=False, function=None ):
+        self.name = name
+        self.definition = definition
+        self._value = value
+        self.globalname = globalname
+        self.push = push
+        self.function = function
+        
+    @property
+    def value(self):
+        if self.function:
+            return self.function()
+        else:
+            return value
+
+
 class FitFunctionBase(object):
     name = 'None'
     def __init__(self):
@@ -23,9 +41,8 @@ class FitFunctionBase(object):
         self.startParameters = []
         self.parameterEnabled = []
         self.parametersConfidence = []
-        self.constantNames = []
-        self.resultNames = ["RMSres"]
         self.RMSres = 0
+        self.results = dict({'RMSres': ResultRecord(name='RMSres', function=lambda: self.RMSres)})
 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -140,8 +157,7 @@ class FitFunctionBase(object):
         return self.parameters
                 
     def __str__(self):
-        return "; ".join([", ".join([self.name, self.functionString] + [ "{0}={1}".format(name, value) for name, value in zip(self.parameterNames,self.parameters)]),
-                          ", ".join([ "{0}={1}".format(name,getattr(self,name)) for name in self.constantNames ])])
+        return "; ".join([", ".join([self.name, self.functionString] + [ "{0}={1}".format(name, value) for name, value in zip(self.parameterNames,self.parameters)])])
 
     def setConstant(self, name, value):
         setattr(self,name,value)
@@ -151,11 +167,8 @@ class FitFunctionBase(object):
     
     def toXmlElement(self, parent):
         myroot  = ElementTree.SubElement(parent, 'FitFunction', {'name': self.name, 'functionString': self.functionString})
-        for name, value, confidence in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence):
-            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence)})
+        for name, value, confidence, enabled in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence,self.parameterEnabled):
+            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': enabled})
             e.text = str(value)
-        for name in self.constantNames:
-            e = ElementTree.SubElement( myroot, 'Constant', {'name':name})
-            e.text = str(getattr(self,name))
            
         return myroot

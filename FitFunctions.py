@@ -6,7 +6,7 @@ Created on Sat Jan 19 10:47:59 2013
 """
 import numpy
 
-from FitFunctionBase import FitFunctionBase
+from FitFunctionBase import FitFunctionBase, ResultRecord
 from modules import MagnitudeParser
 
 class CosFit(FitFunctionBase):
@@ -186,10 +186,10 @@ class LinearFit(FitFunctionBase):
         self.parameterNames = [ 'm', 'b' ]
         self.parameters = [1,0]
         self.startParameters = [1,0]
-        self.resultNames = self.resultNames + ['halfpoint']
         self.halfpoint = 0        
         self.parameterEnabled = [True]*2
         self.parametersConfidence = [None]*2
+        self.results['halfpoint'] = ResultRecord(name='halfpoint', function=lambda: self.halfpoint)
         
     def residuals(self,p, y, x, sigma):
         m,b = self.allFitParameters(p)
