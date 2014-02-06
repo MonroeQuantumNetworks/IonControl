@@ -79,7 +79,7 @@ class ParameterScanGenerator:
             experiment.onStop()                   
     
     def xRange(self):
-        if is_magnitude(self.scan.xUnit) and self.scan.xUnit.has_dimension(self.scan.list[index]):
+        if is_magnitude(self.scan.xUnit) and self.scan.xUnit.has_dimension(self.scan.list[0]):
             return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
         return self.scan.start.toval(), self.scan.stop.toval()
                                      
