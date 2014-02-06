@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>280</width>
-    <height>448</height>
+    <width>327</width>
+    <height>544</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QComboBox" name="comboBox_2">
+      <widget class="QComboBox" name="analysisNameComboBox">
        <property name="contextMenuPolicy">
         <enum>Qt::ActionsContextMenu</enum>
        </property>
@@ -27,7 +27,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="removeButton_2">
+      <widget class="QToolButton" name="removeAnalysisButton">
        <property name="minimumSize">
         <size>
          <width>0</width>
@@ -78,7 +78,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QComboBox" name="comboBox"/>
+    <widget class="QComboBox" name="fitSelectionComboBox"/>
    </item>
    <item>
     <widget class="QLabel" name="descriptionLabel">
@@ -99,7 +99,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="fitButton">
        <property name="text">
         <string>Fit</string>
        </property>
@@ -113,7 +113,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="removeButton">
+      <widget class="QToolButton" name="removePlotButton">
        <property name="minimumSize">
         <size>
          <width>24</width>

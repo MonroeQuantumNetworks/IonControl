@@ -12,6 +12,7 @@ from modules import magnitude
 import xml.etree.ElementTree as ElementTree
 from itertools import izip_longest
 import logging
+from modules.MagnitudeUtilit import value
 
 class FitFunctionBase(object):
     name = 'None'
@@ -19,18 +20,80 @@ class FitFunctionBase(object):
         self.epsfcn=0.0
         self.parameterNames = []
         self.parameters = []
+        self.startParameters = []
+        self.parameterEnabled = []
         self.parametersConfidence = []
         self.constantNames = []
         self.resultNames = ["RMSres"]
         self.RMSres = 0
 
+    def allFitParameters(self, p):
+        """return a list where the disabled parameters are added to the enabled parameters given in p"""
+        pindex = 0
+        params = list()
+        for index, enabled in enumerate(self.parameterEnabled):
+            if enabled:
+                params.append(p[pindex])
+                pindex += 1
+            else:
+                params.append(value(self.startParameters[index]))
+        return params
+    
+    def enabledStartParameters(self, parameters=None):
+        """return a list of only the enabled start parameters"""
+        if parameters is None:
+            parameters = self.startParameters
+        params = list()
+        for enabled, param in zip(self.parameterEnabled, parameters):
+            if enabled:
+                params.append(value(param))
+        return params
+
+    def enabledFitParameters(self, parameters=None):
+        """return a list of only the enabled fit parameters"""
+        if parameters is None:
+            parameters = self.parameters
+        params = list()
+        for enabled, param in zip(self.parameterEnabled, parameters):
+            if enabled:
+                params.append(value(param))
+        return params
+
+    def enabledParameterNames(self):
+        """return a list of only the enabled fit parameters"""
+        params = list()
+        for enabled, param in zip(self.parameterEnabled, self.parameterNames):
+            if enabled:
+                params.append(param)
+        return params
+    
+    def setEnabledFitParameters(self, parameters):
+        """set the fitted parameters if enabled"""
+        pindex = 0
+        for index, enabled in enumerate(self.parameterEnabled):
+            if enabled:
+                self.parameters[index] = parameters[pindex]
+                pindex += 1
+            else:
+                self.parameters[index] = value(self.startParameters[index])
+    
+    def setEnabledConfidenceParameters(self, confidence):
+        """set the parameter confidence values for the enabled parameters"""
+        pindex = 0
+        for index, enabled in enumerate(self.parameterEnabled):
+            if enabled:
+                self.parametersConfidence[index] = confidence[pindex]
+                pindex += 1
+            else:
+                self.parametersConfidence[index] = None        
+
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
         if parameters is None:
-            parameters = self.parameters
-        #self.parameters, self.n = leastsq(self.residuals, parameters, args=(y,x), epsfcn=self.epsfcn)
+            parameters = [value(param) for param in self.startParameters]
         
-        self.parameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, parameters, args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
+        enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
+        self.setEnabledFitParameters(enabledOnlyParameters)
         self.finalize(self.parameters)
         logger.info( "chisq {0}".format( sum(self.infodict["fvec"]*self.infodict["fvec"]) ) )        
         
@@ -50,21 +113,22 @@ class FitFunctionBase(object):
         # uncertainties are calculated as per gnuplot, "fixing" the result
         # for non unit values of the reduced chisq.
         # values at min match gnuplot
+        enabledParameterNames = self.enabledParameterNames()
         if self.cov_x is not None:
-            self.parametersConfidence = numpy.sqrt(numpy.diagonal(self.cov_x))*sqrt(self.chisq/self.dof)
-            self.parametersRelConfidence = self.parametersConfidence/numpy.abs(self.parameters)*100
+            enabledOnlyParametersConfidence = numpy.sqrt(numpy.diagonal(self.cov_x))*sqrt(self.chisq/self.dof)
+            self.setEnabledConfidenceParameters(enabledOnlyParametersConfidence)
             logger.info(  "Fitted parameters at minimum, with 68% C.I.:" )
-            for i,pmin in enumerate(self.parameters):
-                logger.info(  "%2i %-10s %12f +/- %10f"%(i,self.parameterNames[i],pmin,sqrt(max(self.cov_x[i,i],0))*sqrt(self.chisq/self.dof)) )
+            for i,pmin in enumerate(enabledOnlyParameters):
+                logger.info(  "%2i %-10s %12f +/- %10f"%(i,enabledParameterNames[i],pmin,sqrt(max(self.cov_x[i,i],0))*sqrt(self.chisq/self.dof)) )
         
             logger.info(  "Correlation matrix" )
             # correlation matrix close to gnuplot
             messagelist = ["               "]
-            for i in range(len(self.parameters)): messagelist.append( "%-10s"%(self.parameterNames[i],) )
+            for i in range(len(enabledOnlyParameters)): messagelist.append( "%-10s"%(enabledParameterNames[i],) )
             logger.info( " ".join(messagelist))
             messagelist = []
-            for i in range(len(self.parameters)):
-                messagelist.append( "%10s"%self.parameterNames[i] )
+            for i in range(len(enabledOnlyParameters)):
+                messagelist.append( "%10s"%enabledParameterNames[i] )
                 for j in range(i+1):
                     messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(self.cov_x[i,i]*self.cov_x[j,j]),) )
                 logger.info( " ".join(messagelist))
@@ -72,8 +136,7 @@ class FitFunctionBase(object):
                 #-----------------------------------------------
         else:
             self.parametersConfidence = None
-            self.parametersRelConfidence = None
-
+ 
         return self.parameters
                 
     def __str__(self):
