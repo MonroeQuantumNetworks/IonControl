@@ -3,6 +3,7 @@ from modules.SequenceDict import SequenceDict
 from modules.Expression import Expression
 from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_nodes
 from modules.magnitude import Magnitude
+import logging
 
 class CyclicDependencyException(Exception):
     pass
@@ -104,8 +105,10 @@ class VariableDictionary(SequenceDict):
     def recalculateNode(self, node):
         if node in self:
             var = self[node]
-            var.value = self.expression.evaluate(var.strvalue, self.valueView)
-            print "recalculating", node, var.value
+            if hasattr(var,'strvalue'):
+                var.value = self.expression.evaluate(var.strvalue, self.valueView)
+            else:
+                logging.getLogger(__name__).warning("variable {0} does not have strvalue.".format(var))
             
     def recalculateAll(self):
         g = self.dependencyGraph.reverse()

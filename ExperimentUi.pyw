@@ -247,6 +247,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.currentTab.onSave()
         logger.info( "Saving config" )
         filename, _ = DataDirectory.DataDirectory().sequencefile("configuration.db")
+        self.saveConfig()
         self.config.saveConfig(filename)
     
     def onStart(self):
