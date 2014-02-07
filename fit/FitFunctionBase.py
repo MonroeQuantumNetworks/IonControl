@@ -23,7 +23,6 @@ class ResultRecord(object):
         self.globalname = globalname
         self.push = push
 
-
 class FitFunctionBase(object):
     name = 'None'
     def __init__(self):

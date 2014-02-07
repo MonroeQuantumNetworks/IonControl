@@ -1,22 +1,53 @@
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-from fit.FitFunctionBase import fitFunctionMap
+from fit.FitFunctionBase import fitFunctionMap, ResultRecord
 import copy
 from fit.FitUiTableModel import FitUiTableModel
 import logging
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.MagnitudeUtilit import value
 from fit.FitResultsTableModel import FitResultsTableModel
+from modules.HashableDict import HashableDict
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
 class AnalysisDefinition(object):
-    def __init__(self):
-        self.name = None
-        self.fitfunctionName = None
-        self.startParameters = list()
-        self.enabledParameters = list()
+    def __init__(self, name=None, fitfunctionName=None ):
+        self.name = name
+        self.fitfunctionName = fitfunctionName
+        self.startParameters = tuple()
+        self.parameterEnabled = tuple()
+        self.results = HashableDict()
 
+    def fitfunction(self):
+        fitfunction = fitFunctionMap[self.fitfunctionName]()
+        fitfunction.startParameters = list(self.startParameters)
+        fitfunction.parameterEnabled = list(self.parameterEnabled)
+        for result in self.results.values():
+            fitfunction.results[result.name].push = result.push
+            fitfunction.results[result.name].globalname = result.globalname
+        return fitfunction
+    
+    @classmethod
+    def fromFitfunction(cls, fitfunction):
+        instance = cls( name=None, fitfunctionName=fitfunction.name )
+        instance.startParameters = tuple(fitfunction.startParameters)
+        instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
+        for result in fitfunction.results.values():
+            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition, globalname=result.globalname, push=result.push)
+        return instance
+     
+    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results'] 
+        
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+        
             
 class FitUi(fitForm, QtGui.QWidget):
     def __init__(self, traceui, config, parentname, parent=None):
@@ -27,6 +58,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction = None
         self.traceui = traceui
         self.fitfunctionCache = self.config.get("FitUi.FitfunctionCache", dict() )
+        self.analysisDefinitions = self.config.get("FitUi.AnalysisDefinitions", dict())
             
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
@@ -35,6 +67,8 @@ class FitUi(fitForm, QtGui.QWidget):
         self.removePlotButton.clicked.connect( self.onRemoveFit )
         self.extractButton.clicked.connect( self.onExtractFit )
         self.copyButton.clicked.connect( self.onCopy )
+        self.removeAnalysisButton.clicked.connect( self.onRemoveAnalysis )
+        self.saveButton.clicked.connect( self.onSaveAnalysis )
         self.fitSelectionComboBox.addItems( fitFunctionMap.keys() )
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
@@ -45,6 +79,12 @@ class FitUi(fitForm, QtGui.QWidget):
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
         if 'FitUi.splitter' in self.config:
             self.splitter.restoreState( self.config['FitUi.splitter'])
+        # Analysis stuff
+        lastAnalysisName = self.config.get("FitUi.LastAnalysis", None)
+        self.analysisNameComboBox.addItems( self.analysisDefinitions.keys() )
+        if lastAnalysisName and lastAnalysisName in self.analysisDefinitions:
+            self.analysisNameComboBox.setCurrentIndex( self.analysisNameComboBox.findText(lastAnalysisName))
+        self.analysisNameComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysis )
        
     def onFitfunctionChanged(self, name):
         name = str(name)
@@ -61,6 +101,8 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
         self.parameterTableView.resizeColumnsToContents()
         self.descriptionLabel.setText( self.fitfunction.functionString )
+        if str(self.fitSelectionComboBox.currentText())!= self.fitfunction.name:
+            self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
         self.resultsTableView.resizeColumnsToContents()
         
     def onFit(self):
@@ -107,5 +149,31 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitfunctionCache[self.fitfunction.name] = self.fitfunction
         self.config["FitUi.FitfunctionCache"] = self.fitfunctionCache
         self.config['FitUi.Splitter'] = self.splitter.saveState()
+        self.config["FitUi.AnalysisDefinitions"] = self.analysisDefinitions
+        self.config["FitUi.LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
             
+    def saveState(self):
+        pass
+    
+    def onRemoveAnalysis(self):
+        name = str(self.analysisNameComboBox.currentText())
+        if name in self.analysisDefinitions:
+            self.analysisDefinitions.pop(name)
+            index = self.analysisNameComboBox.findText(name)
+            if index>=0:
+                self.analysisNameComboBox.removeItem(index)
+    
+    def onSaveAnalysis(self):
+        name = str(self.analysisNameComboBox.currentText())       
+        definition = AnalysisDefinition.fromFitfunction(self.fitfunction)
+        definition.name = name
+        self.analysisDefinitions[name] = definition
+        if self.analysisNameComboBox.findText(name)<0:
+            self.analysisNameComboBox.addItem(name)
+        
+    def onLoadAnalysis(self, name):
+        name = str(name)
+        if name in self.analysisDefinitions:
+            if AnalysisDefinition.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
+                self.setFitfunction( self.analysisDefinitions[name].fitfunction() )
         

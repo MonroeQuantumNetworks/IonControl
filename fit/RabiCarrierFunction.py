@@ -77,7 +77,7 @@ class RabiCarrierFunction(FitFunctionBase):
 class FullRabiCarrierFunction(RabiCarrierFunction):
     name = "FullRabiCarrier"
     def __init__(self):
-        super(FullRabiCarrierFunction,self).__init__(self)
+        super(FullRabiCarrierFunction,self).__init__()
         self.functionString =  'Numerical Carrier Rabi Transition without Lamb-Dicke approx'
         self.laguerreCacheEta = -1
         self.laguerreTable = None
