@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ElementTree
 from itertools import izip_longest
 import logging
 from modules.MagnitudeUtilit import value
-
+from modules.SequenceDict import SequenceDict
 
 class ResultRecord(object):
     def __init__(self, name=None, definition=None, value=None, globalname=None, push=False ):
@@ -34,8 +34,12 @@ class FitFunctionBase(object):
         self.parameterEnabled = []
         self.parametersConfidence = []
         self.units = None
-        self.RMSres = 0
-        self.results = dict({'RMSres': ResultRecord(name='RMSres')})
+        self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        if not isinstance(self.results, SequenceDict):
+            self.results = SequenceDict(self.results)  
 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -111,13 +115,14 @@ class FitFunctionBase(object):
         self.chisq=sum(self.infodict["fvec"]*self.infodict["fvec"])
         
         self.dof=len(x)-len(parameters)
-        self.RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
-        self.RMSres.significantDigits = 3
+        RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
+        RMSres.significantDigits = 3
+        self.results['RMSres'].value = RMSres
         # chisq, sqrt(chisq/dof) agrees with gnuplot
         logger.info(  "success {0} {1}".format( self.ier, self.mesg ) )
         logger.info(  "Converged with chi squared {0}".format(self.chisq) )
         logger.info(  "degrees of freedom, dof {0}".format( self.dof ) )
-        logger.info(  "RMS of residuals (i.e. sqrt(chisq/dof)) {0}".format( self.RMSres ) )
+        logger.info(  "RMS of residuals (i.e. sqrt(chisq/dof)) {0}".format( RMSres ) )
         logger.info(  "Reduced chisq (i.e. variance of residuals) {0}".format( self.chisq/self.dof ) )
         
         # uncertainties are calculated as per gnuplot, "fixing" the result
@@ -165,3 +170,5 @@ class FitFunctionBase(object):
             e.text = str(value)
            
         return myroot
+    
+fitFunctionMap = dict()    

@@ -8,9 +8,9 @@ from itertools import chain, izip
 from modules.Utility import flatten
 from LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
 
-from pycallgraph import PyCallGraph
-from pycallgraph.output import GraphvizOutput
-from pycallgraph import Config
+# from pycallgraph import PyCallGraph
+# from pycallgraph.output import GraphvizOutput
+# from pycallgraph import Config
 
 import cProfile
 

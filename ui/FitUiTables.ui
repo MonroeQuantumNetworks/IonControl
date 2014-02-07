@@ -93,7 +93,7 @@
       <enum>Qt::Vertical</enum>
      </property>
      <widget class="QTableView" name="parameterTableView"/>
-     <widget class="QTableView" name="tableView"/>
+     <widget class="QTableView" name="resultsTableView"/>
     </widget>
    </item>
    <item>

@@ -49,7 +49,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         pass
     
     def fitDataChanged(self):
-        self.dataChanged.emit( self.createIndex(0,3), self.createIndex(self.rowCount(),4))
+        self.dataChanged.emit( self.createIndex(0,3), self.createIndex(self.rowCount(),5))
  
     def startDataChanged(self):
         self.dataChanged.emit( self.createIndex(0,2), self.createIndex(self.rowCount(),2))

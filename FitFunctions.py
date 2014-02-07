@@ -6,7 +6,7 @@ Created on Sat Jan 19 10:47:59 2013
 """
 import numpy
 
-from FitFunctionBase import FitFunctionBase, ResultRecord
+from FitFunctionBase import FitFunctionBase, ResultRecord, fitFunctionMap
 from modules import MagnitudeParser
 
 class CosFit(FitFunctionBase):
@@ -208,17 +208,17 @@ class LinearFit(FitFunctionBase):
 
 from RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
         
-fitFunctionMap = { GaussianFit.name: GaussianFit, 
-                   CosFit.name: CosFit, 
-                   CosSqFit.name: CosSqFit,
-                   SinSqFit.name: SinSqFit,
-                   SquareRabiFit.name: SquareRabiFit,
-                   LorentzianFit.name: LorentzianFit,
-                   TruncatedLorentzianFit.name: TruncatedLorentzianFit,
-                   RabiCarrierFunction.name: RabiCarrierFunction,
-                   FullRabiCarrierFunction.name: FullRabiCarrierFunction,
-                   LinearFit.name: LinearFit
-                 }        
+fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
+                       CosFit.name: CosFit, 
+                       CosSqFit.name: CosSqFit,
+                       SinSqFit.name: SinSqFit,
+                       SquareRabiFit.name: SquareRabiFit,
+                       LorentzianFit.name: LorentzianFit,
+                       TruncatedLorentzianFit.name: TruncatedLorentzianFit,
+                       RabiCarrierFunction.name: RabiCarrierFunction,
+                       FullRabiCarrierFunction.name: FullRabiCarrierFunction,
+                       LinearFit.name: LinearFit
+                 } )       
         
 def fitFunctionFactory(text):
     """
