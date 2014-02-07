@@ -52,6 +52,12 @@ class Settings:
         self.numTriggerChannels = 7
                 
 
+def bitEvaluate(numChannels, thisval, lastval=None, channelOffset=0):
+    if lastval is None:
+        return [(bit+channelOffset,1 if thisval&(1<<bit) else -1) for bit in range(numChannels)]
+    return [(bit+channelOffset,0 if thisval&(1<<bit)==lastval&(1<<bit) else 1 if thisval&(1<<bit) else -1) for bit in range(numChannels)]
+    
+
 class LogicAnalyzer(Form, Base ):
     OpStates = enum('stopped','running','single','idle') #added idle in response to exception
     def __init__(self,config,pulserHardware,channelNameData, parent=None):
@@ -145,20 +151,27 @@ class LogicAnalyzer(Form, Base ):
             self.setStatusStopped()
         self.evaluateData(logicData)
             
+            
     def evaluateData(self, logicData):
         self.pulseData = dict()
         if logicData.data:
+            lastval = None
             for clockcycle, value in logicData.data:
-                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( [(i,bool(value&(1<<i))) for i in range(self.settings.numChannels)] )
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( bitEvaluate(self.settings.numChannels,value,lastval) )
+                lastval = value
             self.pulseData[logicData.stopMarker * self.settings.scaling] = dict()
         inext = self.settings.numChannels
         if logicData.auxData:
+            lastval = None
             for clockcycle, value in logicData.auxData:
-                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( [(i+inext,bool(value&(1<<i))) for i in range(self.settings.numAuxChannels)] )
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( bitEvaluate(self.settings.numAuxChannels,value,lastval,inext)  )
+                lastval = value
         inext += self.settings.numAuxChannels
         if logicData.trigger:
+            lastval = None
             for clockcycle, value in logicData.trigger:
-                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( [(i+inext,bool(value&(1<<i))) for i in range(self.settings.numTriggerChannels)] )
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( bitEvaluate(self.settings.numTriggerChannels,value,lastval,inext) )
+                lastval = value
         self.traceTableModel.setPulseData(self.pulseData)
         self.traceTableView.resizeColumnsToContents()
            

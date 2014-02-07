@@ -38,6 +38,7 @@
    <addaction name="actionStop"/>
    <addaction name="actionSingle"/>
    <addaction name="actionClear"/>
+   <addaction name="actionSave"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="dockWidget">
@@ -50,7 +51,7 @@
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QTableView" name="traceTableView"/>
+      <widget class="TableViewRotatedHorizontalHeader" name="traceTableView"/>
      </item>
     </layout>
    </widget>
@@ -107,12 +108,29 @@
     <string>Clear</string>
    </property>
   </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
    <class>CoordinatePlotWidget</class>
    <extends>QGraphicsView</extends>
    <header>CoordinatePlotWidget</header>
+  </customwidget>
+  <customwidget>
+   <class>TableViewRotatedHorizontalHeader</class>
+   <extends>QTableView</extends>
+   <header>TableViewRotatedHorizontalHeader</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -8,6 +8,12 @@ import sip
 
 api2 = sip.getapi("QVariant")==2
 
+def anyNonZero( dictionary, keys ):
+    for key in keys:
+        if dictionary.get(key,None):
+            return True
+    return False
+
     
 class LogicAnalyzerTraceTableModel(QtCore.QAbstractTableModel):
     def __init__(self, config, signalTableModel, parent=None, *args): 
@@ -18,14 +24,23 @@ class LogicAnalyzerTraceTableModel(QtCore.QAbstractTableModel):
                             (QtCore.Qt.DisplayRole,0): lambda row: self.pulseData[row][0]-self.referenceTime
                      }
         self.pulseData = None
+        self.rawPulseData = None
         self.referenceTime = 0
         self.onEnabledChannelsChanged()
         self.signalTableModel.enableChanged.connect( self.onEnabledChannelsChanged )
         
+    def eliminateEmptyRows(self, rawPulseData):
+        significantPulseData = list()
+        for record in rawPulseData:
+            if anyNonZero( record[1], self.enabledSignalLookup ):
+                significantPulseData.append(record)    
+        return significantPulseData            
+        
     def setPulseData(self, pulseData):
         self.beginResetModel()
-        self.pulseData = list(sorted(pulseData.iteritems()))
+        self.rawPulseData = list(sorted(pulseData.iteritems()))
         self.headerDataChanged.emit( QtCore.Qt.Horizontal, 0, len(self.enabledSignalLookup) )
+        self.pulseData = self.eliminateEmptyRows(self.rawPulseData)
         self.endResetModel()
         
     def onEnabledChannelsChanged(self):
@@ -34,6 +49,8 @@ class LogicAnalyzerTraceTableModel(QtCore.QAbstractTableModel):
         for channel, enabled in enumerate(self.signalTableModel.enabledList):
             if enabled:
                 self.enabledSignalLookup.append(channel)
+        if self.rawPulseData:
+            self.pulseData = self.eliminateEmptyRows(self.rawPulseData)
         self.endResetModel()
         self.headerDataChanged.emit( QtCore.Qt.Horizontal, 0, len(self.enabledSignalLookup) )
         
@@ -46,7 +63,7 @@ class LogicAnalyzerTraceTableModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2 + len(self.enabledSignalLookup)
  
-    colorLookup = { False: QtGui.QColor(QtCore.Qt.red), True: QtGui.QColor(QtCore.Qt.green), None: QtGui.QColor(QtCore.Qt.white) }
+    colorLookup = { -1: QtGui.QColor(QtCore.Qt.red), 1: QtGui.QColor(QtCore.Qt.green), 0: QtGui.QColor(QtCore.Qt.white), None: QtGui.QColor(QtCore.Qt.white) }
     def pulseDataLookup(self, timestep, signal):
         return self.colorLookup[self.pulseData[timestep][1].get(signal,None)]
     
