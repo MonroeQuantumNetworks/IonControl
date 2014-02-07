@@ -60,7 +60,7 @@ class LoadingEvent:
         self.trappingTime = None
 
 class AutoLoad(UiForm,UiBase):
-    StatusOptions = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared')
+    StatusOptions = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared', 'Frozen' )
     def __init__(self, config, pulser, dataAvailableSignal, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
@@ -125,6 +125,7 @@ class AutoLoad(UiForm,UiBase):
             self.getWavemeterData(ilChannel.channel)
         #end wavemeter interlock setup      
         self.setIdle()
+        self.pulser.ppActiveChanged.connect( self.setDisabled )
         
     def deleteFromHistory(self):
         for row in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=True):
@@ -226,6 +227,8 @@ class AutoLoad(UiForm,UiBase):
     def setIdle(self):
         """Execute when the loading process is set to idle. Disable timer, do not
            pay attention to the count rate, and turn off the ionization laser and oven."""
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
         if self.timer:
             self.timer = None
         self.elapsedLabel.setStyleSheet("QLabel { color:black; }")
@@ -239,6 +242,8 @@ class AutoLoad(UiForm,UiBase):
     
     def setPreheat(self):
         """Execute when the loading process begins. Turn on timer, turn on oven."""
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
         logger = logging.getLogger(__name__)
         logger.info( "Loading Preheat" )
         self.timer = QtCore.QTimer()
@@ -254,6 +259,8 @@ class AutoLoad(UiForm,UiBase):
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
            monitoring count rate."""
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
         logger = logging.getLogger(__name__)
         logger.info( "Loading Load" )
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
@@ -266,6 +273,8 @@ class AutoLoad(UiForm,UiBase):
     
     def setCheck(self):
         """Execute when count rate goes over threshold."""
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
         logger = logging.getLogger(__name__)
         logger.info(  "Loading Check" )
         self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
@@ -276,6 +285,8 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
         
     def setTrapped(self,reappeared=False):
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
         if not reappeared:
             logger = logging.getLogger(__name__)
             logger.info(  "Loading Trapped" )
@@ -288,7 +299,16 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel) )
     
+    def setFrozen(self):
+        self.startButton.setEnabled( False )
+        self.stopButton.setEnabled( False )       
+        self.elapsedLabel.setStyleSheet("QLabel { color:grey; }")
+        self.statusLabel.setText("Currently running pulse program")       
+        self.status=self.StatusOptions.Frozen        
+    
     def setDisappeared(self):
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
         self.status = self.StatusOptions.Disappeared
         self.disappearedAt = datetime.now()
         self.statusLabel.setText("Disappeared :(")
@@ -335,3 +355,17 @@ class AutoLoad(UiForm,UiBase):
     def saveConfig(self):
         self.config['AutoLoad.Settings'] = self.settings
         self.config['AutoLoad.History'] = self.loadingHistory
+
+    def setDisabled(self, disable):
+        if disable:
+            if self.status in [ self.StatusOptions.Preheat, self.StatusOptions.Load ]:
+                self.setIdle()   # if we are loading we interrupt
+            elif self.status == self.StatusOptions.Check:
+                self.setTrapped()
+                self.setFrozen()
+            elif self.status in [self.StatusOptions.Trapped, self.StatusOptions.Disappeared ]:
+                self.setFrozen()
+        else:
+            if self.status == self.StatusOptions.Frozen:
+                self.setTrapped(True)
+
