@@ -75,7 +75,6 @@ class Scan:
         self.scantype = 0
         self.scanMode = 0
         self.scanRepeat = 0
-        self.rewriteDDS = False
         self.filename = ""
         self.autoSave = False
         self.xUnit = ""
@@ -127,12 +126,12 @@ class Scan:
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
-    stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
+    stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
                 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
                 'center', 'span', 'startCenter', 'evalList']
 
-    documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 'rewriteDDS', 
+    documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'loadPP', 'loadPPName' ]
         
     def documentationString(self):
@@ -209,7 +208,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.stepsBox.valueChanged.connect( self.onStepsValueChanged )
         self.stepsCombo.currentIndexChanged[int].connect( self.onStepsSelectChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
-        self.rewriteDDSCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'rewriteDDS') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
         self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
@@ -239,7 +237,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.setSteps( self.settings, True )
         self.stepsCombo.setCurrentIndex(self.settings.stepsSelect)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
-        self.rewriteDDSCheckBox.setChecked( self.settings.rewriteDDS )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
         if self.settings.scanParameter: 
             self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))

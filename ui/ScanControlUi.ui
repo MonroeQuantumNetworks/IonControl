@@ -374,16 +374,6 @@
         </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="rewriteDDSCheckBox">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply DDS settings from Main Ui after sequence is finished&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="text">
-          <string>Rewrite DDS when finished</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -403,8 +393,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>274</width>
-        <height>452</height>
+        <width>216</width>
+        <height>219</height>
        </rect>
       </property>
       <attribute name="label">
@@ -509,8 +499,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>274</width>
-        <height>452</height>
+        <width>172</width>
+        <height>171</height>
        </rect>
       </property>
       <attribute name="label">
@@ -676,7 +666,6 @@
   <tabstop>scanRepeatComboBox</tabstop>
   <tabstop>filenameEdit</tabstop>
   <tabstop>autoSaveCheckBox</tabstop>
-  <tabstop>rewriteDDSCheckBox</tabstop>
   <tabstop>histogramBinsBox</tabstop>
   <tabstop>enableCheckBox</tabstop>
   <tabstop>saveRawDataCheckBox</tabstop>

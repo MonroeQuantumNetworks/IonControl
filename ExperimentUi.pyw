@@ -118,7 +118,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
 
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
                              (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan", toolBar=self.experimentToolBar), "External Scan"),
-                             (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,"VoltageScan"), "Voltage Scan"),
+                             (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,"VoltageScan", toolBar=self.experimentToolBar), "Voltage Scan"),
                              (testExperiment.test(),"test"),
                              ]:
             widget.setupUi( widget, self.config )
@@ -247,6 +247,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.currentTab.onSave()
         logger.info( "Saving config" )
         filename, _ = DataDirectory.DataDirectory().sequencefile("configuration.db")
+        self.saveConfig()
         self.config.saveConfig(filename)
     
     def onStart(self):
