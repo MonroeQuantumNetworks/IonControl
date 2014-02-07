@@ -60,7 +60,7 @@ class LogicAnalyzer(Form, Base ):
         self.state = self.OpStates.idle
         self.config = config
         self.pulserHardware = pulserHardware
-        self.settings = self.config.get( "LogicAnalyzerSettings", Settings() )
+        self.settings = Settings() #self.config.get( "LogicAnalyzerSettings", Settings() )
         self.pulserHardware.logicAnalyzerDataAvailable.connect( self.onData )
         self.curveBundle = None
         self.curveTriggerBundle = None
@@ -160,6 +160,7 @@ class LogicAnalyzer(Form, Base ):
             for clockcycle, value in logicData.trigger:
                 dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( [(i+inext,bool(value&(1<<i))) for i in range(self.settings.numTriggerChannels)] )
         self.traceTableModel.setPulseData(self.pulseData)
+        self.traceTableView.resizeColumnsToContents()
            
     def plotData(self):
         offset = 0
