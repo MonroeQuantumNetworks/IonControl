@@ -20,8 +20,7 @@ import numpy
 import pens
 import Traceui
 import MainWindowWidget
-import FitUi
-import FitUiTables
+from fit.FitUi import FitUi
 from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
@@ -275,7 +274,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampDockWidget.setWidget( self.timestampTraceui )
         self.dockWidgetList.append(self.timestampDockWidget)       
         # new fit widget
-        self.fitWidgetTables = FitUiTables.FitUiTables(self.traceui,self.config,self.experimentName)
+        self.fitWidgetTables = FitUi(self.traceui,self.config,self.experimentName)
         self.fitWidgetTables.setupUi(self.fitWidgetTables)
         self.dockWidgetFitUiTables = QtGui.QDockWidget("Fit Tables")
         self.dockWidgetFitUiTables.setObjectName("Fit Tables")

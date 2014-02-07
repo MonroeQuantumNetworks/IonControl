@@ -14,7 +14,7 @@ import numpy
 import pens
 from Traceui import Traceui
 import MainWindowWidget
-import FitUiTables
+from fit.FitUi import FitUi
 import functools
 from modules import DataDirectory
 from AverageViewTable import AverageViewTable
@@ -43,7 +43,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
-        self.fitWidget = FitUiTables.FitUiTables(self.traceui,self.config,"testExperiment")
+        self.fitWidget = FitUi(self.traceui,self.config,"testExperiment")
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )

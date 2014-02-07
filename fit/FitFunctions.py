@@ -6,7 +6,8 @@ Created on Sat Jan 19 10:47:59 2013
 """
 import numpy
 
-from FitFunctionBase import FitFunctionBase, ResultRecord, fitFunctionMap
+from FitFunctionBase import ResultRecord, fitFunctionMap
+from fit.FitFunctionBase import FitFunctionBase
 from modules import MagnitudeParser
 
 class CosFit(FitFunctionBase):
@@ -204,9 +205,9 @@ class LinearFit(FitFunctionBase):
         
     def update(self,parameters):
         m, b = parameters
-        self.halfpoint= (0.5-b)/m
+        self.results['halfpoint'].value = (0.5-b)/m
 
-from RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
+from fit.RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
         
 fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
                        CosFit.name: CosFit, 

@@ -5,7 +5,8 @@ Created on Thu May 16 20:56:17 2013
 @author: pmaunz
 """
 
-from FitFunctionBase import FitFunctionBase, ResultRecord
+from FitFunctionBase import ResultRecord
+from fit.FitFunctionBase import FitFunctionBase
 from scipy import constants
 from numpy import pi, cos, sqrt, sin, exp, dot, array, log
 from modules.magnitude import mg

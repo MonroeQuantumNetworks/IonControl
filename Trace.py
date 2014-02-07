@@ -19,7 +19,7 @@ from itertools import izip_longest
 import math
 
 try:
-    import FitFunctions
+    from fit import FitFunctions
     FitFunctionsAvailable = True
 except:
     FitFunctionsAvailable = False
@@ -74,7 +74,7 @@ class TracePlottingList(list):
             plotting.__dict__.update( plottingelement.attrib )
             plotting.type = int(plotting.type) if hasattr(plotting,'type') else 0
             if plottingelement.find("FitFunction") is not None:
-                plotting.fitFunction = FitFunctions.fromXmlElement( plottingelement.find("FitFunction") )
+                plotting.fitFunction = fit.FitFunctions.fromXmlElement( plottingelement.find("FitFunction") )
             l.append(plotting)
         return l    
 
@@ -319,7 +319,7 @@ class Trace(object):
         for attr,d in zip( columnspec, zip(*data) ):
             setattr( self, attr, numpy.array(d) )
         if hasattr(self.vars,'fitfunction') and FitFunctionsAvailable:
-            self.fitfunction = FitFunctions.fitFunctionFactory(self.vars.fitfunction)
+            self.fitfunction = fit.FitFunctions.fitFunctionFactory(self.vars.fitfunction)
         self.vars.tracePlottingList = [TracePlotting(xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None, rawColumn=None,name="")]
             
     def addColumn(self, name):

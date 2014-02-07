@@ -1,14 +1,14 @@
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-from FitFunctionBase import fitFunctionMap
+from fit.FitFunctionBase import fitFunctionMap
 import copy
-from FitUiTableModel import FitUiTableModel
+from fit.FitUiTableModel import FitUiTableModel
 import logging
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.MagnitudeUtilit import value
-from FitResultsTableModel import FitResultsTableModel
+from fit.FitResultsTableModel import FitResultsTableModel
 
-fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUiTables.ui')
+fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
 class AnalysisDefinition(object):
     def __init__(self):
@@ -18,7 +18,7 @@ class AnalysisDefinition(object):
         self.enabledParameters = list()
 
             
-class FitUiTables(fitForm, QtGui.QWidget):
+class FitUi(fitForm, QtGui.QWidget):
     def __init__(self, traceui, config, parentname, parent=None):
         QtGui.QWidget.__init__(self,parent)
         fitForm.__init__(self)
