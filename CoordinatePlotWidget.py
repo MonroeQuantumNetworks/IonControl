@@ -17,6 +17,7 @@ import pyqtgraph as pg
 from pyqtgraph.graphicsItems.LabelItem import LabelItem
 from pyqtgraph.graphicsItems.ButtonItem import ButtonItem
 from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
+from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
@@ -24,8 +25,21 @@ import logging
 
 grid_opacity = 0.3
 icons_dir = '.\\ui\\icons\\'
-grid_icon_file = icons_dir + 'grid'
-range_icon_file = icons_dir + 'unityrange'
+range_icon_file = icons_dir + 'unity-range'
+holdZero_icon_file = icons_dir + 'hold-zero'
+
+class CustomViewBox(ViewBox):
+    
+    def __init__(self, *args, **kwds):
+        super(CustomViewBox,self).__init__(*args, **kwds)
+        self.holdZero = False
+    
+    def setRange(self, rect=None, xRange=None, yRange=None, *args, **kwds):
+        if self.holdZero:
+            if not kwds.get('disableAutoRange', True):
+                if yRange is not None:
+                    yRange[0] = 0
+        ViewBox.setRange(self, rect, xRange, yRange, *args, **kwds)
 
 class CustomPlotItem(PlotItem):
     """
@@ -34,19 +48,20 @@ class CustomPlotItem(PlotItem):
     Add a unity range button which sets the y axis range to 1.
     resizeEvent is extended to set the position of the two new buttons correctly.
     """
-    def __init__(self,parent=None):
+    def __init__(self, parent=None):
         """
         Create a new CustomPlotItem. In addition to the ordinary PlotItem, add
         a grid button and a unity range button. Also set the default range to
         0 to 1 and the default grid to on.
         """
-        super(CustomPlotItem,self).__init__(parent)
+        cvb = CustomViewBox()
+        super(CustomPlotItem,self).__init__(parent, viewBox = cvb)
         pg.setConfigOption('background', 'w') #set background to white
         pg.setConfigOption('foreground', 'k') #set foreground to black
-        self.gridBtn = ButtonItem(imageFile=grid_icon_file, width=15, parentItem=self)
-        self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=15, parentItem=self)
+        self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=14, parentItem=self)
+        self.holdZeroBtn = ButtonItem(imageFile=holdZero_icon_file, width=14, parentItem=self)
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
-        self.gridBtn.clicked.connect(self.onGrid)
+        self.holdZeroBtn.clicked.connect(self.onHoldZero)
         self.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         
     def resizeEvent(self, ev):
@@ -56,22 +71,32 @@ class CustomPlotItem(PlotItem):
         PlotItem.py.
         """
         PlotItem.resizeEvent(self,ev)
-        gridBtnRect = self.mapRectFromItem(self.gridBtn, self.gridBtn.boundingRect())
+#        gridBtnRect = self.mapRectFromItem(self.gridBtn, self.gridBtn.boundingRect())
         unityRangeBtnRect = self.mapRectFromItem(self.unityRangeBtn, self.unityRangeBtn.boundingRect())
-        yGrid = self.size().height() - gridBtnRect.height()
-        yRange= self.size().height() - unityRangeBtnRect.height()
-        self.gridBtn.setPos(0, yGrid-24) #The autoBtn height is 14, add 10 to leave a space
-        self.unityRangeBtn.setPos(0, yRange-49) #The gridBtn height is 15, add 10 again to leave space
+        holdZeroBtnRect= self.mapRectFromItem(self.holdZeroBtn, self.holdZeroBtn.boundingRect())
+        yHoldZero = self.size().height() - holdZeroBtnRect.height()
+        yUnityRange= self.size().height() - unityRangeBtnRect.height()
+        self.unityRangeBtn.setPos(0, yUnityRange-24) #The autoBtn height is 14, add 10 to leave a space
+        self.holdZeroBtn.setPos(0, yHoldZero-67)
 
     def onUnityRange(self):
         """Execute when unityRangeBtn is clicked. Set the yrange to 0 to 1."""
+        self.vb.holdZero = False
         self.setYRange(0,1)
+        
+    def onHoldZero(self):
+        self.setYRange(0,1)
+        self.vb.holdZero = True
+        super(CustomPlotItem,self).autoBtnClicked()
+        self.autoBtn.show()
 
-    def onGrid(self):
-        """Execute when gridBtn is clicked. Turn the grid on or off."""
-        xChecked = self.ctrl.xGridCheck.isChecked()
-        yChecked = self.ctrl.yGridCheck.isChecked()
-        self.showGrid(x = not xChecked, y = not yChecked)
+    def autoBtnClicked(self):
+        self.setYRange(0,1)
+        self.vb.holdZero = False
+        super(CustomPlotItem,self).autoBtnClicked()
+
+    def updateButtons(self):
+        self.autoBtn.show()
 
 class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
@@ -86,9 +111,7 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
         self.mousePointList = list()
-#        self.graphicsView.setYRange(0,1) #Range defaults to 0 to 1
         self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
-        self.gridShown = True #Because we can't query whether the grid is on or off, we just keep track
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         
@@ -151,8 +174,14 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
 if __name__ == '__main__':
     import sys    
     app = QtGui.QApplication(sys.argv)
+    pg.setConfigOption('background', 'w') #set background to white
+    pg.setConfigOption('foreground', 'k') #set foreground to black
     MainWindow = QtGui.QMainWindow()
-    MainWindow.setCentralWidget(CoordinatePlotWidget())
+    myPlotWidget = CoordinatePlotWidget()
+    MainWindow.setCentralWidget(myPlotWidget)
+    pi = myPlotWidget.getItem(0, 0)
+    pi.plot(x = [3,4,5,6], y = [9,16,25,36])
+
     MainWindow.show()
     sys.exit(app.exec_())
     
