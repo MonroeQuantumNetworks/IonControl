@@ -74,7 +74,7 @@ class TracePlottingList(list):
             plotting.__dict__.update( plottingelement.attrib )
             plotting.type = int(plotting.type) if hasattr(plotting,'type') else 0
             if plottingelement.find("FitFunction") is not None:
-                plotting.fitFunction = fit.FitFunctions.fromXmlElement( plottingelement.find("FitFunction") )
+                plotting.fitFunction = FitFunctions.fromXmlElement( plottingelement.find("FitFunction") )
             l.append(plotting)
         return l    
 

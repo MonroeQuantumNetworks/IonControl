@@ -165,9 +165,11 @@ class FitFunctionBase(object):
     def toXmlElement(self, parent):
         myroot  = ElementTree.SubElement(parent, 'FitFunction', {'name': self.name, 'functionString': self.functionString})
         for name, value, confidence, enabled in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence,self.parameterEnabled):
-            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': enabled})
+            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': str(enabled)})
             e.text = str(value)
-           
+        for result in self.results.values():
+            e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition), 'globalname': str(result.globalname), 'push': str(result.push)})
+            e.text = str(result.value)
         return myroot
     
 fitFunctionMap = dict()    

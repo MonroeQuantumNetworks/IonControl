@@ -11,3 +11,6 @@ def prettify(elem, commentchar=None):
     if not commentchar:
         return text
     return ''.join(['# {0}\n'.format(line) for line in text.splitlines()])
+
+def stringToStringOrNone(string):
+    return string if string != "None" else None
