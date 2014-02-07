@@ -89,6 +89,19 @@ class SequenceDict(dict, MutableMapping):
             return all(p==q for p, q in  izip_longest(self.items(), other.items()))
         return dict.__eq__(self, other)
     
+    def setAt(self, index, value):
+        """return the element at position index
+        >>> s = SequenceDict([(4,44),(2,22),(3,33),(1,11)])
+        >>> print s.at(2)
+        33
+        >>> s.setAt(2,333)
+        >>> print s.at(2)
+        333
+        >>> print s[3]
+        333
+        """
+        return dict.__setitem__(self, self._keys[index], value)
+
     def at(self, index):
         """return the element at position index
         >>> s = SequenceDict([(4,44),(2,22),(3,33),(1,11)])

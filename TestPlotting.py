@@ -94,7 +94,7 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
 #        #self.onMouseClicked(ev)
         
     def copyPointsToClipboard(self, modifiers):
-        print "copyPointsToClipboard"
+        #print "copyPointsToClipboard"
         if modifiers & QtCore.Qt.ControlModifier:
             if modifiers & QtCore.Qt.ShiftModifier:
                 QtGui.QApplication.clipboard().setText(" ".join(["{0}".format(p.x()) for p in self.mousePointList]))
@@ -104,7 +104,7 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
                 QtGui.QApplication.clipboard().setText(" ".join(["{0} {1}".format(p.x(),p.y()) for p in self.mousePointList]))
         
     def keyReleaseEvent(self, ev):
-        print "Key released", ev.key(), ev.modifiers()
+        #print "Key released", ev.key(), ev.modifiers()
         { 67: self.copyPointsToClipboard }.get(ev.key(),lambda x:None)(ev.modifiers())
         
     def mouseReleaseEvent(self,ev):

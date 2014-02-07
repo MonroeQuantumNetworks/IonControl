@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Pulse Programmer</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="Experiment.qrc">
+    <normaloff>:/petersIcons/icons/pulser1.png</normaloff>:/petersIcons/icons/pulser1.png</iconset>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="QSplitter" name="splitterVertical">

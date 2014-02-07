@@ -11,6 +11,7 @@ from logging import Logger
 from ComboBoxDelegate import ComboBoxDelegate
 from functools import partial
 from collections import OrderedDict
+from modules.SequenceDict import SequenceDict
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LoggerLevelsUi.ui')
 
@@ -24,12 +25,17 @@ class LoggerLevelsTableModel(QtCore.QAbstractTableModel):
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.config = config
-        self.levelDict = self.config.get('LoggingLevelDict',dict())
+        self.levelDict = self.config.get('LoggingLevels',SequenceDict())
         for name, level in self.levelDict.iteritems():
             logger = logging.getLogger(name)
             logger.setLevel(level)
-        self.levelList = list(self.levelDict.iteritems())
         self.update()
+        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.levelDict.keyAt(row),
+                             (QtCore.Qt.DisplayRole,1): lambda row: levelNames[self.levelDict.at(row)],
+                             (QtCore.Qt.EditRole,1):    lambda row: levelNames[self.levelDict.at(row)],
+                             #(QtCore.Qt.BackgroundColorRole): functools.partial( self.displayDataColor, index),
+                             #(QtCore.Qt.ToolTipRole): functools.partial( self.displayToolTip, index )   
+                             }
         
     def choice(self, index):
         return levelNumbers.keys()
@@ -39,32 +45,26 @@ class LoggerLevelsTableModel(QtCore.QAbstractTableModel):
         for name, logger in Logger.manager.loggerDict.iteritems():
             if isinstance(logger,Logger):
                 self.levelDict[name] = logger.getEffectiveLevel()
-        self.levelList = list(self.levelDict.iteritems())
         self.endResetModel()
 
 
     def saveConfig(self):
-        self.config['LoggingLevelDict'] = self.levelDict
+        self.config['LoggingLevels'] = self.levelDict
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.levelList) 
+        return len(self.levelDict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
  
     def data(self, index, role): 
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,0): self.levelList[index.row()][0],
-                     (QtCore.Qt.DisplayRole,1): levelNames[self.levelList[index.row()][1]],
-                     (QtCore.Qt.EditRole,1): levelNames[self.levelList[index.row()][1]],
-                     #(QtCore.Qt.BackgroundColorRole): functools.partial( self.displayDataColor, index),
-                     #(QtCore.Qt.ToolTipRole): functools.partial( self.displayToolTip, index )
-                     }.get((role,index.column()),None)
+            return self.dataLookup.get((role,index.column()), lambda row: None)(index.row())
         return None
         
     def setLevel(self, index, value):
-        self.levelList[index.row()] = (self.levelList[index.row()][0], levelNumbers[value])
-        logger = logging.getLogger(self.levelList[index.row()][0])
+        self.levelDict.setAt(index.row(), levelNumbers[value])
+        logger = logging.getLogger(self.levelDict.keyAt(index.row()))
         logger.setLevel(levelNumbers[value])
         
     def setData(self, index, value, role):
@@ -74,9 +74,10 @@ class LoggerLevelsTableModel(QtCore.QAbstractTableModel):
     def setValue(self, index, value):
         self.setData( index, value, QtCore.Qt.EditRole)
         
+    flagsLookup = [QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
+                 QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled]
     def flags(self, index ):
-        return  [QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
-                 QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled][index.column()]
+        return  self.flagsLookup[index.column()]
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):

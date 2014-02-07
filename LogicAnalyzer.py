@@ -8,6 +8,29 @@ from itertools import chain, izip
 from modules.Utility import flatten
 from LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
 
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
+from pycallgraph import Config
+
+import cProfile
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            profile.print_stats()
+    return profiled_func
+
+def get_number():
+    for x in xrange(5000000):
+        yield x
+
+
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
 class Settings:
@@ -67,8 +90,16 @@ class LogicAnalyzer(Form, Base ):
         self.signalTableView.resizeColumnsToContents()
         if 'LogicAnalyzer.State' in self.config:
             self.restoreState(self.config['LogicAnalyzer.State'])
+        self.signalTableModel.enableChanged.connect( self.refresh )
         
-    def onData(self, logicData ):
+#     def onData(self, logicData ):
+#         config = Config(max_depth=5)
+#         with PyCallGraph(output=GraphvizOutput()):
+#             self.onDataProfile(logicData)
+        
+    @do_cprofile
+    def onData(self, logicData):
+        self.logicData = logicData
         offset = 0
         if logicData.data:
             self.xData, self.yData = zip( *logicData.data )
@@ -185,6 +216,9 @@ class LogicAnalyzer(Form, Base ):
                         if curve:
                             curve.setData(x=self.xTrigger,y=yTrigger)
         self.lastEnabledChannels = list( self.signalTableModel.enabledList )
+             
+    def refresh(self):
+        self.onData(self.logicData)
                 
     def onRun(self):
         logger = logging.getLogger(__name__)

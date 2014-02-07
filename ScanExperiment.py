@@ -37,6 +37,7 @@ from AverageViewTable import AverageViewTable
 from PlottedTrace import PlottedTrace
 import logging
 from ScanProgress import ScanProgress
+from modules.magnitude import is_magnitude
      
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -61,7 +62,9 @@ class ParameterScanGenerator:
         return self.scan.code[currentIndex*2:]
         
     def xValue(self, index):
-        return self.scan.list[index].ounit(self.scan.xUnit).toval()
+        if is_magnitude(self.scan.xUnit) and self.scan.xUnit.has_dimension(self.scan.list[index]):
+            return self.scan.list[index].ounit(self.scan.xUnit).toval()
+        return self.scan.list[index].toval()
         
     def dataNextCode(self, experiment):
         if self.nextIndexToWrite<len(self.scan.code):
@@ -76,7 +79,9 @@ class ParameterScanGenerator:
             experiment.onStop()                   
     
     def xRange(self):
-        return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
+        if is_magnitude(self.scan.xUnit) and self.scan.xUnit.has_dimension(self.scan.list[0]):
+            return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
+        return self.scan.start.toval(), self.scan.stop.toval()
                                      
     def appendData(self,traceList,x,evaluated):
         if evaluated and traceList:
@@ -409,8 +414,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
-            if self.scan and self.scan.rewriteDDS:
-                self.NeedsDDSRewrite.emit()
+            self.NeedsDDSRewrite.emit()
             self.progressUi.setIdle()
         if self.scan:
             self.finalizeData(reason='stopped')
