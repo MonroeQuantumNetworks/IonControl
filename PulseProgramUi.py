@@ -240,6 +240,7 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.horizontalLayout.addWidget(self.tabWidget)
         self.setWindowTitle('Pulse Program')
         self.setWindowFlags(QtCore.Qt.WindowMinMaxButtonsHint)
+        self.setWindowIcon(QtGui.QIcon(":/petersIcons/icons/pulser1.png"))
 
     def addExperiment(self, experiment, parameterdict=dict(), parameterChangedSignal=None):
         if not experiment in self.pulseProgramSet:

@@ -19,7 +19,11 @@ def setdefault( thisdict, defaultdict ):
     for key, value in defaultdict.iteritems():
         thisdict.setdefault( key, value )
     return thisdict
-    
+
+def getOrInsert( thisdict, key, default=None):
+    thisdict.setdefault(key,default)
+    return thisdict[key]
+
 if __name__=="__main__":
     d = {1:2, 3:4, 5:6, 7:8, 9:10}
     k = [1,5]

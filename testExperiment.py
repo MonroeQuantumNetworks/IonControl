@@ -14,7 +14,7 @@ import numpy
 import pens
 from Traceui import Traceui
 import MainWindowWidget
-import FitUi
+from fit.FitUi import FitUi
 import functools
 from modules import DataDirectory
 from AverageViewTable import AverageViewTable
@@ -43,7 +43,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
-        self.fitWidget = FitUi.FitUi(self.traceui,self.config,"testExperiment")
+        self.fitWidget = FitUi(self.traceui,self.config,"testExperiment")
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
@@ -160,7 +160,8 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def saveConfig(self):
         self.config['testWidget.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.traceui.saveConfig()
-
+        self.fitWidget.saveConfig()
+        
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
         path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))

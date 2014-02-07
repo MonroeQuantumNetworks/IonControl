@@ -28,7 +28,7 @@ import PulseProgramUi
 import ShutterUi
 import DDSUi
 import DedicatedCounters
-from LogicAnalyzer import LogicAnalyzer
+from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
 import ExternalScannedParametersSelection
 import ExternalScannedParametersUi
 import ProjectSelectionUi

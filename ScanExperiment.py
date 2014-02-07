@@ -20,7 +20,7 @@ import numpy
 import pens
 import Traceui
 import MainWindowWidget
-import FitUi
+from fit.FitUi import FitUi
 from modules import enum
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
@@ -273,10 +273,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampTraceui.setupUi(self.timestampTraceui)
         self.timestampDockWidget.setWidget( self.timestampTraceui )
         self.dockWidgetList.append(self.timestampDockWidget)       
-        self.fitWidget = FitUi.FitUi(self.traceui,self.config,self.experimentName)
-        self.fitWidget.setupUi(self.fitWidget)
-        self.dockWidgetFitUi.setWidget( self.fitWidget )
-        self.dockWidgetList.append(self.dockWidgetFitUi )
+        # new fit widget
+        self.fitWidgetTables = FitUi(self.traceui,self.config,self.experimentName)
+        self.fitWidgetTables.setupUi(self.fitWidgetTables)
+        self.dockWidgetFitUiTables = QtGui.QDockWidget("Fit Tables")
+        self.dockWidgetFitUiTables.setObjectName("Fit Tables")
+        self.dockWidgetFitUiTables.setWidget( self.fitWidgetTables )
+        self.dockWidgetList.append(self.dockWidgetFitUiTables )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.dockWidgetFitUiTables)
+
         self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys() )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
@@ -697,6 +702,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.saveConfig()
         self.traceui.saveConfig()
         self.displayUi.saveConfig()
+        self.fitWidgetTables.saveConfig()
         
     def onClose(self):
         pass
