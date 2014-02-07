@@ -4,9 +4,12 @@ import logging
 from pens import penList
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 from pyqtgraph.graphicsItems.TextItem import TextItem
-from itertools import chain, izip
 from modules.Utility import flatten
-from LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
+from logicAnalyzer.LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
+from logicAnalyzer.LogicAnalyzerTraceTableModel import LogicAnalyzerTraceTableModel
+from modules import dictutil
+from RotatedHeaderView import RotatedHeaderView
+from PyQt4 import QtCore
 
 # from pycallgraph import PyCallGraph
 # from pycallgraph.output import GraphvizOutput
@@ -25,10 +28,6 @@ def do_cprofile(func):
         finally:
             profile.print_stats()
     return profiled_func
-
-def get_number():
-    for x in xrange(5000000):
-        yield x
 
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
@@ -92,12 +91,19 @@ class LogicAnalyzer(Form, Base ):
             self.restoreState(self.config['LogicAnalyzer.State'])
         self.signalTableModel.enableChanged.connect( self.refresh )
         
+        self.headerView =  RotatedHeaderView(QtCore.Qt.Horizontal )
+        self.traceTableView.setHorizontalHeader( self.headerView )
+        self.traceTableModel = LogicAnalyzerTraceTableModel(self.config, self.signalTableModel)
+        self.traceTableView.setModel( self.traceTableModel )
+        self.traceTableView.resizeColumnsToContents()
+
+        
 #     def onData(self, logicData ):
 #         config = Config(max_depth=5)
 #         with PyCallGraph(output=GraphvizOutput()):
 #             self.onDataProfile(logicData)
         
-    @do_cprofile
+#    @do_cprofile
     def onData(self, logicData):
         self.logicData = logicData
         offset = 0
@@ -137,6 +143,23 @@ class LogicAnalyzer(Form, Base ):
         self.plotData()
         if self.state==self.OpStates.single:
             self.setStatusStopped()
+        self.evaluateData(logicData)
+            
+    def evaluateData(self, logicData):
+        self.pulseData = dict()
+        if logicData.data:
+            for clockcycle, value in logicData.data:
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( [(i,bool(value&(1<<i))) for i in range(self.settings.numChannels)] )
+            self.pulseData[logicData.stopMarker * self.settings.scaling] = dict()
+        inext = self.settings.numChannels
+        if logicData.auxData:
+            for clockcycle, value in logicData.auxData:
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( [(i+inext,bool(value&(1<<i))) for i in range(self.settings.numAuxChannels)] )
+        inext += self.settings.numAuxChannels
+        if logicData.trigger:
+            for clockcycle, value in logicData.trigger:
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( [(i+inext,bool(value&(1<<i))) for i in range(self.settings.numTriggerChannels)] )
+        self.traceTableModel.setPulseData(self.pulseData)
            
     def plotData(self):
         offset = 0

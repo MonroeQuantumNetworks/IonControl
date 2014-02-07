@@ -66,11 +66,9 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
     def displayData(self,index):
         return str(self.currentState(index))
         
+    colorLookup = { -1: QtGui.QColor(QtCore.Qt.red), 0: QtGui.QColor(QtCore.Qt.white), 1: QtGui.QColor(QtCore.Qt.green) }
     def displayDataColor(self,index):
-        color = { -1: QtGui.QColor(QtCore.Qt.red),
-                 0: QtGui.QColor(QtCore.Qt.white),
-                 1: QtGui.QColor(QtCore.Qt.green) }[self.currentState(index)]
-        return color
+        return self.colorLookup[self.currentState(index)]
         
     def displayToolTip(self, index):
         return "ToolTip"
