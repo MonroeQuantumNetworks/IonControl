@@ -10,6 +10,26 @@ from LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
 
 from pycallgraph import PyCallGraph
 from pycallgraph.output import GraphvizOutput
+from pycallgraph import Config
+
+import cProfile
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            profile.print_stats()
+    return profiled_func
+
+def get_number():
+    for x in xrange(5000000):
+        yield x
+
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
@@ -72,11 +92,13 @@ class LogicAnalyzer(Form, Base ):
             self.restoreState(self.config['LogicAnalyzer.State'])
         self.signalTableModel.enableChanged.connect( self.refresh )
         
-    def onData(self, logicData ):
-        #with PyCallGraph(output=GraphvizOutput()):
-        self.onDataProfile(logicData)
+#     def onData(self, logicData ):
+#         config = Config(max_depth=5)
+#         with PyCallGraph(output=GraphvizOutput()):
+#             self.onDataProfile(logicData)
         
-    def onDataProfile(self, logicData):
+    @do_cprofile
+    def onData(self, logicData):
         self.logicData = logicData
         offset = 0
         if logicData.data:
