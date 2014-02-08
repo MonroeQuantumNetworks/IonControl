@@ -508,6 +508,8 @@ class PulserHardwareServer(Process):
         logger.info( "ppWriteRamWordlist {0} {1} {2}".format( len(data), len(testdata), data==testdata ) )
         if data!=testdata:
             logger.error( "Write unsuccessfull data does not match write length {0} read length {1}".format(len(data),len(testdata)))
+            logger.debug( "Sent     {0}".format(list(data)))
+            logger.debug( "Received {0}".format(list(testdata)))
             raise PulserHardwareException("RAM write unsuccessful")
 
     def ppReadRam(self,data,address):

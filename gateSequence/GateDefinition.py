@@ -49,7 +49,7 @@ class GateDefinition(object):
         
         #load gate definitions
         self.Gates = dict()
-        GateDefinitionElement = root.find("GateDefinition")
+        GateDefinitionElement = root.find("GateDictionary")
         for gate in GateDefinitionElement:
             self.addGate( gate )
                         
