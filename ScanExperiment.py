@@ -26,7 +26,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from modules import DataDirectory
 import time
-from CoordinatePlotWidget import CoordinatePlotWidget
+from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 import functools
 from modules import stringutilit
 from datetime import datetime, timedelta

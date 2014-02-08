@@ -1,6 +1,4 @@
 from PyQt4 import QtCore
-from modules.round import roundToNDigits, roundToStdDev
-
 
 class FitResultsTableModel(QtCore.QAbstractTableModel):
     

@@ -20,7 +20,7 @@ from modules.enum import enum
 from gateSequence import GateSequenceUi
 from modules.PyqtUtility import BlockSignals
 from EvaluationTableModel import EvaluationTableModel
-from ComboBoxDelegate import ComboBoxDelegate
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 import logging
 from modules.HashableDict import HashableDict
 from modules.PyqtUtility import updateComboBoxItems

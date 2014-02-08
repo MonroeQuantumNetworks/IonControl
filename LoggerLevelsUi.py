@@ -8,7 +8,7 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 import logging
 from logging import Logger
-from ComboBoxDelegate import ComboBoxDelegate
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from functools import partial
 from collections import OrderedDict
 from modules.SequenceDict import SequenceDict

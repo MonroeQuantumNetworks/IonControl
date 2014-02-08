@@ -2,7 +2,7 @@ import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 from modules.RunningStat import RunningStat
 from modules.round import roundToStdDev, roundToNDigits
-from KeyboardFilter import KeyListFilter
+from uiModules.KeyboardFilter import KeyListFilter
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\AverageViewTable.ui')
 

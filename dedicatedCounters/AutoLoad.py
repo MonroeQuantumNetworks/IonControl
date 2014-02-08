@@ -18,7 +18,7 @@ from datetime import datetime
 import logging
 from dedicatedCounters.WavemeterInterlockTableModel import WavemeterInterlockTableModel
 from modules.SequenceDict import SequenceDict
-from KeyboardFilter import KeyFilter
+from uiModules.KeyboardFilter import KeyFilter
 from modules.Utility import unique
 from modules.magnitude import Magnitude
 

@@ -7,7 +7,7 @@ Created on Sat Feb 16 16:56:57 2013
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 import functools
-from MagnitudeSpinBox import MagnitudeSpinBox
+from uiModules.MagnitudeSpinBox import MagnitudeSpinBox
 import modules.magnitude as magnitude
        
 VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')

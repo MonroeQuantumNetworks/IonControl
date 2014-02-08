@@ -17,8 +17,7 @@ from modules import dictutil
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 import ProjectSelection
 import logging
-from modules.SequenceDict import SequenceDict
-from RotatedHeaderView import RotatedHeaderView
+from uiModules.RotatedHeaderView import RotatedHeaderView
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 

@@ -13,7 +13,7 @@ from externalParameter.ExternalParameter import ExternalParameter
 from externalParameter.ExternalParameterTableModel import ExternalParameterTableModel
 import logging
 from modules.SequenceDict import SequenceDict
-from KeyboardFilter import KeyListFilter
+from uiModules.KeyboardFilter import KeyListFilter
 from modules.Utility import unique
 
 class Settings:

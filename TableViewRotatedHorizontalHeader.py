@@ -4,7 +4,7 @@ Created on Feb 7, 2014
 @author: plmaunz
 '''
 from PyQt4 import QtGui, QtCore
-from RotatedHeaderView import RotatedHeaderView
+from uiModules.RotatedHeaderView import RotatedHeaderView
 
 class TableViewRotatedHorizontalHeader(QtGui.QTableView):
     '''

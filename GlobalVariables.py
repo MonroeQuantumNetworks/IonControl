@@ -7,9 +7,9 @@ import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 from GlobalVariableTableModel import GlobalVariableTableModel
 from modules.SequenceDict import SequenceDict
-from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.Utility import unique 
-from KeyboardFilter import KeyListFilter
+from uiModules.KeyboardFilter import KeyListFilter
        
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 

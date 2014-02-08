@@ -5,8 +5,6 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore
-import functools
-import modules.magnitude as magnitude
 import sip
 import logging
 from pulseProgram.VariableDictionary import CyclicDependencyException

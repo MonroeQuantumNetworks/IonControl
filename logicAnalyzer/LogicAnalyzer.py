@@ -8,7 +8,7 @@ from modules.Utility import flatten
 from logicAnalyzer.LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
 from logicAnalyzer.LogicAnalyzerTraceTableModel import LogicAnalyzerTraceTableModel
 from modules import dictutil
-from RotatedHeaderView import RotatedHeaderView
+from uiModules.RotatedHeaderView import RotatedHeaderView
 from PyQt4 import QtCore
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 

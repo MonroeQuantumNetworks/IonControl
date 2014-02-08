@@ -4,7 +4,7 @@ from fit.FitFunctionBase import fitFunctionMap, ResultRecord
 import copy
 from fit.FitUiTableModel import FitUiTableModel
 import logging
-from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.MagnitudeUtilit import value
 from fit.FitResultsTableModel import FitResultsTableModel
 from modules.HashableDict import HashableDict
