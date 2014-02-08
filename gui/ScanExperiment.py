@@ -279,16 +279,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # new fit widget
         self.fitWidgetTables = FitUi(self.traceui,self.config,self.experimentName)
         self.fitWidgetTables.setupUi(self.fitWidgetTables)
-        self.dockWidgetFitUiTables = QtGui.QDockWidget("Fit Tables")
-        self.dockWidgetFitUiTables.setObjectName("Fit Tables")
+        self.dockWidgetFitUiTables = QtGui.QDockWidget("Fit")
+        self.dockWidgetFitUiTables.setObjectName("Fit")
         self.dockWidgetFitUiTables.setWidget( self.fitWidgetTables )
         self.dockWidgetList.append(self.dockWidgetFitUiTables )
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.dockWidgetFitUiTables)
-
-        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys() )
-        self.scanControlWidget.setupUi(self.scanControlWidget)
-        self.scanControlUi.setWidget(self.scanControlWidget )
-        self.dockWidgetList.append(self.scanControlUi)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea , self.dockWidgetFitUiTables)
+        self.tabifyDockWidget( self.dockWidgetFitUiTables, self.timestampDockWidget )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
         # Average View
         self.displayUi = AverageViewTable(self.config)
@@ -298,6 +294,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayDock.setWidget( self.displayUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
         self.dockWidgetList.append(self.displayDock )
+        # Scan Control
+        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys() )
+        self.scanControlWidget.setupUi(self.scanControlWidget)
+        self.scanControlDock = QtGui.QDockWidget("Scan Control")
+        self.scanControlDock.setObjectName("Scan Control")
+        self.scanControlDock.setWidget( self.scanControlWidget )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.scanControlDock)
+        self.dockWidgetList.append(self.scanControlDock)
+
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
         
