@@ -372,9 +372,6 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
 
     logger = logging.getLogger("")
-    # the next two lines migrate old pickle files to use the new magnitude module
-    import modules.magnitude as magnitude
-    sys.modules['magnitude'] = magnitude
 
     project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
     

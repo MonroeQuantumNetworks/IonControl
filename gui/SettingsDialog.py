@@ -31,11 +31,6 @@ class SettingsDialogConfig:
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object"""
         self.__dict__ = state
-        self.__dict__.setdefault('autoUpload', False)
-        self.__dict__.setdefault('lastInstrument', None)
-        self.__dict__.setdefault('lastBitfile', None)
-        self.__dict__.setdefault('showOnStartup', True)
-
 
 class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def __init__(self,pulser,config,parent=0):

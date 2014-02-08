@@ -48,9 +48,6 @@ class AutoLoadSettings:
         after unpickling. Only new class attributes need to be added here.
         """
         self.__dict__ = state
-        self.__dict__.setdefault('useInterlock', False)
-        self.__dict__.setdefault('interlock', SequenceDict() )
-        self.__dict__.setdefault('wavemeterAddress', "" )
 
 def invert( logic, channel):
     """ returns logic for positive channel number, inverted for negative channel number """

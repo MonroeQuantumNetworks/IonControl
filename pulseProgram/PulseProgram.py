@@ -105,7 +105,6 @@ class Variable:
         
     def __setstate__(self, d):
         self.__dict__ = d
-        self.__dict__.setdefault( "enabled", True )
         
     def __repr__(self):
         return str(self.__dict__)

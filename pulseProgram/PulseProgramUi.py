@@ -31,8 +31,6 @@ class ConfiguredParams:
         
     def __setstate__(self,d):
         self.__dict__ = d
-        self.__dict__.setdefault('lastFilename',None)
-        self.__dict__.setdefault('recentFiles',dict())
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 

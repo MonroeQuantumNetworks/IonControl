@@ -41,10 +41,6 @@ class EvaluationDefinition:
         
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault('plotname', None)        
-        self.__dict__.setdefault('settings', HashableDict())        
-        self.__dict__.setdefault('settingsCache', HashableDict())
-        self.__dict__.setdefault('showHistogram', False)   
         
     stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram'] 
         

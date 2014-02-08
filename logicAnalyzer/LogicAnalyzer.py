@@ -28,14 +28,6 @@ class Settings:
         
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault('numChannels', 38 )
-        self.__dict__.setdefault('height', 0.75 )
-        self.__dict__.setdefault('scaling', 0.000020 )
-        self.__dict__.setdefault('numTriggerChannels', 7 )
-        self.__dict__.setdefault('triggerWidth', 0.0001 )
-        self.__dict__.setdefault('numAuxChannels', 4 )
-        self.numTriggerChannels = 7
-                
 
 def bitEvaluate(numChannels, thisval, lastval=None, channelOffset=0):
     if lastval is None:

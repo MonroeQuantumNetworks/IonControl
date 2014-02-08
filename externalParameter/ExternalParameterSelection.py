@@ -32,7 +32,6 @@ class Parameter:
         
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault('enabled', False)        
 
 class SelectionUi(SelectionForm,SelectionBase):
     selectionChanged = QtCore.pyqtSignal(object)

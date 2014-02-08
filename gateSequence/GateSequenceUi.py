@@ -38,10 +38,6 @@ class Settings:
         
     def __setstate__(self,d):
         self.__dict__ = d
-        self.__dict__.setdefault( "gateSequenceCache", dict() )
-        self.__dict__.setdefault( "gateDefinitionCache", dict() )
-        self.__dict__.setdefault( "thisSequenceRepetition", 10 )
-        self.__dict__.setdefault( "debug", False )
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)

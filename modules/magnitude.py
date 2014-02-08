@@ -451,8 +451,6 @@ class Magnitude():
         after unpickling. Only new class attributes need to be added here.
         """
         self.__dict__ = state
-        self.__dict__.setdefault('significantDigits', None)
-
 
     def copy(self, with_format=False):
         """Builds and returns a copy of a magnitude.

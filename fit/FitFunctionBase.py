@@ -40,8 +40,6 @@ class FitFunctionBase(object):
         
     def __setstate__(self, state):
         self.__dict__ = state
-        if not isinstance(self.results, SequenceDict):
-            self.results = SequenceDict(self.results)  
 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""

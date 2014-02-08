@@ -21,9 +21,6 @@ class GlobalVariables(object):
 
     def __setstate__(self, state):
         self.__dict__ = state
-        if not isinstance(self.variabledict,SequenceDict):
-            self.variabledict = SequenceDict(self.variabledict)
-
 
 class GlobalVariableUi(Form, Base ):
     def __init__(self,config,parent=None):
