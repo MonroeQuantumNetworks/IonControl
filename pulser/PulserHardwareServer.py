@@ -12,7 +12,7 @@ import ok
 from mylogging.ServerLogging import configureServerLogging
 from modules import enum
 import modules.magnitude as magnitude
-
+from bitfileHeader import BitfileInfo
 
 ModelStrings = {
         0: 'Unknown',
@@ -601,9 +601,11 @@ class PulserHardwareServer(Process):
             self.modules[newname] = self.modules.pop(oldname)
             
     def uploadBitfile(self,bitfile):
+        logger = logging.getLogger(__name__)
         if self.xem is not None and self.xem.IsOpen():
             check( self.xem.ConfigureFPGA(bitfile), "Configure bitfile {0}".format(bitfile))
             self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
+            logger.info(str(BitfileInfo(bitfile)))
 
     def openByName(self,name):
         self.xem = ok.FrontPanel()
