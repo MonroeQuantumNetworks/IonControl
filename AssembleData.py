@@ -5,11 +5,14 @@ Created on Wed Sep 11 12:09:09 2013
 @author: plmaunz
 """
 
-from trace.Trace import Trace
-import os.path
-import numpy
-from modules.DataDirectory import DataDirectory
 import datetime
+import os.path
+
+import numpy
+
+from modules.DataDirectory import DataDirectory
+from trace.Trace import Trace
+
 
 resultsTable = None
 headerList = list()

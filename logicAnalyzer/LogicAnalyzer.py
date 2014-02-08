@@ -1,16 +1,19 @@
-import PyQt4.uic
-from modules.enum import enum
 import logging 
-from trace.pens import penList
+
+from PyQt4 import QtCore
+import PyQt4.uic
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 from pyqtgraph.graphicsItems.TextItem import TextItem
-from modules.Utility import flatten
+from pyqtgraph.graphicsItems.ViewBox import ViewBox
+
 from logicAnalyzer.LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
 from logicAnalyzer.LogicAnalyzerTraceTableModel import LogicAnalyzerTraceTableModel
 from modules import dictutil
+from modules.Utility import flatten
+from modules.enum import enum
+from trace.pens import penList
 from uiModules.RotatedHeaderView import RotatedHeaderView
-from PyQt4 import QtCore
-from pyqtgraph.graphicsItems.ViewBox import ViewBox
+
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 

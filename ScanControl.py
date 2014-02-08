@@ -4,27 +4,30 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
 import copy
 import functools
-from PyQt4 import QtCore, QtGui
-import CountEvaluation
-from modules.MagnitudeUtilit import valueAs
- 
-ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
-
-import ScanList
-from modules import MagnitudeUtilit
-from modules.magnitude import mg, MagnitudeError
-from modules.enum import enum
-from gateSequence import GateSequenceUi
-from modules.PyqtUtility import BlockSignals
-from EvaluationTableModel import EvaluationTableModel
-from uiModules.ComboBoxDelegate import ComboBoxDelegate
 import logging
+
+from PyQt4 import QtCore, QtGui
+import PyQt4.uic
+
+import CountEvaluation
+from EvaluationTableModel import EvaluationTableModel
+import ScanList
+from gateSequence import GateSequenceUi
+from modules import MagnitudeUtilit
 from modules.HashableDict import HashableDict
+from modules.MagnitudeUtilit import valueAs
+from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
+from modules.enum import enum
+from modules.magnitude import mg, MagnitudeError
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
+
+
+ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
+
 
 class EvaluationDefinition:
     def __init__(self):

@@ -1,13 +1,16 @@
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
-from fit.FitFunctionBase import fitFunctionMap, ResultRecord
 import copy
-from fit.FitUiTableModel import FitUiTableModel
 import logging
-from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.MagnitudeUtilit import value
+
+from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+
+from fit.FitFunctionBase import fitFunctionMap, ResultRecord
 from fit.FitResultsTableModel import FitResultsTableModel
+from fit.FitUiTableModel import FitUiTableModel
 from modules.HashableDict import HashableDict
+from modules.MagnitudeUtilit import value
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 

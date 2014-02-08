@@ -9,7 +9,7 @@ import struct
 
 import ok
 
-from ServerLogging import configureServerLogging
+from mylogging.ServerLogging import configureServerLogging
 from modules import enum
 import modules.magnitude as magnitude
 

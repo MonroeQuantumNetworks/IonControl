@@ -6,8 +6,10 @@ Created on Fri May 31 15:09:52 2013
 """
 
 from PyQt4 import uic, QtGui, QtCore
-from uiModules.MagnitudeSpinBox import MagnitudeSpinBox
+
 from modules.magnitude import mg
+from uiModules.MagnitudeSpinBox import MagnitudeSpinBox
+
 
 Form, Base = uic.loadUiType(r'ui\TableWidgetTest.ui')
 

@@ -7,10 +7,13 @@ Created on Wed Jan 02 09:53:48 2013
 This is the model used with TraceTreeView to view the list of traces in a tree.
 """
 
+from functools import partial
+
 from PyQt4 import QtCore, QtGui
 import sip
-from functools import partial
+
 from PlottedTrace import PlottedTrace
+
 
 api2 = sip.getapi("QVariant")==2
 

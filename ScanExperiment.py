@@ -13,32 +13,35 @@ It is expected to send an endlabel (0xffffffff) when finished.
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
-from trace.Trace import Trace
-import numpy
-from trace import pens
+from datetime import datetime, timedelta
+import functools
+import logging
+import random
+import time
 from trace import Traceui
-import MainWindowWidget
-from fit.FitUi import FitUi
-from modules import enum
+from trace import pens
+
+from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+import numpy
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
-from modules import DataDirectory
-import time
-from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
-import functools
-from modules import stringutilit
-from datetime import datetime, timedelta
-import RawData
-import random
-import ScanControl
+
 from AverageViewTable import AverageViewTable
-from trace.PlottedTrace import PlottedTrace
-import logging
+import MainWindowWidget
+import RawData
+import ScanControl
 from ScanProgress import ScanProgress
+from fit.FitUi import FitUi
+from modules import DataDirectory
+from modules import enum
+from modules import stringutilit
 from modules.magnitude import is_magnitude
-     
+from trace.PlottedTrace import PlottedTrace
+from trace.Trace import Trace
+from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+
+
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
 class ParameterScanGenerator:

@@ -5,11 +5,13 @@ Created on Fri Dec 14 15:37:21 2012
 @author: plmaunz
 """
 
-import visa
+from trace import Trace
+
 import numpy
+import visa
+
 import ReadGeneric
 
-from trace import Trace
 
 class E5100B(ReadGeneric.ReadGeneric):
     def __init__(self,address):

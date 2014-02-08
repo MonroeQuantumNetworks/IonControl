@@ -1,5 +1,6 @@
 from PyQt4 import QtCore
 
+
 class FitResultsTableModel(QtCore.QAbstractTableModel):
     
     def __init__(self, config, parent=None, *args): 

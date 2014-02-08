@@ -5,10 +5,12 @@ Created on Fri May 24 14:46:16 2013
 @author: wolverine
 """
 
-from modules import DataDirectory
 from array import array
 import hashlib
 import shutil
+
+from modules import DataDirectory
+
 
 class RawData(object):
     def __init__(self):

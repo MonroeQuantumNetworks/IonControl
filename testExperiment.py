@@ -5,20 +5,23 @@ Created on Sat Dec 22 17:25:13 2012
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
-from trace.Trace import Trace
-from trace.PlottedTrace import PlottedTrace
-import random
-import numpy
-from trace import pens
-from trace.Traceui import Traceui
-import MainWindowWidget
-from fit.FitUi import FitUi
 import functools
-from modules import DataDirectory
+import random
+from trace import pens
+
+from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+import numpy
+
 from AverageViewTable import AverageViewTable
+import MainWindowWidget
 from ScanControl import ScanControl
+from fit.FitUi import FitUi
+from modules import DataDirectory
+from trace.PlottedTrace import PlottedTrace
+from trace.Trace import Trace
+from trace.Traceui import Traceui
+
 
 testForm, testBase = PyQt4.uic.loadUiType(r'ui\testExperiment.ui')
 

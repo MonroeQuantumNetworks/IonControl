@@ -6,6 +6,7 @@ Created on Sun Jan 06 16:49:47 2013
 """
 from PyQt4 import QtGui
 
+
 class MainWindowWidget(QtGui.QMainWindow):
 
     def __init__(self, toolBar=None, parent=None):

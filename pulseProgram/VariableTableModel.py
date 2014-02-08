@@ -4,10 +4,13 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
+import logging
+
 from PyQt4 import QtCore
 import sip
-import logging
+
 from pulseProgram.VariableDictionary import CyclicDependencyException
+
 
 api2 = sip.getapi("QVariant")==2
 

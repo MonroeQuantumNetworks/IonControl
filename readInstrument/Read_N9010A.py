@@ -5,10 +5,13 @@ Created on Fri Dec 14 15:37:21 2012
 @author: plmaunz
 """
 
-import visa
-import numpy
-import ReadGeneric 
 from trace import Trace
+
+import numpy
+import visa
+
+import ReadGeneric 
+
 
 class N9010A(ReadGeneric.ReadGeneric):
     def __init__(self,address):

@@ -3,14 +3,16 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
 from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+
 from GlobalVariableTableModel import GlobalVariableTableModel
 from modules.SequenceDict import SequenceDict
-from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.Utility import unique 
 from uiModules.KeyboardFilter import KeyListFilter
-       
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+
+
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
 class GlobalVariables(object):

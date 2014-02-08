@@ -5,11 +5,14 @@ Created on Fri Apr 12 23:45:54 2013
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtCore
 import functools
-from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 import logging
+
+from PyQt4 import QtCore
+import PyQt4.uic
+
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 

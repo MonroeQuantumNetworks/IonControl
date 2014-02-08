@@ -1,8 +1,11 @@
-import PyQt4.uic
-from PyQt4 import QtCore, QtGui
-import time
-from modules.enum import enum
 from datetime import timedelta
+import time
+
+from PyQt4 import QtCore, QtGui
+import PyQt4.uic
+
+from modules.enum import enum
+
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ScanProgress.ui')
 

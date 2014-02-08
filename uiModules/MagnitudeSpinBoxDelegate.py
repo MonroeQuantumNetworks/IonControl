@@ -1,7 +1,10 @@
-from MagnitudeSpinBox import MagnitudeSpinBox
-from PyQt4 import QtGui, QtCore
 from functools import partial
 import re
+
+from PyQt4 import QtGui, QtCore
+
+from MagnitudeSpinBox import MagnitudeSpinBox
+
 
 class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
   

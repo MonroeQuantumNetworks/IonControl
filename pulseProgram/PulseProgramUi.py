@@ -4,20 +4,23 @@ Created on Thu Feb 07 22:55:28 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
+import logging
+import os.path
+
 from PyQt4 import QtCore, QtGui
+import PyQt4.uic
+
+import CounterTableModel
+import ProjectSelection
+import TriggerTableModel
+from modules import dictutil
 from pulseProgram import PulseProgram
+from pulseProgram import ShutterTableModel
+from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 from pulseProgram.VariableDictionary import VariableDictionary
 from pulseProgram.VariableTableModel import VariableTableModel
-from pulseProgram import ShutterTableModel
-import TriggerTableModel
-import CounterTableModel
-import os.path
-from modules import dictutil
-from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
-import ProjectSelection
-import logging
 from uiModules.RotatedHeaderView import RotatedHeaderView
+
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 

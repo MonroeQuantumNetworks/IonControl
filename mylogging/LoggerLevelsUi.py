@@ -4,14 +4,17 @@ Created on Sat Feb 09 22:00:58 2013
 
 @author: pmaunz
 """
+from collections import OrderedDict
+from functools import partial
+from logging import Logger
+import logging
+
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
-import logging
-from logging import Logger
-from uiModules.ComboBoxDelegate import ComboBoxDelegate
-from functools import partial
-from collections import OrderedDict
+
 from modules.SequenceDict import SequenceDict
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
+
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LoggerLevelsUi.ui')
 

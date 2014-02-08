@@ -1,6 +1,8 @@
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, registerParameterType
 from pyqtgraph.parametertree.Parameter import Parameter
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, registerParameterType
+
 from MagnitudeSpinBox import MagnitudeSpinBox
+
 
 class MagnitudeWidgetParameterItem(WidgetParameterItem):
     def __init__(self, param, depth):

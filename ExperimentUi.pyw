@@ -16,34 +16,36 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QTime",2)
 #sip.setapi("QUrl",2)
 
-import LoggingSetup
-import ScanExperiment
+import argparse
+import logging
+
+from PyQt4 import QtCore, QtGui 
+import PyQt4.uic
+
+import DDSUi
+from mylogging.ExceptionLogButton import ExceptionLogButton
 import ExternalScanExperiment
-import VoltageScanExperiment
+import GlobalVariables 
+from mylogging.LoggerLevelsUi import LoggerLevelsUi
+from mylogging import LoggingSetup  #@UnusedImport
+import ProjectSelection
+import ProjectSelectionUi
+from PulserHardwareClient import PulserHardware 
+import ScanExperiment
 import SettingsDialog
-import testExperiment
+import VoltageScanExperiment
+from dedicatedCounters.DedicatedCounters import DedicatedCounters
+from externalParameter import ExternalParameterSelection
+from externalParameter import ExternalParameterUi 
+from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
+from modules import DataDirectory
+from modules.DataChanged import DataChanged
+from modules.bidict import ChannelNameMap
 from persist import configshelve
 from pulseProgram import PulseProgramUi
 from pulseProgram import ShutterUi
-import DDSUi
-from dedicatedCounters.DedicatedCounters import DedicatedCounters
-from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
-from externalParameter import ExternalParameterSelection
-from externalParameter import ExternalParameterUi 
-import ProjectSelectionUi
-from modules import DataDirectory
-from ExceptionLogButton import ExceptionLogButton
-import GlobalVariables 
-from PulserHardwareClient import PulserHardware 
-import ProjectSelection
-from LoggerLevelsUi import LoggerLevelsUi
-from modules.bidict import ChannelNameMap
-from modules.DataChanged import DataChanged
-    
-import PyQt4.uic
-from PyQt4 import QtCore, QtGui 
-import argparse
-import logging
+import testExperiment
+
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 

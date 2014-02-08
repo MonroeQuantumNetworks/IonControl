@@ -5,8 +5,10 @@ Created on Tue Feb 26 21:57:31 2013
 @author: pmaunz
 """
 
-import Trace
 import numpy
+
+import Trace
+
 
 class TraceAverage(Trace):
     def __init__(self):
