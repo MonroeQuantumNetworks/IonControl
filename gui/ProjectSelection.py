@@ -88,7 +88,8 @@ def guiConfigFile():
     if SpecificConfigFile:
         return SpecificConfigFile
     else:
-        return os.path.join( guiConfigDir(), "experiment-gui.db.config" ) 
+        scriptname,_ = os.path.splitext( os.path.basename(__main__.__file__))
+        return os.path.join( guiConfigDir(), scriptname+".config.db" ) 
    
 def getBaseDir():
     return ProjectsBaseDir
