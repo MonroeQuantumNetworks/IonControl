@@ -376,10 +376,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def startScan(self):
         logger = logging.getLogger(__name__)
         self.startTime = time.time()
-        self.progressUi.setRunning( max(len(self.scan.list),1) ) 
         PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
         self.generator = GeneratorList[self.scan.scanMode](self.scan)
         (mycode, data) = self.generator.prepare(self.pulseProgramUi)
+        self.progressUi.setRunning( max(len(self.scan.list),1) ) 
         if data:
             self.pulserHardware.ppWriteRamWordlist(data,0)
         self.pulserHardware.ppFlushData()
