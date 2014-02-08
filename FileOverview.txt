@@ -14,10 +14,10 @@ DedicatedCountersSettings.py	Settings gui for the dedicated counters window
 DedicatedDisplay.py	Numeric display gui of counts within the dedicated counters window
 Experiment_rc.py	Resources file, redirect to ui\Experiment_rc.py
 ExternalScanExperiment.py	Measurement tab gui for experiment where an external parameter is changed between points
-ExternalScannedParameters.py	Definition of external parameters that can be scanned
-ExternalScannedParametersConfig.py	Gui for external parameters, includes name, enable and configuration of the parameter
-ExternalScannedParametersSelection.py Gui for selection of enabled external parameters
-ExternalScannedParametersUi.py	Gui for changing the current value on all external parameters
+ExternalParameter.py	Definition of external parameters that can be scanned
+ExternalParameterConfig.py	Gui for external parameters, includes name, enable and configuration of the parameter
+ExternalParameterSelection.py Gui for selection of enabled external parameters
+ExternalParameterUi.py	Gui for changing the current value on all external parameters
 FitFunctions.py	Definitions of fit functions
 FitUi.py	Gui for fitting
 fpgaUtilit.py	Utilities for fpga hardware
@@ -77,7 +77,7 @@ VoltageBlender.py	Blends the different voltage control methods and calculates th
 Modules that can easily be expanded:
 AnalogInputCalibration.py	Calibration to convert voltage values from the ADC to other units
 CountEvaluation.py	Evaluation of count values, different algorithms, used for mean and state detection
-ExternalScannedParameters.py	Definition of external parameters that can be scanned
+ExternalParameter.py	Definition of external parameters that can be scanned
 FitFunctions.py	Definitions of fit functions
 pens.py	Pen definitions for plotting
 ScanList.py	Definitions of ways to scan (Linear up, Linear down, Randomized, ...)
@@ -93,9 +93,9 @@ DedicatedCountersSettings.py	Settings gui for the dedicated counters window
 DedicatedDisplay.py	Numeric display gui of counts within the dedicated counters window
 Experiment_rc.py	Resources file, redirect to ui\Experiment_rc.py
 ExternalScanExperiment.py	Measurement tab gui for experiment where an external parameter is changed between points
-ExternalScannedParametersConfig.py	Gui for external parameters, includes name, enable and configuration of the parameter
-ExternalScannedParametersSelection.py Gui for selection of enabled external parameters
-ExternalScannedParametersUi.py	Gui for changing the current value on all external parameters
+ExternalParameterConfig.py	Gui for external parameters, includes name, enable and configuration of the parameter
+ExternalParameterSelection.py Gui for selection of enabled external parameters
+ExternalParameterUi.py	Gui for changing the current value on all external parameters
 FitUi.py	Gui for fitting
 FromFile.py	Measurement tab gui to load existing files
 MagnitudeSpinBox.py	SpinBox gui for input of a magnitude value (double with unit)

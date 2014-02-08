@@ -28,8 +28,8 @@ from pulseProgram import ShutterUi
 import DDSUi
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
-import ExternalScannedParametersSelection
-import ExternalScannedParametersUi
+from externalParameter import ExternalParameterSelection
+from externalParameter import ExternalParameterUi 
 import ProjectSelectionUi
 from modules import DataDirectory
 from ExceptionLogButton import ExceptionLogButton
@@ -157,25 +157,25 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
         self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
         
-        self.ExternalParametersSelectionUi = ExternalScannedParametersSelection.SelectionUi(self.config)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
-        self.ExternalScannedParametersSelectionDock = QtGui.QDockWidget("Params Selection")
-        self.ExternalScannedParametersSelectionDock.setObjectName("_ExternalScannedParametersSelectionDock")
-        self.ExternalScannedParametersSelectionDock.setWidget(self.ExternalParametersSelectionUi)
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersSelectionDock)
+        self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
+        self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
+        self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
-        self.ExternalParametersUi = ExternalScannedParametersUi.ControlUi()
+        self.ExternalParametersUi = ExternalParameterUi.ControlUi()
         self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.ExternalParametersUi )
-        self.ExternalScannedParametersDock = QtGui.QDockWidget("Params Control")
-        self.ExternalScannedParametersDock.setWidget(self.ExternalParametersUi)
-        self.ExternalScannedParametersDock.setObjectName("_ExternalScannedParametersDock")
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalScannedParametersDock)
+        self.ExternalParameterDock = QtGui.QDockWidget("Params Control")
+        self.ExternalParameterDock.setWidget(self.ExternalParametersUi)
+        self.ExternalParameterDock.setObjectName("_ExternalParameterDock")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterDock)
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
                
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         #tabify 
-        self.tabifyDockWidget( self.ExternalScannedParametersSelectionDock, self.ExternalScannedParametersDock)
+        self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
         
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
@@ -280,7 +280,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalScannedParametersDock, self.ExternalScannedParametersSelectionDock, self.globalVariablesDock,
+                     self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
                      self.loggerDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         

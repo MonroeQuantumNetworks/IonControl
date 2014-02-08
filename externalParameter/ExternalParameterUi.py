@@ -11,7 +11,7 @@ import functools
 from MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 import logging
 
-UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParameterUi.ui')
+UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
 class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     valueChanged = QtCore.pyqtSignal(str, object)

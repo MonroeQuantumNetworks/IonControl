@@ -439,7 +439,7 @@ class DummyParameter(ExternalParameterBase):
 
     
         
-ExternalScannedParameters = { LaserWavemeterLockScan.className: LaserWavemeterLockScan, 
+ExternalParameter = { LaserWavemeterLockScan.className: LaserWavemeterLockScan, 
                               HP8672A.className: HP8672A,
                               AgilentPowerSupply.className: AgilentPowerSupply,
                               LaserWavemeterScan.className : LaserWavemeterScan,

@@ -6,7 +6,7 @@ Scan that varies a parameter outside the FPGA
 it uses ScanExperiment and only overwrites procedures that need to handle
 stuff differently.
 
-External parameters that can be scanned in this way are defined in ExternalScannedParameters
+External parameters that can be scanned in this way are defined in ExternalParameter
 
 The pulse program is expected to run the experiment necessary for one external parameter setting.
 It reports the count values during each experiment and finishes by sending the end marker (0xffffffff).

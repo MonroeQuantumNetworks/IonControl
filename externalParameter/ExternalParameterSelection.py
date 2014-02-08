@@ -8,9 +8,9 @@ Created on Fri Apr 12 20:15:47 2013
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
 
-SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalScannedParametersSelection.ui')
-from ExternalScannedParameters import ExternalScannedParameters
-from ExternalParameterTableModel import ExternalParameterTableModel 
+SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
+from externalParameter.ExternalParameter import ExternalParameter
+from externalParameter.ExternalParameterTableModel import ExternalParameterTableModel
 import logging
 from modules.SequenceDict import SequenceDict
 from KeyboardFilter import KeyListFilter
@@ -38,7 +38,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         SelectionBase.__init__(self,parent)
         SelectionForm.__init__(self)
         self.config = config
-        self.parameters = self.config.get("ExternalScannedParametersSelection.ParametersSequence",SequenceDict())
+        self.parameters = self.config.get("ExternalParameterSelection.ParametersSequence",SequenceDict())
         self.enabledParametersObjects = SequenceDict()
     
     def setupUi(self,MainWindow):
@@ -52,7 +52,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
-        self.classComboBox.addItems( ExternalScannedParameters.keys() )
+        self.classComboBox.addItems( ExternalParameter.keys() )
         self.addParameterButton.clicked.connect( self.onAddParameter )
         self.removeParameterButton.clicked.connect( self.onRemoveParameter )
         for parameter in self.parameters.values():
@@ -115,7 +115,7 @@ class SelectionUi(SelectionForm,SelectionBase):
     def enableInstrument(self,parameter):
         if parameter.name not in self.enabledParametersObjects:
             logger = logging.getLogger(__name__)
-            instance = ExternalScannedParameters[parameter.className](parameter.name,parameter.settings,parameter.instrument)
+            instance = ExternalParameter[parameter.className](parameter.name,parameter.settings,parameter.instrument)
             self.enabledParametersObjects[parameter.name] = instance
             self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
             self.selectionChanged.emit( self.enabledParametersObjects )
@@ -138,7 +138,7 @@ class SelectionUi(SelectionForm,SelectionBase):
             self.treeWidget.setParameters( self.enabledParametersObjects[self.parameters.at(modelIndex.row()).name].parameter )
         
     def saveConfig(self):
-        self.config["ExternalScannedParametersSelection.ParametersSequence"] = self.parameters
+        self.config["ExternalParameterSelection.ParametersSequence"] = self.parameters
         
     def onClose(self):
         for inst in self.enabledParametersObjects.values():
