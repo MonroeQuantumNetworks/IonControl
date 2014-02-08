@@ -57,8 +57,9 @@ class FitUi(fitForm, QtGui.QWidget):
         self.parentname = parentname
         self.fitfunction = None
         self.traceui = traceui
-        self.fitfunctionCache = self.config.get("FitUi.FitfunctionCache", dict() )
-        self.analysisDefinitions = self.config.get("FitUi.AnalysisDefinitions", dict())
+        self.configname = "FitUi.{0}.".format(parentname)
+        self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
+        self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
             
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
@@ -77,14 +78,19 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
-        if 'FitUi.splitter' in self.config:
-            self.splitter.restoreState( self.config['FitUi.splitter'])
+        if self.configname+'splitter' in self.config:
+            self.splitter.restoreState( self.config[self.configname+'splitter'])
         # Analysis stuff
-        lastAnalysisName = self.config.get("FitUi.LastAnalysis", None)
+        lastAnalysisName = self.config.get(self.configname+"LastAnalysis", None)
         self.analysisNameComboBox.addItems( self.analysisDefinitions.keys() )
+        self.analysisNameComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysis )
         if lastAnalysisName and lastAnalysisName in self.analysisDefinitions:
             self.analysisNameComboBox.setCurrentIndex( self.analysisNameComboBox.findText(lastAnalysisName))
-        self.analysisNameComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysis )
+        fitfunction = self.config.get(self.configname+"LastFitfunction",None)
+        if fitfunction:
+            self.fitfunction = fitfunction
+            self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )
+
        
     def onFitfunctionChanged(self, name):
         name = str(name)
@@ -147,10 +153,11 @@ class FitUi(fitForm, QtGui.QWidget):
     def saveConfig(self):
         if self.fitfunction is not None:
             self.fitfunctionCache[self.fitfunction.name] = self.fitfunction
-        self.config["FitUi.FitfunctionCache"] = self.fitfunctionCache
-        self.config['FitUi.Splitter'] = self.splitter.saveState()
-        self.config["FitUi.AnalysisDefinitions"] = self.analysisDefinitions
-        self.config["FitUi.LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
+        self.config[self.configname+"FitfunctionCache"] = self.fitfunctionCache
+        self.config[self.configname+'Splitter'] = self.splitter.saveState()
+        self.config[self.configname+"AnalysisDefinitions"] = self.analysisDefinitions
+        self.config[self.configname+"LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
+        self.config[self.configname+"LastFitfunction"] = self.fitfunction
             
     def saveState(self):
         pass

@@ -54,7 +54,7 @@ testsequences = [ ['I'] * sequencelength,
 for i in range(randomizations):               
     testsequences.append([basis[random.randrange(0,len(basis))] for i in range(sequencelength)])
    
-root = ElementTree.Element('GateSetDefinition')
+root = ElementTree.Element('GateSequenceDefinition')
 
 i = 0
 for truncation in range(0,sequencelength+1):

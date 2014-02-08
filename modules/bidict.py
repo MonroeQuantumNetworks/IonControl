@@ -559,7 +559,6 @@ class bidict(object):
 
 MutableMapping.register(bidict)
 
-
 # thanks to Raymond Hettinger for the idea for namedbidict
 
 _LEGALNAMEPAT = '^[a-zA-Z][a-zA-Z0-9_]*$'

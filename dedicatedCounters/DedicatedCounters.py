@@ -10,11 +10,11 @@ DedicatedCounters reads and displays the counts from the simple counters and ADC
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 from modules import enum
-import DedicatedCountersSettings
+from dedicatedCounters import DedicatedCountersSettings
 import numpy
-import DedicatedDisplay
-import AutoLoad
-import InputCalibrationUi
+from dedicatedCounters import DedicatedDisplay
+from dedicatedCounters import AutoLoad
+from dedicatedCounters import InputCalibrationUi
        
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 

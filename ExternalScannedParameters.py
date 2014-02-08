@@ -6,7 +6,7 @@ Created on Tue Mar 12 15:22:09 2013
 """
 
 
-from WavemeterGetFrequency import WavemeterGetFrequency
+from wavemeter import WavemeterGetFrequency
 import numpy
 import modules.magnitude as magnitude
 from pyqtgraph.parametertree import Parameter

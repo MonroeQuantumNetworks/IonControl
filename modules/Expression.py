@@ -139,7 +139,7 @@ class Expression:
             if useFloat and m.dimensionless():
                 return m.val
             return m
-        return res
+        return 0
             
     def evaluate(self, expression, variabledict=dict(), listDependencies=False, useFloat=True ):
         self.variabledict = variabledict

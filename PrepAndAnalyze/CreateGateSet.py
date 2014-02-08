@@ -15,7 +15,7 @@ from xml.dom import minidom
 basis = ['I', 'x', 'y', 'x2' ]
 #Maximum GST sequence length = 2^7 = 128
 nmax = 7
-filename = "GateSetV2.xml"
+filename = "GateSequenceV2.xml"
     
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -58,7 +58,7 @@ def gst_strings(alphabet, length):
     #Triply nested loop, as each element of alphabet can be the first, middle, or last gate
     return [[x] + [alphabet[i]]*length + [y] for i in range(0,len(alphabet)) for x in alphabet for y in alphabet]
        
-root = ElementTree.Element('GateSetDefinition')
+root = ElementTree.Element('GateSequenceDefinition')
 
 #'i' counts each element. Every time a gate sequence is added, i is incremented.
 i = 0

@@ -7,7 +7,7 @@ Created on Fri May 24 17:32:35 2013
 
 from PyQt4 import uic, QtCore, QtGui
 import functools
-from PPSyntaxHighlighter import PPHighlighter
+from pulseProgram.PPSyntaxHighlighter import PPHighlighter
 
 Form, Base = uic.loadUiType(r'ui\PulseProgramEdit.ui')
 

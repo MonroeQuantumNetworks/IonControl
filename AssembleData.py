@@ -14,11 +14,11 @@ import datetime
 resultsTable = None
 headerList = list()
 
-goodGateSets = [ (datetime.date(2013,10,9), [3, 5, 6, 7, 8, 9, 10, 11, 12] ),
+goodGateSequences = [ (datetime.date(2013,10,9), [3, 5, 6, 7, 8, 9, 10, 11, 12] ),
                  (datetime.date(2013,10,10), [2, 4, 5, 6, 7, 8, 10, 11, 12, 13] ),
                  (datetime.date(2013,10,11), [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20] ) ]
 
-goodTestGateSets = [  (datetime.date(2013,10,9),[1, 4, 5, 6, 7]),
+goodTestGateSequences = [  (datetime.date(2013,10,9),[1, 4, 5, 6, 7]),
                   (datetime.date(2013,10,10), [2, 3, 4, 5, 6]),
                   (datetime.date(2013,10,11), [2, 3, 5, 7, 9, 10, 11, 12, 14] ) ]
 
@@ -26,9 +26,9 @@ goodTestGateSets = [  (datetime.date(2013,10,9),[1, 4, 5, 6, 7]),
 datadirectory = DataDirectory('QGA')
 outputpath = datadirectory.path( datetime.date(2013,10,11))
 
-filenamebody = "GateSet"
+filenamebody = "GateSequence"
 expectedLength = 1066
-for date, filenolist in goodGateSets:
+for date, filenolist in goodGateSequences:
     path = datadirectory.path( date )
     for fileno in filenolist:
         filename = filenamebody+"_{0:03d}.txt".format(fileno)
@@ -56,7 +56,7 @@ numpy.savetxt(os.path.join(outputpath,filenamebody+"_good.txt"),numpy.transpose(
 resultsTable = list()
 filenamebody = "GateTestSet"
 expectedLength = 2020
-for date, filenolist in goodTestGateSets:
+for date, filenolist in goodTestGateSequences:
     path = datadirectory.path( date )
     for fileno in filenolist:
         filename = filenamebody+"_{0:03d}.txt".format(fileno)

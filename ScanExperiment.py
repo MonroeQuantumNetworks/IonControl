@@ -140,15 +140,15 @@ class StepInPlaceGenerator:
     def dataOnFinal(self, experiment, currentState):
         experiment.onStop()                   
 
-class GateSetScanGenerator:
+class GateSequenceScanGenerator:
     def __init__(self, scan):
         self.scan = scan
         
     def prepare(self, pulseProgramUi):
         logger = logging.getLogger(__name__)
-        address, data, self.gateSetSettings = self.scan.gateSetUi.gateSetScanData()
-        parameter = self.gateSetSettings.startAddressParam
-        logger.debug( "GateSetScan {0} {1}".format( address, parameter ) )
+        address, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()
+        parameter = self.gateSequenceSettings.startAddressParam
+        logger.debug( "GateSequenceScan {0} {1}".format( address, parameter ) )
         self.scan.list = address
         self.scan.index = range(len(self.scan.list))
         if self.scan.scantype == 1:
@@ -159,7 +159,7 @@ class GateSetScanGenerator:
             random.shuffle(zipped)
             self.scan.index, self.scan.list = zip( *zipped )
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
-        logger.debug( "GateSetScanCode {0} {1}".format(self.scan.list, self.scan.code) )
+        logger.debug( "GateSequenceScanCode {0} {1}".format(self.scan.list, self.scan.code) )
         return (self.scan.code, data)
 
     def restartCode(self,currentIndex):
@@ -193,7 +193,7 @@ class GateSetScanGenerator:
         else:
             experiment.onStop()                   
         
-GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSetScanGenerator]   
+GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSequenceScanGenerator]   
 
 class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )

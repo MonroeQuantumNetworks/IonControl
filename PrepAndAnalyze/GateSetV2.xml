@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<GateSetDefinition>
+<GateSequenceDefinition>
   <!--Strings of length 0-->
   <GateSequence index="0" name="0"/>
   <!--Strings of length 1-->
@@ -89,4 +89,4 @@
   <GateSequence index="82" name="82">x2, x2, x</GateSequence>
   <GateSequence index="83" name="83">x2, x2, y</GateSequence>
   <GateSequence index="84" name="84">x2, x2, x2</GateSequence>
-</GateSetDefinition>
+</GateSequenceDefinition>

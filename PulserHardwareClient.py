@@ -216,7 +216,7 @@ def processReturn( returnvalue ):
 
 if __name__ == "__main__":
     import fpgaUtilit
-    import PulseProgram
+    from pulseProgram import PulseProgram
     
     printdata = True
     

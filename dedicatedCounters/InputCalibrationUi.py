@@ -11,7 +11,7 @@ from PyQt4 import QtGui, QtCore
 Form, Base = PyQt4.uic.loadUiType(r'ui\InputCalibrationUi.ui')
 SheetForm, SheetBase = PyQt4.uic.loadUiType(r'ui\InputCalibrationChannel.ui')
 
-import AnalogInputCalibration
+from dedicatedCounters import AnalogInputCalibration
 from pyqtgraph.parametertree import Parameter, ParameterTree
 
 class Settings:

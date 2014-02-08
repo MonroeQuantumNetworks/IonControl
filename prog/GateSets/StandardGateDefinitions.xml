@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<GateSetDefinition>
+<GateSequenceDefinition>
 	<PulseDefinition>
 		<Pulse name="phase" type="value">AD9912_PHASE</Pulse>
 		<Pulse name="pulsetime" type="value">TIME</Pulse>
@@ -42,4 +42,4 @@
 			<Pulse name="waittime">gateTime-piTime</Pulse>
 		</Gate>
 	</GateDefinition>
-</GateSetDefinition>
+</GateSequenceDefinition>

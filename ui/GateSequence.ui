@@ -17,7 +17,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QCheckBox" name="GateSetEnableCheckBox">
+      <widget class="QCheckBox" name="GateSequenceEnableCheckBox">
        <property name="text">
         <string>Gate Sets in RAM</string>
        </property>
@@ -33,7 +33,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QFrame" name="GateSetFrame">
+    <widget class="QFrame" name="GateSequenceFrame">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -45,7 +45,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="5" column="3">
-       <widget class="QToolButton" name="GateSetButton">
+       <widget class="QToolButton" name="GateSequenceButton">
         <property name="text">
          <string>...</string>
         </property>
@@ -110,7 +110,7 @@
        </widget>
       </item>
       <item row="5" column="1" colspan="2">
-       <widget class="QComboBox" name="GateSetBox">
+       <widget class="QComboBox" name="GateSequenceBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>

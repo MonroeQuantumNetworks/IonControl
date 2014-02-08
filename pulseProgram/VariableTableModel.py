@@ -9,7 +9,7 @@ import functools
 import modules.magnitude as magnitude
 import sip
 import logging
-from VariableDictionary import CyclicDependencyException
+from pulseProgram.VariableDictionary import CyclicDependencyException
 
 api2 = sip.getapi("QVariant")==2
 

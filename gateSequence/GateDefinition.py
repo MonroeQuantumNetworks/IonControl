@@ -65,6 +65,6 @@ class GateDefinition(object):
         
 if __name__=="__main__":
     gatedef = GateDefinition()
-    gatedef.loadGateDefinition(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\StandardGateDefinitions.xml")    
+    gatedef.loadGateDefinition(r"C:\Users\Public\Documents\experiments\QGA\config\GateSequences\StandardGateDefinitions.xml")    
     gatedef.printGates()
     

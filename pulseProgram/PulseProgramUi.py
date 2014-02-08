@@ -6,15 +6,15 @@ Created on Thu Feb 07 22:55:28 2013
 """
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
-import PulseProgram
-from VariableDictionary import VariableDictionary
-from VariableTableModel import VariableTableModel
-import ShutterTableModel
+from pulseProgram import PulseProgram
+from pulseProgram.VariableDictionary import VariableDictionary
+from pulseProgram.VariableTableModel import VariableTableModel
+from pulseProgram import ShutterTableModel
 import TriggerTableModel
 import CounterTableModel
 import os.path
 from modules import dictutil
-from PulseProgramSourceEdit import PulseProgramSourceEdit
+from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 import ProjectSelection
 import logging
 from modules.SequenceDict import SequenceDict

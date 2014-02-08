@@ -8,7 +8,7 @@ from modules.Expression import Expression
 import modules.magnitude as magnitude
 import logging
 
-class GateSetCompiler(object):
+class GateSequenceCompiler(object):
     def __init__(self, pulseProgram ):
         self.pulseProgram = pulseProgram
         self.compiledGates = dict()
@@ -16,22 +16,22 @@ class GateSetCompiler(object):
         
     """Compile all gate sets into binary representation
         returns tuple of start address list and bytearray data"""
-    def gateSetsCompile(self, gatesets ):
+    def gateSequencesCompile(self, gatesets ):
         logger = logging.getLogger(__name__)
-        logger.info( "compiling {0} gateSets.".format(len(gatesets.GateSetDict)) )
+        logger.info( "compiling {0} gateSequences.".format(len(gatesets.GateSequenceDict)) )
         self.gateCompile( gatesets.gateDefinition )
         addresses = list()
         data = list()
         index = 0
-        for gateset in gatesets.GateSetDict.values():
-            gatesetdata = self.gateSetCompile( gateset )
+        for gateset in gatesets.GateSequenceDict.values():
+            gatesetdata = self.gateSequenceCompile( gateset )
             addresses.append(index)
             data.append(gatesetdata)
             index += len(gatesetdata)*4
         return addresses, [item for sublist in data for item in sublist]
     
     """Compile one gateset into its binary representation"""
-    def gateSetCompile(self, gateset ):
+    def gateSequenceCompile(self, gateset ):
         data = list()
         for gate in gateset:
             data.append( self.compiledGates[gate] )
@@ -54,28 +54,28 @@ class GateSetCompiler(object):
                 
         
 if __name__=="__main__":
-    from PulseProgram import PulseProgram
-    from GateDefinition import GateDefinition
-    from GateSetContainer import GateSetContainer
+    from pulseProgram.PulseProgram import PulseProgram
+    from gateSequence.GateDefinition import GateDefinition
+    from gateSequence.GateSequenceContainer import GateSequenceContainer
     
     pp = PulseProgram()
     pp.debug = False
-    pp.loadSource(r"C:\Users\Public\Documents\experiments\QGA\config\PulsePrograms\YbGateSetTomography.pp")
+    pp.loadSource(r"C:\Users\Public\Documents\experiments\QGA\config\PulsePrograms\YbGateSequenceTomography.pp")
     
     gatedef = GateDefinition()
-    gatedef.loadGateDefinition(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\StandardGateDefinitions.xml")    
+    gatedef.loadGateDefinition(r"C:\Users\Public\Documents\experiments\QGA\config\GateSequences\StandardGateDefinitions.xml")    
     gatedef.printGates()
     
-    container = GateSetContainer(gatedef)
-    container.loadXml(r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateSetDefinition.xml")
+    container = GateSequenceContainer(gatedef)
+    container.loadXml(r"C:\Users\Public\Documents\experiments\QGA\config\GateSequences\GateSequenceDefinition.xml")
     container.validate()  
     #print container
     
-    compiler = GateSetCompiler(pp)
+    compiler = GateSequenceCompiler(pp)
     compiler.gateCompile( container.gateDefinition )
-    print compiler.gateSetCompile( container.GateSetDict['S11'])
+    print compiler.gateSequenceCompile( container.GateSequenceDict['S11'])
     
-    address, data = compiler.gateSetsCompile( container )
+    address, data = compiler.GateSequencesCompile( container )
     print address
     print data
 

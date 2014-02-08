@@ -17,17 +17,16 @@ This is the main gui program for the ExperimentalUi
 #sip.setapi("QUrl",2)
 
 import LoggingSetup
-import MagnitudeParameter
 import ScanExperiment
 import ExternalScanExperiment
 import VoltageScanExperiment
 import SettingsDialog
 import testExperiment
 from persist import configshelve
-import PulseProgramUi
-import ShutterUi
+from pulseProgram import PulseProgramUi
+from pulseProgram import ShutterUi
 import DDSUi
-import DedicatedCounters
+from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
 import ExternalScannedParametersSelection
 import ExternalScannedParametersUi
@@ -204,13 +203,13 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
             
-        self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulser)
+        self.dedicatedCountersWindow = DedicatedCounters(self.config, self.pulser)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
         self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser, self.channelNameData )
         self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
-        self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
+        self.voltageControlWindow = VoltageControl(self.config)
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
@@ -356,7 +355,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         
 if __name__ == "__main__":
     import sys
-    import VoltageControl
+    from voltageControl.VoltageControl import VoltageControl
 
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes

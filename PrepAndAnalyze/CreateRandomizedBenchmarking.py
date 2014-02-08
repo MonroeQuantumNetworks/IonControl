@@ -82,7 +82,7 @@ def createRandomization(length):
     
 if __name__=="__main__":    
 
-    root = ElementTree.Element('GateSetDefinition')
+    root = ElementTree.Element('GateSequenceDefinition')
     index = 0     # keep track of the current index
     outcomes = list() # list of all expected outcomes  
     totallength = 0   # total number of gates

@@ -16,7 +16,7 @@ from modules import enum
 from modules.formatDelta import formatDelta
 from datetime import datetime
 import logging
-from WavemeterInterlockTableModel import WavemeterInterlockTableModel
+from dedicatedCounters.WavemeterInterlockTableModel import WavemeterInterlockTableModel
 from modules.SequenceDict import SequenceDict
 from KeyboardFilter import KeyFilter
 from modules.Utility import unique
@@ -24,7 +24,7 @@ from modules.magnitude import Magnitude
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
-from LoadingHistoryModel import LoadingHistoryModel 
+from dedicatedCounters.LoadingHistoryModel import LoadingHistoryModel
 
 class AutoLoadSettings:
     def __init__(self):

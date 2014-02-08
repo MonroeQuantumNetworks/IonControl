@@ -53,7 +53,7 @@ var DetectCounters 0, counter
 var ddsApplyTrigger   3,trigger
 var ddsMicrowaveApply 0,trigger
 var PresenceThreshold 6, parameter
-var UseGateSet 0,parameter
+var UseGateSequence 0,parameter
 
 # internal variables
 var experimentsleft 100
@@ -145,7 +145,7 @@ QubitInit: NOP
 	ASYNCSHUTTER MicrowaveOff
 	
 PulseTrainInit: NOP
-	LDWR UseGateSet
+	LDWR UseGateSequence
 	JMPZ QubitAnalyze
 
 	RAMREAD 

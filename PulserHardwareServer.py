@@ -639,7 +639,7 @@ def sliceview(view,length):
 
 if __name__ == "__main__":
     import fpgaUtilit
-    import PulseProgram
+    from pulseProgram import PulseProgram
     
     printdata = True
     

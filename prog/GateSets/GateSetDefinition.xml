@@ -1,200 +1,200 @@
 <?xml version="1.0"?>
-<GateSetDefinitions>
+<GateSequenceDefinitions>
 	<!-- Used gates I, x, y, x2 -->
 	<!-- Sij i,j = 1..4 -->
-	<GateSet name="S11">
+	<GateSequence name="S11">
 		I, I
-	</GateSet>
-	<GateSet name="S12">
+	</GateSequence>
+	<GateSequence name="S12">
 		I, x
-	</GateSet>
-	<GateSet name="S13">
+	</GateSequence>
+	<GateSequence name="S13">
 		I, y
-	</GateSet>
-	<GateSet name="S14">
+	</GateSequence>
+	<GateSequence name="S14">
 		I, x2
-	</GateSet>
-	<GateSet name="S21">
+	</GateSequence>
+	<GateSequence name="S21">
 		x, I
-	</GateSet>
-	<GateSet name="S22">
+	</GateSequence>
+	<GateSequence name="S22">
 		x, x
-	</GateSet>
-	<GateSet name="S23">
+	</GateSequence>
+	<GateSequence name="S23">
 		x, y
-	</GateSet>
-	<GateSet name="S24">
+	</GateSequence>
+	<GateSequence name="S24">
 		x, x2
-	</GateSet>
-	<GateSet name="S31">
+	</GateSequence>
+	<GateSequence name="S31">
 		y, I
-	</GateSet>
-	<GateSet name="S32">
+	</GateSequence>
+	<GateSequence name="S32">
 		y, x
-	</GateSet>
-	<GateSet name="S33">
+	</GateSequence>
+	<GateSequence name="S33">
 		y, y
-	</GateSet>
-	<GateSet name="S34">
+	</GateSequence>
+	<GateSequence name="S34">
 		y, x2
-	</GateSet>
-	<GateSet name="S41">
+	</GateSequence>
+	<GateSequence name="S41">
 		x2, I
-	</GateSet>
-	<GateSet name="S42">
+	</GateSequence>
+	<GateSequence name="S42">
 		x2, x
-	</GateSet>
-	<GateSet name="S43">
+	</GateSequence>
+	<GateSequence name="S43">
 		x2, y
-	</GateSet>
-	<GateSet name="S44">
+	</GateSequence>
+	<GateSequence name="S44">
 		x2, x2
-	</GateSet>
+	</GateSequence>
 	<!-- Si x Sj i,j = 1..4 -->
-	<GateSet name="AS11">
+	<GateSequence name="AS11">
 		I, x, I
-	</GateSet>
-	<GateSet name="AS12">
+	</GateSequence>
+	<GateSequence name="AS12">
 		I, x, x
-	</GateSet>
-	<GateSet name="AS13">
+	</GateSequence>
+	<GateSequence name="AS13">
 		I, x, y
-	</GateSet>
-	<GateSet name="AS14">
+	</GateSequence>
+	<GateSequence name="AS14">
 		I, x, x2
-	</GateSet>
-	<GateSet name="AS21">
+	</GateSequence>
+	<GateSequence name="AS21">
 		x, x, I
-	</GateSet>
-	<GateSet name="AS22">
+	</GateSequence>
+	<GateSequence name="AS22">
 		x, x, x
-	</GateSet>
-	<GateSet name="AS23">
+	</GateSequence>
+	<GateSequence name="AS23">
 		x, x, y
-	</GateSet>
-	<GateSet name="AS24">
+	</GateSequence>
+	<GateSequence name="AS24">
 		x, x, x2
-	</GateSet>
-	<GateSet name="AS31">
+	</GateSequence>
+	<GateSequence name="AS31">
 		y, x, I
-	</GateSet>
-	<GateSet name="AS32">
+	</GateSequence>
+	<GateSequence name="AS32">
 		y, x, x
-	</GateSet>
-	<GateSet name="AS33">
+	</GateSequence>
+	<GateSequence name="AS33">
 		y, x, y
-	</GateSet>
-	<GateSet name="AS34">
+	</GateSequence>
+	<GateSequence name="AS34">
 		y, x, x2
-	</GateSet>
-	<GateSet name="AS41">
+	</GateSequence>
+	<GateSequence name="AS41">
 		x2, x, I
-	</GateSet>
-	<GateSet name="AS42">
+	</GateSequence>
+	<GateSequence name="AS42">
 		x2, x, x
-	</GateSet>
-	<GateSet name="AS43">
+	</GateSequence>
+	<GateSequence name="AS43">
 		x2, x, y
-	</GateSet>
-	<GateSet name="AS44">
+	</GateSequence>
+	<GateSequence name="AS44">
 		x2, x, x2
-	</GateSet>
+	</GateSequence>
 	<!-- Si y Sj i,j = 1..4 -->
-	<GateSet name="BS11">
+	<GateSequence name="BS11">
 		I, y, I
-	</GateSet>
-	<GateSet name="BS12">
+	</GateSequence>
+	<GateSequence name="BS12">
 		I, y, x
-	</GateSet>
-	<GateSet name="BS13">
+	</GateSequence>
+	<GateSequence name="BS13">
 		I, y, y
-	</GateSet>
-	<GateSet name="BS14">
+	</GateSequence>
+	<GateSequence name="BS14">
 		I, y, x2
-	</GateSet>
-	<GateSet name="BS21">
+	</GateSequence>
+	<GateSequence name="BS21">
 		x, y, I
-	</GateSet>
-	<GateSet name="BS22">
+	</GateSequence>
+	<GateSequence name="BS22">
 		x, y, x
-	</GateSet>
-	<GateSet name="BS23">
+	</GateSequence>
+	<GateSequence name="BS23">
 		x, y, y
-	</GateSet>
-	<GateSet name="BS24">
+	</GateSequence>
+	<GateSequence name="BS24">
 		x, y, x2
-	</GateSet>
-	<GateSet name="BS31">
+	</GateSequence>
+	<GateSequence name="BS31">
 		y, y, I
-	</GateSet>
-	<GateSet name="BS32">
+	</GateSequence>
+	<GateSequence name="BS32">
 		y, y, x
-	</GateSet>
-	<GateSet name="BS33">
+	</GateSequence>
+	<GateSequence name="BS33">
 		y, y, y
-	</GateSet>
-	<GateSet name="BS34">
+	</GateSequence>
+	<GateSequence name="BS34">
 		y, y, x2
-	</GateSet>
-	<GateSet name="BS41">
+	</GateSequence>
+	<GateSequence name="BS41">
 		x2, y, I
-	</GateSet>
-	<GateSet name="BS42">
+	</GateSequence>
+	<GateSequence name="BS42">
 		x2, y, x
-	</GateSet>
-	<GateSet name="BS43">
+	</GateSequence>
+	<GateSequence name="BS43">
 		x2, y, y
-	</GateSet>
-	<GateSet name="BS44">
+	</GateSequence>
+	<GateSequence name="BS44">
 		x2, y, x2
-	</GateSet>
+	</GateSequence>
 	<!-- Si x2 Sj i,j = 1..4 -->
-	<GateSet name="AAS11">
+	<GateSequence name="AAS11">
 		I, x2, I
-	</GateSet>
-	<GateSet name="AAS12">
+	</GateSequence>
+	<GateSequence name="AAS12">
 		I, x2, x
-	</GateSet>
-	<GateSet name="AAS13">
+	</GateSequence>
+	<GateSequence name="AAS13">
 		I, x2, y
-	</GateSet>
-	<GateSet name="AAS14">
+	</GateSequence>
+	<GateSequence name="AAS14">
 		I, x2, x2
-	</GateSet>
-	<GateSet name="AAS21">
+	</GateSequence>
+	<GateSequence name="AAS21">
 		x, x2, I
-	</GateSet>
-	<GateSet name="AAS22">
+	</GateSequence>
+	<GateSequence name="AAS22">
 		x, x2, x
-	</GateSet>
-	<GateSet name="AAS23">
+	</GateSequence>
+	<GateSequence name="AAS23">
 		x, x2, y
-	</GateSet>
-	<GateSet name="AAS24">
+	</GateSequence>
+	<GateSequence name="AAS24">
 		x, x2, x2
-	</GateSet>
-	<GateSet name="AAS31">
+	</GateSequence>
+	<GateSequence name="AAS31">
 		y, x2, I
-	</GateSet>
-	<GateSet name="AAS32">
+	</GateSequence>
+	<GateSequence name="AAS32">
 		y, x2, x
-	</GateSet>
-	<GateSet name="AAS33">
+	</GateSequence>
+	<GateSequence name="AAS33">
 		y, x2, y
-	</GateSet>
-	<GateSet name="AAS34">
+	</GateSequence>
+	<GateSequence name="AAS34">
 		y, x2, x2
-	</GateSet>
-	<GateSet name="AAS41">
+	</GateSequence>
+	<GateSequence name="AAS41">
 		x2, x2, I
-	</GateSet>
-	<GateSet name="AAS42">
+	</GateSequence>
+	<GateSequence name="AAS42">
 		x2, x2, x
-	</GateSet>
-	<GateSet name="AAS43">
+	</GateSequence>
+	<GateSequence name="AAS43">
 		x2, x2, y
-	</GateSet>
-	<GateSet name="AAS44">
+	</GateSequence>
+	<GateSequence name="AAS44">
 		x2, x2, x2
-	</GateSet>
-</GateSetDefinitions>
+	</GateSequence>
+</GateSequenceDefinitions>

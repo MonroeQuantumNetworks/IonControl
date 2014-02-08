@@ -8,33 +8,33 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-goodGateSets09= ['003', '005', '006', '006', '007', '008', '009', '010', '011', '012'] #006 is doubled because that one had 100 expts/pt
-goodGateSets10= ['002', '004', '005', '006', '007', '008', '010', '011', '012', '013']
-goodGateSets11= ['002', '003', '004', '005', '006', '007', '008', '009', '010', '011',
+goodGateSequences09= ['003', '005', '006', '006', '007', '008', '009', '010', '011', '012'] #006 is doubled because that one had 100 expts/pt
+goodGateSequences10= ['002', '004', '005', '006', '007', '008', '010', '011', '012', '013']
+goodGateSequences11= ['002', '003', '004', '005', '006', '007', '008', '009', '010', '011',
                  '012', '013', '014', '015', '016', '017', '019', '020']
 
-goodTestGateSets09= ['001', '004', '005', '006', '007']
-goodTestGateSets10= ['002', '003', '004', '005', '006']
-goodTestGateSets11= ['002', '003', '005', '007', '009',
+goodTestGateSequences09= ['001', '004', '005', '006', '007']
+goodTestGateSequences10= ['002', '003', '004', '005', '006']
+goodTestGateSequences11= ['002', '003', '005', '007', '009',
                      '010', '011','012', '014']
 
-filenames09 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_09\\GateSet_{0}.txt'.format(gateset)
-        for gateset in goodGateSets09]
+filenames09 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_09\\GateSequence_{0}.txt'.format(gateset)
+        for gateset in goodGateSequences09]
 
-filenames10 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_10\\GateSet_{0}.txt'.format(gateset)
-        for gateset in goodGateSets10]
+filenames10 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_10\\GateSequence_{0}.txt'.format(gateset)
+        for gateset in goodGateSequences10]
 
-filenames11 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_11\\GateSet_{0}.txt'.format(gateset)
-        for gateset in goodGateSets11]
+filenames11 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_11\\GateSequence_{0}.txt'.format(gateset)
+        for gateset in goodGateSequences11]
 
 filenamesTest09 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_09\\GateTestSet_{0}.txt'.format(gateset)
-        for gateset in goodTestGateSets09]
+        for gateset in goodTestGateSequences09]
 
 filenamesTest10 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_10\\GateTestSet_{0}.txt'.format(gateset)
-        for gateset in goodTestGateSets10]
+        for gateset in goodTestGateSequences10]
 
 filenamesTest11 = ['C:\\Users\\Public\\Documents\\experiments\\QGA\\2013\\2013_10\\2013_10_11\\GateTestSet_{0}.txt'.format(gateset)
-        for gateset in goodTestGateSets11]
+        for gateset in goodTestGateSequences11]
 
 
 filenames = filenames09 + filenames10 + filenames11

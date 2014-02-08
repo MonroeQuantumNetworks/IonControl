@@ -17,7 +17,7 @@ import ScanList
 from modules import MagnitudeUtilit
 from modules.magnitude import mg, MagnitudeError
 from modules.enum import enum
-import GateSetUi
+from gateSequence import GateSequenceUi
 from modules.PyqtUtility import BlockSignals
 from EvaluationTableModel import EvaluationTableModel
 from ComboBoxDelegate import ComboBoxDelegate
@@ -59,7 +59,7 @@ class EvaluationDefinition:
  
 
 class Scan:
-    ScanMode = enum('ParameterScan','StepInPlace','GateSetScan')
+    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan')
     ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized')
     ScanRepeat = enum('SingleScan','RepeatedScan')
     def __init__(self):
@@ -94,8 +94,8 @@ class Scan:
         self.integrateTimestamps = 0
         self.timestampsChannel = 0
         self.saveRawData = False
-        # GateSet Settings
-        self.gateSetSettings = GateSetUi.Settings()
+        # GateSequence Settings
+        self.gateSequenceSettings = GateSequenceUi.Settings()
         
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -110,7 +110,7 @@ class Scan:
         self.__dict__.setdefault('center',0)
         self.__dict__.setdefault('span',0)
         self.__dict__.setdefault('startCenter',0)        
-        self.__dict__.setdefault('gateSetSettings',GateSetUi.Settings())
+        self.__dict__.setdefault('gateSequenceSettings',GateSequenceUi.Settings())
         self.__dict__.setdefault('evalList',list())
 
     def __eq__(self,other):
@@ -128,7 +128,7 @@ class Scan:
         
     stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
-                'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSetSettings',
+                'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSequenceSettings',
                 'center', 'span', 'startCenter', 'evalList']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 
@@ -136,12 +136,12 @@ class Scan:
         
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
-        r += self.gateSetSettings.documentationString()
+        r += self.gateSequenceSettings.documentationString()
         return r
 
 
 class ScanControl(ScanControlForm, ScanControlBase ):
-    ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSetScan')
+    ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSequenceScan')
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
     def __init__(self,config,parentname, plotnames=None, parent=None):
@@ -164,7 +164,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         except TypeError:
             logger.info( "Unable to read scan control settings. Setting to new scan." )
             self.settings = Scan()
-        self.gateSetUi = None
+        self.gateSequenceUi = None
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
         self.evalAlgorithmList = list()
         self.plotnames = plotnames
@@ -264,8 +264,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.onModeChanged(self.settings.scanMode)
-        if self.gateSetUi:
-            self.gateSetUi.setSettings( self.settings.gateSetSettings )
+        if self.gateSequenceUi:
+            self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
         self.updateSaveStatus()
         self.evalAlgorithmList = []
         for evaluation in self.settings.evalList:
@@ -434,15 +434,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         self.pulseProgramUi.recentFilesChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
 
-        if not self.gateSetUi:
-            self.gateSetUi = GateSetUi.GateSetUi()
-            self.gateSetUi.valueChanged.connect( self.updateSaveStatus )
-            self.gateSetUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
-            self.gateSetUi.setupUi(self.gateSetUi)
-            self.toolBox.addItem(self.gateSetUi,"Gate Sets")
+        if not self.gateSequenceUi:
+            self.gateSequenceUi = GateSequenceUi.GateSequenceUi()
+            self.gateSequenceUi.valueChanged.connect( self.updateSaveStatus )
+            self.gateSequenceUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
+            self.gateSequenceUi.setupUi(self.gateSequenceUi)
+            self.toolBox.addItem(self.gateSequenceUi,"Gate Sets")
         if pulseProgramUi.variabledict:
-            self.gateSetUi.setVariables( pulseProgramUi.variabledict )
-        self.gateSetUi.setSettings( self.settings.gateSetSettings )
+            self.gateSequenceUi.setVariables( pulseProgramUi.variabledict )
+        self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
 
 
     def onEditingFinished(self,edit,attribute):
@@ -542,8 +542,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
             self.settings.scanParameter = self.comboBoxParameter.currentText()
-        if self.gateSetUi:
-            self.gateSetUi.setVariables(variabledict)
+        if self.gateSequenceUi:
+            self.gateSequenceUi.setVariables(variabledict)
         self.updateSaveStatus()
             
     def setScanNames(self, scannames):
@@ -558,7 +558,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps if scan.stepsSelect==0 else scan.stepSize, 
                                        scan.type, scan.stepsSelect )
         scan.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
-        scan.gateSetUi = self.gateSetUi
+        scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName
         self.onCommit()
         return scan
