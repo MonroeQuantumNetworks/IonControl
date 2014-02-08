@@ -9,12 +9,12 @@ from modules import DataDirectory
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui
 import visa
-import Read_N9342CN
-import Read_E5100B
-import Read_N9010A
+from readInstrument import Read_N9342CN
+from readInstrument import Read_E5100B
+from readInstrument import Read_N9010A
 import pens
 import Traceui
-from modules import configshelve
+from persist import configshelve
 
 instrumentmap = {
     'N9342CN' : Read_N9342CN.N9342CN,

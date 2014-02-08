@@ -594,7 +594,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             else:
                 yColumnName = 'y{0}'.format(index) 
                 self.histogramTrace.addColumn( yColumnName )
-                plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps,
+                plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
                                                      yColumn=yColumnName, name="Histogram "+histogram[2])
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
                 plottedHistogramTrace.x = histogram[1]

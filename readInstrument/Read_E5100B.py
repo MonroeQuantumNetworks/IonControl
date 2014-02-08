@@ -9,7 +9,7 @@ import visa
 import numpy
 import ReadGeneric
 
-from .. import Trace
+import Trace
 
 class E5100B(ReadGeneric.ReadGeneric):
     def __init__(self,address):
@@ -41,7 +41,4 @@ if __name__== "__main__":
     print numpy.abs(t.Trace)
     print t.Trace.size
     print t.TraceX.size
-    Inst.save("Resonator_4.txt")
-    pyplot.plot( t.TraceX, 10*numpy.log(numpy.abs(t.Trace)) )
-    pyplot.show()
- 
+    Inst.save("Resonator_4.txt") 

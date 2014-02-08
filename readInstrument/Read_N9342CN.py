@@ -8,9 +8,9 @@ Created on Fri Dec 14 15:37:21 2012
 import visa
 import numpy
 import ReadGeneric 
-from .. import Trace
+import Trace
 
-class N9010A(ReadGeneric.ReadGeneric):
+class N9342CN(ReadGeneric.ReadGeneric):
     def __init__(self,address):
         self.GPIB = visa.instrument(address)
         
@@ -35,13 +35,10 @@ class N9010A(ReadGeneric.ReadGeneric):
         
 
 if __name__== "__main__":
-    Inst = N9010A("USB0::0x0957::0xFFEF::SG05300073")
+    Inst = N9342CN("USB0::0x0957::0xFFEF::SG05300073")
     t = Inst.readTrace()
     print t.vars.__dict__
     print t.Trace
     print t.Trace.size
     print t.TraceX.size
     Inst.save("Resonator_4.txt")
-    pyplot.plot( t.TraceX, t.Trace )
-    pyplot.show()
- 

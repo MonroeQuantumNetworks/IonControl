@@ -544,11 +544,12 @@ class bidict(object):
         self._fwd = merged._fwd
         self._bwd = merged._bwd
 
-    def _proxied_to_fwd(method):
+    def _proxied_to_fwd(self):  
         """
         Decorator which proxies calls to the given bidict method on to the
         self._fwd dict.
         """
+        method = self
         @wraps(method, ('__name__', '__doc__'))
         def wrapper(self, *args, **kwds):
             return method(self._fwd, *args, **kwds)
@@ -557,7 +558,7 @@ class bidict(object):
     for methodname in '__contains__ __iter__ __len__ get keys items values'.split():
         locals()[methodname] = _proxied_to_fwd(getattr(dict, methodname))
 
-MutableMapping.register(bidict)
+MutableMapping.register(bidict)  #@UndefinedVariable
 
 # thanks to Raymond Hettinger for the idea for namedbidict
 

@@ -42,7 +42,7 @@ class LoggerLevelsTableModel(QtCore.QAbstractTableModel):
 
     def update(self):
         self.beginResetModel()
-        for name, logger in Logger.manager.loggerDict.iteritems():
+        for name, logger in Logger.manager.loggerDict.iteritems():  #@UndefinedVariable
             if isinstance(logger,Logger):
                 self.levelDict[name] = logger.getEffectiveLevel()
         self.endResetModel()
