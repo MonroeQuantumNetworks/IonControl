@@ -258,50 +258,31 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+        # Traceui
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict["Scan Data"]["view"])
         self.traceui.setupUi(self.traceui)
-        self.dockWidget.setWidget( self.traceui )
-        self.dockWidgetList.append(self.dockWidget)
-        # ScanProgress
-        self.progressUi = ScanProgress()
-        self.progressUi.setupUi()
-        self.progressDock = QtGui.QDockWidget("Progress")
-        self.progressDock.setObjectName("Progress")
-        self.progressDock.setWidget( self.progressUi )
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.progressDock)
-        self.dockWidgetList.append( self.progressDock )
+        self.traceuiDock = self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
         # traceui for timestamps
         self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict["Timestamps"]["view"])
         self.timestampTraceui.setupUi(self.timestampTraceui)
-        self.timestampDockWidget.setWidget( self.timestampTraceui )
-        self.dockWidgetList.append(self.timestampDockWidget)       
+        self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea, stackBelow=self.traceuiDock)
         # new fit widget
         self.fitWidgetTables = FitUi(self.traceui,self.config,self.experimentName)
         self.fitWidgetTables.setupUi(self.fitWidgetTables)
-        self.dockWidgetFitUiTables = QtGui.QDockWidget("Fit")
-        self.dockWidgetFitUiTables.setObjectName("Fit")
-        self.dockWidgetFitUiTables.setWidget( self.fitWidgetTables )
-        self.dockWidgetList.append(self.dockWidgetFitUiTables )
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea , self.dockWidgetFitUiTables)
-        self.tabifyDockWidget( self.dockWidgetFitUiTables, self.timestampDockWidget )
-        self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
+        self.setupAsDockWidget(self.fitWidgetTables, "Fit", QtCore.Qt.LeftDockWidgetArea, stackBelow=self.timestampTraceuiDock)
+        # ScanProgress
+        self.progressUi = ScanProgress()
+        self.progressUi.setupUi()
+        self.setupAsDockWidget(self.progressUi, "Progress", QtCore.Qt.RightDockWidgetArea)
         # Average View
         self.displayUi = AverageViewTable(self.config)
         self.displayUi.setupUi()
-        self.displayDock = QtGui.QDockWidget("Average")
-        self.displayDock.setObjectName("Average")
-        self.displayDock.setWidget( self.displayUi )
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDock)
-        self.dockWidgetList.append(self.displayDock )
+        self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
         self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys() )
         self.scanControlWidget.setupUi(self.scanControlWidget)
-        self.scanControlDock = QtGui.QDockWidget("Scan Control")
-        self.scanControlDock.setObjectName("Scan Control")
-        self.scanControlDock.setWidget( self.scanControlWidget )
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.scanControlDock)
-        self.dockWidgetList.append(self.scanControlDock)
+        self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
@@ -326,6 +307,19 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.setToolTip("Rename a plot")
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
+
+
+    def setupAsDockWidget(self, widget, name, area=QtCore.Qt.RightDockWidgetArea, stackAbove=None, stackBelow=None ):
+        dock = QtGui.QDockWidget(name)
+        dock.setObjectName(name)
+        dock.setWidget( widget )
+        self.addDockWidget(area , dock )
+        self.dockWidgetList.append( dock )
+        if stackAbove is not None:
+            self.tabifyDockWidget( stackAbove, dock )
+        elif stackBelow is not None:
+            self.tabifyDockWidget( dock, stackBelow )
+        return dock           
 
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
