@@ -4,9 +4,12 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
+import logging
+
 from PyQt4 import QtCore, QtGui
 import sip
-import logging
+
+
 api2 = sip.getapi("QVariant")==2
 
 

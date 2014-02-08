@@ -8,6 +8,7 @@ Created on Sun Feb 24 16:41:05 2013
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
     ZeroOrMore,Forward,nums,alphas,restOfLine, printables, Suppress, OneOrMore, Keyword
 
+
 point = Literal( "." )
 comma = Literal(",")
 e     = CaselessLiteral( "E" )

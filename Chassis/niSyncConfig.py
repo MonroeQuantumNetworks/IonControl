@@ -1,6 +1,7 @@
 import os
-import sys
 import platform
+import sys
+
 
 # This file sets the path for the location of the niSync dll, which differs depending on the os.
 # Windows XP: C:\Program Files\National Instruments\IVI Foundation\VISA\WinNT\Bin
@@ -8,7 +9,6 @@ import platform
 #
 # The API reference documentation is in the following directory:
 # C:\Program Files (x86)\IVI Foundation\VISA\WinNT\niSync
-
 if sys.platform.startswith('win'):
     lib_directory = r'C:\Program Files\IVI Foundation\VISA\WinNT\Bin'
     lib_directory += "//"

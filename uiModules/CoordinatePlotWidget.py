@@ -13,14 +13,17 @@ y range to 0->1.
 Buttons added by jmizrahi on 10/15/2013.
 """
 
-import pyqtgraph as pg
-from pyqtgraph.graphicsItems.LabelItem import LabelItem
-from pyqtgraph.graphicsItems.ButtonItem import ButtonItem
-from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
-from PyQt4 import QtGui, QtCore
-import math
-from modules.round import roundToNDigits
 import logging
+import math
+
+from PyQt4 import QtGui, QtCore
+from pyqtgraph.graphicsItems.ButtonItem import ButtonItem
+from pyqtgraph.graphicsItems.LabelItem import LabelItem
+from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
+
+from modules.round import roundToNDigits
+import pyqtgraph as pg
+
 
 grid_opacity = 0.3
 icons_dir = '.\\ui\\icons\\'

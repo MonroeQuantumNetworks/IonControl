@@ -9,8 +9,10 @@ tomography (GST). The output is an XML file, containing a list of gates, formed
 from the elements of 'basis'.
 """
 
-import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
+
+import xml.etree.ElementTree as ElementTree
+
 
 basis = ['I', 'x', 'y', 'x2' ]
 #Maximum GST sequence length = 2^7 = 128
@@ -34,20 +36,20 @@ def gateSequence(parent, name, sequence, i):
     e.text = ", ".join(sequence)
 
 def allstrings(alphabet, length):
-	"""Find the list of all strings of 'alphabet' of length 'length'"""
-	
-	if length == 0: return []
-	
-	c = [[a] for a in alphabet[:]]
-	if length == 1: return c
-	
-	c = [[x,y] for x in alphabet for y in alphabet]
-	if length == 2: return c
-	
-	for l in range(2, length):
-		c = [[x]+y for x in alphabet for y in c]
-		
-	return c
+    """Find the list of all strings of 'alphabet' of length 'length'"""
+    
+    if length == 0: return []
+    
+    c = [[a] for a in alphabet[:]]
+    if length == 1: return c
+    
+    c = [[x,y] for x in alphabet for y in alphabet]
+    if length == 2: return c
+    
+    for _ in range(2, length):
+        c = [[x]+y for x in alphabet for y in c]
+    
+    return c
 
 def gst_strings(alphabet, length):
     """return the list of all gate set tomography strings with gates taken from 'alphabet'.

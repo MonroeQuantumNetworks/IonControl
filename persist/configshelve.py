@@ -8,14 +8,16 @@ It also includes default directory for storing of config files.
 @author: pmaunz
 """
 
+import logging
+import pickle
+from shutil import copyfile
+
+from sqlalchemy import Column, String
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
-import pickle
-from sqlalchemy import Column, String
-from shutil import copyfile
-import logging
+from sqlalchemy.orm.exc import NoResultFound
+
 
 Base = declarative_base()
 defaultcategory = 'main'

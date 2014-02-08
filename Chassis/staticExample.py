@@ -1,6 +1,7 @@
-from itfParser import itfParser
-from WaveformChassis import WaveformChassis
 from DAQmxUtility import Mode
+from WaveformChassis import WaveformChassis
+from itfParser import itfParser
+
 
 chassis = WaveformChassis()
 itf = itfParser()

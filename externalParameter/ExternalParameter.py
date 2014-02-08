@@ -6,12 +6,15 @@ Created on Tue Mar 12 15:22:09 2013
 """
 
 
-from wavemeter import WavemeterGetFrequency
-import numpy
-import modules.magnitude as magnitude
-from pyqtgraph.parametertree import Parameter
-from PyQt4 import QtCore
 import logging
+
+from PyQt4 import QtCore
+import numpy
+from pyqtgraph.parametertree import Parameter
+
+import modules.magnitude as magnitude
+from wavemeter import WavemeterGetFrequency
+
 
 try:
     import visa

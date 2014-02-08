@@ -1,6 +1,8 @@
+import ctypes
+
 from niSyncConfig import lib_directory, lib_name
 from niSyncTypes import *
-import ctypes
+
 
 #Load the niSync dll into SyncLib
 SyncLib=ctypes.windll.LoadLibrary(lib_directory + "\\" + lib_name)

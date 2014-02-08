@@ -1,6 +1,7 @@
 #from http://stackoverflow.com/questions/11476907/python-and-pyqt-get-input-from-qtablewidget
 from PyQt4 import QtCore, QtGui
 
+
 dict = {'param1':'1.1','param2':'0.3','param3':'1.1','param4':'0.3'}
 
 class Widget(QtGui.QWidget):

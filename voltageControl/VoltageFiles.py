@@ -4,12 +4,15 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
-import os.path
-import ProjectSelection
 import logging
-       
+import os.path
+
+from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+
+import ProjectSelection
+
+
 VoltageFilesForm, VoltageFilesBase = PyQt4.uic.loadUiType(r'ui\VoltageFiles.ui')
 
 

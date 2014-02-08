@@ -1,5 +1,6 @@
 from ConfigParser import SafeConfigParser
 
+
 ## This class can read and write a WaveformChassis configuration file.
 class chassisConfigParser(SafeConfigParser):
     def _createTestData(self):

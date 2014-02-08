@@ -6,13 +6,15 @@
 # modified on 6/5/2012 by C. Spencer Nichols
 # rewritten Peter Maunz
   
-import re, os
-import modules.magnitude as magnitude
-import struct
-import math
 import collections
 import logging
-  
+import math
+import re, os
+import struct
+
+import modules.magnitude as magnitude
+
+
 # add deg to magnitude
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
   

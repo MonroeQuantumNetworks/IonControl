@@ -7,9 +7,11 @@ Created on Wed Jan 02 09:53:48 2013
 This is the model used with TraceTableView to view the list of traces in a table.
 """
 
+import functools
+
 from PyQt4 import QtCore, QtGui
 import sip
-import functools
+
 
 api2 = sip.getapi("QVariant")==2
 

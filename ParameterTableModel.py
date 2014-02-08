@@ -4,9 +4,12 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
-from PyQt4 import QtCore
-from modules import Expression
 import logging
+
+from PyQt4 import QtCore
+
+from modules import Expression
+
 
 class Parameter:
     def __init__(self,name, value, strvalue=None):

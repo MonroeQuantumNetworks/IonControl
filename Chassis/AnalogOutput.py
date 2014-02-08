@@ -1,9 +1,11 @@
+import ctypes
+
+import numpy
+
+import DAQmxUtility as dutil
 from PyDAQmx import Task, DAQmxConnectTerms, DAQmxDisconnectTerms
 from PyDAQmx.DAQmxConstants import *
 from PyDAQmx.DAQmxTypes import *
-import DAQmxUtility as dutil
-import ctypes
-import numpy
 
 
 class CallbackTask(Task,object):

@@ -138,9 +138,10 @@ sequence versus inverting the (k, v) pairs in a mapping).
 
 """
 
-import re
 from collections import MutableMapping
 from functools import wraps
+import re
+
 
 class inverted(object):
     """

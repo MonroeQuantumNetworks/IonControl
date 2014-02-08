@@ -1,8 +1,11 @@
+import functools
+
 from PyQt4 import QtGui
 import PyQt4.uic
-import functools
+
 import Ad9912
 from modules.magnitude import mg
+
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 

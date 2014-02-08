@@ -1,8 +1,11 @@
-from WaveformGenerator import WaveformGenerator
-import DAQmxUtility as dutil
-import numpy
-import sys
 import os
+import sys
+
+import numpy
+
+import DAQmxUtility as dutil
+from WaveformGenerator import WaveformGenerator
+
 
 sys.path.insert(0, os.path.abspath('..'))
 

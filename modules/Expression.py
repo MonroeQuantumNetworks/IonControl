@@ -7,11 +7,14 @@
 #
 # Copyright 2003-2006 by Paul McGuire
 #
-import magnitude as magnitude
-from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
-    ZeroOrMore,Forward,nums,alphas
 import math
 import operator
+
+from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
+    ZeroOrMore,Forward,nums,alphas
+
+import magnitude as magnitude
+
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )

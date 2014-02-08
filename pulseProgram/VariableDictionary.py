@@ -1,9 +1,12 @@
 
-from modules.SequenceDict import SequenceDict
-from modules.Expression import Expression
-from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_nodes
-from modules.magnitude import Magnitude
 import logging
+
+from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_nodes
+
+from modules.Expression import Expression
+from modules.SequenceDict import SequenceDict
+from modules.magnitude import Magnitude
+
 
 class CyclicDependencyException(Exception):
     pass

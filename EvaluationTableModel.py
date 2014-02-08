@@ -1,5 +1,7 @@
 from PyQt4 import QtCore
+
 from CountEvaluation import EvaluationAlgorithms
+
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )

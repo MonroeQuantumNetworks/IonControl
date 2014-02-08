@@ -7,6 +7,7 @@ Created on Wed Oct 16 21:30:44 2013
 
 from ctypes import Structure, c_float, c_int, c_char, c_longlong, c_ulong, c_uint
 
+
 displayCurves = 8
 resolution = 4e-12
 wraparound = 210698240

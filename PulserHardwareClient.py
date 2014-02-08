@@ -2,13 +2,16 @@
 """
 Encapsulation of the Pulse Programmer Hardware 
 """
-from PyQt4 import QtCore 
-import struct
 from Queue import Queue
-import modules.magnitude as magnitude
-import multiprocessing
-from PulserHardwareServer import PulserHardwareServer, FinishException, ErrorMessages, FPGAException
 import logging
+import multiprocessing
+import struct
+
+from PyQt4 import QtCore 
+
+from PulserHardwareServer import PulserHardwareServer, FinishException, ErrorMessages, FPGAException
+import modules.magnitude as magnitude
+
 
 def check(number, command):
     if number is not None and number<0:

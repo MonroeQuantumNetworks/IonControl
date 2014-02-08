@@ -5,14 +5,17 @@ Created on Thu May 16 20:56:17 2013
 @author: pmaunz
 """
 
+import logging
+
+from numpy import pi, cos, sqrt, sin, exp, dot, array, log
+from scipy import constants
+from scipy.special import laguerre
+
 from FitFunctionBase import ResultRecord
 from fit.FitFunctionBase import FitFunctionBase
-from scipy import constants
-from numpy import pi, cos, sqrt, sin, exp, dot, array, log
-from modules.magnitude import mg
-from scipy.special import laguerre
-import logging
 from modules.MagnitudeUtilit import value
+from modules.magnitude import mg
+
 
 class RabiCarrierFunction(FitFunctionBase):
     name = "RabiCarrier"
@@ -32,7 +35,7 @@ class RabiCarrierFunction(FitFunctionBase):
         self.update()
         
     def update(self,parameters=None):
-        A,n,omega,mass,angle,trapFrequency,wavelength = self.parameters if parameters is None else parameters
+        _,n,omega,mass,angle,trapFrequency,wavelength = self.parameters if parameters is None else parameters
         m = mass * constants.m_p
         secfreq = trapFrequency.toval('Hz')
         eta = ( (2*pi/wavelength.toval('m'))*cos(angle*pi/180)
@@ -86,7 +89,7 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
                
     def updateTables(self,beta):
         logger = logging.getLogger(__name__)
-        A,n,omega,mass,angle,trapFrequency,wavelength = self.parameters
+        A,n,omega,mass,angle,trapFrequency,wavelength = self.parameters #@UnusedVariable
         secfreq = value(trapFrequency,'Hz')
         m = mass * constants.m_p
         eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)

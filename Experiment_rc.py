@@ -6,4 +6,6 @@ This allows the ui files to find the resource file in the ui module
 """
 
 
-from ui import Experiment_rc
+from ui import Experiment_rc #@UnusedImport
+
+

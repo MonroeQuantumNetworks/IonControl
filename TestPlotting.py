@@ -8,13 +8,16 @@ PlotWidget that adds the coordinates of the cursor position
 as a second element also allows one to copy the coordinates to the clipboard
 """
 
-from pyqtgraph.graphicsItems.PlotItem import PlotItem
+import math
+
+from PyQt4 import QtGui, QtCore
+import pyqtgraph
 from pyqtgraph.graphicsItems.ButtonItem import ButtonItem
 from pyqtgraph.graphicsItems.LabelItem import LabelItem
-from PyQt4 import QtGui, QtCore
-import math
+from pyqtgraph.graphicsItems.PlotItem import PlotItem
+
 from modules.round import roundToNDigits
-import pyqtgraph
+
 
 grid_opacity = 0.3
 grid_icon_file = 'C:\\Users\\jamizra\\Programming\\aaAQC_FPGA\\ui\\icons\\grid2'

@@ -5,8 +5,10 @@ Created on Sat May 11 11:25:40 2013
 @author: pmaunz
 """
 
-from PyQt4 import QtGui, QtCore
 import operator
+
+from PyQt4 import QtGui, QtCore
+
 
 class TableViewExtended(QtGui.QTableView):
     def keyReleaseEvent(self, e):

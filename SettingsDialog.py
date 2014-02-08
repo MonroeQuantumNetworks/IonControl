@@ -5,11 +5,13 @@ Created on Sat Dec 22 22:34:06 2012
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
 from functools import partial
 import logging
 import os
+
+from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+
 
 class Settings:
     def __init__(self):

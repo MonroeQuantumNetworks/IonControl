@@ -1,14 +1,17 @@
-from WaveformGenerator import WaveformGenerator
-from Timing import Timing
-from PyDAQmx import DAQError
-import DAQmxUtility as dutil
-from chassisConfigParser import chassisConfigParser
-from numpy import append
-from re import search
-import numpy
 import functools
-#from time import sleep
+from re import search
 
+from numpy import append
+import numpy
+
+import DAQmxUtility as dutil
+from PyDAQmx import DAQError
+from Timing import Timing
+from WaveformGenerator import WaveformGenerator
+from chassisConfigParser import chassisConfigParser
+
+
+#from time import sleep
 ## This class contains a list of WaveformGenerator objects and a Timing object.
 #  It is intended to represent a chasis with a NiSync Card and a number
 #  of PXI-6733s.

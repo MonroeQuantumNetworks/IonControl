@@ -4,10 +4,6 @@ Created on Fri Dec 28 16:17:51 2012
 
 @author: pmaunz
 """
-from pyqtgraph import mkPen, mkBrush
-from PyQt4 import QtCore, QtGui
-from ui import Experiment_rc
-
 """
 penList is a list of 4-tuples. It is used to define how to plot a trace.
 The first element of the tuple is the pen to use for drawing solid curves. The
@@ -21,6 +17,12 @@ Symbol letters are:
     't': triangle
     'd': diamond
 """
+
+from PyQt4 import QtCore, QtGui
+from pyqtgraph import mkPen, mkBrush
+
+from ui import Experiment_rc #@UnusedImport
+
 
 yellow = (180,180,0,255)
 orange = (247,153,0)
@@ -91,7 +93,7 @@ class penicons:
         return self.icons
         
     def loadicons(self):
-          self.icons = [ QtGui.QIcon(), 
+        self.icons = [ QtGui.QIcon(), 
             QtGui.QIcon(":/penicon/icons/247-153-0.png"),
             QtGui.QIcon(":/penicon/icons/red.png"),
             QtGui.QIcon(":/penicon/icons/green.png"),

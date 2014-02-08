@@ -6,6 +6,7 @@ Created on Fri Feb 08 22:02:08 2013
 """
 from PyQt4 import QtCore, QtGui
 
+
 class InterlockChannel:
     def __init__(self):
         self.enable = False

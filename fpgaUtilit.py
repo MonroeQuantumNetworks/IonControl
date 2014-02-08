@@ -2,9 +2,11 @@
 #3-31-2012
 #This code initializes the connection with the FPGA
 
-import ok
-from PyQt4 import QtCore
 import logging
+
+from PyQt4 import QtCore
+import ok
+
 
 ModelStrings = {
 		0: 'Unknown',

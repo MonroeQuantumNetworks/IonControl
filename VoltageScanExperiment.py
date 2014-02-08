@@ -14,11 +14,14 @@ It reports the count values during each experiment and finishes by sending the e
 @author: pmaunz
 """
 
-import ScanExperiment 
-import time
-from PyQt4 import QtCore
-from modules import enum
 import logging
+import time
+
+from PyQt4 import QtCore
+
+import ScanExperiment 
+from modules import enum
+
 
 class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
     Status = enum.enum('Idle','Starting','Running','Stopping')

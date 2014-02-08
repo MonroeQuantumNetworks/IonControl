@@ -6,6 +6,7 @@ Created on Fri Feb 08 22:02:08 2013
 """
 from PyQt4 import QtCore
 
+
 class LoadingHistoryModel(QtCore.QAbstractTableModel):
     def __init__(self, history, parent=None, *args): 
         """ datain: a list where each item is a row

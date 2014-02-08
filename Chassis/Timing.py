@@ -1,6 +1,8 @@
-import niSyncFunctions as niSync
-from niSyncError import niSyncError
 import ctypes
+
+from niSyncError import niSyncError
+import niSyncFunctions as niSync
+
 
 ## This class will generate perform the timing and synchronization required to
 #  synchronize all cards on the PXI backplane.

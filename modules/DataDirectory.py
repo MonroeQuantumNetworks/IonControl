@@ -10,9 +10,10 @@ It is also used to generate file serials. For serial determination, the director
 @author: plmaunz
 """
 import datetime
+import functools
 import os.path
 import re
-import functools
+
 
 class DataDirectoryException(Exception):
     pass

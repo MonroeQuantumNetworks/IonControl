@@ -4,9 +4,11 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
-from PyQt4 import QtCore, QtGui
 import functools
 import re
+
+from PyQt4 import QtCore, QtGui
+
 
 class ShutterTableModel(QtCore.QAbstractTableModel):
     def __init__(self, variabledict, channelNameData, parent=None, *args): 

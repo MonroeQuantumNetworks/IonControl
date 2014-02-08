@@ -8,15 +8,18 @@ This is the class in which the data associated with a single trace is stored.
 
 """
 
-import numpy
 from datetime import datetime
-import os.path
-import xml.etree.ElementTree as ElementTree
-from modules.XmlUtilit import prettify
 import io
-from modules.enum import enum
 from itertools import izip_longest
 import math
+import os.path
+
+import numpy
+
+from modules.XmlUtilit import prettify
+from modules.enum import enum
+import xml.etree.ElementTree as ElementTree
+
 
 try:
     from fit import FitFunctions

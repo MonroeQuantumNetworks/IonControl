@@ -4,9 +4,11 @@ Created on Fri Jul 19 09:22:24 2013
 
 @author: wolverine
 """
+import logging
+
 from modules.Expression import Expression
 import modules.magnitude as magnitude
-import logging
+
 
 class GateSequenceCompiler(object):
     def __init__(self, pulseProgram ):

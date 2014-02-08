@@ -5,9 +5,11 @@ Created on Mon Sep 09 14:53:25 2013
 @author: plmaunz
 """
 
-import xml.etree.ElementTree as ElementTree
-from xml.dom import minidom
 import random
+from xml.dom import minidom
+
+import xml.etree.ElementTree as ElementTree
+
 
 basis = ['I', 'x', 'y', 'x2' ]
 filename = "TestSet.xml"
@@ -29,20 +31,20 @@ def gateSequence(parent, name, sequence, i):
     e.text = ", ".join(sequence)
 
 def allstrings(alphabet, length):
-	"""Find the list of all strings of 'alphabet' of length 'length'"""
-	
-	if length == 0: return []
-	
-	c = [[a] for a in alphabet[:]]
-	if length == 1: return c
-	
-	c = [[x,y] for x in alphabet for y in alphabet]
-	if length == 2: return c
-	
-	for l in range(2, length):
-		c = [[x]+y for x in alphabet for y in c]
-		
-	return c
+    """Find the list of all strings of 'alphabet' of length 'length'"""
+    
+    if length == 0: return []
+    
+    c = [[a] for a in alphabet[:]]
+    if length == 1: return c
+    
+    c = [[x,y] for x in alphabet for y in alphabet]
+    if length == 2: return c
+    
+    for _ in range(2, length):
+        c = [[x]+y for x in alphabet for y in c]
+    
+    return c
 
 
 testsequences = [ ['I'] * sequencelength,

@@ -1,5 +1,6 @@
-import xml.etree.ElementTree as ElementTree
 from xml.dom import minidom
+
+import xml.etree.ElementTree as ElementTree
 
 
 def prettify(elem, commentchar=None):

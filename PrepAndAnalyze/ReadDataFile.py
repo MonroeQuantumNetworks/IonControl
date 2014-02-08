@@ -5,8 +5,10 @@ Created on Fri Oct 11 10:18:19 2013
 @author: wolverine
 """
 import csv
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 goodGateSequences09= ['003', '005', '006', '006', '007', '008', '009', '010', '011', '012'] #006 is doubled because that one had 100 expts/pt
 goodGateSequences10= ['002', '004', '005', '006', '007', '008', '010', '011', '012', '013']

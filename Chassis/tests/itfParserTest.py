@@ -1,8 +1,11 @@
-from itfParser import itfParser
 import os
-import numpy
+import os
 import sys
-import os
+
+import numpy
+
+from itfParser import itfParser
+
 
 sys.path.insert(0, os.path.abspath('..'))
 

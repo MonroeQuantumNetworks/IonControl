@@ -1,7 +1,8 @@
 # A list that also works as a dict
 from collections import MutableMapping
-from operator import itemgetter
 from itertools import izip_longest
+from operator import itemgetter
+
 
 class SequenceDict(dict, MutableMapping):
 

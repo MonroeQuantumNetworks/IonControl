@@ -9,22 +9,25 @@ a record of all loads, and an interlock to the laser frequencies returned by
 the wavemeter.
 """
 
-import PyQt4.uic
-from PyQt4 import QtCore, QtNetwork
-import functools
-from modules import enum
-from modules.formatDelta import formatDelta
 from datetime import datetime
+import functools
 import logging
+
+from PyQt4 import QtCore, QtNetwork
+import PyQt4.uic
+
+from dedicatedCounters.LoadingHistoryModel import LoadingHistoryModel
 from dedicatedCounters.WavemeterInterlockTableModel import WavemeterInterlockTableModel
+from modules import enum
 from modules.SequenceDict import SequenceDict
-from uiModules.KeyboardFilter import KeyFilter
 from modules.Utility import unique
+from modules.formatDelta import formatDelta
 from modules.magnitude import Magnitude
+from uiModules.KeyboardFilter import KeyFilter
+
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
-from dedicatedCounters.LoadingHistoryModel import LoadingHistoryModel
 
 class AutoLoadSettings:
     def __init__(self):

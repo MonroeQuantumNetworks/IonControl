@@ -4,10 +4,12 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
 import copy
-       
+
+from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+
+
 ComboBoxTestForm, ComboBoxTestBase = PyQt4.uic.loadUiType(r'ComboBoxTest.ui')
 
 

@@ -1,11 +1,12 @@
+import sys
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import sys
+
 
 ##my_array = [['00','01','02'],
 ##            ['10','11','12'],
 ##            ['20','21','22']]
-
 my_array = [('param1','1.1'),('param2','0.3')]
 
 def main():

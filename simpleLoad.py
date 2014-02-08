@@ -1,10 +1,9 @@
 import os.path
 
-
-
+from  Chassis.DAQmxUtility import Mode
 from Chassis.WaveformChassis import WaveformChassis
 from Chassis.itfParser import itfParser
-from  Chassis.DAQmxUtility import Mode
+
 
 base_dir = r'C:\Users\Public\Documents\aaAQC_FPGA\Chassis\config'
 

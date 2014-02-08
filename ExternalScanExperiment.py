@@ -14,10 +14,13 @@ It reports the count values during each experiment and finishes by sending the e
 @author: pmaunz
 """
 
-import ScanExperiment 
-import time
-from PyQt4 import QtCore
 import logging
+import time
+
+from PyQt4 import QtCore
+
+import ScanExperiment 
+
 
 class ScanNotAvailableException(Exception):
     pass

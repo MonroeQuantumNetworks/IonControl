@@ -5,15 +5,18 @@ Created on Thu May 16 20:53:03 2013
 @author: pmaunz
 """
 
-from scipy.optimize import leastsq
-import numpy
-from math import sqrt
-from modules import magnitude
-import xml.etree.ElementTree as ElementTree
 from itertools import izip_longest
 import logging
+from math import sqrt
+
+import numpy
+from scipy.optimize import leastsq
+
+from modules import magnitude
 from modules.MagnitudeUtilit import value
 from modules.SequenceDict import SequenceDict
+import xml.etree.ElementTree as ElementTree
+
 
 class ResultRecord(object):
     def __init__(self, name=None, definition=None, value=None, globalname=None, push=False ):

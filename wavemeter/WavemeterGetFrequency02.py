@@ -7,6 +7,7 @@ Created on Wed Sep 18 16:43:58 2013
 
 import httplib
 
+
 class WavemeterReadException(Exception):
     pass
 

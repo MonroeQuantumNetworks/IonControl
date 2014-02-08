@@ -1,5 +1,6 @@
 from fileParser import fileParser
 
+
 ## This class will parse the electrode mape file.
 class eMapParser(fileParser):
 

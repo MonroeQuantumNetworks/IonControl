@@ -7,11 +7,13 @@ Created on Mon Sep 09 14:53:25 2013
 Generate the sequences necessary for randomized benchmarking
 """
 
-import xml.etree.ElementTree as ElementTree
-from xml.dom import minidom
-import random
 from collections import Counter
 import os.path
+import random
+from xml.dom import minidom
+
+import xml.etree.ElementTree as ElementTree
+
 
 Paulis = ['Ip', 'xp', 'Ip', 'yp', 'Ip', '-xp', 'Ip', '-yp' ]
 Cliffords = ['Ic', 'xc', 'yc', '-xc', '-yc' ]
@@ -72,7 +74,7 @@ def createRandomization(length):
        returns the BlochState object representing the sequence
     """
     state = BlochState()
-    for i in range(length):
+    for _ in range(length):
         state.transition( Paulis[random.randrange(0,len(Paulis))] )
         state.transition( Cliffords[random.randrange(0,len(Cliffords))] )       
     state.transition( Paulis[random.randrange(0,len(Paulis))] )

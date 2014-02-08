@@ -1,7 +1,9 @@
-import DigitalOutput as do
-import DAQmxUtility as dutil
-import sys
 import os
+import sys
+
+import DAQmxUtility as dutil
+import DigitalOutput as do
+
 
 sys.path.insert(0, os.path.abspath('..'))
 

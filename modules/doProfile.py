@@ -6,6 +6,7 @@ Created on Feb 7, 2014
 import cProfile
 import pstats
 
+
 def doprofile(func):
     def profiled_func(*args, **kwargs):
         profile = cProfile.Profile()

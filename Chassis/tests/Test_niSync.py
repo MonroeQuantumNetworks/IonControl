@@ -1,7 +1,9 @@
-import niSyncFunctions as niSync
 from ctypes import *
-import sys
 import os
+import sys
+
+import niSyncFunctions as niSync
+
 
 sys.path.insert(0, os.path.abspath('..'))
 

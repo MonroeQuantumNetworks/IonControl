@@ -1,10 +1,13 @@
-from WaveformChassis import WaveformChassis
+import os
+import sys
+import time
+
+from numpy import linspace, roll
+
 import DAQmxUtility as dutil
 from PyDAQmx import DAQError
-import time
-from numpy import linspace, roll
-import sys
-import os
+from WaveformChassis import WaveformChassis
+
 
 sys.path.insert(0, os.path.abspath('..'))
 

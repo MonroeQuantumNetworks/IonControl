@@ -5,8 +5,11 @@
 # ene
 #http://www.daniweb.com/software-development/python/threads/191210/python-gui-programming/4
 import operator
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
+
 class MyWindow(QWidget):
     def __init__(self, data_list, header, *args):
         QWidget.__init__(self, *args)

@@ -5,20 +5,22 @@ Created on Tue Nov 13 17:37:50 2012
 @author: plmaunz
 """
 
-import ftd2xx
-import crcmod
-import crcmod.predefined
-import struct
-import numpy
-from PyQt4.QtCore import QMutex
-from PyQt4.QtCore import QThread
-from PyQt4.QtCore import QMutexLocker
-from PyQt4.QtGui import QApplication
 import Queue
-import math
-import sys
 import copy
 import logging
+import math
+import struct
+import sys
+
+from PyQt4.QtCore import QMutex
+from PyQt4.QtCore import QMutexLocker
+from PyQt4.QtCore import QThread
+from PyQt4.QtGui import QApplication
+import crcmod
+import crcmod.predefined
+import ftd2xx
+import numpy
+
 
 MessageQueue = Queue.Queue()
 clockfrequency = 50000000.0

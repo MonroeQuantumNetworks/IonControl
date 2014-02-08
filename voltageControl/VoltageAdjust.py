@@ -4,12 +4,15 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
-from PyQt4 import QtCore
 import functools
-import modules.magnitude as magnitude
 import logging
-       
+
+from PyQt4 import QtCore
+import PyQt4.uic
+
+import modules.magnitude as magnitude
+
+
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
 ShuttlingEdgeForm, ShuttlingEdgeBase = PyQt4.uic.loadUiType(r'ui\ShuttlingEdge.ui')
 

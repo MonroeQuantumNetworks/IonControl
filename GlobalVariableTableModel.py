@@ -4,11 +4,14 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
-from PyQt4 import QtCore
-import modules.magnitude as magnitude
-from modules import Expression
-import sip
 import logging
+
+from PyQt4 import QtCore
+import sip
+
+from modules import Expression
+import modules.magnitude as magnitude
+
 
 api2 = sip.getapi("QVariant")==2
 

@@ -7,10 +7,12 @@
 #
 # Copyright 2003-2006 by Paul McGuire
 #
-from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
-    ZeroOrMore,Forward,nums,alphas
 import math
 import operator
+
+from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
+    ZeroOrMore,Forward,nums,alphas
+
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )

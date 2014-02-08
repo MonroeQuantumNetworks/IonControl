@@ -8,8 +8,10 @@ import numpy
 
 from FitFunctionBase import ResultRecord, fitFunctionMap
 from fit.FitFunctionBase import FitFunctionBase
+from fit.RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
 from modules import MagnitudeParser
 from modules.XmlUtilit import stringToStringOrNone
+
 
 class CosFit(FitFunctionBase):
     name = "Cos"
@@ -208,7 +210,6 @@ class LinearFit(FitFunctionBase):
         m, b = parameters
         self.results['halfpoint'].value = (0.5-b)/m
 
-from fit.RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
         
 fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
                        CosFit.name: CosFit, 

@@ -1,8 +1,8 @@
 from ctypes import *
 
+
 #These types are found in visatypes.h in
 #Windows 7: C:\Program Files (x86)\IVI Foundation\VISA\WinNT\include
-
 #Types
 ViRsrc = c_char_p
 ViBoolean = c_ushort

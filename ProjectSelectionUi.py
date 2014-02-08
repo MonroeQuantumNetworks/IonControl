@@ -5,11 +5,13 @@ Created on Fri May 10 21:12:12 2013
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtGui
 import sys 
 
+from PyQt4 import QtGui
+import PyQt4.uic
+
 import ProjectSelection
+
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ProjectSelection.ui')
 

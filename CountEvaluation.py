@@ -6,13 +6,16 @@ This is used for simple averaging but also for different state detection algorit
 algorithms are expected to defined the fileds as stated in MeanEvaluation
 
 """
-import numpy
+import copy
 import math
-from pyqtgraph.parametertree import Parameter
+
 from PyQt4 import QtCore
+import numpy
+from pyqtgraph.parametertree import Parameter
+
 from Observable import Observable
 from modules.enum import enum 
-import copy
+
 
 class EvaluationBase(Observable):
     def __init__(self,settings =  None):

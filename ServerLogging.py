@@ -1,5 +1,6 @@
 import logging
 
+
 class QueueHandler(logging.Handler):
     """
     This is a logging handler which sends events to a multiprocessing queue.

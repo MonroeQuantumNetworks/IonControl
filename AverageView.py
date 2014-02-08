@@ -5,11 +5,13 @@ Created on Sat Sep 14 06:59:54 2013
 @author: pmaunz
 """
 
-import PyQt4.uic
 from PyQt4 import QtCore, QtGui
+import PyQt4.uic
+
 from modules.RunningStat import RunningStat
 from modules.round import roundToStdDev, roundToNDigits
-       
+
+
 Form, Base = PyQt4.uic.loadUiType(r'ui\AverageViewUi.ui')
 
 

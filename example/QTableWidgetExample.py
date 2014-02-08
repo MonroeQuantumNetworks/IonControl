@@ -1,5 +1,7 @@
 import sys
+
 from PyQt4 import QtGui, QtCore
+
 
 lista = ['aa']
 listb = ['ba']

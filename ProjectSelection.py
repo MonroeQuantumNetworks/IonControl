@@ -5,10 +5,12 @@ Created on Fri May 10 21:02:42 2013
 @author: pmaunz
 """
 
-import os.path
 import __main__
-from persist.configshelve import configshelve
+import os.path
+
 from modules import DataDirectory
+from persist.configshelve import configshelve
+
 
 ProjectsBaseDir = os.path.expanduser("~public\\Documents\\experiments")
 Project = None

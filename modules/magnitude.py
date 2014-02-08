@@ -175,11 +175,11 @@ there is none.
 import re, math
 import types
 
+
 # Base magnitude names and prefixes.  The _mags dictionary, initialized
 # at the end, will contain all the known magnitudes.  Units are
 # 9-element arrays, each element the exponent of the unit named by the
 # Uname in the same position.
-
 class MagnitudeError(Exception):
     pass
 

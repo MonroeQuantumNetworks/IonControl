@@ -1,8 +1,10 @@
-from AnalogOutput import AnalogOutput
-from DigitalOutput import DigitalOutput
-import DAQmxUtility as dutil
 import re
 import threading
+
+from AnalogOutput import AnalogOutput
+import DAQmxUtility as dutil
+from DigitalOutput import DigitalOutput
+
 
 class writeStartStop(threading.Thread):
     def __init__(self, wfrmGenObject, aoBuffer, doBuffer = None):

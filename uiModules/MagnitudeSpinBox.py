@@ -9,13 +9,16 @@ Features are: up-down arrows will increase/decrease the digit left to the cursor
 @author: pmaunz
 """
 
+import logging
+
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
+import sip
+
 from modules import Expression
 from modules import MagnitudeParser
 from modules import magnitude
-import sip
-import logging
+
 
 debug = False
 api2 = sip.getapi("QString")==2

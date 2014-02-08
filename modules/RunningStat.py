@@ -6,6 +6,7 @@ Created on Sat Sep 14 07:25:59 2013
 """
 import math
 
+
 # see Donald Knuth's Art of Computer Programming, Vol 2, page 232, 3rd edition
 class RunningStat(object):
     def __init__(self, zero=0):  # giving zero should allow to pass numpy arrays to be averaged

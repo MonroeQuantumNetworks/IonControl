@@ -5,9 +5,12 @@ Created on Fri May 24 17:32:35 2013
 @author: pmaunz
 """
 
-from PyQt4 import uic, QtCore, QtGui
 import functools
+
+from PyQt4 import uic, QtCore, QtGui
+
 from pulseProgram.PPSyntaxHighlighter import PPHighlighter
+
 
 Form, Base = uic.loadUiType(r'ui\PulseProgramEdit.ui')
 

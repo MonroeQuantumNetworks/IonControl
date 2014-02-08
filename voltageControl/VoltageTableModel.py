@@ -5,9 +5,11 @@ Created on Wed Mar 20 13:06:13 2013
 @author: wolverine
 """
 
-from PyQt4 import QtCore, QtGui
 import operator
 import sys
+
+from PyQt4 import QtCore, QtGui
+
 
 class VoltageTableModel(QtCore.QAbstractTableModel):
     def __init__(self, voltageBlender, parent=None, *args): 

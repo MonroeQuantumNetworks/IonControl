@@ -1,6 +1,7 @@
 from PyQt4 import QtCore
 import sip
 
+
 api2 = sip.getapi("QVariant")==2
 
     

@@ -6,11 +6,13 @@ Created on Tue Oct 01 15:09:55 2013
 File for testing the wavemeter interlock code
 """
 
+from functools import partial
+
+from PyQt4 import QtCore, QtGui
 from PyQt4 import QtNetwork
 import PyQt4.uic
-from PyQt4 import QtCore, QtGui
-from functools import partial
-       
+
+
 Form, Base = PyQt4.uic.loadUiType(r'ui\WavemeterInterlockTest.ui')
 
 class WavemeterInterlockTest(Form, Base):

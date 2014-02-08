@@ -5,16 +5,19 @@ Created on Fri Apr 12 20:15:47 2013
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+import logging
 
-SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
+from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+
 from externalParameter.ExternalParameter import ExternalParameter
 from externalParameter.ExternalParameterTableModel import ExternalParameterTableModel
-import logging
 from modules.SequenceDict import SequenceDict
-from uiModules.KeyboardFilter import KeyListFilter
 from modules.Utility import unique
+from uiModules.KeyboardFilter import KeyListFilter
+
+
+SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
 
 class Settings:
     pass

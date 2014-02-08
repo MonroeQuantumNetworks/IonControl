@@ -7,6 +7,7 @@ Created on Wed Oct 16 16:57:23 2013
 
 from PyQt4 import QtCore, QtGui, uic
 
+
 WidgetContainerForm, WidgetContainerBase = uic.loadUiType(r'C:\Users\jamizra\Programming\playground\TestTraceTree.ui')
 
 class TraceTreeItem(object):

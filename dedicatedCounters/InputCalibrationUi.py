@@ -5,14 +5,16 @@ Created on Thu Sep 05 20:31:16 2013
 @author: pmaunz
 """
 
-import PyQt4.uic
 from PyQt4 import QtGui, QtCore
+import PyQt4.uic
+from pyqtgraph.parametertree import Parameter, ParameterTree
+
+from dedicatedCounters import AnalogInputCalibration
+
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InputCalibrationUi.ui')
 SheetForm, SheetBase = PyQt4.uic.loadUiType(r'ui\InputCalibrationChannel.ui')
 
-from dedicatedCounters import AnalogInputCalibration
-from pyqtgraph.parametertree import Parameter, ParameterTree
 
 class Settings:
     def __init__(self):

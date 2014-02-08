@@ -1,6 +1,9 @@
-from numpy import float64, append
-from fileParser import fileParser
 import collections
+
+from numpy import float64, append
+
+from fileParser import fileParser
+
 
 ## This class will parse through an itf file.
 class itfParser(fileParser):

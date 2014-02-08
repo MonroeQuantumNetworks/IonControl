@@ -6,9 +6,12 @@ Created on Sat May 25 09:02:02 2013
 """
 
 import sys
-from PyQt4.QtGui import QSyntaxHighlighter, QTextCharFormat, QBrush, QFont
+
 from PyQt4.QtCore import Qt, QRegExp, QStringList
+from PyQt4.QtGui import QSyntaxHighlighter, QTextCharFormat, QBrush, QFont
+
 from pulseProgram.PulseProgram import OPS
+
 
 class PPHighlighter( QSyntaxHighlighter ):
 

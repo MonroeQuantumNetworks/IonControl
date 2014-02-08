@@ -7,15 +7,17 @@ Created on Sat Feb 16 16:56:57 2013
 DedicatedCounters reads and displays the counts from the simple counters and ADCs.
 
 """
-import PyQt4.uic
 from PyQt4 import QtCore, QtGui
-from modules import enum
-from dedicatedCounters import DedicatedCountersSettings
+import PyQt4.uic
 import numpy
-from dedicatedCounters import DedicatedDisplay
+
 from dedicatedCounters import AutoLoad
+from dedicatedCounters import DedicatedCountersSettings
+from dedicatedCounters import DedicatedDisplay
 from dedicatedCounters import InputCalibrationUi
-       
+from modules import enum
+
+
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
 curvecolors = [ 'b', 'g', 'r', 'b', 'c', 'm', 'y', 'g' ]

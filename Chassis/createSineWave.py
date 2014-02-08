@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def createSineWave(amplitude, frequency, sampleRate, numSamples, phase = 0):
     #calculated params
     dt = 1 / np.float64(sampleRate)

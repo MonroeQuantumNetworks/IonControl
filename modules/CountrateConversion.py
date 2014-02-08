@@ -59,11 +59,11 @@ if __name__ == "__main__":
     def test():
         u = DisplayUnit(0)
         for i in range(2,10000):
-            out = u.convert(i,i)
+            u.convert(i,i)
     
     def test2():
         for i in range(2,10000):
-            out = convert(i%4,i,i)
+            convert(i%4,i,i)
         
         
     t = timeit.Timer("test()", "from __main__ import test")

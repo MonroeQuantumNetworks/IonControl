@@ -4,10 +4,13 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-from modules import enum
-import numpy
-import random
 import functools
+import random
+
+import numpy
+
+from modules import enum
+
 
 ScanType = enum.enum('LinearUp', 'LinearDown', 'Randomized')
 

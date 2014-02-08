@@ -4,8 +4,19 @@ Created on Tue Mar 19 23:14:52 2013
 
 @author: pmaunz
 """
-from Chassis.itfParser import itfParser
 import logging
+import math
+import os.path
+import socket
+
+from PyQt4 import QtCore
+import numpy
+
+from Chassis import DAQmxUtility     
+from Chassis.itfParser import itfParser
+import ProjectSelection
+from modules import MyException
+
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -18,14 +29,6 @@ except ImportError as e:
     logger.error( "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e) )
     HardwareDriverLoaded = False
 
-from Chassis import DAQmxUtility     
-import math
-import numpy
-from PyQt4 import QtCore
-import socket
-import ProjectSelection
-import os.path
-from modules import MyException
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)

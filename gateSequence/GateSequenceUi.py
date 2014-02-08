@@ -5,16 +5,18 @@ Created on Fri Jul 19 14:28:08 2013
 @author: wolverine
 """
 
-import PyQt4.uic
-from PyQt4 import QtCore, QtGui
-import operator
-from modules.enum import enum
-import os.path
 import logging
+import operator
+import os.path
+
+from PyQt4 import QtCore, QtGui
+import PyQt4.uic
 
 from GateDefinition import GateDefinition
-from GateSequenceContainer import GateSequenceContainer
 from GateSequenceCompiler import GateSequenceCompiler
+from GateSequenceContainer import GateSequenceContainer
+from modules.enum import enum
+
 
 Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
 

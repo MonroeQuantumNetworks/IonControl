@@ -1,5 +1,6 @@
 from PyQt4 import QtGui, QtCore
 
+
 class RotatedHeaderView( QtGui.QHeaderView ):
     def __init__(self, orientation, parent=None ):
         super(RotatedHeaderView, self).__init__(orientation, parent)

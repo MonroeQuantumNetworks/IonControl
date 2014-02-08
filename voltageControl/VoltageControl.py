@@ -4,16 +4,18 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
-from PyQt4 import QtGui
-       
-from VoltageFiles import VoltageFiles
-from VoltageAdjust import VoltageAdjust
-from VoltageGlobalAdjust import VoltageGlobalAdjust
-import VoltageBlender
-import VoltageTableModel
 import logging
-       
+
+from PyQt4 import QtGui
+import PyQt4.uic
+
+from VoltageAdjust import VoltageAdjust
+import VoltageBlender
+from VoltageFiles import VoltageFiles
+from VoltageGlobalAdjust import VoltageGlobalAdjust
+import VoltageTableModel
+
+
 VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
 
 

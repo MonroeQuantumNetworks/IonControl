@@ -10,6 +10,7 @@ see stackoverflow
 
 from collections import OrderedDict
 
+
 def enum(*sequential, **named):
     enums = OrderedDict(zip(sequential, range(len(sequential))), **named)
     reverse, forward = dict((value, key) for key, value in enums.iteritems()), enums.copy()

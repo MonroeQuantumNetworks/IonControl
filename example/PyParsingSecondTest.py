@@ -10,6 +10,7 @@
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
     ZeroOrMore,Forward,nums,alphas
 
+
 point = Literal( "." )
 e     = CaselessLiteral( "E" )
 fnumber = Combine( Word( "+-"+nums, nums ) + 

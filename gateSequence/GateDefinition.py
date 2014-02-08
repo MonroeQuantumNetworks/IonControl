@@ -5,9 +5,11 @@ Created on Fri Jul 19 07:28:56 2013
 @author: wolverine
 """
 
-import xml.etree.ElementTree as etree
 from collections import OrderedDict
 import logging
+
+import xml.etree.ElementTree as etree
+
 
 class Pulse(object):
     def __init__(self, name, pulsetype, encoding):

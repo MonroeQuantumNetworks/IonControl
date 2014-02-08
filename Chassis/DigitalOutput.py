@@ -1,9 +1,12 @@
+import ctypes
+
+import numpy
+
+import DAQmxUtility as dutil
 from PyDAQmx import Task
 from PyDAQmx.DAQmxConstants import *
 from PyDAQmx.DAQmxTypes import *
-import DAQmxUtility as dutil
-import ctypes
-import numpy
+
 
 ## This class will generate digital outputs using pyDAQmx.
 class DigitalOutput(object):

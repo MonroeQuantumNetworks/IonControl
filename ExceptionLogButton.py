@@ -5,12 +5,14 @@ Created on Fri Apr 12 20:15:47 2013
 @author: pmaunz
 """
 
-import PyQt4.uic
-from PyQt4 import QtGui
-import sys
 import functools
-import logging
 import inspect
+import logging
+import sys
+
+from PyQt4 import QtGui
+import PyQt4.uic
+
 
 ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
 

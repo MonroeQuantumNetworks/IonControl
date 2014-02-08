@@ -1,7 +1,9 @@
+import os
+import sys
+
 import AnalogOutput as ao
 import DAQmxUtility as dutil
-import sys
-import os
+
 
 sys.path.insert(0, os.path.abspath('..'))
 

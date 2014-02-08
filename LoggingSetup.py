@@ -1,6 +1,8 @@
 import logging
-from PyQt4 import QtCore
 import sys
+
+from PyQt4 import QtCore
+
 
 class QtLoggingHandler(logging.Handler, QtCore.QObject):    
     textWritten = QtCore.pyqtSignal(object, object)

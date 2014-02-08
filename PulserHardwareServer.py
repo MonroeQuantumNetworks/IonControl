@@ -2,14 +2,17 @@
 """
 Encapsulation of the Pulse Programmer Hardware 
 """
-import struct
-from modules import enum
+import logging
 import math
 from multiprocessing import Process
-import modules.magnitude as magnitude
+import struct
+
 import ok
+
 from ServerLogging import configureServerLogging
-import logging
+from modules import enum
+import modules.magnitude as magnitude
+
 
 ModelStrings = {
         0: 'Unknown',

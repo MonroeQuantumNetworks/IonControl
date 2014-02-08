@@ -4,12 +4,15 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import PyQt4.uic
-from PyQt4 import QtCore
-import modules.magnitude as magnitude
 import functools
+
+from PyQt4 import QtCore
+import PyQt4.uic
+
 from modules import CountrateConversion
-       
+import modules.magnitude as magnitude
+
+
 DedicatedCountersSettingsForm, DedicatedCountersSettingsBase = PyQt4.uic.loadUiType(r'ui\DedicatedCountersSettings.ui')
 
 class Settings:

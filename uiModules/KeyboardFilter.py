@@ -1,5 +1,6 @@
 from PyQt4 import QtCore
 
+
 class KeyFilter(QtCore.QObject):
     keyPressed = QtCore.pyqtSignal()
     

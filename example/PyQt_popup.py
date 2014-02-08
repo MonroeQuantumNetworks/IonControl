@@ -1,5 +1,7 @@
 import sys
+
 from PyQt4.Qt import *
+
 
 class MyPopup(QWidget):
     def __init__(self):

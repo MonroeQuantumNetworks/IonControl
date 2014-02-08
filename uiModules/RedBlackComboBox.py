@@ -1,6 +1,6 @@
 
 from PyQt4 import QtCore, QtGui
-       
+
 
 class RedBlackComboBox( QtGui.QComboBox ):       
     def __init__(self,parent=None):

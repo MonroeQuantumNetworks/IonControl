@@ -6,6 +6,7 @@ Created on Feb 6, 2014
 from PyQt4 import QtCore, QtGui
 import sip
 
+
 api2 = sip.getapi("QVariant")==2
 
 def anyNonZero( dictionary, keys ):

@@ -4,10 +4,12 @@ Created on Fri Jul 19 08:37:56 2013
 
 @author: wolverine
 """
-import xml.etree.ElementTree as etree
 from collections import OrderedDict
-import operator
 import logging
+import operator
+
+import xml.etree.ElementTree as etree
+
 
 class GateSequenceOrderedDict(OrderedDict):
     pass
