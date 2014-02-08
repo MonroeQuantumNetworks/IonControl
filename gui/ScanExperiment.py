@@ -262,15 +262,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict["Scan Data"]["view"])
         self.traceui.setupUi(self.traceui)
-        self.traceuiDock = self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
         # traceui for timestamps
         self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict["Timestamps"]["view"])
         self.timestampTraceui.setupUi(self.timestampTraceui)
-        self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea, stackBelow=self.traceuiDock)
+        self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
         # new fit widget
-        self.fitWidgetTables = FitUi(self.traceui,self.config,self.experimentName)
-        self.fitWidgetTables.setupUi(self.fitWidgetTables)
-        self.setupAsDockWidget(self.fitWidgetTables, "Fit", QtCore.Qt.LeftDockWidgetArea, stackBelow=self.timestampTraceuiDock)
+        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName)
+        self.fitWidget.setupUi(self.fitWidget)
+        self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.timestampTraceuiDock)
+        # TraceuiDock
+        self.traceuiDock = self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.fitWidgetDock )
         # ScanProgress
         self.progressUi = ScanProgress()
         self.progressUi.setupUi()
@@ -703,7 +704,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.saveConfig()
         self.traceui.saveConfig()
         self.displayUi.saveConfig()
-        self.fitWidgetTables.saveConfig()
+        self.fitWidget.saveConfig()
         
     def onClose(self):
         pass
