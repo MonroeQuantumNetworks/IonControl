@@ -10,25 +10,7 @@ from logicAnalyzer.LogicAnalyzerTraceTableModel import LogicAnalyzerTraceTableMo
 from modules import dictutil
 from RotatedHeaderView import RotatedHeaderView
 from PyQt4 import QtCore
-
-# from pycallgraph import PyCallGraph
-# from pycallgraph.output import GraphvizOutput
-# from pycallgraph import Config
-
-import cProfile
-
-def do_cprofile(func):
-    def profiled_func(*args, **kwargs):
-        profile = cProfile.Profile()
-        try:
-            profile.enable()
-            result = func(*args, **kwargs)
-            profile.disable()
-            return result
-        finally:
-            profile.print_stats()
-    return profiled_func
-
+from pyqtgraph.graphicsItems.ViewBox import ViewBox
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
@@ -83,6 +65,7 @@ class LogicAnalyzer(Form, Base ):
         self.channelNameData = channelNameData
         self.lastEnabledChannels = None
         self.textItems = list()
+        self.logicData = None
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
@@ -102,14 +85,10 @@ class LogicAnalyzer(Form, Base ):
         self.traceTableModel = LogicAnalyzerTraceTableModel(self.config, self.signalTableModel)
         self.traceTableView.setModel( self.traceTableModel )
         self.traceTableView.resizeColumnsToContents()
+        
+        self.traceTableView.doubleClicked.connect( self.traceTableModel.setReferenceTimeCell )
 
         
-#     def onData(self, logicData ):
-#         config = Config(max_depth=5)
-#         with PyCallGraph(output=GraphvizOutput()):
-#             self.onDataProfile(logicData)
-        
-#    @do_cprofile
     def onData(self, logicData):
         self.logicData = logicData
         offset = 0
@@ -177,6 +156,8 @@ class LogicAnalyzer(Form, Base ):
            
     def plotData(self):
         offset = 0
+        lastAutoRangeState = self.graphicsView.vb.getState()['autoRange']
+        self.graphicsView.disableAutoRange(ViewBox.XYAxes)
         if self.lastEnabledChannels and self.lastEnabledChannels!=self.signalTableModel.enabledList:
             for curve in self.curveBundle + self.curveAuxBundle + self.curveTriggerBundle:
                 if curve:
@@ -253,9 +234,16 @@ class LogicAnalyzer(Form, Base ):
                         if curve:
                             curve.setData(x=self.xTrigger,y=yTrigger)
         self.lastEnabledChannels = list( self.signalTableModel.enabledList )
+        xautorange, yautorange = lastAutoRangeState
+        if xautorange:
+            self.graphicsView.enableAutoRange(ViewBox.XAxis)
+        if yautorange:
+            self.graphicsView.enableAutoRange(ViewBox.YAxis)
+        self.graphicsView.autoRange()
              
     def refresh(self):
-        self.onData(self.logicData)
+        if self.logicData:
+            self.onData(self.logicData)
                 
     def onRun(self):
         logger = logging.getLogger(__name__)

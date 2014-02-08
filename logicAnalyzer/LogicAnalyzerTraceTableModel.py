@@ -20,8 +20,8 @@ class LogicAnalyzerTraceTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.signalTableModel = signalTableModel
-        self.dataLookup = { (QtCore.Qt.DisplayRole,1): lambda row: self.pulseData[row][0],
-                            (QtCore.Qt.DisplayRole,0): lambda row: self.pulseData[row][0]-self.referenceTime
+        self.dataLookup = { (QtCore.Qt.DisplayRole,0): lambda row: self.pulseData[row][0],
+                            (QtCore.Qt.DisplayRole,1): lambda row: self.pulseData[row][0]-self.referenceTime
                      }
         self.pulseData = None
         self.rawPulseData = None
@@ -56,6 +56,11 @@ class LogicAnalyzerTraceTableModel(QtCore.QAbstractTableModel):
         
     def setReferenceTime(self, time):
         self.referenceTime = time
+        self.dataChanged.emit( self.createIndex(0,1), self.createIndex(self.rowCount(),1))
+        
+    def setReferenceTimeCell(self,index):
+        self.referenceTime = self.pulseData[index.row()][0]
+        self.dataChanged.emit( self.createIndex(0,1), self.createIndex(self.rowCount(),1))
         
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.pulseData) if self.pulseData else 0
