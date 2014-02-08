@@ -15,10 +15,10 @@ It is expected to send an endlabel (0xffffffff) when finished.
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-from Trace import Trace
+from trace.Trace import Trace
 import numpy
-import pens
-import Traceui
+from trace import pens
+from trace import Traceui
 import MainWindowWidget
 from fit.FitUi import FitUi
 from modules import enum
@@ -34,7 +34,7 @@ import RawData
 import random
 import ScanControl
 from AverageViewTable import AverageViewTable
-from PlottedTrace import PlottedTrace
+from trace.PlottedTrace import PlottedTrace
 import logging
 from ScanProgress import ScanProgress
 from modules.magnitude import is_magnitude

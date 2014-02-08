@@ -12,8 +12,8 @@ import visa
 from readInstrument import Read_N9342CN
 from readInstrument import Read_E5100B
 from readInstrument import Read_N9010A
-import pens
-import Traceui
+from trace import pens
+from trace import Traceui
 from persist import configshelve
 
 instrumentmap = {

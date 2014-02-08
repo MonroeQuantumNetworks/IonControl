@@ -8,7 +8,7 @@ Created on Fri Dec 14 15:37:21 2012
 import visa
 import numpy
 import ReadGeneric 
-import Trace
+from trace import Trace
 
 class N9342CN(ReadGeneric.ReadGeneric):
     def __init__(self,address):

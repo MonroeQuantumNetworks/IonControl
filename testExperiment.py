@@ -7,12 +7,12 @@ Created on Sat Dec 22 17:25:13 2012
 
 import PyQt4.uic
 from PyQt4 import QtGui, QtCore
-from Trace import Trace
-from PlottedTrace import PlottedTrace
+from trace.Trace import Trace
+from trace.PlottedTrace import PlottedTrace
 import random
 import numpy
-import pens
-from Traceui import Traceui
+from trace import pens
+from trace.Traceui import Traceui
 import MainWindowWidget
 from fit.FitUi import FitUi
 import functools

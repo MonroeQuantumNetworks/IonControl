@@ -1,7 +1,7 @@
 import PyQt4.uic
 from modules.enum import enum
 import logging 
-from pens import penList
+from trace.pens import penList
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 from pyqtgraph.graphicsItems.TextItem import TextItem
 from modules.Utility import flatten

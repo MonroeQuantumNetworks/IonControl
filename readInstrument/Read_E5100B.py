@@ -9,7 +9,7 @@ import visa
 import numpy
 import ReadGeneric
 
-import Trace
+from trace import Trace
 
 class E5100B(ReadGeneric.ReadGeneric):
     def __init__(self,address):

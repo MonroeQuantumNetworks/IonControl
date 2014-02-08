@@ -5,7 +5,7 @@ Created on Wed Sep 11 12:09:09 2013
 @author: plmaunz
 """
 
-from Trace import Trace
+from trace.Trace import Trace
 import os.path
 import numpy
 from modules.DataDirectory import DataDirectory

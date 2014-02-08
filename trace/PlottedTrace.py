@@ -5,14 +5,14 @@ Created on Fri Dec 28 18:40:30 2012
 @author: pmaunz
 """
 from modules import enum
-import pens
+from trace import pens
 from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 import numpy
 from modules import DataDirectory 
 import os.path
 from PyQt4 import QtGui
-from Trace import TracePlotting
+from trace.Trace import TracePlotting
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')

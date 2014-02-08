@@ -63,7 +63,7 @@ if __name__=="__main__":
     
     filename, components = DataDirectory.DataDirectory().sequencefile( "TestTrace.txt" )    
     
-    import Trace
+    from trace import Trace
     tr = Trace.Trace()
     tr.x = range(200)
     tr.y = range(200)

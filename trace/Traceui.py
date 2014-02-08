@@ -5,13 +5,14 @@ Created on Fri Dec 28 18:40:30 2012
 @author: pmaunz
 """
 import PyQt4.uic
-from TraceTreeModel import TraceComboDelegate, TraceTreeModel
-import pens
+from TraceTreeModel import TraceComboDelegate
+from TraceTreeModel import TraceTreeModel
+from trace import pens
 from PyQt4 import QtGui, QtCore
-import Trace
+from trace import Trace
 import os.path
 import ProjectSelection
-from PlottedTrace import PlottedTrace
+from trace.PlottedTrace import PlottedTrace
 import logging
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
