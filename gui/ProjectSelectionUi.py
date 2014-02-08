@@ -44,35 +44,35 @@ class ProjectSelectionUi(Form, Base):
         ProjectSelection.setSpecificConfigFile( str( self.configFileEdit.text()))
             
     def onOpenConfigFile(self): 
-        fname = QtGui.QFileDialog.getOpenFileName(self, 'Open config file', gui.ProjectSelection.ProjectsBaseDir)
-        gui.ProjectSelection.setSpecificConfigFile( str( fname ))
+        fname = QtGui.QFileDialog.getOpenFileName(self, 'Open config file', ProjectSelection.ProjectsBaseDir)
+        ProjectSelection.setSpecificConfigFile( str( fname ))
         self.configFileEdit.setText(fname)
                 
     def onCreateProject(self):
         name = str(self.newProjectName.text())
         if name not in self.projects:
-            gui.ProjectSelection.createProject(name)
+            ProjectSelection.createProject(name)
             self.projects.append(name)
             self.projectList.addItem(name)
             
     def accept(self):
         if self.defaultCheckBox.isChecked():
-            gui.ProjectSelection.setDefaultProject(str(self.projectList.currentItem().text()))
+            ProjectSelection.setDefaultProject(str(self.projectList.currentItem().text()))
         else:
-            gui.ProjectSelection.setDefaultProject(None)
+            ProjectSelection.setDefaultProject(None)
         self.project = str(self.projectList.currentItem().text()) if self.projectList.currentItem() else None
         Base.accept(self)
         
 def GetProjectSelection(atProgramStart=False):
-    project = gui.ProjectSelection.defaultProject()
+    project = ProjectSelection.defaultProject()
     if (not project) or (not atProgramStart):
         selectionui = ProjectSelectionUi()
         selectionui.setupUi(selectionui, atProgramStart)
         selectionui.exec_()
         project = selectionui.project
-        gui.ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)
-    gui.ProjectSelection.setProject(project)
-    return project, gui.ProjectSelection.projectDir()
+        ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)
+    ProjectSelection.setProject(project)
+    return project, ProjectSelection.projectDir()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

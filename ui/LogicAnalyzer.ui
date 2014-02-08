@@ -57,11 +57,17 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="dockWidget_3">
+   <property name="minimumSize">
+    <size>
+     <width>40</width>
+     <height>111</height>
+    </size>
+   </property>
    <property name="windowTitle">
     <string>Signals</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>2</number>
+    <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_3">
     <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -130,7 +136,7 @@
   <customwidget>
    <class>TableViewRotatedHorizontalHeader</class>
    <extends>QTableView</extends>
-   <header>TableViewRotatedHorizontalHeader</header>
+   <header>uiModules.TableViewRotatedHorizontalHeader</header>
   </customwidget>
  </customwidgets>
  <resources>

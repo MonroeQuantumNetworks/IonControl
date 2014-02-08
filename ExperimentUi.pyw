@@ -77,12 +77,14 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
     
     def setupUi(self, parent):
         super(WidgetContainerUi,self).setupUi(parent)
+        self.dockWidgetConsole.hide()
         self.loggerUi = LoggerLevelsUi(self.config)
         self.loggerUi.setupUi(self.loggerUi)
         self.loggerDock = QtGui.QDockWidget("Logging")
         self.loggerDock.setWidget(self.loggerUi)
         self.loggerDock.setObjectName("_LoggerDock")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.loggerDock)
+        self.loggerDock.hide()
                 
         logger = logging.getLogger()        
         self.toolBar.addWidget(ExceptionLogButton())

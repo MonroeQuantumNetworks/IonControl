@@ -289,7 +289,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
         self.dockWidgetList.append(self.scanControlUi)
-        self.tabifyDockWidget( self.scanControlUi, self.dockWidgetFitUi )
         self.tabifyDockWidget( self.timestampDockWidget, self.dockWidget)
         # Average View
         self.displayUi = AverageViewTable(self.config)

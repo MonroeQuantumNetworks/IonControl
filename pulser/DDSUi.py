@@ -18,7 +18,7 @@ class DDSUi(DDSForm, DDSBase):
         self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*6)
         self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
         self.names = self.config.get('DDSUi.Names',['']*6)
-        self.ad9912 = pulser.Ad9912.Ad9912(pulser)
+        self.ad9912 = Ad9912.Ad9912(pulser)
         self.writeOnStartup = self.config.get('DDSUi.WriteOnStartup',False)
         self.autoApply = self.config.get('DDSUi.autoApply',False)
         

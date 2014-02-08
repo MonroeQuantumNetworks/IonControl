@@ -89,6 +89,11 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.displayDockADC.setObjectName("Analog Channels")
         self.displayDockADC.setWidget(self.displayUiADC)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.displayDockADC)
+        # Arrange the dock widgets
+        self.tabifyDockWidget( self.displayDockADC, self.displayDock2)
+        self.tabifyDockWidget( self.displayDock2, self.displayDock )
+        self.tabifyDockWidget( self.calibrationDock, self.settingsDock )
+        self.calibrationDock.hide()        
         # AutoLoad
         self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware, self.dataAvailable)
         self.autoLoad.setupUi(self.autoLoad)

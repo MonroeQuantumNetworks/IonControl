@@ -31,20 +31,11 @@
     <string>Traces</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>2</number>
+    <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout"/>
    </widget>
-  </widget>
-  <widget class="QDockWidget" name="dockWidgetFitUi">
-   <property name="windowTitle">
-    <string>Curve Fitting</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2"/>
   </widget>
   <widget class="QDockWidget" name="scanControlUi">
    <property name="windowTitle">
@@ -60,7 +51,7 @@
     <string>Timestamp traces</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>2</number>
+    <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_6"/>
   </widget>
