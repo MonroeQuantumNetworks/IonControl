@@ -637,12 +637,12 @@
   <customwidget>
    <class>RedBlackComboBox</class>
    <extends>QComboBox</extends>
-   <header>RedBlackComboBox</header>
+   <header>uiModules.RedBlackComboBox</header>
   </customwidget>
   <customwidget>
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>MagnitudeSpinBox</header>
+   <header>uiModules.MagnitudeSpinBox</header>
   </customwidget>
   <customwidget>
    <class>ParameterTree</class>

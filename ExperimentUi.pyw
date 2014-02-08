@@ -22,18 +22,18 @@ import logging
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
-import DDSUi
+from pulser import DDSUi
 from mylogging.ExceptionLogButton import ExceptionLogButton
-import ExternalScanExperiment
-import GlobalVariables 
+from gui import ExternalScanExperiment
+from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
-import ProjectSelection
-import ProjectSelectionUi
-from PulserHardwareClient import PulserHardware 
-import ScanExperiment
-import SettingsDialog
-import VoltageScanExperiment
+from gui import ProjectSelection
+from gui import ProjectSelectionUi
+from pulser.PulserHardwareClient import PulserHardware 
+from gui import ScanExperiment
+from gui import SettingsDialog
+from gui import VoltageScanExperiment
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from externalParameter import ExternalParameterSelection
 from externalParameter import ExternalParameterUi 
@@ -44,7 +44,7 @@ from modules.bidict import ChannelNameMap
 from persist import configshelve
 from pulseProgram import PulseProgramUi
 from pulseProgram import ShutterUi
-import testExperiment
+from gui import testExperiment
 
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')

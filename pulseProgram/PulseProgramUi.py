@@ -10,9 +10,9 @@ import os.path
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
-import CounterTableModel
-import ProjectSelection
-import TriggerTableModel
+from pulseProgram import CounterTableModel
+from gui import ProjectSelection
+from pulseProgram import TriggerTableModel
 from modules import dictutil
 from pulseProgram import PulseProgram
 from pulseProgram import ShutterTableModel

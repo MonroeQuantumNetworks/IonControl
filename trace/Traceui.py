@@ -12,7 +12,7 @@ from trace import pens
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-import ProjectSelection
+from gui import ProjectSelection
 from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace

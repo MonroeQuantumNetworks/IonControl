@@ -13,7 +13,7 @@ from PyQt4 import QtCore
 import numpy
 from pyqtgraph.parametertree import Parameter
 
-from Observable import Observable
+from modules.Observable import Observable
 from modules.enum import enum 
 
 

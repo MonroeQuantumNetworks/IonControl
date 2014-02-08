@@ -404,12 +404,12 @@
   <customwidget>
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>MagnitudeSpinBox</header>
+   <header>uiModules.MagnitudeSpinBox</header>
   </customwidget>
   <customwidget>
    <class>TableViewExtended</class>
    <extends>QTableView</extends>
-   <header>TableViewExtended</header>
+   <header>uiModules.TableViewExtended</header>
   </customwidget>
  </customwidgets>
  <tabstops>

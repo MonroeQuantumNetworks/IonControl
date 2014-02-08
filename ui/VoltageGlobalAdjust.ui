@@ -48,7 +48,7 @@
   <customwidget>
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>MagnitudeSpinBox</header>
+   <header>uiModules.MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
  <resources/>

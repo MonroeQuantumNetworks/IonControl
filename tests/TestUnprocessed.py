@@ -35,20 +35,20 @@ gate_dict = {'I' :[Iphase, Iwait, Ipulse],
 nmax = 7
 
 def allstrings(alphabet, length):
-	"""Find the list of all strings of 'alphabet' of length 'length'"""
-	
-	if length == 0: return []
-	
-	c = [[a] for a in alphabet[:]]
-	if length == 1: return c
-	
-	c = [[x,y] for x in alphabet for y in alphabet]
-	if length == 2: return c
-	
-	for l in range(2, length):
-		c = [[x]+y for x in alphabet for y in c]
-		
-	return c
+    """Find the list of all strings of 'alphabet' of length 'length'"""
+    
+    if length == 0: return []
+    
+    c = [[a] for a in alphabet[:]]
+    if length == 1: return c
+    
+    c = [[x,y] for x in alphabet for y in alphabet]
+    if length == 2: return c
+    
+    for _ in range(2, length):
+        c = [[x]+y for x in alphabet for y in c]
+    
+    return c
 
 def gst_strings(alphabet, length):
     """return the list of all gate set tomography strings with gates taken from 'alphabet'.
@@ -63,7 +63,7 @@ expectedContent = []
 
 def addToExpectedContent(sequence):
     """Add a gate sequence string to the expected unprocessed content"""
-    for expt in range(numexpts):
+    for _ in range(numexpts):
         expectedContent.append(999999)
         expectedContent.append(len(sequence))
         for gate in sequence:

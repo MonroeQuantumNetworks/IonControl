@@ -15,7 +15,7 @@ import numpy
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
-from ScanControl import ScanControl
+from scan.ScanControl import ScanControl
 from fit.FitUi import FitUi
 from modules import DataDirectory
 from trace.PlottedTrace import PlottedTrace

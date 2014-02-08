@@ -8,7 +8,7 @@ Created on Tue Feb 19 14:53:26 2013
 import logging
 import math
 
-from fpgaUtilit import check
+from pulser.PulserHardwareClient import check
 
 
 class Ad9912Exception(Exception):

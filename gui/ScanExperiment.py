@@ -29,8 +29,8 @@ from pyqtgraph.graphicsItems.ViewBox import ViewBox
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
-import RawData
-import ScanControl
+from trace import RawData
+from scan import ScanControl
 from ScanProgress import ScanProgress
 from fit.FitUi import FitUi
 from modules import DataDirectory

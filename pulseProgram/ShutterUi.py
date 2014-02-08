@@ -9,7 +9,7 @@ import logging
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-import ShutterHardwareTableModel
+from pulser import ShutterHardwareTableModel
 
 
 ShutterForm, ShutterBase = PyQt4.uic.loadUiType(r'ui\Shutter.ui')

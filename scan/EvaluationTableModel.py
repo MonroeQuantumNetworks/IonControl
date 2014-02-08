@@ -1,6 +1,6 @@
 from PyQt4 import QtCore
 
-from CountEvaluation import EvaluationAlgorithms
+from scan.CountEvaluation import EvaluationAlgorithms
 
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):

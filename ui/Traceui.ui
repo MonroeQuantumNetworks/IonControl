@@ -301,7 +301,7 @@
   <customwidget>
    <class>TableViewExtended</class>
    <extends>QTableView</extends>
-   <header>TableViewExtended</header>
+   <header>uiModules.TableViewExtended</header>
   </customwidget>
  </customwidgets>
  <resources>

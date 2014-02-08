@@ -19,7 +19,7 @@ import time
 
 from PyQt4 import QtCore
 
-import ScanExperiment 
+import ScanExperiment
 from modules import enum
 
 

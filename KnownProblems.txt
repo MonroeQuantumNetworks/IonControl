@@ -1,4 +1,0 @@
-* ScanParameters and ExternalScanParameters
-	If a counter has multiple gates during one experiment, these are not considered different gates within an experiment but are treated like different experiments
-	workaround: connect the signal to different counter channels and use those
-	fix: define counter decimation to extract the first, second, .... gate of each experiment

@@ -10,7 +10,7 @@ import os.path
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-import ProjectSelection
+from gui import ProjectSelection
 
 
 VoltageFilesForm, VoltageFilesBase = PyQt4.uic.loadUiType(r'ui\VoltageFiles.ui')

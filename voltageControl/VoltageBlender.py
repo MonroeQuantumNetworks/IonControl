@@ -14,7 +14,7 @@ import numpy
 
 from Chassis import DAQmxUtility     
 from Chassis.itfParser import itfParser
-import ProjectSelection
+from gui import ProjectSelection
 from modules import MyException
 
 
@@ -76,7 +76,7 @@ class VoltageBlender(QtCore.QObject):
     def loadVoltage(self,path):
         self.itf.open(path)
         self.lines = list()
-        for i in range(self.itf.getNumLines()):
+        for _ in range(self.itf.getNumLines()):
             line = self.itf.eMapReadLine() 
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
@@ -91,7 +91,7 @@ class VoltageBlender(QtCore.QObject):
         itf = itfParser()
         itf.eMapFilePath = self.mappingpath
         itf.open(path)
-        for i in range(itf.getNumLines()):
+        for _ in range(itf.getNumLines()):
             line = itf.eMapReadLine() 
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
