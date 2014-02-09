@@ -22,7 +22,7 @@ class ParamStructure(Structure):
         ("end", c_float) ]
 
     def __str__(self):
-        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_ ] )
+        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,_) in self._fields_ ] )
         
 class CurveMapping(Structure):
     _fields_ = [
@@ -30,7 +30,7 @@ class CurveMapping(Structure):
         ("show", c_int) ]
 
     def __str__(self):
-        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_ ] )
+        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,_) in self._fields_ ] )
         
 class TextHeader(Structure):
     _fields_ = [
@@ -43,7 +43,7 @@ class TextHeader(Structure):
         ("comment", c_char * 256)]
         
     def __str__(self):
-        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_.remove(("crlf", c_char * 2)) ] )
+        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,_) in self._fields_.remove(("crlf", c_char * 2)) ] )
                             
 class BinaryHeader(Structure):
     _fields_ = [
@@ -74,7 +74,7 @@ class BinaryHeader(Structure):
         ("scriptName", c_char * 20) ]
         
     def __str__(self):
-        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_ ] )
+        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,_) in self._fields_ ] )
 
 class BoardHeader(Structure):
     _fields_ = [
@@ -115,7 +115,7 @@ class BoardHeader(Structure):
         ("rtChan4_CFDZeroCross", c_int)]    
 
     def __str__(self):
-        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_ ] )
+        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,_) in self._fields_ ] )
         
 class CurveHeader(Structure):
     _pack_ = 4
@@ -160,7 +160,7 @@ class CurveHeader(Structure):
         ("RtChan_CFDZeroCross", c_int) ]
 
     def __str__(self):
-        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,ctype) in self._fields_ ] )
+        return "\n".join( [ name+" {0}".format(getattr(self,name)) for (name,_) in self._fields_ ] )
 
 class TTTRHeader(Structure):
     _fields_ = [
@@ -192,7 +192,7 @@ class PicoHarpPhd(object):
             f.readinto(self.boardHeader)
             self.curveHeadersList = list()
             self.curveDataList = list()
-            for no in range(self.binaryHeader.curves):
+            for _ in range(self.binaryHeader.curves):
                 curveHeader = CurveHeader()
                 f.readinto(curveHeader)
                 self.curveHeaderList.append( curveHeader )
@@ -223,7 +223,7 @@ if __name__=="__main__":
     phd = PicoHarpPhd(r'C:\ex-control\data\ring_94\data\traces.phd')
     
     print phd.binaryHeader.curves
-   # print phd.curveDataList
+    # print phd.curveDataList
     print phd.pruned()        
         
        

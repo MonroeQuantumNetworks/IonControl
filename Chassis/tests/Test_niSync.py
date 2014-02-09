@@ -2,7 +2,7 @@ from ctypes import *
 import os
 import sys
 
-import niSyncFunctions as niSync
+from Chassis import niSyncFunctions as niSync
 
 
 sys.path.insert(0, os.path.abspath('..'))

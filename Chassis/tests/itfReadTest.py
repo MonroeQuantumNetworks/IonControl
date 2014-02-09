@@ -1,11 +1,5 @@
-import os
-import sys
 
-from itfParser import itfParser
-
-
-sys.path.insert(0, os.path.abspath('..'))
-
+from Chassis.itfParser import itfParser
 
 sinPath ='../config/SineWave.itf'
 testPath = '../config/voltage_test.itf'

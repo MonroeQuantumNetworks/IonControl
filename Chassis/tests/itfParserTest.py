@@ -1,13 +1,8 @@
 import os
-import os
-import sys
 
 import numpy
 
-from itfParser import itfParser
-
-
-sys.path.insert(0, os.path.abspath('..'))
+from Chassis.itfParser import itfParser
 
 def deleteIfExists(filePath):
     directory = os.getcwd()

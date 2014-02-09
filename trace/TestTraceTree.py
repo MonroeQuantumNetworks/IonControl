@@ -52,8 +52,8 @@ class TraceTreeItem(object):
     def insertChildren(self, position, count, columns):
         if position < 0 or position > len(self.childItems):
             return False
-        for row in range(count):
-            data = [None for v in range(columns)]
+        for _ in range(count):
+            data = [None] * len(columns)
             item = TraceTreeItem(data, parent=self)
             self.childItems.insert(position, item)
         return True
