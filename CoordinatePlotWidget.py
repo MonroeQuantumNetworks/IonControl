@@ -77,12 +77,15 @@ class CustomPlotItem(PlotItem):
         The code is borrowed from the same code applied to autoBtn in the parent method in PlotItem.py.
         """
         PlotItem.resizeEvent(self,ev)
+        autoBtnRect = self.mapRectFromItem(self.autoBtn, self.autoBtn.boundingRect())
         unityRangeBtnRect = self.mapRectFromItem(self.unityRangeBtn, self.unityRangeBtn.boundingRect())
         holdZeroBtnRect= self.mapRectFromItem(self.holdZeroBtn, self.holdZeroBtn.boundingRect())
+        yAuto = self.size().height() - autoBtnRect.height()
         yHoldZero = self.size().height() - holdZeroBtnRect.height()
         yUnityRange= self.size().height() - unityRangeBtnRect.height()
-        self.unityRangeBtn.setPos(0, yUnityRange-24) #The autoBtn height is 14, add 10 to leave a space
-        self.holdZeroBtn.setPos(0, yHoldZero-67) #Leave some space above the unity range button
+        self.autoBtn.setPos(-5,yAuto)
+        self.unityRangeBtn.setPos(-5, yUnityRange-24) #The autoBtn height is 14, add 10 to leave a space
+        self.holdZeroBtn.setPos(-5, yHoldZero-67) #Leave some space above the unity range button
 
     def onUnityRange(self):
         """Execute when unityRangeBtn is clicked. Set the yrange to 0 to 1."""
