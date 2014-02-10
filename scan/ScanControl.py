@@ -438,7 +438,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.gateSequenceUi.valueChanged.connect( self.updateSaveStatus )
             self.gateSequenceUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
             self.gateSequenceUi.setupUi(self.gateSequenceUi)
-            self.toolBox.addItem(self.gateSequenceUi,"Gate Sets")
+            self.toolBox.addItem(self.gateSequenceUi,"Gate Sequences")
         if pulseProgramUi.variabledict:
             self.gateSequenceUi.setVariables( pulseProgramUi.variabledict )
         self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )

@@ -30,20 +30,21 @@ The Trapped Ion Quantum Control System (TIQCS) consists of FPGA controller hardw
 %\lstinputlisting{../prog/Ions-samples/ExternalScan.pp}
 %}
 
-The FPGA firmware executes a {\it Pulse Program}. The Pulse Program can be at most $4096$ words long where each command and variable take $1$ word of memory. In addition the Pulse Program has access to the FPGA internal memory in which variables are stored. Via simple commands there is also access to the on-board SDRAM (128 MByte). This memory can be written to and read from the host computer. In addition there are two pipes implemented between the host computer and the FPGA Pulse Program. Values can be read from and written to these pipes.
+The FPGA firmware executes a {\it Pulse Program}. The Pulse Program can be at most $4096$ words long where each command and variable take $1$ word of memory. The Pulse Program has access to the program memory in which variables are stored. Via simple commands there is also access to the on-board SDRAM (128 MByte). This memory can be written to and read from the host computer. In addition there are two pipes implemented between the host computer and the FPGA Pulse Program. Values can be read from and written to these pipes.
 
-Counters to count incoming pulses are implemented in a gates fashion. The Pulse Program sets the gates for the $24$ different counters, the counting is then done in parallel to the execution of the Pulse Program. When the gate is lowered, the accumulated counter value (24 bit) is transfered to the computer via the outgoing pipe without the intervention of the Pulse Program. The counter value can also be read from the Pulse Program.
+Counters to count incoming pulses are implemented in a gated setup. The Pulse Program sets the gates for the $24$ different counters, the counting is then done in parallel to the execution of the Pulse Program. When the gate is lowered, the accumulated counter value (24 bit) is transfered to the computer via the outgoing pipe without the intervention of the Pulse Program (only channels $0-15$). The counter value can also be read from the Pulse Program.
 
-The are $8$ timestamping channels implemented.
+The are $8$ timestamping channels implemented. Currently, there are $8$ singal input routed to the counters. Counters $0-7$, $8-15$,$16-23$. 
 
 \subsection{Pulse Program Basics}
-The Pulse Program uses \lit{\#} as the rest of line comment character. Exceptions are the following:
+The Pulse Program uses \lit{\#} as the rest of line comment character (python style comments). 
 
-\declaration{\lit*{\#insert} \synt{filename}}{is used to insert the contents of one file at the position of the insert command.}
+\declaration{\lit*{insert} \synt{filename}}{is used to insert the contents of one file at the position of the insert command.}
 
-\declaration{\lit*{\#define} \synt{constant}}{is used to define constants. Constants have to be used for the \synt{channel} arguments of the DDS commands. In general if a command takes two arguments, the first argument has to be a constant.}
+\declaration{\lit*{const} \synt{constant}}{is used to define constants. Constants have to be used for the \synt{channel} arguments of the DDS commands. In general if a command takes two arguments, the first argument has to be a constant.}
 
 \declaration{\lit*{var} \synt{name}  \synt{value}, [\synt{type}], [\synt{unit}], [\synt{encoding}]}{ is used to declare variables.  For the Pulse Program only the \synt{name} and \synt{value} arguments are used. The additional arguments are interpreted by the graphical front-end to enable the control of the variable values. The \synt{type} defines what the intended use of the variable. The \synt{unit} describes it default dimension and unit. The \synt{encoding} determines how a variable value which on the front-end side can be a floating point value with physical quantity is converted into the 32 bit binary value used on the FPGA.
+
 The possible types are 
 \begin{description}
 \item[\lit*{parameter}] The variable will be used as a parameter variable.
@@ -120,7 +121,10 @@ Jumps can redirect the program flow to a \synt{label}. Depending on the jump com
 Set W to 0 if $W \le \text{{\it variable}}$ .
 
 \item[\lit*{CMPEQUAL} \synt{variable}]  \hfill\\  
-compare W and \synt{variable} and set the internal compare bit to true if W=\synt{variable}.
+compare W and \synt{variable} and set the internal compare bit to true if $W=\synt{variable}$.
+
+\item[\lit*{CMPNOTEQUAL} \synt{variable}]  \hfill\\  
+compare W and \synt{variable} and set the internal compare bit to true if $W\neq\synt{variable}$.
 
 \item[\lit*{CMPGE} \synt{variable}]\hfill\\  
 compare W and \synt{variable} and set the internal compare bit to true if $W \ge \text{\it variable}$.
@@ -131,8 +135,11 @@ compare W and \synt{variable} and set the internal compare bit to true if $W \le
 \item[\lit*{CMPGREATER} \synt{variable}]\hfill\\  
 compare W and \synt{variable} and set the internal compare bit to true if $W > \text{\it variable}$.
 
+\item[\lit*{CMPLESS} \synt{variable}]\hfill\\  
+compare W and \synt{variable} and set the internal compare bit to true if $W < \text{\it variable}$.
+
 \item[\lit*{JMP} \synt{label}] \hfill\\   
-Jump to {\it label}.
+Unconditional jump to {\it label}.
 
 \item[\lit*{JMPZ} \synt{label}]  \hfill\\  
 Jump to {\it label} if W = 0.
@@ -161,6 +168,9 @@ Set internal register shutter\_mask to {\it variable}.
 
 \item[\lit*{ASYNCSHUTTER} \synt{ variable}]  \hfill\\  
 Update internal shutter register, bits set in shutter\_mask are updated with the bits from {\it variable}.
+
+\item[\lit*{ASYNCINVSHUTTER} \synt{ variable}]  \hfill\\  
+Update internal shutter register, bits set in shutter\_mask are updated with the inverted bits from {\it variable}.
 
 \item[\lit*{COUTERMASK} \synt{ variable}]  \hfill\\  
 Set the internal register with gate signals for the 24 counters and 8 timestampers. Bits 23:0 gate counters 23:0, bits 31:24 gate  timestamping on channels 7:0. The $8$ external input channels are used repeatedly. External input channel $0$ is routed to counter channels $0$, $8$, and $15$. The counts from channels $0 - 15$ are transmitted to the computer after the counter is gated low. Channels $16-24$ are only accessible from the Pulse Program. The timestamping channels are also operated by a gate. On the enabling edge of the gate the current values of a global counter (running at $50\unit{MHz}$) is transfered to the computer. Each detection event will then trigger the transmission of the current counter value. On counter overrun a overrun marker is written to the host computer. In this way, the total time of the gate is not limited.
@@ -277,14 +287,14 @@ Wait for the DDS writes to complete.
 \subsection{Deprecated commands}
 These commands are only present for backwards compatibility and are not recommended to be used.
 \begin{addmargin}{1cm}
-\lit*{DDSCHN}, \lit*{SHUTTER}, \lit*{COUNT}, \lit*{COUNT1}, \lit*{COUNTBOTH}, \lit*{DELAY}, \lit*{STWR1}, \lit*{LDWR1}, \lit*{JMPZ1 }, \lit*{JMPNZ1}, \lit*{CLRW1}, \lit*{[CMP1}
+\lit*{DDSCHN}, \lit*{SHUTTER}, \lit*{COUNT}, \lit*{COUNT1}, \lit*{COUNTBOTH}, \lit*{DELAY}, \lit*{STWR1}, \lit*{LDWR1}, \lit*{JMPZ1 }, \lit*{JMPNZ1}, \lit*{CLRW1}, \lit*{CMP1}
 \end{addmargin}
 
 \subsection{Common idioms}
 \definecolor{green}{rgb}{0,0.6,0}
 \lstdefinelanguage{pp}  
   { morekeywords={NOP,JMPPIPEEMPTY,READPIPEINDF,WRITEPIPEINDF,READPIPE,WRITEPIPE,STWI,LDWR,STWR,END,
-    JMP,JMPNZ,DEC,TRIGGER,SHUTTERMASK,ASYNCSHUTTER,WAIT,UPDATE,COUNTERMASK},
+    JMP,JMPNZ,JMPZ,DEC,TRIGGER,SHUTTERMASK,ASYNCSHUTTER,WAIT,UPDATE,COUNTERMASK},
  morecomment=[l]{\#}
 }
 \newcommand*{\Comment}[1]{\hfill\makebox[0.5\textwidth][l]{\parbox{0.5\textwidth}{\color{green}#1}}}%
@@ -371,7 +381,7 @@ scanloop: NOP
 	STWR experimentsleft   &\Comment{\# store it in the loop parameter}&
 experimentloop: NOP
 \end{lstlisting}
- here goes everything that makes a single experiment.
+ here goes everything that makes a single experiment. Please make sure to close counter gates and wait for the completion of the counter gate to ensure the results are assigned to the correct experimental point.
 
 \begin{lstlisting}[numbers=left, firstnumber=last]
 	DEC experimentsleft    &\Comment{\# decrease the number of experiments left to do, result is in W}&
@@ -389,7 +399,7 @@ For an external scan the FPGA only has to execute the experiments to be averaged
 
 A minimal program could look like this:
 \begin{lstlisting}
-&\#&define COOLDDS 0
+const COOLDDS 0
 var startupMask       1, mask
 var startup           1, shutter startupMask
 var startupTime       1, parameter, ms
@@ -436,15 +446,15 @@ cooling: NOP
 
 
 \section{Front-end}
-The front-end is used to interact with the Pulse Program. It repares the data to be written and analyzes the results from the Pulse Program. The main window (figure~\ref{MainWindow}) has controls for instruments while the Pulse Program is {\em not} running. The windows for the DDS, Shutters, Triggers and external instruments are all in separate dockwidgets. These dockwidgets can be re-arranged, torn out into an independent window or closed. Once closed they can be re-opend via the View menu or the contect menu of any dockwidget.
+The front-end is used to interact with the Pulse Program. It prepares the data to be written and analyzes the results from the Pulse Program. The main window (figure~\ref{MainWindow}) has controls for instruments while the Pulse Program is {\em not} running. The windows for the DDS, Shutters, Triggers and external instruments are all in separate dockwidgets. These dockwidgets can be re-arranged, torn out into an independent window or closed. Once closed they can be re-opend via the View menu or the contect menu of any dockwidget.
 
-In addition to the Main window the program has non-modal windows for the Pulse Program configuration (wrench icon), the voltage control (Voltage icon) and FPGA settings (gear icon). Furthermore, there is a "dedicated counters" window available from the graph icon. The separate windows are described in detail below.
+In addition to the Main window the program has non-modal windows for the Pulse Program configuration (pulse icon), the voltage control (Voltage icon), FPGA settings (gear icon), Logic analyzer (chip lupe icon). Furthermore, there is a "dedicated counters" window available from the graph icon. The separate windows are described in detail below.
 
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=\textwidth]{MainWindow}
 \end{center}
-\caption{\label{MainWindow} Main window.}
+\caption{\label{MainWindow} Main window. There two categories of dock widgets. Global variables, Triggers, Shutters, DDS, Params Selection, Pamams Control, Trace, Timestamp Tracee and Fit belong to the Main Window. The other visible dock widgets belong to active measurement.}
 \end{figure}
 
 \subsection{Project Selection}
@@ -455,9 +465,9 @@ In addition to the Main window the program has non-modal windows for the Pulse P
 \caption{\label{ProjectSelection} Project Selection. Folders in the base directory are considered projects. All configuration data and result data is saved in the project folder.}
 \end{SCfigure}
 
-The control program defines a "Base directory". The folders in the Base directory are considered Projects. Each Project has dedicated gui settings and data directories. The configuration data of the control program is saved in the folder .gui-config in the Project directory. It is recommended to create a folder "config" for the pulse program files and other configuration files. Data is saved by default in a directory structure consiting of year, month and day directories. This window is shown on first startup of the control program.
+The control program defines a "Base directory". The folders in the Base directory are considered Projects. Each Project has dedicated gui settings and data directories. The configuration data of the control program is saved in the folder .gui-config in the Project directory. It is recommended to create a folder "config" for the pulse program files and other configuration files. Example files can be found in the {\em config} folder within the python source tree. Data is saved by default in a directory structure consiting of year, month and day directories. This window is shown on first startup of the control program.
 
-If "Set as default" is checked the control program will start with the default project. In this case the project can be changed by selecting File $\rightarrow$ Project.
+If "Set as default" is checked the control program will start with the default project. In this case the project can be changed by selecting File $\rightarrow$ Project. Changing the Project requires an immediate restart of the program.
 
 \subsection{FPGA settings}
 \begin{figure}[htbp]
@@ -466,7 +476,7 @@ If "Set as default" is checked the control program will start with the default p
 \end{center}
 \caption{\label{FPGASettings} FPGA settings window.}
 \end{figure}
-The FPGA settings window (figure\ref{FPGASettings}) is sown on start-up. If "Automatically upload bitfile" is checked, the bitfile will be uploaded on "OK". The bitfile can also be uploaded manually. In the case the Instrument selection is empty, please make sure previous processes have been closed (and orphans have been closed). Disconnecting and re-connecting the USB cable should help too. After fixing the problem press "Scan".
+The FPGA settings window (figure\ref{FPGASettings}) is sown on start-up. If "Automatically upload bitfile" is checked, the bitfile will be uploaded on "OK" otherwise, the bitfile has to be explicitly loaded by pressing {\em upload}. The bitfile can also be uploaded manually. In the case the Instrument selection is empty, please make sure previous processes have been closed (and orphans have been closed). Disconnecting and re-connecting the USB cable should help too. After fixing the problem press "Scan".
 
 \subsection{Plot display}
 \begin{figure}[htbp]
@@ -485,11 +495,11 @@ All plots are displayed using the pyqtgraph library. A typical window is shown i
 \end{center}
 \caption{\label{DedicatedCounters} Dedicated counters window. The left dock widget controls the Auto-loading feature. The right dock widgets display the last counter values and analog input values as well as the counter control and input calibration widgets. Dock widgets can be re-arranged, torn out or closed if not needed. }
 \end{figure}
-In addition to the Pulse Program, the FPGA has dedicated counters for all $8$ digital input lines and $4$ analog inputs. These counters are {\em not} synchronized with the execution of the Pulse Program, nor do they stop during the Pulse Program execution. The analog input channels can be calibrated to voltage or any function can be used to map the values to different quantities. Currently there is a conversion function for reading the Mini-Circuits rf-power detectors. Others can be added easily.
+In addition to the Pulse Program, the FPGA has dedicated counters for all $8$ digital input lines and $4$ analog inputs. These counters are {\em not} synchronized with the execution of the Pulse Program, nor do they stop during the Pulse Program execution. The analog input channels can be calibrated to display voltage or any function can be used to map the values to different quantities. Currently there is a conversion function for reading the Mini-Circuits rf-power detectors. Others can be added easily.
 
 The dedicated counters and  the Auto-load feature building upon it are controlled from the "dedicated counters" window (figure~\ref{DedicatedCounters}). 
 
-The counter channels can be selected from the 
+The counter channels can be selected from the controls shown in Figure~\ref{DedicatedCountersSettings}. Points to keep determines how many points are kept, and the integration time can be adjusted. There are glitches in the displayed values when the integration time is changed.
 
 \begin{SCfigure}
 \centering
@@ -528,6 +538,8 @@ These settings are as follows:
 \item[\lit{Counter}] Counter channel to be used for ion detection.
 \end{description}
 
+The autoload feature is disabled while a pulse program is running. In addition, starting a pulse program will interrupt the loading process. This is necessary because the autoload feature cannot control the shutter output bits while a pulse program is running.
+
 \paragraph{Interlock}
 In addition to observing the counts it is possible to monitor relevant laser frequencies and stop the loading process if a laser is out of lock. The interface is shown in figure~\ref{WavemeterInterlock}.
 \begin{SCfigure}
@@ -551,7 +563,7 @@ The voltages at the analog inputs can be either displayed in Volt or converted. 
 \begin{SCfigure}
 \centering
 \includegraphics[width=0.5\textwidth]{GlobalVariables}
-\caption{\label{GlobalVariables} Global variables window. Global variables can be defined here. The value should be entered with dimensions. Entering of mathematical expressions is possible, however the expression will only be evaluated once and replace with the result. The variables can be sorted by name, or re-ordered be hand: selected rows can be moved up or down by pressing the Page-Up and Page-Down keys, respectively. New variables are added by entering the name and clicking the plus icon.}
+\caption{\label{GlobalVariables} Global variables window. Global variables can be defined here. The value should be entered with dimensions. Entering of mathematical expressions is possible, however the expression will only be evaluated once and replaced with the result. The variables can be sorted by name, or re-ordered be hand: selected rows can be moved up or down by pressing the Page-Up and Page-Down keys, respectively. New variables are added by entering the name and clicking the plus icon.}
 \end{SCfigure}
 
 Global variables can be defined as shown in figure~\ref{GlobalVariables}. These variables can then be used in all Pulse Program controls.
@@ -563,14 +575,14 @@ Static settings are the settings that are applied while no Pulse Program is runn
 \begin{SCfigure}
 \centering
 \includegraphics[width=0.5\textwidth]{DDS}
-\caption{\label{DDS} DDS control window for 6 DDS channels. The channel names are only for the memory of the user. These values are {\em not} used anywhere else. The frequency has to be entered with a frequency unit. The Phase has to be entered with the unit rad. (Please excuse that in most other parts the phase is entered in degree and without unit). The amplitude is entered as an integer between 0 and 1023. If apply directly is checked, the io-update signals are generated after each change. If it is not checked, the apply button has to be clicked. Reset triggers a channel reset, values have to be written explicitly thereafter. }
+\caption{\label{DDS} DDS control window for 6 DDS channels. The channel names are for the memory of the user. The frequency has to be entered with a frequency unit. The Phase has to be entered with the unit rad. (Please excuse that in most other parts the phase is entered in degree and without unit). The amplitude is entered as an integer between 0 and 1023. If apply directly is checked, the io-update signals are generated after each change. If it is not checked, the apply button has to be clicked. Reset triggers a channel reset, values have to be written explicitly thereafter. }
 \end{SCfigure}
 The DDS settings are entered in the window show in figure~\ref{DDS}.  The channel names are only for the memory of the user. These values are {\em not} used anywhere else. The frequency has to be entered with a frequency unit. The Phase has to be entered with the unit rad. (Please excuse that in most other parts the phase is entered in degree and without unit). The amplitude is entered as an integer between 0 and 1023. If apply directly is checked, the io-update signals are generated after each change. If it is not checked, the apply button has to be clicked. Reset triggers a channel reset, values have to be written explicitly thereafter. The controls are disabled while a Pulse Program is running. After the execution of a Pulse Program, the DDS chips might be left at different settings. In the configuration of Pulse Program scans an option to automatically write the static settings can be selected.
 
 The fields for frequency and phase can be changed by pressing the up and down keys. The value is then increased or reduced by the value of the digit left of the cursor.
 
 \subsubsection{Shutters}
-Shutters are the digital outputs of the system. These can be toggled by clicking the red (off, low) or green (on, high) field. The channel name that can be entered in the left column is only for the reference of the user. It is not used anywhere else.
+Shutters are the digital outputs of the system. These can be toggled by clicking the red (off, low) or green (on, high) field. The channel name that can be entered in the left column is only for the reference of the user and defines the shutter names shown in the Pulse Program and Logic Analyzer windows.
 
 \begin{SCfigure}
 \centering
@@ -582,7 +594,7 @@ Shutters are the digital outputs of the system. These can be toggled by clicking
 The triggers are digital outputs that are low by default and only switched to high for one clock cycle. The control window is similar to the Shutter window. Only here "not triggered" is represented by a white field. Triggers are applied by clicking Apply.
 
 \subsection{External Instruments}
-External instruments includes all external instruments connected via GPIB, USB, Serial, IP-network to the host computer. The external instruments have one value that can be controlled and used for scans. In addition each instrument can define a number of Parameters which can be controlled from the gui. The External parameter interface consists of two windows: "Params selection" and "Params control". Params selection serves to establish a connection to the device and control the Parameters. The Paras control window combines the main channels of all enabled External Instruments.
+External instruments include all external instruments connected via GPIB, USB, Serial, IP-network to the host computer. The external instruments have one value that can be controlled and used for scans. In addition each instrument can define a number of Parameters which can be controlled from the gui. The External parameter interface consists of two windows: "Params selection" and "Params control". Params selection serves to establish a connection to the device and control the Parameters. The Paras control window combines the main channels of all enabled External Instruments.
 
 \subsubsection{External Instrument Selection}
 
@@ -611,31 +623,55 @@ This window combines the main values of all external instruments. The order foll
 
 
 \section{Pulse Program}
+The Pulse Program window serves as graphics interface to the pulse program. A pulse program is loaded with the "File open" button. The selection box gives easy access to recently used pulse programs. The system remembers the path of the file internally. Thus using files of the same filename at different locations will be confusing and is discouraged. The values of variables defined in the pulse program are shown in the interface. The variables in the gui {\em overwrite} the values defined in the pulse program (Figure~\ref{PulseProgram}). 
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=\textwidth]{PulseProgram}
 \end{center}
-\caption{\label{PulseProgram} Main window.}
+\caption{\label{PulseProgram} Pulse Program window. There is a tab for every pulse program used by the different measurement tabs of the Main Window.}
 \end{figure}
+
+The interface to the shutter values (top left) combines shutter_mask and shutter variables. The table on the left allows to change the trigger values, the third window allows to control the counter gates.
+Currently, the $8$ input channels are routed to counters $0-7$, $8-15$, $16-23$, and to the time-stamping circuits $24-31$.
+The accumulated counts from channels $0-15$ are transmitted back to the computer when the gate is closed. Channels $16-23$ are only accessible from the pulse program. Channels $24-31$ lead to the transmission of a time-stamp for every detected pulse. The time resolution of $20\unit{ns}$ is given by the FPGA clock frequency $50\unit{MHz}$.
+
+The control for the variables can be found on the right. The "use" column allows one to set the variable to $0$ while keeping the previous value in the value field. The value field accepts mathematical expressions including dimensions and can reference local and global variables. The program will prevent the definition of cyclic dependencies.
+
+The values in the gui are saved in the gui configuration file. The pulse program file is saved exactly as shown in the bottom left. An external editor can be used.
 
 \section{Scan configuration}
-\subsection{Scan settings}
-\begin{figure}[htbp]
-\begin{center}
+The Scan configuration allows the user to control how the scan is executed and evaluated. All values are copied when the scan starts. Changes to any of these controls will only go into effect for newly started scans. The window is how in Figure~\ref{ScanParametersScan}. All scan settings can be saved under a name that is entered in the selection box at the top. The current values are saved under this name when the "save" button is pressed. The "reload" button allows to re-load the values that were saved before under the name currently showing in the selection box. Selecting a different saved set from the selection box will load those values.
+The undo and redo button go back to the last set of values used for the last executed scan.
+
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{ScanParametersScan}
-\end{center}
-\caption{\label{PulseProgram} Main window.}
-\end{figure}
+\caption{\label{PulseProgram} Scan Control --- Scan. A scan is defined here. \protect\lit*{Parameter Scan} will overwrite one of the variables in the pulse program, \protect\lit*{Step in Place} will repeat the experiment as defined in the pulse program. In this case, he number of steps defines how many points are kept.  \protect\lit*{Gate Sequence Scan} will scan through the values defined in the Gate Sequence configuration files.}
+\end{SCfigure}
+\subsection{Scan settings}
+The  way he scan is executed is defined in the \lit*{Scan} tab. The possible scans are:
+\begin{description}
+\item \lit*{Step in place} which will execute the current pulse program repeatedly with the same settings.
+\item \lit*{Parameter Scan} will overwrite the variable from the current pulse program selected in the next selection box. If the value that was last selected is not available in the current pulse program, it will be displayed in red. 
+\item \lit*{Gate Sequence} Allows to scan over different gate sequences as defined in the gate sequence configuration files.
+\end{description}
+The scan can be defined with start and stop values or center and span values. In addition either the number of steps or the stepsize can be defined. The x-axis unit defines the unit to which values are converted before they are plotted. The scan direction can be either \lit*{Linear Start to Stop}, \lit*{Linear Stop to Start} and \lit*{Randomized}. Randomized will execute the different points in a random permutation defined at the beginning of the scan. Results are saved in the order the points were taken. If \lit*{Load PP} is checked, the pulse program file selected on the right is loaded when the scan control settings are loaded. If \lit*{Filename} is checked, results will automatically saved to the filename given on the right. If only a filename is given, the data will be saved under this filename once the user presses the save button in the Trace user interface. When saving, a three digit serial number is inserted before the last period of the string given in \lit*{Filename}.
 
 \subsection{Evaluation settings}
-\begin{figure}[htbp]
-\begin{center}
+\begin{SCfigure}
+\centering
 \includegraphics[width=0.5\textwidth]{ScanParametersEvaluation}
-\end{center}
-\caption{\label{PulseProgram} Main window.}
-\end{figure}
+\caption{\label{PulseProgram} Evaluation definition.}
+\end{SCfigure}
+The way the count values from the different channels are evaluated is defined in the \lit*{Evaluation} tab. Pressing the plus icon will add a new evaluation, pressing the minus icon will delete currently selected evaluations. After adding, the different fields can be changed. The Counter channel which counter channels is evaluated. The Evaluation defines the kind of evaluations. It is easy to add newly defines evaluations. A unique Name is necessary for identification. If Hist is checked a histogram will be displayed in the Histogram graph. Plot defines in which plot window the results are displayed. Available evaluations are:
+\begin{description}
+\item \lit*{Threshold} Does a simple thresholding, where the threshold value is entered in the parameter window (after selection the evaluation). A value of $n$ means count values $0-n$ are considered dark, count values $>n$ are considered bright. Error-bars are  represent the Wilson score interval with continuity correction\footnote{see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval}. These are always limited by 0 and 1.
+\item \lit*{Mean} Evaluated to the mean count number. Error-bars can either be shot-noise $\sqrt{\sum_{i=1}^N{x_i}}/N$ or statistical standard error $$\frac{1}{\sqrt{N-1}}\sqrt{\langle x^2 \rangle - \langle x \rangle^2},$$ where $N$ is the number of values averaged.
+\item \lit*{Number} Evaluated to the number of count values received. This is useful if a loop in the pulse program leads to a variable number of results in a channel.
+\end{description}
 
-\subsection{Timestamp settings}
+\subsection{Time-stamp settings}
+The time-stamp settings define how time-stamps are displayed. If enabled, the binwidth defines the time-interval combined into one value. This values should be chosen in multiples of the clock duration ($20\unit{ns}$). ROI start defines the start of the plot with respect to the gate. ROI width the width of the curve shown. Counter defines which counter values are displayed. Here $0-7$ corresponds to the pulse program countermask in bits $24-31$. 
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=0.5\textwidth]{ScanParametersTimestamps}
@@ -651,6 +687,8 @@ This window combines the main values of all external instruments. The order foll
 \end{center}
 \caption{\label{PulseProgram} Main window.}
 \end{figure}
+
+\section{Logic Analyzer}
 
 \section{Curve fitting}
 \begin{figure}[htbp]
@@ -668,5 +706,14 @@ This window combines the main values of all external instruments. The order foll
 \caption{\label{AutoloadSettings} Main window.}
 \end{figure}
 
+\section{Extending the program}
+
+\subsection{Analog Inputs}
+
+\subsection{External Parameters}
+
+\subsection{Count evaluation}
+
+\subsection{Fit functions}
 
 \end{document}
