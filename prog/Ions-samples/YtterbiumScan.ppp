@@ -1,0 +1,148 @@
+###########################################################################
+#
+#  example for PulseProgramPlus input
+#
+
+const DDSDetect 1
+const DDSMicrowave 2
+const PMTChannel 9
+
+# 397 beam frequencies and amplitudes
+parameter<AD9912_FRQ> DetectFreq = 100 MHz
+parameter DetectAmp = 1023
+parameter<AD9912_FRQ> MicrowaveFreq = 40 MHz
+parameter<AD9912_PHASE> MicrowaveInitPhase = 0
+parameter<AD9912_PHASE> MicrowaveAnalyzePhase = 0
+
+# masks and shutters
+shutter InitializationShutter 
+masked_shutter CoolingOn
+masked_shutter CoolingOff
+masked_shutter PumpingOn
+masked_shutter PumpingOff
+masked_shutter MicrowaveOn
+masked_shutter MicrowaveOff
+masked_shutter DetectOn
+masked_shutter DetectOff
+
+# times
+parameter CoolingTime = 1 ms
+parameter PumpTime = 0 ms
+parameter QubitInitTime = 0 ms
+parameter QubitWaitTime = 0 ms
+parameter QubitAnalyzeTime = 0 ms
+parameter DetectTime = 1 ms
+parameter AmplitudeSettlingTime = 100 us
+
+# control parameters
+parameter MaxInitRepeat = 10
+parameter experiments = 100
+parameter CheckIonCounters = 0
+parameter DetectCounters = 0
+trigger ddsApplyTrigger =  3
+trigger ddsMicrowaveApply = 3
+parameter PresenceThreshold = 6
+
+# internal variables
+var experimentsleft = 100
+var Null = 0
+var endLabel = 0xffffffff
+var initRemaining = 0
+
+procedure cool {
+	set_shutter( CoolingOn )
+	set_counter( CheckIonCounters )
+	update( CoolingTime )
+	set_counter( Null )
+	update()
+	W = load_count( PMTChannel )
+}
+
+procedure pump {
+	set_shutter( PumpingOn )
+	update( PumpingTime )
+	set_shutter( PumpingOff )
+}
+
+procedure qubitInit {
+	set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
+	set_trigger( ddsMicrowaveApply )
+	set_shutter( MicrowaveOn )
+	update( QubitInitTime )
+	set_shutter( MicrowaveOff )
+}
+
+# startup switching on cooling quickly
+	set_shutter( InitializationShutter )
+	set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
+	set_trigger( ddsApplyTrigger )
+	update()
+
+while ( not pipe_empty() ) {
+	P = read_pipe()
+	write_pipe( P ) 
+	w = read_pipe()
+	write_pipe( W )
+	*P = W
+	experimentsleft = experiments
+	
+	while (experimentsleft>0) {
+		cool()
+		if (MaxInitRepeat>0) {
+			initRemaining = MaxInitRepeat
+			while (W<PresenceThreshold) {
+				if (initRemaining==0) { exit( IonLostExiutcode ) }
+				cool()
+			}
+		if (PumpingTime>0) {
+			pump()
+		}
+		if (QubitInitTime>0) {
+			qubitInit()
+		}
+	
+QubitWait: NOP	
+	LDWR QubitWaitTime
+	JMPZ QubitAnalyze
+	WAIT
+	UPDATE QubitWaitTime
+
+QubitAnalyze: NOP
+	LDWR QubitAnalyzeTime
+	JMPZ detect
+	DDSFRQ DDSMicrowave, MicrowaveFreq
+	DDSPHS DDSMicrowave, MicrowaveAnalyzePhase
+	TRIGGER ddsMicrowaveApply
+	SHUTTERMASK  MicrowaveOnMask
+	ASYNCSHUTTER MicrowaveOn
+	WAIT
+	UPDATE QubitAnalyzeTime
+	
+	SHUTTERMASK  MicrowaveOffMask
+	ASYNCSHUTTER MicrowaveOff
+		
+detect: NOP
+	LDWR DetectTime
+	JMPZ postdetect
+	DDSFRQ DDSDetect, DetectFreq
+	SHUTTERMASK  DetectOnMask
+	ASYNCSHUTTER DetectOn
+	COUNTERMASK DetectCounters
+	TRIGGER ddsApplyTrigger
+	
+	WAIT
+	UPDATE DetectTime
+	
+	SHUTTERMASK DetectOffMask
+	ASYNCSHUTTER DetectOff
+
+postdetect: NOP
+	DEC experimentsleft
+	STWR experimentsleft
+	JMPNZ init
+	JMP scanloop
+	
+endlabel: LDWR endLabel
+	WAIT
+	WRITEPIPE
+	END

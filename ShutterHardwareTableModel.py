@@ -13,19 +13,21 @@ api2 = sip.getapi("QVariant")==2
 class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
     onColor =  QtGui.QColor(QtCore.Qt.green)
     offColor =  QtGui.QColor(QtCore.Qt.red)
-    def __init__(self, shutterdict, pulserHardware, outputname, size=32, parent=None, *args): 
+    def __init__(self, pulserHardware, outputname, data, size=32, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.shutterdict = shutterdict
-        self.shutterNameDict = dict((value, key) for key, value in shutterdict.iteritems())
         self.pulserHardware = pulserHardware
         self.outputname = outputname
         self.size = size
         self._shutter = getattr(self.pulserHardware,self.outputname)
-#        size = 8
-#        [bool(235 & (1 << size - i - 1)) for i in xrange(size)]
+        self.data, self.dataChangedSignal = data 
+        self.dataLookup = { (QtCore.Qt.DisplayRole,0):          lambda row: self.data.names.get(row,None),
+                            (QtCore.Qt.BackgroundColorRole,1):  lambda row: self.onColor if self._shutter & (1<<row) else self.offColor,
+                            (QtCore.Qt.EditRole,0):             lambda row: self.data.names.get(row,''),
+                           }
+
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return self.size
         
@@ -36,29 +38,24 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         logger = logging.getLogger(__name__)
         value = str(value if api2 else str(value.toString()))
         if index.column()==0 and role==QtCore.Qt.EditRole:
-            if value in self.shutterNameDict and index.column()==self.shutterNameDict[value]: # no change
+            if value in self.data.channels and index.column()==self.data.channels[value]: # no change
                 return True
-            elif value in self.shutterNameDict: # duplicate
+            elif value in self.data.channels: # duplicate
                 logger.error( "cannot have the same name twice" )
                 return False
             else:
-                old = self.shutterdict.get(index.row())
-                if old in self.shutterNameDict:
-                    self.shutterNameDict.pop(self.shutterdict[index.row()])                    
                 if value != '':
-                    self.shutterNameDict[value] = index.row()
-                    self.shutterdict[index.row()] = value
+                    self.data.channels[value] = index.row()
+                    self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
                 else:
-                    if index.row() in self.shutterdict:
-                        self.shutterdict.pop(index.row())
+                    if index.row() in self.data.names:
+                        self.data.names.pop(index.row())
+                        self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
         return False
         
     def data(self, index, role): 
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,0): self.shutterdict.get(index.row(),None),
-                     (QtCore.Qt.BackgroundColorRole,1): self.onColor if self._shutter & (1<<index.row()) else self.offColor,
-                     (QtCore.Qt.EditRole,0): self.shutterdict.get(index.row(),''),
-                     }.get((role,index.column()),None)
+            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
         return None
         
     def flags(self, index ):

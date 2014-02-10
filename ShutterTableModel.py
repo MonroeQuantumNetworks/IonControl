@@ -9,7 +9,7 @@ import functools
 import re
 
 class ShutterTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, variabledict, parent=None, *args): 
+    def __init__(self, variabledict, channelNameData, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
@@ -26,6 +26,8 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
                         self.maskdict[name] = self.variabledict[m.group(1)]
         #self.variablelist = sorted(self.variablelist, key=attrgetter('index')) 
         #print self.variablelist 
+        self.channelNames, self.channelSignal = channelNameData
+        self.channelSignal.dataChanged.connect( self.onHeaderChanged )
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.variablelist) 
@@ -84,10 +86,16 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
     def flags(self, index ):
         return  QtCore.Qt.ItemIsEnabled 
 
+    def onHeaderChanged(self, first, last):
+        self.headerDataChanged.emit( QtCore.Qt.Horizontal, first, last )
+
     def headerData(self, section, orientation, role ):
+        index = 31-section
         if (role == QtCore.Qt.DisplayRole):
-            if (orientation == QtCore.Qt.Horizontal): 
-                return str(31-section)
+            if (orientation == QtCore.Qt.Horizontal):
+                if index in self.channelNames.names:
+                    return self.channelNames.names[index]
+                return index
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.variablelist[section].name
         return None #QtCore.QVariant()

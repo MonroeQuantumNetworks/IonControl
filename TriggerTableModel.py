@@ -8,13 +8,15 @@ from PyQt4 import QtCore, QtGui
 import functools
 
 class TriggerTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, variabledict, parent=None, *args): 
+    def __init__(self, variabledict, channelNameData, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variabledict = variabledict
         self.variablelist = [ x for x in self.variabledict.values() if x.type=='trigger' ]
+        self.channelNames, self.channelSignal = channelNameData
+        self.channelSignal.dataChanged.connect( self.onHeaderChanged )
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.variablelist) 
@@ -52,10 +54,16 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
     def flags(self, index ):
         return  QtCore.Qt.ItemIsEnabled 
 
+    def onHeaderChanged(self, first, last):
+        self.headerDataChanged.emit( QtCore.Qt.Horizontal, first, last )        
+
     def headerData(self, section, orientation, role ):
+        index = 31-section
         if (role == QtCore.Qt.DisplayRole):
-            if (orientation == QtCore.Qt.Horizontal): 
-                return str(31-section)
+            if (orientation == QtCore.Qt.Horizontal):
+                if index in self.channelNames.names:
+                    return self.channelNames.names[index]
+                return index
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.variablelist[section].name
         return None #QtCore.QVariant()

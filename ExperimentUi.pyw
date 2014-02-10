@@ -38,7 +38,8 @@ import GlobalVariables
 from PulserHardwareClient import PulserHardware 
 import ProjectSelection
 from LoggerLevelsUi import LoggerLevelsUi
-
+from modules.bidict import ChannelNameMap
+from modules.DataChanged import DataChanged
     
 import PyQt4.uic
 from PyQt4 import QtCore, QtGui 
@@ -59,6 +60,10 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.deviceDescription = config.get('Settings.deviceDescription')
         self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
         self.consoleMaximumLines = config.get('Settings.consoleMaximumLines',0)
+        self.shutterNameDict = config.get('Settings.ShutterNameDict', ChannelNameMap())
+        self.shutterNameSignal = DataChanged()
+        self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameMap())
+        self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         
     def __enter__(self):
@@ -91,8 +96,11 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.parent = parent
         self.tabList = list()
         self.tabDict = dict()
+        
+        
         # initialize PulseProgramUi
-        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config)
+        self.channelNameData = (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal)
+        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
         self.settingsDialog = SettingsDialog.SettingsDialog(self.pulser, self.config, self.parent)
@@ -127,13 +135,13 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalScanExperiment = self.tabDict["External Scan"]
         self.voltageScanExperiment = self.tabDict["Voltage Scan"]
         
-        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config)
+        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal) )
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
         self.pulser.ppActiveChanged.connect( self.shutterUi.setDisabled )
         logger.debug( "ShutterUi representation:" + repr(self.shutterUi) )
 
-        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config)
+        self.triggerUi = ShutterUi.TriggerUi(self.pulser, 'trigger', self.config, (self.triggerNameDict, self.triggerNameSignal) )
         self.triggerUi.offColor =  QtGui.QColor(QtCore.Qt.white)
         self.triggerUi.setupUi(self.triggerUi)
         self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
@@ -199,7 +207,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow = DedicatedCounters.DedicatedCounters(self.config, self.pulser)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
-        self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser)
+        self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser, self.channelNameData )
         self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
         self.voltageControlWindow = VoltageControl.VoltageControl(self.config)
@@ -327,6 +335,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.size'] = self.size()
         self.config['Settings.loggingLevel'] = self.loggingLevel
         self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
+        self.config['Settings.ShutterNameDict'] = self.shutterNameDict 
+        self.config['SettingsTriggerNameDict'] = self.triggerNameDict 
         self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
