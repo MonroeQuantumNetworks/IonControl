@@ -245,8 +245,8 @@ class PulseProgram:
 
 # routines below here should not be needed by the user   
 
-    insertPattern = re.compile('#insert\s+([\w.-_]+)',re.IGNORECASE)
-    codelinePattern = re.compile('(#define|\s*[^#\s]+)',re.IGNORECASE)
+    insertPattern = re.compile('insert\s+([\w.-_]+)',re.IGNORECASE)
+    codelinePattern = re.compile('(\s*[^#\s]+)',re.IGNORECASE)
     def insertSource(self, pp_file):
         """ read a source file pp_file
         calls itself recursively to for #insert
@@ -267,7 +267,7 @@ class PulseProgram:
                 if self.codelinePattern.match(text):
                     self.sourcelines.append((text, line+1, pp_file))
 
-    definePattern = re.compile('#define\s+(\w+)\s+(\w+)[^#\n\r]*')     #csn
+    definePattern = re.compile('const\s+(\w+)\s+(\w+)[^#\n\r]*')     #csn
     def addDefine(self, m, lineno, sourcename):
         """ add the define to the self.defines dictionary
         """
