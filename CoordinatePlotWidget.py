@@ -7,8 +7,7 @@ Created on Wed Jan 09 21:19:26 2013
 This is the main plotting element used in the control program. It adds the
 coordinates of the cursor position as a second element also allows one to
 copy the coordinates to the clipboard. It uses a custom version of PlotItem
-which includes a button to turn the grid on and off, and a button to set the
-y range to 0->1.
+which includes custom range options.
 
 Buttons added by jmizrahi on 10/15/2013.
 """
@@ -29,7 +28,13 @@ range_icon_file = icons_dir + 'unity-range'
 holdZero_icon_file = icons_dir + 'hold-zero'
 
 class CustomViewBox(ViewBox):
+    """
+    Override of pyqtgraph ViewBox class. Modifies setRange method to allow for autoranging while keeping the minimum at zero.
     
+    Adds a variable "holdZero" which indicates whether the ViewBox should hold the minimum y value at zero while autoranging.
+    If this variable is True, the setRange method forces the minimum y value to be zero. If it is False, the setRange method
+    is identical to that of pyqtgraph.ViewBox.
+    """    
     def __init__(self, *args, **kwds):
         super(CustomViewBox,self).__init__(*args, **kwds)
         self.holdZero = False
@@ -43,41 +48,41 @@ class CustomViewBox(ViewBox):
 
 class CustomPlotItem(PlotItem):
     """
-    Plot using pyqtgraph.PlotItem, with a few modifications:
-    Add a grid button which turns the grid on/off.
-    Add a unity range button which sets the y axis range to 1.
+    Plot using pyqtgraph.PlotItem, with extra buttons.
+
+    The added buttons are:
+        -A unity range button which sets the y axis range to 1.
+        -A hold zero button which keeps the y minimum at zero while autoranging.
     resizeEvent is extended to set the position of the two new buttons correctly.
     """
     def __init__(self, parent=None):
         """
-        Create a new CustomPlotItem. In addition to the ordinary PlotItem, add
-        a grid button and a unity range button. Also set the default range to
-        0 to 1 and the default grid to on.
+        Create a new CustomPlotItem. In addition to the ordinary PlotItem, adds buttons and uses the custom ViewBox.
         """
         cvb = CustomViewBox()
         super(CustomPlotItem,self).__init__(parent, viewBox = cvb)
-        pg.setConfigOption('background', 'w') #set background to white
-        pg.setConfigOption('foreground', 'k') #set foreground to black
         self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=14, parentItem=self)
-        self.holdZeroBtn = ButtonItem(imageFile=holdZero_icon_file, width=14, parentItem=self)
+        self.unityRangeBtn.setToolTip("Set y range to (0,1)")
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
+        self.holdZeroBtn = ButtonItem(imageFile=holdZero_icon_file, width=14, parentItem=self)
+        self.holdZeroBtn.setToolTip("Keep 0 as minimum y value while autoranging")
         self.holdZeroBtn.clicked.connect(self.onHoldZero)
+        self.autoBtn.setToolTip("Autorange x and y axes")
         self.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         
     def resizeEvent(self, ev):
         """
-        Set the size of gridBtn and unityRangeBtn appropriately. The code is 
-        borrowed from the same code applied to autoBtn in the parent method in 
-        PlotItem.py.
+        Set the button sizes appropriately.
+        
+        The code is borrowed from the same code applied to autoBtn in the parent method in PlotItem.py.
         """
         PlotItem.resizeEvent(self,ev)
-#        gridBtnRect = self.mapRectFromItem(self.gridBtn, self.gridBtn.boundingRect())
         unityRangeBtnRect = self.mapRectFromItem(self.unityRangeBtn, self.unityRangeBtn.boundingRect())
         holdZeroBtnRect= self.mapRectFromItem(self.holdZeroBtn, self.holdZeroBtn.boundingRect())
         yHoldZero = self.size().height() - holdZeroBtnRect.height()
         yUnityRange= self.size().height() - unityRangeBtnRect.height()
         self.unityRangeBtn.setPos(0, yUnityRange-24) #The autoBtn height is 14, add 10 to leave a space
-        self.holdZeroBtn.setPos(0, yHoldZero-67)
+        self.holdZeroBtn.setPos(0, yHoldZero-67) #Leave some space above the unity range button
 
     def onUnityRange(self):
         """Execute when unityRangeBtn is clicked. Set the yrange to 0 to 1."""
@@ -85,23 +90,28 @@ class CustomPlotItem(PlotItem):
         self.setYRange(0,1)
         
     def onHoldZero(self):
-        self.setYRange(0,1)
+        """Execute when holdZeroBtn is clicked. Autorange, but leave the y minimum at zero."""
+        self.setYRange(0,1) #This is a shortcut to turn off the autoranging, so that we can turn it back on with holdZero's value changed
         self.vb.holdZero = True
         super(CustomPlotItem,self).autoBtnClicked()
         self.autoBtn.show()
 
     def autoBtnClicked(self):
-        self.setYRange(0,1)
+        """Execute when the the autoBtn is clicked. Set the holdZero variable to False."""
+        self.setYRange(0,1) #This is a shortcut to turn off the autoranging, so that we can turn it back on with holdZero's value changed
         self.vb.holdZero = False
         super(CustomPlotItem,self).autoBtnClicked()
 
     def updateButtons(self):
+        """Overrides parent method updateButtons. Makes the autoscale button visible all the time.
+        
+        In the parent method, the auto button disappears when autoranging is enabled, or when the mouse moved off the plot window.
+        I didn't like that feature, so this method disables it."""
         self.autoBtn.show()
 
 class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
-       coordinate display, a button to set the y scale to 0-1, and a button
-       to display/hide the grid."""
+       coordinate display, and custom buttons."""
     def __init__(self,parent=None):
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = LabelItem(justify='right')
