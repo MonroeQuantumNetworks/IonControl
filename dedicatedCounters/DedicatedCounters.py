@@ -10,13 +10,15 @@ DedicatedCounters reads and displays the counts from the simple counters and ADC
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 import numpy
+import logging
 
 from dedicatedCounters import AutoLoad
 from dedicatedCounters import DedicatedCountersSettings
 from dedicatedCounters import DedicatedDisplay
 from dedicatedCounters import InputCalibrationUi
 from modules import enum
-
+from trace.Trace import Trace, TracePlotting
+from modules.DataDirectory import DataDirectory
 
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -52,7 +54,6 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         DedicatedCountersForm.setupUi(self,parent)
         self.actionSave.triggered.connect( self.onSave )
         self.actionClear.triggered.connect( self.onClear )
-        self.actionPause.triggered.connect( self.onPause )
         self.actionStart.triggered.connect( self.onStart )
         self.actionStop.triggered.connect( self.onStop )
         self.settingsUi = DedicatedCountersSettings.DedicatedCountersSettings(self.config)
@@ -165,17 +166,23 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.state = self.OpStates.idle
                 
     def onSave(self):
-        pass
+        logger = logging.getLogger(__name__)
+        for counter in range(8):
+            if len(self.xData[counter])>0 and len(self.yData[counter])>0:
+                trace = Trace()
+                trace.x = self.xData[counter]
+                trace.y = self.yData[counter]
+                trace.vars.counter = counter
+                filename, _ = DataDirectory().sequencefile("DedicatedCounter_{0}.txt".format(counter))
+                trace.addTracePlotting( TracePlotting(name="Counter {0}".format(counter)) )
+                trace.saveTrace(filename)
+        logger.info("saving dedicated counters")
     
     def onClear(self):
         self.xData = [numpy.array([])]*8
         self.yData = [numpy.array([])]*8
         self.tick = 0        
     
-    def onPause(self):
-        if self.state in [self.OpStates.running, self.OpStates.paused]:
-            self.state = self.OpStates.paused if self.actionPause.isChecked() else self.OpStates.running
-        
     def onData(self, data):
         self.tick += 1
         self.displayUi.values = data.data[0:4]

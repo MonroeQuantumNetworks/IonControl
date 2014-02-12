@@ -38,7 +38,6 @@
    <addaction name="actionClear"/>
    <addaction name="actionStart"/>
    <addaction name="actionStop"/>
-   <addaction name="actionPause"/>
   </widget>
   <widget class="QDockWidget" name="settingsDock">
    <property name="windowTitle">
@@ -65,18 +64,6 @@
    </property>
    <property name="text">
     <string>Clear</string>
-   </property>
-  </action>
-  <action name="actionPause">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/player_pause.png</normaloff>:/kde/icons/player_pause.png</iconset>
-   </property>
-   <property name="text">
-    <string>Pause</string>
    </property>
   </action>
   <action name="actionStart">
