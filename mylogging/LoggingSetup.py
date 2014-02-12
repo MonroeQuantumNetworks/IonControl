@@ -38,8 +38,10 @@ stderrHandler = logging.StreamHandler(sys.stderr)
 stderrHandler.setFormatter(formatter)
 stderrHandler.addFilter(LevelThresholdFilter(logging.ERROR,True))
 
+fileformatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
+
 fileHandler = logging.FileHandler("messages")
-fileHandler.setFormatter(formatter)
+fileHandler.setFormatter(fileformatter)
 fileHandler.setLevel(logging.INFO)
 
 qtHandler = QtLoggingHandler()
