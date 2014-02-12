@@ -133,7 +133,7 @@ class Expression:
             dependencies.add(op)
             return self.variabledict[op]
         elif op[0].isalpha():
-            raise KeyError("operand '{0}' not found in dictionary.".format(op[0]))
+            raise KeyError("operand '{0}' not found in dictionary.".format(op))
         else:
             fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
             l = fmag.parseString(op)
