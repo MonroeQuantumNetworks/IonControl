@@ -3,6 +3,7 @@ from re import search
 
 from numpy import append
 import numpy
+import logging
 
 import DAQmxUtility as dutil
 from PyDAQmx import DAQError
@@ -202,7 +203,10 @@ class WaveformChassis(object):
         #number of channels
         #print 'total number of channels: ' + str(totalNumChnls)
         sampsPerChannel = len(data)/totalNumChnls
-        #print 'samples per channel: ' + str(sampsPerChannel)
+        if sampsPerChannel == 0:
+            logging.getLogger(__name__).error("samples per channel: 0, no voltages will be written")
+        else:
+            logging.getLogger(__name__).debug('samples per channel: {0}'.format(sampsPerChannel))
         
         #take a subset of data and input into the buffer for each generator
         for i , generator in enumerate(self.gens):
