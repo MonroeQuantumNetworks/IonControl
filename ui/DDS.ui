@@ -425,13 +425,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="checkBoxWriteOnStartup">
-       <property name="text">
-        <string>Write on startup</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -532,7 +525,6 @@
   <tabstop>phaseBox5</tabstop>
   <tabstop>amplitudeBox5</tabstop>
   <tabstop>autoApplyBox</tabstop>
-  <tabstop>checkBoxWriteOnStartup</tabstop>
   <tabstop>writeAllButton</tabstop>
   <tabstop>resetButton</tabstop>
   <tabstop>applyButton</tabstop>

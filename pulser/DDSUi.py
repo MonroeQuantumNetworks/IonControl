@@ -19,7 +19,6 @@ class DDSUi(DDSForm, DDSBase):
         self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
         self.names = self.config.get('DDSUi.Names',['']*6)
         self.ad9912 = Ad9912.Ad9912(pulser)
-        self.writeOnStartup = self.config.get('DDSUi.WriteOnStartup',False)
         self.autoApply = self.config.get('DDSUi.autoApply',False)
         
     def setupUi(self,parent):
@@ -39,12 +38,10 @@ class DDSUi(DDSForm, DDSBase):
         self.applyButton.clicked.connect( self.onApply )
         self.resetButton.clicked.connect( self.onReset )
         self.writeAllButton.clicked.connect( self.onWriteAll )
-        self.checkBoxWriteOnStartup.setChecked(self.writeOnStartup)
         self.autoApplyBox.setChecked( self.autoApply )
         self.autoApplyBox.stateChanged.connect( self.onStateChanged )
-        if self.writeOnStartup:
-            self.onWriteAll()
-            self.onApply()
+        self.onWriteAll()
+        self.onApply()
             
     def setDisabled(self, disabled):
         for widget  in [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5,
@@ -87,7 +84,6 @@ class DDSUi(DDSForm, DDSBase):
         self.config['DDSUi.Phase'] = self.phase
         self.config['DDSUi.Amplitude'] = self.amplitude
         self.config['DDSUi.Names'] = self.names
-        self.config['DDSUi.WriteOnStartup'] = self.checkBoxWriteOnStartup.isChecked()
         self.config['DDSUi.autoApply'] = self.autoApply
         
     def onApply(self):
