@@ -95,12 +95,13 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         logger.info( "onDefinitionChanged {0}".format(self.files.definitionFile) )
         
     def onGlobalChanged(self,value):
-        logger = logging.getLogger(__name__)
-        value = str(value)
-        if  value in self.files.globalHistory:
-            self.files.globalFile = self.files.globalHistory[value]
-        self.loadGlobalAdjust.emit(self.files.globalFile)
-        logger.info( "onGlobalChanged {0}".format(self.files.globalFile) )
+        if value is not None:
+            logger = logging.getLogger(__name__)
+            value = str(value)
+            if  value in self.files.globalHistory:
+                self.files.globalFile = self.files.globalHistory[value]
+            self.loadGlobalAdjust.emit(self.files.globalFile)
+            logger.info( "onGlobalChanged {0}".format(self.files.globalFile) )
         
     def onLocalChanged(self,value):
         pass

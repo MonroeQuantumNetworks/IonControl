@@ -24,7 +24,7 @@ from modules.Utility import unique
 from modules.formatDelta import formatDelta
 from modules.magnitude import Magnitude
 from uiModules.KeyboardFilter import KeyFilter
-
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -42,16 +42,20 @@ class AutoLoadSettings:
         self.useInterlock = False
         self.interlock = SequenceDict()
         self.wavemeterAddress = ""
+        self.ovenChannelActiveLow = False
+        self.shutterChannelActiveLow = False
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
         after unpickling. Only new class attributes need to be added here.
         """
         self.__dict__ = state
+        self.__dict__.setdefault( 'ovenChannelActiveLow', False)
+        self.__dict__.setdefault( 'shutterChannelActiveLow', False )
 
-def invert( logic, channel):
+def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
-    return (logic if channel>0 else not logic)
+    return (not logic if invert else logic)
 
 class LoadingEvent:
     def __init__(self,loading=None,trappedAt=None):
@@ -84,6 +88,10 @@ class AutoLoad(UiForm,UiBase):
         self.shutterChannelBox.valueChanged.connect( functools.partial( self.onValueChanged, 'shutterChannel' ))
         self.ovenChannelBox.setValue( self.settings.ovenChannel )
         self.ovenChannelBox.valueChanged.connect( functools.partial( self.onValueChanged, 'ovenChannel' ))
+        self.ovenChannelActiveLowBox.setChecked( self.settings.ovenChannelActiveLow )
+        self.ovenChannelActiveLowBox.stateChanged.connect( functools.partial( self.onStateChanged, 'ovenChannelActiveLow') )
+        self.shutterChannelActiveLowBox.setChecked( self.settings.shutterChannelActiveLow )
+        self.shutterChannelActiveLowBox.stateChanged.connect( functools.partial( self.onStateChanged, 'shutterChannelActiveLow') )
         self.laserDelayBox.setValue( self.settings.laserDelay )
         self.laserDelayBox.dimension = Magnitude(1,s=1)
         self.laserDelayBox.valueChanged.connect( functools.partial( self.onValueChanged, 'laserDelay' ))
@@ -113,6 +121,9 @@ class AutoLoad(UiForm,UiBase):
         self.wavemeterAddressLineEdit.setText( self.settings.wavemeterAddress )
         self.wavemeterAddressLineEdit.editingFinished.connect( self.onWavemeterAddress )
         self.tableModel = WavemeterInterlockTableModel( self.settings.interlock )
+        delegate = MagnitudeSpinBoxDelegate()
+        self.interlockTableView.setItemDelegateForColumn(3, delegate ) 
+        self.interlockTableView.setItemDelegateForColumn(4, delegate ) 
         self.tableModel.getWavemeterData.connect( self.getWavemeterData )
         self.tableModel.getWavemeterData.connect( self.checkFreqsInRange )
         self.interlockTableView.setModel( self.tableModel )
@@ -134,6 +145,9 @@ class AutoLoad(UiForm,UiBase):
     def onRemoveChannel(self):
         for index in sorted(unique([ i.row() for i in self.interlockTableView.selectedIndexes() ]),reverse=True):
             self.tableModel.removeChannel(index)
+            
+    def onStateChanged(self, name, state):
+        setattr( self.settings, name, state==QtCore.Qt.Checked )
         
     def onWavemeterAddress(self):
         value = str(self.wavemeterAddressLineEdit.text())
@@ -237,8 +251,8 @@ class AutoLoad(UiForm,UiBase):
         if self.dataSignalConnected:
             self.dataSignal.disconnect( self.onData )
             self.dataSignalConnected = False
-        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel ))
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
     
     def setPreheat(self):
         """Execute when the loading process begins. Turn on timer, turn on oven."""
@@ -254,7 +268,7 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:red; }")
         self.status = self.StatusOptions.Preheat
         self.statusLabel.setText("Preheating")
-        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(True,self.settings.ovenChannel) )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
     
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
@@ -268,8 +282,8 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Loading")
         self.dataSignal.connect( self.onData )
         self.dataSignalConnected = True
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(True,self.settings.shutterChannel) )
-        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(True,self.settings.ovenChannel) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
     
     def setCheck(self):
         """Execute when count rate goes over threshold."""
@@ -281,8 +295,8 @@ class AutoLoad(UiForm,UiBase):
         self.status = self.StatusOptions.Check
         self.checkStarted = datetime.now()
         self.statusLabel.setText("Checking for ion")
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel) )
-        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         
     def setTrapped(self,reappeared=False):
         self.startButton.setEnabled( True )
@@ -296,8 +310,8 @@ class AutoLoad(UiForm,UiBase):
         self.status=self.StatusOptions.Trapped
         self.elapsedLabel.setStyleSheet("QLabel { color:green; }")
         self.statusLabel.setText("Trapped :)")       
-        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invert(False,self.settings.ovenChannel) )
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invert(False,self.settings.shutterChannel) )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
     
     def setFrozen(self):
         self.startButton.setEnabled( False )

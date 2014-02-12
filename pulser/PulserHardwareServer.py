@@ -615,11 +615,13 @@ class PulserHardwareServer(Process):
 
     def openBySerial(self,serial):
         logger = logging.getLogger(__name__)
-        logger.debug("Open Serial {0}".format(serial) )
         if self.xem is None or not self.xem.IsOpen() or self.xem.GetSerialNumber()!=serial:
+            logger.debug("Open Serial {0}".format(serial) )
             self.xem = ok.FrontPanel()
-            check( self.xem.OpenBySerial( serial ), "OpenBySerial {0}".format(serial) )
+            check( self.xem.OpenBySerial( serial ), "OpenBySerial '{0}'".format(serial) )
             self.openModule = self.getDeviceDescription(self.xem)
+        else:
+            logger.debug("Serial {0} is already open".format(serial) )         
         return None
 
     def enableLogicAnalyzer(self, enable):
