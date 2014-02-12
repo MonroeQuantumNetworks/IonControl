@@ -86,8 +86,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             lineEdit = self.lineEdit()
             value, delta, pos, decimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
             newvalue = value + (steps * delta)
-            newvalue.ounit( value.out_unit )
-            newvalue.output_prec( value.oprec )
+            newvalue.copy_format( value )
             self.setValue( newvalue )
             value, delta, _, newdecimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
             lineEdit.setCursorPosition( pos + newdecimalpos - decimalpos )
@@ -156,7 +155,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
 if __name__ == "__main__":
     debug = True
-    TestWidget, TestBase = PyQt4.uic.loadUiType(r'ui\MagnitudeSpinBoxTest.ui')
+    TestWidget, TestBase = PyQt4.uic.loadUiType(r'..\ui\MagnitudeSpinBoxTest.ui')
 
     class TestUi(TestWidget,TestBase):
         def __init__(self):
