@@ -5,17 +5,17 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore, QtGui
-
+from modules.magnitude import mg
 
 class InterlockChannel:
     def __init__(self):
         self.enable = False
         self.channel = 0
-        self.min = 0.0
-        self.max = 0.0
+        self.min = mg(1, 'GHz')
+        self.max = mg(1, 'GHz')
         self.current = 0
         self.inRange = False
-
+        
 class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     getWavemeterData = QtCore.pyqtSignal( object )
     headerDataLookup = [ 'Enable', 'Channel', 'Current','Minimum', 'Maximum']
@@ -34,11 +34,13 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole,1):    lambda row: self.channelDict.at(row).channel,
                              (QtCore.Qt.DisplayRole,2):    lambda row: "{0:.4f} GHz".format(self.channelDict.at(row).current),
                              (QtCore.Qt.BackgroundColorRole,2): lambda row: QtGui.QColor(QtCore.Qt.white) if not self.channelDict.at(row).enable else QtGui.QColor(0xa6,0xff,0xa6,0xff) if self.channelDict.at(row).inRange else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.DisplayRole,3):    lambda row: "{0:.4f} GHz".format(self.channelDict.at(row).min),
-                             (QtCore.Qt.DisplayRole,4):    lambda row: "{0:.4f} GHz".format(self.channelDict.at(row).max),
+                             (QtCore.Qt.DisplayRole,3):    lambda row: str(self.channelDict.at(row).min),
+                             (QtCore.Qt.DisplayRole,4):    lambda row: str(self.channelDict.at(row).max),
                              (QtCore.Qt.EditRole,1):       lambda row: self.channelDict.at(row).channel,
-                             (QtCore.Qt.EditRole,3):       lambda row: "{0:.4f}".format(self.channelDict.at(row).min),
-                             (QtCore.Qt.EditRole,4):       lambda row: "{0:.4f}".format(self.channelDict.at(row).max),   }
+                             (QtCore.Qt.EditRole,3):       lambda row: str(self.channelDict.at(row).min),
+                             (QtCore.Qt.EditRole,4):       lambda row: str(self.channelDict.at(row).max), 
+                             (QtCore.Qt.UserRole,3):       lambda row: mg(1,'GHz'), 
+                             (QtCore.Qt.UserRole,4):       lambda row: mg(1,'GHz'),  }
  
     def data(self, index, role): 
         if index.isValid():
@@ -54,6 +56,9 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
 
+    def setValue(self, row, value):
+        pass
+
     def flags(self, index ):
         if index.column() in [1,3,4]:
             return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
@@ -66,9 +71,8 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         if channel==self.channelDict.at(index.row()).channel:  # no change
             return True
         if channel not in self.channelDict:
-            ilChannel = self.channelDict.pop(self.channelDict.at(index.row()).channel)  # pop the old one from the dict
-            ilChannel.channel = channel
-            self.channelDict[channel] = ilChannel
+            self.channelDict.renameAt(index.row(),channel)
+            self.channelDict.at(index.row()).channel = channel
             return True
         return False      
                 
@@ -77,14 +81,14 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         index = self.channelDict.index(channel)
         ilChannel.current = value
         self.dataChanged.emit( self.createIndex(index,2), self.createIndex(index,2) ) 
-        ilChannel.inRange = ilChannel.min < ilChannel.current < ilChannel.max
+        ilChannel.inRange = ilChannel.min.toval('GHz') < ilChannel.current < ilChannel.max.toval('GHz')
                 
     def setMin(self, index, value):
-        self.channelDict.at(index.row()).min = float(value.toString())
+        self.channelDict.at(index.row()).min = value
         return True
 
     def setMax(self, index, value):
-        self.channelDict.at(index.row()).max = float(value.toString())
+        self.channelDict.at(index.row()).max = value
         return True
                 
     def setEnable(self, index, value):

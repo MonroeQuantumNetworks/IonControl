@@ -24,7 +24,7 @@ from modules.Utility import unique
 from modules.formatDelta import formatDelta
 from modules.magnitude import Magnitude
 from uiModules.KeyboardFilter import KeyFilter
-
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -113,6 +113,9 @@ class AutoLoad(UiForm,UiBase):
         self.wavemeterAddressLineEdit.setText( self.settings.wavemeterAddress )
         self.wavemeterAddressLineEdit.editingFinished.connect( self.onWavemeterAddress )
         self.tableModel = WavemeterInterlockTableModel( self.settings.interlock )
+        delegate = MagnitudeSpinBoxDelegate()
+        self.interlockTableView.setItemDelegateForColumn(3, delegate ) 
+        self.interlockTableView.setItemDelegateForColumn(4, delegate ) 
         self.tableModel.getWavemeterData.connect( self.getWavemeterData )
         self.tableModel.getWavemeterData.connect( self.checkFreqsInRange )
         self.interlockTableView.setModel( self.tableModel )
