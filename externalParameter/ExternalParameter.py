@@ -125,7 +125,7 @@ class N6700BPowerSupply(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = visa.instrument(instrument) #open visa session
-        logger.info( "opend {0}".format(instrument) )
+        logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         self.value = self._getValue()
 

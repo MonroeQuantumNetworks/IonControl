@@ -33,16 +33,23 @@ class PPHighlighter( QSyntaxHighlighter ):
             rule = HighlightingRule(pattern, keyword)
             self.highlightingRules.append(rule)
         
-        # define and include
+        # define and insert
         brush = QBrush(Qt.darkMagenta, Qt.SolidPattern)
-        pattern = QRegExp("#define [^\n]*")
+        pattern = QRegExp("\\bconst\\b")
+        define.setForeground(brush)
+        rule = HighlightingRule(pattern, define)
+        self.highlightingRules.append(rule)
+        
+        # var
+        brush = QBrush(Qt.darkCyan, Qt.SolidPattern)
+        pattern = QRegExp("\\bvar\\b")
         define.setForeground(brush)
         rule = HighlightingRule(pattern, define)
         self.highlightingRules.append(rule)
         
         # comment
         brush = QBrush(Qt.darkGreen, Qt.SolidPattern)
-        pattern = QRegExp("#(?!(define)|(include))[^\n]*")
+        pattern = QRegExp("#[^\n]*")
         comment.setForeground(brush)
         rule = HighlightingRule(pattern, comment)
         self.highlightingRules.append(rule)

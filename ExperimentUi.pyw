@@ -45,6 +45,7 @@ from persist import configshelve
 from pulseProgram import PulseProgramUi
 from pulseProgram import ShutterUi
 from gui import testExperiment
+from uiModules import MagnitudeParameter #@UnusedImport
 
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
