@@ -29,12 +29,10 @@ class ShutterUi(ShutterForm, ShutterBase):
     def setupUi(self,parent,dynupdate=False):
         logger = logging.getLogger(__name__)
         ShutterForm.setupUi(self,parent)
-        self.setAtStartup = self.config.get(self.configname+".SetAtStartup",False)
-        self.checkBoxSetAtStartup.setChecked(self.setAtStartup)
+        self.applyButton.setVisible(False)
         self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.pulserHardware,self.outputname, self.dataContainer )
-        if self.setAtStartup:
-            logger.info( "Set old shutter values {0} {1}".format( (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0) ) )
-            self.shutterTableModel.shutter = self.config.get((self.configname, 'Value'),0) 
+        logger.info( "Set old shutter values {0} 0x{1:x}".format( (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0) ) )
+        self.shutterTableModel.shutter = self.config.get((self.configname, 'Value'),0) 
         self.shutterTableModel.offColor = self.offColor
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
@@ -44,7 +42,6 @@ class ShutterUi(ShutterForm, ShutterBase):
             self.pulserHardware.shutterChanged.connect( self.shutterTableModel.updateShutter )
         
     def saveConfig(self):
-        self.config[self.configname+".SetAtStartup"] = self.checkBoxSetAtStartup.isChecked()
         self.config[(self.configname, 'Value')] = self.shutterTableModel.shutter
         
     def __repr__(self):
@@ -62,6 +59,7 @@ class TriggerUi(ShutterUi):
         
     def setupUi(self,parent):
         super(TriggerUi,self).setupUi(parent)
+        self.applyButton.setVisible(True)
         self.applyButton.clicked.connect( self.onApply )
         
     def onApply(self):

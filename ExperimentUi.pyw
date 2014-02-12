@@ -43,7 +43,7 @@ from modules.DataChanged import DataChanged
 from modules.bidict import ChannelNameMap
 from persist import configshelve
 from pulseProgram import PulseProgramUi
-from pulseProgram import ShutterUi
+from pulser import ShutterUi
 from gui import testExperiment
 
 
