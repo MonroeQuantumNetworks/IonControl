@@ -125,7 +125,7 @@ class Expression:
             return opn[op]( op1, op2 )
         elif op == "PI" or op=='pi':
             return math.pi # 3.1415926535
-        elif op == "E":
+        elif op == "E" or op=="e":
             return math.e  # 2.718281828
         elif op in fn:
             return fn[op]( self.evaluateStack( s, dependencies, useFloat ) )
@@ -133,7 +133,7 @@ class Expression:
             dependencies.add(op)
             return self.variabledict[op]
         elif op[0].isalpha():
-            return 0
+            raise KeyError("operand '{0}' not found in dictionary.".format(op[0]))
         else:
             fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
             l = fmag.parseString(op)
