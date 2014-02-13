@@ -175,6 +175,13 @@ there is none.
 import re, math
 import types
 
+class Enumerate(dict):
+    """C enum emulation (original by Scott David Daniels)"""
+    def __init__(self, names):
+        for number, name in enumerate(names.split()):
+            setattr(self, name, number)
+            self[number] = name
+
 
 # Base magnitude names and prefixes.  The _mags dictionary, initialized
 # at the end, will contain all the known magnitudes.  Units are
@@ -379,6 +386,7 @@ def _numberp(n):  ## Python has to have a decent way to do this!
             isinstance(n, types.LongType))
 
 class Magnitude():
+    Format = Enumerate("precision significantDigits")
     def __init__(self, val, m=0, s=0, K=0, kg=0, A=0, mol=0, cd=0, dollar=0,
                  b=0):
         self.val = val
@@ -388,6 +396,7 @@ class Magnitude():
         self.oprec = None
         self.oformat = None
         self.significantDigits = None
+        self.strFormat = self.Format.significantDigits
 
     def copy_format(self, other):
         """ copy the formatting options form other to self
@@ -410,6 +419,7 @@ class Magnitude():
         self.oprec = other.oprec
         self.oformat = other.oformat
         self.significantDigits = other.significantDigits
+        self.strFormat = other.strFormat
         
     def update_value(self, value, unitstr ):
         """ update value and unit, leave formatting as is
@@ -473,6 +483,7 @@ class Magnitude():
             cp.out_factor = self.out_factor
             cp.oprec = self.oprec
             cp.oformat = self.oformat
+            cp.strFormat = self.strFormat
         cp.significantDigits = self.significantDigits
         return cp
 
@@ -519,8 +530,9 @@ class Magnitude():
             st += num
         return st
 
-    def _formatNumber_(self):
-        if self.significantDigits:
+    def _formatNumber_(self, strFormat ):
+        strFormat = self.strFormat if strFormat is None else strFormat
+        if self.significantDigits and strFormat==self.Format.significantDigits:
             #st = repr( roundToNDigits(self.val,self.significantDigits) )
             st = "{{0:.{0}f}}".format( digitsToPrecision(self.val, self.significantDigits)).format( roundToNDigits(self.val,self.significantDigits) )
         else:
@@ -542,16 +554,22 @@ class Magnitude():
     def __str__(self):
         if _prn_units:
             return " ".join( self.toStringTuple() )
-        return self.toStringTuple()[0]        
+        return self.toStringTuple()[0]  
     
-    def toStringTuple(self):
+    def toString(self, strFormat=None ):
+        if _prn_units:
+            return " ".join( self.toStringTuple(strFormat) )
+        return self.toStringTuple( strFormat )[0]  
+              
+    
+    def toStringTuple(self, strFormat=None ):
         unitTuple = tuple(self.unit)
         if math.isinf(self.val) or math.isnan(self.val):
             return (str(self.val),"")
         if self.out_unit:
             m = self.copy(True)
             m._div_by(self.out_factor)
-            return ( m._formatNumber_().strip(), self.out_unit.strip() )
+            return ( m._formatNumber_( strFormat ).strip(), self.out_unit.strip() )
         elif unitTuple in _outputDimensions:
             outmag = _mags[_outputDimensions[unitTuple]]
             m = self.copy(True)
@@ -561,9 +579,9 @@ class Magnitude():
                 m = self.copy(True)
                 outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
                 m._div_by(outmag)
-            return ( m._formatNumber_().strip(), (prefix + _outputDimensions[unitTuple]).strip() )
+            return ( m._formatNumber_( strFormat ).strip(), (prefix + _outputDimensions[unitTuple]).strip() )
         else:
-            return ( self._formatNumber_().strip(), self._unitRepr_().strip() )
+            return ( self._formatNumber_( strFormat ).strip(), self._unitRepr_().strip() )
 
     def term2mag(self, s):
         """Converts a string with units to a Magnitude.
