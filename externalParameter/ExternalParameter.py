@@ -13,7 +13,7 @@ import numpy
 from pyqtgraph.parametertree import Parameter
 
 import modules.magnitude as magnitude
-from wavemeter import WavemeterGetFrequency
+from wavemeter.WavemeterGetFrequency import WavemeterGetFrequency
 
 
 try:
@@ -365,7 +365,10 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         self.savedValue = 0
         logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
         self.value = self.savedValue
-        self.channel = 6
+
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('channel' , 6)       
     
     def setValue(self,value):
         """
@@ -377,30 +380,30 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         else:
             myvalue = value
         
-        self.wavemeter.set_frequency(myvalue, self.channel)
+        self.wavemeter.set_frequency(myvalue, self.settings.channel)
         self.value = myvalue
         logger.debug( "setValue {0}".format(self.value) )
-        ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"GHz") )
-        return numpy.abs(self.wavemeter.get_frequency(self.channel)-self.value)<.005
+        #ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"GHz") )
+        return numpy.abs(self.wavemeter.get_frequency(self.settings.channel)-self.value)<.005
            
                 
     def currentExternalValue(self):
         logger = logging.getLogger(__name__)
 #        self.lastExternalValue = self.wavemeter.get_frequency(4)
 #        while self.lastExternalValue <=0:
-        self.lastExternalValue = self.wavemeter.get_frequency(self.channel) 
+        self.lastExternalValue = self.wavemeter.get_frequency(self.settings.channel) 
         logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)
         counter = 0
         while numpy.abs(self.detuning)>=1 and counter<10:
-            self.lastExternalValue = self.wavemeter.get_frequency(self.channel)    
+            self.lastExternalValue = self.wavemeter.get_frequency(self.settings.channel)    
             self.detuning=(self.lastExternalValue-self.value)
             counter += 1
         return self.lastExternalValue 
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'channel', 'type': 'int', 'value': self.channel})
+        superior.append({'name': 'channel', 'type': 'int', 'value': self.settings.channel})
         return superior
 
     def saveValue(self):

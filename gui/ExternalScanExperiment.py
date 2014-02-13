@@ -136,6 +136,6 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                     self.progressUi.onData( self.currentIndex )  
                 else:
                     self.finalizeData(reason='end of scan')
-                    self.generator.dataOnFinal(self)
+                    self.generator.dataOnFinal(self, self.progressUi.state )
                     logger.info("Scan Completed")
 
