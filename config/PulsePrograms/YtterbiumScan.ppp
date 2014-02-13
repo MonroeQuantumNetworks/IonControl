@@ -3,9 +3,9 @@
 #  example for PulseProgramPlus input
 #
 
-const DDSDetect 1
-const DDSMicrowave 2
-const PMTChannel 9
+const DDSDetect = 1
+const DDSMicrowave = 2
+const PMTChannel = 9
 
 # 397 beam frequencies and amplitudes
 parameter<AD9912_FRQ> DetectFreq = 100 MHz
@@ -49,100 +49,73 @@ var Null = 0
 var endLabel = 0xffffffff
 var initRemaining = 0
 
-procedure cool {
+def cool():
 	set_shutter( CoolingOn )
 	set_counter( CheckIonCounters )
 	update( CoolingTime )
 	set_counter( Null )
 	update()
 	W = load_count( PMTChannel )
-}
 
-procedure pump {
+
+def pump():
 	set_shutter( PumpingOn )
 	update( PumpingTime )
 	set_shutter( PumpingOff )
-}
 
-procedure qubitInit {
+def qubitInit():
 	set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
 	set_trigger( ddsMicrowaveApply )
 	set_shutter( MicrowaveOn )
 	update( QubitInitTime )
 	set_shutter( MicrowaveOff )
-}
+
+def qubitAnalyze():
+	set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveAnalyzePhase )
+	set_trigger( ddsMicrowaveApply )
+	set_shutter( MicrowaveOn )
+	update( QubitAnalyzeTime )
+	set_shutter( MicrowaveOff )
+	
+def detect():
+	set_dds( channel=DDSDetect, freq=DetectFreq )
+	set_shutter( DetectOn )
+	set_scounter( DetectCounters )
+	set_trigger( ddsApplyTrigger )
+	update( DetectTime )
+	set_shutter( DetectOff )
+	
 
 # startup switching on cooling quickly
-	set_shutter( InitializationShutter )
-	set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
-	set_trigger( ddsApplyTrigger )
-	update()
+set_shutter( InitializationShutter )
+set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
+set_trigger( ddsApplyTrigger )
 
 while ( not pipe_empty() ) {
+	update()
 	P = read_pipe()
 	write_pipe( P ) 
-	w = read_pipe()
+	W = read_pipe()
 	write_pipe( W )
 	*P = W
-	experimentsleft = experiments
-	
-	while (experimentsleft>0) {
+
+	for ( currentexperiment=0; currentexperiment<experiments; currentexperiment++ ):
 		cool()
 		if (MaxInitRepeat>0) {
 			initRemaining = MaxInitRepeat
-			while (W<PresenceThreshold) {
-				if (initRemaining==0) { exit( IonLostExiutcode ) }
+			while W<PresenceThreshold:
+				if initRemaining==0:
+					exit( IonLostExiutcode )
 				cool()
-			}
-		if (PumpingTime>0) {
+		if PumpingTime>0:
 			pump()
-		}
-		if (QubitInitTime>0) {
+		if QubitInitTime>0: 
 			qubitInit()
-		}
-	
-QubitWait: NOP	
-	LDWR QubitWaitTime
-	JMPZ QubitAnalyze
-	WAIT
-	UPDATE QubitWaitTime
+		if QubitWait>0:
+			update( QubitWaitTime )
+		if QubitAnalyzeTime>0:
+			qubitAnalyze()
+		if DetectTime>0:
+			detect()	
 
-QubitAnalyze: NOP
-	LDWR QubitAnalyzeTime
-	JMPZ detect
-	DDSFRQ DDSMicrowave, MicrowaveFreq
-	DDSPHS DDSMicrowave, MicrowaveAnalyzePhase
-	TRIGGER ddsMicrowaveApply
-	SHUTTERMASK  MicrowaveOnMask
-	ASYNCSHUTTER MicrowaveOn
-	WAIT
-	UPDATE QubitAnalyzeTime
-	
-	SHUTTERMASK  MicrowaveOffMask
-	ASYNCSHUTTER MicrowaveOff
-		
-detect: NOP
-	LDWR DetectTime
-	JMPZ postdetect
-	DDSFRQ DDSDetect, DetectFreq
-	SHUTTERMASK  DetectOnMask
-	ASYNCSHUTTER DetectOn
-	COUNTERMASK DetectCounters
-	TRIGGER ddsApplyTrigger
-	
-	WAIT
-	UPDATE DetectTime
-	
-	SHUTTERMASK DetectOffMask
-	ASYNCSHUTTER DetectOff
-
-postdetect: NOP
-	DEC experimentsleft
-	STWR experimentsleft
-	JMPNZ init
-	JMP scanloop
-	
-endlabel: LDWR endLabel
-	WAIT
-	WRITEPIPE
-	END
+exit( endLabel )
