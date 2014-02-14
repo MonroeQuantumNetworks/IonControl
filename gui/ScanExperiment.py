@@ -65,9 +65,7 @@ class ParameterScanGenerator:
         return self.scan.code[currentIndex*2:]
         
     def xValue(self, index):
-        if is_magnitude(self.scan.xUnit) and self.scan.xUnit.has_dimension(self.scan.list[index]):
-            return self.scan.list[index].ounit(self.scan.xUnit).toval()
-        return self.scan.list[index].toval()
+        return self.scan.list[index].ounit(self.scan.xUnit).toval()
         
     def dataNextCode(self, experiment):
         if self.nextIndexToWrite<len(self.scan.code):
@@ -82,9 +80,7 @@ class ParameterScanGenerator:
             experiment.onStop()                   
     
     def xRange(self):
-        if is_magnitude(self.scan.xUnit) and self.scan.xUnit.has_dimension(self.scan.list[0]):
-            return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
-        return self.scan.start.toval(), self.scan.stop.toval()
+        return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
                                      
     def appendData(self,traceList,x,evaluated):
         if evaluated and traceList:

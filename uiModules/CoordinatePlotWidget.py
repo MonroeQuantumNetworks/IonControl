@@ -39,12 +39,75 @@ class CustomViewBox(ViewBox):
         super(CustomViewBox,self).__init__(*args, **kwds)
         self.holdZero = False
     
-    def setRange(self, rect=None, xRange=None, yRange=None, *args, **kwds):
-        if self.holdZero:
-            if not kwds.get('disableAutoRange', True):
-                if yRange is not None:
-                    yRange[0] = 0
-        ViewBox.setRange(self, rect, xRange, yRange, *args, **kwds)
+#     def setRange(self, rect=None, xRange=None, yRange=None, *args, **kwds):
+#         if self.holdZero:
+#             if not kwds.get('disableAutoRange', True):
+#                 if yRange is not None:
+#                     yRange[0] = 0
+#         ViewBox.setRange(self, rect, xRange, yRange, *args, **kwds)
+
+    def updateAutoRange(self):
+        ## Break recursive loops when auto-ranging.
+        ## This is needed because some items change their size in response 
+        ## to a view change.
+        if self._updatingRange:
+            return
+        
+        self._updatingRange = True
+        try:
+            targetRect = self.viewRange()
+            if not any(self.state['autoRange']):
+                return
+                
+            fractionVisible = self.state['autoRange'][:]
+            for i in [0,1]:
+                if type(fractionVisible[i]) is bool:
+                    fractionVisible[i] = 1.0
+
+            childRange = None
+            
+            order = [0,1]
+            if self.state['autoVisibleOnly'][0] is True:
+                order = [1,0]
+
+            args = {}
+            for ax in order:
+                if self.state['autoRange'][ax] is False:
+                    continue
+                if self.state['autoVisibleOnly'][ax]:
+                    oRange = [None, None]
+                    oRange[ax] = targetRect[1-ax]
+                    childRange = self.childrenBounds(frac=fractionVisible, orthoRange=oRange)
+                    
+                else:
+                    if childRange is None:
+                        childRange = self.childrenBounds(frac=fractionVisible)
+                
+                ## Make corrections to range
+                xr = childRange[ax]
+                if xr is not None:
+                    if self.state['autoPan'][ax]:
+                        x = sum(xr) * 0.5
+                        w2 = (targetRect[ax][1]-targetRect[ax][0]) / 2.
+                        childRange[ax] = [x-w2, x+w2]
+                    else:
+                        padding = self.suggestPadding(ax)
+                        wp = (xr[1] - xr[0]) * padding
+                        if self.holdZero and ax == 1:
+                            childRange[ax][0] = 0-wp
+                        else:
+                            childRange[ax][0] -= wp
+                        childRange[ax][1] += wp
+                    targetRect[ax] = childRange[ax]
+                    args['xRange' if ax == 0 else 'yRange'] = targetRect[ax]
+            if len(args) == 0:
+                return
+            args['padding'] = 0
+            args['disableAutoRange'] = False
+            self.setRange(**args)
+        finally:
+            self._autoRangeNeedsUpdate = False
+            self._updatingRange = False
 
 class CustomPlotItem(PlotItem):
     """
