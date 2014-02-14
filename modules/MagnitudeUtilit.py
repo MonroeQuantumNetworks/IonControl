@@ -26,6 +26,16 @@ def haveSameDimension( first, second ):
     elif isSecondMag:
         return second.dimensionless()
     return True
+
+def ensureCorrectUnit( unit, magnitudeVal ):
+    """ensure unit is of the same dimension as the magnitude value,
+    if yes, return unit, otherwise, return output unit of magnitudeVal"""
+    try:
+        if magnitude.mg(1,unit).dimension()==magnitudeVal.dimension():
+            return unit
+    except magnitude.MagnitudeError:
+        pass
+    return magnitudeVal.out_unit            
     
 def valueAs( obj, tounit=None ):
     """ return the value of a magnitude object, in the unit of another magnitude object"""

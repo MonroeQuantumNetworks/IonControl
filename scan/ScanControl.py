@@ -17,7 +17,7 @@ import ScanList
 from gateSequence import GateSequenceUi
 from modules import MagnitudeUtilit
 from modules.HashableDict import HashableDict
-from modules.MagnitudeUtilit import valueAs
+from modules.MagnitudeUtilit import valueAs, ensureCorrectUnit
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
@@ -559,6 +559,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
         scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName
+        scan.xUnit = ensureCorrectUnit(scan.xUnit, scan.start)
         self.onCommit()
         return scan
         
