@@ -559,7 +559,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
         scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName
-        scan.xUnit = ensureCorrectUnit(scan.xUnit, scan.start)
+        try:
+            scan.xUnit = ensureCorrectUnit(scan.xUnit, scan.start)
+        except AttributeError:
+            pass  # scan.start is not a magnitude, don't change xunit
         self.onCommit()
         return scan
         
