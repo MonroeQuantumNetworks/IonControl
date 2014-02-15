@@ -80,6 +80,52 @@ class SinSqFit(FitFunctionBase):
     def value(self,x,p=None):
         A,T,theta, O = self.parameters if p is None else p
         return A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
+  
+class SinSqExpFit(FitFunctionBase):
+    name = "Sin2 Exponential Decay"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A * exp(-x/tau) * sin^2(pi/(2*T)*x+theta) + O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
+        self.parameters = [1,100,0,0,1000]
+        self.startParameters = [1,100,0,0,1000]
+        self.parameterEnabled = [True]*5
+        self.parametersConfidence = [None]*5
+        
+    def residuals(self,p, y, x, sigma):
+        A,T,theta,O,tau = self.allFitParameters(p)
+        if sigma is not None:
+            return (y-A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O)/sigma
+        else:
+            return y-A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
+        
+    def value(self,x,p=None):
+        A, T, theta, O, tau = self.parameters if p is None else p
+        return A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
+  
+class SinSqGaussFit(FitFunctionBase):
+    name = "Sin2 Gaussian Decay"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A * exp(-x^2/tau^2) * sin^2(pi/(2*T)*x+theta) + O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
+        self.parameters = [1,100,0,0, 1000]
+        self.startParameters = [1,100,0,0, 1000]
+        self.parameterEnabled = [True]*5
+        self.parametersConfidence = [None]*5
+        
+    def residuals(self,p, y, x, sigma):
+        A,T,theta,O,tau = self.allFitParameters(p)
+        if sigma is not None:
+            return (y-A*numpy.exp(-numpy.square(x/tau))*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O)/sigma
+        else:
+            return y-A*numpy.exp(-numpy.square(x/tau))*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
+        
+    def value(self,x,p=None):
+        A,T,theta, O, tau = self.parameters if p is None else p
+        return A*numpy.exp(-numpy.square(x/tau))*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
+  
+  
         
 class GaussianFit(FitFunctionBase):
     name = "Gaussian"
@@ -215,6 +261,8 @@ fitFunctionMap.update({ GaussianFit.name: GaussianFit,
                        CosFit.name: CosFit, 
                        CosSqFit.name: CosSqFit,
                        SinSqFit.name: SinSqFit,
+                       SinSqExpFit.name: SinSqExpFit,
+                       SinSqGaussFit.name: SinSqGaussFit,
                        SquareRabiFit.name: SquareRabiFit,
                        LorentzianFit.name: LorentzianFit,
                        TruncatedLorentzianFit.name: TruncatedLorentzianFit,
