@@ -133,7 +133,7 @@ class FitUi(fitForm, QtGui.QWidget):
             fitfunction.parameters = [value(param) for param in fitfunction.startParameters]
             plot.fitFunction = fitfunction
             plot.plot(-2)
-            fitfunction.finalize(fitfunction.parameters)
+            fitfunction.update()
                 
     def onRemoveFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
