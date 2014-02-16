@@ -20,7 +20,8 @@ from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 from pulseProgram.VariableDictionary import VariableDictionary
 from pulseProgram.VariableTableModel import VariableTableModel
 from uiModules.RotatedHeaderView import RotatedHeaderView
-
+from modules.enum import enum
+from pppCompiler.pppCompiler import pppCompiler
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -35,7 +36,7 @@ class ConfiguredParams:
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
     recentFilesChanged = QtCore.pyqtSignal(str)
-    
+    SourceMode = enum('pp','ppp') 
     def __init__(self,config,parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
@@ -48,6 +49,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.variableTableModel = None
         self.parameterChangedSignal = None
         self.channelNameData = channelNameData
+        self.sourceMode = self.SourceMode.pp
    
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -97,12 +99,26 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onLoad(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
         if path!="":
-            self.loadFile(path)
+            if os.path.splitext(path)==".ppp":
+                self.sourceMode = self.SourceMode.ppp
+                self.loadpppFile(path)
+            else:
+                self.sourceMode = self.SourceMode.pp
+                self.loadFile(path)
             
     def onReset(self):
         if self.configParams.lastFilename is not None:
             self.variabledict = VariableDictionary( self.pulseProgram.variabledict, self.parameterdict )
             self.loadFile(self.configParams.lastFilename)
+    
+    def loadpppFile(self, path):
+        self.pppSourceFile = path
+        with open(path,"r") as f:
+            self.pppSource = f.read() 
+    
+    def compileppp(self):
+        compiler = pppCompiler()
+        return compiler.compileString( self.pppSouce )
     
     def loadFile(self, path):
         logger = logging.getLogger(__name__)

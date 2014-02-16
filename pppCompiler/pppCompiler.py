@@ -334,6 +334,21 @@ class pppCompiler:
         codetext = "\n".join(header + allcode)
         return codetext
     
+    def compileString(self, programText):
+        self.programText = programText
+        result = self.program.parseString( self.programText, parseAll=True )
+
+        allcode = list()
+        for element in result:
+            if not isinstance(element, str) and 'code' in element:
+                allcode += element['code']
+            elif not isinstance(element[0], str) and 'code' in element[0]:
+                allcode += element[0]['code']
+        header = self.createHeader()        
+
+        codetext = "\n".join(header + allcode)
+        return codetext
+    
     def createHeader(self):
         header = [ "# const values" ]
         for constval in self.symbols.getAllConst():
