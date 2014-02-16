@@ -82,7 +82,11 @@ def write_pipe( symboltable, arg=list(), kwarg=dict()):
     return ["  WRITEPIPE"]
 
 def pipe_empty( symboltable, arg=list(), kwarg=dict()):
-    return ["  READPIPEEMPTY"]
+    #return ["  READPIPEEMPTY"]
+    return {True: '  JMPPIPEEMPTY', False:'  JMPPIPEAVAIL'}
+
+def ram_read_valid( symboltable, arg=list(), kwarg=dict()):
+    return {True: ' JMPRAMVALID', False: '  JMPRAMINVALID'}
 
 def exit_( symboltable, arg=list(), kwarg=dict()):
     if len(arg)!=2:

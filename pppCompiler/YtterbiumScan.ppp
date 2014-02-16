@@ -107,11 +107,11 @@ while not pipe_empty():
 				if initRemaining==0:
 					exit( IonLostExitcode )
 				cool()
-		if PumpingTime>0:
+		if PumpTime>0:
 			pump()
 		if QubitInitTime>0: 
 			qubitInit()
-		if QubitWait>0:
+		if QubitWaitTime>0:
 			update( QubitWaitTime )
 			qubitAnalyze()
 		if DetectTime>0:

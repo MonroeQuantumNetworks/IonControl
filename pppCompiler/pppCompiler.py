@@ -159,7 +159,7 @@ class pppCompiler:
             elif 'identifier' in  arg.rval:
                 code.append("  LDWR {0}".format(arg.rval.identifier))
             if arg.op=="+=":
-                code.append( "  ADD {0}".format(arg.lval))
+                code.append( "  ADDW {0}".format(arg.lval))
             else:
                 code.append( "  SUB {0}".format(arg.lval))
         code.append("  STWR {0}".format(arg.lval))
@@ -170,20 +170,28 @@ class pppCompiler:
     
     def condition_action(self, text, loc, arg):
         logger.debug( "condition_action {0} {1}".format( lineno(loc, text), arg ))
-        arg["code"] = [ "# condition line {0}".format(lineno(loc, text)),
-                        '  LDWR {0}'.format(arg.leftidentifier),
-                        '  {0} {1}'.format(comparisonCommands[arg.comparison],arg.identifier) ]
+        code = [ "# condition line {0}".format(lineno(loc, text)) ]
+        if arg.leftidentifier!="W":
+            code.append('  LDWR {0}'.format(arg.leftidentifier))
+        code.append('  {0} {1}'.format(comparisonCommands[arg.comparison],arg.identifier))
+        arg["code"] = code
         return arg
     
     def rExp_condition_action(self, text, loc, arg):
         logger.debug( "rExp_condition_action {0} {1}".format( lineno(loc, text), arg ))
         code = [ "# rExp condition line {0}".format(lineno(loc, text)) ]
-        code += arg.condition.rExp['code'] 
-        if 'not_' in arg['condition']:
-            code += [ "  CMPEQUAL NULL" ]
+        condition_code = arg.condition.rExp['code'] 
+        if isinstance(condition_code,str):
+            if 'not_' in arg['condition']:
+                code += [ "  CMPEQUAL NULL" ]
+            else:
+                code += ["  CMPNOTEQUAL NULL"]
+            arg['code'] = code
         else:
-            code += ["  CMPNOTEQUAL NULL"]
-        arg['code'] = code
+            if 'not_' in arg['condition']:
+                arg['code'] = { False: condition_code[True], True: condition_code[False] }
+            else:
+                arg['code'] = condition_code
         return arg
     
     def named_param_action(self, text, loc, arg):
@@ -203,7 +211,11 @@ class pppCompiler:
         logger.debug( "procedurecall_action {0} {1}".format( lineno(loc, text), arg ))
         procedure = self.symbols.getProcedure(arg[0])
         code = [ "# procedurecall line {0}".format(lineno(loc, text)) ]
-        code += procedure.codegen(self.symbols, arg=arg.asList(), kwarg=arg.asDict())
+        opcode = procedure.codegen(self.symbols, arg=arg.asList(), kwarg=arg.asDict())
+        if isinstance(opcode,list):
+            code += opcode
+        else:
+            code = opcode
         arg['code'] = code
         logger.debug( "procedurecall generated code {0}".format(code))
         return arg
@@ -214,12 +226,17 @@ class pppCompiler:
         
     def if_action(self, text, loc, arg):
         logger.debug( "if_action {0} {1}".format( lineno(loc, text), arg ))
-        code = ["# if statement condition " ] + arg.condition['code']
+        code = ["# if statement condition " ]
+        if isinstance(arg.condition.code,list):
+            code += arg.condition.code
+            JMPCMD = "JMPNCMP"
+        else:
+            JMPCMD = arg.condition.code[True]            
         labelNumber = self.symbols.getLabelNumber()
         elseLabel = "else_label_{0}".format( labelNumber )
         endifLabel = "end_if_label_{0}".format( labelNumber )
         if 'elseblock' in arg:
-            code.append("  JMPNOTCMP {0}".format(elseLabel))
+            code.append("  {1} {0}".format(elseLabel, JMPCMD))
             code.append( "# IF block")
             code += arg.ifblock.code
             code += ["  JMP {0}".format(endifLabel),
@@ -228,7 +245,7 @@ class pppCompiler:
             code += arg.elseblock['code']
             code += "{0}: NOP".format(endifLabel)
         else: 
-            code.append("  JMPNOTCMP {0}".format(endifLabel))
+            code.append("  {1} {0}".format(endifLabel, JMPCMD))
             code.append( "# IF block")
             code += arg.ifblock.ifblock['code']
             code.append( "{0}: NOP".format(endifLabel))
@@ -244,10 +261,18 @@ class pppCompiler:
         code = [ "# while statement {0} {1}".format(lineno(loc,text),arg),
                  "{0}: NOP".format(topLabel) ]
         if 'code' in arg.condition:
-            code += arg.condition['code']
+            if isinstance(arg.condition.code,list):
+                code += arg.condition.code
+                JMPCMD = "JMPNCMP"
+            else:
+                JMPCMD = arg.condition.code[True]            
         elif 'rExp' in arg.condition and 'code' in arg.condition.rExp:
-            code += arg.condition.rExp['code']            
-        code += [ "  JMPNOTCMP {0}".format(endLabel)]
+            if isinstance(arg.condition.rExp.code,list):
+                code += arg.condition.rExp.code
+                JMPCMD = "JMPNCMP"
+            else:
+                JMPCMD = arg.condition.rExp.code[True]            
+        code += [ "  {1} {0}".format(endLabel, JMPCMD)]
         code += arg.statementBlock.statementBlock['code']
         code += [ "  JMP {0}".format(topLabel) ]
         code += [ "{0}: NOP".format(endLabel) ]
@@ -298,15 +323,11 @@ class pppCompiler:
         result = self.program.parseFile( self.currentFile, parseAll=True )
 
         allcode = list()
-        for index, element in enumerate(result):
+        for element in result:
             if not isinstance(element, str) and 'code' in element:
                 allcode += element['code']
-                print "{0}: {1}\n {2}".format(index,element,element['code'])
             elif not isinstance(element[0], str) and 'code' in element[0]:
                 allcode += element[0]['code']
-                print "{0}: {1}\n {2}".format(index,element,element[0]['code'])
-            else:
-                print "no code in {0}:".format(index), element
         header = self.createHeader()        
 
         codetext = "\n".join(header + allcode)
