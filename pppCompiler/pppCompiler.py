@@ -41,7 +41,7 @@ decvalue = Word( nums ).setWhitespaceChars(" \t")
 hexvalue = Regex("0x[0-9a-f]+").setWhitespaceChars(" \t")
 value = hexvalue | decvalue
 assign = Literal("=").suppress()
-type_ = Keyword("parameter") | Keyword("shutter") | Keyword("masked_shutter") | Keyword("trigger") | Keyword("var") | Keyword("counter_gate") | Keyword("exitcode")
+type_ = Keyword("parameter") | Keyword("shutter") | Keyword("masked_shutter") | Keyword("trigger") | Keyword("var") | Keyword("counter") | Keyword("exitcode")
 comparison = ( Literal("==") | Literal("!=") | Literal("<") | Literal(">") | Literal("<=") | Literal(">=") )
 addOperator = oneOf("+ -")
 not_ = Keyword("not")
@@ -67,7 +67,7 @@ from Symbol import *
 
 def list_rtrim( l, trimvalue=None ):
     """in place list right trim"""
-    while l[-1]==trimvalue:
+    while len(l)>0 and l[-1]==trimvalue:
         l.pop()
     return l
     
@@ -306,7 +306,8 @@ class pppCompiler:
         
     def var_action( self, text, loc, arg):
         logger.debug( "var_action {0} {1} {2} {3} {4} {5} {6}".format(self.currentFile, lineno(loc,text) , arg["type_"], arg.get("encoding"), arg["name"], arg.get("value"), arg.get("unit") ) )
-        self.symbols[arg["name"]] = VarSymbol( type_=arg["type_"], name=arg["name"], value=arg.get("value"), encoding=arg.get("encoding"), unit=arg.get("unit") )
+        type_ = arg["type_"] if arg["type_"]!="var" else None
+        self.symbols[arg["name"]] = VarSymbol( type_=type_, name=arg["name"], value=arg.get("value"), encoding=arg.get("encoding"), unit=arg.get("unit") )
         
     def insert_action( self, text, loc, arg ):
         oldfile = self.currentFile
