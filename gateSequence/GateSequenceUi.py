@@ -38,6 +38,10 @@ class Settings:
         
     def __setstate__(self,d):
         self.__dict__ = d
+        for cache in [self.gateDefinitionCache, self.gateSequenceCache]:
+            for key, value in list(cache.iteritems()):
+                if not os.path.exists(value):
+                    cache.pop(key)
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
