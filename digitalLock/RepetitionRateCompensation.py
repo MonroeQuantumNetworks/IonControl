@@ -25,9 +25,9 @@ import argparse
 import logging
 from ProjectSelectionUi import GetProjectSelection
 
-from RepetitionRateWidget import RepetitionRateWidget
-from RepetitionRateLock import RepetitionRateLock
-from RepetitionRateTrace import RepetitionRateTrace
+from digitalLock import RepetitionRateWidget.RepetitionRateWidget
+from digitalLock import RepetitionRateLock.RepetitionRateLock
+from digitalLock import RepetitionRateTrace.RepetitionRateTrace
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\RepetitionRate.ui')
 

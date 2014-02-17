@@ -11,7 +11,7 @@ import math
 import traceback
 import time
 import multiprocessing
-from RepetitionRateCompensationHardwareServer import RepetitionRateCompensationHardwareServer
+from digitalLock import RepetitionRateCompensationHardwareServer.RepetitionRateCompensationHardwareServer
 import logging
 
 def check(number, command):
