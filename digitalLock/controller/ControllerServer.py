@@ -276,162 +276,6 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.SetWireInValue(address, data)
 
-    def getShutter(self):
-        return self._shutter  #
-         
-    def setShutter(self, value):
-        if self.xem:
-            check( self.xem.SetWireInValue(0x06, value, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
-            self._shutter = value
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-        return self._shutter
-            
-    def setShutterBit(self, bit, value):
-        mask = 1 << bit
-        newval = (self._shutter & (~mask)) | (mask if value else 0)
-        return self.setShutter( newval )
-        
-    def getTrigger(self):
-        return self._trigger
-            
-    def setTrigger(self,value):
-        if self.xem:
-            check( self.xem.SetWireInValue(0x08, value, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x09, value>>16, 0xFFFF)	, 'SetWireInValue' )
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
-            check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
-            self._trigger = value
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-        return self._trigger
-            
-    def getCounterMask(self):
-        return self._adcCounterMask & 0xff
-        
-    def setCounterMask(self, value):
-        if self.xem:
-            self._adcCounterMask = (self._adcCounterMask & 0xf00) | (value & 0xff)
-            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
-            logging.getLogger(__name__).info( "set counterMask {0}".format( hex(self._adcCounterMask) ) )
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-        return self._adcCounterMask & 0xff
-
-    def getAdcMask(self):
-        return (self._adcCounterMask >> 8) & 0xff
-        
-    def setAdcMask(self, value):
-        if self.xem:
-            self._adcCounterMask = ((value<<8) & 0xf00) | (self._adcCounterMask & 0xff)
-            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )  
-            logging.getLogger(__name__).info( "set adc mask {0}".format(hex(self._adcCounterMask)) )
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-        return (self._adcCounterMask >> 8) & 0xff
-        
-    def getIntegrationTime(self):
-        return self._integrationTime
-        
-    def setIntegrationTime(self, value):
-        self.integrationTimeBinary = int( (value/self.timestep).toval() )
-        if self.xem:
-            logging.getLogger(__name__).info(  "set dedicated integration time {0} {1}".format( value, self.integrationTimeBinary ) )
-            check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x0c, self.integrationTimeBinary, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
-            self._integrationTime = value
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-        return self.integrationTimeBinary
-            
-    def getIntegrationTimeBinary(self, value):
-        return int( (value/self.timestep).toval() ) & 0xffffffff
-            
-    def ppUpload(self,binarycode,startaddress=0):
-        if self.xem:
-            logger = logging.getLogger(__name__)
-            logger.info(  "starting PP upload" )
-            check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )	# start addr at zero
-            self.xem.UpdateWireIns()
-            check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
-            logger.info(  "{0} bytes".format(len(binarycode)) )
-            num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
-            check(num, 'Write to program pipe' )
-            logger.info(   "uploaded pp file {0} bytes".format(num) )
-            num, data = self.ppDownload(0,num)
-            logger.info(   "Verified {0} bytes. {1}".format(num,data==binarycode) )
-            return True
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return False
-            
-    def ppDownload(self,startaddress,length):
-        if self.xem:
-            self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)	# start addr at 3900
-            self.xem.UpdateWireIns()
-            self.xem.ActivateTriggerIn(0x41, 0)
-            self.xem.ActivateTriggerIn(0x41, 1)
-            data = bytearray('\000'*length)
-            num = self.xem.ReadFromPipeOut(0xA0, data)
-            return num, data
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return 0,None
-        
-    def ppIsRunning(self):
-        if self.xem:
-            data = '\x00'*32
-            self.xem.ReadFromPipeOut(0xA1, data)
-            if ((data[:2] != '\xED\xFE') or (data[-2:] != '\xED\x0F')):
-                logging.getLogger(__name__).warning( "Bad data string: {0}".format( map(ord, data) ) )
-                return True
-            data = map(ord, data[2:-2])
-            #Decode
-            active =  bool(data[1] & 0x80)
-            return active
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return False
-            
-
-    def ppReset(self):#, widget = None, data = None):
-        if self.xem:
-            self.xem.ActivateTriggerIn(0x40,0)
-            self.xem.ActivateTriggerIn(0x41,0)
-            logging.getLogger(__name__).warning( "pp_reset is not working right now... CWC 08302012" )
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-
-    def ppStart(self):#, widget = None, data = None):
-        if self.xem:
-            self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
-            self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
-            self.readDataFifo()
-            self.readDataFifo()   # after the first time the could still be data in the FIFO not reported by the fifo count
-            self.data = Data()    # flush data that might have been accumulated
-            logging.getLogger(__name__).debug("Sending start trigger")
-            self.xem.ActivateTriggerIn(0x40, 2)  # pp_start_trig
-            return True
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return False
-
-    def ppStop(self):#, widget, data= None):
-        if self.xem:
-            self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
-            return True
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return False
-
-    def interruptRead(self):
-        self.sleepQueue.put(False)
-
     def ppReadData(self,minbytes=4):
         if self.xem:
             self.xem.UpdateWireOuts()
@@ -470,20 +314,6 @@ class PulserHardwareServer(Process):
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return None
                 
-    def ppWriteRam(self,data,address):
-        if self.xem:
-            appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
-            data += bytearray([0]*appendlength)
-            logging.getLogger(__name__).info( "set write address {0}".format(address) )
-            self.xem.SetWireInValue( 0x01, address & 0xffff )
-            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-            self.xem.UpdateWireIns()
-            self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
-            return self.xem.WriteToPipeIn( 0x82, data )
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return None
-            
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
@@ -498,38 +328,7 @@ class PulserHardwareServer(Process):
             (w,) = struct.unpack_from('I',buffer(barray),offset)
             wordlist.append(w)
         return wordlist
-            
-    def ppWriteRamWordlist(self,wordlist,address):
-        logger = logging.getLogger(__name__)
-        data = self.wordListToBytearray(wordlist)
-        self.ppWriteRam( data, address)
-        testdata = bytearray([0]*len(data))
-        self.ppReadRam( testdata, address)
-        logger.info( "ppWriteRamWordlist {0} {1} {2}".format( len(data), len(testdata), data==testdata ) )
-        if data!=testdata:
-            logger.error( "Write unsuccessfull data does not match write length {0} read length {1}".format(len(data),len(testdata)))
-            logger.debug( "Sent     {0}".format(list(data)))
-            logger.debug( "Received {0}".format(list(testdata)))
-            raise PulserHardwareException("RAM write unsuccessful")
-
-    def ppReadRam(self,data,address):
-        if self.xem:
-#           print "set read address"
-            self.xem.SetWireInValue( 0x01, address & 0xffff )
-            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-            self.xem.UpdateWireIns()
-            self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
-            self.xem.ReadFromPipeOut( 0xa3, data )
-#           print "read", len(data)
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            
-    def ppReadRamWordList(self, wordlist, address):
-        data = bytearray([0]*len(wordlist)*4)
-        self.ppReadRam(data,address)
-        wordlist = self.bytearrayToWordList(data)
-        return wordlist
-                
+                           
     def ppClearWriteFifo(self):
         if self.xem:
             self.xem.ActivateTriggerIn(0x41, 3)
@@ -624,23 +423,6 @@ class PulserHardwareServer(Process):
             logger.debug("Serial {0} is already open".format(serial) )         
         return None
 
-    def enableLogicAnalyzer(self, enable):
-        if enable != self.logicAnalyzerEnabled:
-            self.logicAnalyzerEnabled = enable
-            if enable:
-                if self.xem:
-                    self.xem.SetWireInValue(0x0d, 1, 0x01)    # set logic analyzer enabled
-                    self.xem.UpdateWireIns()
-            else:
-                if self.xem:
-                    self.xem.SetWireInValue(0x0d, 0, 0x01)    # set logic analyzer disabled
-                    self.xem.UpdateWireIns()
-                    
-    def logicAnalyzerTrigger(self):
-        self.logicAnalyzerEnabled = True
-        self.logicAnalyzerStopAtEnd = True
-        if self.xem:
-            self.xem.ActivateTriggerIn( 0x40, 12 ) # Ram set read address
 
        
         
