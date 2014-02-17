@@ -17,13 +17,9 @@ parameter<AD9912_PHASE> MicrowaveAnalyzePhase = 0
 # masks and shutters
 shutter InitializationShutter 
 masked_shutter CoolingOn
-masked_shutter CoolingOff
 masked_shutter PumpingOn
-masked_shutter PumpingOff
 masked_shutter MicrowaveOn
-masked_shutter MicrowaveOff
 masked_shutter DetectOn
-masked_shutter DetectOff
 
 # times
 parameter CoolingTime = 1 ms
@@ -64,21 +60,21 @@ def cool():
 def pump():
 	set_shutter( PumpingOn )
 	update( PumpTime )
-	set_shutter( PumpingOff )
+	set_inv_shutter( PumpingOn )
 
 def qubitInit():
 	set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
 	set_trigger( ddsMicrowaveApply )
 	set_shutter( MicrowaveOn )
 	update( QubitInitTime )
-	set_shutter( MicrowaveOff )
+	set_inv_shutter( MicrowaveOn )
 
 def qubitAnalyze():
 	set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveAnalyzePhase )
 	set_trigger( ddsMicrowaveApply )
 	set_shutter( MicrowaveOn )
 	update( QubitAnalyzeTime )
-	set_shutter( MicrowaveOff )
+	set_inv_shutter( MicrowaveOn )
 	
 def detect():
 	set_dds( channel=DDSDetect, freq=DetectFreq )
@@ -86,7 +82,7 @@ def detect():
 	set_counter( DetectCounters )
 	set_trigger( ddsApplyTrigger )
 	update( DetectTime )
-	set_shutter( DetectOff )
+	set_inv_shutter( DetectOn )
 	
 
 # startup switching on cooling quickly

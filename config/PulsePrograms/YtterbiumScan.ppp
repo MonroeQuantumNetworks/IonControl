@@ -38,29 +38,32 @@ parameter AmplitudeSettlingTime = 100 us
 parameter MaxInitRepeat = 10
 parameter experiments = 100
 parameter CheckIonCounters = 0
-parameter DetectCounters = 0
+counter DetectCounters = 0
 trigger ddsApplyTrigger =  3
 trigger ddsMicrowaveApply = 3
 parameter PresenceThreshold = 6
 
+# excitcodes
+exitcode IonLostExitcode = 0x1
+exitcode endLabel = 0xffffffff
+
 # internal variables
 var experimentsleft = 100
 var Null = 0
-var endLabel = 0xffffffff
 var initRemaining = 0
+var currentexperiment = 0
 
 def cool():
 	set_shutter( CoolingOn )
 	set_counter( CheckIonCounters )
 	update( CoolingTime )
 	set_counter( Null )
-	update()
+	update( )
 	W = load_count( PMTChannel )
-
 
 def pump():
 	set_shutter( PumpingOn )
-	update( PumpingTime )
+	update( PumpTime )
 	set_shutter( PumpingOff )
 
 def qubitInit():
@@ -80,7 +83,7 @@ def qubitAnalyze():
 def detect():
 	set_dds( channel=DDSDetect, freq=DetectFreq )
 	set_shutter( DetectOn )
-	set_scounter( DetectCounters )
+	set_counter( DetectCounters )
 	set_trigger( ddsApplyTrigger )
 	update( DetectTime )
 	set_shutter( DetectOff )
@@ -91,31 +94,28 @@ set_shutter( InitializationShutter )
 set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
 set_trigger( ddsApplyTrigger )
 
-while ( not pipe_empty() ) {
+while not pipe_empty():
 	update()
-	P = read_pipe()
-	write_pipe( P ) 
-	W = read_pipe()
-	write_pipe( W )
-	*P = W
-
-	for ( currentexperiment=0; currentexperiment<experiments; currentexperiment++ ):
+	apply_next_scan_point()
+	
+	currentexperiment = 0
+	while currentexperiment < experiments:
 		cool()
-		if (MaxInitRepeat>0) {
+		if MaxInitRepeat>0: 
 			initRemaining = MaxInitRepeat
 			while W<PresenceThreshold:
 				if initRemaining==0:
-					exit( IonLostExiutcode )
+					exit( IonLostExitcode )
 				cool()
-		if PumpingTime>0:
+		if PumpTime>0:
 			pump()
 		if QubitInitTime>0: 
 			qubitInit()
-		if QubitWait>0:
+		if QubitWaitTime>0:
 			update( QubitWaitTime )
-		if QubitAnalyzeTime>0:
 			qubitAnalyze()
 		if DetectTime>0:
 			detect()	
+ 	currentexperiment += 1
 
 exit( endLabel )

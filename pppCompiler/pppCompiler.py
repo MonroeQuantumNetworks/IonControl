@@ -47,7 +47,7 @@ addOperator = oneOf("+ -")
 not_ = Keyword("not")
 
 logger = logging.getLogger(__name__)
-logger.setLevel( logging.DEBUG )
+logger.setLevel( logging.INFO )
 
 formatter = logging.Formatter('%(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
@@ -336,6 +336,7 @@ class pppCompiler:
     
     def compileString(self, programText):
         self.programText = programText
+        self.currentFile = "Memory"
         result = self.program.parseString( self.programText, parseAll=True )
 
         allcode = list()
@@ -371,24 +372,42 @@ class pppCompiler:
         header.append( "" )        
         return header
 
+class compilertest:
+    def __init__(self):
+        with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
+            self.sourcecode = f.read()
+           
+    def test(self):
+        compiler = pppCompiler()
+        assemblercode = compiler.compileString(self.sourcecode )
+        return assemblercode
+        
+
 
 if __name__=="__main__":
-    compiler = pppCompiler()
-    assemblercode = compiler.compileFile( "YtterbiumScan.ppp" )
-
-    with open("YtterbiumScan.auto.pp","w") as f:
-        f.write(assemblercode)
-    
-    from pulseProgram.PulseProgram import PulseProgram    
-    pp = PulseProgram()
-    pp.debug = True
-    pp.loadSource(r"YtterbiumScan.auto.pp")
-        
-    pp.toBytecode()
-    print "updateVariables"
-    
-    for op, val in pp.bytecode:
-        print hex(op), hex(val)
-        
-    pp.toBinary()
+    import timeit
+    number = 30
+    t = timeit.timeit(stmt='c.test()', setup='from __main__ import compilertest; c = compilertest()', number=number)
+    print t/number
+#     with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
+#         sourcecode = f.read()
+#     
+#     compiler = pppCompiler()
+#     assemblercode = compiler.compileString(sourcecode )
+# 
+#     with open("YtterbiumScan.auto.pp","w") as f:
+#         f.write(assemblercode)
+#     
+#     from pulseProgram.PulseProgram import PulseProgram    
+#     pp = PulseProgram()
+#     pp.debug = True
+#     pp.loadSource(r"YtterbiumScan.auto.pp")
+#         
+#     pp.toBytecode()
+#     print "updateVariables"
+#     
+#     for op, val in pp.bytecode:
+#         print hex(op), hex(val)
+#         
+#     pp.toBinary()
 
