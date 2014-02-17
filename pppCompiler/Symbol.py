@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import Builtins
-from CompileError import CompileError
+from CompileException import SymbolException
 
 class Symbol(object):
     def __init__(self, name):
@@ -26,10 +26,10 @@ class FunctionSymbol(Symbol):
         
     def codegen(self, symboltable, arg=list(), kwarg=dict()):
         if len(arg)>1:
-            raise CompileError( "defined functions cannot have arguments" )
+            raise SymbolException( "defined functions cannot have arguments" )
         return self.block
 
-class Builtin(Symbol):
+class Builtin(FunctionSymbol):
     def __init__(self, name, codegen):
         super(Builtin, self).__init__(name)
         self.codegen = codegen
@@ -49,6 +49,7 @@ class SymbolTable(OrderedDict):
         self['set_shutter'] = Builtin('set_shutter',Builtins.set_shutter)
         self['set_inv_shutter'] = Builtin('set_inv_shutter',Builtins.set_inv_shutter)
         self['set_counter'] = Builtin('set_counter',Builtins.set_counter)
+        self['clear_counter'] = Builtin('clear_counter',Builtins.clear_counter)
         self['update'] = Builtin('update', Builtins.update)
         self['load_count'] = Builtin('load_count', Builtins.load_count)
         self['set_trigger'] = Builtin( 'set_trigger', Builtins.set_trigger )
@@ -70,18 +71,27 @@ class SymbolTable(OrderedDict):
         
     def getConst(self, name):
         """get a const symbol"""
+        if name not in self or not isinstance( self[name], ConstSymbol):
+            raise SymbolException("Constant '{0}' is not defined".format(name))
         return self[name]
 
     def getVar(self, name, type_=None):
         """check for the availability and type of a vaiabledefinition"""
+        if name not in self or not isinstance( self[name], VarSymbol):
+            raise SymbolException("Variable '{0}' is not defined".format(name))
+        var = self[name]
+        if type_ is not None and var.type_!=type_:
+            raise SymbolException("Variable '{0}' is of type {1}, required type: {2}".format(name,var.type_,type_))
         return self[name]
         
     def getProcedure(self, name):
+        if name not in self or not isinstance( self[name], FunctionSymbol):
+            raise SymbolException("Function '{0}' is not defined".format(name))
         return self[name]
 
     def checkAvailable(self, name):
         if name in self:
-            raise CompileError("symbol {0} already exists.".format(name))
+            raise SymbolException("symbol {0} already exists.".format(name))
         
     def getAllConst(self):
         return [value for value in self.values() if isinstance(value,ConstSymbol)]

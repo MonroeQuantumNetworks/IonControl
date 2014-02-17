@@ -5,10 +5,10 @@ Created on Feb 9, 2014
 '''
 
 from pyparsing import lineno, LineEnd, Literal, alphanums, alphas, dblQuotedString, Keyword, Word, Regex, pythonStyleComment, nums, ZeroOrMore
-from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, oneOf, ParseResults
+from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, oneOf, ParseResults, ParseException
 import logging
 import sys
-
+from CompileException import CompileException, CompileInternalException
 """
 BNF of grammar
 
@@ -29,6 +29,7 @@ HEXVALUE ::= 0x nums*
 DECVALUE ::= nums* 
 """
 
+
 var = Keyword("var").suppress()
 const = Keyword("const").suppress()
 insert = Keyword("insert").suppress()
@@ -47,7 +48,7 @@ addOperator = oneOf("+ -")
 not_ = Keyword("not")
 
 logger = logging.getLogger(__name__)
-logger.setLevel( logging.INFO )
+logger.setLevel( logging.DEBUG )
 
 formatter = logging.Formatter('%(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
@@ -129,69 +130,81 @@ class pppCompiler:
     
     def assignment_action(self, text, loc, arg):
         logger.debug( "assignment_action {0} {1}".format( lineno(loc, text), arg ))
-        code = [ "# assignment line {0}".format(lineno(loc, text)) ]
-        rval_code = find_and_get(arg.rval,'code')
-        if rval_code is not None:
-            code += arg.rval.code
-        elif arg.rval=="*P":
-            code.append( "  LDWI" )
-        elif 'identifier'in arg:
-            code.append(  "  LDWR {0}".format(arg.identifier))
-        if arg.lval=="*P":
-            code.append( "  STWI" )
-        elif arg.lval!="W":
-            symbol = self.symbols.getVar(arg.lval)
-            code.append( "  STWR {0}".format(symbol.name))
-        arg['code'] = code
+        try:
+            code = [ "# assignment line {0}".format(lineno(loc, text)) ]
+            rval_code = find_and_get(arg.rval,'code')
+            if rval_code is not None:
+                code += arg.rval.code
+            elif arg.rval=="*P":
+                code.append( "  LDWI" )
+            elif 'identifier'in arg:
+                code.append(  "  LDWR {0}".format(arg.identifier))
+            if arg.lval=="*P":
+                code.append( "  STWI" )
+            elif arg.lval!="W":
+                symbol = self.symbols.getVar(arg.lval)
+                code.append( "  STWR {0}".format(symbol.name))
+            arg['code'] = code
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
         return arg
         
     def addassignement_action(self, text, loc, arg):
         logger.debug( "addassignement_action {0} {1}".format( lineno(loc, text), arg ))
-        code = [ "# add assignment line {0}".format(lineno(loc, text)) ]
-        if arg.rval=='1':
-            if arg.op=="+=":
-                code.append("  INC {0}".format(arg.lval))
+        try:
+            code = [ "# add assignment line {0}".format(lineno(loc, text)) ]
+            if arg.rval=='1':
+                if arg.op=="+=":
+                    code.append("  INC {0}".format(arg.lval))
+                else:
+                    code.append("  DEC {0}".format(arg.lval))
             else:
-                code.append("  DEC {0}".format(arg.lval))
-        else:
-            if 'code'in arg.rval:
-                code += arg.rval.code
-            elif 'identifier' in  arg.rval:
-                code.append("  LDWR {0}".format(arg.rval.identifier))
-            if arg.op=="+=":
-                code.append( "  ADDW {0}".format(arg.lval))
-            else:
-                code.append( "  SUB {0}".format(arg.lval))
-        code.append("  STWR {0}".format(arg.lval))
-        arg['code'] = code
+                if 'code'in arg.rval:
+                    code += arg.rval.code
+                elif 'identifier' in  arg.rval:
+                    code.append("  LDWR {0}".format(arg.rval.identifier))
+                if arg.op=="+=":
+                    code.append( "  ADDW {0}".format(arg.lval))
+                else:
+                    code.append( "  SUB {0}".format(arg.lval))
+            code.append("  STWR {0}".format(arg.lval))
+            arg['code'] = code
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
         return arg
 
             
     
     def condition_action(self, text, loc, arg):
         logger.debug( "condition_action {0} {1}".format( lineno(loc, text), arg ))
-        code = [ "# condition line {0}".format(lineno(loc, text)) ]
-        if arg.leftidentifier!="W":
-            code.append('  LDWR {0}'.format(arg.leftidentifier))
-        code.append('  {0} {1}'.format(comparisonCommands[arg.comparison],arg.identifier))
-        arg["code"] = code
+        try:
+            code = [ "# condition line {0}".format(lineno(loc, text)) ]
+            if arg.leftidentifier!="W":
+                code.append('  LDWR {0}'.format(arg.leftidentifier))
+            code.append('  {0} {1}'.format(comparisonCommands[arg.comparison],arg.identifier))
+            arg["code"] = code
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
         return arg
     
     def rExp_condition_action(self, text, loc, arg):
         logger.debug( "rExp_condition_action {0} {1}".format( lineno(loc, text), arg ))
-        code = [ "# rExp condition line {0}".format(lineno(loc, text)) ]
-        condition_code = arg.condition.rExp['code'] 
-        if isinstance(condition_code,str):
-            if 'not_' in arg['condition']:
-                code += [ "  CMPEQUAL NULL" ]
+        try:
+            code = [ "# rExp condition line {0}".format(lineno(loc, text)) ]
+            condition_code = arg.condition.rExp['code'] 
+            if isinstance(condition_code,str):
+                if 'not_' in arg['condition']:
+                    code += [ "  CMPEQUAL NULL" ]
+                else:
+                    code += ["  CMPNOTEQUAL NULL"]
+                arg['code'] = code
             else:
-                code += ["  CMPNOTEQUAL NULL"]
-            arg['code'] = code
-        else:
-            if 'not_' in arg['condition']:
-                arg['code'] = { False: condition_code[True], True: condition_code[False] }
-            else:
-                arg['code'] = condition_code
+                if 'not_' in arg['condition']:
+                    arg['code'] = { False: condition_code[True], True: condition_code[False] }
+                else:
+                    arg['code'] = condition_code
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
         return arg
     
     def named_param_action(self, text, loc, arg):
@@ -208,16 +221,19 @@ class pppCompiler:
         return arg
         
     def procedurecall_action(self, text, loc, arg):
-        logger.debug( "procedurecall_action {0} {1}".format( lineno(loc, text), arg ))
-        procedure = self.symbols.getProcedure(arg[0])
-        code = [ "# procedurecall line {0}".format(lineno(loc, text)) ]
-        opcode = procedure.codegen(self.symbols, arg=arg.asList(), kwarg=arg.asDict())
-        if isinstance(opcode,list):
-            code += opcode
-        else:
-            code = opcode
-        arg['code'] = code
-        logger.debug( "procedurecall generated code {0}".format(code))
+        try:
+            logger.debug( "procedurecall_action {0} {1}".format( lineno(loc, text), arg ))
+            procedure = self.symbols.getProcedure(arg[0])
+            code = [ "# procedurecall line {0}".format(lineno(loc, text)) ]
+            opcode = procedure.codegen(self.symbols, arg=arg.asList(), kwarg=arg.asDict())
+            if isinstance(opcode,list):
+                code += opcode
+            else:
+                code = opcode
+            arg['code'] = code
+            logger.debug( "procedurecall generated code {0}".format(code))
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)
         return arg
         
     def rExp_action(self, text, loc, arg):
@@ -226,97 +242,116 @@ class pppCompiler:
         
     def if_action(self, text, loc, arg):
         logger.debug( "if_action {0} {1}".format( lineno(loc, text), arg ))
-        code = ["# if statement condition " ]
-        if isinstance(arg.condition.code,list):
-            code += arg.condition.code
-            JMPCMD = "JMPNCMP"
-        else:
-            JMPCMD = arg.condition.code[True]            
-        labelNumber = self.symbols.getLabelNumber()
-        elseLabel = "else_label_{0}".format( labelNumber )
-        endifLabel = "end_if_label_{0}".format( labelNumber )
-        if 'elseblock' in arg:
-            code.append("  {1} {0}".format(elseLabel, JMPCMD))
-            code.append( "# IF block")
-            code += arg.ifblock.code
-            code += ["  JMP {0}".format(endifLabel),
-                     "{0}: NOP".format(elseLabel) ]
-            code.append( "# ELSE block")
-            code += arg.elseblock['code']
-            code += "{0}: NOP".format(endifLabel)
-        else: 
-            code.append("  {1} {0}".format(endifLabel, JMPCMD))
-            code.append( "# IF block")
-            code += arg.ifblock.ifblock['code']
-            code.append( "{0}: NOP".format(endifLabel))
-        code.append( "# end if" )
-        arg['code'] = code
-        return arg
-        
-    def while_action(self, text, loc, arg):
-        logger.debug( "while_action {0} {1}".format( lineno(loc, text),  arg ))
-        labelNumber = self.symbols.getLabelNumber()
-        topLabel = "while_label_{0}".format(labelNumber)
-        endLabel = "end_while_label_{0}".format(labelNumber)
-        code = [ "# while statement {0} {1}".format(lineno(loc,text),arg),
-                 "{0}: NOP".format(topLabel) ]
-        if 'code' in arg.condition:
+        try:
+            code = ["# if statement condition " ]
             if isinstance(arg.condition.code,list):
                 code += arg.condition.code
                 JMPCMD = "JMPNCMP"
             else:
                 JMPCMD = arg.condition.code[True]            
-        elif 'rExp' in arg.condition and 'code' in arg.condition.rExp:
-            if isinstance(arg.condition.rExp.code,list):
-                code += arg.condition.rExp.code
-                JMPCMD = "JMPNCMP"
-            else:
-                JMPCMD = arg.condition.rExp.code[True]            
-        code += [ "  {1} {0}".format(endLabel, JMPCMD)]
-        code += arg.statementBlock.statementBlock['code']
-        code += [ "  JMP {0}".format(topLabel) ]
-        code += [ "{0}: NOP".format(endLabel) ]
-        code.append("# end while")
-        arg['code'] = code
-        logger.debug( "while_action generated code {0}".format(code))
+            labelNumber = self.symbols.getLabelNumber()
+            elseLabel = "else_label_{0}".format( labelNumber )
+            endifLabel = "end_if_label_{0}".format( labelNumber )
+            if 'elseblock' in arg:
+                code.append("  {1} {0}".format(elseLabel, JMPCMD))
+                code.append( "# IF block")
+                code += arg.ifblock.code
+                code += ["  JMP {0}".format(endifLabel),
+                         "{0}: NOP".format(elseLabel) ]
+                code.append( "# ELSE block")
+                code += arg.elseblock['code']
+                code += "{0}: NOP".format(endifLabel)
+            else: 
+                code.append("  {1} {0}".format(endifLabel, JMPCMD))
+                code.append( "# IF block")
+                code += arg.ifblock.ifblock['code']
+                code.append( "{0}: NOP".format(endifLabel))
+            code.append( "# end if" )
+            arg['code'] = code
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)                        
+        return arg
+        
+    def while_action(self, text, loc, arg):
+        logger.debug( "while_action {0} {1}".format( lineno(loc, text),  arg ))
+        try:
+            labelNumber = self.symbols.getLabelNumber()
+            topLabel = "while_label_{0}".format(labelNumber)
+            endLabel = "end_while_label_{0}".format(labelNumber)
+            code = [ "# while statement {0} {1}".format(lineno(loc,text),arg),
+                     "{0}: NOP".format(topLabel) ]
+            if 'code' in arg.condition:
+                if isinstance(arg.condition.code,list):
+                    code += arg.condition.code
+                    JMPCMD = "JMPNCMP"
+                else:
+                    JMPCMD = arg.condition.code[True]            
+            elif 'rExp' in arg.condition and 'code' in arg.condition.rExp:
+                if isinstance(arg.condition.rExp.code,list):
+                    code += arg.condition.rExp.code
+                    JMPCMD = "JMPNCMP"
+                else:
+                    JMPCMD = arg.condition.rExp.code[True]            
+            code += [ "  {1} {0}".format(endLabel, JMPCMD)]
+            code += arg.statementBlock.statementBlock['code']
+            code += [ "  JMP {0}".format(topLabel) ]
+            code += [ "{0}: NOP".format(endLabel) ]
+            code.append("# end while")
+            arg['code'] = code
+            logger.debug( "while_action generated code {0}".format(code))
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)                        
         return arg
         
     def statementBlock_action(self, text, loc, arg):
         logger.debug( "statementBlock_action {0} {1} {2}".format( lineno(loc, text), arg.funcname, arg ))
-        code = list()
-        for command in arg[0]:
-            if 'code'in command:
-                code += command['code']
-            elif 'code' in command[0]:
-                code += command[0]['code']
-        arg[0]['code'] = code
-        logger.debug( "statementBlock generated code {0}".format(code))
+        try:
+            code = list()
+            for command in arg[0]:
+                if 'code'in command:
+                    code += command['code']
+                elif 'code' in command[0]:
+                    code += command[0]['code']
+            arg[0]['code'] = code
+            logger.debug( "statementBlock generated code {0}".format(code))
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
         return arg
         
     def def_action(self, text, loc, arg):
         logger.debug( "def_action {0} {1} {2}".format( lineno(loc, text), arg.funcname, arg ))
-        name = arg[0]
-        self.symbols.checkAvailable(name)
-        self.symbols[name] = FunctionSymbol(name, arg[1]['code']) 
+        try:
+            name = arg[0]
+            self.symbols.checkAvailable(name)
+            self.symbols[name] = FunctionSymbol(name, arg[1]['code']) 
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
        
     def const_action( self, text, loc, arg ):
-        name, value = arg
-        logger.debug( "const_action {0} {1} {2} {3}".format(self.currentFile, lineno(loc, text), name, value) )
-        self.symbols[name] = ConstSymbol(name,value)
+        try:
+            name, value = arg
+            logger.debug( "const_action {0} {1} {2} {3}".format(self.currentFile, lineno(loc, text), name, value) )
+            self.symbols[name] = ConstSymbol(name,value)
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
         
     def var_action( self, text, loc, arg):
         logger.debug( "var_action {0} {1} {2} {3} {4} {5} {6}".format(self.currentFile, lineno(loc,text) , arg["type_"], arg.get("encoding"), arg["name"], arg.get("value"), arg.get("unit") ) )
-        type_ = arg["type_"] if arg["type_"]!="var" else None
-        self.symbols[arg["name"]] = VarSymbol( type_=type_, name=arg["name"], value=arg.get("value"), encoding=arg.get("encoding"), unit=arg.get("unit") )
+        try:
+            type_ = arg["type_"] if arg["type_"]!="var" else None
+            self.symbols[arg["name"]] = VarSymbol( type_=type_, name=arg["name"], value=arg.get("value"), encoding=arg.get("encoding"), unit=arg.get("unit") )
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
         
     def insert_action( self, text, loc, arg ):
-        oldfile = self.currentFile
-        print "insert_action", lineno(loc,text), arg
-        myprogram = self.program.copy()
-        self.currentFile = arg[0][1:-1]
-        result = myprogram.parseFile( self.currentFile )
-        self.currentFile = oldfile
-        print result
+        try:
+            oldfile = self.currentFile
+            myprogram = self.program.copy()
+            self.currentFile = arg[0][1:-1]
+            result = myprogram.parseFile( self.currentFile )
+            self.currentFile = oldfile
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)                    
         return result
     
     def compileFile(self, filename):
@@ -385,29 +420,29 @@ class compilertest:
 
 
 if __name__=="__main__":
-    import timeit
-    number = 30
-    t = timeit.timeit(stmt='c.test()', setup='from __main__ import compilertest; c = compilertest()', number=number)
-    print t/number
-#     with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
-#         sourcecode = f.read()
-#     
-#     compiler = pppCompiler()
-#     assemblercode = compiler.compileString(sourcecode )
-# 
-#     with open("YtterbiumScan.auto.pp","w") as f:
-#         f.write(assemblercode)
-#     
-#     from pulseProgram.PulseProgram import PulseProgram    
-#     pp = PulseProgram()
-#     pp.debug = True
-#     pp.loadSource(r"YtterbiumScan.auto.pp")
-#         
-#     pp.toBytecode()
-#     print "updateVariables"
-#     
-#     for op, val in pp.bytecode:
-#         print hex(op), hex(val)
-#         
-#     pp.toBinary()
+#     import timeit
+#     number = 30
+#     t = timeit.timeit(stmt='c.test()', setup='from __main__ import compilertest; c = compilertest()', number=number)
+#     print t/number
+    with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
+        sourcecode = f.read()
+     
+    compiler = pppCompiler()
+    assemblercode = compiler.compileString(sourcecode )
+ 
+    with open("YtterbiumScan.auto.pp","w") as f:
+        f.write(assemblercode)
+     
+    from pulseProgram.PulseProgram import PulseProgram    
+    pp = PulseProgram()
+    pp.debug = True
+    pp.loadSource(r"YtterbiumScan.auto.pp")
+         
+    pp.toBytecode()
+    print "updateVariables"
+     
+    for op, val in pp.bytecode:
+        print hex(op), hex(val)
+         
+    pp.toBinary()
 

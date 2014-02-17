@@ -33,7 +33,7 @@ parameter AmplitudeSettlingTime = 100 us
 # control parameters
 parameter MaxInitRepeat = 10
 parameter experiments = 100
-parameter CheckIonCounters = 0
+counter CheckIonCounters = 0
 counter DetectCounters = 0
 trigger ddsApplyTrigger =  3
 trigger ddsMicrowaveApply = 3
@@ -45,7 +45,6 @@ exitcode endLabel = 0xffffffff
 
 # internal variables
 var experimentsleft = 100
-var Null = 0
 var initRemaining = 0
 var currentexperiment = 0
 
@@ -53,7 +52,7 @@ def cool():
 	set_shutter( CoolingOn )
 	set_counter( CheckIonCounters )
 	update( CoolingTime )
-	set_counter( Null )
+	clear_counter()
 	update( )
 	W = load_count( PMTChannel )
 
@@ -83,6 +82,7 @@ def detect():
 	set_trigger( ddsApplyTrigger )
 	update( DetectTime )
 	set_inv_shutter( DetectOn )
+	clear_counter()
 	
 
 # startup switching on cooling quickly
