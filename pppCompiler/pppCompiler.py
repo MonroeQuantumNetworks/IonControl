@@ -428,21 +428,26 @@ if __name__=="__main__":
         sourcecode = f.read()
      
     compiler = pppCompiler()
-    assemblercode = compiler.compileString(sourcecode )
+    try:
+        assemblercode = compiler.compileString(sourcecode )
  
-    with open("YtterbiumScan.auto.pp","w") as f:
-        f.write(assemblercode)
-     
-    from pulseProgram.PulseProgram import PulseProgram    
-    pp = PulseProgram()
-    pp.debug = True
-    pp.loadSource(r"YtterbiumScan.auto.pp")
+        with open("YtterbiumScan.auto.pp","w") as f:
+            f.write(assemblercode)
          
-    pp.toBytecode()
-    print "updateVariables"
-     
-    for op, val in pp.bytecode:
-        print hex(op), hex(val)
+        from pulseProgram.PulseProgram import PulseProgram    
+        pp = PulseProgram()
+        pp.debug = True
+        pp.loadSource(r"YtterbiumScan.auto.pp")
+             
+        pp.toBytecode()
+        print "updateVariables"
          
-    pp.toBinary()
+        for op, val in pp.bytecode:
+            print hex(op), hex(val)
+             
+        pp.toBinary()
+        
+    except CompileException as e:
+        print str(e)
+        print e.line()
 
