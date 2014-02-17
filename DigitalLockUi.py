@@ -1,22 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Dec 22 17:37:41 2012
-
-This is the main gui program for the ExperimentalUi
-
-@author: pmaunz
-"""
-
-#import sip
-#sip.setapi("QString",2)
-#sip.setapi("QVariant",2)
-#sip.setapi("QDate",2)
-#sip.setapi("QDateTime",2)
-#sip.setapi("QTextStream",2)
-#sip.setapi("QTime",2)
-#sip.setapi("QUrl",2)
-
-import argparse
 import logging
 
 from PyQt4 import QtCore, QtGui 
@@ -48,7 +29,7 @@ from gui import testExperiment
 from uiModules import MagnitudeParameter #@UnusedImport
 
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\DigitalLockUi.ui')
 
 
 class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
@@ -218,158 +199,14 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
-    def onClearConsole(self):
-        self.textEditConsole.clear()
-        
-    def onConsoleMaximumLinesChanged(self, maxlines):
-        self.consoleMaximumLines = maxlines
-        
-    def setLoggingLevel(self, index):
-        self.loggingLevel = self.levelValueList[index]
 
-    def showDedicatedCounters(self):
-        self.dedicatedCountersWindow.show()
-        self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
-        self.dedicatedCountersWindow.raise_()
-        self.dedicatedCountersWindow.onStart() #Start displaying data immediately
 
-    def showLogicAnalyzer(self):
-        self.logicAnalyzerWindow.show()
-        self.logicAnalyzerWindow.setWindowState(QtCore.Qt.WindowActive)
-        self.logicAnalyzerWindow.raise_()
-
-    def onVoltageControl(self):
-        self.voltageControlWindow.show()
-        self.voltageControlWindow.setWindowState(QtCore.Qt.WindowActive)
-        self.voltageControlWindow.raise_()
-        
-    def onClear(self):
-        self.currentTab.onClear()
-    
-    def onSave(self):
-        logger = logging.getLogger(__name__)
-        self.currentTab.onSave()
-        logger.info( "Saving config" )
-        filename, _ = DataDirectory.DataDirectory().sequencefile("configuration.db")
-        self.saveConfig()
-        self.config.saveConfig(filename)
-    
-    def onStart(self):
-        self.currentTab.onStart()
-    
-    def onPause(self):
-        self.currentTab.onPause()
-    
-    def onStop(self):
-        self.currentTab.onStop()
-        
-    def onContinue(self):
-        if hasattr(self.currentTab,'onContinue'):
-            self.currentTab.onStop()
-        else:
-            self.statusbar.showMessage("continue not implemented")    
-            
-    def onReload(self):
-        logger = logging.getLogger(__name__)
-        logger.debug( "OnReload" )
-        self.currentTab.onReload()
-    
-    def onCurrentChanged(self, index):
-        self.currentTab.deactivate()
-        self.currentTab = self.tabList[index]
-        self.currentTab.activate()
-        self.initMenu()
-        
-    def initMenu(self):
-        self.menuView.clear()
-        if hasattr(self.currentTab,'viewActions'):
-            self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
-                     self.loggerDock ]:
-            self.menuView.addAction(dock.toggleViewAction())
-        
-    def onSettings(self):
-        self.settingsDialog.show()
-        
-    def onPulses(self):
-        self.pulseProgramDialog.show()
-        self.pulseProgramDialog.setWindowState(QtCore.Qt.WindowActive)
-        self.pulseProgramDialog.raise_()
-        if hasattr(self.currentTab,'experimentName'):
-            self.pulseProgramDialog.setCurrentTab(self.currentTab.experimentName)
-                  
-    def onClose(self):
-        self.parent.close()
-        
-    def onMessageWrite(self,message,level=logging.DEBUG):
-        if level>= self.loggingLevel:
-            cursor = self.textEditConsole.textCursor()
-            cursor.movePosition(QtGui.QTextCursor.End)
-            if level < logging.ERROR:
-                self.textEditConsole.setTextColor(QtCore.Qt.black)
-            else:
-                self.textEditConsole.setTextColor(QtCore.Qt.red)
-            cursor.insertText(message)
-            self.textEditConsole.setTextCursor(cursor)
-            self.textEditConsole.ensureCursorVisible()
-        
-    def closeEvent(self,e):
-        logger = logging.getLogger("")
-        logger.debug( "Saving Configuration" )
-        self.saveConfig()
-        for tab in self.tabList:
-            tab.onClose()
-        self.currentTab.deactivate()
-        self.pulseProgramDialog.done(0)
-        self.settingsDialog.done(0)
-        self.ExternalParametersSelectionUi.onClose()
-        self.voltageControlWindow.close()
-        self.dedicatedCountersWindow.close()
-        self.pulseProgramDialog.onClose()
-        self.logicAnalyzerWindow.close()
-
-    def saveConfig(self):
-        self.config['MainWindow.State'] = self.parent.saveState()
-        for tab in self.tabList:
-            tab.saveConfig()
-        self.config['Settings.deviceSerial'] = self.settings.deviceSerial
-        self.config['Settings.deviceDescription'] = self.settings.deviceDescription
-        self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
-        self.config['MainWindow.pos'] = self.pos()
-        self.config['MainWindow.size'] = self.size()
-        self.config['Settings.loggingLevel'] = self.loggingLevel
-        self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
-        self.config['Settings.ShutterNameDict'] = self.shutterNameDict 
-        self.config['SettingsTriggerNameDict'] = self.triggerNameDict 
-        self.pulseProgramDialog.saveConfig()
-        self.settingsDialog.saveConfig()
-        self.DDSUi.saveConfig()
-        self.shutterUi.saveConfig()
-        self.triggerUi.saveConfig()
-        self.dedicatedCountersWindow.saveConfig()
-        self.logicAnalyzerWindow.saveConfig()
-        self.voltageControlWindow.saveConfig()
-        self.ExternalParametersSelectionUi.saveConfig()
-        self.globalVariablesUi.saveConfig()
-        self.loggerUi.saveConfig()
-        
-    def onProjectSelection(self):
-        ProjectSelectionUi.GetProjectSelection()
-        
-        
 if __name__ == "__main__":
-    import sys
-    from voltageControl.VoltageControl import VoltageControl
-
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
-    import ctypes
-    myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
+    import ctypes, sys
+    myappid = 'TrappedIons.DigitalLockUi' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
-    parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
-    parser.add_argument('--project',type=str,default=None,help='project name')
-    args = parser.parse_args()
     app = QtGui.QApplication(sys.argv)
 
     logger = logging.getLogger("")

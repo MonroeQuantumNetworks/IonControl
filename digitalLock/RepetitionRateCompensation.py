@@ -25,7 +25,7 @@ import argparse
 import logging
 from ProjectSelectionUi import GetProjectSelection
 
-from digitalLock import RepetitionRateWidget.RepetitionRateWidget
+import DigitalLockUi
 from digitalLock import RepetitionRateLock.RepetitionRateLock
 from digitalLock import RepetitionRateTrace.RepetitionRateTrace
 
