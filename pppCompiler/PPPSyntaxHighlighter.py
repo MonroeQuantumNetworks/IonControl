@@ -75,7 +75,7 @@ if __name__ == "__main__":
             font.setPointSize( 12 )
             editor = QTextEdit()
             editor.setFont( font )
-            self.highlighter = PPHighlighter( editor, "Classic" )
+            self.highlighter = PPPHighlighter( editor, "Classic" )
             self.setCentralWidget( editor )
             self.setWindowTitle( "Syntax Highlighter" )
             with open("prog\Ions-samples\DriveD5half.pp","r") as f:
