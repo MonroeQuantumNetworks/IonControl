@@ -26,8 +26,8 @@ import logging
 from ProjectSelectionUi import GetProjectSelection
 
 import DigitalLockUi
-from digitalLock import RepetitionRateLock.RepetitionRateLock
-from digitalLock import RepetitionRateTrace.RepetitionRateTrace
+from digitalLock import LockControl
+from digitalLock import LockStatus
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\RepetitionRate.ui')
 
@@ -80,7 +80,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.tabList.append(repRateWidget)
         self.tabDict["Repetition Rate"] = repRateWidget
             
-        self.repetitionRateTrace = RepetitionRateTrace(self.pulser, self.config)
+        self.repetitionRateTrace = LockStatus(self.pulser, self.config)
         self.repetitionRateTrace.setupUi()
         self.traceControl.setWidget( self.repetitionRateTrace )
 

@@ -360,7 +360,7 @@
   <customwidget>
    <class>CoordinatePlotWidget</class>
    <extends>QGraphicsView</extends>
-   <header>CoordinatePlotWidget</header>
+   <header>uiModules.CoordinatePlotWidget</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -3,9 +3,9 @@ from PyQt4 import QtGui, QtCore, QtSvg
 
 import logging
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\RepetitionRateTrace.ui')
+Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\TraceControl.ui')
 
-class RepetitionRateTrace(Form, Base):
+class TraceControl(Form, Base):
     def __init__(self,pulserHardware,config,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)

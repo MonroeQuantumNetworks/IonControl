@@ -6,15 +6,53 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>242</width>
-    <height>180</height>
+    <width>263</width>
+    <height>205</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="4" column="0" colspan="2">
+   <item row="7" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="1">
+    <widget class="QComboBox" name="comboTriggerMode">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <item>
+      <property name="text">
+       <string>Immediate</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Rising edge</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Falling edge</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer">
@@ -91,45 +129,7 @@
      </item>
     </layout>
    </item>
-   <item row="6" column="0">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="3" column="1">
-    <widget class="QComboBox" name="comboTriggerMode">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <item>
-      <property name="text">
-       <string>Immediate</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Rising edge</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Falling edge</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="3" column="0">
+   <item row="4" column="0">
     <widget class="QLabel" name="label_4">
      <property name="text">
       <string>Trigger Mode</string>
@@ -196,10 +196,30 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
+   <item row="6" column="0" colspan="2">
     <widget class="QLabel" name="statusLabel">
      <property name="text">
       <string>Status ...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="MagnitudeSpinBox" name="magHistoryAccum">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::NoButtons</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>History accum</string>
      </property>
     </widget>
    </item>
@@ -209,7 +229,7 @@
   <customwidget>
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>MagnitudeSpinBox</header>
+   <header>uiModules.MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
  <resources>
