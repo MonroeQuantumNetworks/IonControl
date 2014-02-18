@@ -51,12 +51,12 @@ from uiModules import MagnitudeParameter #@UnusedImport
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
 
-class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
+class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     def __init__(self,config):
         self.config = config
-        super(DigitalLockUi, self).__init__()
+        super(ExperimentUi, self).__init__()
         self.settings = SettingsDialog.Settings()
         self.deviceSerial = config.get('Settings.deviceSerial')
         self.deviceDescription = config.get('Settings.deviceDescription')
@@ -77,7 +77,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         return False
     
     def setupUi(self, parent):
-        super(DigitalLockUi,self).setupUi(parent)
+        super(ExperimentUi,self).setupUi(parent)
         self.dockWidgetConsole.hide()
         self.loggerUi = LoggerLevelsUi(self.config)
         self.loggerUi.setupUi(self.loggerUi)
@@ -380,7 +380,7 @@ if __name__ == "__main__":
         DataDirectory.DefaultProject = project
         
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with DigitalLockUi(config) as ui:
+            with ExperimentUi(config) as ui:
                 ui.setupUi(ui)
                 LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()

@@ -22,6 +22,9 @@ from pulseProgram.VariableTableModel import VariableTableModel
 from uiModules.RotatedHeaderView import RotatedHeaderView
 from modules.enum import enum
 from pppCompiler.pppCompiler import pppCompiler
+from pppCompiler.CompileException import CompileException
+from modules.PyqtUtility import BlockSignals
+from pyparsing import ParseException
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -42,6 +45,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
         self.sourceCodeEdits = dict()
+        self.pppCodeEdits = dict()
         self.config = config
         self.parameterdict = parameterdict     # dictionary of globals
         self.combinedDict = None               # dictionary containing all PP variables
@@ -50,6 +54,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.parameterChangedSignal = None
         self.channelNameData = channelNameData
         self.sourceMode = self.SourceMode.pp
+        self.pppCompileException = None
    
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -69,11 +74,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             for key, path in self.configParams.recentFiles.iteritems():
                 if os.path.exists(path):
                     self.filenameComboBox.addItem(key)
-        if self.configParams.lastFilename is not None:
-#             try:
-            self.loadFile( self.configParams.lastFilename )
-#             except Exception as e:
-#                 logger.error( "Ignoring exception {0}, pulse programming file '{1}' cannot be loaded.".format(str(e),self.configParams.lastFilename) )
+        lastFilename =  self.configParams.lastFilename
+        if lastFilename is not None:
+            self.adaptiveLoadFile(lastFilename)
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
         if hasattr(self.configParams,'splitterVertical'):
@@ -89,7 +92,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onFilenameChange(self, name ):
         name = str(name)
         if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastFilename:
-            self.loadFile(self.configParams.recentFiles[name])
+            self.adaptiveLoadFile(self.configParams.recentFiles[name])
             if str(self.filenameComboBox.currentText())!=name:
                 self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
         
@@ -99,12 +102,16 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onLoad(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
         if path!="":
-            if os.path.splitext(path)==".ppp":
-                self.sourceMode = self.SourceMode.ppp
-                self.loadpppFile(path)
-            else:
-                self.sourceMode = self.SourceMode.pp
-                self.loadFile(path)
+            self.adaptiveLoadFile(path)
+            
+    def adaptiveLoadFile(self, path):
+        _, ext = os.path.splitext(path)
+        if ext==".ppp":
+            self.sourceMode = self.SourceMode.ppp
+            self.loadpppFile(path)
+        else:
+            self.sourceMode = self.SourceMode.pp
+            self.loadFile(path)            
             
     def onReset(self):
         if self.configParams.lastFilename is not None:
@@ -112,15 +119,45 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadFile(self.configParams.lastFilename)
     
     def loadpppFile(self, path):
-        self.pppSourceFile = path
+        self.pppSourcePath = path
+        _, self.pppSourceFile = os.path.split(path)
+        base, _ = os.path.splitext(path)
         with open(path,"r") as f:
-            self.pppSource = f.read() 
+            self.pppSource = f.read()
+        ppFilename = base+".pp"
+        self.compileppp(ppFilename)
+        if self.pppCompileException is None:
+            self.loadFile(ppFilename, cache=False)
+        filename = os.path.basename(path)
+        if filename not in self.configParams.recentFiles:
+            self.filenameComboBox.addItem(filename)
+            self.recentFilesChanged.emit(filename)
+        self.configParams.recentFiles[filename]=path
+        self.configParams.lastFilename = self.pppSourcePath
+        with BlockSignals(self.filenameComboBox) as w:
+            w.setCurrentIndex( self.filenameComboBox.findText(filename))
+
+    def saveppp(self, path):
+        if self.pppSource and path:
+            with open(path,'w') as f:
+                f.write( self.pppSource )
+
+    def compileppp(self, savefilename):
+        self.pppSource.expandtabs(4)
+        try:
+            compiler = pppCompiler()
+            ppCode = compiler.compileString( self.pppSource )
+            self.pppCompileException = None
+            with open(savefilename,"w") as f:
+                f.write("# autogenerated from '{0}' \n# DO NOT EDIT DIRECTLY\n# The file will be overwritten by the compiler\n#\n".format(self.pppSourcePath))
+                f.write(ppCode)
+        except CompileException as e:
+            self.pppCompileException = e
+        except ParseException as e:
+            e.__class__ = CompileException  # cast to CompileException. Is possible because CompileException does ONLY add behavior
+            self.pppCompileException = e
     
-    def compileppp(self):
-        compiler = pppCompiler()
-        return compiler.compileString( self.pppSouce )
-    
-    def loadFile(self, path):
+    def loadFile(self, path, cache=True):
         logger = logging.getLogger(__name__)
         logger.debug( "loadFile {0}".format( path ) )
         if self.combinedDict is not None and self.configParams.lastFilename is not None:
@@ -136,14 +173,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.combinedDict = self.pulseProgram.variabledict.copy()
         if (self.configname,key) in self.config:
             self.combinedDict.update( dictutil.subdict(self.config[(self.configname,key)], self.combinedDict.keys() ) )
-        self.updateDisplay(compileexception)
-        filename = os.path.basename(path)
-        if filename not in self.configParams.recentFiles:
-            self.filenameComboBox.addItem(filename)
-            logger.debug( "self.recentFilesChanged.emit({0})".format(filename) )
-            self.recentFilesChanged.emit(filename)
-        self.configParams.recentFiles[filename]=path
-        self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
+        self.updateDisplay(compileexception, self.pppCompileException)
+        if cache:
+            filename = os.path.basename(path)
+            if filename not in self.configParams.recentFiles:
+                self.filenameComboBox.addItem(filename)
+                logger.debug( "self.recentFilesChanged.emit({0})".format(filename) )
+                self.recentFilesChanged.emit(filename)
+            self.configParams.recentFiles[filename]=path
+            self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
 
     def onRemoveCurrent(self):
         text = str(self.filenameComboBox.currentText())
@@ -153,39 +191,75 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def onSave(self):
         self.onApply()
-        self.pulseProgram.saveSource()
+        if self.sourceMode==self.SourceMode.pp:
+            self.pulseProgram.saveSource()
+        else:
+            self.saveppp(self.pppSourcePath)
     
     def onApply(self):
-        try:
+        if self.sourceMode==self.SourceMode.pp:
+            try:
+                positionCache = dict()
+                for name, textEdit in self.sourceCodeEdits.iteritems():
+                    self.pulseProgram.source[name] = str(textEdit.toPlainText())
+                    positionCache[name] = ( textEdit.textEdit.textCursor().position(),
+                                            textEdit.textEdit.verticalScrollBar().value() )
+                self.pulseProgram.loadFromMemory()
+                self.oldcombinedDict = self.combinedDict
+                self.combinedDict = self.pulseProgram.variabledict.copy()
+                self.combinedDict.update( dictutil.subdict(self.oldcombinedDict, self.combinedDict.keys() ) )
+                self.updateDisplay(pppCompileException=self.pppCompileException)
+                for name, textEdit in self.sourceCodeEdits.iteritems():
+                    textEdit.clearHighlightError()
+                    cursor = textEdit.textEdit.textCursor()
+                    cursorpos, scrollpos = positionCache[name]
+                    cursor.setPosition( cursorpos )
+                    textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
+                    textEdit.textEdit.setTextCursor( cursor )
+            except PulseProgram.ppexception as ppex:
+                textEdit = self.sourceCodeEdits[ ppex.file ].highlightError(str(ppex), ppex.line, ppex.context )
+        else:
             positionCache = dict()
-            for name, textEdit in self.sourceCodeEdits.iteritems():
-                self.pulseProgram.source[name] = str(textEdit.toPlainText())
+            for name, textEdit in self.pppCodeEdits.iteritems():
+                self.pppSource = str(textEdit.toPlainText())
                 positionCache[name] = ( textEdit.textEdit.textCursor().position(),
                                         textEdit.textEdit.verticalScrollBar().value() )
-            self.pulseProgram.loadFromMemory()
             self.oldcombinedDict = self.combinedDict
-            self.combinedDict = self.pulseProgram.variabledict.copy()
-            self.combinedDict.update( dictutil.subdict(self.oldcombinedDict, self.combinedDict.keys() ) )
-            self.updateDisplay()
-            for name, textEdit in self.sourceCodeEdits.iteritems():
-                textEdit.clearHighlightError()
-                cursor = textEdit.textEdit.textCursor()
-                cursorpos, scrollpos = positionCache[name]
-                cursor.setPosition( cursorpos )
-                textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                textEdit.textEdit.setTextCursor( cursor )
-        except PulseProgram.ppexception as ppex:
-            textEdit = self.sourceCodeEdits[ ppex.file ].highlightError(str(ppex), ppex.line, ppex.context )
+            base, _ = os.path.splitext(self.pppSourcePath)
+            ppFilename = base+".pp"
+            self.compileppp(ppFilename)
+            if self.pppCompileException is None:
+                self.loadFile(ppFilename, cache=False)
+                self.combinedDict = self.pulseProgram.variabledict.copy()
+                self.combinedDict.update( dictutil.subdict(self.oldcombinedDict, self.combinedDict.keys() ) )
+            self.updateDisplay(pppCompileException=self.pppCompileException)
+            if self.pppCompileException is None:
+                for name, textEdit in self.pppCodeEdits.iteritems():
+                    textEdit.clearHighlightError()
+                    cursor = textEdit.textEdit.textCursor()
+                    cursorpos, scrollpos = positionCache[name]
+                    cursor.setPosition( cursorpos )
+                    textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
+                    textEdit.textEdit.setTextCursor( cursor )
     
-    def updateDisplay(self, compileexception=None):   # why does this not update the display?
+    def updateDisplay(self, compileexception=None, pppCompileException=None):   # why does this not update the display?
         self.sourceTabs.clear()
         self.sourceCodeEdits = dict()
+        self.pppCodeEdits = dict()
+        if self.sourceMode==self.SourceMode.ppp:
+            for name, text in [(self.pppSourceFile,self.pppSource)]:
+                textEdit = PulseProgramSourceEdit(mode='ppp')
+                textEdit.setupUi(textEdit)
+                textEdit.setPlainText(text)
+                self.pppCodeEdits[name] = textEdit
+                self.sourceTabs.addTab( textEdit, name )
         for name, text in self.pulseProgram.source.iteritems():
             textEdit = PulseProgramSourceEdit()
             textEdit.setupUi(textEdit)
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
+            textEdit.setReadOnly( self.sourceMode!=self.SourceMode.pp )
         self.variabledict = VariableDictionary( self.combinedDict, self.parameterdict )
         self.variableTableModel = VariableTableModel( self.variabledict )
         if self.parameterChangedSignal:
@@ -207,6 +281,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.pulseProgramChanged.emit()
         if compileexception:
             textEdit = self.sourceCodeEdits[ compileexception.file ].highlightError(str(compileexception), compileexception.line, compileexception.context )
+        if pppCompileException and self.sourceMode==self.SourceMode.ppp:
+            textEdit = self.pppCodeEdits[self.pppSourceFile].highlightError( pppCompileException.message(), pppCompileException.lineno(), col=pppCompileException.col())
             
                     
     def onAccept(self):
