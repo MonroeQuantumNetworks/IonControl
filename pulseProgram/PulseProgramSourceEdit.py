@@ -10,7 +10,7 @@ import functools
 from PyQt4 import uic, QtCore, QtGui
 
 from pulseProgram.PPSyntaxHighlighter import PPHighlighter
-
+from pppCompiler.PPPSyntaxHighlighter import PPPHighlighter
 
 Form, Base = uic.loadUiType(r'ui\PulseProgramEdit.ui')
 
@@ -38,7 +38,7 @@ class PulseProgramSourceEdit(Form, Base):
         self.findMatchCaseCheckBox.stateChanged.connect( self.onFindFlagsChanged )
         self.findNextButton.clicked.connect( self.onFind )
         self.findPreviousButton.clicked.connect( functools.partial(self.onFind , True))
-        self.highlighter = PPHighlighter( self.textEdit, "Classic" )
+        self.highlighter = PPHighlighter( self.textEdit, "Classic" ) if self.mode=='pp' else PPPHighlighter( self.textEdit, "Classic" ) 
         self.errorDisplay.hide()
         self.closeErrorButton.clicked.connect( self.clearHighlightError )
         
