@@ -10,10 +10,10 @@ from trace import pens
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
-import visa
+import visa  #@UnresolvedImport
 
 from modules import DataDirectory
-from persist import configshelve
+from persist import configshelve 
 from readInstrument import Read_E5100B
 from readInstrument import Read_N9010A
 from readInstrument import Read_N9342CN

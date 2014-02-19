@@ -8,7 +8,7 @@ Created on Fri Dec 14 15:37:21 2012
 from trace import Trace
 
 import numpy
-import visa
+import visa #@UnresolvedImport
 
 import ReadGeneric
 

@@ -5,7 +5,7 @@ Encapsulation of the Pulse Programmer Hardware
 from Queue import Queue
 import logging
 import multiprocessing
-import struct
+from modules.magnitude import mg
 
 from PyQt4 import QtCore 
 
@@ -17,6 +17,29 @@ def check(number, command):
     if number is not None and number<0:
         raise FPGAException("OpalKelly exception '{0}' in command {1}".format(ErrorMessages.get(number,number),command))
 
+frequencyQuantum = mg(1,'GHz') / 0xffffffffffff
+frequencyQuantumHz = frequencyQuantum.toval('Hz')
+voltageQuantum = mg(5,'V') / 0xffff
+voltageQuantumV = voltageQuantum.toval('V')
+sampleTime = mg(2,'us')
+
+def binToFreq( binvalue ):
+    return binvalue * frequencyQuantum
+
+def binToFreqHz( binvalue ):
+    return binvalue * frequencyQuantumHz
+
+def binToVoltage( binvalue ):
+    return binvalue * voltageQuantum
+
+def binToVoltageV( binvalue ):
+    return binvalue * voltageQuantumV
+
+def freqToBin( mag_value ):
+    return int((0xffffffffffff * mag_value / mg(1,'GHz')).toval()) & 0xffffffffffff
+
+def voltageToBin( mag_value ):
+    return int((0xffff * mag_value / mg(2.5,'V')).toval()) & 0xffff
 
 class QueueReader(QtCore.QThread):      
     def __init__(self, controller, dataQueue, parent = None):

@@ -5,6 +5,8 @@ from functools import partial
 import logging
 from modules.magnitude import mg
 
+from controller.ControllerClient import freqToBin, voltageToBin 
+
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockControl.ui')
 
 
@@ -47,9 +49,21 @@ class LockControl(Form, Base):
         self.setupSpinBox('magOffset', 'offset', self.setOffset, 'V')
         self.setupSpinBox('magPCoeff', 'pCoefficient', self.setpCoefficient, '')
         self.setupSpinBox('magICoeff', 'iCoefficient', self.setiCoefficient, '')
+        self.autoLockButton.clicked.connect( self.onAutoLock )
+        self.lockButton.clicked.connect( self.onLock )
+        self.unlockButton.clicked.connect( self.onUnlock )
+        
+    def onLock(self):
+        pass
+    
+    def onUnlock(self):
+        pass
+    
+    def onAutoLock(self):
+        pass
         
     def setReferenceFrequency(self, value):
-        binvalue = int((0xffffffffffff * value / mg(1,'GHz')).toval()) & 0xffffffffffff
+        binvalue = freqToBin(value)
         self.controller.setReferenceFrequency(binvalue)
         self.lockSettings.referenceFrequency = value
         self.dataChanged.emit( self.lockSettings )
@@ -61,7 +75,7 @@ class LockControl(Form, Base):
         self.dataChanged.emit( self.lockSettings )
         
     def setOutputFrequency(self, value):
-        binvalue = int((0xffffffffffff * value / mg(1,'GHz')).toval()) & 0xffffffffffff
+        binvalue = freqToBin(value)
         self.controller.setOutputFrequency(binvalue)
         self.lockSettings.outputFrequency = value
         self.dataChanged.emit( self.lockSettings )
@@ -79,7 +93,7 @@ class LockControl(Form, Base):
         self.dataChanged.emit( self.lockSettings )
         
     def setOffset(self, value):
-        binvalue = int((0xffff * value / mg(2.5,'V')).toval()) & 0xffff
+        binvalue = voltageToBin(value)
         self.controller.setInputOffset(binvalue)
         self.lockSettings.offset = value
         self.dataChanged.emit( self.lockSettings )

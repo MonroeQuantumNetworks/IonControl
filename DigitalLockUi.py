@@ -94,7 +94,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.setupAsDockWidget(self.lockControl, "Control", QtCore.Qt.RightDockWidgetArea)
         
         # Trace control
-        self.traceControl = TraceControl(self.pulser, self.config, self.parent)
+        self.traceControl = TraceControl(self.pulser, self.config, self.traceui, self.plotDict["History"]["view"], self.parent)
         self.traceControl.setupUi()
         self.setupAsDockWidget(self.traceControl, "Trace Control", QtCore.Qt.RightDockWidgetArea)
         

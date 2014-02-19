@@ -17,7 +17,7 @@ from wavemeter.WavemeterGetFrequency import WavemeterGetFrequency
 
 
 try:
-    import visa
+    import visa  #@UnresolvedImport
 except:
     logging.getLogger(__name__).info( "visa loading failed. Proceeding without." )
     

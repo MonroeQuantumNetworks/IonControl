@@ -163,6 +163,7 @@ class DigitalLockControllerServer(Process):
                     if code==0xffffffffffffffff:
                         self.dataQueue.put( self.scopeData )
                         self.scopeData = scopeData()
+                        self.scopeEnabled = False
                     else:
                         self.scopeData.errorSig.append( code >> 48 )
                         self.scopeData.frequency.append( code & 0xffffffffffff )
@@ -197,6 +198,9 @@ class DigitalLockControllerServer(Process):
     def SetWireInValue(self, address, data):
         if self.xem:
             self.xem.SetWireInValue(address, data)
+
+    def triggerScope(self):
+        self.scopeEnabled = True
 
     def setReferenceFrequency(self, binvalue ):
         if self.xem:

@@ -1,27 +1,24 @@
 import PyQt4.uic
 
-import logging
-from modules.magnitude import mg
 from modules.MagnitudeUtilit import setSignificantDigits
 from trace.PlottedTrace import PlottedTrace 
 from trace.Trace import Trace
 from operator import attrgetter, methodcaller
 import numpy
 
+from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage
+from modules.magnitude import mg
+
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockStatus.ui')
 
-frequencyQuantum = mg(1,'GHz') / 0xffffffffffff
-voltageQuantum = mg(5,'V') / 0xffff
 
-def convertFreq( binvalue ):
-    return binvalue * frequencyQuantum
-
-def convertVoltage( binvalue ):
-    return binvalue * voltageQuantum
 
 class StatusData:
     pass
 
+class Settings:
+    def __init__(self):
+        self.averageSamples = mg(1,'')
 
 class LockStatus(Form, Base):
     def __init__(self,controller,config,traceui,view,parent=None):
@@ -37,11 +34,33 @@ class LockStatus(Form, Base):
         self.freqCurve = None
         self.freqTrace = None
         self.view = view
-    
+        self.settings = Settings()#self.config.get("LockStatus.settings",Settings())
+
+    def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
+        box = getattr(self, localname)
+        value = getattr(self.settings, settingsname)
+        box.setValue( value )
+        box.dimension = unit
+        box.valueChanged.connect( updatefunc )
+        updatefunc( value )
+   
     def setupUi(self):
         Form.setupUi(self,self)
+        self.setupSpinBox('magHistoryAccum', 'averageSamples', self.setAverageSamples, '')
         self.controller.streamDataAvailable.connect( self.onData )
         self.controller.lockStatusChanged.connect( self.onLockChange )
+        self.addTraceButton.clicked.connect( self.onAddTrace )
+        
+    def onAddTrace(self):
+        if self.errorSigCurve:
+            self.traceui.addTrace( self.errorSigCurve )
+            self.errorSigCurve = None
+        if self.freqTrace:
+            self.traceui.addTrace( self.freqCurve )
+            self.freqCurve = None
+        
+    def setAverageSamples(self, value):
+        self.controller.setStreamAccum(int(value.toval()))
         
     def onLockChange(self, data=None):
         pass
@@ -54,36 +73,36 @@ class LockStatus(Form, Base):
         if self.lockSettings is None:
             return None
         status = StatusData()
-        status.referenceFrequency = self.lockSettings.referenceFrequency + convertFreq(item.freqAvg)
+        status.referenceFrequency = self.lockSettings.referenceFrequency + binToFreq(item.freqAvg)
         setSignificantDigits(status.referenceFrequency, frequencyQuantum)
 
-        status.outputFrequency = self.lockSettings.outputFrequency + convertFreq(item.freqAvg)* self.lockSettings.harmonic
+        status.outputFrequency = self.lockSettings.outputFrequency + binToFreq(item.freqAvg)* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequency, frequencyQuantum)
 
         binvalue = (item.freqMax - item.freqMin) 
-        status.referenceFrequencyDelta = convertFreq(binvalue) 
+        status.referenceFrequencyDelta = binToFreq(binvalue) 
         setSignificantDigits(status.referenceFrequencyDelta, frequencyQuantum)        
-        status.referenceFrequencyMax = convertFreq(item.freqMax)
+        status.referenceFrequencyMax = binToFreq(item.freqMax)
         setSignificantDigits(status.referenceFrequencyMax, frequencyQuantum)
-        status.referenceFrequencyMin = convertFreq(item.freqMin)
+        status.referenceFrequencyMin = binToFreq(item.freqMin)
         setSignificantDigits(status.referenceFrequencyMin, frequencyQuantum)
 
         binvalue *= self.lockSettings.harmonic
-        status.outputFrequencyDelta = convertFreq(binvalue)
+        status.outputFrequencyDelta = binToFreq(binvalue)
         setSignificantDigits(status.outputFrequencyDelta, frequencyQuantum*self.lockSettings.harmonic)
-        status.outputFrequencyMax = self.lockSettings.outputFrequency + convertFreq(item.freqMax)* self.lockSettings.harmonic
+        status.outputFrequencyMax = self.lockSettings.outputFrequency + binToFreq(item.freqMax)* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequencyMax, frequencyQuantum)
-        status.outputFrequencyMin = self.lockSettings.outputFrequency + convertFreq(item.freqMin)* self.lockSettings.harmonic
+        status.outputFrequencyMin = self.lockSettings.outputFrequency + binToFreq(item.freqMin)* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequencyMin, frequencyQuantum)
         
-        status.errorSigAvg = convertVoltage( item.errorSigAvg )
+        status.errorSigAvg = binToVoltage( item.errorSigAvg )
         setSignificantDigits( status.errorSigAvg.significantDigits, voltageQuantum )
         binvalue = item.errorSigMax - item.errorSigMin
-        status.errorSigDelta = convertVoltage(binvalue )
+        status.errorSigDelta = binToVoltage(binvalue )
         setSignificantDigits( status.errorSigDelta, voltageQuantum )            
-        status.errorSigMax = convertVoltage(item.errorSigMax)
+        status.errorSigMax = binToVoltage(item.errorSigMax)
         setSignificantDigits( status.errorSigMax, voltageQuantum )            
-        status.errorSigMin = convertVoltage(item.errorSigMax)
+        status.errorSigMin = binToVoltage(item.errorSigMax)
         setSignificantDigits( status.errorSigMin, voltageQuantum )            
         return status
     
@@ -114,14 +133,17 @@ class LockStatus(Form, Base):
             self.errorSigTrace.y = y
             self.errorSigTrace.bottom = bottom
             self.errorSigTrace.top = top
-            self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Style.points, name="Error Signal")  #@UndefinedVariable 
-            self.errorSigCurve.plot()
         else:
             self.errorSigTrace.x = numpy.append( self.errorSigTrace.x, x )
             self.errorSigTrace.y = numpy.append( self.errorSigTrace.y, y )
             self.errorSigTrace.bottom = numpy.append( self.errorSigTrace.bottom, bottom )
             self.errorSigTrace.top = numpy.append( self.errorSigTrace.top, top )
-            self.errorSigCurve.replot()
+            
+        if self.errorSigCurve is None:
+            self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Style.points, name="Error Signal")  #@UndefinedVariable 
+            self.errorSigCurve.plot()
+        else:
+            self.errorSigCurve.replot()            
            
         to_plot = zip(*(attrgetter('referenceFrequency','referenceFrequencyMin', 'referenceFrequencyMax')(e) for e in self.lastLockData))
         x = numpy.arange( len(to_plot[0] ))
@@ -134,14 +156,17 @@ class LockStatus(Form, Base):
             self.freqTrace.y = y
             self.freqTrace.bottom = bottom
             self.freqTrace.top = top
-            self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Style.points, name="Repetition rate")  #@UndefinedVariable
-            self.freqCurve.plot()
         else:
             self.freqTrace.x = numpy.append( self.freqTrace.x, x )
             self.freqTrace.y = numpy.append( self.freqTrace.y, y )
             self.freqTrace.bottom = numpy.append( self.freqTrace.bottom, bottom )
             self.freqTrace.top = numpy.append( self.freqTrace.top, top )
-            self.freqCurve.replot()
+            
+        if self.freqCurve is None:
+            self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Style.points, name="Repetition rate")  #@UndefinedVariable
+            self.freqCurve.plot()
+        else:
+            self.freqCurve.replot()                        
              
            
     def saveConfig(self):
