@@ -3,7 +3,6 @@
 Encapsulation of the Pulse Programmer Hardware 
 """
 import logging
-import math
 from multiprocessing import Process
 import struct
 
@@ -98,12 +97,9 @@ class StreamData(list):
 
 class ScopeData:
     def __init__(self):
-        self.data = list()
-        self.auxData = list()
-        self.trigger = list()
-        self.stopMarker = None
-        self.countOffset = 0
-
+        self.errorSig = list()
+        self.frequency = list()
+        
 class FinishException(Exception):
     pass
 
@@ -158,28 +154,18 @@ class DigitalLockControllerServer(Process):
 
     analyzingState = enum.enum('normal','scanparameter')
     def readDataFifo(self):
-        logger = logging.getLogger(__name__)
+        #logger = logging.getLogger(__name__)
         if (self.scopeEnabled):
             scopeData, _ = self.readScopeData(8)
             if scopeData is not None:
                 for s in sliceview(scopeData,8):
                     (code, ) = struct.unpack('Q',s)
-                    time = (code&0xffffff) + self.logicAnalyzerData.countOffset
-                    pattern = (code >> 24) & 0x3fffffffff
-                    header = (code >> 62 )
-                    if code==0x8000000000000000:  # overrun marker
-                        self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
-                    elif code&0xffffffffff000000==0x800000000f000000:  # end marker
-                        self.logicAnalyzerData.stopMarker = time
-                        self.dataQueue.put( self.logicAnalyzerData )
-                        self.logicAnalyzerData = ScopeData()
-                    elif header==0: # trigger
-                        self.logicAnalyzerData.trigger.append( (time,pattern) )
-                    elif header==1: # standard
-                        self.logicAnalyzerData.data.append( (time,pattern) )  
-                    elif header==3: # aux data
-                        self.logicAnalyzerData.auxData.append( (time,pattern))                                          
-                    #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+                    if code==0xffffffffffffffff:
+                        self.dataQueue.put( self.scopeData )
+                        self.scopeData = scopeData()
+                    else:
+                        self.scopeData.errorSig.append( code >> 48 )
+                        self.scopeData.frequency.append( code & 0xffffffffffff )
                    
         data, self.streamData.overrun = self.readStreamData(40)
         self.streamBuffer.extend( data )
@@ -194,10 +180,7 @@ class DigitalLockControllerServer(Process):
                 self.streamData.append(item)
             self.dataQueue.put( self.streamData )
             self.streamData = StreamData()
-            self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40))
-            
-                
-            
+            self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40))           
      
     def __getattr__(self, name):
         """delegate not available procedures to xem"""
@@ -213,6 +196,88 @@ class DigitalLockControllerServer(Process):
     def SetWireInValue(self, address, data):
         if self.xem:
             self.xem.SetWireInValue(address, data)
+
+    def setReferenceFrequency(self, binvalue ):
+        if self.xem:
+            self.xem.SetWireInValue(0x00, binvalue & 0xffff )
+            self.xem.SetWireInValue(0x01, (binvalue>>16) & 0xffff )
+            self.xem.SetWireInValue(0x02, (binvalue>>32) & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x40, 7 )
+
+    def setOutputFrequency(self, binvalue ):
+        if self.xem:
+            self.xem.SetWireInValue(0x03, binvalue & 0xffff )
+            self.xem.SetWireInValue(0x04, (binvalue>>16) & 0xffff )
+            self.xem.SetWireInValue(0x05, (binvalue>>32) & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x40, 8 )
+    
+    def setReferenceAmplitude(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x0c, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn(0x40, 2)
+
+    def setOutputAmplitude(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x0d, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn(0x40, 3)
+    
+    def setpCoeff(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x0e, binvalue & 0xffff )
+            self.xem.SetWireInValue(0x0f, (binvalue >> 16) & 0xffff )
+            self.xem.UpdateWireIns()
+            
+    def setiCoeff(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x10, binvalue & 0xffff )
+            self.xem.SetWireInValue(0x11, (binvalue>>16) & 0xffff )
+            self.xem.UpdateWireIns()
+    
+    def setMode(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x12, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
+            
+    def setInputOffset(self, binvalue ):
+        if self.xem:
+            self.xem.SetWireInValue(0x13, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
+        
+    def setHarmonic(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x14, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
+            
+    def setStreamAccum(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x15, binvalue & 0xffff )
+            self.xem.SetWireInValue(0x16, (binvalue>>16) & 0xffff )
+            self.xem.UpdateWireIns()
+    
+    def setSamples(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x17, binvalue & 0xffff )
+            self.xem.SetWireInValue(0x18, (binvalue>>16) & 0xffff )
+            self.xem.UpdateWireIns()
+    
+    def setSubSample(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x19, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
+
+    def setTriggerLevel(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x1a, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
+ 
+    def setTriggerMode(self, binvalue):
+        if self.xem:
+            self.xem.SetWireInValue(0x1b, binvalue & 0xffff )
+            self.xem.UpdateWireIns()
 
     def readStreamData(self,minbytes=4):
         if self.xem:
@@ -238,21 +303,6 @@ class DigitalLockControllerServer(Process):
                 return data, overrun
         return None, False
                                         
-    def wordListToBytearray(self, wordlist):
-        """ convert list of words to binary bytearray
-        """
-        self.binarycode = bytearray()
-        for word in wordlist:
-            self.binarycode += struct.pack('I', word)
-        return self.binarycode        
-
-    def bytearrayToWordList(self, barray):
-        wordlist = list()
-        for offset in range(0,len(barray),4):
-            (w,) = struct.unpack_from('I',buffer(barray),offset)
-            wordlist.append(w)
-        return wordlist        
-        
     def listBoards(self):
         xem = ok.FrontPanel()
         self.moduleCount = xem.GetDeviceCount()
@@ -314,9 +364,6 @@ class DigitalLockControllerServer(Process):
         else:
             logger.debug("Serial {0} is already open".format(serial) )         
         return None
-
-
-       
         
 def sliceview(view,length):
     return tuple(buffer(view, i, length) for i in range(0, len(view), length))
