@@ -9,8 +9,7 @@ import struct
 
 from PyQt4 import QtCore 
 
-from digitalLock.controller.ControllerServer import FinishException, ErrorMessages, FPGAException
-from digitalLock.controller import ControllerServer
+from digitalLock.controller.ControllerServer import FinishException, ErrorMessages, FPGAException, DigitalLockControllerServer
 import modules.magnitude as magnitude
 
 
@@ -91,7 +90,7 @@ class Controller(QtCore.QObject):
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
         self.loggingQueue = multiprocessing.Queue()
                 
-        self.serverProcess = ControllerServer(self.dataQueue, self.serverPipe, self.loggingQueue )
+        self.serverProcess = DigitalLockControllerServer(self.dataQueue, self.serverPipe, self.loggingQueue )
         self.serverProcess.start()
 
         self.queueReader = QueueReader(self, self.dataQueue)

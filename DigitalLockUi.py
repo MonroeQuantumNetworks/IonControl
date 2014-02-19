@@ -8,7 +8,7 @@ from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
 from gui import ProjectSelection
 from gui import ProjectSelectionUi
-from pulser.PulserHardwareClient import PulserHardware 
+from digitalLock.controller.ControllerClient import Controller 
 from gui import SettingsDialog
 from modules import DataDirectory
 from persist import configshelve
@@ -44,7 +44,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         
     def __enter__(self):
-        self.pulser = PulserHardware()
+        self.pulser = Controller()
         return self
     
     def __exit__(self, excepttype, value, traceback):
@@ -80,7 +80,14 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog = SettingsDialog.SettingsDialog(self.pulser, self.config, self.parent)
         self.settingsDialog.setupUi()
         self.settings = self.settingsDialog.settings
-        
+
+        self.setupPlots()       
+        # Traceui
+        self.penicons = pens.penicons().penicons()
+        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict["Scope"]["view"])
+        self.traceui.setupUi(self.traceui)
+        self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
+
         # Lock oOntrol      
         self.lockControl = LockControl(self.pulser, self.config, self.parent)
         self.lockControl.setupUi() 
@@ -92,17 +99,10 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.setupAsDockWidget(self.traceControl, "Trace Control", QtCore.Qt.RightDockWidgetArea)
         
         # Trace control
-        self.lockStatus = LockStatus(self.pulser, self.config, self.parent)
+        self.lockStatus = LockStatus(self.pulser, self.config, self.traceui, self.plotDict["History"]["view"], self.parent)
         self.lockStatus.setupUi()
         self.setupAsDockWidget(self.lockStatus, "Status", QtCore.Qt.RightDockWidgetArea)
         
-        self.setupPlots()
-        # Traceui
-        self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict["Scope"]["view"])
-        self.traceui.setupUi(self.traceui)
-        self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
-
 #         self.actionClear.triggered.connect(self.onClear)
 #         self.actionPause.triggered.connect(self.onPause)
         self.actionSave.triggered.connect(self.onSave)
