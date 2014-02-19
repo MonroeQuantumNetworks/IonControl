@@ -81,20 +81,20 @@ def check(number, command):
 class PulserHardwareException(Exception):
     pass
 
-class StreamData:
+class StreamDataItem:
     def __init__(self):
-        self.count = [list() for _ in range(16)]
-        self.timestamp = [list() for _ in range(8)]
-        self.timestampZero = [0]*8
-        self.scanvalue = None
-        self.final = False
-        self.other = list()
-        self.overrun = False
-        self.exitcode = 0
-        
-    def __str__(self):
-        return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
+        self.samples = 0
+        self.errorSigAvg = 0
+        self.errorSigMin = 0
+        self.errorSigMax = 0
+        self.freqAvg = 0
+        self.freqMin = 0
+        self.freqMax = 0
 
+class StreamData(list):
+    def __init__(self):
+        super(StreamData, self).__init__(self)
+        self.overrun = False   
 
 class ScopeData:
     def __init__(self):
@@ -123,10 +123,9 @@ class DigitalLockControllerServer(Process):
         self.scopeData = ScopeData()
         self.streamData = StreamData()
         self.timestampOffset = 0
+        
+        self.streamBuffer = bytearray()
 
-        self._shutter = 0
-        self._trigger = 0
-        self._adcCounterMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
         
         self.scopeEnabled = False
@@ -161,9 +160,9 @@ class DigitalLockControllerServer(Process):
     def readDataFifo(self):
         logger = logging.getLogger(__name__)
         if (self.scopeEnabled):
-            logicAnalyzerData, _ = self.ppReadScopeData(8)
-            if logicAnalyzerData is not None:
-                for s in sliceview(logicAnalyzerData,8):
+            scopeData, _ = self.readScopeData(8)
+            if scopeData is not None:
+                for s in sliceview(scopeData,8):
                     (code, ) = struct.unpack('Q',s)
                     time = (code&0xffffff) + self.logicAnalyzerData.countOffset
                     pattern = (code >> 24) & 0x3fffffffff
@@ -182,14 +181,21 @@ class DigitalLockControllerServer(Process):
                         self.logicAnalyzerData.auxData.append( (time,pattern))                                          
                     #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
                    
-        data, self.data.overrun = self.ppReadStreamData(4)
-        if data:
-            for s in sliceview(data,4):
-                (token,) = struct.unpack('I',s)
-            if self.data.overrun:
-                logger.info( "Overrun detected, triggered data queue" )
-                self.dataQueue.put( self.data )
-                self.data = StreamData()
+        data, self.streamData.overrun = self.readStreamData(40)
+        self.streamBuffer.extend( data )
+        if len(self.streamBuffer)>=40:
+            for s in sliceview(self.streamBuffer,40):
+                item = StreamDataItem()
+                (errorsig, item.samples, item.errorSigMin, item.errorSigMax, freq0, freq1, freq2) = struct.unpack('QIHHQQQ',s)
+                item.errorSigAvg = errorsig / item.samples
+                item.freqMin = freq1 & 0xffffffffffff
+                item.freqMax = freq2 & 0xffffffffffff
+                item.freqAvg = freq0 / item.samples * 8 + (freq1 >> 56) / item.samples
+                self.streamData.append(item)
+            self.dataQueue.put( self.streamData )
+            self.streamData = StreamData()
+            self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40))
+            
                 
             
      
@@ -208,7 +214,7 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.SetWireInValue(address, data)
 
-    def ppReadStreamData(self,minbytes=4):
+    def readStreamData(self,minbytes=4):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x21)   # pipe_out_available
@@ -220,7 +226,7 @@ class DigitalLockControllerServer(Process):
                 return data, overrun
         return None, False
                         
-    def ppReadScopeData(self,minbytes=4):
+    def readScopeData(self,minbytes=4):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x20)   # pipe_out_available
@@ -313,5 +319,11 @@ class DigitalLockControllerServer(Process):
        
         
 def sliceview(view,length):
-    return tuple(buffer(view, i, length) for i in range(0, len(view), length))    
+    return tuple(buffer(view, i, length) for i in range(0, len(view), length))
+
+def sliceview_remainder(view,length):
+    l = len(view)
+    full_items = l//length
+    appendix = l-length*full_items
+    return buffer(view, l-appendix, appendix )
 
