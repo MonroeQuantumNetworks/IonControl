@@ -119,10 +119,10 @@ class LogicAnalyzerData:
 class FinishException(Exception):
     pass
 
-class DigitalLockControllerServer(Process):
+class PulserHardwareServer(Process):
     timestep = magnitude.mg(20,'ns')
     def __init__(self, dataQueue, commandPipe, loggingQueue):
-        super(DigitalLockControllerServer,self).__init__()
+        super(PulserHardwareServer,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
         self.running = True
@@ -153,7 +153,7 @@ class DigitalLockControllerServer(Process):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
-                    logger.debug( "DigitalLockControllerServer {0}".format(commandstring) )
+                    logger.debug( "PulserHardwareServer {0}".format(commandstring) )
                     self.commandPipe.send(command(*argument))
                 except Exception as e:
                     self.commandPipe.send(e)
@@ -264,7 +264,7 @@ class DigitalLockControllerServer(Process):
     def __getattr__(self, name):
         """delegate not available procedures to xem"""
         if name.startswith('__') and name.endswith('__'):
-            return super(DigitalLockControllerServer, self).__getattr__(name)
+            return super(PulserHardwareServer, self).__getattr__(name)
         def wrapper(*args):
             if self.xem:
                 return getattr( self.xem, name )(*args)

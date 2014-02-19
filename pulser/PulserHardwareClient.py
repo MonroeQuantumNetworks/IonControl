@@ -9,8 +9,8 @@ import struct
 
 from PyQt4 import QtCore 
 
-from DigitalLockControllerServer import FinishException, ErrorMessages, FPGAException
-from DigitalLockControllerServer import DigitalLockControllerServer
+from PulserHardwareServer import FinishException, ErrorMessages, FPGAException
+from PulserHardwareServer import PulserHardwareServer
 import modules.magnitude as magnitude
 
 
@@ -101,7 +101,7 @@ class PulserHardware(QtCore.QObject):
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
         self.loggingQueue = multiprocessing.Queue()
                 
-        self.serverProcess = DigitalLockControllerServer(self.dataQueue, self.serverPipe, self.loggingQueue )
+        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue )
         self.serverProcess.start()
 
         self.queueReader = QueueReader(self, self.dataQueue)
