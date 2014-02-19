@@ -218,6 +218,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
+        QtCore.QTimer.singleShot(60000, self.onCommitConfig )
+        
     def onClearConsole(self):
         self.textEditConsole.clear()
         
@@ -253,7 +255,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         filename, _ = DataDirectory.DataDirectory().sequencefile("configuration.db")
         self.saveConfig()
         self.config.saveConfig(filename)
-    
+        
+    def onCommitConfig(self):
+        logger = logging.getLogger(__name__)
+        self.currentTab.onSave()
+        logger.debug( "Committing config" )
+        self.saveConfig()
+        self.config.saveConfig() 
+        QtCore.QTimer.singleShot(60000, self.onCommitConfig )      
+            
     def onStart(self):
         self.currentTab.onStart()
     
