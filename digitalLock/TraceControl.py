@@ -14,3 +14,6 @@ class TraceControl(Form, Base):
     
     def setupUi(self):
         Form.setupUi(self,self)
+        
+    def saveConfig(self):
+        pass

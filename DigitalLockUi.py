@@ -203,6 +203,9 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
         self.settingsDialog.saveConfig()
         self.loggerUi.saveConfig()
+        self.lockControl.saveConfig()
+        self.lockStatus.saveConfig()
+        self.traceControl.saveConfig()
 
 if __name__ == "__main__":
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
