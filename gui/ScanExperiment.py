@@ -362,7 +362,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             yColumnName = 'y{0}'.format(index)
 #             rawColumnName = 'raw{0}'.format(index)
             trace.addColumn( yColumnName )
-            thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName)
+            thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName, xAxisUnit = self.scan.xUnit,
+                                                    xAxisLabel = self.scan.scanParameter)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
             thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
@@ -492,10 +493,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         trace.addColumn( bottomColumnName )                
                         plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
                                                     yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
-                                                    rawColumn=rawColumnName, name=self.scan.evalList[index].name) 
+                                                    rawColumn=rawColumnName, name=self.scan.evalList[index].name, xAxisUnit = self.scan.xUnit,
+                                                    xAxisLabel = self.scan.scanParameter) 
                     else:                
                         plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
-                                                    yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name)               
+                                                    yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
+                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter)               
                     xRange = self.generator.xRange()
                     if xRange:
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )

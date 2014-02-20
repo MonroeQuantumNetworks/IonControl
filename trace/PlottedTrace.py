@@ -22,7 +22,8 @@ class PlottedTrace(object):
     Types = enum.enum('default','steps')
     def __init__(self,Trace,graphicsView,penList,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
-                 rawColumn='raw', tracePlotting=None, name=""):
+                 rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
+                 yAxisLabel = None, yAxisUnit = None):
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:
@@ -41,6 +42,10 @@ class PlottedTrace(object):
         self.childTraces = []
         self.curvePen = 0
         self.name = name
+        self.xAxisLabel = xAxisLabel
+        self.xAxisUnit = xAxisUnit
+        self.yAxisLabel = yAxisLabel
+        self.yAxisUnit = yAxisUnit
         # we use pointers to the relevant columns in trace
         if tracePlotting is not None:
             self.tracePlotting = tracePlotting
@@ -191,19 +196,42 @@ class PlottedTrace(object):
 
     def plotLines(self,penindex):
         self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0])
+        if self.xAxisLabel:
+            if self.xAxisUnit:
+                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+            else:
+                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
+        
     
     def plotPoints(self,penindex):
         self.curve = self.graphicsView.plot(self.x, self.y, pen=None, symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
+        if self.xAxisLabel:
+            if self.xAxisUnit:
+                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+            else:
+                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
+
     
     def plotLinespoints(self,penindex):
         self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
-                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])                
+                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
+        if self.xAxisLabel:
+            if self.xAxisUnit:
+                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+            else:
+                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
+                
     
     def plotSteps(self,penindex):
         mycolor = list(self.penList[penindex][4])
         mycolor[3] = 80
         self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor, pen=self.penList[penindex][0])
+        if self.xAxisLabel:
+            if self.xAxisUnit:
+                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+            else:
+                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
         self.graphicsView.addItem( self.curve )
     
     def plot(self,penindex=-1,style=None):
