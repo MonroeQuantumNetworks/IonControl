@@ -124,10 +124,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         base, _ = os.path.splitext(path)
         with open(path,"r") as f:
             self.pppSource = f.read()
+        self
         ppFilename = base+".pp"
         self.compileppp(ppFilename)
         if self.pppCompileException is None:
             self.loadFile(ppFilename, cache=False)
+        else:
+            self.updateDisplay(pppCompileException=self.pppCompileException)
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
@@ -143,7 +146,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 f.write( self.pppSource )
 
     def compileppp(self, savefilename):
-        self.pppSource.expandtabs(4)
+        self.pppSource = self.pppSource.expandtabs(4)
         try:
             compiler = pppCompiler()
             ppCode = compiler.compileString( self.pppSource )
@@ -260,25 +263,26 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
             textEdit.setReadOnly( self.sourceMode!=self.SourceMode.pp )
-        self.variabledict = VariableDictionary( self.combinedDict, self.parameterdict )
-        self.variableTableModel = VariableTableModel( self.variabledict )
-        if self.parameterChangedSignal:
-            self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
-        self.variableView.setModel(self.variableTableModel)
-        self.variableView.resizeColumnToContents(0)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.combinedDict, self.channelNameData[0:2] )
-        self.shutterTableView.setModel(self.shutterTableModel)
-        self.shutterTableView.resizeColumnsToContents()
-        self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
-        self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.combinedDict, self.channelNameData[2:4] )
-        self.triggerTableView.setModel(self.triggerTableModel)
-        self.triggerTableView.resizeColumnsToContents()
-        self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-        self.counterTableModel = CounterTableModel.CounterTableModel( self.combinedDict )
-        self.counterTableView.setModel(self.counterTableModel)
-        self.counterTableView.resizeColumnsToContents()
-        self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
-        self.pulseProgramChanged.emit()
+        if self.combinedDict is not None:
+            self.variabledict = VariableDictionary( self.combinedDict, self.parameterdict )
+            self.variableTableModel = VariableTableModel( self.variabledict )
+            if self.parameterChangedSignal:
+                self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
+            self.variableView.setModel(self.variableTableModel)
+            self.variableView.resizeColumnToContents(0)
+            self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.combinedDict, self.channelNameData[0:2] )
+            self.shutterTableView.setModel(self.shutterTableModel)
+            self.shutterTableView.resizeColumnsToContents()
+            self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
+            self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.combinedDict, self.channelNameData[2:4] )
+            self.triggerTableView.setModel(self.triggerTableModel)
+            self.triggerTableView.resizeColumnsToContents()
+            self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
+            self.counterTableModel = CounterTableModel.CounterTableModel( self.combinedDict )
+            self.counterTableView.setModel(self.counterTableModel)
+            self.counterTableView.resizeColumnsToContents()
+            self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
+            self.pulseProgramChanged.emit()
         if compileexception:
             textEdit = self.sourceCodeEdits[ compileexception.file ].highlightError(str(compileexception), compileexception.line, compileexception.context )
         if pppCompileException and self.sourceMode==self.SourceMode.ppp:

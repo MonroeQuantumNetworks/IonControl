@@ -62,6 +62,7 @@ class QueueReader(QtCore.QThread):
         while True:
             try:
                 data = self.dataQueue.get()
+                logger.info("{0}".format( data.__class__.__name__ ) )
                 self.dataHandler[ data.__class__.__name__ ]( data )
             except (KeyboardInterrupt, SystemExit, FinishException):
                 break

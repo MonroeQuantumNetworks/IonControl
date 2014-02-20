@@ -41,8 +41,8 @@ class SymbolTable(OrderedDict):
         super(SymbolTable, self).__init__()
         self.addBuiltins()
         self.inlineParameterValues = dict() 
-        self.inlineParameterValues[0] = 'NULL'
-        self.inlineParameterValues[0xffffffff] = 'FFFFFFFF'
+        self.setInlineParameter( 'NULL', 0 )
+        self.setInlineParameter( 'FFFFFFFF', 0xffffffff )
         self.labelNumber = 0 
         
     def addBuiltins(self):
@@ -59,10 +59,18 @@ class SymbolTable(OrderedDict):
         self['exit'] = Builtin( 'exit', Builtins.exit_ )
         self['pipe_empty'] = Builtin( 'pipe_empty', Builtins.pipe_empty )
         self['apply_next_scan_point'] = Builtin( 'apply_next_scan_point', Builtins.apply_next_scan_point )
+        self['set_ram_address'] = Builtin( 'set_ram_address', Builtins.set_ram_address )
+        self['read_ram'] = Builtin( 'read_ram', Builtins.read_ram )
+        
+    def setInlineParameter(self, name, value):
+        self.inlineParameterValues[value] = name
+        self[name] = VarSymbol(name=name, value=value)
         
     def getInlineParameter(self, prefix, value):
         if value not in self.inlineParameterValues:
-            self.inlineParameterValues[value] = "{0}_{1}".format(prefix,len(self.inlineParameterValues))
+            name = "{0}_{1}".format(prefix,len(self.inlineParameterValues))
+            self.inlineParameterValues[value] = name
+            self[name] = VarSymbol(name=name, value=value)
         return self.inlineParameterValues[value]
     
     def getLabelNumber(self):

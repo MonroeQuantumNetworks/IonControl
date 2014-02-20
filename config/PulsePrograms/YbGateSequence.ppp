@@ -1,6 +1,6 @@
 ###########################################################################
 #
-#  example for PulseProgramPlus input
+# Gate Sequence Example
 #
 
 const DDSDetect = 1
@@ -15,7 +15,7 @@ parameter<AD9912_PHASE> MicrowaveInitPhase = 0
 parameter<AD9912_PHASE> MicrowaveAnalyzePhase = 0
 
 # masks and shutters
-shutter InitializationShutter 
+shutter InitializationShutter
 masked_shutter CoolingOn
 masked_shutter PumpingOn
 masked_shutter MicrowaveOn
@@ -24,37 +24,45 @@ masked_shutter DetectOn
 # times
 parameter CoolingTime = 1 ms
 parameter PumpTime = 0 ms
-parameter QubitInitTime = 0 ms
-parameter QubitWaitTime = 0 ms
-parameter QubitAnalyzeTime = 0 ms
+parameter QubitInitTime = 0 us
+parameter QubitAnalyzeTime = 0 us
 parameter DetectTime = 1 ms
-parameter AmplitudeSettlingTime = 100 us
+parameter AmplitudeSettlingTime = 100us
+parameter gateTime = 100 us
+parameter piTime = 90 us
+parameter PostPulseWaitTime = 0us
 
 # control parameters
 parameter MaxInitRepeat = 10
 parameter experiments = 100
-counter CheckIonCounters = 0
-counter DetectCounters = 0
-trigger ddsApplyTrigger =  3
-trigger ddsMicrowaveApply = 3
-parameter PresenceThreshold = 6
-
-# excitcodes
-exitcode IonLostExitcode = 0x1
-exitcode endLabel = 0xffffffff
+counter CheckIonCounters
+counter DetectCounters
+trigger ddsApplyTrigger 
+trigger ddsMicrowaveApply
+parameter PresenceThreshold 
+parameter UseGateSequence
 
 # internal variables
-var experimentsleft = 100
+var currentExperiment
 var initRemaining = 0
-var currentexperiment = 0
+var trainPhase = 0
+parameter trainTime = 0
+var PulsesRemaining = 0
+var RamStartAddress = 0
+
+# exitcodes
+exitcode IonLostExitcode = 0x1
+exitcode endLabel = 0xffff0000
 
 def cool():
+    set_dds( channel=DDSMicrowave, freq=MicrowaveFreq )
     set_shutter( CoolingOn )
     set_counter( CheckIonCounters )
     update( CoolingTime )
     clear_counter()
     update( )
     W = load_count( PMTChannel )
+    set_inv_shutter( CoolingOn )
 
 def pump():
     set_shutter( PumpingOn )
@@ -62,14 +70,14 @@ def pump():
     set_inv_shutter( PumpingOn )
 
 def qubitInit():
-    set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
+    set_dds( channel=DDSMicrowave, phase=MicrowaveInitPhase )
     set_trigger( ddsMicrowaveApply )
     set_shutter( MicrowaveOn )
     update( QubitInitTime )
     set_inv_shutter( MicrowaveOn )
 
 def qubitAnalyze():
-    set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveAnalyzePhase )
+    set_dds( channel=DDSMicrowave, phase=MicrowaveAnalyzePhase )
     set_trigger( ddsMicrowaveApply )
     set_shutter( MicrowaveOn )
     update( QubitAnalyzeTime )
@@ -84,7 +92,6 @@ def detect():
     set_inv_shutter( DetectOn )
     clear_counter()
     
-
 # startup switching on cooling quickly
 set_shutter( InitializationShutter )
 set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
@@ -94,25 +101,42 @@ while not pipe_empty():
     update()
     apply_next_scan_point()
     
-    currentexperiment = 0
-    while currentexperiment < experiments:
+    currentExperiment = 0
+    while currentExperiment < experiments:
+        set_ram_address( RamStartAddress )
         cool()
         if MaxInitRepeat>0: 
             initRemaining = MaxInitRepeat
+            W = load_count( PMTChannel )
             while W<PresenceThreshold:
                 if initRemaining==0:
                     exit( IonLostExitcode )
                 cool()
         if PumpTime>0:
             pump()
-        if QubitInitTime>0: 
-            qubitInit()
-        if QubitWaitTime>0:
-            update( QubitWaitTime )
+        if QubitInitTime>0:
+            qubitInit()         
+        if UseGateSequence!=0:
+            PulsesRemaining = read_ram()
+            while PulsesRemaining!=0:
+                PulsesRemaining -= 1
+                trainPhase = read_ram()
+                trainTime = read_ram()
+                set_dds( channel=DDSMicrowave, phase=trainPhase )
+                set_trigger( ddsMicrowaveApply )
+                if trainTime!=0:
+                    update(trainTime)
+                trainTime = read_ram()
+                if trainTime!=0:
+                    set_shutter( MicrowaveOn )
+                    update( trainTime )
+                    set_inv_shutter( MicrowaveOn )
+            update( PostPulseWaitTime )
         if QubitAnalyzeTime>0:
-        	qubitAnalyze()
+            qubitAnalyze()
         if DetectTime>0:
-            detect()    
-    	currentexperiment += 1
-
+            detect()
+        currentExperiment += 1  
+        
 exit( endLabel )
+    

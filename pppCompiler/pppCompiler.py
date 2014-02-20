@@ -4,7 +4,7 @@ Created on Feb 9, 2014
 @author: pmaunz
 '''
 
-from pyparsing import lineno, LineEnd, Literal, alphanums, alphas, dblQuotedString, Keyword, Word, Regex, pythonStyleComment, nums, ZeroOrMore
+from pyparsing import lineno, line, LineEnd, Literal, alphanums, alphas, dblQuotedString, Keyword, Word, Regex, pythonStyleComment, nums, ZeroOrMore
 from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, oneOf, ParseResults, ParseException
 import logging
 import sys
@@ -131,13 +131,14 @@ class pppCompiler:
     def assignment_action(self, text, loc, arg):
         logger.debug( "assignment_action {0} {1}".format( lineno(loc, text), arg ))
         try:
-            code = [ "# assignment line {0}".format(lineno(loc, text)) ]
+            code = [ "# line {0} assignment {1}".format(lineno(loc, text), line(loc,text)) ]
             rval_code = find_and_get(arg.rval,'code')
             if rval_code is not None:
                 code += arg.rval.code
             elif arg.rval=="*P":
                 code.append( "  LDWI" )
             elif 'identifier'in arg:
+                self.symbols.getVar( arg.identifier )
                 code.append(  "  LDWR {0}".format(arg.identifier))
             if arg.lval=="*P":
                 code.append( "  STWI" )
@@ -152,8 +153,9 @@ class pppCompiler:
     def addassignement_action(self, text, loc, arg):
         logger.debug( "addassignement_action {0} {1}".format( lineno(loc, text), arg ))
         try:
-            code = [ "# add assignment line {0}".format(lineno(loc, text)) ]
-            if arg.rval=='1':
+            code = [ "# line {0}: add_assignment: {1}".format(lineno(loc, text),line(loc,text)) ]
+            if arg.rval=='1' or arg.rval[0]=='1':
+                self.symbols.getVar(arg.lval)
                 if arg.op=="+=":
                     code.append("  INC {0}".format(arg.lval))
                 else:
@@ -162,11 +164,14 @@ class pppCompiler:
                 if 'code'in arg.rval:
                     code += arg.rval.code
                 elif 'identifier' in  arg.rval:
+                    self.symbols.getVar(arg.rval.identifier)
                     code.append("  LDWR {0}".format(arg.rval.identifier))
                 if arg.op=="+=":
+                    self.symbols.getVar(arg.lval)
                     code.append( "  ADDW {0}".format(arg.lval))
                 else:
-                    code.append( "  SUB {0}".format(arg.lval))
+                    self.symbols.getVar(arg.lval)
+                    code.append( "  SUBW {0}".format(arg.lval))
             code.append("  STWR {0}".format(arg.lval))
             arg['code'] = code
         except Exception as e:
@@ -178,8 +183,9 @@ class pppCompiler:
     def condition_action(self, text, loc, arg):
         logger.debug( "condition_action {0} {1}".format( lineno(loc, text), arg ))
         try:
-            code = [ "# condition line {0}".format(lineno(loc, text)) ]
+            code = [ "# line {0} condition {1}".format(lineno(loc, text),line(loc,text)) ]
             if arg.leftidentifier!="W":
+                self.symbols.getVar(arg.leftidentifier)
                 code.append('  LDWR {0}'.format(arg.leftidentifier))
             code.append('  {0} {1}'.format(comparisonCommands[arg.comparison],arg.identifier))
             arg["code"] = code
@@ -190,7 +196,7 @@ class pppCompiler:
     def rExp_condition_action(self, text, loc, arg):
         logger.debug( "rExp_condition_action {0} {1}".format( lineno(loc, text), arg ))
         try:
-            code = [ "# rExp condition line {0}".format(lineno(loc, text)) ]
+            code = [ "# line {0} rExp_condition {1}".format(lineno(loc, text), line(loc,text)) ]
             condition_code = arg.condition.rExp['code'] 
             if isinstance(condition_code,str):
                 if 'not_' in arg['condition']:
@@ -224,7 +230,7 @@ class pppCompiler:
         try:
             logger.debug( "procedurecall_action {0} {1}".format( lineno(loc, text), arg ))
             procedure = self.symbols.getProcedure(arg[0])
-            code = [ "# procedurecall line {0}".format(lineno(loc, text)) ]
+            code = [ "# line {0}: procedurecall {1}".format(lineno(loc, text), line(loc,text)) ]
             opcode = procedure.codegen(self.symbols, arg=arg.asList(), kwarg=arg.asDict())
             if isinstance(opcode,list):
                 code += opcode
@@ -243,7 +249,7 @@ class pppCompiler:
     def if_action(self, text, loc, arg):
         logger.debug( "if_action {0} {1}".format( lineno(loc, text), arg ))
         try:
-            code = ["# if statement condition " ]
+            code = ["# line {0} if statement {1}".format(lineno(loc,text), line(loc,text)) ]
             if isinstance(arg.condition.code,list):
                 code += arg.condition.code
                 JMPCMD = "JMPNCMP"
@@ -278,7 +284,7 @@ class pppCompiler:
             labelNumber = self.symbols.getLabelNumber()
             topLabel = "while_label_{0}".format(labelNumber)
             endLabel = "end_while_label_{0}".format(labelNumber)
-            code = [ "# while statement {0} {1}".format(lineno(loc,text),arg),
+            code = [ "# line {0} while_statement {1}".format(lineno(loc,text),line(loc,text)),
                      "{0}: NOP".format(topLabel) ]
             if 'code' in arg.condition:
                 if isinstance(arg.condition.code,list):
@@ -401,8 +407,8 @@ class pppCompiler:
                     varline += ", " + ", ".join(optionals)
                 header.append(varline)
         header.append("# inline variables")
-        for value, name in self.symbols.inlineParameterValues.iteritems():
-            header.append("var {0} {1}".format(name, value))
+#         for value, name in self.symbols.inlineParameterValues.iteritems():
+#             header.append("var {0} {1}".format(name, value))
         header.append( "# end header")
         header.append( "" )        
         return header

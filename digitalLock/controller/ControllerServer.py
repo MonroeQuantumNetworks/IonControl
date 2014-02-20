@@ -154,7 +154,7 @@ class DigitalLockControllerServer(Process):
 
     analyzingState = enum.enum('normal','scanparameter')
     def readDataFifo(self):
-        #logger = logging.getLogger(__name__)
+        logger = logging.getLogger(__name__)
         if (self.scopeEnabled):
             scopeData, _ = self.readScopeData(8)
             if scopeData is not None:
@@ -173,6 +173,7 @@ class DigitalLockControllerServer(Process):
             self.streamBuffer.extend( data )
             if len(self.streamBuffer)>=40:
                 for s in sliceview(self.streamBuffer,40):
+                    logger.info("process slice")
                     item = StreamDataItem()
                     (errorsig, item.samples, item.errorSigMin, item.errorSigMax, freq0, freq1, freq2) = struct.unpack('QIHHQQQ',s)
                     if item.samples>0:
@@ -182,6 +183,7 @@ class DigitalLockControllerServer(Process):
                         item.freqAvg = freq0 / item.samples * 8 + (freq1 >> 56) / item.samples
                         self.streamData.append(item)
                 if len(self.streamData)>0:
+                    logger.info("send result")
                     self.dataQueue.put( self.streamData )
                     self.streamData = StreamData()
                 self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40))           
@@ -373,7 +375,7 @@ class DigitalLockControllerServer(Process):
         return None
         
 def sliceview(view,length):
-    return tuple(buffer(view, i, length) for i in range(0, len(view), length))
+    return tuple(buffer(view, i, length) for i in range(0, len(view)-length+1, length))
 
 def sliceview_remainder(view,length):
     l = len(view)
