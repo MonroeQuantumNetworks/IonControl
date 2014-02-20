@@ -175,13 +175,15 @@ class DigitalLockControllerServer(Process):
                 for s in sliceview(self.streamBuffer,40):
                     item = StreamDataItem()
                     (errorsig, item.samples, item.errorSigMin, item.errorSigMax, freq0, freq1, freq2) = struct.unpack('QIHHQQQ',s)
-                    item.errorSigAvg = errorsig / item.samples
-                    item.freqMin = freq1 & 0xffffffffffff
-                    item.freqMax = freq2 & 0xffffffffffff
-                    item.freqAvg = freq0 / item.samples * 8 + (freq1 >> 56) / item.samples
-                    self.streamData.append(item)
-                self.dataQueue.put( self.streamData )
-                self.streamData = StreamData()
+                    if item.samples>0:
+                        item.errorSigAvg = errorsig / item.samples
+                        item.freqMin = freq1 & 0xffffffffffff
+                        item.freqMax = freq2 & 0xffffffffffff
+                        item.freqAvg = freq0 / item.samples * 8 + (freq1 >> 56) / item.samples
+                        self.streamData.append(item)
+                if len(self.streamData)>0:
+                    self.dataQueue.put( self.streamData )
+                    self.streamData = StreamData()
                 self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40))           
      
     def __getattr__(self, name):
