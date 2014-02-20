@@ -203,8 +203,18 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.SetWireInValue(address, data)
 
-    def triggerScope(self):
+    def armScope(self):
         self.scopeEnabled = True
+        if self.xem:
+            self.xem.ActivateTriggerIn( 0x40, 13 )
+            
+    def setStreamEnabled(self, enabled ):
+        if self.xem:
+            if enabled:
+                self.xem.ActivateTriggerIn( 0x41, 0 )
+            else:
+                self.xem.ActivateTriggerIn( 0x41, 1 )
+                
 
     def setReferenceFrequency(self, binvalue ):
         if self.xem:
