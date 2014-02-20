@@ -61,8 +61,8 @@ def cool():
     update( CoolingTime )
     clear_counter()
     update( )
-    W = load_count( PMTChannel )
     set_inv_shutter( CoolingOn )
+    W = load_count( PMTChannel )
 
 def pump():
     set_shutter( PumpingOn )
