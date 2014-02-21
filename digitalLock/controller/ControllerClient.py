@@ -37,10 +37,10 @@ def binToVoltageV( binvalue ):
     return binvalue * voltageQuantumV
 
 def freqToBin( mag_value ):
-    return int((0xffffffffffff * mag_value / mg(1,'GHz')).toval()) & 0xffffffffffff
+    return int((mag_value / frequencyQuantum).toval()) & 0xffffffffffff
 
 def voltageToBin( mag_value ):
-    return int((0xffff * mag_value / voltageQuantum.toval())) & 0xffff 
+    return int((mag_value / voltageQuantum).toval()) & 0xffff 
 
 class QueueReader(QtCore.QThread):      
     def __init__(self, controller, dataQueue, parent = None):

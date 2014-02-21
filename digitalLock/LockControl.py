@@ -96,6 +96,7 @@ class LockControl(Form, Base):
     def setOffset(self, value):
         binvalue = voltageToBin(value)
         self.controller.setInputOffset(binvalue)
+        logging.getLogger(__name__).debug("offset {0} binary {1:x}".format(value,binvalue))
         self.lockSettings.offset = value
         self.dataChanged.emit( self.lockSettings )
         

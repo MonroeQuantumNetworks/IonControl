@@ -21,7 +21,7 @@ def setSignificantDigits( mag_value, quantum ):
     """
     if mag_value.dimension()!=quantum.dimension():
         raise magnitude.MagnitudeError("setSignificantDigits needs matching dimensions {0} {1}".format(mag_value,quantum))
-    digits = int(math.ceil(math.log(abs(mag_value/quantum)))) if mag_value.toval()!=0 else 2
+    digits = int(math.ceil(math.log(abs(mag_value/quantum),10))) if mag_value.toval()!=0 else 2
     mag_value.significantDigits = digits
     return mag_value
 
