@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>Average Samples</string>
+        <string>Average time</string>
        </property>
       </widget>
      </item>

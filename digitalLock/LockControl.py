@@ -52,6 +52,7 @@ class LockControl(Form, Base):
         self.autoLockButton.clicked.connect( self.onAutoLock )
         self.lockButton.clicked.connect( self.onLock )
         self.unlockButton.clicked.connect( self.onUnlock )
+        self.dataChanged.emit( self.lockSettings )
         
     def onLock(self):
         pass

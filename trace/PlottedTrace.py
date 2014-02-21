@@ -16,13 +16,14 @@ from modules import DataDirectory
 from modules import enum
 from trace.Trace import TracePlotting
 
-
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints')
     Types = enum.enum('default','steps')
-    def __init__(self,Trace,graphicsView,penList,pen=0,style=None,plotType=None, isRootTrace=False,
+    def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name=""):
+        if penList is None:
+            penList = pens.penList
         self.penList = penList
         self.graphicsView = graphicsView
         if self.graphicsView != None:

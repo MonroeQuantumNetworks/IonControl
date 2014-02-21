@@ -72,7 +72,7 @@ class TraceControl(Form, Base):
             self.errorSigTrace.x = numpy.arange(len(errorSig))*sampleTime.toval('us')
             self.errorSigTrace.y = numpy.array( errorSig )
             if self.errorSigCurve is None:
-                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Style.lines, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
                 self.errorSigCurve.plot()
             else:
                 self.errorSigCurve.replot()                
@@ -82,24 +82,24 @@ class TraceControl(Form, Base):
             self.freqTrace.x = numpy.arange(len(frequency))*sampleTime.toval('us')
             self.freqTrace.y = numpy.array( frequency )
             if self.freqCurve is None:
-                self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Style.lines, name="Frequency")  #@UndefinedVariable 
+                self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Styles.lines, name="Frequency")  #@UndefinedVariable 
                 self.freqCurve.plot()
             else:
                 self.freqCurve.replot()                           
         if self.state==self.StateOptions.running:
-            self.controller.triggerScope()
+            self.controller.armScope()
         else:
             self.setState(self.StateOptions.stopped)         
 
     def onRun(self):
-        self.controller.triggerScope()
+        self.controller.armScope()
         self.setState(self.StateOptions.running)
     
     def onStop(self):
         self.setState( self.StateOptions.stopped)
     
     def onSingle(self):
-        self.controller.triggerScope()
+        self.controller.armScope()
         self.setState( self.StateOptions.single )
 
     def setTriggerMode(self, mode):

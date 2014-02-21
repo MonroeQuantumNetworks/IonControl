@@ -14,8 +14,8 @@
    <string>Experimental Control</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../ui/Experiment.qrc">
-    <normaloff>:/other/icons/ions.jpg</normaloff>:/other/icons/ions.jpg</iconset>
+   <iconset resource="RepetitionRate.qrc">
+    <normaloff>:/openicon/icons/lock-pink.png</normaloff>:/openicon/icons/lock-pink.png</iconset>
   </property>
   <property name="tabShape">
    <enum>QTabWidget::Rounded</enum>
@@ -365,6 +365,7 @@
  </customwidgets>
  <resources>
   <include location="../../ui/Experiment.qrc"/>
+  <include location="RepetitionRate.qrc"/>
  </resources>
  <connections/>
 </ui>
