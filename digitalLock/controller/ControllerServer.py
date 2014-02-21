@@ -142,7 +142,7 @@ class DigitalLockControllerServer(Process):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
         while (self.running):
-            if self.commandPipe.poll(0.5):
+            if self.commandPipe.poll(0.02):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
@@ -168,14 +168,16 @@ class DigitalLockControllerServer(Process):
         if (self.scopeEnabled):
             scopeData, _ = self.readScopeData(8)
             if scopeData is not None:
+                logger.debug("received scope data {0}".format(len(scopeData)))
                 for s in sliceview(scopeData,8):
                     (code, ) = struct.unpack('Q',s)
                     if code==0xffffffffffffffff:
                         self.dataQueue.put( self.scopeData )
-                        self.scopeData = scopeData()
+                        logger.debug("sent data {0}".format(len(self.scopeData.errorSig)))
+                        self.scopeData = ScopeData()
                         self.scopeEnabled = False
                     else:
-                        self.scopeData.errorSig.append( code >> 48 )
+                        self.scopeData.errorSig.append( twos_comp(code >> 48,16) )
                         self.scopeData.frequency.append( code & 0xffffffffffff )
                    
         data, self.streamData.overrun = self.readStreamData(40)
@@ -324,7 +326,7 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x20)   # pipe_out_available
-            byteswaiting = (wirevalue & 0xffe)*2
+            byteswaiting = (wirevalue & 0x7ffe)*2
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa0, data)
@@ -336,7 +338,7 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x21)   # pipe_out_available
-            byteswaiting = (wirevalue & 0xffe)*2
+            byteswaiting = (wirevalue & 0x7ffe)*2
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa1, data)

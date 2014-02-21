@@ -22,7 +22,7 @@ frequencyQuantumHz = frequencyQuantum.toval('Hz')
 voltageQuantum = mg(10,'V') / 0xffff
 voltageQuantumV = voltageQuantum.toval('V')
 clockTick = mg(20,'ns')
-sampleTime = mg(2,'us')
+sampleTime = mg(1,'us')
 
 def binToFreq( binvalue ):
     return binvalue * frequencyQuantum

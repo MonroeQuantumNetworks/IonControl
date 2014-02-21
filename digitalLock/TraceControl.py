@@ -23,7 +23,7 @@ class TraceControl(Form, Base):
         Form.__init__(self)
         self.controller = controller
         self.config = config
-        self.traceSettings = TraceSettings()#self.config.get("TraceControl.Settings",TraceSettings())
+        self.traceSettings = self.config.get("TraceControl.Settings",TraceSettings())
         self.state = self.StateOptions.stopped
         self.traceui = traceui
         self.view = view
@@ -57,9 +57,11 @@ class TraceControl(Form, Base):
         if self.errorSigCurve:
             self.traceui.addTrace( self.errorSigCurve )
             self.errorSigCurve = None
+            self.errorSigTrace = None
         if self.freqCurve:
             self.traceui.addTrace( self.freqCurve )
             self.freqCurve = None
+            self.errorSigTrace = None
 
     def setState(self, state):
         self.state = state
@@ -68,7 +70,8 @@ class TraceControl(Form, Base):
     def onData(self, data):
         if data.errorSig:
             errorSig = map( binToVoltageV, data.errorSig )
-            self.errorSigTrace = Trace()
+            if self.errorSigTrace is None:
+                self.errorSigTrace = Trace()
             self.errorSigTrace.x = numpy.arange(len(errorSig))*sampleTime.toval('us')
             self.errorSigTrace.y = numpy.array( errorSig )
             if self.errorSigCurve is None:
@@ -78,7 +81,8 @@ class TraceControl(Form, Base):
                 self.errorSigCurve.replot()                
         if data.frequency:
             frequency = map( binToFreqHz, data.frequency )
-            self.freqTrace = Trace()
+            if self.freqTrace is None:
+                self.freqTrace = Trace()
             self.freqTrace.x = numpy.arange(len(frequency))*sampleTime.toval('us')
             self.freqTrace.y = numpy.array( frequency )
             if self.freqCurve is None:
@@ -103,15 +107,19 @@ class TraceControl(Form, Base):
         self.setState( self.StateOptions.single )
 
     def setTriggerMode(self, mode):
+        self.traceSettings.triggerMode = mode
         self.controller.setTriggerMode(mode)
     
     def setTriggerLevel(self, value):
+        self.traceSettings.triggerLevel = value
         self.controller.setTriggerLevel( voltageToBin(value) )
     
     def setSamples(self, samples):
+        self.traceSettings.samples = samples
         self.controller.setSamples(int(samples.toval()))
     
     def setSubSample(self, subsample):
+        self.traceSettings.subsample = subsample
         self.controller.setSubSample(int(subsample.toval()))
     
          
