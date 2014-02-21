@@ -1,4 +1,5 @@
 import PyQt4.uic
+import logging
 
 from modules.MagnitudeUtilit import setSignificantDigits
 from trace.PlottedTrace import PlottedTrace 
@@ -6,7 +7,7 @@ from trace.Trace import Trace
 from operator import attrgetter, methodcaller
 import numpy
 
-from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage
+from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime
 from modules.magnitude import mg
 
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockStatus.ui')
@@ -18,7 +19,11 @@ class StatusData:
 
 class Settings:
     def __init__(self):
-        self.averageSamples = mg(1,'')
+        self.averageTime = mg(100,'ms')
+        
+    def __setstate__(self, s):
+        self.__dict__ = s
+        self.__dict__.setdefault( 'averageTime', mg(100,'ms') )
 
 class LockStatus(Form, Base):
     def __init__(self,controller,config,traceui,view,parent=None):
@@ -34,7 +39,8 @@ class LockStatus(Form, Base):
         self.freqCurve = None
         self.freqTrace = None
         self.view = view
-        self.settings = Settings()#self.config.get("LockStatus.settings",Settings())
+        self.settings = self.config.get("LockStatus.settings",Settings())
+        self.lastXValue = 0
 
     def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
         box = getattr(self, localname)
@@ -46,10 +52,11 @@ class LockStatus(Form, Base):
    
     def setupUi(self):
         Form.setupUi(self,self)
-        self.setupSpinBox('magHistoryAccum', 'averageSamples', self.setAverageSamples, '')
+        self.setupSpinBox('magHistoryAccum', 'averageTime', self.setAverageTime, 'ms')
         self.controller.streamDataAvailable.connect( self.onData )
         self.controller.lockStatusChanged.connect( self.onLockChange )
         self.addTraceButton.clicked.connect( self.onAddTrace )
+        self.controller.setStreamEnabled(True)
         
     def onAddTrace(self):
         if self.errorSigCurve:
@@ -59,8 +66,9 @@ class LockStatus(Form, Base):
             self.traceui.addTrace( self.freqCurve )
             self.freqCurve = None
         
-    def setAverageSamples(self, value):
-        self.controller.setStreamAccum(int(value.toval()))
+    def setAverageTime(self, value):
+        self.settings.averageTime = value        
+        self.controller.setStreamAccum(int((value / sampleTime).toval()))
         
     def onLockChange(self, data=None):
         pass
@@ -96,7 +104,7 @@ class LockStatus(Form, Base):
         setSignificantDigits(status.outputFrequencyMin, frequencyQuantum)
         
         status.errorSigAvg = binToVoltage( item.errorSigAvg )
-        setSignificantDigits( status.errorSigAvg.significantDigits, voltageQuantum )
+        setSignificantDigits( status.errorSigAvg, voltageQuantum )
         binvalue = item.errorSigMax - item.errorSigMin
         status.errorSigDelta = binToVoltage(binvalue )
         setSignificantDigits( status.errorSigDelta, voltageQuantum )            
@@ -107,67 +115,78 @@ class LockStatus(Form, Base):
         return status
     
     def onData(self, data=None ):
+        logger = logging.getLogger()
+        logger.debug( "received streaming data {0} {1}".format(len(data),data[-1] if len(data)>0 else ""))
         if data is not None:
-            self.lastLockData = map(self.convertStatus, data)
-        self.plotData()
-        if self.lastLockData:
-            item = self.lastLockData[-1]
-            
-            self.referenceFreqLabel.setText( str(item.referenceFrequency) )
-            self.referenceFreqRangeLabel.setText( str(item.referenceFrequencyDelta) )
-            self.outputFreqLabel.setText( str(item.outputFrequency))
-            self.outputFreqRangeLabel.setText( str(item.outputFrequencyDelta))
-            
-            self.errorSignalLabel.setText( str(item.errorSigAvg))
-            self.errorSignalRangeLabel.setText( str(item.errorSigDelta))
+            self.lastLockData = list()
+            for item in data:
+                converted = self.convertStatus(item)
+                if converted is not None:
+                    self.lastLockData.append( converted)
+        if self.lastLockData is not None:
+            self.plotData()
+            if self.lastLockData:
+                item = self.lastLockData[-1]
+                
+                self.referenceFreqLabel.setText( str(item.referenceFrequency) )
+                self.referenceFreqRangeLabel.setText( str(item.referenceFrequencyDelta) )
+                self.outputFreqLabel.setText( str(item.outputFrequency))
+                self.outputFreqRangeLabel.setText( str(item.outputFrequencyDelta))
+                
+                self.errorSignalLabel.setText( str(item.errorSigAvg))
+                self.errorSignalRangeLabel.setText( str(item.errorSigDelta))
+        else:
+            logger.info("no lock control information")
             
     def plotData(self):
-        to_plot = zip(*(attrgetter('errorSigAvg','errorSigMin', 'errorSigMax')(e) for e in self.lastLockData))
-        x = numpy.arange( len(to_plot[0] ))
-        y = numpy.array( map( methodcaller('toval','V'), to_plot[0] ) )
-        bottom = self.errorSigTrace.y - numpy.arange( map( methodcaller('toval','V'), to_plot[1] ) ) 
-        top = numpy.arange( map( methodcaller('toval','V'), to_plot[2] ) ) - self.errorSigTrace.y  
-        if self.errorSigTrace is None:
-            self.errorSigTrace = Trace()
-            self.errorSigTrace.x = x
-            self.errorSigTrace.y = y
-            self.errorSigTrace.bottom = bottom
-            self.errorSigTrace.top = top
-        else:
-            self.errorSigTrace.x = numpy.append( self.errorSigTrace.x, x )
-            self.errorSigTrace.y = numpy.append( self.errorSigTrace.y, y )
-            self.errorSigTrace.bottom = numpy.append( self.errorSigTrace.bottom, bottom )
-            self.errorSigTrace.top = numpy.append( self.errorSigTrace.top, top )
-            
-        if self.errorSigCurve is None:
-            self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Style.points, name="Error Signal")  #@UndefinedVariable 
-            self.errorSigCurve.plot()
-        else:
-            self.errorSigCurve.replot()            
-           
-        to_plot = zip(*(attrgetter('referenceFrequency','referenceFrequencyMin', 'referenceFrequencyMax')(e) for e in self.lastLockData))
-        x = numpy.arange( len(to_plot[0] ))
-        y = numpy.array( map( methodcaller('toval','MHz'), to_plot[0] ) )
-        bottom = self.errorSigTrace.y - numpy.arange( map( methodcaller('toval','MHz'), to_plot[1] ) ) 
-        top = numpy.arange( map( methodcaller('toval','MHz'), to_plot[2] ) ) - self.errorSigTrace.y             
-        if self.freqTrace is None:
-            self.freqTrace = Trace()
-            self.freqTrace.x = x
-            self.freqTrace.y = y
-            self.freqTrace.bottom = bottom
-            self.freqTrace.top = top
-        else:
-            self.freqTrace.x = numpy.append( self.freqTrace.x, x )
-            self.freqTrace.y = numpy.append( self.freqTrace.y, y )
-            self.freqTrace.bottom = numpy.append( self.freqTrace.bottom, bottom )
-            self.freqTrace.top = numpy.append( self.freqTrace.top, top )
-            
-        if self.freqCurve is None:
-            self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Style.points, name="Repetition rate")  #@UndefinedVariable
-            self.freqCurve.plot()
-        else:
-            self.freqCurve.replot()                        
+        if len(self.lastLockData)>0:
+            to_plot = zip(*(attrgetter('errorSigAvg','errorSigMin', 'errorSigMax')(e) for e in self.lastLockData))
+            x = numpy.arange( self.lastXValue, self.lastXValue+len(to_plot[0] ))
+            self.lastXValue += len(to_plot[0] )
+            y = numpy.array( map( methodcaller('toval','V'), to_plot[0] ) )
+            bottom = numpy.array( map( methodcaller('toval','V'), to_plot[1] ) ) 
+            top = numpy.array( map( methodcaller('toval','V'), to_plot[2] ) )
+            if self.errorSigTrace is None:
+                self.errorSigTrace = Trace()
+                self.errorSigTrace.x = x
+                self.errorSigTrace.y = y
+                self.errorSigTrace.bottom = bottom
+                self.errorSigTrace.top = top
+            else:
+                self.errorSigTrace.x = numpy.append( self.errorSigTrace.x, x )
+                self.errorSigTrace.y = numpy.append( self.errorSigTrace.y, y )
+                self.errorSigTrace.bottom = numpy.append( self.errorSigTrace.bottom, bottom )
+                self.errorSigTrace.top = numpy.append( self.errorSigTrace.top, top )
+                
+            if self.errorSigCurve is None:
+                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigCurve.plot()
+            else:
+                self.errorSigCurve.replot()            
+               
+            to_plot = zip(*(attrgetter('referenceFrequency','referenceFrequencyMin', 'referenceFrequencyMax')(e) for e in self.lastLockData))
+            y = numpy.array( map( methodcaller('toval','MHz'), to_plot[0] ) )
+            bottom = numpy.array( map( methodcaller('toval','MHz'), to_plot[1] ) ) 
+            top = numpy.array( map( methodcaller('toval','MHz'), to_plot[2] ) )          
+            if self.freqTrace is None:
+                self.freqTrace = Trace()
+                self.freqTrace.x = x
+                self.freqTrace.y = y
+                self.freqTrace.bottom = bottom
+                self.freqTrace.top = top
+            else:
+                self.freqTrace.x = numpy.append( self.freqTrace.x, x )
+                self.freqTrace.y = numpy.append( self.freqTrace.y, y )
+                self.freqTrace.bottom = numpy.append( self.freqTrace.bottom, bottom )
+                self.freqTrace.top = numpy.append( self.freqTrace.top, top )
+                
+            if self.freqCurve is None:
+                self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate")  #@UndefinedVariable
+                self.freqCurve.plot()
+            else:
+                self.freqCurve.replot()                        
              
            
     def saveConfig(self):
-        pass
+        self.config["LockStatus.settings"] = self.settings
+        

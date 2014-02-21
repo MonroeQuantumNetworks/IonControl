@@ -132,7 +132,7 @@ class DigitalLockControllerServer(Process):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
         while (self.running):
-            if self.commandPipe.poll(0.05):
+            if self.commandPipe.poll(0.5):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
@@ -173,17 +173,19 @@ class DigitalLockControllerServer(Process):
             self.streamBuffer.extend( data )
             if len(self.streamBuffer)>=40:
                 for s in sliceview(self.streamBuffer,40):
-                    logger.info("process slice")
                     item = StreamDataItem()
                     (errorsig, item.samples, item.errorSigMin, item.errorSigMax, freq0, freq1, freq2) = struct.unpack('QIHHQQQ',s)
+                    #logger.info("process slice samples {0}".format(item.samples))
                     if item.samples>0:
-                        item.errorSigAvg = errorsig / item.samples
+                        item.errorSigAvg = (errorsig&0xffffffffffff) / item.samples
                         item.freqMin = freq1 & 0xffffffffffff
                         item.freqMax = freq2 & 0xffffffffffff
                         item.freqAvg = freq0 / item.samples * 8 + (freq1 >> 56) / item.samples
                         self.streamData.append(item)
+                        logger.info("{6} errorSig: {0} {1} {2}  freq: {3} {4} {5}".format(item.errorSigMin, item.errorSigAvg, item.errorSigMax, 
+                                                                                          item.freqMin, item.freqAvg, item.freqMax, item.samples))
                 if len(self.streamData)>0:
-                    logger.info("send result")
+                    #logger.info("send result {0}".format(len(self.streamData)))
                     self.dataQueue.put( self.streamData )
                     self.streamData = StreamData()
                 self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40))           
@@ -211,9 +213,12 @@ class DigitalLockControllerServer(Process):
     def setStreamEnabled(self, enabled ):
         if self.xem:
             if enabled:
-                self.xem.ActivateTriggerIn( 0x41, 0 )
+                check( self.xem.ActivateTriggerIn( 0x41, 0 ), "setStreamEnabled" )
             else:
-                self.xem.ActivateTriggerIn( 0x41, 1 )
+                check( self.xem.ActivateTriggerIn( 0x41, 1 ), "setStreamEnabled" )
+            logging.getLogger(__name__).warning("setStreamEnabled {0}".format(enabled))
+        else:
+            logging.getLogger(__name__).warning("Controller Hardware not available")
                 
 
     def setReferenceFrequency(self, binvalue ):
@@ -301,11 +306,11 @@ class DigitalLockControllerServer(Process):
     def readStreamData(self,minbytes=4):
         if self.xem:
             self.xem.UpdateWireOuts()
-            wirevalue = self.xem.GetWireOutValue(0x21)   # pipe_out_available
+            wirevalue = self.xem.GetWireOutValue(0x20)   # pipe_out_available
             byteswaiting = (wirevalue & 0xffe)*2
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
-                self.xem.ReadFromPipeOut(0xa1, data)
+                self.xem.ReadFromPipeOut(0xa0, data)
                 overrun = (wirevalue & 0x8000)!=0
                 return data, overrun
         return None, False
@@ -313,11 +318,11 @@ class DigitalLockControllerServer(Process):
     def readScopeData(self,minbytes=4):
         if self.xem:
             self.xem.UpdateWireOuts()
-            wirevalue = self.xem.GetWireOutValue(0x20)   # pipe_out_available
+            wirevalue = self.xem.GetWireOutValue(0x21)   # pipe_out_available
             byteswaiting = (wirevalue & 0xffe)*2
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
-                self.xem.ReadFromPipeOut(0xa0, data)
+                self.xem.ReadFromPipeOut(0xa1, data)
                 overrun = (wirevalue & 0x8000)!=0
                 return data, overrun
         return None, False

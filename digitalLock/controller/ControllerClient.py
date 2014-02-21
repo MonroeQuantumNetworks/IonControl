@@ -21,6 +21,7 @@ frequencyQuantum = mg(1,'GHz') / 0xffffffffffff
 frequencyQuantumHz = frequencyQuantum.toval('Hz')
 voltageQuantum = mg(5,'V') / 0xffff
 voltageQuantumV = voltageQuantum.toval('V')
+clockTick = mg(20,'ns')
 sampleTime = mg(2,'us')
 
 def binToFreq( binvalue ):
@@ -62,7 +63,7 @@ class QueueReader(QtCore.QThread):
         while True:
             try:
                 data = self.dataQueue.get()
-                logger.info("{0}".format( data.__class__.__name__ ) )
+                #logger.info("{0}".format( data.__class__.__name__ ) )
                 self.dataHandler[ data.__class__.__name__ ]( data )
             except (KeyboardInterrupt, SystemExit, FinishException):
                 break

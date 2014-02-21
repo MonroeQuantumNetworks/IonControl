@@ -56,11 +56,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.dockWidgetConsole.hide()
         self.loggerUi = LoggerLevelsUi(self.config)
         self.loggerUi.setupUi(self.loggerUi)
-        self.loggerDock = QtGui.QDockWidget("Logging")
-        self.loggerDock.setWidget(self.loggerUi)
-        self.loggerDock.setObjectName("_LoggerDock")
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.loggerDock)
-        self.loggerDock.hide()
+        self.setupAsDockWidget(self.loggerUi, "Logging", QtCore.Qt.NoDockWidgetArea)
                 
         logger = logging.getLogger()        
         self.toolBar.addWidget(ExceptionLogButton())
@@ -88,8 +84,14 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.traceui.setupUi(self.traceui)
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
+        # lock status
+        self.lockStatus = LockStatus(self.pulser, self.config, self.traceui, self.plotDict["History"]["view"], self.parent)
+        self.lockStatus.setupUi()
+        self.setupAsDockWidget(self.lockStatus, "Status", QtCore.Qt.RightDockWidgetArea)
+
         # Lock oOntrol      
         self.lockControl = LockControl(self.pulser, self.config, self.parent)
+        self.lockControl.dataChanged.connect( self.lockStatus.onControlChanged )
         self.lockControl.setupUi() 
         self.setupAsDockWidget(self.lockControl, "Control", QtCore.Qt.RightDockWidgetArea)
         
@@ -98,10 +100,6 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.traceControl.setupUi()
         self.setupAsDockWidget(self.traceControl, "Trace Control", QtCore.Qt.RightDockWidgetArea)
         
-        # Trace control
-        self.lockStatus = LockStatus(self.pulser, self.config, self.traceui, self.plotDict["History"]["view"], self.parent)
-        self.lockStatus.setupUi()
-        self.setupAsDockWidget(self.lockStatus, "Status", QtCore.Qt.RightDockWidgetArea)
         
 #         self.actionClear.triggered.connect(self.onClear)
 #         self.actionPause.triggered.connect(self.onPause)
