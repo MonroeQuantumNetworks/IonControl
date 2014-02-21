@@ -178,7 +178,7 @@ class DigitalLockControllerServer(Process):
                         self.scopeEnabled = False
                     else:
                         self.scopeData.errorSig.append( twos_comp(code >> 48,16) )
-                        self.scopeData.frequency.append( code & 0xffffffffffff )
+                        self.scopeData.frequency.append( twos_comp(code & 0x7fffffffffff, 47) )
                    
         data, self.streamData.overrun = self.readStreamData(40)
         if data:
@@ -203,9 +203,9 @@ class DigitalLockControllerServer(Process):
             raise AlignmentException(len(self.streamData))
         if item.samples>0:
             item.errorSigSum = twos_comp( (errorsig&0xffffffffffff), 48) 
-            item.freqMin = freq1 & 0xffffffffffff
-            item.freqMax = freq2 & 0xffffffffffff
-            item.freqSum = (freq0 <<8) | (freq1 >> 56) 
+            item.freqMin = twos_comp( freq1 & 0xffffffffffff, 48 )
+            item.freqMax = twos_comp( freq2 & 0xffffffffffff, 48 )
+            item.freqSum = twos_comp( (freq0 <<8) | (freq1 >> 56), 72 ) 
             self.streamData.append(item)
             
      
@@ -228,6 +228,11 @@ class DigitalLockControllerServer(Process):
         self.scopeEnabled = True
         if self.xem:
             self.xem.ActivateTriggerIn( 0x40, 13 )
+            
+    def clearIntegrator(self):
+        if self.xem:
+            self.xem.ActivateTriggerIn( 0x40, 5 )
+        
             
     def setStreamEnabled(self, enabled ):
         if self.xem:

@@ -89,16 +89,18 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.lockStatus.setupUi()
         self.setupAsDockWidget(self.lockStatus, "Status", QtCore.Qt.RightDockWidgetArea)
 
-        # Lock oOntrol      
-        self.lockControl = LockControl(self.pulser, self.config, self.parent)
-        self.lockControl.dataChanged.connect( self.lockStatus.onControlChanged )
-        self.lockControl.setupUi() 
-        self.setupAsDockWidget(self.lockControl, "Control", QtCore.Qt.RightDockWidgetArea)
-        
         # Trace control
         self.traceControl = TraceControl(self.pulser, self.config, self.traceui, self.plotDict["Scope"]["view"], self.parent)
         self.traceControl.setupUi()
         self.setupAsDockWidget(self.traceControl, "Trace Control", QtCore.Qt.RightDockWidgetArea)
+
+        # Lock oOntrol      
+        self.lockControl = LockControl(self.pulser, self.config, self.parent)
+        self.lockControl.dataChanged.connect( self.lockStatus.onControlChanged )
+        self.lockControl.dataChanged.connect( self.traceControl.onControlChanged )
+        self.lockControl.setupUi() 
+        self.setupAsDockWidget(self.lockControl, "Control", QtCore.Qt.RightDockWidgetArea)
+        
         
         
 #         self.actionClear.triggered.connect(self.onClear)

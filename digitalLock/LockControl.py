@@ -55,10 +55,11 @@ class LockControl(Form, Base):
         self.dataChanged.emit( self.lockSettings )
         
     def onLock(self):
-        pass
+        self.controller.setMode(1)
     
     def onUnlock(self):
-        pass
+        self.controller.setMode(0)
+        self.controller.clearIntegrator()
     
     def onAutoLock(self):
         pass

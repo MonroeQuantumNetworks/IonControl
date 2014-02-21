@@ -32,6 +32,7 @@ class TraceControl(Form, Base):
         self.freqTrace = None
         self.errorSigCurve = None
         self.freqCurve = None
+        self.lockSettings = None
     
     def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
         box = getattr(self, localname)
@@ -53,6 +54,9 @@ class TraceControl(Form, Base):
         self.stopButton.clicked.connect(self.onStop)
         self.addTraceButton.clicked.connect( self.onAddTrace )
         
+    def onControlChanged(self, value):
+        self.lockSettings = value
+    
     def onAddTrace(self):
         if self.errorSigCurve:
             self.traceui.addTrace( self.errorSigCurve )
@@ -72,7 +76,7 @@ class TraceControl(Form, Base):
             errorSig = map( binToVoltageV, data.errorSig )
             if self.errorSigTrace is None:
                 self.errorSigTrace = Trace()
-            self.errorSigTrace.x = numpy.arange(len(errorSig))*sampleTime.toval('us')
+            self.errorSigTrace.x = numpy.arange(len(errorSig))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
             self.errorSigTrace.y = numpy.array( errorSig )
             if self.errorSigCurve is None:
                 self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
@@ -83,7 +87,7 @@ class TraceControl(Form, Base):
             frequency = map( binToFreqHz, data.frequency )
             if self.freqTrace is None:
                 self.freqTrace = Trace()
-            self.freqTrace.x = numpy.arange(len(frequency))*sampleTime.toval('us')
+            self.freqTrace.x = numpy.arange(len(frequency))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
             self.freqTrace.y = numpy.array( frequency )
             if self.freqCurve is None:
                 self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Styles.lines, name="Frequency")  #@UndefinedVariable 
