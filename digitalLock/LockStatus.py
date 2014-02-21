@@ -81,10 +81,10 @@ class LockStatus(Form, Base):
         if self.lockSettings is None:
             return None
         status = StatusData()
-        status.referenceFrequency = self.lockSettings.referenceFrequency + binToFreq(item.freqAvg)
+        status.referenceFrequency = self.lockSettings.referenceFrequency + binToFreq(item.freqSum / float(item.samples))
         setSignificantDigits(status.referenceFrequency, frequencyQuantum)
 
-        status.outputFrequency = self.lockSettings.outputFrequency + binToFreq(item.freqAvg)* self.lockSettings.harmonic
+        status.outputFrequency = self.lockSettings.outputFrequency + binToFreq(item.freqSum / float(item.samples) )* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequency, frequencyQuantum)
 
         binvalue = (item.freqMax - item.freqMin) 
@@ -103,14 +103,14 @@ class LockStatus(Form, Base):
         status.outputFrequencyMin = self.lockSettings.outputFrequency + binToFreq(item.freqMin)* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequencyMin, frequencyQuantum)
         
-        status.errorSigAvg = binToVoltage( item.errorSigAvg )
+        status.errorSigAvg = binToVoltage( item.errorSigSum/float(item.samples) )
         setSignificantDigits( status.errorSigAvg, voltageQuantum )
         binvalue = item.errorSigMax - item.errorSigMin
         status.errorSigDelta = binToVoltage(binvalue )
         setSignificantDigits( status.errorSigDelta, voltageQuantum )            
         status.errorSigMax = binToVoltage(item.errorSigMax)
         setSignificantDigits( status.errorSigMax, voltageQuantum )            
-        status.errorSigMin = binToVoltage(item.errorSigMax)
+        status.errorSigMin = binToVoltage(item.errorSigMin)
         setSignificantDigits( status.errorSigMin, voltageQuantum )            
         return status
     
@@ -135,6 +135,7 @@ class LockStatus(Form, Base):
                 
                 self.errorSignalLabel.setText( str(item.errorSigAvg))
                 self.errorSignalRangeLabel.setText( str(item.errorSigDelta))
+                logger.info("error  signal min {0} max {1}".format(item.errorSigMin, item.errorSigMax ))
         else:
             logger.info("no lock control information")
             

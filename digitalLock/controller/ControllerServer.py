@@ -76,6 +76,11 @@ def check(number, command):
     if number is not None and number<0:
         raise FPGAException("OpalKelly exception '{0}' in command {1}".format(ErrorMessages.get(number,number),command))
 
+def twos_comp(val, bits):
+    """compute the 2's compliment of int value val"""
+    if( (val&(1<<(bits-1))) != 0 ):
+        val = val - (1<<bits)
+    return val
 
 class PulserHardwareException(Exception):
     pass
@@ -83,10 +88,10 @@ class PulserHardwareException(Exception):
 class StreamDataItem:
     def __init__(self):
         self.samples = 0
-        self.errorSigAvg = 0
+        self.errorSigSum = 0
         self.errorSigMin = 0
         self.errorSigMax = 0
-        self.freqAvg = 0
+        self.freqSum = 0
         self.freqMin = 0
         self.freqMax = 0
 
@@ -102,6 +107,11 @@ class ScopeData:
         
 class FinishException(Exception):
     pass
+
+class AlignmentException( Exception):
+    def __init__(self, length):
+        super(AlignmentException, self).__init__()
+        self.length = length
 
 class DigitalLockControllerServer(Process):
     timestep = magnitude.mg(20,'ns')
@@ -171,24 +181,31 @@ class DigitalLockControllerServer(Process):
         data, self.streamData.overrun = self.readStreamData(40)
         if data:
             self.streamBuffer.extend( data )
-            if len(self.streamBuffer)>=40:
-                for s in sliceview(self.streamBuffer,40):
-                    item = StreamDataItem()
-                    (errorsig, item.samples, item.errorSigMin, item.errorSigMax, freq0, freq1, freq2) = struct.unpack('QIHHQQQ',s)
-                    #logger.info("process slice samples {0}".format(item.samples))
-                    if item.samples>0:
-                        item.errorSigAvg = (errorsig&0xffffffffffff) / item.samples
-                        item.freqMin = freq1 & 0xffffffffffff
-                        item.freqMax = freq2 & 0xffffffffffff
-                        item.freqAvg = freq0 / item.samples * 8 + (freq1 >> 56) / item.samples
-                        self.streamData.append(item)
-                        logger.info("{6} errorSig: {0} {1} {2}  freq: {3} {4} {5}".format(item.errorSigMin, item.errorSigAvg, item.errorSigMax, 
-                                                                                          item.freqMin, item.freqAvg, item.freqMax, item.samples))
-                if len(self.streamData)>0:
-                    #logger.info("send result {0}".format(len(self.streamData)))
-                    self.dataQueue.put( self.streamData )
-                    self.streamData = StreamData()
-                self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40))           
+            while len(self.streamBuffer)>=40:
+                try:
+                    for itembuffer in sliceview(self.streamBuffer,40):
+                        self.unpackStreamRecord(itembuffer)
+                    if len(self.streamData)>0:
+                        self.dataQueue.put( self.streamData )
+                        self.streamData = StreamData()     
+
+                    self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40) )           
+                except AlignmentException as e:
+                    logger.info("data not aligned skipping 2 bytes")
+                    self.streamBuffer = bytearray( self.streamBuffer[e.length*40+2:] )
+     
+    def unpackStreamRecord(self, itembuffer ):
+        item = StreamDataItem()
+        (errorsig, item.errorSigMax, item.errorSigMin, item.samples, freq0, freq1, freq2) = struct.unpack('QhhIQQQ',itembuffer)
+        if errorsig & 0xffff000000000000 != 0xfefe000000000000 or freq2 &  0xffff000000000000 != 0xefef000000000000:
+            raise AlignmentException(len(self.streamData))
+        if item.samples>0:
+            item.errorSigSum = twos_comp( (errorsig&0xffffffffffff), 48) 
+            item.freqMin = freq1 & 0xffffffffffff
+            item.freqMax = freq2 & 0xffffffffffff
+            item.freqSum = (freq0 <<8) | (freq1 >> 56) 
+            self.streamData.append(item)
+            
      
     def __getattr__(self, name):
         """delegate not available procedures to xem"""
