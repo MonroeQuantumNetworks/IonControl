@@ -6,4 +6,4 @@ This allows the ui files to find the resource file in the ui module
 """
 
 
-from ui import RepetitionRate_rc
+from ui import RepetitionRate_rc #@UnusedImport

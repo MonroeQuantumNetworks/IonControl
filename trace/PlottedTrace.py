@@ -65,7 +65,7 @@ class PlottedTrace(object):
             self._heightColumn = heightColumn
             self._rawColumn = rawColumn
             self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
-                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name, type=self.type)
+                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name, type_=self.type)
             self.trace.addTracePlotting( self.tracePlotting )
             if not hasattr(self.trace,xColumn):
                 self.trace.addColumn( xColumn )

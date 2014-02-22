@@ -36,7 +36,6 @@ from fit.FitUi import FitUi
 from modules import DataDirectory
 from modules import enum
 from modules import stringutilit
-from modules.magnitude import is_magnitude
 from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget

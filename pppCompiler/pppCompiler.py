@@ -5,10 +5,10 @@ Created on Feb 9, 2014
 '''
 
 from pyparsing import lineno, line, LineEnd, Literal, alphanums, alphas, dblQuotedString, Keyword, Word, Regex, pythonStyleComment, nums, ZeroOrMore
-from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, oneOf, ParseResults, ParseException
+from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, oneOf, ParseResults
 import logging
 import sys
-from CompileException import CompileException, CompileInternalException
+from CompileException import CompileException
 """
 BNF of grammar
 
@@ -63,7 +63,11 @@ comparisonCommands = { "==": "CMPEQUAL",
                        "<=": "CMPLE",
                        ">=": "CMPGE" }
 
-from Symbol import *
+jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
+                    "!=" : { True: "JMPNZ", False: "JMPZ"},
+                    ">" : {True: "JMPNZ", False: "JMPZ" } }
+
+from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 
 
 def list_rtrim( l, trimvalue=None ):
@@ -187,7 +191,10 @@ class pppCompiler:
             if arg.leftidentifier!="W":
                 self.symbols.getVar(arg.leftidentifier)
                 code.append('  LDWR {0}'.format(arg.leftidentifier))
-            code.append('  {0} {1}'.format(comparisonCommands[arg.comparison],arg.identifier))
+            if arg.identifier=='NULL' and arg.comparison in jmpNullCommands:
+                arg['jmpcmd'] = jmpNullCommands[arg.comparison]
+            else:
+                code.append('  {0} {1}'.format(comparisonCommands[arg.comparison],arg.identifier))
             arg["code"] = code
         except Exception as e:
             raise CompileException(text,loc,str(e),self)            
@@ -252,7 +259,7 @@ class pppCompiler:
             code = ["# line {0} if statement {1}".format(lineno(loc,text), line(loc,text)) ]
             if isinstance(arg.condition.code,list):
                 code += arg.condition.code
-                JMPCMD = "JMPNCMP"
+                JMPCMD = arg.condition.get( 'jmpcmd', {False: "JMPNCMP"} )[False]
             else:
                 JMPCMD = arg.condition.code[True]            
             labelNumber = self.symbols.getLabelNumber()
@@ -289,13 +296,13 @@ class pppCompiler:
             if 'code' in arg.condition:
                 if isinstance(arg.condition.code,list):
                     code += arg.condition.code
-                    JMPCMD = "JMPNCMP"
+                    JMPCMD = arg.condition.get('jmpcmd', {False: "JMPNCMP"} )[False]
                 else:
                     JMPCMD = arg.condition.code[True]            
             elif 'rExp' in arg.condition and 'code' in arg.condition.rExp:
                 if isinstance(arg.condition.rExp.code,list):
                     code += arg.condition.rExp.code
-                    JMPCMD = "JMPNCMP"
+                    JMPCMD = arg.condition.rExp.get('jmpcmd', "JMPNCMP" )
                 else:
                     JMPCMD = arg.condition.rExp.code[True]            
             code += [ "  {1} {0}".format(endLabel, JMPCMD)]
