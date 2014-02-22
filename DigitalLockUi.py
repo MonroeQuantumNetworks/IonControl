@@ -99,6 +99,8 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.lockControl.dataChanged.connect( self.lockStatus.onControlChanged )
         self.lockControl.dataChanged.connect( self.traceControl.onControlChanged )
         self.lockControl.setupUi() 
+        self.lockStatus.newDataAvailable.connect( self.lockControl.onStreamData )
+        self.traceControl.newDataAvailable.connect( self.lockControl.onTraceData )
         self.setupAsDockWidget(self.lockControl, "Control", QtCore.Qt.RightDockWidgetArea)
         
         

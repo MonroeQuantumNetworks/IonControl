@@ -168,7 +168,6 @@ class DigitalLockControllerServer(Process):
         if (self.scopeEnabled):
             scopeData, _ = self.readScopeData(8)
             if scopeData is not None:
-                logger.debug("received scope data {0}".format(len(scopeData)))
                 for s in sliceview(scopeData,8):
                     (code, ) = struct.unpack('Q',s)
                     if code==0xffffffffffffffff:

@@ -1,5 +1,6 @@
 import PyQt4.uic
 
+from PyQt4 import QtCore
 from digitalLock.controller.ControllerClient import voltageToBin, binToVoltageV, sampleTime, binToFreqHz
 from modules.magnitude import mg
 from modules.enum import enum
@@ -18,6 +19,7 @@ class TraceSettings:
 
 class TraceControl(Form, Base):
     StateOptions = enum('stopped','running','single')
+    newDataAvailable = QtCore.pyqtSignal( object )
     def __init__(self,controller,config,traceui,view,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
@@ -59,11 +61,11 @@ class TraceControl(Form, Base):
     
     def onAddTrace(self):
         if self.errorSigCurve:
-            self.traceui.addTrace( self.errorSigCurve )
+            self.traceui.addTrace( self.errorSigCurve, pen=-1 )
             self.errorSigCurve = None
             self.errorSigTrace = None
         if self.freqCurve:
-            self.traceui.addTrace( self.freqCurve )
+            self.traceui.addTrace( self.freqCurve, pen=-1 )
             self.freqCurve = None
             self.errorSigTrace = None
 
@@ -83,6 +85,7 @@ class TraceControl(Form, Base):
                 self.errorSigCurve.plot()
             else:
                 self.errorSigCurve.replot()                
+            self.newDataAvailable.emit( self.errorSigTrace )                          
         if data.frequency:
             frequency = map( binToFreqHz, data.frequency )
             if self.freqTrace is None:
@@ -93,7 +96,7 @@ class TraceControl(Form, Base):
                 self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Styles.lines, name="Frequency")  #@UndefinedVariable 
                 self.freqCurve.plot()
             else:
-                self.freqCurve.replot()                           
+                self.freqCurve.replot() 
         if self.state==self.StateOptions.running:
             self.controller.armScope()
         else:

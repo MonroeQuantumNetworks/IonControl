@@ -1,9 +1,9 @@
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore, QtSvg
+from PyQt4 import QtCore
 
-from functools import partial
 import logging
 from modules.magnitude import mg
+from modules.enum import enum
 
 from controller.ControllerClient import freqToBin, voltageToBin 
 
@@ -24,12 +24,14 @@ class LockSettings(object):
 
 class LockControl(Form, Base):
     dataChanged = QtCore.pyqtSignal( object )
+    AutoStates = enum('idle', 'autoOffset', 'autoLock')
     def __init__(self,controller,config,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
         self.controller = controller
         self.config = config
         self.lockSettings = self.config.get("LockSettings",LockSettings())
+        self.autoState = self.AutoStates.idle
     
     def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
         box = getattr(self, localname)
@@ -62,7 +64,7 @@ class LockControl(Form, Base):
         self.controller.clearIntegrator()
     
     def onAutoLock(self):
-        pass
+        self.autoOffset()
         
     def setReferenceFrequency(self, value):
         binvalue = freqToBin(value)
@@ -115,3 +117,18 @@ class LockControl(Form, Base):
 
     def saveConfig(self):
         self.config["LockSettings"] = self.lockSettings
+        
+    def onTraceData(self , data):
+        pass
+    
+    def onStreamData(self, data):
+        if self.autoState == self.AutoStates.autoOffset:
+            newOffset = (data.errorSigMax + data.errorSigMin)/2 + self.lockSettings.offset
+            self.magOffset.setValue( newOffset )
+            self.setOffset(newOffset)
+            self.autoState = self.AutoStates.idle
+    
+    def autoOffset(self):
+        if self.autoState == self.AutoStates.idle:
+            self.autoState = self.AutoStates.autoOffset
+        
