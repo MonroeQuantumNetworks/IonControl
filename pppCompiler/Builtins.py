@@ -109,6 +109,9 @@ def set_ram_address( symboltable, arg=list(), kwarg=dict()):
 def read_ram( symboltable, arg=list(), kwarg=dict()):
     return ["  RAMREAD"]
 
+def wait_dds( symboltable, arg=list(), kwarg=dict()):
+    return ["  WAITDDSWRITEDONE"]
+
 def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
     if len(arg)!=1:
         raise CompileException( "apply_next_scan_point does not take arguments" )

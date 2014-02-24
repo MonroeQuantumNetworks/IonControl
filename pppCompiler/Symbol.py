@@ -61,6 +61,7 @@ class SymbolTable(OrderedDict):
         self['apply_next_scan_point'] = Builtin( 'apply_next_scan_point', Builtins.apply_next_scan_point )
         self['set_ram_address'] = Builtin( 'set_ram_address', Builtins.set_ram_address )
         self['read_ram'] = Builtin( 'read_ram', Builtins.read_ram )
+        self['wait_dds'] = Builtin( 'wait_dds', Builtins.wait_dds )
         
     def setInlineParameter(self, name, value):
         self.inlineParameterValues[value] = name
