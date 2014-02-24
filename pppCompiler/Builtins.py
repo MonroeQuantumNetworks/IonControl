@@ -45,13 +45,15 @@ def clear_counter( symboltable, arg=list(), kwarg=dict() ):
     return ["  COUNTERMASK NULL"]
 
 def update( symboltable, arg=list(), kwarg=dict() ):
-    if len(arg)>2:
-        raise CompileException( "expected at most one argument in update" )
+    code = ["  WAITDDSWRITEDONE"]
+    if 'wait_dds' in kwarg:
+        if not kwarg['wait_dds']:
+            code = list()
     if len(arg)==2:
         symbol = symboltable.getVar( arg[1], type_ = "parameter" )
-        return ["  WAIT",
+        return code + ["  WAIT",
                 "  UPDATE {0}".format(symbol.name) ]
-    return ["  WAIT",
+    return code + ["  WAIT",
             "  UPDATE NULL"]
 
 def load_count( symboltable, arg=list(), kwarg=dict()):
