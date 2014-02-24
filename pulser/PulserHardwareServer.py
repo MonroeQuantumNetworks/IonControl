@@ -115,6 +115,15 @@ class LogicAnalyzerData:
         self.trigger = list()
         self.stopMarker = None
         self.countOffset = 0
+        
+    def dataToStr(self, l):
+        strlist = list()
+        for time, pattern in l:
+            strlist.append("({0}, {1:x})".format(time, pattern))
+        return "["+", ".join(strlist)+"]"
+                  
+    def __str__(self):
+        return "data: {0} auxdata: {1} trigger: {2} stopMarker: {3} countOffset: {4}".format(self.dataToStr(self.data), self.dataToStr(self.auxData), self.dataToStr(self.trigger), self.stopMarker, self.countOffset)
 
 class FinishException(Exception):
     pass

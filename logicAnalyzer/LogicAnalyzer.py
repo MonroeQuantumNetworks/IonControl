@@ -13,7 +13,7 @@ from modules.Utility import flatten
 from modules.enum import enum
 from trace.pens import penList
 from uiModules.RotatedHeaderView import RotatedHeaderView
-
+from modules.concatenate_iter import concatenate_iter
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
@@ -85,6 +85,7 @@ class LogicAnalyzer(Form, Base ):
 
         
     def onData(self, logicData):
+        logging.getLogger(__name__).debug( str(logicData) )
         self.logicData = logicData
         offset = 0
         if logicData.data:
@@ -154,12 +155,12 @@ class LogicAnalyzer(Form, Base ):
         lastAutoRangeState = self.graphicsView.vb.getState()['autoRange']
         self.graphicsView.disableAutoRange(ViewBox.XYAxes)
         if self.lastEnabledChannels and self.lastEnabledChannels!=self.signalTableModel.enabledList:
-            for curve in self.curveBundle + self.curveAuxBundle + self.curveTriggerBundle:
+            for curve in concatenate_iter(self.curveBundle, self.curveAuxBundle, self.curveTriggerBundle):
                 if curve:
                     self.graphicsView.removeItem(curve)
-                self.curveBundle = None
-                self.curveAuxBundle = None
-                self.curveTriggerBundle = None
+            self.curveBundle = None
+            self.curveAuxBundle = None
+            self.curveTriggerBundle = None
             if self.textItems:
                 for item in self.textItems:
                     self.graphicsView.removeItem(item)
