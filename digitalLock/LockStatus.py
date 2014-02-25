@@ -186,9 +186,9 @@ class LockStatus(Form, Base):
                 self.errorSigCurve.replot()            
                
             to_plot = zip(*(attrgetter('regulatorFrequency','referenceFrequencyMin', 'referenceFrequencyMax')(e) for e in self.lastLockData))
-            y = numpy.array( map( methodcaller('toval','MHz'), to_plot[0] ) )
-            bottom = numpy.array( map( methodcaller('toval','MHz'), numpy.array(to_plot[0])-numpy.array(to_plot[1]) ) ) 
-            top = numpy.array( map( methodcaller('toval','MHz'), numpy.array(to_plot[2])-numpy.array(to_plot[0]) ) )          
+            y = numpy.array( map( methodcaller('toval','Hz'), to_plot[0] ) )
+            bottom = numpy.array( map( methodcaller('toval','Hz'), numpy.array(to_plot[0])-numpy.array(to_plot[1]) ) ) 
+            top = numpy.array( map( methodcaller('toval','Hz'), numpy.array(to_plot[2])-numpy.array(to_plot[0]) ) )          
             if self.freqTrace is None:
                 self.freqTrace = Trace()
                 self.freqTrace.x = x
