@@ -91,6 +91,7 @@ class StreamDataItem:
         self.errorSigSum = 0
         self.errorSigMin = 0
         self.errorSigMax = 0
+        self.errorSigSumSq = 0;
         self.freqSum = 0
         self.freqMin = 0
         self.freqMax = 0
@@ -179,25 +180,25 @@ class DigitalLockControllerServer(Process):
                         self.scopeData.errorSig.append( twos_comp(code >> 48,16) )
                         self.scopeData.frequency.append( twos_comp(code & 0x7fffffffffff, 47) )
                    
-        data, self.streamData.overrun = self.readStreamData(40)
+        data, self.streamData.overrun = self.readStreamData(48)
         if data:
             self.streamBuffer.extend( data )
-            while len(self.streamBuffer)>=40:
+            while len(self.streamBuffer)>=48:
                 try:
-                    for itembuffer in sliceview(self.streamBuffer,40):
+                    for itembuffer in sliceview(self.streamBuffer,48):
                         self.unpackStreamRecord(itembuffer)
                     if len(self.streamData)>0:
                         self.dataQueue.put( self.streamData )
                         self.streamData = StreamData()     
 
-                    self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 40) )           
+                    self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 48) )           
                 except AlignmentException as e:
                     logger.info("data not aligned skipping 2 bytes")
-                    self.streamBuffer = bytearray( self.streamBuffer[e.length*40+2:] )
+                    self.streamBuffer = bytearray( self.streamBuffer[e.length*48+2:] )  # e.length holds the number of successfully read records
      
     def unpackStreamRecord(self, itembuffer ):
         item = StreamDataItem()
-        (errorsig, item.errorSigMax, item.errorSigMin, item.samples, freq0, freq1, freq2) = struct.unpack('QhhIQQQ',itembuffer)
+        (errorsig, item.errorSigMax, item.errorSigMin, item.samples, freq0, freq1, freq2, item.errorSigSumSq ) = struct.unpack('QhhIQQQQ',itembuffer)
         if errorsig & 0xffff000000000000 != 0xfefe000000000000 or freq2 &  0xffff000000000000 != 0xefef000000000000:
             raise AlignmentException(len(self.streamData))
         if item.samples>0:

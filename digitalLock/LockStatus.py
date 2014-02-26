@@ -10,7 +10,7 @@ import numpy
 
 from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime
 from modules.magnitude import mg
-
+import math
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockStatus.ui')
 
 
@@ -123,7 +123,10 @@ class LockStatus(Form, Base):
         status.errorSigMax = binToVoltage(item.errorSigMax)
         setSignificantDigits( status.errorSigMax, voltageQuantum )            
         status.errorSigMin = binToVoltage(item.errorSigMin)
-        setSignificantDigits( status.errorSigMin, voltageQuantum )            
+        setSignificantDigits( status.errorSigMin, voltageQuantum )
+        
+        status.errorSigRMS = binToVoltage( math.sqrt(item.errorSigSumSq/float(item.samples)) )
+        setSignificantDigits( status.errorSigRMS, voltageQuantum )                  
         return status
     
     def onData(self, data=None ):
@@ -147,6 +150,7 @@ class LockStatus(Form, Base):
                 
                 self.errorSignalLabel.setText( str(item.errorSigAvg))
                 self.errorSignalRangeLabel.setText( str(item.errorSigDelta))
+                self.errorSignalRMSLabel.setText( str(item.errorSigRMS))
                 logger.debug("error  signal min {0} max {1}".format(item.errorSigMin, item.errorSigMax ))
                 self.newDataAvailable.emit( item )
         else:
