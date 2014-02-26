@@ -10,6 +10,14 @@ from controller.ControllerClient import freqToBin, voltageToBin
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockControl.ui')
 
 
+def setBit( var, index, val ):
+    """Set the index:th bit of v to x, and return the new value."""
+    mask = 1 << index
+    var &= ~mask
+    if val:
+        var |= mask
+    return var    
+
 class LockSettings(object):
     def __init__(self):
         self.referenceFrequency = mg(0,'MHz')
@@ -20,6 +28,13 @@ class LockSettings(object):
         self.offset = mg(0,'V')
         self.pCoefficient = mg(0)
         self.iCoefficient = mg(0)
+        self.enableLowPass = False
+        self.mode = 0
+        
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__dict__.setdefault( 'enableLowPass', False )
+        self.__dict__.setdefault( 'mode', 0 )
         
 
 class LockControl(Form, Base):
@@ -51,17 +66,25 @@ class LockControl(Form, Base):
         self.setupSpinBox('magOffset', 'offset', self.setOffset, 'V')
         self.setupSpinBox('magPCoeff', 'pCoefficient', self.setpCoefficient, '')
         self.setupSpinBox('magICoeff', 'iCoefficient', self.setiCoefficient, '')
+        self.lowPassCheckBox.setChecked( self.lockSettings.enableLowPass )
+        self.lowPassCheckBox.stateChanged.connect( self.onLowPassEnable )
         self.autoLockButton.clicked.connect( self.onAutoLock )
         self.lockButton.clicked.connect( self.onLock )
         self.unlockButton.clicked.connect( self.onUnlock )
         self.dataChanged.emit( self.lockSettings )
         
+    def onLowPassEnable(self, enable):
+        self.lockSettings.enableLowPass = enable==QtCore.Qt.Checked
+        self.lockSettings.mode = setBit( self.lockSettings.mode, 1, self.lockSettings.enableLowPass)
+        self.controller.setMode(self.lockSettings.mode)
+        
     def onLock(self):
-        self.controller.setMode(1)
+        self.lockSettings.mode = setBit( self.lockSettings.mode, 0, True)
+        self.controller.setMode(self.lockSettings.mode)
     
     def onUnlock(self):
-        self.controller.setMode(0)
-        self.controller.clearIntegrator()
+        self.lockSettings.mode = setBit( self.lockSettings.mode, 0, False)
+        self.controller.setMode(self.lockSettings.mode)
     
     def onAutoLock(self):
         self.autoOffset()

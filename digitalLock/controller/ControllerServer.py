@@ -147,7 +147,7 @@ class DigitalLockControllerServer(Process):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
-                    logger.debug( "DigitalLockControllerServer {0}".format(commandstring) )
+                    logger.debug( "DigitalLockControllerServer {0} {1}".format(commandstring, argument) )
                     self.commandPipe.send(command(*argument))
                 except Exception as e:
                     self.commandPipe.send(e)
