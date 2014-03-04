@@ -92,16 +92,6 @@ class TraceControl(Form, Base):
     def onControlChanged(self, value):
         self.lockSettings = value
     
-    def onAddTrace(self):
-        if self.errorSigCurve:
-            self.traceui.addTrace( self.errorSigCurve, pen=-1 )
-            self.errorSigCurve = None
-            self.errorSigTrace = None
-        if self.freqCurve:
-            self.traceui.addTrace( self.freqCurve, pen=-1 )
-            self.freqCurve = None
-            self.errorSigTrace = None
-
     def setState(self, state):
         self.state = state
         self.statusLabel.setText( self.StateOptions.reverse_mapping[self.state] )
@@ -116,6 +106,7 @@ class TraceControl(Form, Base):
             if self.errorSigCurve is None:
                 self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.plotDict[self.traceSettings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
                 self.errorSigCurve.plot()
+                self.traceui.addTrace( self.errorSigCurve, pen=-1 )
             else:
                 self.errorSigCurve.replot()                
             self.newDataAvailable.emit( self.errorSigTrace )                          
@@ -128,12 +119,21 @@ class TraceControl(Form, Base):
             if self.freqCurve is None:
                 self.freqCurve = PlottedTrace(self.freqTrace, self.plotDict[self.traceSettings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Frequency")  #@UndefinedVariable 
                 self.freqCurve.plot()
+                self.traceui.addTrace( self.freqCurve, pen=-1 )
             else:
                 self.freqCurve.replot() 
         if self.state==self.StateOptions.running:
             self.controller.armScope()
         else:
             self.setState(self.StateOptions.stopped)         
+
+    def onAddTrace(self):
+        if self.errorSigCurve:
+            self.errorSigCurve = None
+            self.errorSigTrace = None
+        if self.freqCurve:
+            self.freqCurve = None
+            self.errorSigTrace = None
 
     def onRun(self):
         self.controller.armScope()

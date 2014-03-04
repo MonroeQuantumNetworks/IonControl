@@ -79,6 +79,7 @@ class LockStatus(Form, Base):
             self.settings.frequencyPlot = str( self.errorSigPlotCombo.currentText() )
         self.frequencyPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeFrequencyPlot )
         self.errorSigPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeErrorSigPlot )
+        self.clearButton.clicked.connect( self.onClear )
         
     def onChangeFrequencyPlot(self, name):
         name = str(name)
@@ -93,14 +94,6 @@ class LockStatus(Form, Base):
             self.settings.errorSigPlot = name
             if self.errorSigCurve is not None:
                 self.errorSigCurve.setView( self.plotDict[name])
-        
-    def onAddTrace(self):
-        if self.errorSigCurve:
-            self.traceui.addTrace( self.errorSigCurve, pen=-1 )
-            self.errorSigCurve = None
-        if self.freqTrace:
-            self.traceui.addTrace( self.freqCurve, pen=-1 )
-            self.freqCurve = None
         
     def setAverageTime(self, value):
         self.settings.averageTime = value        
@@ -218,6 +211,7 @@ class LockStatus(Form, Base):
                 self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
                 self.errorSigTrace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockErrorSignal.txt" )
                 self.errorSigCurve.plot()
+                self.traceui.addTrace( self.errorSigCurve, pen=-1 )
             else:
                 self.errorSigCurve.replot()            
                
@@ -248,10 +242,30 @@ class LockStatus(Form, Base):
                 self.freqCurve = PlottedTrace(self.freqTrace, self.plotDict[self.settings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate")  #@UndefinedVariable
                 self.errorSigTrace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockOutputSignal.txt" )
                 self.freqCurve.plot()
+                self.traceui.addTrace( self.freqCurve, pen=-1 )
             else:
                 self.freqCurve.replot()                        
              
+    def onClear(self):
+        if self.errorSigTrace:
+            self.errorSigTrace.x = numpy.array( [] )
+            self.errorSigTrace.y = numpy.array( [] )
+            self.errorSigTrace.bottom = numpy.array( [] )
+            self.errorSigTrace.top = numpy.array( [] )
+        if self.freqTrace:
+            self.freqTrace.x = numpy.array( [] )
+            self.freqTrace.y = numpy.array( [] )
+            self.freqTrace.bottom = numpy.array( [] )
+            self.freqTrace.top = numpy.array( [] )
            
+    def onAddTrace(self):
+        if self.errorSigCurve:
+            self.errorSigTrace = None
+            self.errorSigCurve = None
+        if self.freqTrace:
+            self.freqTrace = None
+            self.freqCurve = None
+        
     def saveConfig(self):
         self.config["LockStatus.settings"] = self.settings
         
