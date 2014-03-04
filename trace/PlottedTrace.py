@@ -274,6 +274,11 @@ class PlottedTrace(object):
             parentFilename = self.parent().trace.getFilename() 
             filename, _ = directory.sequencefile( os.path.split(parentFilename)[1] )
             return filename
+        
+    def setView(self, graphicsView ):
+        self.removePlots()
+        self.graphicsView = graphicsView
+        self.plot(-1)
             
     @property
     def fitFunction(self):

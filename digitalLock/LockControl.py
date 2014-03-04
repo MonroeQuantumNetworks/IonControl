@@ -28,18 +28,20 @@ class LockSettings(object):
         self.offset = mg(0,'V')
         self.pCoefficient = mg(0)
         self.iCoefficient = mg(0)
-        self.enableLowPass = False
+        self.filter = LockControl.FilterOptions.NoFilter
         self.mode = 0
         
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault( 'enableLowPass', False )
         self.__dict__.setdefault( 'mode', 0 )
+        self.__dict__.setdefault( 'filter', LockControl.FilterOptions.NoFilter )
         
 
 class LockControl(Form, Base):
     dataChanged = QtCore.pyqtSignal( object )
     AutoStates = enum('idle', 'autoOffset', 'autoLock')
+    FilterOptions = enum('NoFilter','Lowpass_29')
     def __init__(self,controller,config,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
@@ -66,16 +68,17 @@ class LockControl(Form, Base):
         self.setupSpinBox('magOffset', 'offset', self.setOffset, 'V')
         self.setupSpinBox('magPCoeff', 'pCoefficient', self.setpCoefficient, '')
         self.setupSpinBox('magICoeff', 'iCoefficient', self.setiCoefficient, '')
-        self.lowPassCheckBox.setChecked( self.lockSettings.enableLowPass )
-        self.lowPassCheckBox.stateChanged.connect( self.onLowPassEnable )
+        self.filterCombo.addItems( self.FilterOptions.mapping.keys() )
+        self.filterCombo.setCurrentIndex( self.lockSettings.filter )
+        self.filterCombo.currentIndexChanged[int].connect( self.onFilterChange )
         self.autoLockButton.clicked.connect( self.onAutoLock )
         self.lockButton.clicked.connect( self.onLock )
         self.unlockButton.clicked.connect( self.onUnlock )
         self.dataChanged.emit( self.lockSettings )
         
-    def onLowPassEnable(self, enable):
-        self.lockSettings.enableLowPass = enable==QtCore.Qt.Checked
-        self.lockSettings.mode = setBit( self.lockSettings.mode, 1, self.lockSettings.enableLowPass)
+    def onFilterChange(self, filterMode):
+        self.lockSettings.filter = filterMode
+        self.lockSettings.mode = setBit( self.lockSettings.mode, 1, self.lockSettings.filter==self.FilterOptions.Lowpass_29)
         self.controller.setMode(self.lockSettings.mode)
         
     def onLock(self):

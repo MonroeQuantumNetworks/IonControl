@@ -7,6 +7,7 @@ from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from operator import attrgetter, methodcaller
 import numpy
+import functools
 
 from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime
 from modules.magnitude import mg
@@ -22,15 +23,19 @@ class Settings:
     def __init__(self):
         self.averageTime = mg(100,'ms')
         self.maxSamples = mg(2000,'')
+        self.frequencyPlot = None
+        self.errorSigPlot = None
         
     def __setstate__(self, s):
         self.__dict__ = s
         self.__dict__.setdefault( 'averageTime', mg(100,'ms') )
         self.__dict__.setdefault( 'maxSamples', mg(2000,'') )
+        self.__dict__.setdefault( 'frequencyPlot', None )
+        self.__dict__.setdefault( 'errorSigPlot', None )
 
 class LockStatus(Form, Base):
     newDataAvailable = QtCore.pyqtSignal( object )
-    def __init__(self,controller,config,traceui,view,parent=None):
+    def __init__(self,controller,config,traceui,plotDict,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
         self.controller = controller
@@ -42,7 +47,7 @@ class LockStatus(Form, Base):
         self.errorSigTrace = None
         self.freqCurve = None
         self.freqTrace = None
-        self.view = view
+        self.plotDict = plotDict
         self.settings = self.config.get("LockStatus.settings",Settings())
         self.lastXValue = 0
 
@@ -62,6 +67,32 @@ class LockStatus(Form, Base):
         self.controller.lockStatusChanged.connect( self.onLockChange )
         self.addTraceButton.clicked.connect( self.onAddTrace )
         self.controller.setStreamEnabled(True)
+        self.frequencyPlotCombo.addItems( self.plotDict.keys() )
+        self.errorSigPlotCombo.addItems( self.plotDict.keys() )
+        if self.settings.frequencyPlot is not None and self.settings.frequencyPlot in  self.plotDict:
+            self.frequencyPlotCombo.setCurrentIndex( self.frequencyPlotCombo.findText(self.settings.frequencyPlot))
+        else:   
+            self.settings.frequencyPlot = str( self.frequencyPlotCombo.currentText() )
+        if self.settings.errorSigPlot is not None and self.settings.errorSigPlot in  self.plotDict:
+            self.errorSigPlotCombo.setCurrentIndex( self.errorSigPlotCombo.findText(self.settings.errorSigPlot))
+        else:   
+            self.settings.frequencyPlot = str( self.errorSigPlotCombo.currentText() )
+        self.frequencyPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeFrequencyPlot )
+        self.errorSigPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeErrorSigPlot )
+        
+    def onChangeFrequencyPlot(self, name):
+        name = str(name)
+        if name!=self.settings.frequencyPlot and name in self.plotDict:
+            self.settings.frequencyPlot = name
+            if self.freqCurve is not None:
+                self.freqCurve.setView( self.plotDict[name])                      
+    
+    def onChangeErrorSigPlot(self, name):
+        name = str(name)
+        if name!=self.settings.errorSigPlot and name in self.plotDict:
+            self.settings.errorSigPlot = name
+            if self.errorSigCurve is not None:
+                self.errorSigCurve.setView( self.plotDict[name])
         
     def onAddTrace(self):
         if self.errorSigCurve:
@@ -184,7 +215,8 @@ class LockStatus(Form, Base):
                     self.errorSigTrace.top = numpy.append( self.errorSigTrace.top, top )
                 
             if self.errorSigCurve is None:
-                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigTrace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockErrorSignal.txt" )
                 self.errorSigCurve.plot()
             else:
                 self.errorSigCurve.replot()            
@@ -213,7 +245,8 @@ class LockStatus(Form, Base):
                     self.freqTrace.top = numpy.append( self.freqTrace.top, top )
                 
             if self.freqCurve is None:
-                self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate")  #@UndefinedVariable
+                self.freqCurve = PlottedTrace(self.freqTrace, self.plotDict[self.settings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate")  #@UndefinedVariable
+                self.errorSigTrace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockOutputSignal.txt" )
                 self.freqCurve.plot()
             else:
                 self.freqCurve.replot()                        

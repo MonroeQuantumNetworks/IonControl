@@ -16,11 +16,18 @@ class TraceSettings:
         self.subsample = mg(0,'')
         self.triggerLevel = mg(0,'V')
         self.triggerMode = 0
+        self.frequencyPlot = None
+        self.errorSigPlot = None
+
+    def __setstate__(self, s):
+        self.__dict__ = s
+        self.__dict__.setdefault( 'frequencyPlot', None )
+        self.__dict__.setdefault( 'errorSigPlot', None )
 
 class TraceControl(Form, Base):
     StateOptions = enum('stopped','running','single')
     newDataAvailable = QtCore.pyqtSignal( object )
-    def __init__(self,controller,config,traceui,view,parent=None):
+    def __init__(self,controller,config,traceui,plotDict,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
         self.controller = controller
@@ -28,7 +35,7 @@ class TraceControl(Form, Base):
         self.traceSettings = self.config.get("TraceControl.Settings",TraceSettings())
         self.state = self.StateOptions.stopped
         self.traceui = traceui
-        self.view = view
+        self.plotDict = plotDict
         self.controller.scopeDataAvailable.connect( self.onData )
         self.errorSigTrace = None
         self.freqTrace = None
@@ -55,6 +62,32 @@ class TraceControl(Form, Base):
         self.singleButton.clicked.connect( self.onSingle )
         self.stopButton.clicked.connect(self.onStop)
         self.addTraceButton.clicked.connect( self.onAddTrace )
+        self.frequencyPlotCombo.addItems( self.plotDict.keys() )
+        self.errorSigPlotCombo.addItems( self.plotDict.keys() )
+        if self.traceSettings.frequencyPlot is not None and self.traceSettings.frequencyPlot in  self.plotDict:
+            self.frequencyPlotCombo.setCurrentIndex( self.frequencyPlotCombo.findText(self.traceSettings.frequencyPlot))
+        else:   
+            self.traceSettings.frequencyPlot = str( self.frequencyPlotCombo.currentText() )
+        if self.traceSettings.errorSigPlot is not None and self.traceSettings.errorSigPlot in  self.plotDict:
+            self.errorSigPlotCombo.setCurrentIndex( self.errorSigPlotCombo.findText(self.traceSettings.errorSigPlot))
+        else:   
+            self.traceSettings.frequencyPlot = str( self.errorSigPlotCombo.currentText() )
+        self.frequencyPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeFrequencyPlot )
+        self.errorSigPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeErrorSigPlot )
+        
+    def onChangeFrequencyPlot(self, name):
+        name = str(name)
+        if name!=self.traceSettings.frequencyPlot and name in self.plotDict:
+            self.traceSettings.frequencyPlot = name
+            if self.freqCurve is not None:
+                self.freqCurve.setView( self.plotDict[name])                      
+    
+    def onChangeErrorSigPlot(self, name):
+        name = str(name)
+        if name!=self.traceSettings.errorSigPlot and name in self.plotDict:
+            self.traceSettings.errorSigPlot = name
+            if self.errorSigCurve is not None:
+                self.errorSigCurve.setView( self.plotDict[name])
         
     def onControlChanged(self, value):
         self.lockSettings = value
@@ -81,7 +114,7 @@ class TraceControl(Form, Base):
             self.errorSigTrace.x = numpy.arange(len(errorSig))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
             self.errorSigTrace.y = numpy.array( errorSig )
             if self.errorSigCurve is None:
-                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.view, pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.plotDict[self.traceSettings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
                 self.errorSigCurve.plot()
             else:
                 self.errorSigCurve.replot()                
@@ -93,7 +126,7 @@ class TraceControl(Form, Base):
             self.freqTrace.x = numpy.arange(len(frequency))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
             self.freqTrace.y = numpy.array( frequency )
             if self.freqCurve is None:
-                self.freqCurve = PlottedTrace(self.freqTrace, self.view, pen=-1, style=PlottedTrace.Styles.lines, name="Frequency")  #@UndefinedVariable 
+                self.freqCurve = PlottedTrace(self.freqTrace, self.plotDict[self.traceSettings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Frequency")  #@UndefinedVariable 
                 self.freqCurve.plot()
             else:
                 self.freqCurve.replot() 
