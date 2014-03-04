@@ -32,6 +32,7 @@ WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'digitalLock\ui
 class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
+    plotConfigurationChanged = QtCore.pyqtSignal( object )
     def __init__(self,config):
         self.config = config
         super(DigitalLockUi, self).__init__()
@@ -89,11 +90,13 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.lockStatus = LockStatus(self.pulser, self.config, self.traceui, self.plotDict, self.parent)
         self.lockStatus.setupUi()
         self.setupAsDockWidget(self.lockStatus, "Status", QtCore.Qt.RightDockWidgetArea)
+        self.plotConfigurationChanged.connect( self.lockStatus.onPlotConfigurationChanged )
 
         # Trace control
         self.traceControl = TraceControl(self.pulser, self.config, self.traceui, self.plotDict, self.parent)
         self.traceControl.setupUi()
         self.setupAsDockWidget(self.traceControl, "Trace Control", QtCore.Qt.RightDockWidgetArea)
+        self.plotConfigurationChanged.connect( self.traceControl.onPlotConfigurationChanged )
 
         # Lock oOntrol      
         self.lockControl = LockControl(self.pulser, self.config, self.parent)
@@ -128,7 +131,12 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
-        
+        try:
+            if 'pyqtgraph-dockareastate' in self.config:
+                self.area.restoreState(self.config['pyqtgraph-dockareastate'])
+        except Exception as e:
+            logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+       
         
     def setupPlots(self):
         self.area = DockArea()
@@ -168,6 +176,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
+            self.plotConfigurationChanged.emit( self.plotDict )
             
     def onRemovePlot(self):
         logger = logging.getLogger(__name__)
@@ -177,6 +186,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
                 name = str(name)
                 self.plotDict[name]["dock"].close()
                 del self.plotDict[name]
+                self.plotConfigurationChanged.emit( self.plotDict )
         else:
             logger.info("There are no plots which can be removed")
                 
@@ -192,6 +202,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
                     self.plotDict[name]["dock"].label.setText(QtCore.QString(newName))
                     self.plotDict[newName] = self.plotDict[name]
                     del self.plotDict[name]
+                    self.plotConfigurationChanged.emit( self.plotDict )
         else:
             logger.info("There are no plots which can be renamed")
 
@@ -245,6 +256,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.config['Settings.loggingLevel'] = self.loggingLevel
         self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
         self.config['PlotNames'] = self.plotDict.keys()
+        self.config['pyqtgraph-dockareastate'] = self.area.saveState()
         self.settingsDialog.saveConfig()
         self.loggerUi.saveConfig()
         self.lockControl.saveConfig()

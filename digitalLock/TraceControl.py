@@ -7,6 +7,7 @@ from modules.enum import enum
 import numpy
 from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
+from modules.PyqtUtility import updateComboBoxItems
 
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\TraceControl.ui')
 
@@ -37,8 +38,8 @@ class TraceControl(Form, Base):
         self.traceui = traceui
         self.plotDict = plotDict
         self.controller.scopeDataAvailable.connect( self.onData )
-        self.errorSigTrace = None
-        self.freqTrace = None
+        self.trace = None
+        self.trace = None
         self.errorSigCurve = None
         self.freqCurve = None
         self.lockSettings = None
@@ -96,29 +97,26 @@ class TraceControl(Form, Base):
         self.statusLabel.setText( self.StateOptions.reverse_mapping[self.state] )
 
     def onData(self, data):
-        if data.errorSig:
+        if data.errorSig and data.frequency:
             errorSig = map( binToVoltageV, data.errorSig )
-            if self.errorSigTrace is None:
-                self.errorSigTrace = Trace()
-                self.errorSigTrace.name = "Scope"
-            self.errorSigTrace.x = numpy.arange(len(errorSig))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
-            self.errorSigTrace.y = numpy.array( errorSig )
+            if self.trace is None:
+                self.trace = Trace()
+                self.trace.name = "Scope"
+                self.trace.addColumn('freq')                
+            self.trace.x = numpy.arange(len(errorSig))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
+            self.trace.y = numpy.array( errorSig )
             if self.errorSigCurve is None:
-                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.plotDict[self.traceSettings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.traceSettings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
             else:
                 self.errorSigCurve.replot()                
-            self.newDataAvailable.emit( self.errorSigTrace )                          
-        if data.frequency:
+            self.newDataAvailable.emit( self.trace )                          
             frequency = map( binToFreqHz, data.frequency )
-            if self.freqTrace is None:
-                self.freqTrace = Trace()
-                self.errorSigTrace.name = "Scope"
-            self.freqTrace.x = numpy.arange(len(frequency))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
-            self.freqTrace.y = numpy.array( frequency )
+            self.trace.freq = numpy.array( frequency )
             if self.freqCurve is None:
-                self.freqCurve = PlottedTrace(self.freqTrace, self.plotDict[self.traceSettings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Frequency")  #@UndefinedVariable 
+                self.freqCurve = PlottedTrace(self.trace, self.plotDict[self.traceSettings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Frequency",  #@UndefinedVariable
+                                              xColumn='x', yColumn='freq' ) 
                 self.freqCurve.plot()
                 self.traceui.addTrace( self.freqCurve, pen=-1 )
             else:
@@ -131,10 +129,20 @@ class TraceControl(Form, Base):
     def onAddTrace(self):
         if self.errorSigCurve:
             self.errorSigCurve = None
-            self.errorSigTrace = None
+            self.trace = None
         if self.freqCurve:
             self.freqCurve = None
-            self.errorSigTrace = None
+            self.trace = None
+
+    def onPlotConfigurationChanged(self, plotDict):
+        self.plotDict = plotDict
+        if self.traceSettings.frequencyPlot not in self.plotDict:
+            self.traceSettings.frequencyPlot = self.plotDict.keys()[0]
+        if self.traceSettings.errorSigPlot not in self.plotDict:
+            self.traceSettings.errorSigPlot = self.plotDict.keys()[0]
+        updateComboBoxItems( self.frequencyPlotCombo, self.plotDict.keys() )
+        updateComboBoxItems( self.errorSigPlotCombo, self.plotDict.keys() )       
+        
 
     def onRun(self):
         self.controller.armScope()

@@ -14,7 +14,7 @@ from modules.magnitude import mg
 import math
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockStatus.ui')
 
-
+from modules.PyqtUtility import updateComboBoxItems
 
 class StatusData:
     pass
@@ -44,9 +44,8 @@ class LockStatus(Form, Base):
         self.lastLockData = list()
         self.traceui = traceui
         self.errorSigCurve = None
-        self.errorSigTrace = None
+        self.trace = None
         self.freqCurve = None
-        self.freqTrace = None
         self.plotDict = plotDict
         self.settings = self.config.get("LockStatus.settings",Settings())
         self.lastXValue = 0
@@ -79,6 +78,15 @@ class LockStatus(Form, Base):
         else:   
             setattr( self.settings, plotAttrName, str( combo.currentText()) )
         combo.currentIndexChanged[QtCore.QString].connect( onChange )       
+
+    def onPlotConfigurationChanged(self, plotDict):
+        self.plotDict = plotDict
+        if self.settings.frequencyPlot not in self.plotDict:
+            self.settings.frequencyPlot = self.plotDict.keys()[0]
+        if self.settings.errorSigPlot not in self.plotDict:
+            self.settings.errorSigPlot = self.plotDict.keys()[0]
+        updateComboBoxItems( self.frequencyPlotCombo, self.plotDict.keys() )
+        updateComboBoxItems( self.errorSigPlotCombo, self.plotDict.keys() )       
         
     def onChangeFrequencyPlot(self, name):
         name = str(name)
@@ -118,7 +126,6 @@ class LockStatus(Form, Base):
         status.referenceFrequency = self.lockSettings.referenceFrequency + status.regulatorFrequency
         setSignificantDigits(status.referenceFrequency, frequencyQuantum)
 
-
         status.outputFrequency = self.lockSettings.outputFrequency + binToFreq(item.freqSum / float(item.samples) )* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequency, frequencyQuantum)
 
@@ -149,7 +156,9 @@ class LockStatus(Form, Base):
         setSignificantDigits( status.errorSigMin, voltageQuantum )
         
         status.errorSigRMS = binToVoltage( math.sqrt(item.errorSigSumSq/float(item.samples)) )
-        setSignificantDigits( status.errorSigRMS, voltageQuantum )                  
+        setSignificantDigits( status.errorSigRMS, voltageQuantum )
+        
+        status.time = item.samples * sampleTime.toval('s')          
         return status
     
     def onData(self, data=None ):
@@ -181,35 +190,38 @@ class LockStatus(Form, Base):
             
     def plotData(self):
         if len(self.lastLockData)>0:
-            to_plot = zip(*(attrgetter('errorSigAvg','errorSigMin', 'errorSigMax')(e) for e in self.lastLockData))
+            to_plot = zip(*(attrgetter('errorSigAvg','errorSigMin', 'errorSigMax','time')(e) for e in self.lastLockData))
             x = numpy.arange( self.lastXValue, self.lastXValue+len(to_plot[0] ))
             self.lastXValue += len(to_plot[0] )
             y = numpy.array( map( methodcaller('toval','V'), to_plot[0] ) )
             bottom = numpy.array( map( methodcaller('toval','V'), numpy.array(to_plot[0])-numpy.array(to_plot[1]) ) ) 
             top = numpy.array( map( methodcaller('toval','V'), numpy.array(to_plot[2])-numpy.array(to_plot[0]) ) )          
-            if self.errorSigTrace is None:
-                self.errorSigTrace = Trace()
-                self.errorSigTrace.x = x
-                self.errorSigTrace.y = y
-                self.errorSigTrace.bottom = bottom
-                self.errorSigTrace.top = top
-                self.errorSigTrace.name = "History"
+            if self.trace is None:
+                self.trace = Trace()
+                self.trace.x = x
+                self.trace.y = y
+                self.trace.bottom = bottom
+                self.trace.top = top
+                self.trace.name = "History"
+                self.trace.addColumn( 'freq' )
+                self.trace.addColumn( 'freqBottom' )
+                self.trace.addColumn( 'freqTop' )
             else:
                 oldSamples = self.settings.maxSamples.toval()-len(x)
-                if len(self.errorSigTrace.x) > oldSamples:
-                    self.errorSigTrace.x = numpy.append( self.errorSigTrace.x[-oldSamples:], x )
-                    self.errorSigTrace.y = numpy.append( self.errorSigTrace.y[-oldSamples:], y )
-                    self.errorSigTrace.bottom = numpy.append( self.errorSigTrace.bottom[-oldSamples:], bottom )
-                    self.errorSigTrace.top = numpy.append( self.errorSigTrace.top[-oldSamples:], top )
+                if len(self.trace.x) > oldSamples:
+                    self.trace.x = numpy.append( self.trace.x[-oldSamples:], x )
+                    self.trace.y = numpy.append( self.trace.y[-oldSamples:], y )
+                    self.trace.bottom = numpy.append( self.trace.bottom[-oldSamples:], bottom )
+                    self.trace.top = numpy.append( self.trace.top[-oldSamples:], top )
                 else:
-                    self.errorSigTrace.x = numpy.append( self.errorSigTrace.x, x )
-                    self.errorSigTrace.y = numpy.append( self.errorSigTrace.y, y )
-                    self.errorSigTrace.bottom = numpy.append( self.errorSigTrace.bottom, bottom )
-                    self.errorSigTrace.top = numpy.append( self.errorSigTrace.top, top )
+                    self.trace.x = numpy.append( self.trace.x, x )
+                    self.trace.y = numpy.append( self.trace.y, y )
+                    self.trace.bottom = numpy.append( self.trace.bottom, bottom )
+                    self.trace.top = numpy.append( self.trace.top, top )
                 
             if self.errorSigCurve is None:
-                self.errorSigCurve = PlottedTrace(self.errorSigTrace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
-                self.errorSigTrace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockErrorSignal.txt" )
+                self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
+                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockErrorSignal.txt" )
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
             else:
@@ -219,53 +231,39 @@ class LockStatus(Form, Base):
             y = numpy.array( map( methodcaller('toval','Hz'), to_plot[0] ) )
             bottom = numpy.array( map( methodcaller('toval','Hz'), numpy.array(to_plot[0])-numpy.array(to_plot[1]) ) ) 
             top = numpy.array( map( methodcaller('toval','Hz'), numpy.array(to_plot[2])-numpy.array(to_plot[0]) ) )          
-            if self.freqTrace is None:
-                self.freqTrace = Trace()
-                self.freqTrace.x = x
-                self.freqTrace.y = y
-                self.freqTrace.bottom = bottom
-                self.freqTrace.top = top
-                self.freqTrace.name = "History"
+            oldSamples = self.settings.maxSamples.toval()-len(x)
+            if len(self.trace.x) > oldSamples:
+                self.trace.freq = numpy.append( self.trace.freq[-oldSamples:], y )
+                self.trace.freqBottom = numpy.append( self.trace.freqBottom[-oldSamples:], bottom )
+                self.trace.freqTop = numpy.append( self.trace.freqTop[-oldSamples:], top )
             else:
-                oldSamples = self.settings.maxSamples.toval()-len(x)
-                if len(self.errorSigTrace.x) > oldSamples:
-                    self.freqTrace.x = numpy.append( self.freqTrace.x[-oldSamples:], x )
-                    self.freqTrace.y = numpy.append( self.freqTrace.y[-oldSamples:], y )
-                    self.freqTrace.bottom = numpy.append( self.freqTrace.bottom[-oldSamples:], bottom )
-                    self.freqTrace.top = numpy.append( self.freqTrace.top[-oldSamples:], top )
-                else:
-                    self.freqTrace.x = numpy.append( self.freqTrace.x, x )
-                    self.freqTrace.y = numpy.append( self.freqTrace.y, y )
-                    self.freqTrace.bottom = numpy.append( self.freqTrace.bottom, bottom )
-                    self.freqTrace.top = numpy.append( self.freqTrace.top, top )
+                self.trace.freq = numpy.append( self.trace.freq, y )
+                self.trace.freqBottom = numpy.append( self.trace.freqBottom, bottom )
+                self.trace.freqTop = numpy.append( self.trace.freqTop, top )
                 
             if self.freqCurve is None:
-                self.freqCurve = PlottedTrace(self.freqTrace, self.plotDict[self.settings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate")  #@UndefinedVariable
-                self.errorSigTrace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockOutputSignal.txt" )
+                self.freqCurve = PlottedTrace(self.trace, self.plotDict[self.settings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate", #@UndefinedVariable
+                                              xColumn='x', yColumn='freq', topColumn='freqTop', bottomColumn='freqBottom')  
+                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockOutputSignal.txt" )
                 self.freqCurve.plot()
                 self.traceui.addTrace( self.freqCurve, pen=-1 )
             else:
                 self.freqCurve.replot()                        
              
     def onClear(self):
-        if self.errorSigTrace:
-            self.errorSigTrace.x = numpy.array( [] )
-            self.errorSigTrace.y = numpy.array( [] )
-            self.errorSigTrace.bottom = numpy.array( [] )
-            self.errorSigTrace.top = numpy.array( [] )
-        if self.freqTrace:
-            self.freqTrace.x = numpy.array( [] )
-            self.freqTrace.y = numpy.array( [] )
-            self.freqTrace.bottom = numpy.array( [] )
-            self.freqTrace.top = numpy.array( [] )
+        if self.trace:
+            self.trace.x = numpy.array( [] )
+            self.trace.y = numpy.array( [] )
+            self.trace.bottom = numpy.array( [] )
+            self.trace.top = numpy.array( [] )
+            self.trace.freq = numpy.array( [] )
+            self.trace.freqBottom = numpy.array( [] )
+            self.trace.freqTop = numpy.array( [] )
            
     def onAddTrace(self):
-        if self.errorSigCurve:
-            self.errorSigTrace = None
-            self.errorSigCurve = None
-        if self.freqTrace:
-            self.freqTrace = None
-            self.freqCurve = None
+        self.trace = None
+        self.errorSigCurve = None
+        self.freqCurve = None
         
     def saveConfig(self):
         self.config["LockStatus.settings"] = self.settings
