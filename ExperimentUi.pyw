@@ -51,12 +51,12 @@ from uiModules import MagnitudeParameter #@UnusedImport
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
 
-class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
+class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     def __init__(self,config):
         self.config = config
-        super(WidgetContainerUi, self).__init__()
+        super(ExperimentUi, self).__init__()
         self.settings = SettingsDialog.Settings()
         self.deviceSerial = config.get('Settings.deviceSerial')
         self.deviceDescription = config.get('Settings.deviceDescription')
@@ -77,7 +77,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         return False
     
     def setupUi(self, parent):
-        super(WidgetContainerUi,self).setupUi(parent)
+        super(ExperimentUi,self).setupUi(parent)
         self.dockWidgetConsole.hide()
         self.loggerUi = LoggerLevelsUi(self.config)
         self.loggerUi.setupUi(self.loggerUi)
@@ -218,6 +218,8 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
+        QtCore.QTimer.singleShot(60000, self.onCommitConfig )
+        
     def onClearConsole(self):
         self.textEditConsole.clear()
         
@@ -232,6 +234,7 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
         self.dedicatedCountersWindow.raise_()
         self.dedicatedCountersWindow.onStart() #Start displaying data immediately
+        self.dedicatedCountersWindow.graphicsView.onHoldZero() #Set the plot to "hold zero" autorange mode
 
     def showLogicAnalyzer(self):
         self.logicAnalyzerWindow.show()
@@ -253,7 +256,15 @@ class WidgetContainerUi(WidgetContainerBase,WidgetContainerForm):
         filename, _ = DataDirectory.DataDirectory().sequencefile("configuration.db")
         self.saveConfig()
         self.config.saveConfig(filename)
-    
+        
+    def onCommitConfig(self):
+        logger = logging.getLogger(__name__)
+        self.currentTab.onSave()
+        logger.debug( "Committing config" )
+        self.saveConfig()
+        self.config.saveConfig() 
+        QtCore.QTimer.singleShot(60000, self.onCommitConfig )      
+            
     def onStart(self):
         self.currentTab.onStart()
     
@@ -380,7 +391,7 @@ if __name__ == "__main__":
         DataDirectory.DefaultProject = project
         
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with WidgetContainerUi(config) as ui:
+            with ExperimentUi(config) as ui:
                 ui.setupUi(ui)
                 LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()

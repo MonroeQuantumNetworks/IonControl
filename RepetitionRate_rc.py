@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Feb 19 21:53:07 2013
-This allows the ui files to find the resource file in the ui module
-@author: pmaunz
-"""
+'''
+Created on Feb 18, 2014
 
-
-from ui import RepetitionRate_rc
+@author: plmaunz
+'''
+from digitalLock.ui import RepetitionRate_rc

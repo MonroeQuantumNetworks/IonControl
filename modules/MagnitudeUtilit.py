@@ -6,7 +6,27 @@ Created on Tue Jul 02 14:25:44 2013
 """
 
 import modules.magnitude as magnitude
+import math
 
+def setSignificantDigits( mag_value, quantum ):
+    """Sets the significant digits of a magnitude according the minimal step quantum
+    and the current value
+    >>> print setSignificantDigits(mg(1.23456789,'Hz'), mg(0.25,'Hz'))
+    1.23 Hz
+    >>> print setSignificantDigits(mg(0,'Hz'), mg(0.25,'Hz'))
+    0 Hz
+    >>> print setSignificantDigits(mg(-1.23456789,'Hz'), mg(0.25,'Hz'))
+    -1.23 Hz
+    
+    """
+    if mag_value.dimension()!=quantum.dimension():
+        raise magnitude.MagnitudeError("setSignificantDigits needs matching dimensions {0} {1}".format(mag_value,quantum))
+    digits = int(math.ceil(math.log(abs(mag_value/quantum),10))) if mag_value.toval()!=0 else 2
+    mag_value.significantDigits = digits
+    return mag_value
+
+def createMagnitude( value, unit, quantum ):
+    pass
 
 def value( obj, tounit=None ):
     """ return the value of a magnitude object, or float"""
@@ -78,12 +98,7 @@ _reverse_prefix = { -24: 'y',  # yocto
                     24: 'Y'   # yotta
                     }
                     
-#def reprefix(mag):
-#    """change the prefix of the output unit of a magnitude
-#    such that the value is between 1 and 1000
-#    """
-#    if mag.val == 0:
-#        return mag
-#    order = 3*int( math.floor( math.log10( abs(mag.val) )/3 ) )
-    
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
     

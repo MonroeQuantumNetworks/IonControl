@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="openicon">
+    <file>icons/edit_clear.png</file>
+    <file>icons/add-plot.png</file>
     <file>icons/system-run-6.png</file>
     <file>icons/dialog-cancel-4.png</file>
     <file>icons/edit-delete-6.png</file>

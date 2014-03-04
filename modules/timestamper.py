@@ -16,9 +16,9 @@ from PyQt4.QtCore import QMutex
 from PyQt4.QtCore import QMutexLocker
 from PyQt4.QtCore import QThread
 from PyQt4.QtGui import QApplication
-import crcmod
-import crcmod.predefined
-import ftd2xx
+import crcmod   #@UnresolvedImport
+import crcmod.predefined #@UnresolvedImport
+import ftd2xx #@UnresolvedImport
 import numpy
 
 

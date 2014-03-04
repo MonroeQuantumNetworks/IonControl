@@ -39,13 +39,6 @@ class CustomViewBox(ViewBox):
         super(CustomViewBox,self).__init__(*args, **kwds)
         self.holdZero = False
     
-#     def setRange(self, rect=None, xRange=None, yRange=None, *args, **kwds):
-#         if self.holdZero:
-#             if not kwds.get('disableAutoRange', True):
-#                 if yRange is not None:
-#                     yRange[0] = 0
-#         ViewBox.setRange(self, rect, xRange, yRange, *args, **kwds)
-
     def updateAutoRange(self):
         ## Break recursive loops when auto-ranging.
         ## This is needed because some items change their size in response 
@@ -179,6 +172,8 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, and custom buttons."""
     def __init__(self,parent=None):
+        pg.setConfigOption('background', 'w')
+        pg.setConfigOption('foreground', 'k')
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = LabelItem(justify='right')
         self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2)
@@ -188,8 +183,6 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         self.mousePoint = None
         self.mousePointList = list()
         self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
         
     def autoRange(self):
         """Set the display to autorange."""

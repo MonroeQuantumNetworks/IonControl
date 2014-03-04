@@ -13,11 +13,10 @@ import numpy
 from pyqtgraph.parametertree import Parameter
 
 import modules.magnitude as magnitude
-from wavemeter.WavemeterGetFrequency import WavemeterGetFrequency
-
+from wavemeter.Wavemeter import Wavemeter
 
 try:
-    import visa
+    import visa  #@UnresolvedImport
 except:
     logging.getLogger(__name__).info( "visa loading failed. Proceeding without." )
     
@@ -333,7 +332,7 @@ class LaserWavemeterScan(AgilentPowerSupply):
     dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         AgilentPowerSupply.__init__(self,name,config,instrument)
-        self.wavemeter = WavemeterGetFrequency()
+        self.wavemeter = Wavemeter()
         self.channel = 6
 
     def currentExternalValue(self):
@@ -361,49 +360,41 @@ class LaserWavemeterLockScan(ExternalParameterBase):
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
-        self.wavemeter = WavemeterGetFrequency()
+        self.wavemeter = Wavemeter()
         self.savedValue = 0
         logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
         self.value = self.savedValue
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
-        self.settings.__dict__.setdefault('channel' , 6)       
+        self.settings.__dict__.setdefault('channel' , 6)  
+        self.settings.__dict__.setdefault('maxDeviation', magnitude.mg(5,'MHz')) 
+        self.settings.__dict__.setdefault('maxAge', magnitude.mg(2,'s'))    
     
     def setValue(self,value):
         """
         Move one steps towards the target, return current value
         """
-        logger = logging.getLogger(__name__)
-        if isinstance(value,magnitude.Magnitude):
-            myvalue = value.ounit("GHz").toval()
-        else:
-            myvalue = value
-        
-        self.wavemeter.set_frequency(myvalue, self.settings.channel)
-        self.value = myvalue
-        logger.debug( "setValue {0}".format(self.value) )
-        #ExternalParameterBase.setValue(self, magnitude.mg(myvalue,"GHz") )
-        return numpy.abs(self.wavemeter.get_frequency(self.settings.channel)-self.value)<.005
+        logger = logging.getLogger(__name__)       
+        self.currentFrequency = self.wavemeter.set_frequency(value, self.settings.channel, self.settings.max_age)
+        self.value = value
+        logger.debug( "setFrequency {0}, current frequency {1}".format(self.value, self.currentFrequency) )
+        return self.currentFrequency is not None and abs(self.currentFrequency-self.value)<self.settings.maxDeviation
            
                 
     def currentExternalValue(self):
         logger = logging.getLogger(__name__)
-#        self.lastExternalValue = self.wavemeter.get_frequency(4)
-#        while self.lastExternalValue <=0:
         self.lastExternalValue = self.wavemeter.get_frequency(self.settings.channel) 
         logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)
-        counter = 0
-        while numpy.abs(self.detuning)>=1 and counter<10:
-            self.lastExternalValue = self.wavemeter.get_frequency(self.settings.channel)    
-            self.detuning=(self.lastExternalValue-self.value)
-            counter += 1
+        self.currentFrequency = self.wavemeter.get_frequency(self.settings.channel, self.settings.maxAge )
         return self.lastExternalValue 
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'channel', 'type': 'int', 'value': self.settings.channel})
+        superior.append({'name': 'maxDeviation', 'type': 'magnitude', 'value': self.settings.maxDeviation})
+        superior.append({'name': 'maxAge', 'type': 'magnitude', 'value': self.settings.maxAge})
         return superior
 
     def saveValue(self):

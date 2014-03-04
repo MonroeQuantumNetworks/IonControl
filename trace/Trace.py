@@ -46,7 +46,7 @@ class ColumnSpec(list):
 class TracePlotting(object):
     Types = enum('default','steps')
     def __init__(self, xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None,
-                 rawColumn=None,name="",type =None):
+                 rawColumn=None,name="",type_ =None):
         
         self.xColumn = xColumn
         self.yColumn = yColumn
@@ -56,7 +56,7 @@ class TracePlotting(object):
         self.rawColumn = rawColumn
         self.fitFunction = None
         self.name = name
-        self.type = TracePlotting.Types.default if type is None else type
+        self.type = TracePlotting.Types.default if type_ is None else type_
         
     attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name', 'type']
 
