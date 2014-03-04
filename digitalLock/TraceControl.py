@@ -62,32 +62,31 @@ class TraceControl(Form, Base):
         self.singleButton.clicked.connect( self.onSingle )
         self.stopButton.clicked.connect(self.onStop)
         self.addTraceButton.clicked.connect( self.onAddTrace )
-        self.frequencyPlotCombo.addItems( self.plotDict.keys() )
-        self.errorSigPlotCombo.addItems( self.plotDict.keys() )
-        if self.traceSettings.frequencyPlot is not None and self.traceSettings.frequencyPlot in  self.plotDict:
-            self.frequencyPlotCombo.setCurrentIndex( self.frequencyPlotCombo.findText(self.traceSettings.frequencyPlot))
+        self.initPlotCombo( self.frequencyPlotCombo, 'frequencyPlot' , self.onChangeFrequencyPlot)
+        self.initPlotCombo( self.errorSigPlotCombo, 'errorSigPlot' , self.onChangeErrorSigPlot)
+        
+    def initPlotCombo(self, combo, plotAttrName, onChange ):
+        combo.addItems( self.plotDict.keys() )
+        plotName = getattr(self.traceSettings,plotAttrName)
+        if plotName is not None and plotName in self.plotDict:
+            combo.setCurrentIndex( combo.findText(plotName))
         else:   
-            self.traceSettings.frequencyPlot = str( self.frequencyPlotCombo.currentText() )
-        if self.traceSettings.errorSigPlot is not None and self.traceSettings.errorSigPlot in  self.plotDict:
-            self.errorSigPlotCombo.setCurrentIndex( self.errorSigPlotCombo.findText(self.traceSettings.errorSigPlot))
-        else:   
-            self.traceSettings.frequencyPlot = str( self.errorSigPlotCombo.currentText() )
-        self.frequencyPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeFrequencyPlot )
-        self.errorSigPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeErrorSigPlot )
+            setattr( self.traceSettings, plotAttrName, str( combo.currentText()) )
+        combo.currentIndexChanged[QtCore.QString].connect( onChange )       
         
     def onChangeFrequencyPlot(self, name):
         name = str(name)
         if name!=self.traceSettings.frequencyPlot and name in self.plotDict:
             self.traceSettings.frequencyPlot = name
             if self.freqCurve is not None:
-                self.freqCurve.setView( self.plotDict[name])                      
+                self.freqCurve.setView( self.plotDict[name]['view'])                      
     
     def onChangeErrorSigPlot(self, name):
         name = str(name)
         if name!=self.traceSettings.errorSigPlot and name in self.plotDict:
             self.traceSettings.errorSigPlot = name
             if self.errorSigCurve is not None:
-                self.errorSigCurve.setView( self.plotDict[name])
+                self.errorSigCurve.setView( self.plotDict[name]['view'])
         
     def onControlChanged(self, value):
         self.lockSettings = value
@@ -101,6 +100,7 @@ class TraceControl(Form, Base):
             errorSig = map( binToVoltageV, data.errorSig )
             if self.errorSigTrace is None:
                 self.errorSigTrace = Trace()
+                self.errorSigTrace.name = "Scope"
             self.errorSigTrace.x = numpy.arange(len(errorSig))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
             self.errorSigTrace.y = numpy.array( errorSig )
             if self.errorSigCurve is None:
@@ -114,6 +114,7 @@ class TraceControl(Form, Base):
             frequency = map( binToFreqHz, data.frequency )
             if self.freqTrace is None:
                 self.freqTrace = Trace()
+                self.errorSigTrace.name = "Scope"
             self.freqTrace.x = numpy.arange(len(frequency))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
             self.freqTrace.y = numpy.array( frequency )
             if self.freqCurve is None:

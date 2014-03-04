@@ -67,33 +67,32 @@ class LockStatus(Form, Base):
         self.controller.lockStatusChanged.connect( self.onLockChange )
         self.addTraceButton.clicked.connect( self.onAddTrace )
         self.controller.setStreamEnabled(True)
-        self.frequencyPlotCombo.addItems( self.plotDict.keys() )
-        self.errorSigPlotCombo.addItems( self.plotDict.keys() )
-        if self.settings.frequencyPlot is not None and self.settings.frequencyPlot in  self.plotDict:
-            self.frequencyPlotCombo.setCurrentIndex( self.frequencyPlotCombo.findText(self.settings.frequencyPlot))
-        else:   
-            self.settings.frequencyPlot = str( self.frequencyPlotCombo.currentText() )
-        if self.settings.errorSigPlot is not None and self.settings.errorSigPlot in  self.plotDict:
-            self.errorSigPlotCombo.setCurrentIndex( self.errorSigPlotCombo.findText(self.settings.errorSigPlot))
-        else:   
-            self.settings.frequencyPlot = str( self.errorSigPlotCombo.currentText() )
-        self.frequencyPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeFrequencyPlot )
-        self.errorSigPlotCombo.currentIndexChanged[QtCore.QString].connect( self.onChangeErrorSigPlot )
+        self.initPlotCombo( self.frequencyPlotCombo, 'frequencyPlot' , self.onChangeFrequencyPlot)
+        self.initPlotCombo( self.errorSigPlotCombo, 'errorSigPlot' , self.onChangeErrorSigPlot)
         self.clearButton.clicked.connect( self.onClear )
+        
+    def initPlotCombo(self, combo, plotAttrName, onChange ):
+        combo.addItems( self.plotDict.keys() )
+        plotName = getattr(self.settings,plotAttrName)
+        if plotName is not None and plotName in self.plotDict:
+            combo.setCurrentIndex( combo.findText(plotName))
+        else:   
+            setattr( self.settings, plotAttrName, str( combo.currentText()) )
+        combo.currentIndexChanged[QtCore.QString].connect( onChange )       
         
     def onChangeFrequencyPlot(self, name):
         name = str(name)
         if name!=self.settings.frequencyPlot and name in self.plotDict:
             self.settings.frequencyPlot = name
             if self.freqCurve is not None:
-                self.freqCurve.setView( self.plotDict[name])                      
+                self.freqCurve.setView( self.plotDict[name]['view'])                      
     
     def onChangeErrorSigPlot(self, name):
         name = str(name)
         if name!=self.settings.errorSigPlot and name in self.plotDict:
             self.settings.errorSigPlot = name
             if self.errorSigCurve is not None:
-                self.errorSigCurve.setView( self.plotDict[name])
+                self.errorSigCurve.setView( self.plotDict[name]['view'])
         
     def setAverageTime(self, value):
         self.settings.averageTime = value        
@@ -194,6 +193,7 @@ class LockStatus(Form, Base):
                 self.errorSigTrace.y = y
                 self.errorSigTrace.bottom = bottom
                 self.errorSigTrace.top = top
+                self.errorSigTrace.name = "History"
             else:
                 oldSamples = self.settings.maxSamples.toval()-len(x)
                 if len(self.errorSigTrace.x) > oldSamples:
@@ -225,6 +225,7 @@ class LockStatus(Form, Base):
                 self.freqTrace.y = y
                 self.freqTrace.bottom = bottom
                 self.freqTrace.top = top
+                self.freqTrace.name = "History"
             else:
                 oldSamples = self.settings.maxSamples.toval()-len(x)
                 if len(self.errorSigTrace.x) > oldSamples:
