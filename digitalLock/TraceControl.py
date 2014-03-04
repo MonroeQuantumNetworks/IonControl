@@ -8,6 +8,7 @@ import numpy
 from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
 from modules.PyqtUtility import updateComboBoxItems
+import functools
 
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\TraceControl.ui')
 
@@ -109,6 +110,7 @@ class TraceControl(Form, Base):
                 self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.traceSettings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
+                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockScope.txt" )
             else:
                 self.errorSigCurve.replot()                
             self.newDataAvailable.emit( self.trace )                          

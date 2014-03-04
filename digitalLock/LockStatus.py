@@ -221,7 +221,7 @@ class LockStatus(Form, Base):
                 
             if self.errorSigCurve is None:
                 self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
-                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockErrorSignal.txt" )
+                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockHistory.txt" )
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
             else:
@@ -244,7 +244,6 @@ class LockStatus(Form, Base):
             if self.freqCurve is None:
                 self.freqCurve = PlottedTrace(self.trace, self.plotDict[self.settings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate", #@UndefinedVariable
                                               xColumn='x', yColumn='freq', topColumn='freqTop', bottomColumn='freqBottom')  
-                self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockOutputSignal.txt" )
                 self.freqCurve.plot()
                 self.traceui.addTrace( self.freqCurve, pen=-1 )
             else:
