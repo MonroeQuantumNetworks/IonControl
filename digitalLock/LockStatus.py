@@ -8,6 +8,7 @@ from trace.Trace import Trace
 from operator import attrgetter, methodcaller
 import numpy
 import functools
+from modules.DataDirectory import DataDirectory
 
 from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime
 from modules.magnitude import mg
@@ -49,6 +50,7 @@ class LockStatus(Form, Base):
         self.plotDict = plotDict
         self.settings = self.config.get("LockStatus.settings",Settings())
         self.lastXValue = 0
+        self.logFile = None
 
     def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
         box = getattr(self, localname)
@@ -161,6 +163,20 @@ class LockStatus(Form, Base):
         status.time = item.samples * sampleTime.toval('s')          
         return status
     
+    logFrequency = ['regulatorFrequency', 'referenceFrequency', 'referenceFrequencyMin', 'referenceFrequencyMax', 
+                      'outputFrequency', 'outputFrequencyMin', 'outputFrequencyMax']
+    logVoltage = ['errorSigAvg', 'errorSigMin', 'errorSigMax', 'errorSigRMS']                 
+    def writeToLogFile(self, status):
+        if self.lockSettings and self.lockSettings.mode & 1 == 1:  # if locked
+            if not self.logFile:
+                self.logFile = DataDirectory().sequenceFile("LockLog.txt")
+                self.logFile.write( " ".join( self.logFrequency + self.logVoltage ) )
+                self.logFile.write( "\n" )
+            self.logFile.write(  " ".join( map( methodcaller('toval','Hz'), (getattr(status, field) for field in self.logFrequency) ) ) )
+            self.logFile.write(  " ".join( map( methodcaller('toval','mV'), (getattr(status, field) for field in self.logVoltage) ) ) )
+            self.logFile.write("\n")
+        
+    
     def onData(self, data=None ):
         logger = logging.getLogger()
         logger.debug( "received streaming data {0} {1}".format(len(data),data[-1] if len(data)>0 else ""))
@@ -169,7 +185,8 @@ class LockStatus(Form, Base):
             for item in data:
                 converted = self.convertStatus(item)
                 if converted is not None:
-                    self.lastLockData.append( converted)
+                    self.lastLockData.append( converted )
+                    self.writeToLogFile(converted)
         if self.lastLockData is not None:
             self.plotData()
             if self.lastLockData:
