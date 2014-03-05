@@ -41,7 +41,7 @@ class LockSettings(object):
 class LockControl(Form, Base):
     dataChanged = QtCore.pyqtSignal( object )
     AutoStates = enum('idle', 'autoOffset', 'autoLock')
-    FilterOptions = enum('NoFilter','Lowpass_29')
+    FilterOptions = enum('NoFilter','Lowp_50_29','Lowp_40_29','Low_30_20','Lowp_100_29', 'Lowp_200_29', 'Lowp_300_29', 'Lowp_300_13', 'Lowp_200_9', 'Lowp100_17')
     def __init__(self,controller,config,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
@@ -78,7 +78,8 @@ class LockControl(Form, Base):
         
     def onFilterChange(self, filterMode):
         self.lockSettings.filter = filterMode
-        self.lockSettings.mode = setBit( self.lockSettings.mode, 1, self.lockSettings.filter==self.FilterOptions.Lowpass_29)
+        self.lockSettings.mode = setBit( self.lockSettings.mode, 1, self.lockSettings.filter>0 )
+        self.controller.setFilter( self.lockSettings.filter )
         self.controller.setMode(self.lockSettings.mode)
         
     def onLock(self):

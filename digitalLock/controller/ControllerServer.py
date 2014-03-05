@@ -289,6 +289,12 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.SetWireInValue(0x12, binvalue & 0xffff )
             self.xem.UpdateWireIns()
+
+    def setFilter(self, filterMode):        
+        if self.xem:
+            self.xem.SetWireInValue(0x1C, filterMode & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x41, 2 )            
             
     def setInputOffset(self, binvalue ):
         if self.xem:
@@ -366,7 +372,7 @@ class DigitalLockControllerServer(Process):
         if self.openModule is not None:
             self.modules[self.openModule.identifier] = self.openModule
         return self.modules
-        
+    
     def getDeviceDescription(self,xem):
         """Get informaion from an open device
         """
