@@ -36,6 +36,7 @@ class LockSettings(object):
         self.__dict__.setdefault( 'enableLowPass', False )
         self.__dict__.setdefault( 'mode', 0 )
         self.__dict__.setdefault( 'filter', LockControl.FilterOptions.NoFilter )
+        self.mode = self.mode & (~1)  # clear the lock enable bit
         
 
 class LockControl(Form, Base):

@@ -9,6 +9,7 @@ from operator import attrgetter, methodcaller
 import numpy
 import functools
 from modules.DataDirectory import DataDirectory
+from datetime import datetime
 
 from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime
 from modules.magnitude import mg
@@ -169,12 +170,14 @@ class LockStatus(Form, Base):
     def writeToLogFile(self, status):
         if self.lockSettings and self.lockSettings.mode & 1 == 1:  # if locked
             if not self.logFile:
-                self.logFile = DataDirectory().sequenceFile("LockLog.txt")
+                self.logFile = open( DataDirectory().sequencefile("LockLog.txt")[0], "w" )
                 self.logFile.write( " ".join( self.logFrequency + self.logVoltage ) )
                 self.logFile.write( "\n" )
-            self.logFile.write(  " ".join( map( methodcaller('toval','Hz'), (getattr(status, field) for field in self.logFrequency) ) ) )
-            self.logFile.write(  " ".join( map( methodcaller('toval','mV'), (getattr(status, field) for field in self.logVoltage) ) ) )
+            self.logFile.write( "{0} ".format(datetime.now()))
+            self.logFile.write(  " ".join( map( repr, map( methodcaller('toval','Hz'), (getattr(status, field) for field in self.logFrequency) ) ) ) )
+            self.logFile.write(  " ".join( map( repr, map( methodcaller('toval','mV'), (getattr(status, field) for field in self.logVoltage) ) ) ) )
             self.logFile.write("\n")
+            self.logFile.flush()
         
     
     def onData(self, data=None ):
