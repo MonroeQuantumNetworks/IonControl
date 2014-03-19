@@ -28,6 +28,7 @@ class LockSettings(object):
         self.offset = mg(0,'V')
         self.pCoefficient = mg(0)
         self.iCoefficient = mg(0)
+        self.resonanceFrequency = mg(12642.817,'MHz')
         self.filter = LockControl.FilterOptions.NoFilter
         self.harmonicOutput = LockControl.HarmonicOutputOptions.Off
         self.mode = 0
@@ -38,6 +39,7 @@ class LockSettings(object):
         self.__dict__.setdefault( 'mode', 0 )
         self.__dict__.setdefault( 'filter', LockControl.FilterOptions.NoFilter )
         self.__dict__.setdefault( 'harmonicOutput', LockControl.HarmonicOutputOptions.Off )
+        self.__dict__.setdefault( 'resonanceFrequency', mg(12642.817,'MHz') )
         self.mode = self.mode & (~1)  # clear the lock enable bit
         
 
@@ -72,6 +74,7 @@ class LockControl(Form, Base):
         self.setupSpinBox('magOffset', 'offset', self.setOffset, 'V')
         self.setupSpinBox('magPCoeff', 'pCoefficient', self.setpCoefficient, '')
         self.setupSpinBox('magICoeff', 'iCoefficient', self.setiCoefficient, '')
+        self.setupSpinBox('magResonanceFreq', 'resonanceFrequency', self.setResonanceFreq, 'MHz')
         self.filterCombo.addItems( self.FilterOptions.mapping.keys() )
         self.filterCombo.setCurrentIndex( self.lockSettings.filter )
         self.filterCombo.currentIndexChanged[int].connect( self.onFilterChange )
@@ -88,12 +91,14 @@ class LockControl(Form, Base):
         self.lockSettings.mode = setBit( self.lockSettings.mode, 1, self.lockSettings.filter>0 )
         self.controller.setFilter( self.lockSettings.filter )
         self.controller.setMode(self.lockSettings.mode)
+        self.dataChanged.emit(self.lockSettings )
         
     def onHarmonicOutputChange(self, outputMode ):
         self.lockSettings.harmonicOutput = outputMode
         self.lockSettings.mode = setBit( self.lockSettings.mode, 14, outputMode==1 )
         self.lockSettings.mode = setBit( self.lockSettings.mode, 15, outputMode==2 )
         self.controller.setMode(self.lockSettings.mode)
+        self.dataChanged.emit(self.lockSettings )
         
     def onLock(self):
         self.lockSettings.mode = setBit( self.lockSettings.mode, 0, True)
@@ -111,6 +116,16 @@ class LockControl(Form, Base):
         self.controller.setReferenceFrequency(binvalue)
         self.lockSettings.referenceFrequency = value
         self.dataChanged.emit( self.lockSettings )
+        self.calculateOffset()
+
+    def setResonanceFreq(self, value):
+        self.lockSettings.resonanceFrequency = value
+        self.calculateOffset()
+        
+    def calculateOffset(self):
+        offsetFrequency = abs( self.lockSettings.resonanceFrequency - abs( self.lockSettings.harmonic ) * self.lockSettings.referenceFrequency + 
+                               (-1 if self.lockSettings.harmonic<0 else 1) * self.lockSettings.outputFrequency )
+        self.magOffsetFreq.setValue(offsetFrequency)
 
     def setReferenceAmplitude(self, value):
         binvalue = int(value.toval(''))
@@ -123,6 +138,7 @@ class LockControl(Form, Base):
         self.controller.setOutputFrequency(binvalue)
         self.lockSettings.outputFrequency = value
         self.dataChanged.emit( self.lockSettings )
+        self.calculateOffset()
 
     def setOutputAmplitude(self, value):
         binvalue = int(value.toval(''))
@@ -135,6 +151,7 @@ class LockControl(Form, Base):
         self.controller.setHarmonic(binvalue)
         self.lockSettings.harmonic = value
         self.dataChanged.emit( self.lockSettings )
+        self.calculateOffset()
         
     def setOffset(self, value):
         binvalue = voltageToBin(value)

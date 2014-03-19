@@ -107,7 +107,11 @@ class LockStatus(Form, Base):
         
     def setAverageTime(self, value):
         self.settings.averageTime = value        
-        self.controller.setStreamAccum(int((value / sampleTime).toval()))
+        mySampleTime = sampleTime.copy()
+        if self.lockSettings is not None and self.lockSettings.filter >0:
+            mySampleTime *= 2
+        accumNumber = int((value / mySampleTime ).toval())
+        self.controller.setStreamAccum(accumNumber)
         
     def setMaxSamples(self, samples):
         self.settings.maxSamples = samples
@@ -117,6 +121,7 @@ class LockStatus(Form, Base):
     
     def onControlChanged(self, value):
         self.lockSettings = value
+        self.setAverageTime(self.settings.averageTime)
         self.onLockChange()
     
     def convertStatus(self, item):
