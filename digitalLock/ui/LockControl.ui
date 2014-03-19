@@ -14,8 +14,31 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="1">
-    <widget class="MagnitudeSpinBox" name="magReferenceAmpl">
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>Prop Coefficient</string>
+     </property>
+     <property name="buddy">
+      <cstring>magPCoeff</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="1">
+    <widget class="MagnitudeSpinBox" name="magOutputFreq">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -27,8 +50,18 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
-    <widget class="MagnitudeSpinBox" name="magICoeff">
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Output Amplitude</string>
+     </property>
+     <property name="buddy">
+      <cstring>magOutputAmpl</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="MagnitudeSpinBox" name="magOutputAmpl">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -40,119 +73,7 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Harmonic</string>
-     </property>
-     <property name="buddy">
-      <cstring>magHarmonic</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Reference Frequency</string>
-     </property>
-     <property name="buddy">
-      <cstring>magReferenceFreq</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_8">
-     <property name="text">
-      <string>Offset</string>
-     </property>
-     <property name="buddy">
-      <cstring>magOffset</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="MagnitudeSpinBox" name="magReferenceFreq">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="buttonSymbols">
-      <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="1">
-    <widget class="MagnitudeSpinBox" name="magPCoeff">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="buttonSymbols">
-      <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Output Frequency</string>
-     </property>
-     <property name="buddy">
-      <cstring>magOutputFreq</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>Reference Amplitude</string>
-     </property>
-     <property name="buddy">
-      <cstring>magReferenceAmpl</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="MagnitudeSpinBox" name="magHarmonic">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="buttonSymbols">
-      <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="MagnitudeSpinBox" name="magOffset">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="buttonSymbols">
-      <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="label_7">
-     <property name="text">
-      <string>Integrator Coefficient</string>
-     </property>
-     <property name="buddy">
-      <cstring>magICoeff</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0" colspan="2">
+   <item row="10" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer">
@@ -238,8 +159,48 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="1">
-    <widget class="MagnitudeSpinBox" name="magOutputAmpl">
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Output Frequency</string>
+     </property>
+     <property name="buddy">
+      <cstring>magOutputFreq</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Reference Amplitude</string>
+     </property>
+     <property name="buddy">
+      <cstring>magReferenceAmpl</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Reference Frequency</string>
+     </property>
+     <property name="buddy">
+      <cstring>magReferenceFreq</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_8">
+     <property name="text">
+      <string>Offset</string>
+     </property>
+     <property name="buddy">
+      <cstring>magOffset</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="MagnitudeSpinBox" name="magReferenceFreq">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -251,8 +212,8 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
-    <widget class="MagnitudeSpinBox" name="magOutputFreq">
+   <item row="6" column="1">
+    <widget class="MagnitudeSpinBox" name="magPCoeff">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -264,36 +225,75 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="label_6">
+   <item row="7" column="0">
+    <widget class="QLabel" name="label_7">
      <property name="text">
-      <string>Prop Coefficient</string>
+      <string>Integrator Coefficient</string>
      </property>
      <property name="buddy">
-      <cstring>magPCoeff</cstring>
+      <cstring>magICoeff</cstring>
      </property>
     </widget>
    </item>
-   <item row="10" column="0">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="4" column="1">
+    <widget class="MagnitudeSpinBox" name="magHarmonic">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::NoButtons</enum>
      </property>
-    </spacer>
+    </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_5">
+   <item row="5" column="1">
+    <widget class="MagnitudeSpinBox" name="magOffset">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::NoButtons</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="MagnitudeSpinBox" name="magReferenceAmpl">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::NoButtons</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="MagnitudeSpinBox" name="magICoeff">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::NoButtons</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Output Amplitude</string>
+      <string>Harmonic</string>
      </property>
      <property name="buddy">
-      <cstring>magOutputAmpl</cstring>
+      <cstring>magHarmonic</cstring>
      </property>
     </widget>
    </item>
@@ -306,6 +306,16 @@
    </item>
    <item row="8" column="1">
     <widget class="QComboBox" name="filterCombo"/>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLabel" name="label_10">
+     <property name="text">
+      <string>Harmonic Output</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="1">
+    <widget class="QComboBox" name="harmonicOutputCombo"/>
    </item>
   </layout>
  </widget>

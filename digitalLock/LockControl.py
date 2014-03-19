@@ -29,6 +29,7 @@ class LockSettings(object):
         self.pCoefficient = mg(0)
         self.iCoefficient = mg(0)
         self.filter = LockControl.FilterOptions.NoFilter
+        self.harmonicOutput = LockControl.HarmonicOutputOptions.Off
         self.mode = 0
         
     def __setstate__(self, d):
@@ -36,6 +37,7 @@ class LockSettings(object):
         self.__dict__.setdefault( 'enableLowPass', False )
         self.__dict__.setdefault( 'mode', 0 )
         self.__dict__.setdefault( 'filter', LockControl.FilterOptions.NoFilter )
+        self.__dict__.setdefault( 'harmonicOutput', LockControl.HarmonicOutputOptions.Off )
         self.mode = self.mode & (~1)  # clear the lock enable bit
         
 
@@ -43,6 +45,7 @@ class LockControl(Form, Base):
     dataChanged = QtCore.pyqtSignal( object )
     AutoStates = enum('idle', 'autoOffset', 'autoLock')
     FilterOptions = enum('NoFilter','Lowp_50_29','Lowp_40_29','Low_30_20','Lowp_100_29', 'Lowp_200_29', 'Lowp_300_29', 'Lowp_300_13', 'Lowp_200_9', 'Lowp100_17')
+    HarmonicOutputOptions = enum('Off','On','External')
     def __init__(self,controller,config,parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
@@ -72,6 +75,9 @@ class LockControl(Form, Base):
         self.filterCombo.addItems( self.FilterOptions.mapping.keys() )
         self.filterCombo.setCurrentIndex( self.lockSettings.filter )
         self.filterCombo.currentIndexChanged[int].connect( self.onFilterChange )
+        self.harmonicOutputCombo.addItems( self.HarmonicOutputOptions.mapping.keys() )
+        self.harmonicOutputCombo.setCurrentIndex( self.lockSettings.harmonicOutput )
+        self.harmonicOutputCombo.currentIndexChanged[int].connect( self.onHarmonicOutputChange )
         self.autoLockButton.clicked.connect( self.onAutoLock )
         self.lockButton.clicked.connect( self.onLock )
         self.unlockButton.clicked.connect( self.onUnlock )
@@ -81,6 +87,12 @@ class LockControl(Form, Base):
         self.lockSettings.filter = filterMode
         self.lockSettings.mode = setBit( self.lockSettings.mode, 1, self.lockSettings.filter>0 )
         self.controller.setFilter( self.lockSettings.filter )
+        self.controller.setMode(self.lockSettings.mode)
+        
+    def onHarmonicOutputChange(self, outputMode ):
+        self.lockSettings.harmonicOutput = outputMode
+        self.lockSettings.mode = setBit( self.lockSettings.mode, 14, outputMode==1 )
+        self.lockSettings.mode = setBit( self.lockSettings.mode, 15, outputMode==2 )
         self.controller.setMode(self.lockSettings.mode)
         
     def onLock(self):
@@ -121,7 +133,7 @@ class LockControl(Form, Base):
     def setHarmonic(self, value):
         binvalue = int(value.toval(''))
         self.controller.setHarmonic(binvalue)
-        self.lockSettings.hamonic = value
+        self.lockSettings.harmonic = value
         self.dataChanged.emit( self.lockSettings )
         
     def setOffset(self, value):

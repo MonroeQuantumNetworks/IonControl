@@ -141,7 +141,7 @@ class LockStatus(Form, Base):
         setSignificantDigits(status.referenceFrequencyMin, frequencyQuantum)
 
         binvalue *= self.lockSettings.harmonic
-        status.outputFrequencyDelta = binToFreq(binvalue)
+        status.outputFrequencyDelta = abs(binToFreq(binvalue))
         setSignificantDigits(status.outputFrequencyDelta, frequencyQuantum*self.lockSettings.harmonic)
         status.outputFrequencyMax = self.lockSettings.outputFrequency + binToFreq(item.freqMax)* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequencyMax, frequencyQuantum)
