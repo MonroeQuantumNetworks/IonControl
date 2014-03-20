@@ -70,19 +70,19 @@ class SinSqFit(FitFunctionBase):
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
         
-    def functionEval(self, T,x0,max_,min_ ):
+    def functionEval(self, x, T, x0, max_, min_ ):
         return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/T*(x-x0)))+min_
     
     def residuals(self,p, y, x, sigma):
         T,x0,max_,min_ = self.allFitParameters(p)
         if sigma is not None:
-            return (y-self.functionEval(T, x0, max_, min_))/sigma
+            return (y-self.functionEval(x, T, x0, max_, min_))/sigma
         else:
-            return y-self.functionEval(T, x0, max_, min_)
+            return y-self.functionEval(x, T, x0, max_, min_)
         
     def value(self,x,p=None):
         T,x0,max_,min_ = self.parameters if p is None else p
-        return self.functionEval(T, x0, max_, min_)
+        return self.functionEval(x, T, x0, max_, min_)
   
 class SinSqExpFit(FitFunctionBase):
     name = "Sin2 Exponential Decay"

@@ -17,16 +17,6 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QComboBox" name="analysisNameComboBox">
-       <property name="contextMenuPolicy">
-        <enum>Qt::ActionsContextMenu</enum>
-       </property>
-       <property name="editable">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QToolButton" name="removeAnalysisButton">
        <property name="minimumSize">
         <size>
@@ -39,7 +29,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
+         <normaloff>:/openicon/icons/edit-clear-locationbar-ltr.png</normaloff>:/openicon/icons/edit-clear-locationbar-ltr.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -48,6 +38,16 @@
         </size>
        </property>
        <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="analysisNameComboBox">
+       <property name="contextMenuPolicy">
+        <enum>Qt::ActionsContextMenu</enum>
+       </property>
+       <property name="editable">
         <bool>true</bool>
        </property>
       </widget>
@@ -98,8 +98,8 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QTableView" name="parameterTableView"/>
-     <widget class="QTableView" name="resultsTableView"/>
+     <widget class="TableViewExtended" name="parameterTableView"/>
+     <widget class="TableViewExtended" name="resultsTableView"/>
     </widget>
    </item>
    <item>
@@ -198,6 +198,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TableViewExtended</class>
+   <extends>QTableView</extends>
+   <header>uiModules.TableViewExtended</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>
