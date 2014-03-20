@@ -160,7 +160,7 @@ class FitFunctionBase(object):
     def setConstant(self, name, value):
         setattr(self,name,value)
         
-    def update(self,parameters):
+    def update(self,parameters=None):
         pass
     
     def toXmlElement(self, parent):

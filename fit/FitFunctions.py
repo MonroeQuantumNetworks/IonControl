@@ -255,8 +255,8 @@ class LinearFit(FitFunctionBase):
         m, b = self.parameters if p is None else p
         return m*x + b
         
-    def update(self,parameters):
-        m, b = parameters
+    def update(self,parameters=None):
+        m, b = parameters if parameters is not None else self.parameters
         self.results['halfpoint'].value = (0.5-b)/m
 
         
