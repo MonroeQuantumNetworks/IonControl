@@ -20,16 +20,6 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QComboBox" name="comboBox">
-       <property name="contextMenuPolicy">
-        <enum>Qt::ActionsContextMenu</enum>
-       </property>
-       <property name="editable">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QToolButton" name="removeButton">
        <property name="minimumSize">
         <size>
@@ -42,7 +32,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
+         <normaloff>:/openicon/icons/edit-clear-locationbar-ltr.png</normaloff>:/openicon/icons/edit-clear-locationbar-ltr.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -51,6 +41,16 @@
         </size>
        </property>
        <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBox">
+       <property name="contextMenuPolicy">
+        <enum>Qt::ActionsContextMenu</enum>
+       </property>
+       <property name="editable">
         <bool>true</bool>
        </property>
       </widget>
@@ -635,14 +635,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>RedBlackComboBox</class>
-   <extends>QComboBox</extends>
-   <header>uiModules.RedBlackComboBox</header>
-  </customwidget>
-  <customwidget>
    <class>MagnitudeSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>uiModules.MagnitudeSpinBox</header>
+  </customwidget>
+  <customwidget>
+   <class>RedBlackComboBox</class>
+   <extends>QComboBox</extends>
+   <header>uiModules.RedBlackComboBox</header>
   </customwidget>
   <customwidget>
    <class>ParameterTree</class>
