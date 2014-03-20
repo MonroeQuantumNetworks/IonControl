@@ -59,6 +59,13 @@
     </layout>
    </item>
    <item>
+    <widget class="QCheckBox" name="normalizeCheck">
+     <property name="text">
+      <string>Normalize Filter Gain</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QComboBox" name="frequencyPlotCombo"/>
    </item>
    <item>

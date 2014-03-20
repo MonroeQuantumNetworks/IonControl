@@ -51,7 +51,7 @@ class Wavemeter(object):
         self.lastResult[channel] = (result, time())
         
     def get_frequency(self, channel, max_age = 3):
-        return self.set_frequency(self, None, channel, max_age )
+        return self.set_frequency(None, channel, max_age )
                    
     def set_frequency(self, freq, channel, max_age=3):
         self.getWavemeterData(channel, freq)
