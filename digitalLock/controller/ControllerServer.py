@@ -199,7 +199,7 @@ class DigitalLockControllerServer(Process):
     def unpackStreamRecord(self, itembuffer ):
         item = StreamDataItem()
         (errorsig, item.errorSigMax, item.errorSigMin, item.samples, freq0, freq1, freq2, item.errorSigSumSq, 
-         item.externalCount, item.externalMin, item.externalMax, externalSum ) =  struct.unpack('QhhIQQQQIHHQ',itembuffer)
+         item.externalMax, item.externalMin, item.externalCount, externalSum ) =  struct.unpack('QhhIQQQQHHIQ',itembuffer)
         if errorsig & 0xffff000000000000 != 0xfefe000000000000 or freq2 &  0xffff000000000000 != 0xefef000000000000:
             raise AlignmentException(len(self.streamData))
         if item.samples>0:
@@ -235,6 +235,10 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.ActivateTriggerIn( 0x40, 5 )
         
+    def setDCThreshold(self, value):
+        if self.xem:
+            self.xem.SetWireInValue(0x1d, value & 0xffff )
+            self.xem.UpdateWireIns()
             
     def setStreamEnabled(self, enabled ):
         if self.xem:

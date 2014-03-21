@@ -126,6 +126,7 @@ class LockStatus(Form, Base):
         self.onLockChange()
     
     def convertStatus(self, item):
+        logger = logging.getLogger(__name__)
         if self.lockSettings is None:
             return None
         status = StatusData()
@@ -171,10 +172,15 @@ class LockStatus(Form, Base):
         setSignificantDigits( status.externalMin, voltageQuantumExternal )
         status.externalMax = binToVoltageExternal( item.externalMax )
         setSignificantDigits( status.externalMax, voltageQuantumExternal )
-        status.externalAvg = binToVoltageExternal( item.externalSum / float(item.externalCount) )
-        setSignificantDigits( status.externalAvg, voltageQuantumExternal/(math.sqrt(item.externalCount) if item.externalCount>0 else 1))
-        status.externalDelta = binToVoltageExternal( abs(item.externalMax - item.externalMin)  )
-        setSignificantDigits( status.externalDelta, voltageQuantumExternal )
+        if item.externalCount>0:
+            status.externalAvg = binToVoltageExternal( item.externalSum / float(item.externalCount) )  
+            setSignificantDigits( status.externalAvg, voltageQuantumExternal/(math.sqrt(item.externalCount) if item.externalCount>0 else 1))
+            status.externalDelta = binToVoltageExternal( abs(item.externalMax - item.externalMin)  )
+            setSignificantDigits( status.externalDelta, voltageQuantumExternal )
+        else:
+            status.externalAvg = None
+            status.externalDelta = None
+        logger.debug("External min: {0} max: {1} samples: {2} sum: {3}".format(item.externalMin,item.externalMax,item.externalCount,item.externalSum))
         
         status.time = item.samples * sampleTime.toval('s')          
         return status
