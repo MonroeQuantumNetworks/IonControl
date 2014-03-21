@@ -5,7 +5,7 @@ import logging
 from modules.magnitude import mg
 from modules.enum import enum
 
-from controller.ControllerClient import freqToBin, voltageToBin 
+from controller.ControllerClient import freqToBin, voltageToBin, voltageToBinExternal
 
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockControl.ui')
 
@@ -32,6 +32,8 @@ class LockSettings(object):
         self.filter = LockControl.FilterOptions.NoFilter
         self.harmonicOutput = LockControl.HarmonicOutputOptions.Off
         self.mode = 0
+        self.dcThreshold = mg(0,'V')
+        self.enableDCThreshold = False
         
     def __setstate__(self, d):
         self.__dict__ = d
@@ -40,6 +42,8 @@ class LockSettings(object):
         self.__dict__.setdefault( 'filter', LockControl.FilterOptions.NoFilter )
         self.__dict__.setdefault( 'harmonicOutput', LockControl.HarmonicOutputOptions.Off )
         self.__dict__.setdefault( 'resonanceFrequency', mg(12642.817,'MHz') )
+        self.__dict__.setdefault( 'dcThreshold', mg(0,'V') )
+        self.__dict__.setdefault( 'enableDCThreshold', False )
         self.mode = self.mode & (~1)  # clear the lock enable bit
         
 
@@ -75,6 +79,7 @@ class LockControl(Form, Base):
         self.setupSpinBox('magPCoeff', 'pCoefficient', self.setpCoefficient, '')
         self.setupSpinBox('magICoeff', 'iCoefficient', self.setiCoefficient, '')
         self.setupSpinBox('magResonanceFreq', 'resonanceFrequency', self.setResonanceFreq, 'MHz')
+        self.setupSpinBox('magDCThreshold', 'dcThreshold', self.onDCThreshold, 'V')
         self.filterCombo.addItems( self.FilterOptions.mapping.keys() )
         self.filterCombo.setCurrentIndex( self.lockSettings.filter )
         self.filterCombo.currentIndexChanged[int].connect( self.onFilterChange )
@@ -84,6 +89,18 @@ class LockControl(Form, Base):
         self.autoLockButton.clicked.connect( self.onAutoLock )
         self.lockButton.clicked.connect( self.onLock )
         self.unlockButton.clicked.connect( self.onUnlock )
+        self.dataChanged.emit( self.lockSettings )
+        self.dcThresholdBox.setChecked( self.lockSettings.enableDCThreshold )
+        self.dcThresholdBox.stateChanged.connect( self.onDCThresholdEnable )
+        
+    def onDCThresholdEnable(self, state):
+        self.lockSettings.enableDCThreshold = state == QtCore.Qt.Checked
+        self.onDCThreshold(self.lockSettings.dcThreshold)
+        
+    def onDCThreshold(self, value):
+        binvalue = voltageToBinExternal(value) if self.lockSettings.enableDCThreshold else 0
+        self.controller.setDCThreshold( binvalue )
+        self.lockSettings.dcThreshold = value
         self.dataChanged.emit( self.lockSettings )
         
     def onFilterChange(self, filterMode):

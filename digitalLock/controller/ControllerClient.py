@@ -20,6 +20,8 @@ def check(number, command):
 frequencyQuantum = mg(1,'GHz') / 0xffffffffffff
 frequencyQuantumHz = frequencyQuantum.toval('Hz')
 voltageQuantum = mg(10,'V') / 0xffff
+voltageQuantumExternal = mg(2.5,'V') / 0xfff
+voltageQuantumExternal16 = mg(2.5,'V') / 0xffff
 voltageQuantumV = voltageQuantum.toval('V')
 clockTick = mg(20,'ns')
 sampleTime = mg(1,'us')
@@ -33,6 +35,9 @@ def binToFreqHz( binvalue ):
 def binToVoltage( binvalue ):
     return binvalue * voltageQuantum
 
+def binToVoltageExternal( binvalue ):
+    return binvalue * voltageQuantumExternal
+
 def binToVoltageV( binvalue ):
     return binvalue * voltageQuantumV
 
@@ -41,6 +46,9 @@ def freqToBin( mag_value ):
 
 def voltageToBin( mag_value ):
     return int((mag_value / voltageQuantum).toval()) & 0xffff 
+
+def voltageToBinExternal( mag_value ):
+    return int((mag_value / voltageQuantumExternal16).toval()) & 0xffff 
 
 class QueueReader(QtCore.QThread):      
     def __init__(self, controller, dataQueue, parent = None):

@@ -11,9 +11,10 @@ import functools
 from modules.DataDirectory import DataDirectory
 from datetime import datetime
 
-from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime
+from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime, binToVoltageExternal
 from modules.magnitude import mg
 import math
+from digitalLock.controller.ControllerClient import voltageQuantumExternal
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockStatus.ui')
 
 from modules.PyqtUtility import updateComboBoxItems
@@ -166,6 +167,15 @@ class LockStatus(Form, Base):
         status.errorSigRMS = binToVoltage( math.sqrt(item.errorSigSumSq/float(item.samples)) )
         setSignificantDigits( status.errorSigRMS, voltageQuantum )
         
+        status.externalMin = binToVoltageExternal( item.externalMin )
+        setSignificantDigits( status.externalMin, voltageQuantumExternal )
+        status.externalMax = binToVoltageExternal( item.externalMax )
+        setSignificantDigits( status.externalMax, voltageQuantumExternal )
+        status.externalAvg = binToVoltageExternal( item.externalSum / float(item.externalCount) )
+        setSignificantDigits( status.externalAvg, voltageQuantumExternal/(math.sqrt(item.externalCount) if item.externalCount>0 else 1))
+        status.externalDelta = binToVoltageExternal( abs(item.externalMax - item.externalMin)  )
+        setSignificantDigits( status.externalDelta, voltageQuantumExternal )
+        
         status.time = item.samples * sampleTime.toval('s')          
         return status
     
@@ -208,6 +218,9 @@ class LockStatus(Form, Base):
                 self.errorSignalLabel.setText( str(item.errorSigAvg))
                 self.errorSignalRangeLabel.setText( str(item.errorSigDelta))
                 self.errorSignalRMSLabel.setText( str(item.errorSigRMS))
+                
+                self.externalSignalLabel.setText( str(item.externalAvg))
+                self.externalSignalRangeLabel.setText( str(item.externalDelta) )
                 logger.debug("error  signal min {0} max {1}".format(item.errorSigMin, item.errorSigMax ))
                 self.newDataAvailable.emit( item )
         else:

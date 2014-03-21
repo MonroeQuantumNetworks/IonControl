@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>167</width>
-    <height>447</height>
+    <height>556</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -236,6 +236,55 @@
      </property>
      <property name="toolTip">
       <string>rms residual</string>
+     </property>
+     <property name="text">
+      <string>0</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_8">
+     <property name="text">
+      <string>External signal</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="externalSignalLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>average value</string>
+     </property>
+     <property name="text">
+      <string>0</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="externalSignalRangeLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>pk-pk</string>
      </property>
      <property name="text">
       <string>0</string>
