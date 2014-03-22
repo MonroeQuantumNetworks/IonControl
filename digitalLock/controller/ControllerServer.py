@@ -200,6 +200,9 @@ class DigitalLockControllerServer(Process):
         item = StreamDataItem()
         (errorsig, item.errorSigMax, item.errorSigMin, item.samples, freq0, freq1, freq2, item.errorSigSumSq, 
          item.externalMax, item.externalMin, item.externalCount, externalSum ) =  struct.unpack('QhhIQQQQHHIQ',itembuffer)
+        item.lockStatus = item.externalMax >> 14
+        item.externalMax &= 0xfff
+        item.externalMin &= 0xfff
         if errorsig & 0xffff000000000000 != 0xfefe000000000000 or freq2 &  0xffff000000000000 != 0xefef000000000000:
             raise AlignmentException(len(self.streamData))
         if item.samples>0:

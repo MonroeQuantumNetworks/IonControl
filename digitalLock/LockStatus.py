@@ -180,6 +180,7 @@ class LockStatus(Form, Base):
         else:
             status.externalAvg = None
             status.externalDelta = None
+        status.lockStatus = item.lockStatus if self.lockSettings.mode & 1 else -1
         logger.debug("External min: {0} max: {1} samples: {2} sum: {3}".format(item.externalMin,item.externalMax,item.externalCount,item.externalSum))
         
         status.time = item.samples * sampleTime.toval('s')          
@@ -200,7 +201,8 @@ class LockStatus(Form, Base):
             self.logFile.write("\n")
             self.logFile.flush()
         
-    
+    background = { -1: "#eeeeee", 0: "#ff0000", 3: "#00ff00", 1:"#ffff00", 2:"#ffff00" }
+    statusText = { -1: "Unlocked", 0:"No Light", 3: "Locked", 1: "Partly no light", 2: "Partly no light"}
     def onData(self, data=None ):
         logger = logging.getLogger()
         logger.debug( "received streaming data {0} {1}".format(len(data),data[-1] if len(data)>0 else ""))
@@ -210,7 +212,8 @@ class LockStatus(Form, Base):
                 converted = self.convertStatus(item)
                 if converted is not None:
                     self.lastLockData.append( converted )
-                    self.writeToLogFile(converted)
+                    if converted.lockStatus==3:
+                        self.writeToLogFile(converted)
         if self.lastLockData is not None:
             self.plotData()
             if self.lastLockData:
@@ -228,6 +231,9 @@ class LockStatus(Form, Base):
                 self.externalSignalLabel.setText( str(item.externalAvg))
                 self.externalSignalRangeLabel.setText( str(item.externalDelta) )
                 logger.debug("error  signal min {0} max {1}".format(item.errorSigMin, item.errorSigMax ))
+                
+                self.statusLabel.setStyleSheet( "QLabel {{ background: {0} }}".format( self.background[item.lockStatus]) )
+                self.statusLabel.setText( self.statusText[item.lockStatus] )
                 self.newDataAvailable.emit( item )
         else:
             logger.info("no lock control information")

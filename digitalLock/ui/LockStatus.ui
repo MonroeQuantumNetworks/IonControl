@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>167</width>
-    <height>556</height>
+    <width>205</width>
+    <height>540</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -294,17 +294,17 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+      <widget class="QLabel" name="statusLabel">
+       <property name="styleSheet">
+        <string notr="true"/>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+       <property name="text">
+        <string>Status</string>
        </property>
-      </spacer>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QToolButton" name="addTraceButton">
@@ -356,7 +356,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>179</height>
       </size>
      </property>
     </spacer>
