@@ -25,6 +25,7 @@ from modules.formatDelta import formatDelta
 from modules.magnitude import Magnitude
 from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from modules.mymath import max_iterable
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -209,14 +210,14 @@ class AutoLoad(UiForm,UiBase):
             from green to red. If the lock is not being used, the status bar is black."""
         enabledChannels = sum(1 if x.enable else 0 for x in self.settings.interlock.values() )
         outOfRangeChannels = sum(1 if x.enable and not x.inRange else 0 for x in self.settings.interlock.values() )
-        maxIdenticalReading = max(x.identicalCount if x.enable else 0 for x in self.settings.interlock.values() ) 
+        maxIdenticalReading = max_iterable(x.identicalCount if x.enable else 0 for x in self.settings.interlock.values() ) 
         if enabledChannels==0:
             #if no channels are checked, set bar on GUI to black
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
             self.allFreqsInRange.setToolTip("No channels are selected")
             self.outOfRangeCount = 0
         elif outOfRangeChannels==0:
-            if maxIdenticalReading<10:
+            if maxIdenticalReading is None or maxIdenticalReading<10:
                 #if all channels are in range, set bar on GUI to green
                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
                 self.allFreqsInRange.setToolTip("All laser frequencies are in range")
