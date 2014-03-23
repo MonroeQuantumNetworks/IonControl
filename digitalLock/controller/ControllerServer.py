@@ -346,8 +346,8 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x20)   # pipe_out_available
-            byteswaiting = (wirevalue & 0x7ffe)*2
-            if byteswaiting:
+            byteswaiting = (wirevalue & 0x0ffe)*2
+            if byteswaiting and wirevalue & 0x7000 == 0x2000:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa0, data)
                 overrun = (wirevalue & 0x8000)!=0
