@@ -189,7 +189,13 @@ class AutoLoad(UiForm,UiBase):
         if channel in self.settings.interlock:
             ilChannel = self.settings.interlock[channel]
             if data.error()==0:
-                self.tableModel.setCurrent( channel, round(float(data.readAll()), 4) )
+                value = float(data.readAll())
+                self.tableModel.setCurrent( channel, round(value, 4) )
+                if ilChannel.lastReading==value:
+                    ilChannel.identicalCount += 1
+                else:
+                    ilChannel.identicalCount = 0 
+                ilChannel.lastReading = value
             #freq_string = "{0:.4f}".format(self.channelResult[channel]) + " GHz"
         #read the wavemeter channel once per second
             if ilChannel.enable:
@@ -203,16 +209,22 @@ class AutoLoad(UiForm,UiBase):
             from green to red. If the lock is not being used, the status bar is black."""
         enabledChannels = sum(1 if x.enable else 0 for x in self.settings.interlock.values() )
         outOfRangeChannels = sum(1 if x.enable and not x.inRange else 0 for x in self.settings.interlock.values() )
+        maxIdenticalReading = max(x.identicalCount if x.enable else 0 for x in self.settings.interlock.values() ) 
         if enabledChannels==0:
             #if no channels are checked, set bar on GUI to black
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
             self.allFreqsInRange.setToolTip("No channels are selected")
             self.outOfRangeCount = 0
         elif outOfRangeChannels==0:
-            #if all channels are in range, set bar on GUI to green
-            self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
-            self.allFreqsInRange.setToolTip("All laser frequencies are in range")
-            self.outOfRangeCount = 0
+            if maxIdenticalReading<10:
+                #if all channels are in range, set bar on GUI to green
+                self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
+                self.allFreqsInRange.setToolTip("All laser frequencies are in range")
+                self.outOfRangeCount = 0
+            else:
+                self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(198, 198, 0)}")
+                self.allFreqsInRange.setToolTip("All laser frequencies seem in range but some readings are struck")
+                self.outOfRangeCount += 1             
         else:
             #Because of the bug where the wavemeter reads incorrectly after calibration,
             #Loading is only inhibited after 10 consecutive bad measurements
