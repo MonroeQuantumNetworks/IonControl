@@ -29,11 +29,12 @@ class Settings:
     def __setstate__(self, state):
         self.__dict__ = state
 
-def bitEvaluate(numChannels, thisval, lastval=None, channelOffset=0):
+def bitEvaluate(numChannels, thisval, lastval=None, channelOffset=0, trigger=False):
+    offValue = 0 if trigger else -1
     if lastval is None:
-        return [(bit+channelOffset,1 if thisval&(1<<bit) else -1) for bit in range(numChannels)]
-    return [(bit+channelOffset,0 if thisval&(1<<bit)==lastval&(1<<bit) else 1 if thisval&(1<<bit) else -1) for bit in range(numChannels)]
-    
+        return [(bit+channelOffset,1 if thisval&(1<<bit) else offValue) for bit in range(numChannels)]
+    return [(bit+channelOffset,0 if thisval&(1<<bit)==lastval&(1<<bit) else 1 if thisval&(1<<bit) else offValue) for bit in range(numChannels)]
+   
 
 class LogicAnalyzer(Form, Base ):
     OpStates = enum('stopped','running','single','idle') #added idle in response to exception
@@ -145,7 +146,7 @@ class LogicAnalyzer(Form, Base ):
         if logicData.trigger:
             lastval = None
             for clockcycle, value in logicData.trigger:
-                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( bitEvaluate(self.settings.numTriggerChannels,value,lastval,inext) )
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( bitEvaluate(self.settings.numTriggerChannels,value,lastval,inext, trigger=True) )
                 lastval = value
         self.traceTableModel.setPulseData(self.pulseData)
         self.traceTableView.resizeColumnsToContents()
