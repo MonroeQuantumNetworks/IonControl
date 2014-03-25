@@ -28,6 +28,10 @@ from pyparsing import ParseException
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
+def getPpFileName( filename ):
+    base, _ = os.path.splitext(filename)
+    return base+".pp"
+
 class ConfiguredParams:
     def __init__(self):
         self.lastFilename = None
@@ -121,11 +125,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def loadpppFile(self, path):
         self.pppSourcePath = path
         _, self.pppSourceFile = os.path.split(path)
-        base, _ = os.path.splitext(path)
         with open(path,"r") as f:
             self.pppSource = f.read()
         self
-        ppFilename = base+".pp"
+        ppFilename = getPpFileName(path)
         self.compileppp(ppFilename)
         if self.pppCompileException is None:
             self.loadFile(ppFilename, cache=False)
@@ -164,7 +167,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         logger = logging.getLogger(__name__)
         logger.debug( "loadFile {0}".format( path ) )
         if self.combinedDict is not None and self.configParams.lastFilename is not None:
-            self.config[(self.configname,self.configParams.lastFilename)] = self.combinedDict
+            self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
         self.configParams.lastFilename = path
         key = self.configParams.lastFilename
         compileexception = None
