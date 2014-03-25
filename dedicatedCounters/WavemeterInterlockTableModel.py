@@ -15,6 +15,14 @@ class InterlockChannel:
         self.max = mg(1, 'GHz')
         self.current = 0
         self.inRange = False
+        self.identicalCount = 0
+        self.lastReading = 0  # same as current only this one has full precision
+        
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__dict__.setdefault( 'identicalCount', 0 )
+        self.__dict__.setdefault( 'lastReading', 0 )
+        
         
 class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     getWavemeterData = QtCore.pyqtSignal( object )

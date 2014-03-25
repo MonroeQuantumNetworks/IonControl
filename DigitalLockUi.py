@@ -23,7 +23,6 @@ from digitalLock.TraceControl import TraceControl
 from digitalLock.LockStatus import LockStatus
 
 from pyqtgraph.dockarea import DockArea, Dock
-from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'digitalLock\ui\DigitalLockUi.ui')

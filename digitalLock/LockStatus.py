@@ -8,10 +8,13 @@ from trace.Trace import Trace
 from operator import attrgetter, methodcaller
 import numpy
 import functools
+from modules.DataDirectory import DataDirectory
+from datetime import datetime
 
-from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime
+from controller.ControllerClient import frequencyQuantum, voltageQuantum, binToFreq, binToVoltage, sampleTime, binToVoltageExternal
 from modules.magnitude import mg
 import math
+from digitalLock.controller.ControllerClient import voltageQuantumExternal
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockStatus.ui')
 
 from modules.PyqtUtility import updateComboBoxItems
@@ -49,6 +52,7 @@ class LockStatus(Form, Base):
         self.plotDict = plotDict
         self.settings = self.config.get("LockStatus.settings",Settings())
         self.lastXValue = 0
+        self.logFile = None
 
     def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
         box = getattr(self, localname)
@@ -104,7 +108,11 @@ class LockStatus(Form, Base):
         
     def setAverageTime(self, value):
         self.settings.averageTime = value        
-        self.controller.setStreamAccum(int((value / sampleTime).toval()))
+        mySampleTime = sampleTime.copy()
+        if self.lockSettings is not None and self.lockSettings.filter >0:
+            mySampleTime *= 2
+        accumNumber = int((value / mySampleTime ).toval())
+        self.controller.setStreamAccum(accumNumber)
         
     def setMaxSamples(self, samples):
         self.settings.maxSamples = samples
@@ -114,9 +122,11 @@ class LockStatus(Form, Base):
     
     def onControlChanged(self, value):
         self.lockSettings = value
+        self.setAverageTime(self.settings.averageTime)
         self.onLockChange()
     
     def convertStatus(self, item):
+        logger = logging.getLogger(__name__)
         if self.lockSettings is None:
             return None
         status = StatusData()
@@ -138,7 +148,7 @@ class LockStatus(Form, Base):
         setSignificantDigits(status.referenceFrequencyMin, frequencyQuantum)
 
         binvalue *= self.lockSettings.harmonic
-        status.outputFrequencyDelta = binToFreq(binvalue)
+        status.outputFrequencyDelta = abs(binToFreq(binvalue))
         setSignificantDigits(status.outputFrequencyDelta, frequencyQuantum*self.lockSettings.harmonic)
         status.outputFrequencyMax = self.lockSettings.outputFrequency + binToFreq(item.freqMax)* self.lockSettings.harmonic
         setSignificantDigits(status.outputFrequencyMax, frequencyQuantum)
@@ -158,9 +168,41 @@ class LockStatus(Form, Base):
         status.errorSigRMS = binToVoltage( math.sqrt(item.errorSigSumSq/float(item.samples)) )
         setSignificantDigits( status.errorSigRMS, voltageQuantum )
         
+        status.externalMin = binToVoltageExternal( item.externalMin )
+        setSignificantDigits( status.externalMin, voltageQuantumExternal )
+        status.externalMax = binToVoltageExternal( item.externalMax )
+        setSignificantDigits( status.externalMax, voltageQuantumExternal )
+        if item.externalCount>0:
+            status.externalAvg = binToVoltageExternal( item.externalSum / float(item.externalCount) )  
+            setSignificantDigits( status.externalAvg, voltageQuantumExternal/(math.sqrt(item.externalCount) if item.externalCount>0 else 1))
+            status.externalDelta = binToVoltageExternal( abs(item.externalMax - item.externalMin)  )
+            setSignificantDigits( status.externalDelta, voltageQuantumExternal )
+        else:
+            status.externalAvg = None
+            status.externalDelta = None
+        status.lockStatus = item.lockStatus if self.lockSettings.mode & 1 else -1
+        logger.debug("External min: {0} max: {1} samples: {2} sum: {3}".format(item.externalMin,item.externalMax,item.externalCount,item.externalSum))
+        
         status.time = item.samples * sampleTime.toval('s')          
         return status
     
+    logFrequency = ['regulatorFrequency', 'referenceFrequency', 'referenceFrequencyMin', 'referenceFrequencyMax', 
+                      'outputFrequency', 'outputFrequencyMin', 'outputFrequencyMax']
+    logVoltage = ['errorSigAvg', 'errorSigMin', 'errorSigMax', 'errorSigRMS']                 
+    def writeToLogFile(self, status):
+        if self.lockSettings and self.lockSettings.mode & 1 == 1:  # if locked
+            if not self.logFile:
+                self.logFile = open( DataDirectory().sequencefile("LockLog.txt")[0], "w" )
+                self.logFile.write( " ".join( self.logFrequency + self.logVoltage ) )
+                self.logFile.write( "\n" )
+            self.logFile.write( "{0} ".format(datetime.now()))
+            self.logFile.write(  " ".join( map( repr, map( methodcaller('toval','Hz'), (getattr(status, field) for field in self.logFrequency) ) ) ) )
+            self.logFile.write(  " ".join( map( repr, map( methodcaller('toval','mV'), (getattr(status, field) for field in self.logVoltage) ) ) ) )
+            self.logFile.write("\n")
+            self.logFile.flush()
+        
+    background = { -1: "#eeeeee", 0: "#ff0000", 3: "#00ff00", 1:"#ffff00", 2:"#ffff00" }
+    statusText = { -1: "Unlocked", 0:"No Light", 3: "Locked", 1: "Partly no light", 2: "Partly no light"}
     def onData(self, data=None ):
         logger = logging.getLogger()
         logger.debug( "received streaming data {0} {1}".format(len(data),data[-1] if len(data)>0 else ""))
@@ -169,7 +211,9 @@ class LockStatus(Form, Base):
             for item in data:
                 converted = self.convertStatus(item)
                 if converted is not None:
-                    self.lastLockData.append( converted)
+                    self.lastLockData.append( converted )
+                    if converted.lockStatus==3:
+                        self.writeToLogFile(converted)
         if self.lastLockData is not None:
             self.plotData()
             if self.lastLockData:
@@ -183,7 +227,13 @@ class LockStatus(Form, Base):
                 self.errorSignalLabel.setText( str(item.errorSigAvg))
                 self.errorSignalRangeLabel.setText( str(item.errorSigDelta))
                 self.errorSignalRMSLabel.setText( str(item.errorSigRMS))
+                
+                self.externalSignalLabel.setText( str(item.externalAvg))
+                self.externalSignalRangeLabel.setText( str(item.externalDelta) )
                 logger.debug("error  signal min {0} max {1}".format(item.errorSigMin, item.errorSigMax ))
+                
+                self.statusLabel.setStyleSheet( "QLabel {{ background: {0} }}".format( self.background[item.lockStatus]) )
+                self.statusLabel.setText( self.statusText[item.lockStatus] )
                 self.newDataAvailable.emit( item )
         else:
             logger.info("no lock control information")

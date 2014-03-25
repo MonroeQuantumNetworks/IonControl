@@ -16,8 +16,8 @@ from PyQt4.QtCore import QMutex
 from PyQt4.QtCore import QMutexLocker
 from PyQt4.QtCore import QThread
 from PyQt4.QtGui import QApplication
-import crcmod   #@UnresolvedImport
-import crcmod.predefined #@UnresolvedImport
+import crcmod   #@UnresolvedImport @UnusedImport
+import crcmod.predefined #@UnresolvedImport @UnusedImport
 import ftd2xx #@UnresolvedImport
 import numpy
 
@@ -120,7 +120,7 @@ class TimestampWorker(QThread):
             self.roistop = roistop
             self.numberOfBins = (roistop-roistart)/binwidth+1
             self.histogram = numpy.zeros(self.numberOfBins)
-            logging.info( "command {0:x}".format(0xff & ( 1<<self.channel | 1<<self.triggerchannel)) )
+            logger.info( "command {0:x}".format(0xff & ( 1<<self.channel | 1<<self.triggerchannel)) )
             self.clearStatus()
             command = struct.pack('>BB', 0x12, 0xff & ( 1<<self.channel | 1<<self.triggerchannel)  )
             self.Connection.write(command)
@@ -158,7 +158,7 @@ class TimestampWorker(QThread):
         try:
             self.histogram[(delta-self.roistart)/self.binwidth] += 1
         except:
-            logging.debug( "out of range" )
+            logger.debug( "out of range" )
 
     def run(self):
         try:
