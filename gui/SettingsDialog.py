@@ -59,15 +59,18 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.comboBoxBitfiles.addItem(item)
         if self.configSettings.lastBitfile:
             self.comboBoxBitfiles.setCurrentIndex( self.comboBoxBitfiles.findText(self.configSettings.lastBitfile))
-        if self.configSettings.lastInstrument in self.deviceMap and not self.configSettings.showOnStartup:
-            try:
-                self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
-                if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
-                    self.onUploadBitfile()
-                else:
-                    self.pulser.openBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
-            except IOError as e:
-                logging.getLogger(__name__).error( e.strerror )
+        if self.configSettings.lastInstrument in self.deviceMap:
+            self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
+            if not self.configSettings.showOnStartup:
+                try:
+                    if self.configSettings.autoUpload and self.configSettings.lastBitfile is not None:
+                        self.onUploadBitfile()
+                    else:
+                        self.pulser.openBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
+                except IOError as e:
+                    logging.getLogger(__name__).error( e.strerror )
+                    self.exec_()
+            else:
                 self.exec_()
         else:
             self.exec_()
