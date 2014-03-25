@@ -49,8 +49,15 @@ class VariableDictionary(SequenceDict):
                 super(VariableDictionary,self).__setitem__(name, var)
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):
-                var.value, dependencies = self.expression.evaluate(var.strvalue, self.valueView, listDependencies=True)
-                self.addDependencies(self.dependencyGraph, dependencies, name)
+                try:
+                    var.value, dependencies = self.expression.evaluate(var.strvalue, self.valueView, listDependencies=True)
+                    self.addDependencies(self.dependencyGraph, dependencies, name)
+                    var.strerror = None
+                except KeyError as e:
+                    logging.getLogger(__name__).error( str(e) )
+                    var.strerror = str(e)
+            else:
+                var.strerror = None
         self.recalculateAll()
         
     def __setitem__(self, key, value):
@@ -77,16 +84,20 @@ class VariableDictionary(SequenceDict):
     def setStrValue(self, name, strvalue):
         """update the variable value with strvalue and recalculate as necessary"""  
         var = self[name]
-        result, dependencies = self.expression.evaluate(strvalue, self.valueView, listDependencies=True )
-        graph = self.dependencyGraph.copy()            # make a copy of the graph. In case of cyclic dependencies we do not want o leave any changes
-        for edge in list(graph.in_edges([name])):      # remove all the inedges, dependencies from other variables might be gone
-            graph.remove_edge(*edge)
-        self.addDependencies(graph, dependencies, name) # add all new dependencies
-        if isinstance(result, Magnitude) and result.dimensionless():
-            result.output_prec(0)
-        var.value = result
-        var.strvalue = strvalue
-        self.dependencyGraph = graph
+        try:
+            result, dependencies = self.expression.evaluate(strvalue, self.valueView, listDependencies=True )
+            graph = self.dependencyGraph.copy()            # make a copy of the graph. In case of cyclic dependencies we do not want o leave any changes
+            for edge in list(graph.in_edges([name])):      # remove all the inedges, dependencies from other variables might be gone
+                graph.remove_edge(*edge)
+            self.addDependencies(graph, dependencies, name) # add all new dependencies
+            if isinstance(result, Magnitude) and result.dimensionless():
+                result.output_prec(0)
+            var.value = result
+            var.strvalue = strvalue
+            self.dependencyGraph = graph
+            var.strerror = None
+        except KeyError as e:
+            var.strerror = str(e)
         return self.recalculateDependent(name)
         
     def setEncodingIndex(self, index, encoding):
@@ -109,7 +120,11 @@ class VariableDictionary(SequenceDict):
         if node in self:
             var = self[node]
             if hasattr(var,'strvalue'):
-                var.value = self.expression.evaluate(var.strvalue, self.valueView)
+                try:
+                    var.value = self.expression.evaluate(var.strvalue, self.valueView)
+                    var.strerror = None
+                except KeyError as e:
+                    var.strerror = str(e)
             else:
                 logging.getLogger(__name__).warning("variable {0} does not have strvalue.".format(var))
             

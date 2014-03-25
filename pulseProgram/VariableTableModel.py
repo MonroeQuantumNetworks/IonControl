@@ -6,7 +6,7 @@ Created on Fri Feb 08 22:02:08 2013
 """
 import logging
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 import sip
 
 from pulseProgram.VariableDictionary import CyclicDependencyException
@@ -27,6 +27,8 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda var: QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
                              (QtCore.Qt.DisplayRole,1):    lambda var: var.name,
                              (QtCore.Qt.DisplayRole,2):    lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                             (QtCore.Qt.BackgroundColorRole,2): lambda var: QtGui.QColor( 255, 200, 200)  if hasattr(var,'strerror') and var.strerror else QtCore.Qt.white,
+                             (QtCore.Qt.ToolTipRole,2):    lambda var: var.strerror if hasattr(var,'strerror') and var.strerror else None,
                              (QtCore.Qt.DisplayRole,3):    lambda var: str(var.encoding),
                              (QtCore.Qt.DisplayRole,4):    lambda var: str(var.value),
                              (QtCore.Qt.EditRole,2):       lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
