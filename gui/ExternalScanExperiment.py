@@ -130,12 +130,19 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 if data.final and data.exitcode not in [0,0xffff]:
                     self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
                 elif self.externalParameterIndex < len(self.scan.list):
-                    self.externalParameter.setValue( self.scan.list[self.externalParameterIndex])
-                    self.pulserHardware.ppStart()
-                    logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )
+                    self.dataBottomHalf()
                     self.progressUi.onData( self.currentIndex )  
                 else:
                     self.finalizeData(reason='end of scan')
                     self.generator.dataOnFinal(self, self.progressUi.state )
                     logger.info("Scan Completed")
 
+    def dataBottomHalf(self):
+        logger = logging.getLogger(__name__)
+        if self.progressUi.state == self.OpStates.running:
+            if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
+                """We are done adjusting"""
+                self.pulserHardware.ppStart()
+                logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )
+            else:
+                QtCore.QTimer.singleShot(100,self.dataBottomHalf)

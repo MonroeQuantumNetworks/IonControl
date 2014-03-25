@@ -63,23 +63,26 @@ class SinSqFit(FitFunctionBase):
     name = "Sin2"
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  'A*sin^2(pi/(2*T)*x+theta)+O'
-        self.parameterNames = [ 'A', 'T', 'theta', 'O' ]
-        self.parameters = [1,100,0,0]
-        self.startParameters = [1,100,0,0]
+        self.functionString = '(max-min)*sin^2( pi*(x-x0)/(2*T) )+min'
+        self.parameterNames = [  'T', 'x0', 'max', 'min' ]
+        self.parameters = [100,0,1,0]
+        self.startParameters = [100,0,1,0]
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
         
+    def functionEval(self, x, T, x0, max_, min_ ):
+        return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/T*(x-x0)))+min_
+    
     def residuals(self,p, y, x, sigma):
-        A,T,theta,O = self.allFitParameters(p)
+        T,x0,max_,min_ = self.allFitParameters(p)
         if sigma is not None:
-            return (y-A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O)/sigma
+            return (y-self.functionEval(x, T, x0, max_, min_))/sigma
         else:
-            return y-A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
+            return y-self.functionEval(x, T, x0, max_, min_)
         
     def value(self,x,p=None):
-        A,T,theta, O = self.parameters if p is None else p
-        return A*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
+        T,x0,max_,min_ = self.parameters if p is None else p
+        return self.functionEval(x, T, x0, max_, min_)
   
 class SinSqExpFit(FitFunctionBase):
     name = "Sin2 Exponential Decay"
@@ -252,8 +255,8 @@ class LinearFit(FitFunctionBase):
         m, b = self.parameters if p is None else p
         return m*x + b
         
-    def update(self,parameters):
-        m, b = parameters
+    def update(self,parameters=None):
+        m, b = parameters if parameters is not None else self.parameters
         self.results['halfpoint'].value = (0.5-b)/m
 
         
@@ -301,7 +304,7 @@ def fromXmlElement(element):
         value = float(parameter.text)
         function.parameters[index] = value
         function.parameterNames[index] = parameter.attrib['name']
-        function.parametersConfidence[index] = float(parameter.attrib['confidence'])
+        function.parametersConfidence[index] = float(parameter.attrib['confidence']) if parameter.attrib['confidence'] is not None else None
         function.parameterEnabled[index] = parameter.attrib['enabled'] == "True"
     for index, parameter in enumerate(element.findall("Result")):
         name= parameter.attrib['name']

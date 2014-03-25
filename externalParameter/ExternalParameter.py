@@ -78,7 +78,7 @@ class ExternalParameterBase(object):
         return arrived
     
     def _setValue(self, v):
-        pass
+        self.value = v
     
     def currentValue(self):
         """
@@ -357,13 +357,14 @@ class LaserWavemeterLockScan(ExternalParameterBase):
     
     className = "Laser Wavemeter Lock"
     dimension = magnitude.mg(1,'GHz')
-    def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
+    def __init__(self,name,config,instrument=None):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
-        self.wavemeter = Wavemeter()
-        self.savedValue = 0
+        self.wavemeter = Wavemeter(instrument)
+        self.savedValue = None
         logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
         self.value = self.savedValue
+        self.setDefaults()
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -376,15 +377,18 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         Move one steps towards the target, return current value
         """
         logger = logging.getLogger(__name__)       
-        self.currentFrequency = self.wavemeter.set_frequency(value, self.settings.channel, self.settings.max_age)
-        self.value = value
+        if value is not None:
+            self.currentFrequency = self.wavemeter.set_frequency(value, self.settings.channel, self.settings.maxAge)
+            self.value = value
+            if self.savedValue is None:
+                self.savedValue = self.currentFrequency
         logger.debug( "setFrequency {0}, current frequency {1}".format(self.value, self.currentFrequency) )
         return self.currentFrequency is not None and abs(self.currentFrequency-self.value)<self.settings.maxDeviation
            
                 
     def currentExternalValue(self):
         logger = logging.getLogger(__name__)
-        self.lastExternalValue = self.wavemeter.get_frequency(self.settings.channel) 
+        self.lastExternalValue = self.wavemeter.get_frequency(self.settings.channel, self.settings.maxAge ) 
         logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)
         self.currentFrequency = self.wavemeter.get_frequency(self.settings.channel, self.settings.maxAge )

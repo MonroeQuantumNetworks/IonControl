@@ -183,22 +183,26 @@ class DigitalLockControllerServer(Process):
         data, self.streamData.overrun = self.readStreamData(48)
         if data:
             self.streamBuffer.extend( data )
-            while len(self.streamBuffer)>=48:
+            while len(self.streamBuffer)>=64:
                 try:
-                    for itembuffer in sliceview(self.streamBuffer,48):
+                    for itembuffer in sliceview(self.streamBuffer,64):
                         self.unpackStreamRecord(itembuffer)
                     if len(self.streamData)>0:
                         self.dataQueue.put( self.streamData )
                         self.streamData = StreamData()     
 
-                    self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 48) )           
+                    self.streamBuffer = bytearray( sliceview_remainder(self.streamBuffer, 64) )           
                 except AlignmentException as e:
                     logger.info("data not aligned skipping 2 bytes")
                     self.streamBuffer = bytearray( self.streamBuffer[e.length*48+2:] )  # e.length holds the number of successfully read records
      
     def unpackStreamRecord(self, itembuffer ):
         item = StreamDataItem()
-        (errorsig, item.errorSigMax, item.errorSigMin, item.samples, freq0, freq1, freq2, item.errorSigSumSq ) = struct.unpack('QhhIQQQQ',itembuffer)
+        (errorsig, item.errorSigMax, item.errorSigMin, item.samples, freq0, freq1, freq2, item.errorSigSumSq, 
+         item.externalMax, item.externalMin, item.externalCount, externalSum ) =  struct.unpack('QhhIQQQQHHIQ',itembuffer)
+        item.lockStatus = item.externalMax >> 14
+        item.externalMax &= 0xfff
+        item.externalMin &= 0xfff
         if errorsig & 0xffff000000000000 != 0xfefe000000000000 or freq2 &  0xffff000000000000 != 0xefef000000000000:
             raise AlignmentException(len(self.streamData))
         if item.samples>0:
@@ -206,6 +210,7 @@ class DigitalLockControllerServer(Process):
             item.freqMin = twos_comp( freq1 & 0xffffffffffff, 48 )
             item.freqMax = twos_comp( freq2 & 0xffffffffffff, 48 )
             item.freqSum = twos_comp( (freq0 <<8) | (freq1 >> 56), 72 ) 
+            item.externalSum = externalSum & 0xfffffffffff
             self.streamData.append(item)
             
      
@@ -233,6 +238,10 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.ActivateTriggerIn( 0x40, 5 )
         
+    def setDCThreshold(self, value):
+        if self.xem:
+            self.xem.SetWireInValue(0x1d, value & 0xffff )
+            self.xem.UpdateWireIns()
             
     def setStreamEnabled(self, enabled ):
         if self.xem:
@@ -337,8 +346,8 @@ class DigitalLockControllerServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x20)   # pipe_out_available
-            byteswaiting = (wirevalue & 0x7ffe)*2
-            if byteswaiting:
+            byteswaiting = (wirevalue & 0x0ffe)*2
+            if byteswaiting and wirevalue & 0x7000 == 0x2000:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa0, data)
                 overrun = (wirevalue & 0x8000)!=0

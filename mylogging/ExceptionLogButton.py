@@ -60,6 +60,8 @@ class ExceptionLogButton( QtGui.QToolButton ):
         if self.exceptionsListed==0:
             self.setIcon(self.ExceptionsIcon)
             self.addClearAllAction()
+        elif self.exceptionsListed>100:
+            self.removeAction( self.myMenu.actions()[1] )
         self.myMenu.addAction(action)
         myMenuItem.deleteButton.clicked.connect( functools.partial(self.removeMessage, action) )
         self.exceptionsListed += 1

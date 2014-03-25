@@ -13,7 +13,7 @@ from datetime import datetime
 import functools
 import logging
 
-from PyQt4 import QtCore, QtNetwork
+from PyQt4 import QtCore, QtNetwork, QtGui
 import PyQt4.uic
 
 from dedicatedCounters.LoadingHistoryModel import LoadingHistoryModel
@@ -25,6 +25,7 @@ from modules.formatDelta import formatDelta
 from modules.magnitude import Magnitude
 from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from modules.mymath import max_iterable
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -138,6 +139,16 @@ class AutoLoad(UiForm,UiBase):
         self.setIdle()
         self.pulser.ppActiveChanged.connect( self.setDisabled )
         
+        # Actions
+        self.createAction("Last ion is still trapped", self.onIonIsStillTrapped )
+        self.createAction("Trapped an ion now", self.onTrappedIonNow )
+        self.autoLoadTab.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        
+    def createAction(self, text, slot ):
+        action = QtGui.QAction( text, self )
+        action.triggered.connect( slot )
+        self.autoLoadTab.addAction( action )
+        
     def deleteFromHistory(self):
         for row in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=True):
             self.historyTableModel.removeRow(row)
@@ -179,7 +190,13 @@ class AutoLoad(UiForm,UiBase):
         if channel in self.settings.interlock:
             ilChannel = self.settings.interlock[channel]
             if data.error()==0:
-                self.tableModel.setCurrent( channel, round(float(data.readAll()), 4) )
+                value = float(data.readAll())
+                self.tableModel.setCurrent( channel, round(value, 4) )
+                if ilChannel.lastReading==value:
+                    ilChannel.identicalCount += 1
+                else:
+                    ilChannel.identicalCount = 0 
+                ilChannel.lastReading = value
             #freq_string = "{0:.4f}".format(self.channelResult[channel]) + " GHz"
         #read the wavemeter channel once per second
             if ilChannel.enable:
@@ -193,16 +210,22 @@ class AutoLoad(UiForm,UiBase):
             from green to red. If the lock is not being used, the status bar is black."""
         enabledChannels = sum(1 if x.enable else 0 for x in self.settings.interlock.values() )
         outOfRangeChannels = sum(1 if x.enable and not x.inRange else 0 for x in self.settings.interlock.values() )
+        maxIdenticalReading = max_iterable(x.identicalCount if x.enable else 0 for x in self.settings.interlock.values() ) 
         if enabledChannels==0:
             #if no channels are checked, set bar on GUI to black
             self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 0, 0)}")
             self.allFreqsInRange.setToolTip("No channels are selected")
             self.outOfRangeCount = 0
         elif outOfRangeChannels==0:
-            #if all channels are in range, set bar on GUI to green
-            self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
-            self.allFreqsInRange.setToolTip("All laser frequencies are in range")
-            self.outOfRangeCount = 0
+            if maxIdenticalReading is None or maxIdenticalReading<10:
+                #if all channels are in range, set bar on GUI to green
+                self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(0, 198, 0)}")
+                self.allFreqsInRange.setToolTip("All laser frequencies are in range")
+                self.outOfRangeCount = 0
+            else:
+                self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(198, 198, 0)}")
+                self.allFreqsInRange.setToolTip("All laser frequencies seem in range but some readings are struck")
+                self.outOfRangeCount += 1             
         else:
             #Because of the bug where the wavemeter reads incorrectly after calibration,
             #Loading is only inhibited after 10 consecutive bad measurements
@@ -241,6 +264,8 @@ class AutoLoad(UiForm,UiBase):
     def setIdle(self):
         """Execute when the loading process is set to idle. Disable timer, do not
            pay attention to the count rate, and turn off the ionization laser and oven."""
+        if self.status == self.StatusOptions.Trapped:
+            self.historyTableModel.updateLast('trappingTime',datetime.now()-self.started)
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
         if self.timer:
@@ -253,6 +278,7 @@ class AutoLoad(UiForm,UiBase):
             self.dataSignalConnected = False
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
+
     
     def setPreheat(self):
         """Execute when the loading process begins. Turn on timer, turn on oven."""
@@ -326,6 +352,26 @@ class AutoLoad(UiForm,UiBase):
         self.status = self.StatusOptions.Disappeared
         self.disappearedAt = datetime.now()
         self.statusLabel.setText("Disappeared :(")
+
+    def onIonIsStillTrapped(self):
+        if self.status == self.StatusOptions.Idle and len(self.historyTableModel.history)>0:
+            self.timer = QtCore.QTimer()
+            self.timer.timeout.connect( self.onTimer )
+            self.timer.start(100)
+            self.started = self.historyTableModel.history[-1].trappedAt
+            self.checkStarted = self.started
+            self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
+            self.setTrapped(reappeared=True)                 
+        
+    def onTrappedIonNow(self):
+        if self.status == self.StatusOptions.Idle:
+            self.timer = QtCore.QTimer()
+            self.timer.timeout.connect( self.onTimer )
+            self.timer.start(100)
+            self.started = datetime.now()
+            self.checkStarted = self.started
+            self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
+            self.setTrapped()                 
     
     def onTimer(self):
         """Execute whenever the timer sends a timeout signal, which is every 100 ms.

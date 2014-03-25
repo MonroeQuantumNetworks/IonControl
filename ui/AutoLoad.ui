@@ -19,7 +19,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tab_3">
+     <widget class="QWidget" name="autoLoadTab">
       <attribute name="title">
        <string>Auto Load</string>
       </attribute>
@@ -35,6 +35,9 @@
             <iconset resource="Experiment.qrc">
              <normaloff>:/openicon/icons/media-playback-start-7.png</normaloff>:/openicon/icons/media-playback-start-7.png</iconset>
            </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -45,6 +48,9 @@
            <property name="icon">
             <iconset resource="Experiment.qrc">
              <normaloff>:/openicon/icons/media-playback-stop-7.png</normaloff>:/openicon/icons/media-playback-stop-7.png</iconset>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -91,7 +97,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_4">
+     <widget class="QWidget" name="settingsTab">
       <attribute name="title">
        <string>Settings</string>
       </attribute>
@@ -330,7 +336,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="interlockTab">
       <attribute name="title">
        <string>Wavemeter Interlock</string>
       </attribute>

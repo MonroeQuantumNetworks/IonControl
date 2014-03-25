@@ -91,7 +91,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
     def onIndexChanged(self,description):
         logger = logging.getLogger(__name__)
         if description!='':
-            logger.info( "New instrument {0} {1}".format(description, self.deviceMap[str(description)]) )
+            logger.info( "instrument '{0}' {1} {2}".format(description, self.deviceMap[str(description)].modelName, self.deviceMap[str(description)].serial) )
             self.settings.deviceSerial = self.deviceMap[str(description)].serial
             self.settings.deviceDescription = str(description)
             self.settings.deviceInfo = self.deviceMap[str(description)]
