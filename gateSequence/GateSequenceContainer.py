@@ -52,9 +52,9 @@ class GateSequenceContainer(object):
         return gateset
 
     def validateGate(self, name, gate):
-        logger = logging.getLogger(__name__)
         if gate not in self.gateDefinition.Gates:
             if gate in self.GateSequenceDict:
+                logger = logging.getLogger(__name__)
                 logger.info( "{0} {1}".format(gate, self.GateSequenceDict[gate] ) )
                 return self.validateGateSequence( gate, self.GateSequenceDict[gate] )
             else:
