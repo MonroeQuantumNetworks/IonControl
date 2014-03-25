@@ -42,7 +42,7 @@ decvalue = Word( nums ).setWhitespaceChars(" \t")
 hexvalue = Regex("0x[0-9a-f]+").setWhitespaceChars(" \t")
 value = hexvalue | decvalue
 assign = Literal("=").suppress()
-type_ = Keyword("parameter") | Keyword("shutter") | Keyword("masked_shutter") | Keyword("trigger") | Keyword("var") | Keyword("counter") | Keyword("exitcode")
+type_ = Keyword("parameter") | Keyword("shutter") | Keyword("masked_shutter") | Keyword("trigger") | Keyword("var") | Keyword("counter") | Keyword("exitcode") | Keyword("address")
 comparison = ( Literal("==") | Literal("!=") | Literal("<") | Literal(">") | Literal("<=") | Literal(">=") )
 addOperator = oneOf("+ -")
 not_ = Keyword("not")
