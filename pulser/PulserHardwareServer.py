@@ -154,6 +154,8 @@ class PulserHardwareServer(Process):
         self.logicAnalyzerStopAtEnd = False
         self.logicAnalyzerData = LogicAnalyzerData()
         
+        self.logicAnalyzerBuffer = bytearray()
+        
     def run(self):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
@@ -193,25 +195,28 @@ class PulserHardwareServer(Process):
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
             logicAnalyzerData, _ = self.ppReadLogicAnalyzerData(8)
-            if logicAnalyzerData is not None:
-                for s in sliceview(logicAnalyzerData,8):
-                    (code, ) = struct.unpack('Q',s)
-                    time = (code&0xffffff) + self.logicAnalyzerData.countOffset
-                    pattern = (code >> 24) & 0x3fffffffff
-                    header = (code >> 62 )
-                    if code==0x8000000000000000:  # overrun marker
-                        self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
-                    elif code&0xffffffffff000000==0x800000000f000000:  # end marker
-                        self.logicAnalyzerData.stopMarker = time
-                        self.dataQueue.put( self.logicAnalyzerData )
-                        self.logicAnalyzerData = LogicAnalyzerData()
-                    elif header==0: # trigger
-                        self.logicAnalyzerData.trigger.append( (time,pattern) )
-                    elif header==1: # standard
-                        self.logicAnalyzerData.data.append( (time,pattern) )  
-                    elif header==3: # aux data
-                        self.logicAnalyzerData.auxData.append( (time,pattern))                                          
-                    #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+            if logicAnalyzerData:
+                self.logicAnalyzerBuffer.extend(logicAnalyzerData)
+            for s in sliceview(self.logicAnalyzerBuffer,8):
+                (code, ) = struct.unpack('Q',s)
+                time = (code&0xffffff) + self.logicAnalyzerData.countOffset
+                pattern = (code >> 24) & 0x3fffffffff
+                header = (code >> 62 )
+                if code==0x8000000000000000:  # overrun marker
+                    self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
+                elif code&0xffffffffff000000==0x800000000f000000:  # end marker
+                    self.logicAnalyzerData.stopMarker = time
+                    self.dataQueue.put( self.logicAnalyzerData )
+                    self.logicAnalyzerData = LogicAnalyzerData()
+                elif header==0: # trigger
+                    self.logicAnalyzerData.trigger.append( (time,pattern) )
+                elif header==1: # standard
+                    self.logicAnalyzerData.data.append( (time,pattern) )  
+                elif header==3: # aux data
+                    self.logicAnalyzerData.auxData.append( (time,pattern))                                          
+                #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+            self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
+
                    
         data, self.data.overrun = self.ppReadData(4)
         if data:
@@ -654,5 +659,10 @@ class PulserHardwareServer(Process):
        
         
 def sliceview(view,length):
-    return tuple(buffer(view, i, length) for i in range(0, len(view), length))    
+    return tuple(buffer(view, i, length) for i in range(0, len(view)-length+1, length))
 
+def sliceview_remainder(view,length):
+    l = len(view)
+    full_items = l//length
+    appendix = l-length*full_items
+    return buffer(view, l-appendix, appendix )
