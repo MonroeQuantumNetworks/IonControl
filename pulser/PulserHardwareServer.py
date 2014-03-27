@@ -113,6 +113,7 @@ class LogicAnalyzerData:
         self.data = list()
         self.auxData = list()
         self.trigger = list()
+        self.gateData = list()
         self.stopMarker = None
         self.countOffset = 0
         
@@ -200,20 +201,22 @@ class PulserHardwareServer(Process):
             for s in sliceview(self.logicAnalyzerBuffer,8):
                 (code, ) = struct.unpack('Q',s)
                 time = (code&0xffffff) + self.logicAnalyzerData.countOffset
-                pattern = (code >> 24) & 0x3fffffffff
-                header = (code >> 62 )
-                if code==0x8000000000000000:  # overrun marker
+                pattern = (code >> 24) & 0xffffffff
+                header = (code >> 56 )
+                if header==2:  # overrun marker
                     self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
-                elif code&0xffffffffff000000==0x800000000f000000:  # end marker
+                elif header==1:  # end marker
                     self.logicAnalyzerData.stopMarker = time
                     self.dataQueue.put( self.logicAnalyzerData )
                     self.logicAnalyzerData = LogicAnalyzerData()
-                elif header==0: # trigger
+                elif header==4: # trigger
                     self.logicAnalyzerData.trigger.append( (time,pattern) )
-                elif header==1: # standard
+                elif header==3: # standard
                     self.logicAnalyzerData.data.append( (time,pattern) )  
-                elif header==3: # aux data
-                    self.logicAnalyzerData.auxData.append( (time,pattern))                                          
+                elif header==5: # aux data
+                    self.logicAnalyzerData.auxData.append( (time,pattern))
+                elif header==6:
+                    self.logicAnalyzerData.gateData.append( (time,pattern) )                                          
                 #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
             self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
 
