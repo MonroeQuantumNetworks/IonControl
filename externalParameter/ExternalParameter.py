@@ -111,6 +111,9 @@ class ExternalParameterBase(object):
             
     def close(self):
         pass
+    
+    def useExternalValue(self):
+        return False
             
 
 class N6700BPowerSupply(ExternalParameterBase):
@@ -338,6 +341,7 @@ class LaserWavemeterScan(AgilentPowerSupply):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('wavemeter_address' , 'http://132.175.165.36:8082')       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('wavemeter_channel' , 6 )       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('use_external' , True )       # if True go to the target value in one jump
 
     def currentExternalValue(self):
         self.wavemeter = Wavemeter(self.settings.wavemeter_address)
@@ -356,7 +360,11 @@ class LaserWavemeterScan(AgilentPowerSupply):
         superior = AgilentPowerSupply.paramDef(self)
         superior.append({'name': 'wavemeter_address', 'type': 'str', 'value': self.settings.wavemeter_address})
         superior.append({'name': 'wavemeter_channel', 'type': 'int', 'value': self.settings.wavemeter_channel})
+        superior.append({'name': 'use_external', 'type': 'bool', 'value': self.settings.use_external})
         return superior
+
+    def useExternalValue(self):
+        return self.settings.use_external
         
 class LaserWavemeterLockScan(ExternalParameterBase):
     """

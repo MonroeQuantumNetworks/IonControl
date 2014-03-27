@@ -111,7 +111,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.onPause()
         else:
             logger.info( "NewExternalScan onData {0}".format( data.scanvalue ) )
-            x = self.generator.xValue(self.externalParameterIndex)
+            x = self.generator.xValue(self.externalParameterIndex) if not self.externalParameter.useExternalValue() else self.externalParameter.currentExternalValue()
             evaluated = list()
             for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
                 if data.count[evaluation.counter]:
