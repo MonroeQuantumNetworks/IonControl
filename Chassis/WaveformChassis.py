@@ -99,7 +99,8 @@ class WaveformChassis(object):
         
         if syncDevice != None:
             self.timing.sampleRate = self.sampleRate
-            self.timing.init(syncDevice) 
+            if syncDevice:
+                self.timing.init(syncDevice) 
         else:
             self.useTiming = False
         
