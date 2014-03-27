@@ -32,7 +32,8 @@ def getPpFileName( filename ):
     if filename is None:
         return filename
     path, leafname = os.path.split( filename )
-    pp_path = os.path.join(path,"generated_pp")
+    _, tail = os.path.split(path)
+    pp_path = os.path.join(path,"generated_pp") if tail != "generated_pp" else path    
     if not os.path.exists(pp_path):
         os.makedirs(pp_path)
     base, _ = os.path.splitext(leafname)
