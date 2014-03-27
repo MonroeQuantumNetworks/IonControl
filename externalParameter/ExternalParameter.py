@@ -350,7 +350,7 @@ class LaserWavemeterScan(AgilentPowerSupply):
         logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)
         counter = 0
-        while numpy.abs(self.detuning)>=1 and counter<10:
+        while self.detuning is None or numpy.abs(self.detuning)>=1 and counter<10:
             self.lastExternalValue = self.wavemeter.get_frequency(self.settings.wavemeter_channel)    
             self.detuning=(self.lastExternalValue-self.value)
             counter += 1
