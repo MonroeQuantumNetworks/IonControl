@@ -19,7 +19,7 @@ import numpy
 from modules.XmlUtilit import prettify
 from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
-
+import time
 
 try:
     from fit import FitFunctions
@@ -106,7 +106,7 @@ class Trace(object):
     from a file.
     """
 
-    def __init__(self):
+    def __init__(self, record_timestamps=False):
         """Construct a trace object."""
         self._x_ = numpy.array([]) #array of x values
         self._y_ = numpy.array([]) #array of y values
@@ -121,6 +121,9 @@ class Trace(object):
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
         self.vars.tracePlottingList = TracePlottingList()
+        self.record_timestamps = record_timestamps
+        if record_timestamps:
+            self.addColumn('timestamp')
         
     def varFromXmlElement(self, element):
         name = element.attrib['name']
@@ -137,6 +140,9 @@ class Trace(object):
     def x(self, val):
         """Set x array"""
         self._x_ = val
+        self.vars.lastDataAquired = datetime.now()
+        if self.record_timestamps:
+            self.timestamp = numpy.append( self.timestamp, time.time() )
         
     @property
     def y(self):
@@ -147,7 +153,6 @@ class Trace(object):
     def y(self,val):
         """Set y array, and record the time it was set."""
         self._y_ = val
-        self.vars.lastDataAquired = datetime.now()
          
     def getFilename(self):
         """return the filename if no filename is available get a filename using the callback"""
@@ -247,6 +252,9 @@ class Trace(object):
             of.close()
 
     def saveTrace(self,filename):
+        # move the timestamp column to the end
+        if self.record_timestamps and 'timestamp' in self.columnNames:
+            self.columnNames.append( self.columnNames.pop(self.columnNames.index('timestamp')))
         if self.rawdata:
             self.vars.rawdata = self.rawdata.save()
         if hasattr(self,'fitfunction'):
