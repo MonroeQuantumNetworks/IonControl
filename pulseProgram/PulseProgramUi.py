@@ -31,8 +31,12 @@ PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui'
 def getPpFileName( filename ):
     if filename is None:
         return filename
-    base, _ = os.path.splitext(filename)
-    return base+".pp"
+    path, leafname = os.path.split( filename )
+    pp_path = os.path.join(path,"generated_pp")
+    if not os.path.exists(pp_path):
+        os.makedirs(pp_path)
+    base, _ = os.path.splitext(leafname)
+    return os.path.join(pp_path, base+".pp")
 
 class ConfiguredParams:
     def __init__(self):
@@ -81,7 +85,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 if os.path.exists(path):
                     self.filenameComboBox.addItem(key)
         lastFilename =  self.configParams.lastFilename
-        if lastFilename is not None:
+        if lastFilename is not None and os.path.exists(lastFilename):
             self.adaptiveLoadFile(lastFilename)
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
