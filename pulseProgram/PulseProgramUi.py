@@ -29,8 +29,14 @@ from pyparsing import ParseException
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
 def getPpFileName( filename ):
-    base, _ = os.path.splitext(filename)
-    return base+".pp"
+    if filename is None:
+        return filename
+    path, leafname = os.path.split( filename )
+    pp_path = os.path.join(path,"generated_pp")
+    if not os.path.exists(pp_path):
+        os.makedirs(pp_path)
+    base, _ = os.path.splitext(leafname)
+    return os.path.join(pp_path, base+".pp")
 
 class ConfiguredParams:
     def __init__(self):
@@ -79,7 +85,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 if os.path.exists(path):
                     self.filenameComboBox.addItem(key)
         lastFilename =  self.configParams.lastFilename
-        if lastFilename is not None:
+        if lastFilename is not None and os.path.exists(lastFilename):
             self.adaptiveLoadFile(lastFilename)
         if hasattr(self.configParams,'splitterHorizontal'):
             self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
@@ -169,7 +175,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.combinedDict is not None and self.configParams.lastFilename is not None:
             self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
         self.configParams.lastFilename = path
-        key = self.configParams.lastFilename
+        key = getPpFileName(self.configParams.lastFilename)
         compileexception = None
         try:
             self.pulseProgram.loadSource(path)
@@ -304,8 +310,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
         if self.configParams.lastFilename:
-            self.config[(self.configname,self.configParams.lastFilename)] = self.combinedDict
-        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,self.configParams.lastFilename))
+            self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
+        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,getPpFileName(self.configParams.lastFilename)))
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)

@@ -194,20 +194,20 @@ class LogicAnalyzer(Form, Base ):
                     if yAuxData:
                         curve = PlotCurveItem(self.xAuxData, yAuxData, stepMode=True, fillLevel=offset, brush=penList[2][4], pen=penList[2][0])
                         self.graphicsView.addItem( curve )
-                        self.curveBundle.append( curve )
+                        self.curveAuxBundle.append( curve )
                         textItem = TextItem( self.signalTableModel.auxChannelName(i), anchor=(1,1), color=(0,0,0) )
                         textItem.setPos( 0, offset )
                         self.graphicsView.addItem(textItem)
                         self.textItems.append(textItem)
                         offset += 1 
                     else:
-                        self.curveBundle.append( None )
+                        self.curveAuxBundle.append( None )
                         
             else:
-                for curve, yData in zip(self.curveBundle, self.yDataBundle):
-                    if yData:
+                for curve, yAuxData in zip(self.curveAuxBundle, self.yAuxDataBundle):
+                    if yAuxData:
                         if curve:
-                            curve.setData(x=self.xData,y=yData)
+                            curve.setData(x=self.xAuxData,y=yAuxData)
         nextChannel += self.settings.numAuxChannels
         if self.yTriggerBundle:
             if self.curveTriggerBundle is None:
