@@ -29,6 +29,8 @@ from pyparsing import ParseException
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
 def getPpFileName( filename ):
+    if filename is None:
+        return filename
     base, _ = os.path.splitext(filename)
     return base+".pp"
 
@@ -169,7 +171,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.combinedDict is not None and self.configParams.lastFilename is not None:
             self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
         self.configParams.lastFilename = path
-        key = self.configParams.lastFilename
+        key = getPpFileName(self.configParams.lastFilename)
         compileexception = None
         try:
             self.pulseProgram.loadSource(path)
@@ -304,8 +306,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
         if self.configParams.lastFilename:
-            self.config[(self.configname,self.configParams.lastFilename)] = self.combinedDict
-        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,self.configParams.lastFilename))
+            self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
+        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,getPpFileName(self.configParams.lastFilename)))
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
