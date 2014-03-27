@@ -16,6 +16,7 @@ from gui import ProjectSelection
 from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
+from modules.doProfile import doprofile
 
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
@@ -126,8 +127,9 @@ class Traceui(TraceuiForm, TraceuiBase):
             if not self.traceTreeView.isExpanded(parentIndex):
                 self.traceTreeView.expand(parentIndex)
         trace.plot(pen,self.settings.plotstyle)
-        numcols = self.model.columnCount()
-        for column in range(numcols):
+                
+    def resizeColumnsToContents(self):
+        for column in range(self.model.columnCount()):
             self.traceTreeView.resizeColumnToContents(column)
 
     def setPlotStyle(self,value):

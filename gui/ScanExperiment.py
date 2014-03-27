@@ -516,6 +516,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.traceui.addTrace( plottedTrace, pen=-1, parentTrace=self.averagePlottedTraceList[index])
                 else:
                     self.traceui.addTrace( plottedTrace, pen=-1)
+            self.traceui.resizeColumnsToContents()
         else:
             self.generator.appendData(self.plottedTraceList, x, evaluated)
             for plottedTrace in self.plottedTraceList:
