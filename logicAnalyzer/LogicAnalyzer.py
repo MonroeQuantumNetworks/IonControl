@@ -19,12 +19,13 @@ Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
 class Settings:
     def __init__(self):
-        self.numChannels = 38
+        self.numChannels = 32
+        self.numTriggerChannels = 7
+        self.numAuxChannels = 10
+        self.numGateChannels = 32
         self.height = 0.75
         self.scaling = 0.000020
-        self.numTriggerChannels = 7
         self.triggerWidth = 0.0001   # only rising edge counts
-        self.numAuxChannels = 4
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -58,6 +59,10 @@ class LogicAnalyzer(Form, Base ):
         self.yAuxData = None
         self.yAuxDataBundle = None
         self.curveAuxBundle = None
+        self.xGateData = None
+        self.yGateData = None
+        self.yGateDataBundle = None
+        self.curveGateBundle = None
         self.channelNameData = channelNameData
         self.lastEnabledChannels = None
         self.textItems = list()
@@ -122,6 +127,17 @@ class LogicAnalyzer(Form, Base ):
                     for value in self.yTrigger:
                         self.yTriggerBundle[i].append(offset+self.settings.height if value&(1<<i) else offset )
                     offset += 1
+        nextChannel += self.settings.numTriggerChannels
+        if logicData.gateData:
+            self.xGateData, self.yGateData = zip( *logicData.gateData )
+            self.xGateData = [ x * self.settings.scaling for x in self.xGateData ]  # convert tuple to list
+            self.xGateData.append( logicData.stopMarker * self.settings.scaling )
+            self.yGateDataBundle = [list() for _ in range(self.settings.numGateChannels)]
+            for i in range(self.settings.numGateChannels):
+                if self.signalTableModel.enabledList[nextChannel+i]:
+                    for value in self.yGateData:
+                        self.yGateDataBundle[i].append(offset+self.settings.height if value&(1<<i) else offset )
+                    offset += 1
         self.plotData()
         if self.state==self.OpStates.single:
             self.setStatusStopped()
@@ -147,6 +163,12 @@ class LogicAnalyzer(Form, Base ):
             lastval = None
             for clockcycle, value in logicData.trigger:
                 dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( bitEvaluate(self.settings.numTriggerChannels,value,lastval,inext, trigger=True) )
+                lastval = value
+        inext += self.settings.numTriggerChannels
+        if logicData.gateData:
+            lastval = None
+            for clockcycle, value in logicData.gateData:
+                dictutil.getOrInsert(self.pulseData, clockcycle * self.settings.scaling, dict()).update( bitEvaluate(self.settings.numGateChannels,value,lastval,inext)  )
                 lastval = value
         self.traceTableModel.setPulseData(self.pulseData)
         self.traceTableView.resizeColumnsToContents()
@@ -230,6 +252,28 @@ class LogicAnalyzer(Form, Base ):
                     if yTrigger:
                         if curve:
                             curve.setData(x=self.xTrigger,y=yTrigger)
+        nextChannel = self.settings.numTriggerChannels
+        if self.yGateDataBundle:
+            if self.curveGateBundle is None:
+                self.curveGateBundle = list()
+                for i, yGateData in enumerate(self.yGateDataBundle):
+                    if yGateData:
+                        curve = PlotCurveItem(self.xGateData, yGateData, stepMode=True, fillLevel=offset, brush=penList[2][4], pen=penList[2][0])
+                        self.graphicsView.addItem( curve )
+                        self.curveGateBundle.append( curve )
+                        textItem = TextItem( self.signalTableModel.gateChannelName(i), anchor=(1,1), color=(0,0,0) )
+                        textItem.setPos( 0, offset )
+                        self.graphicsView.addItem(textItem)
+                        self.textItems.append(textItem)
+                        offset += 1 
+                    else:
+                        self.curveGateBundle.append( None )
+                        
+            else:
+                for curve, yGateData in zip(self.curveGateBundle, self.yGateDataBundle):
+                    if yGateData:
+                        if curve:
+                            curve.setData(x=self.xGateData,y=yGateData)
         self.lastEnabledChannels = list( self.signalTableModel.enabledList )
         xautorange, yautorange = lastAutoRangeState
         if xautorange:

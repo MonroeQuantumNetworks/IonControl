@@ -16,6 +16,8 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
         self.gateSignals = 32
         self.triggerSignals = 7
         self.enabledList = config.get('LogicAnalyzer.EnabledChannels',[True]*(self.dataSignals+self.auxSignals+self.triggerSignals) )
+        if len(self.enabledList)!=self.rowCount():
+            self.enabledList.extend( [True]*(self.rowCount()-len(self.enabledList)))
         self.dataLookup = { (QtCore.Qt.DisplayRole,1): lambda row: self.channelName(row),
                             (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.enabledList[row] else QtCore.Qt.Unchecked,
                      }
@@ -58,7 +60,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
             return "Counter {0}".format(index)
          
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return self.dataSignals+self.auxSignals+self.triggerSignals
+        return self.dataSignals+self.auxSignals+self.triggerSignals+self.gateSignals
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2

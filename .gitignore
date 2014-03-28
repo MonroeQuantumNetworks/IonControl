@@ -25,3 +25,4 @@ manual/*.synctex.gz
 pppCompiler/YtterbiumScan.auto.pp
 config/PulsePrograms/YtterbiumScan2.pp
 config/PulsePrograms/YbGateSequence.pp
+config/PulsePrograms/generated_pp/
