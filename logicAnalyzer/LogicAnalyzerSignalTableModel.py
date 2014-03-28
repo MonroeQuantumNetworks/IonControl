@@ -73,6 +73,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
     def setData(self,index, value, role):
         if (role, index.column()) == (QtCore.Qt.CheckStateRole,0): 
             self.enabledList[index.row()] = value==QtCore.Qt.Checked
+            
             self.enableChanged.emit()
             return True
         return False

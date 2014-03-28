@@ -178,12 +178,13 @@ class LogicAnalyzer(Form, Base ):
         lastAutoRangeState = self.graphicsView.vb.getState()['autoRange']
         self.graphicsView.disableAutoRange(ViewBox.XYAxes)
         if self.lastEnabledChannels and self.lastEnabledChannels!=self.signalTableModel.enabledList:
-            for curve in concatenate_iter(self.curveBundle, self.curveAuxBundle, self.curveTriggerBundle):
+            for curve in concatenate_iter(self.curveBundle, self.curveAuxBundle, self.curveTriggerBundle, self.curveGateBundle):
                 if curve:
                     self.graphicsView.removeItem(curve)
             self.curveBundle = None
             self.curveAuxBundle = None
             self.curveTriggerBundle = None
+            self.curveGateBundle = None
             if self.textItems:
                 for item in self.textItems:
                     self.graphicsView.removeItem(item)
