@@ -50,7 +50,7 @@ def update( symboltable, arg=list(), kwarg=dict() ):
         if not kwarg['wait_dds']:
             code = list()
     if len(arg)==2:
-        symbol = symboltable.getVar( arg[1], type_ = "parameter" )
+        symbol = symboltable.getVar( arg[1] )
         return code + ["  WAIT",
                 "  UPDATE {0}".format(symbol.name) ]
     return code + ["  WAIT",

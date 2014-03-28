@@ -475,7 +475,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 
     def updateMainGraph(self, x, evaluated): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
-            trace = Trace()
+            trace = Trace(record_timestamps=True)
             self.plottedTraceList = list()
             for index, result in enumerate(evaluated):
                 if result is not None:  # result is None if there were no counter results

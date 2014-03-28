@@ -111,6 +111,9 @@ class ExternalParameterBase(object):
             
     def close(self):
         pass
+    
+    def useExternalValue(self):
+        return False
             
 
 class N6700BPowerSupply(ExternalParameterBase):
@@ -332,20 +335,36 @@ class LaserWavemeterScan(AgilentPowerSupply):
     dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         AgilentPowerSupply.__init__(self,name,config,instrument)
-        self.wavemeter = Wavemeter()
-        self.channel = 6
+        self.setDefaults()
+    
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('wavemeter_address' , 'http://132.175.165.36:8082')       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('wavemeter_channel' , 6 )       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('use_external' , True )       # if True go to the target value in one jump
 
     def currentExternalValue(self):
+        self.wavemeter = Wavemeter(self.settings.wavemeter_address)
         logger = logging.getLogger(__name__)
-        self.lastExternalValue = self.wavemeter.get_frequency(self.channel) 
+        self.lastExternalValue = self.wavemeter.get_frequency(self.settings.wavemeter_channel) 
         logger.debug( str(self.lastExternalValue) )
         self.detuning=(self.lastExternalValue)
         counter = 0
-        while numpy.abs(self.detuning)>=1 and counter<10:
-            self.lastExternalValue = self.wavemeter.get_frequency(self.channel)    
+        while self.detuning is None or numpy.abs(self.detuning)>=1 and counter<10:
+            self.lastExternalValue = self.wavemeter.get_frequency(self.settings.wavemeter_channel)    
             self.detuning=(self.lastExternalValue-self.value)
             counter += 1
         return self.lastExternalValue       
+
+    def paramDef(self):
+        superior = AgilentPowerSupply.paramDef(self)
+        superior.append({'name': 'wavemeter_address', 'type': 'str', 'value': self.settings.wavemeter_address})
+        superior.append({'name': 'wavemeter_channel', 'type': 'int', 'value': self.settings.wavemeter_channel})
+        superior.append({'name': 'use_external', 'type': 'bool', 'value': self.settings.use_external})
+        return superior
+
+    def useExternalValue(self):
+        return self.settings.use_external
         
 class LaserWavemeterLockScan(ExternalParameterBase):
     """
