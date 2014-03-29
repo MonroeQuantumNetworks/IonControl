@@ -36,6 +36,7 @@ class CosFit(FitFunctionBase):
         A,k,theta, O = self.parameters if p is None else p
         return A*numpy.cos(2*numpy.pi*k*x+theta)+O
 
+
 class CosSqFit(FitFunctionBase):
     name = "Cos2"
     def __init__(self):
@@ -47,17 +48,9 @@ class CosSqFit(FitFunctionBase):
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
        
-    def residuals(self,p, y, x, sigma):
-        A,T,theta,O = self.allFitParameters(p)
-        if sigma is not None:
-            return (y-A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))-O)/sigma
-        else:            
-            return y-A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))-O
-        
-    def value(self,x,p=None):
-        A,T,theta, O = self.parameters if p is None else p
+    def functionEval(self, x, A, T, theta, O ):
         return A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))+O
-        
+
 
 class SinSqFit(FitFunctionBase):
     name = "Sin2"
@@ -72,17 +65,22 @@ class SinSqFit(FitFunctionBase):
         
     def functionEval(self, x, T, x0, max_, min_ ):
         return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/T*(x-x0)))+min_
-    
-    def residuals(self,p, y, x, sigma):
-        T,x0,max_,min_ = self.allFitParameters(p)
-        if sigma is not None:
-            return (y-self.functionEval(x, T, x0, max_, min_))/sigma
-        else:
-            return y-self.functionEval(x, T, x0, max_, min_)
+
+
+class ChripedSinSqFit(FitFunctionBase):
+    name = "ChirpedSin2"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString = '(max-min)*sin^2( pi*(x-x0)/(2*(T+dt*x) ))+min'
+        self.parameterNames = [  'T', 'x0', 'max', 'min', 'dt' ]
+        self.parameters = [100,0,1,0,0]
+        self.startParameters = [100,0,1,0,0]
+        self.parameterEnabled = [True]*5
+        self.parametersConfidence = [None]*5
         
-    def value(self,x,p=None):
-        T,x0,max_,min_ = self.parameters if p is None else p
-        return self.functionEval(x, T, x0, max_, min_)
+    def functionEval(self, x, T, x0, max_, min_, dt ):
+        return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/(T+dt*x)*(x-x0)))+min_
+    
   
 class SinSqExpFit(FitFunctionBase):
     name = "Sin2 Exponential Decay"
@@ -95,17 +93,10 @@ class SinSqExpFit(FitFunctionBase):
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
         
-    def residuals(self,p, y, x, sigma):
-        A,T,theta,O,tau = self.allFitParameters(p)
-        if sigma is not None:
-            return (y-A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O)/sigma
-        else:
-            return y-A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
-        
-    def value(self,x,p=None):
-        A, T, theta, O, tau = self.parameters if p is None else p
+    def functionEval(self, x, A, T, theta, O, tau ):
         return A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
   
+
 class SinSqGaussFit(FitFunctionBase):
     name = "Sin2 Gaussian Decay"
     def __init__(self):
@@ -117,19 +108,10 @@ class SinSqGaussFit(FitFunctionBase):
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
         
-    def residuals(self,p, y, x, sigma):
-        A,T,theta,O,tau = self.allFitParameters(p)
-        if sigma is not None:
-            return (y-A*numpy.exp(-numpy.square(x/tau))*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O)/sigma
-        else:
-            return y-A*numpy.exp(-numpy.square(x/tau))*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))-O
-        
-    def value(self,x,p=None):
-        A,T,theta, O, tau = self.parameters if p is None else p
+    def functionEval(self, x, A, T, theta, O, tau ):
         return A*numpy.exp(-numpy.square(x/tau))*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
-  
-  
-        
+
+
 class GaussianFit(FitFunctionBase):
     name = "Gaussian"
     def __init__(self):
@@ -141,16 +123,9 @@ class GaussianFit(FitFunctionBase):
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
         
-    def residuals(self,p, y, x, sigma):
-        A,x0,s,O = self.allFitParameters(p)
-        if sigma is not None:
-            return (y-(A*numpy.exp(-numpy.square((x-x0)/s))+O))/sigma
-        else:
-            return y-(A*numpy.exp(-numpy.square((x-x0)/s))+O)
-        
-    def value(self,x,p=None):
-        A,x0,s,O = self.parameters if p is None else p
+    def functionEval(self, x, A, x0, s, O ):
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
+
 
 class SquareRabiFit(FitFunctionBase):
     name = "Square Rabi"
@@ -163,21 +138,11 @@ class SquareRabiFit(FitFunctionBase):
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
         
-    def residuals(self,p, y, x, sigma):
-        T, C, A, O, t = self.allFitParameters(p)
-        Rs = numpy.square(2*numpy.pi/T)
-        Ds = numpy.square(2*numpy.pi*(x-C))
-        if sigma is not None:
-            return (y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*t/2.)))-O)/sigma
-        else:
-            return (y-(A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*t/2.)))-O)
-        
-    def value(self,x,p=None):
-        T, C, A, O, t = self.parameters if p is None else p
+    def functionEval(self, x, T, C, A, O, t ):
         Rs = numpy.square(2*numpy.pi/T)
         Ds = numpy.square(2*numpy.pi*(x-C))
         return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*t/2.)))+O
-    
+   
 
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
@@ -190,19 +155,11 @@ class LorentzianFit(FitFunctionBase):
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
         
-    def residuals(self,p, y, x, sigma):
-        A,s,x0,O = self.allFitParameters(p)
-        s2 = numpy.square(s)
-        if sigma is not None:
-            return (y-(A*s2/(s2+numpy.square(x-x0))+O))/sigma
-        else:
-            return (y-(A*s2/(s2+numpy.square(x-x0))+O))            
-        
-    def value(self,x,p=None):
-        A,s,x0,O  = self.parameters if p is None else p
+    def functionEval(self, x, A, s, x0, O ):
         s2 = numpy.square(s)
         return A*s2/(s2+numpy.square(x-x0))+O
-        
+
+       
 class TruncatedLorentzianFit(FitFunctionBase):
     name = "Truncated Lorentzian"
     def __init__(self):
@@ -215,17 +172,7 @@ class TruncatedLorentzianFit(FitFunctionBase):
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
         
-    def residuals(self,p, y, x, sigma):
-        A,s,x0,O = self.allFitParameters(p)
-        s2 = numpy.square(s)
-        if sigma is not None:
-            return (y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O))/sigma
-        else:
-            return (y-(A*s2/(s2+numpy.square(x-x0))*(1-numpy.sign(x-x0))/2+O))
-
-        
-    def value(self,x,p=None):
-        A,s,x0,O  = self.parameters if p is None else p
+    def functionEval(self, x, A, s, x0, O):
         s2 = numpy.square(s)
         return (A*s2/(s2+numpy.square(x-x0)))*(1-numpy.sign(x-x0))/2+O
 
@@ -244,15 +191,7 @@ class LinearFit(FitFunctionBase):
         self.parametersConfidence = [None]*2
         self.results['halfpoint'] = ResultRecord(name='halfpoint')
         
-    def residuals(self,p, y, x, sigma):
-        m,b = self.allFitParameters(p)
-        if sigma is not None:
-            return (y - m*x - b)/sigma
-        else:
-            return y - m*x - b
-        
-    def value(self,x,p=None):
-        m, b = self.parameters if p is None else p
+    def functionEval(self,x, m, b ):
         return m*x + b
         
     def update(self,parameters=None):
@@ -271,7 +210,8 @@ fitFunctionMap.update({ GaussianFit.name: GaussianFit,
                        TruncatedLorentzianFit.name: TruncatedLorentzianFit,
                        RabiCarrierFunction.name: RabiCarrierFunction,
                        FullRabiCarrierFunction.name: FullRabiCarrierFunction,
-                       LinearFit.name: LinearFit
+                       LinearFit.name: LinearFit,
+                       ChripedSinSqFit.name: ChripedSinSqFit
                  } )       
         
 def fitFunctionFactory(text):

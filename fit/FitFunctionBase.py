@@ -173,4 +173,16 @@ class FitFunctionBase(object):
             e.text = str(result.value)
         return myroot
     
+    def residuals(self,p, y, x, sigma):
+        p = self.allFitParameters(p)
+        if sigma is not None:
+            return (y-self.functionEval(x, *p))/sigma
+        else:
+            return y-self.functionEval(x, *p)
+        
+    def value(self,x,p=None):
+        p = self.parameters if p is None else p
+        return self.functionEval(x, *p )
+
+    
 fitFunctionMap = dict()    
