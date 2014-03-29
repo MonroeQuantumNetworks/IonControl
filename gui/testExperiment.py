@@ -88,9 +88,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
             self.startScan()
 #end added
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(80)
+        self.timer.setInterval(10)
         self.timer.timeout.connect( self.onData )
-        self.timer.start(80)
+        self.timer.start(10)
         self.displayUi.onClear()
 
 #start added
@@ -135,7 +135,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.plottedTrace.trace.bottom = numpy.append( self.plottedTrace.trace.bottom, 0.05)
         self.displayUi.add( [value] )
         self.plottedTrace.replot()
-        if self.xvalue > 3.5:
+        if self.xvalue > 10:
             if self.scanType == 0:
                 self.onStop()
 #start added

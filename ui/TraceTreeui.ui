@@ -311,6 +311,21 @@
          <string>linespoints</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>lines errors</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>points errors</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>linespoints errors</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>

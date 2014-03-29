@@ -15,9 +15,10 @@ from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 from modules import DataDirectory 
 from modules import enum
 from trace.Trace import TracePlotting
+from functools import partial
 
 class PlottedTrace(object):
-    Styles = enum.enum('lines','points','linespoints')
+    Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
     Types = enum.enum('default','steps')
     def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
@@ -71,6 +72,13 @@ class PlottedTrace(object):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
                 self.trace.addColumn( yColumn )
+        self.stylesLookup = { self.Styles.lines: partial(self.plotLines, errorbars=False),
+                         self.Styles.points: partial(self.plotPoints, errorbars=False),
+                         self.Styles.linespoints: partial(self.plotLinespoints, errorbars=False), 
+                         self.Styles.lines_with_errorbars: partial(self.plotLines, errorbars=True),
+                         self.Styles.points_with_errorbars: partial(self.plotPoints, errorbars=True),
+                         self.Styles.linepoints_with_errorbars: partial(self.plotLinespoints, errorbars=True)}
+
           
     @property
     def hasTopColumn(self):
@@ -195,16 +203,19 @@ class PlottedTrace(object):
             self.graphicsView.addItem(self.errorBarItem)
             
 
-    def plotLines(self,penindex):
+    def plotLines(self,penindex, errorbars=True ):
+        if errorbars:
+            self.plotErrorBars(penindex)
         self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0])
         if self.xAxisLabel:
             if self.xAxisUnit:
                 self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
             else:
                 self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
-        
     
-    def plotPoints(self,penindex):
+    def plotPoints(self,penindex, errorbars=True ):
+        if errorbars:
+            self.plotErrorBars(penindex)
         self.curve = self.graphicsView.plot(self.x, self.y, pen=None, symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
@@ -214,7 +225,9 @@ class PlottedTrace(object):
                 self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
 
     
-    def plotLinespoints(self,penindex):
+    def plotLinespoints(self,penindex, errorbars=True ):
+        if errorbars:
+            self.plotErrorBars(penindex)
         self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
@@ -243,10 +256,7 @@ class PlottedTrace(object):
         if penindex>0:
             if self.type==self.Types.default:
                 self.plotFitfunction(penindex)
-                self.plotErrorBars(penindex)
-                { self.Styles.lines: self.plotLines,
-                  self.Styles.points: self.plotPoints,
-                  self.Styles.linespoints: self.plotLinespoints }.get(self.style,self.plotLines)(penindex)
+                self.stylesLookup.get(self.style,self.plotLines)(penindex)
             elif self.type ==self.Types.steps:
                 self.plotSteps(penindex)
             self.penUsageDict[penindex] += 1

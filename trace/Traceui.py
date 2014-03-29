@@ -16,7 +16,6 @@ from gui import ProjectSelection
 from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
-from modules.doProfile import doprofile
 
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
@@ -135,6 +134,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     def setPlotStyle(self,value):
         """Set the plot style to 'value'."""
         self.settings.plotstyle = value
+        self.onApplyStyle()
         
     def onViewClicked(self,index):
         """If one of the editable columns is clicked, begin to edit it."""

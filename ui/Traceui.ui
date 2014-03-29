@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>312</width>
-    <height>300</height>
+    <height>696</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -286,6 +286,21 @@
        <item>
         <property name="text">
          <string>linespoints</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>lines with errorb</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>points with errorb</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>linespoints with errorb</string>
         </property>
        </item>
       </widget>
