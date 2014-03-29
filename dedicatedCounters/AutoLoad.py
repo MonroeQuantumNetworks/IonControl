@@ -273,9 +273,7 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:black; }")
         self.status = self.StatusOptions.Idle
         self.statusLabel.setText("Idle")
-        if self.dataSignalConnected:
-            self.dataSignal.disconnect( self.onData )
-            self.dataSignalConnected = False
+        self.disconnectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
 
@@ -306,8 +304,7 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
         self.status = self.StatusOptions.Load
         self.statusLabel.setText("Loading")
-        self.dataSignal.connect( self.onData )
-        self.dataSignalConnected = True
+        self.connectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
     
@@ -361,7 +358,8 @@ class AutoLoad(UiForm,UiBase):
             self.started = self.historyTableModel.history[-1].trappedAt
             self.checkStarted = self.started
             self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
-            self.setTrapped(reappeared=True)                 
+            self.setTrapped(reappeared=True) 
+            self.connectDataSignal()                
         
     def onTrappedIonNow(self):
         if self.status == self.StatusOptions.Idle:
@@ -371,7 +369,8 @@ class AutoLoad(UiForm,UiBase):
             self.started = datetime.now()
             self.checkStarted = self.started
             self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
-            self.setTrapped()                 
+            self.setTrapped()     
+            self.connectDataSignal()            
     
     def onTimer(self):
         """Execute whenever the timer sends a timeout signal, which is every 100 ms.
@@ -429,3 +428,12 @@ class AutoLoad(UiForm,UiBase):
             if self.status == self.StatusOptions.Frozen:
                 self.setTrapped(True)
 
+    def connectDataSignal(self):
+        self.dataSignal.connect( self.onData, QtCore.Qt.UniqueConnection )
+        self.dataSignalConnected = True
+
+    
+    def disconnectDataSignal(self):
+        if self.dataSignalConnected:
+            self.dataSignal.disconnect( self.onData )
+            self.dataSignalConnected = False
