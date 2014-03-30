@@ -68,7 +68,6 @@ class MeanEvaluation(EvaluationBase):
         self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical ]
         
     def setDefault(self):
-        self.settings.setdefault('errorBars',False)
         self.settings.setdefault('errorBarType',0)
          
     def evaluateShotnoise(self, countarray ):
@@ -89,8 +88,7 @@ class MeanEvaluation(EvaluationBase):
         return self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
 
     def children(self):
-        return [{'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] },
-                {'name':'errorBarType', 'type': 'list', 'values':self.errorBarType.mapping, 'value': self.settings['errorBarType'] } ]     
+        return [{'name':'errorBarType', 'type': 'list', 'values':self.errorBarType.mapping, 'value': self.settings['errorBarType'] } ]     
 
 class NumberEvaluation(EvaluationBase):
     """
@@ -102,15 +100,15 @@ class NumberEvaluation(EvaluationBase):
         EvaluationBase.__init__(self,settings)
         
     def setDefault(self):
-        self.settings.setdefault('errorBars',False)
-         
+        pass
+    
     def evaluate(self, countarray, timestamps=None ):
         if not countarray:
-            return 0, (0,0), 0
-        return len(countarray), (0,0), len(countarray)
+            return 0, None, 0
+        return len(countarray), None, len(countarray)
 
     def children(self):
-        return [{'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'], 'readonly':True }]     
+        return []     
 
 
 class ThresholdEvaluation(EvaluationBase):
@@ -127,7 +125,6 @@ class ThresholdEvaluation(EvaluationBase):
     def setDefault(self):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
-        self.settings.setdefault('errorBars',False)
         
     def evaluate(self, countarray, timestamps=None ):
         if not countarray:
@@ -149,7 +146,6 @@ class ThresholdEvaluation(EvaluationBase):
         
     def children(self):
         return [{'name':'threshold','type':'int','value':self.settings['threshold']},
-                {'name':'errorBars', 'type': 'bool', 'value':self.settings['errorBars'] },
                 {'name':'invert', 'type': 'bool', 'value':self.settings['invert'] }]     
         
    

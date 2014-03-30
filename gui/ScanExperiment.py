@@ -84,10 +84,10 @@ class ParameterScanGenerator:
     def appendData(self,traceList,x,evaluated):
         if evaluated and traceList:
             traceList[0].x = numpy.append(traceList[0].x, x)
-        for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+        for trace, (y, error, raw) in zip(traceList, evaluated):                                  
             trace.y = numpy.append(trace.y, y)
             trace.raw = numpy.append(trace.raw, raw)
-            if error and showerror:
+            if error is not None:
                 trace.bottom = numpy.append(trace.bottom, error[0])
                 trace.top = numpy.append(trace.top, error[1])
                 
@@ -119,19 +119,19 @@ class StepInPlaceGenerator:
         if evaluated and traceList:
             if len(traceList[0].x)<self.scan.steps or self.scan.steps==0:
                 traceList[0].x = numpy.append(traceList[0].x, x)
-                for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+                for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                     trace.y = numpy.append(trace.y, y)
                     trace.raw = numpy.append(trace.raw, raw)
-                    if error and showerror:
+                    if error is not None:
                         trace.bottom = numpy.append(trace.bottom, error[0])
                         trace.top = numpy.append(trace.top, error[1])
             else:
                 steps = int(self.scan.steps)
                 traceList[0].x = numpy.append(traceList[0].x[-steps+1:], x)
-                for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+                for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                     trace.y = numpy.append(trace.y[-steps+1:], y)
                     trace.raw = numpy.append(trace.raw[-steps+1:], raw)
-                    if error and showerror:
+                    if error is not None:
                         trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0])
                         trace.top = numpy.append(trace.top[-steps+1:], error[1])
 
@@ -178,10 +178,10 @@ class GateSequenceScanGenerator:
     def appendData(self,traceList,x,evaluated):
         if evaluated and traceList:
             traceList[0].x = numpy.append(traceList[0].x, x)
-        for trace, ((y, error, raw), showerror) in zip(traceList, evaluated):                                  
+        for trace, (y, error, raw) in zip(traceList, evaluated):                                  
             trace.y = numpy.append(trace.y, y)
             trace.raw = numpy.append(trace.raw, raw)
-            if error and showerror:
+            if error is not None:
                 trace.bottom = numpy.append(trace.bottom, error[0])
                 trace.top = numpy.append(trace.top, error[1])
 
@@ -447,14 +447,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             evaluated = list()
             for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
                 if len(data.count[evaluation.counter])>0:
-                    evaluated.append( (algo.evaluate( data.count[evaluation.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
+                    evaluated.append( algo.evaluate( data.count[evaluation.counter]) ) # returns mean, error, raw
                 else:
-                    evaluated.append( ((0,0,0),False) )
+                    evaluated.append( (0,None,0) )
                     logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
-                self.displayUi.add( [ e[0][0] for e in evaluated ] )
+                self.displayUi.add( [ e[0] for e in evaluated ] )
                 self.updateMainGraph(x, evaluated )
                 self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
@@ -479,8 +479,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList = list()
             for index, result in enumerate(evaluated):
                 if result is not None:  # result is None if there were no counter results
-                    (_, error, _), showerror = result
-                    showerror = error and self.scan.evalAlgorithmList[index].settings['errorBars']
+                    (_, error, _) = result
+                    showerror = error is not None
                     yColumnName = 'y{0}'.format(index) 
                     rawColumnName = 'raw{0}'.format(index)
                     trace.addColumn( yColumnName )

@@ -41,6 +41,8 @@ class EvaluationDefinition:
         
     def __setstate__(self, state):
         self.__dict__ = state
+        if 'errorBars' in self.settings:   # remove errorBars property in old unpickled instances
+            self.settings.pop('errorBars')
         
     stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram'] 
         
