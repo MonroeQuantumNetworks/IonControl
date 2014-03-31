@@ -457,7 +457,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Called by worker with new data
         """
         logger = logging.getLogger(__name__)
-        expected = self.generator.expected( self.currentIndex )
         if data.overrun:
             logger.error( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
@@ -466,6 +465,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             logger.info( "onData {0} {1}".format( [len(data.count[i]) for i in range(16)], data.scanvalue ) )
             # Evaluate as given in evalList
+            expected = self.generator.expected( self.currentIndex )
             x = self.generator.xValue(self.currentIndex)
             evaluated = list()
             for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):

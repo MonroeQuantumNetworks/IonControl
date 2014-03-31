@@ -37,8 +37,7 @@ class GateSequenceContainer(object):
                 self.GateSequenceDict.update( { gateset.attrib['name']: map(operator.methodcaller('strip'),gateset.text.split(','))} )
             else:  # we have the length 0 gate string
                 self.GateSequenceDict.update( { gateset.attrib['name']: [] } )
-        self.GateSequenceAttributes.update( { gateset.attrib['name']: gateset.attrib })
-            
+            self.GateSequenceAttributes.update( { gateset.attrib['name']: gateset.attrib })
         self.validate()
     
     """Validate the gates used in the gate sets against the defined gates"""            

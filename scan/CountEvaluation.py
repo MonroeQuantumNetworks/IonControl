@@ -144,6 +144,10 @@ class ThresholdEvaluation(EvaluationBase):
         bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0            
         return p, (p-bottom, top-p), x
 
+    def children(self):
+        return [{'name':'threshold','type':'int','value':self.settings['threshold']},
+                {'name':'invert', 'type': 'bool', 'value':self.settings['invert'] }]     
+
 class FidelityEvaluation(EvaluationBase):
     """
     simple threshold state detection: if more than threshold counts are observed 
