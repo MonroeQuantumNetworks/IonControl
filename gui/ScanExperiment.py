@@ -141,6 +141,7 @@ class StepInPlaceGenerator:
 class GateSequenceScanGenerator:
     def __init__(self, scan):
         self.scan = scan
+        self.nextIndexToWrite = 0
         
     def prepare(self, pulseProgramUi):
         logger = logging.getLogger(__name__)
@@ -158,7 +159,11 @@ class GateSequenceScanGenerator:
             self.scan.index, self.scan.list = zip( *zipped )
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
         logger.debug( "GateSequenceScanCode {0} {1}".format(self.scan.list, self.scan.code) )
-        return (self.scan.code, data)
+        if len(self.scan.code)>2040:
+            self.nextIndexToWrite = 2040
+            return ( self.scan.code[:2040], data)
+        self.nextIndexToWrite = len(self.scan.code)
+        return ( self.scan.code, data)
 
     def restartCode(self,currentIndex):
         logger = logging.getLogger(__name__)
@@ -170,6 +175,9 @@ class GateSequenceScanGenerator:
         return self.scan.index[index]
 
     def dataNextCode(self, experiment):
+        if self.nextIndexToWrite<len(self.scan.code):
+            self.nextIndexToWrite += 2
+            return self.scan.code[self.nextIndexToWrite-2:self.nextIndexToWrite]
         return []
         
     def xRange(self):
