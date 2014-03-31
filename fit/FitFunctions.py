@@ -244,7 +244,7 @@ def fromXmlElement(element):
         value = float(parameter.text)
         function.parameters[index] = value
         function.parameterNames[index] = parameter.attrib['name']
-        function.parametersConfidence[index] = float(parameter.attrib['confidence']) if parameter.attrib['confidence'] is not None else None
+        function.parametersConfidence[index] = float(parameter.attrib['confidence']) if parameter.attrib['confidence'] != 'None' else None
         function.parameterEnabled[index] = parameter.attrib['enabled'] == "True"
     for index, parameter in enumerate(element.findall("Result")):
         name= parameter.attrib['name']
