@@ -43,6 +43,8 @@ from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
+ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
+
 class ParameterScanGenerator:
     def __init__(self, scan):
         self.scan = scan
@@ -91,6 +93,9 @@ class ParameterScanGenerator:
                 trace.bottom = numpy.append(trace.bottom, error[0])
                 trace.top = numpy.append(trace.top, error[1])
                 
+    def expected(self, index):
+        return None
+                
 class StepInPlaceGenerator:
     def __init__(self, scan):
         self.scan = scan
@@ -138,6 +143,9 @@ class StepInPlaceGenerator:
     def dataOnFinal(self, experiment, currentState):
         experiment.onStop()                   
 
+    def expected(self, index):
+        return None
+
 class GateSequenceScanGenerator:
     def __init__(self, scan):
         self.scan = scan
@@ -146,6 +154,7 @@ class GateSequenceScanGenerator:
     def prepare(self, pulseProgramUi):
         logger = logging.getLogger(__name__)
         address, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()
+        self.gateSequenceAttributes = self.scan.gateSequenceUi.gateSequenceAttributes()
         parameter = self.gateSequenceSettings.startAddressParam
         logger.debug( "GateSequenceScan {0} {1}".format( address, parameter ) )
         self.scan.list = address
@@ -198,6 +207,11 @@ class GateSequenceScanGenerator:
             experiment.startScan()
         else:
             experiment.onStop()                   
+
+    def expected(self, index):
+        if self.gateSequenceAttributes is not None:
+            return ExpectedLoopkup[ self.gateSequenceAttributes[index]['expected'] ]
+        return None 
         
 GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSequenceScanGenerator]   
 
@@ -443,6 +457,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         """ Called by worker with new data
         """
         logger = logging.getLogger(__name__)
+        expected = self.generator.expected( self.currentIndex )
         if data.overrun:
             logger.error( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
@@ -455,7 +470,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             evaluated = list()
             for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
                 if len(data.count[evaluation.counter])>0:
-                    evaluated.append( algo.evaluate( data.count[evaluation.counter]) ) # returns mean, error, raw
+                    evaluated.append( algo.evaluate( data.count[evaluation.counter], expected=expected ) ) # returns mean, error, raw
                 else:
                     evaluated.append( (0,None,0) )
                     logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))

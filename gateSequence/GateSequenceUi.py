@@ -241,6 +241,11 @@ class GateSequenceUi(Form,Base):
             data = self.gateSequenceCompiler.gateSequenceCompile( self.settings.gate )
             address = [0]*self.settings.thisSequenceRepetition
         return address, data, self.settings
+    
+    def gateSequenceAttributes(self):
+        if self.settings.active == self.Mode.FullList:
+            return self.gateSequenceContainer.GateSequenceAttributes.values()
+        return None
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict

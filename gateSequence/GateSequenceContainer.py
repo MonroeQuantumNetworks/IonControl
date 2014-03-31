@@ -21,6 +21,7 @@ class GateSequenceContainer(object):
     def __init__(self, gateDefinition ):
         self.gateDefinition = gateDefinition
         self.GateSequenceDict = GateSequenceOrderedDict()
+        self.GateSequenceAttributes = OrderedDict()
         
     def __repr__(self):
         return self.GateSequenceDict.__repr__()
@@ -36,6 +37,7 @@ class GateSequenceContainer(object):
                 self.GateSequenceDict.update( { gateset.attrib['name']: map(operator.methodcaller('strip'),gateset.text.split(','))} )
             else:  # we have the length 0 gate string
                 self.GateSequenceDict.update( { gateset.attrib['name']: [] } )
+        self.GateSequenceAttributes.update( { gateset.attrib['name']: gateset.attrib })
             
         self.validate()
     
