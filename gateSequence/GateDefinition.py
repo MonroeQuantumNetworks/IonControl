@@ -54,9 +54,9 @@ class GateDefinition(object):
             self.addGate( gate )
                         
     def addGate(self, element):
-        pulsedict = dict()
+        pulsedict = list()
         for child in element:
-            pulsedict.update( { child.attrib['name']: child.text })
+            pulsedict.append( (child.attrib['name'], child.text) )
         self.Gates.update( { element.attrib['name']: Gate(element.attrib['name'],pulsedict)} )
 
     def printGates(self):
