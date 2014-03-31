@@ -17,6 +17,14 @@ from modules import enum
 from trace.Trace import TracePlotting
 from functools import partial
 
+MaxPlotPoints = 100   # workaround for the freezing problem
+
+def truncateArray( x ):
+    if MaxPlotPoints>0 and len(x)>MaxPlotPoints:
+        return x[-MaxPlotPoints:]
+    return x
+
+
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
     Types = enum.enum('default','steps')
@@ -194,11 +202,10 @@ class PlottedTrace(object):
  
     def plotErrorBars(self,penindex):
         if self.hasHeightColumn:
-            self.errorBarItem = ErrorBarItem(x=self.x, y=self.y, height=self.height,
+            self.errorBarItem = ErrorBarItem(x=truncateArray(self.x), y=truncateArray(self.y), height=truncateArray(self.height),
                                                        pen=self.penList[penindex][0])
-            self.graphicsView.addItem(self.errorBarItem)
         elif self.hasTopColumn and self.hasBottomColumn:
-            self.errorBarItem = ErrorBarItem(x=self.x, y=self.y, top=self.top, bottom=self.bottom,
+            self.errorBarItem = ErrorBarItem(x=truncateArray(self.x), y=truncateArray(self.y), top=truncateArray(self.top), bottom=truncateArray(self.bottom),
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
             
@@ -206,7 +213,7 @@ class PlottedTrace(object):
     def plotLines(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0])
+        self.curve = self.graphicsView.plot(truncateArray(self.x), truncateArray(self.y), pen=self.penList[penindex][0])            
         if self.xAxisLabel:
             if self.xAxisUnit:
                 self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
@@ -216,7 +223,7 @@ class PlottedTrace(object):
     def plotPoints(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot(self.x, self.y, pen=None, symbol=self.penList[penindex][1],
+        self.curve = self.graphicsView.plot(truncateArray(self.x), truncateArray(self.y), pen=None, symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
             if self.xAxisUnit:
@@ -228,7 +235,7 @@ class PlottedTrace(object):
     def plotLinespoints(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+        self.curve = self.graphicsView.plot(truncateArray(self.x), truncateArray(self.y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
             if self.xAxisUnit:
@@ -264,12 +271,12 @@ class PlottedTrace(object):
         
     def replot(self):
         if hasattr(self,'curve') and self.curve is not None:
-            self.curve.setData( self.x, self.y )
+            self.curve.setData( truncateArray(self.x), truncateArray(self.y) )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
             if self.hasHeightColumn:
-                self.errorBarItem.setData(x=self.x, y=self.y, height=self.trace.height)
+                self.errorBarItem.setData(x=truncateArray(self.x), y=truncateArray(self.y), height=truncateArray(self.trace.height))
             else:
-                self.errorBarItem.setOpts(x=self.x, y=self.y, top=self.top, bottom=self.bottom)
+                self.errorBarItem.setOpts(x=truncateArray(self.x), y=truncateArray(self.y), top=truncateArray(self.top), bottom=truncateArray(self.bottom))
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
