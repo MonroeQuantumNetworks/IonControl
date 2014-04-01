@@ -51,12 +51,16 @@ class ParameterScanGenerator:
         self.nextIndexToWrite = 0
         
     def prepare(self, pulseProgramUi ):
+        if self.scan.gateSequenceUi.settings.enabled:
+            _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
+        else:
+            data = []
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, self.scan.list)
         if len(self.scan.code)>2040:
             self.nextIndexToWrite = 2040
-            return ( self.scan.code[:2040], [])
+            return ( self.scan.code[:2040], data)
         self.nextIndexToWrite = len(self.scan.code)
-        return ( self.scan.code, [])
+        return ( self.scan.code, data)
         
     def restartCode(self,currentIndex):
         if len(self.scan.code)-2*currentIndex>2040:
@@ -101,11 +105,15 @@ class StepInPlaceGenerator:
         self.scan = scan
         
     def prepare(self, pulseProgramUi ):
+        if self.scan.gateSequenceUi.settings.enabled:
+            _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
+        else:
+            data = []
         #self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
         self.stepInPlaceValue = 0
         self.scan.code = [4095, 0] # writing the last memory location
         #self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
-        return (self.scan.code*5, []) # write 5 points to the fifo queue at start,
+        return (self.scan.code*5, data) # write 5 points to the fifo queue at start,
                         # this prevents the Step in Place from stopping in case the computer lags behind evaluating by up to 5 points
 
     def restartCode(self,currentIndex):

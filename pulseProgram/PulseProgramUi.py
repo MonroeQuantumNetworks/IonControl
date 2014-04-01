@@ -133,6 +133,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.adaptiveLoadFile(self.configParams.lastFilename)
     
     def loadpppFile(self, path):
+        if self.combinedDict is not None and self.configParams.lastFilename is not None:
+            self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
         self.pppSourcePath = path
         _, self.pppSourceFile = os.path.split(path)
         with open(path,"r") as f:
