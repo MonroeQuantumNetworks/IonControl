@@ -116,6 +116,8 @@ class LogicAnalyzerData:
         self.gateData = list()
         self.stopMarker = None
         self.countOffset = 0
+        self.overrun = False
+        self.wordcount = 0
         
     def dataToStr(self, l):
         strlist = list()
@@ -162,7 +164,7 @@ class PulserHardwareServer(Process):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
         while (self.running):
-            if self.commandPipe.poll(0.05):
+            if self.commandPipe.poll(0.01):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
@@ -197,10 +199,15 @@ class PulserHardwareServer(Process):
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
             logicAnalyzerData, _ = self.ppReadLogicAnalyzerData(8)
+            if self.logicAnalyzerOverrun:
+                logger.error("Logic Analyzer Pipe overrun")
+                self.logicAnalyzerClearOverrun()
+                self.logicAnalyzerData.overrun = True
             if logicAnalyzerData:
                 self.logicAnalyzerBuffer.extend(logicAnalyzerData)
             for s in sliceview(self.logicAnalyzerBuffer,8):
                 (code, ) = struct.unpack('Q',s)
+                self.logicAnalyzerData.wordcount += 1
                 time = (code&0xffffff) + self.logicAnalyzerData.countOffset
                 pattern = (code >> 24) & 0xffffffff
                 header = (code >> 56 )
@@ -218,7 +225,7 @@ class PulserHardwareServer(Process):
                     self.logicAnalyzerData.auxData.append( (time,pattern))
                 elif header==6:
                     self.logicAnalyzerData.gateData.append( (time,pattern) )                                          
-                #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+                logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
             self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
 
                    
@@ -466,7 +473,8 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x27)   # pipe_out_available
-            byteswaiting = (wirevalue & 0xffe)*2
+            byteswaiting = (wirevalue & 0x1ffe)*2
+            self.logicAnalyzerOverrun = (wirevalue & 0x4000) == 0x4000
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa1, data)
@@ -660,6 +668,9 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.ActivateTriggerIn( 0x40, 12 ) # Ram set read address
 
+    def logicAnalyzerClearOverrun(self):
+        if self.xem:
+            self.xem.ActivateTriggerIn( 0x40, 10 ) # Ram set read address
        
         
 def sliceview(view,length):

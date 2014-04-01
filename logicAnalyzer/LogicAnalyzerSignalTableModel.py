@@ -24,7 +24,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
         self.shutterNamesSignal.dataChanged.connect( lambda first, last: self.dataChanged.emit( self.createIndex(first,0), self.createIndex(last,0) ))
         self.triggerNamesSignal.dataChanged.connect( lambda first, last: self.dataChanged.emit( self.createIndex(first+self.dataSignals,0), self.createIndex(last+self.dataSignals,0) ))
         
-    auxChannelNames = ['DDS 0 CS', 'DDS 1 CS', 'DDS 2 CS', 'DDS 3 CS', 'DDS 4 CS', 'DDS 5 CS', 'dds write done', 'out fifo full', 'in fifo empty', 'ram fifo valid']
+    auxChannelNames = ['dds write done', 'out fifo full', 'in fifo empty', 'ram fifo valid', 'DDS 0 CS', 'DDS 1 CS', 'DDS 2 CS', 'DDS 3 CS', 'DDS 4 CS', 'DDS 5 CS']
             
     def channelName(self, index):
         if index<self.dataSignals:

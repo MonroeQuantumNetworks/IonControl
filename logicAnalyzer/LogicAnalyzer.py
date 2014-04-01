@@ -91,7 +91,9 @@ class LogicAnalyzer(Form, Base ):
 
         
     def onData(self, logicData):
-        logging.getLogger(__name__).debug( str(logicData) )
+        logger = logging.getLogger(__name__)
+        logger.debug( str(logicData) )
+        logger.debug( "Wordcount: {0}".format(logicData.wordcount))
         self.logicData = logicData
         offset = 0
         if logicData.data:
