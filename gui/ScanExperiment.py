@@ -39,7 +39,7 @@ from modules import stringutilit
 from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
-
+from modules.doProfile import doprofile
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -49,13 +49,16 @@ class ParameterScanGenerator:
     def __init__(self, scan):
         self.scan = scan
         self.nextIndexToWrite = 0
+        self.numUpdatedVariables = 1
         
+    @doprofile
     def prepare(self, pulseProgramUi ):
         if self.scan.gateSequenceUi.settings.enabled:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
             data = []
         self.scan.code = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list)
+        self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
         if len(self.scan.code)>2040:
             self.nextIndexToWrite = 2040
             return ( self.scan.code[:2040], data)
@@ -63,11 +66,12 @@ class ParameterScanGenerator:
         return ( self.scan.code, data)
         
     def restartCode(self,currentIndex):
-        if len(self.scan.code)-2*currentIndex>2040:
-            self.nextIndexToWrite = 2040+currentIndex*2
-            return ( self.scan.code[currentIndex*2:self.nextIndexToWrite])
+        currentWordCount = 2*self.numUpdatedVariables*currentIndex
+        if len(self.scan.code)-currentWordCount>2040:
+            self.nextIndexToWrite = 2040+currentWordCount
+            return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
-        return self.scan.code[currentIndex*2:]
+        return self.scan.code[currentWordCount:]
         
     def xValue(self, index):
         return self.scan.list[index].ounit(self.scan.xUnit).toval()
@@ -184,10 +188,12 @@ class GateSequenceScanGenerator:
         return ( self.scan.code, data)
 
     def restartCode(self,currentIndex):
-        logger = logging.getLogger(__name__)
-        mycode = self.scan.code[currentIndex*2:]
-        logger.debug( "original length {0} remaining {1}".format( len(self.scan.code), len(mycode) ) )
-        return mycode
+        currentWordCount = 2*self.numUpdatedVariables*currentIndex
+        if len(self.scan.code)-currentWordCount>2040:
+            self.nextIndexToWrite = 2040+currentWordCount
+            return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
+        self.nextIndexToWrite = len(self.scan.code)
+        return self.scan.code[currentWordCount:]
 
     def xValue(self,index):
         return self.scan.index[index]
