@@ -55,7 +55,7 @@ class ParameterScanGenerator:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
             data = []
-        self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, self.scan.list)
+        self.scan.code = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list)
         if len(self.scan.code)>2040:
             self.nextIndexToWrite = 2040
             return ( self.scan.code[:2040], data)

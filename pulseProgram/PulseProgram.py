@@ -11,6 +11,7 @@ import logging
 import math
 import re, os
 import struct
+import copy
 
 import modules.magnitude as magnitude
 
@@ -110,6 +111,11 @@ class Variable:
         
     def __repr__(self):
         return str(self.__dict__)
+    
+    def __deepcopy__(self, mode):
+        new = Variable()
+        new.__dict__ = copy.deepcopy( self.__dict__ )
+        return new 
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
@@ -218,6 +224,15 @@ class PulseProgram:
         var = self.variabledict[variablename]
         # [item for sublist in l for item in sublist] idiom for flattening of list
         return self.flattenList( [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] )
+                   
+    def multiVariableUpdateCode(self, variablenames, values):
+        varslist = [ self.variabledict[name] for name in  variablenames]
+        codelist = list()
+        for var, value in zip(varslist,values):
+            codelist.extend( ( var.address | 0x8000, self.convertParameter(value,var.encoding)) )  # bit 15 set means there is more to come
+        if len(codelist)>2:
+            codelist[-2] &= 0x7fff 
+        return codelist
                    
     def loadFromMemory(self):
         """Similar to loadSource

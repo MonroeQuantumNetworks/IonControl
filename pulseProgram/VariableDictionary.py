@@ -6,7 +6,7 @@ from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_n
 from modules.Expression import Expression
 from modules.SequenceDict import SequenceDict
 from modules.magnitude import Magnitude
-
+import copy
 
 class CyclicDependencyException(Exception):
     pass
@@ -38,7 +38,7 @@ class VariableDictionaryView(object):
 class VariableDictionary(SequenceDict):
     """Ordered Dictionary to hold variable values. It maintains a dependency graph
     to check for cycles and to recalculate the necessary values when one of the fields is updated"""   
-    def __init__(self, variabledict, globaldict):
+    def __init__(self, variabledict, globaldict, deepcopy=False):
         super(VariableDictionary,self).__init__()
         self.dependencyGraph = DiGraph()
         self.expression = Expression()
@@ -46,7 +46,7 @@ class VariableDictionary(SequenceDict):
         self.valueView = VariableDictionaryView(self)
         for name,var in variabledict.iteritems():
             if var.type in ['parameter','address']:
-                super(VariableDictionary,self).__setitem__(name, var)
+                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) if deepcopy else var)
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):
                 try:
@@ -65,6 +65,8 @@ class VariableDictionary(SequenceDict):
         if hasattr(value,'strvalue'):
             self.setStrValue( key, value.strvalue )
 
+    def __deepcopy__(self, memo):
+        return type(self)( self, self.globaldict, deepcopy = True)
                 
     def addDependencies(self, graph, dependencies, name):
         """add all the dependencies to name"""
@@ -99,6 +101,19 @@ class VariableDictionary(SequenceDict):
         except KeyError as e:
             var.strerror = str(e)
         return self.recalculateDependent(name)
+    
+    def setValue(self, name, value):
+        """update the variable value with value and recalculate as necessary.
+        This is done using existing dependencies."""
+        var = self[name]
+        try:
+            var.value = value
+            var.strvalue = ""
+            var.strerror = None
+        except KeyError as e:
+            var.strerror = str(e)
+        return self.recalculateDependent(name, returnResult=True)
+        
         
     def setEncodingIndex(self, index, encoding):
         self.at(index).encoding = None if encoding == 'None' else str(encoding)
@@ -106,15 +121,14 @@ class VariableDictionary(SequenceDict):
     def setEnabledIndex(self, index, enabled):
         self.at(index).enabled = enabled
        
-    def recalculateDependent(self, node):
+    def recalculateDependent(self, node, returnResult=False):
         if self.dependencyGraph.has_node(node):
             generator = dfs_preorder_nodes(self.dependencyGraph,node)
             next(generator )   # skip the first, that is us
             nodelist = list(generator)  # make a list, we need it twice 
-            for node in nodelist:
-                self.recalculateNode(node)
-            return nodelist     # return which ones were re-calculated, so gui can be updated 
-        return list()
+            result = [ self.recalculateNode(node) for node in nodelist ]                
+            return (nodelist, result) if returnResult else nodelist     # return which ones were re-calculated, so gui can be updated 
+        return (list(), list()) if returnResult else list()
 
     def recalculateNode(self, node):
         if node in self:
@@ -127,6 +141,8 @@ class VariableDictionary(SequenceDict):
                     var.strerror = str(e)
             else:
                 logging.getLogger(__name__).warning("variable {0} does not have strvalue.".format(var))
+            return var.value
+        return None
             
     def recalculateAll(self):
         g = self.dependencyGraph.reverse()

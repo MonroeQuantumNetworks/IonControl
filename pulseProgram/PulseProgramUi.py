@@ -25,6 +25,7 @@ from pppCompiler.pppCompiler import pppCompiler
 from pppCompiler.CompileException import CompileException
 from modules.PyqtUtility import BlockSignals
 from pyparsing import ParseException
+import copy
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -243,8 +244,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 positionCache[name] = ( textEdit.textEdit.textCursor().position(),
                                         textEdit.textEdit.verticalScrollBar().value() )
             self.oldcombinedDict = self.combinedDict
-            base, _ = os.path.splitext(self.pppSourcePath)
-            ppFilename = base+".pp"
+            ppFilename = getPpFileName( self.pppSourcePath )
             self.compileppp(ppFilename)
             if self.pppCompileException is None:
                 self.loadFile(ppFilename, cache=False)
@@ -332,6 +332,17 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         
     def getVariableValue(self,name):
         return self.variableTableModel.getVariableValue(name)
+    
+    def variableScanCode(self, variablename, values):
+        tempvariabledict = copy.deepcopy( self.variabledict )
+        updatecode = list()
+        for currentval in values:
+            upd_names, upd_values = tempvariabledict.setValue(variablename, currentval)
+            upd_names.append( variablename )
+            upd_values.append( currentval )
+            updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
+        return updatecode
+
              
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
