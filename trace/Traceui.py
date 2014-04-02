@@ -104,7 +104,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         if (len(selectedIndexes) == 0) and useLastIfNoSelection:
             if len(self.tracePersistentIndexes) != 0:
                 #Find and return the most recently added trace that still has a valid index (i.e. has not been removed).
-                for ind in range(-1, -len(self.tracePersistentIndexes), -1): 
+                for ind in range(-1, -len(self.tracePersistentIndexes)-1, -1): 
                     if self.tracePersistentIndexes[ind].isValid():
                         return [QtCore.QModelIndex(self.tracePersistentIndexes[ind])]
                 return None #If the for loop failed to find a valid index, return None. This happens if all traces have been deleted.
