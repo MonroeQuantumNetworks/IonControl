@@ -117,7 +117,7 @@ def wait_dds( symboltable, arg=list(), kwarg=dict()):
 def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
     if len(arg)!=1:
         raise CompileException( "apply_next_scan_point does not take arguments" )
-    return [  "  READPIPEINDF",
+    return [  "apply_next_scan_point:  READPIPEINDF",
               "  NOP",
               "  WRITEPIPEINDF",
               "  NOP",
@@ -125,5 +125,6 @@ def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
               "  NOP",
               "  WRITEPIPE",
               "  NOP",
-              "  STWI"  ]
+              "  STWI",
+              "  JMPCMP apply_next_scan_point"  ]
     

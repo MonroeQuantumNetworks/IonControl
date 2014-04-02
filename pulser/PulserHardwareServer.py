@@ -91,6 +91,7 @@ class Data:
         self.other = list()
         self.overrun = False
         self.exitcode = 0
+        self.dependentValues = list()
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -184,7 +185,7 @@ class PulserHardwareServer(Process):
         self.running = False
         return True
 
-    analyzingState = enum.enum('normal','scanparameter')
+    analyzingState = enum.enum('normal','scanparameter', 'dependentscanparameter')
     def readDataFifo(self):
         """ run is responsible for reading the data back from the FPGA
             0xffffffff end of experiment marker
@@ -233,7 +234,12 @@ class PulserHardwareServer(Process):
         if data:
             for s in sliceview(data,4):
                 (token,) = struct.unpack('I',s)
-                if self.state == self.analyzingState.scanparameter:
+                if self.state == self.analyzingState.dependentscanparameter:
+                    self.data.dependentValues.append(token)
+                    logger.debug( "Dependent value {0} received".format(token) )
+                    self.state = self.analyzingState.normal
+                elif self.state == self.analyzingState.scanparameter:
+                    logger.debug( "Scan value {0} received".format(token) )
                     if self.data.scanvalue is None:
                         self.data.scanvalue = token
                     else:
@@ -263,7 +269,7 @@ class PulserHardwareServer(Process):
                     elif token == 0xff000000:
                         self.timestampOffset += 1<<28
                     elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
-                        self.state = self.analyzingState.scanparameter
+                        self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
                     key = token >> 28
                     channel = (token >>24) & 0xf
