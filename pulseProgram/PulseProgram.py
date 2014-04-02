@@ -230,7 +230,7 @@ class PulseProgram:
         codelist = list()
         for var, value in zip(varslist,values):
             codelist.extend( ( var.address | 0x8000, self.convertParameter(value,var.encoding)) )  # bit 15 set means there is more to come
-        if len(codelist)>2:
+        if len(codelist)>1:
             codelist[-2] &= 0x7fff 
         return codelist
                    

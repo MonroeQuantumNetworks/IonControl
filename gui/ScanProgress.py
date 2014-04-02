@@ -45,7 +45,7 @@ class ScanProgress(Form,Base):
         
     def stopTimer(self):
         if self.timer:
-            del self.timer
+            self.timer = None
             
     def setIdle(self):
         self.statusLabel.setText("Idle")    

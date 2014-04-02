@@ -289,6 +289,7 @@ class PulserHardwareServer(Process):
                 logger.info( "Overrun detected, triggered data queue" )
                 self.dataQueue.put( self.data )
                 self.data = Data()
+                self.clearOverrun()
                 
             
      
@@ -677,6 +678,10 @@ class PulserHardwareServer(Process):
     def logicAnalyzerClearOverrun(self):
         if self.xem:
             self.xem.ActivateTriggerIn( 0x40, 10 ) # Ram set read address
+            
+    def clearOverrun(self):
+        if self.xem:
+            self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
        
         
 def sliceview(view,length):

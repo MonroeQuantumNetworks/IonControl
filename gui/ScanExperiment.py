@@ -72,10 +72,11 @@ class ParameterScanGenerator:
     def xValue(self, index):
         return self.scan.list[index].ounit(self.scan.xUnit).toval()
         
-    def dataNextCode(self, experiment):
+    def dataNextCode(self, experiment, num_word_pairs ):
         if self.nextIndexToWrite<len(self.scan.code):
-            self.nextIndexToWrite += 2
-            return self.scan.code[self.nextIndexToWrite-2:self.nextIndexToWrite]
+            start = self.nextIndexToWrite
+            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*num_word_pairs )
+            return self.scan.code[start:self.nextIndexToWrite]
         return []
         
     def dataOnFinal(self, experiment, currentState):
@@ -119,7 +120,7 @@ class StepInPlaceGenerator:
     def restartCode(self,currentIndex):
         return self.scan.code * 5
         
-    def dataNextCode(self, experiment):
+    def dataNextCode(self, experiment, num_word_pairs):
         return self.scan.code
         
     def xValue(self,index):
@@ -191,10 +192,11 @@ class GateSequenceScanGenerator:
     def xValue(self,index):
         return self.scan.index[index]
 
-    def dataNextCode(self, experiment):
+    def dataNextCode(self, experiment, num_word_pairs):
         if self.nextIndexToWrite<len(self.scan.code):
-            self.nextIndexToWrite += 2
-            return self.scan.code[self.nextIndexToWrite-2:self.nextIndexToWrite]
+            start = self.nextIndexToWrite
+            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*num_word_pairs )
+            return self.scan.code[start:self.nextIndexToWrite]
         return []
         
     def xRange(self):
@@ -503,7 +505,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 else:
                     self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
             else:
-                mycode = self.generator.dataNextCode(self)
+                mycode = self.generator.dataNextCode(self, len(data.dependentValues)+1 )
                 if mycode:
                     self.pulserHardware.ppWriteData(mycode)
                 self.progressUi.onData( self.currentIndex )  
