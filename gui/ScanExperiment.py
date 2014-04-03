@@ -39,7 +39,6 @@ from modules import stringutilit
 from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
-from modules.doProfile import doprofile
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -51,7 +50,6 @@ class ParameterScanGenerator:
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
         
-    @doprofile
     def prepare(self, pulseProgramUi ):
         if self.scan.gateSequenceUi.settings.enabled:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
