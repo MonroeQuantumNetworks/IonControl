@@ -45,11 +45,14 @@ def getPpFileName( filename ):
 
 class ConfiguredParams:
     def __init__(self):
-        self.lastFilename = None
+        self.lastLoadFilename = None
+        self.lastppFilename = None
         self.recentFiles = dict()
         
     def __setstate__(self,d):
         self.__dict__ = d
+        self.__dict__.setdefault('lastLoadFilename',None)
+        self.__dict__.setdefault('lastppFilename',None)
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
@@ -89,7 +92,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             for key, path in self.configParams.recentFiles.iteritems():
                 if os.path.exists(path):
                     self.filenameComboBox.addItem(key)
-        lastFilename =  self.configParams.lastFilename
+        lastFilename =  self.configParams.lastLoadFilename
         if lastFilename is not None and os.path.exists(lastFilename):
             self.adaptiveLoadFile(lastFilename)
         if hasattr(self.configParams,'splitterHorizontal'):
@@ -100,13 +103,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
     def documentationString(self):
-        messages = [ "PulseProgram {0}".format( self.configParams.lastFilename ) ]
+        messages = [ "PulseProgram {0}".format( self.configParams.lastLoadFilename ) ]
         r = "\n".join(messages)
         return "\n".join( [r, self.pulseProgram.currentVariablesText()])        
                
     def onFilenameChange(self, name ):
         name = str(name)
-        if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastFilename:
+        if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastLoadFilename:
             self.adaptiveLoadFile(self.configParams.recentFiles[name])
             if str(self.filenameComboBox.currentText())!=name:
                 self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
@@ -127,15 +130,16 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         else:
             self.sourceMode = self.SourceMode.pp
             self.loadFile(path)            
+        self.configParams.lastLoadFilename = path
             
     def onReset(self):
-        if self.configParams.lastFilename is not None:
+        if self.configParams.lastLoadFilename is not None:
             self.variabledict = VariableDictionary( self.pulseProgram.variabledict, self.parameterdict )
-            self.adaptiveLoadFile(self.configParams.lastFilename)
+            self.adaptiveLoadFile(self.configParams.lastLoadFilename)
     
     def loadpppFile(self, path):
-        if self.combinedDict is not None and self.configParams.lastFilename is not None:
-            self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
+        if self.combinedDict is not None and self.configParams.lastppFilename is not None:
+            self.config[(self.configname,getPpFileName(self.configParams.lastppFilename))] = self.combinedDict
         self.pppSourcePath = path
         _, self.pppSourceFile = os.path.split(path)
         with open(path,"r") as f:
@@ -152,7 +156,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.filenameComboBox.addItem(filename)
             self.recentFilesChanged.emit(filename)
         self.configParams.recentFiles[filename]=path
-        self.configParams.lastFilename = self.pppSourcePath
         with BlockSignals(self.filenameComboBox) as w:
             w.setCurrentIndex( self.filenameComboBox.findText(filename))
 
@@ -179,10 +182,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def loadFile(self, path, cache=True):
         logger = logging.getLogger(__name__)
         logger.debug( "loadFile {0}".format( path ) )
-        if self.combinedDict is not None and self.configParams.lastFilename is not None:
-            self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
-        self.configParams.lastFilename = path
-        key = getPpFileName(self.configParams.lastFilename)
+        if self.combinedDict is not None and self.configParams.lastppFilename is not None:
+            self.config[(self.configname,getPpFileName(self.configParams.lastppFilename))] = self.combinedDict
+        self.configParams.lastppFilename = getPpFileName(path)
+        key = self.configParams.lastppFilename
         compileexception = None
         try:
             self.pulseProgram.loadSource(path)
@@ -315,9 +318,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
-        if self.configParams.lastFilename:
-            self.config[(self.configname,getPpFileName(self.configParams.lastFilename))] = self.combinedDict
-        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,getPpFileName(self.configParams.lastFilename)))
+        if self.configParams.lastppFilename:
+            self.config[(self.configname,getPpFileName(self.configParams.lastppFilename))] = self.combinedDict
+        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,getPpFileName(self.configParams.lastppFilename)))
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
