@@ -9,6 +9,7 @@
 #
 import math
 import operator
+from lru_cache import lru_cache
 
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
     ZeroOrMore,Forward,nums,alphas
@@ -103,6 +104,10 @@ class Expression:
         self.bnf = expr
         self.variabledict = variabledict
         self.funit = fnumber + ZeroOrMore(ident)
+        self.fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
+
+        self.cache = dict()
+        self.literalCache = dict()
 
 
     def pushFirst(self, strg, loc, toks ):
@@ -135,21 +140,31 @@ class Expression:
         elif op[0].isalpha():
             raise KeyError("operand '{0}' not found in dictionary.".format(op))
         else:
-            fmag = Optional(fnumber).setResultsName('num') + Optional(ident).setResultsName('unit')
-            l = fmag.parseString(op)
-            m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
-            m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
-            if useFloat and m.dimensionless():
-                return m.val
-            return m
+            return self._evaluate_literal(op, useFloat)
         return 0
+            
+    @lru_cache(maxsize=100)
+    def _evaluate_literal(self, literal, useFloat):
+        l = self.fmag.parseString(literal)
+        m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
+        m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
+        if useFloat and m.dimensionless():
+            value = m.val
+        else:
+            value = m
+        return value
+                    
+    @lru_cache(maxsize=100)
+    def _parse_expression(self, expression):
+        self.exprStack = list()
+        self.results = self.bnf.parseString(expression)
+        return self.exprStack           
             
     def evaluate(self, expression, variabledict=dict(), listDependencies=False, useFloat=True ):
         self.variabledict = variabledict
-        self.exprStack = []
-        self.results = self.bnf.parseString(expression)
+        stack = self._parse_expression(expression)
         dependencies = set()
-        value = self.evaluateStack( self.exprStack[:], dependencies, useFloat )
+        value = self.evaluateStack( stack[:], dependencies, useFloat )
         if listDependencies:
             return value, dependencies
         return value
@@ -209,5 +224,47 @@ if __name__ == "__main__":
     test( "2 * sqrt ( 4s / 1 s)",4 )
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
     test( "piTime",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10,'ms')} )
+    test( "9", 9 )
+    test( "-9", -9 )
+    test( "--9", 9 )
+    test( "-E", -math.e )
+    test( "9 + 3 + 6", 9 + 3 + 6 )
+    test( "9 + 3 / 11", 9 + 3.0 / 11 )
+    test( "(9 + 3)", (9 + 3) )
+    test( "(9+3) / 11", (9+3.0) / 11 )
+    test( "9 - 12 - 6", 9 - 12 - 6 )
+    test( "9 - (12 - 6)", 9 - (12 - 6) )
+    test( "2*3.14159", 2*3.14159 )
+    test( "3.1415926535*3.1415926535 / 10", 3.1415926535*3.1415926535 / 10 )
+    test( "PI * PI / 10", math.pi * math.pi / 10 )
+    test( "PI*PI/10", math.pi*math.pi/10 )
+    test( "PI^2", math.pi**2 )
+    test( "round(PI^2)", round(math.pi**2) )
+    test( "6.02E23 * 8.048", 6.02E23 * 8.048 )
+    test( "e / 3", math.e / 3 )
+    test( "sin(pi/2)", math.sin(math.pi/2) )
+    test( "trunc(E)", int(math.e) )
+    test( "trunc(-E)", int(-math.e) )
+    test( "round(E)", round(math.e) )
+    test( "round(-E)", round(-math.e) )
+    test( "E^PI", math.e**math.pi )
+    test( "2^3^2", 2**3**2 )
+    test( "2^3+2", 2**3+2 )
+    test( "2^9", 2**9 )
+    test( ".5", 0.5)
+    test( "-.7", -0.7)
+    test( "-.7ms", magnitude.mg(-0.7,"ms"))
+    test( "sgn(-2)", -1 )
+    test( "sgn(0)", 0 )
+    test( "sgn(0.1)", 1 )
+    test( "2*(3+5)", 16 )
+    test( "2*(alpha+beta)", 14, {'alpha':5,'beta':2} )
+    test( "-4 MHz" , magnitude.mg(-4,'MHz') )
+    test( "2*4 MHz" , magnitude.mg(8,'MHz') )
+    test( "2 * sqrt ( 4s / 1 s)",4 )
+    test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
+    test( "piTime",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10,'ms')} )
 
     print ExprEval.evaluate( "4 MHz" )
+    print ExprEval._evaluate_literal.cache_info()
+    print ExprEval._parse_expression.cache_info()
