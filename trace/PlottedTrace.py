@@ -7,7 +7,7 @@ Created on Fri Dec 28 18:40:30 2012
 import os.path
 from trace import pens
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import numpy
 from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
@@ -16,14 +16,7 @@ from modules import DataDirectory
 from modules import enum
 from trace.Trace import TracePlotting
 from functools import partial
-
-MaxPlotPoints = 100   # workaround for the freezing problem
-
-def truncateArray( x ):
-    if MaxPlotPoints>0 and len(x)>MaxPlotPoints:
-        return x[-MaxPlotPoints:]
-    return x
-
+import time 
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
@@ -56,6 +49,8 @@ class PlottedTrace(object):
         self.xAxisUnit = xAxisUnit
         self.yAxisLabel = yAxisLabel
         self.yAxisUnit = yAxisUnit
+        self.lastPlotTime = time.time()
+        self.needsReplot = False
         # we use pointers to the relevant columns in trace
         if tracePlotting is not None:
             self.tracePlotting = tracePlotting
@@ -202,10 +197,10 @@ class PlottedTrace(object):
  
     def plotErrorBars(self,penindex):
         if self.hasHeightColumn:
-            self.errorBarItem = ErrorBarItem(x=truncateArray(self.x), y=truncateArray(self.y), height=truncateArray(self.height),
+            self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), height=(self.height),
                                                        pen=self.penList[penindex][0])
         elif self.hasTopColumn and self.hasBottomColumn:
-            self.errorBarItem = ErrorBarItem(x=truncateArray(self.x), y=truncateArray(self.y), top=truncateArray(self.top), bottom=truncateArray(self.bottom),
+            self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), top=(self.top), bottom=(self.bottom),
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
             
@@ -213,7 +208,7 @@ class PlottedTrace(object):
     def plotLines(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot(truncateArray(self.x), truncateArray(self.y), pen=self.penList[penindex][0])            
+        self.curve = self.graphicsView.plot((self.x), (self.y), pen=self.penList[penindex][0])            
         if self.xAxisLabel:
             if self.xAxisUnit:
                 self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
@@ -223,7 +218,7 @@ class PlottedTrace(object):
     def plotPoints(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot(truncateArray(self.x), truncateArray(self.y), pen=None, symbol=self.penList[penindex][1],
+        self.curve = self.graphicsView.plot((self.x), (self.y), pen=None, symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
             if self.xAxisUnit:
@@ -235,7 +230,7 @@ class PlottedTrace(object):
     def plotLinespoints(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot(truncateArray(self.x), truncateArray(self.y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+        self.curve = self.graphicsView.plot((self.x), (self.y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
             if self.xAxisUnit:
@@ -270,13 +265,23 @@ class PlottedTrace(object):
         self.curvePen = penindex
         
     def replot(self):
+        if len(self.x)>500 and time.time()-self.lastPlotTime<len(self.x)/500.:
+            if not self.needsReplot:
+                self.needsReplot = True
+                QtCore.QTimer.singleShot(len(self.x)*2,self._replot) 
+        else:
+            self._replot()
+            
+    def _replot(self):
         if hasattr(self,'curve') and self.curve is not None:
-            self.curve.setData( truncateArray(self.x), truncateArray(self.y) )
+            self.curve.setData( (self.x), (self.y) )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
             if self.hasHeightColumn:
-                self.errorBarItem.setData(x=truncateArray(self.x), y=truncateArray(self.y), height=truncateArray(self.trace.height))
+                self.errorBarItem.setData(x=(self.x), y=(self.y), height=(self.trace.height))
             else:
-                self.errorBarItem.setOpts(x=truncateArray(self.x), y=truncateArray(self.y), top=truncateArray(self.top), bottom=truncateArray(self.bottom))
+                self.errorBarItem.setOpts(x=(self.x), y=(self.y), top=(self.top), bottom=(self.bottom))
+        self.lastPlotTime = time.time()
+        self.needsReplot = False
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
