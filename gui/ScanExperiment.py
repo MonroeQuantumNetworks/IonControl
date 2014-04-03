@@ -161,6 +161,7 @@ class GateSequenceScanGenerator:
     def __init__(self, scan):
         self.scan = scan
         self.nextIndexToWrite = 0
+        self.numUpdatedVariables = 1
         
     def prepare(self, pulseProgramUi):
         logger = logging.getLogger(__name__)
