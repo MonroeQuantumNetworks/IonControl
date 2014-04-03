@@ -473,8 +473,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
             return path
             
-    def onData(self, data ):
+    def onData(self, data, queuesize ):
         """ Called by worker with new data
+        queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
         if data.overrun:
@@ -498,7 +499,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
                 self.displayUi.add( [ e[0] for e in evaluated ] )
-                self.updateMainGraph(x, evaluated )
+                self.updateMainGraph(x, evaluated, 0 if data.final else queuesize )
                 self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
             if self.scan.enableTimestamps: 
@@ -516,7 +517,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.pulserHardware.ppWriteData(mycode)
                 self.progressUi.onData( self.currentIndex )  
 
-    def updateMainGraph(self, x, evaluated): # evaluated is list of mean, error, raw
+    def updateMainGraph(self, x, evaluated, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
             trace = Trace(record_timestamps=True)
             self.plottedTraceList = list()
@@ -562,8 +563,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.traceui.resizeColumnsToContents()
         else:
             self.generator.appendData(self.plottedTraceList, x, evaluated)
-            for plottedTrace in self.plottedTraceList:
-                plottedTrace.replot()
+            if queuesize<2:
+                for plottedTrace in self.plottedTraceList:
+                    plottedTrace.replot()
 
     def finalizeData(self, reason='end of scan'):
         logger = logging.getLogger(__name__)

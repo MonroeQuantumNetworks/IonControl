@@ -27,10 +27,10 @@ class QueueReader(QtCore.QThread):
         self.running = False
         self.dataMutex = QtCore.QMutex()           # protects the thread data
         self.dataQueue = dataQueue
-        self.dataHandler = { 'Data': lambda data : self.pulserHardware.dataAvailable.emit(data),
-                             'DedicatedData': lambda data: self.pulserHardware.dedicatedDataAvailable.emit(data),
-                             'FinishException': lambda data: self.raise_(FinishException()),
-                             'LogicAnalyzerData': lambda data: self.onLogicAnalyzerData(data) }
+        self.dataHandler = { 'Data': lambda data, size : self.pulserHardware.dataAvailable.emit(data, size),
+                             'DedicatedData': lambda data, size: self.pulserHardware.dedicatedDataAvailable.emit(data),
+                             'FinishException': lambda data, size: self.raise_(FinishException()),
+                             'LogicAnalyzerData': lambda data, size: self.onLogicAnalyzerData(data) }
    
     def onLogicAnalyzerData(self, data): 
         self.pulserHardware.logicAnalyzerDataAvailable.emit(data)
@@ -44,7 +44,7 @@ class QueueReader(QtCore.QThread):
         while True:
             try:
                 data = self.dataQueue.get()
-                self.dataHandler[ data.__class__.__name__ ]( data )
+                self.dataHandler[ data.__class__.__name__ ]( data, self.dataQueue.qsize() )
             except (KeyboardInterrupt, SystemExit, FinishException):
                 break
             except Exception:
@@ -80,7 +80,7 @@ class LoggingReader(QtCore.QThread):
 class PulserHardware(QtCore.QObject):
     sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
 
-    dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
+    dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject', object )
     dedicatedDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     logicAnalyzerDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )

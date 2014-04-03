@@ -73,7 +73,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
             self.removeAll()
         
     def myexcepthook(self, excepttype, value, tback):
-        logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__)
+        logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__ if tback is not None else "unknown")
         self.addMessage(value)
         logger.error( str(value), exc_info=(excepttype, value, tback) )
         #sys.__excepthook__(excepttype, value, tback)

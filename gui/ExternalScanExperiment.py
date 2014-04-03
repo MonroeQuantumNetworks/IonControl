@@ -101,7 +101,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 self.progressUi.setIdle()
                 logger.info( "Status -> Idle" )
 
-    def onData(self, data ):
+    def onData(self, data, queuesize ):
         """ Called by worker with new data
         """
         logger = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                     logger.info( "No data for counter {0}, ignoring it.".format(evaluation.counter) )
             if len(evaluated)>0:
                 self.displayUi.add(  [ e[0][0] for e in evaluated ] )
-                self.updateMainGraph(x, evaluated )
+                self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )
                 self.showHistogram(data, self.scan.evalList )
             self.currentIndex += 1
             self.externalParameterIndex += 1

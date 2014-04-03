@@ -135,7 +135,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.plottedTrace.trace.bottom = numpy.append( self.plottedTrace.trace.bottom, 0.05)
         self.displayUi.add( [value] )
         self.plottedTrace.replot()
-        if self.xvalue > 10:
+        if self.xvalue > 500:
             if self.scanType == 0:
                 self.onStop()
 #start added
