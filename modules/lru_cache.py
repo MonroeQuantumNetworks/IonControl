@@ -7,7 +7,7 @@ _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 class _HashedSeq(list):
     __slots__ = 'hashvalue'
 
-    def __init__(self, tup, hash=hash):
+    def __init__(self, tup, hash=hash): #@ReservedAssignment
         self[:] = tup
         self.hashvalue = hash(tup)
 
@@ -17,7 +17,7 @@ class _HashedSeq(list):
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
              fasttypes = {int, str, frozenset, type(None)},
-             sorted=sorted, tuple=tuple, type=type, len=len):
+             sorted=sorted, tuple=tuple, type=type, len=len):  # @ReservedAssignment
     'Make a cache key from optionally typed positional and keyword arguments'
     key = args
     if kwds:
@@ -28,7 +28,7 @@ def _make_key(args, kwds, typed,
     if typed:
         key += tuple(type(v) for v in args)
         if kwds:
-            key += tuple(type(v) for k, v in sorted_items)
+            key += tuple(type(v) for _, v in sorted_items)
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
     return _HashedSeq(key)
@@ -130,7 +130,7 @@ def lru_cache(maxsize=100, typed=False):
                         # empty the oldest link and make it the new root
                         root = nonlocal_root[0] = oldroot[NEXT]
                         oldkey = root[KEY]
-                        oldvalue = root[RESULT]
+                        oldvalue = root[RESULT]  # @UnusedVariable
                         root[KEY] = root[RESULT] = None
                         # now update the cache dictionary for the new links
                         del cache[oldkey]
