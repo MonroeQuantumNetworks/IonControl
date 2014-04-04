@@ -22,7 +22,7 @@ from modules import enum
 from modules.SequenceDict import SequenceDict
 from modules.Utility import unique
 from modules.formatDelta import formatDelta
-from modules.magnitude import Magnitude
+from modules.magnitude import Magnitude, mg
 from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.mymath import max_iterable
@@ -45,6 +45,10 @@ class AutoLoadSettings:
         self.wavemeterAddress = ""
         self.ovenChannelActiveLow = False
         self.shutterChannelActiveLow = False
+        self.autoReload = False
+        self.waitForComebackTime =  mg( 60, 's' )
+        self.minLaserScatter = mg( 0.1, 'kHz' )
+        self.maxFailedAutoload = 0
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -53,6 +57,10 @@ class AutoLoadSettings:
         self.__dict__ = state
         self.__dict__.setdefault( 'ovenChannelActiveLow', False)
         self.__dict__.setdefault( 'shutterChannelActiveLow', False )
+        self.__dict__.setdefault( 'autoReload', False )
+        self.__dict__.setdefault( 'waitForComebackTime', mg( 60, 's' ) )
+        self.__dict__.setdefault( 'minLaserScatter', mg( 0.1, 'kHz' ) )
+        self.__dict__.setdefault( 'maxFailedAutoload', 0 )
 
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -65,7 +73,8 @@ class LoadingEvent:
         self.trappingTime = None
 
 class AutoLoad(UiForm,UiBase):
-    StatusOptions = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared', 'Frozen' )
+    StatusOptions = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven' )
+    ionReappeared = QtCore.pyqtSignal()
     def __init__(self, config, pulser, dataAvailableSignal, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
@@ -78,43 +87,45 @@ class AutoLoad(UiForm,UiBase):
         self.dataSignalConnected = False
         self.outOfRangeCount=0
         self.dataSignal = dataAvailableSignal
+        self.numFailedAutoload = 0
+        
+    def initMagnitude(self, ui, settingsname, dimension=None  ):
+        ui.setValue( getattr( self.settings, settingsname  ) )
+        ui.valueChanged.connect( functools.partial( self.onValueChanged, settingsname ) )
+        if dimension:
+            ui.dimension = dimension     
+    
+    def initCheckBox(self, ui, settingsname):
+        ui.setChecked( getattr( self.settings, settingsname  ) )
+        ui.stateChanged.connect( functools.partial( self.onStateChanged, settingsname ) )
     
     def setupUi(self,widget):
         UiForm.setupUi(self,widget)
         #Set the GUI values from the settings stored in the config files, and
         #connect the valueChanged events of each button to the appropriate method
-        self.counterChannelBox.setValue( self.settings.counterChannel )
-        self.counterChannelBox.valueChanged.connect( functools.partial( self.onValueChanged, 'counterChannel' ))
-        self.shutterChannelBox.setValue( self.settings.shutterChannel )
-        self.shutterChannelBox.valueChanged.connect( functools.partial( self.onValueChanged, 'shutterChannel' ))
-        self.ovenChannelBox.setValue( self.settings.ovenChannel )
-        self.ovenChannelBox.valueChanged.connect( functools.partial( self.onValueChanged, 'ovenChannel' ))
-        self.ovenChannelActiveLowBox.setChecked( self.settings.ovenChannelActiveLow )
-        self.ovenChannelActiveLowBox.stateChanged.connect( functools.partial( self.onStateChanged, 'ovenChannelActiveLow') )
-        self.shutterChannelActiveLowBox.setChecked( self.settings.shutterChannelActiveLow )
-        self.shutterChannelActiveLowBox.stateChanged.connect( functools.partial( self.onStateChanged, 'shutterChannelActiveLow') )
-        self.laserDelayBox.setValue( self.settings.laserDelay )
-        self.laserDelayBox.dimension = Magnitude(1,s=1)
-        self.laserDelayBox.valueChanged.connect( functools.partial( self.onValueChanged, 'laserDelay' ))
-        self.maxTimeBox.setValue( self.settings.maxTime )
-        self.maxTimeBox.dimension = Magnitude(1,s=1)
-        self.maxTimeBox.valueChanged.connect( functools.partial( self.onValueChanged, 'maxTime' ))
-        self.thresholdBareBox.setValue( self.settings.thresholdBare )
-        self.thresholdBareBox.dimension = Magnitude(1,s=-1)
-        self.thresholdBareBox.valueChanged.connect( functools.partial( self.onValueChanged, 'thresholdBare' ))
-        self.thresholdOvenBox.setValue( self.settings.thresholdOven )
-        self.thresholdOvenBox.dimension = Magnitude(1,s=-1)
-        self.thresholdOvenBox.valueChanged.connect( functools.partial( self.onValueChanged, 'thresholdOven' ))
-        self.checkTimeBox.setValue( self.settings.checkTime )
-        self.checkTimeBox.dimension = Magnitude(1,s=1)
-        self.checkTimeBox.valueChanged.connect( functools.partial( self.onValueChanged, 'checkTime' ))
+        self.initMagnitude( self.counterChannelBox, 'counterChannel' )
+        self.initMagnitude( self.shutterChannelBox, 'shutterChannel' )
+        self.initMagnitude( self.ovenChannelBox, 'ovenChannel' )
+        self.initCheckBox( self.ovenChannelActiveLowBox, 'ovenChannelActiveLow') 
+        self.initCheckBox( self.shutterChannelActiveLowBox, 'shutterChannelActiveLow') 
+        self.initMagnitude( self.laserDelayBox, 'laserDelay', Magnitude(1,s=1) )
+        self.initMagnitude( self.maxTimeBox, 'maxTime', Magnitude(1,s=1) )
+        self.initMagnitude( self.thresholdBareBox, 'thresholdBare', Magnitude(1,s=-1) )
+        self.initMagnitude( self.thresholdOvenBox, 'thresholdOven', Magnitude(1,s=-1) )
+        self.initMagnitude( self.checkTimeBox, 'checkTime', Magnitude(1,s=1) )
+        self.initCheckBox( self.autoReloadBox, 'autoReload') 
+        self.initMagnitude( self.minLaserScatterBox, 'minLaserScatter', Magnitude(1,s=-1) )
+        self.initMagnitude( self.waitForComebackBox, 'waitForComebackTime', Magnitude(1,s=1) )
+        self.initMagnitude( self.maxFailedAutoloadBox, 'maxFailedAutoload' )
+        
         self.startButton.clicked.connect( self.onStart )
         self.stopButton.clicked.connect( self.onStop )
         self.historyTableModel = LoadingHistoryModel(self.loadingHistory)
         self.historyTableView.setModel(self.historyTableModel)
         self.keyFilter = KeyFilter(QtCore.Qt.Key_Delete)
         self.keyFilter.keyPressed.connect( self.deleteFromHistory )
-        self.historyTableView.installEventFilter( self.keyFilter )
+        self.historyTableView.installEventFilter( self.keyFilter )                
+        
         #Wavemeter interlock setup        
         self.am = QtNetwork.QNetworkAccessManager()
         self.useInterlockGui.setChecked(self.settings.useInterlock)
@@ -252,8 +263,9 @@ class AutoLoad(UiForm,UiBase):
         
     def onStart(self):
         """Execute when start button is clicked. Begin loading if idle."""
-        if (self.status == self.StatusOptions.Idle):
+        if (self.status in [ self.StatusOptions.Idle, self.StatusOptions.AutoReloadFailed]):
             self.setPreheat()
+            self.numFailedAutoload = 0
 
     def onStop(self):
         """Execute when stop button is clicked. Stop loading."""
@@ -335,6 +347,7 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Trapped :)")       
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
+        self.numFailedAutoload = 0
     
     def setFrozen(self):
         self.startButton.setEnabled( False )
@@ -350,6 +363,27 @@ class AutoLoad(UiForm,UiBase):
         self.disappearedAt = datetime.now()
         self.statusLabel.setText("Disappeared :(")
 
+    def setWaitingForComeback(self):
+        self.statusLabel.setText("Waiting to see if ion comes back")
+        self.status = self.StatusOptions.WaitingForComeback
+    
+    def setCoolingOven(self):
+        self.statusLabel.setText("Cooling Oven")
+        self.status = self.StatusOptions.CoolingOven
+        self.started = datetime.now()
+    
+    def setAutoReloadFailed(self):
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
+        self.timer = None
+        self.elapsedLabel.setStyleSheet("QLabel { color:black; }")
+        self.status = self.StatusOptions.AutoReloadFailed
+        self.statusLabel.setText("Auto reload failed")
+        self.disconnectDataSignal()
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
+        
+        
     def onIonIsStillTrapped(self):
         if self.status == self.StatusOptions.Idle and len(self.historyTableModel.history)>0:
             self.timer = QtCore.QTimer()
@@ -383,11 +417,27 @@ class AutoLoad(UiForm,UiBase):
                 self.setLoad()
         elif self.status==self.StatusOptions.Load:
             if self.elapsed.total_seconds() > self.settings.maxTime.toval('s'):
-                self.setIdle()
+                self.numFailedAutoload += 1
+                if self.settings.autoReload:
+                    if self.numFailedAutoload<=self.settings.maxFailedAutoload:
+                        self.setCoolingOven()
+                    else:
+                        self.setAutoReloadFailed()
+                else:
+                    self.setIdle()
         elif self.status==self.StatusOptions.Disappeared:
             if (datetime.now()-self.disappearedAt).total_seconds() > self.settings.checkTime.toval('s'):
                 self.historyTableModel.updateLast('trappingTime',self.disappearedAt-self.started)
-                self.setIdle()
+                self.setWaitingForComeback()
+        elif self.status==self.StatusOptions.WaitingForComeback:
+            if (datetime.now()-self.disappearedAt).total_seconds() > self.settings.waitForComebackTime.toval('s'):
+                if self.settings.autoReload and self.numFailedAutoload<=self.settings.maxFailedAutoload:
+                    self.setPreheat()
+        elif self.status==self.StatusOptions.CoolingOven:
+            if (datetime.now()-self.started).total_seconds() > self.settings.waitForComebackTime.toval('s'):
+                if self.settings.autoReload and self.numFailedAutoload<=self.settings.maxFailedAutoload:
+                    self.setPreheat()
+            
     
     def onData(self, data ):
         """Execute when count rate data is received. Change state based on count rate."""
@@ -404,6 +454,11 @@ class AutoLoad(UiForm,UiBase):
                 self.setDisappeared()
         elif self.status==self.StatusOptions.Disappeared:
             if data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare:
+                self.ionReappeared.emit()
+                self.setTrapped(True)
+        elif self.status==self.StatusOptions.WaitingForComeback:
+            if data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare:
+                self.ionReappeared.emit()
                 self.setTrapped(True)
             
     
