@@ -50,6 +50,7 @@ class AutoLoadSettings:
         self.waitForComebackTime =  mg( 60, 's' )
         self.minLaserScatter = mg( 0.1, 'kHz' )
         self.maxFailedAutoload = 0
+        self.postSequenceWaitTime = mg( 5, 's' )
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -62,6 +63,7 @@ class AutoLoadSettings:
         self.__dict__.setdefault( 'waitForComebackTime', mg( 60, 's' ) )
         self.__dict__.setdefault( 'minLaserScatter', mg( 0.1, 'kHz' ) )
         self.__dict__.setdefault( 'maxFailedAutoload', 0 )
+        self.__dict__.setdefault( 'postSequenceWaitTime', mg( 5, 's' ) )
 
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -103,6 +105,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addState( 'WaitingForComeback', self.setWaitingForComeback )
         self.statemachine.addState( 'AutoReloadFailed', self.setAutoReloadFailed )
         self.statemachine.addState( 'CoolingOven', self.setCoolingOven )
+        self.statemachine.addState( 'PostSequenceWait', self.setPostSequenceWait )
 
         self.statemachine.addTransition( 'timer', 'Preheat', 'Load', 
                                          lambda state: state.timeInState() > self.settings.laserDelay )
@@ -129,15 +132,18 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'timer', 'CoolingOven', 'Preheat',
                                         lambda state: state.timeInState() > self.settings.waitForComebackTime and
                                                       self.settings.autoReload )
+        self.statemachine.addTransition( 'timer', 'PostSequenceWait', 'Trapped', 
+                                         lambda state: state.timeInState() > self.settings.postSequenceWaitTime )
         self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven )
         self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
         self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare)
         self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
         self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
+        self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
         self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven'], 'Idle')
         self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
         self.statemachine.addTransition( 'ppStarted', 'Trapped', 'Frozen' )
-        self.statemachine.addTransition( 'ppStopped', 'Frozen', 'Trapped' )
+        self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' )
         self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load'], 'Idle' )
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 )
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped' )
@@ -170,6 +176,7 @@ class AutoLoad(UiForm,UiBase):
         self.initMagnitude( self.minLaserScatterBox, 'minLaserScatter', Magnitude(1,s=-1) )
         self.initMagnitude( self.waitForComebackBox, 'waitForComebackTime', Magnitude(1,s=1) )
         self.initMagnitude( self.maxFailedAutoloadBox, 'maxFailedAutoload' )
+        self.initMagnitude( self.postSequenceWaitTimeBox, 'postSequenceWaitTime' )
         
         self.startButton.clicked.connect( self.onStart )
         self.stopButton.clicked.connect( self.onStop )
@@ -370,6 +377,9 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         
+    def setPostSequenceWait(self):
+        self.statusLabel.setText("Waiting after sequence finished.")
+        
     def loadingToTrapped(self, check, trapped):
         logger = logging.getLogger(__name__)
         logger.info(  "Loading Trapped" )
@@ -385,6 +395,7 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.numFailedAutoload = 0
         self.timerNullTime = self.trappingTime
+        self.ionReappeared.emit()        
     
     def exitTrapped(self):
         self.historyTableModel.updateLast('trappingTime',datetime.now()-self.trappingTime)
