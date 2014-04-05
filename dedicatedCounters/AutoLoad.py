@@ -26,6 +26,7 @@ from modules.magnitude import Magnitude, mg
 from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.mymath import max_iterable
+from modules.statemachine import Statemachine
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -68,12 +69,11 @@ def invertIf( logic, invert ):
 
 class LoadingEvent:
     def __init__(self,loading=None,trappedAt=None):
-        self.loadingTime = loading
+        self.trappingTime = loading
         self.trappedAt = trappedAt
         self.trappingTime = None
 
 class AutoLoad(UiForm,UiBase):
-    StatusOptions = enum.enum('Idle','Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven' )
     ionReappeared = QtCore.pyqtSignal()
     def __init__(self, config, pulser, dataAvailableSignal, parent=None):
         UiBase.__init__(self,parent)
@@ -81,13 +81,66 @@ class AutoLoad(UiForm,UiBase):
         self.config = config
         self.settings = self.config.get('AutoLoad.Settings',AutoLoadSettings())
         self.loadingHistory = self.config.get('AutoLoad.History',list())
-        self.status = self.StatusOptions.Idle
         self.timer = None
         self.pulser = pulser
         self.dataSignalConnected = False
         self.outOfRangeCount=0
         self.dataSignal = dataAvailableSignal
         self.numFailedAutoload = 0
+        self.constructStatemachine()
+        self.timerNullTime = datetime.now()
+        self.trappingTime = None
+        
+    def constructStatemachine(self):
+        self.statemachine = Statemachine()
+        self.statemachine.addState( 'Idle' , self.setIdle, self.exitIdle )
+        self.statemachine.addState( 'Preheat', self.setPreheat )
+        self.statemachine.addState( 'Load', self.setLoad )
+        self.statemachine.addState( 'Check', self.setCheck )
+        self.statemachine.addState( 'Trapped', self.setTrapped, self.exitTrapped )
+        self.statemachine.addState( 'Disappeared', self.setDisappeared )
+        self.statemachine.addState( 'Frozen', self.setFrozen )
+        self.statemachine.addState( 'WaitingForComeback', self.setWaitingForComeback )
+        self.statemachine.addState( 'AutoReloadFailed', self.setAutoReloadFailed )
+        self.statemachine.addState( 'CoolingOven', self.setCoolingOven )
+
+        self.statemachine.addTransition( 'timer', 'Preheat', 'Load', 
+                                         lambda state: state.timeInState() > self.settings.laserDelay )
+        self.statemachine.addTransition( 'timer', 'Check', 'Trapped',
+                                         lambda state: state.timeInState() > self.settings.checkTime,
+                                         self.loadingToTrapped )
+        self.statemachine.addTransition( 'timer', 'Load', 'AutoReloadFailed', 
+                                         lambda state: state.timeInState() > self.settings.maxTime and 
+                                                       self.settings.autoReload and 
+                                                       self.numFailedAutoload>=self.settings.maxFailedAutoload) 
+        self.statemachine.addTransition( 'timer', 'Load', 'CoolingOven',
+                                         lambda state: state.timeInState() > self.settings.maxTime-self.settings.laserDelay and
+                                                       self.settings.autoReload and
+                                                       self.numFailedAutoload<self.settings.maxFailedAutoload )                                         
+        self.statemachine.addTransition( 'timer', 'Load', 'Idle',
+                                         lambda state: state.timeInState() > self.settings.maxTime-self.settings.laserDelay and 
+                                                       not self.settings.autoReload )
+        self.statemachine.addTransition( 'timer', 'Disappeared', 'WaitingForComeback',
+                                         lambda state: state.timeInState() > self.settings.checkTime )
+        self.statemachine.addTransition( 'timer', 'WaitingForComeback', 'Preheat',
+                                         lambda state: state.timeInState() > self.settings.waitForComebackTime and
+                                                       self.settings.autoReload and 
+                                                       self.numFailedAutoload<=self.settings.maxFailedAutoload)                                         
+        self.statemachine.addTransition( 'timer', 'CoolingOven', 'Preheat',
+                                        lambda state: state.timeInState() > self.settings.waitForComebackTime and
+                                                      self.settings.autoReload )
+        self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven )
+        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
+        self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare)
+        self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
+        self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
+        self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven'], 'Idle')
+        self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
+        self.statemachine.addTransition( 'ppStarted', 'Trapped', 'Frozen' )
+        self.statemachine.addTransition( 'ppStopped', 'Frozen', 'Trapped' )
+        self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load'], 'Idle' )
+        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 )
+        self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped' )
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
         ui.setValue( getattr( self.settings, settingsname  ) )
@@ -147,8 +200,8 @@ class AutoLoad(UiForm,UiBase):
         for ilChannel in self.settings.interlock.values():
             self.getWavemeterData(ilChannel.channel)
         #end wavemeter interlock setup      
-        self.setIdle()
         self.pulser.ppActiveChanged.connect( self.setDisabled )
+        self.statemachine.initialize( 'Idle' )
         
         # Actions
         self.createAction("Last ion is still trapped", self.onIonIsStillTrapped )
@@ -249,8 +302,7 @@ class AutoLoad(UiForm,UiBase):
                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
                 self.allFreqsInRange.setToolTip("There are laser frequencies out of range")
                 #This is the interlock: loading is inhibited if frequencies are out of range
-                if ((self.status != self.StatusOptions.Idle) & self.settings.useInterlock):
-                    self.setIdle() 
+                self.statemachine.processEvent( 'outOfLock' )
         
     def onValueChanged(self,attr,value):
         """Change the value of attr in settings to value"""
@@ -263,60 +315,48 @@ class AutoLoad(UiForm,UiBase):
         
     def onStart(self):
         """Execute when start button is clicked. Begin loading if idle."""
-        if (self.status in [ self.StatusOptions.Idle, self.StatusOptions.AutoReloadFailed]):
-            self.setPreheat()
+        if self.statemachine.processEvent( 'startButton' ) == 'Preheat':
             self.numFailedAutoload = 0
 
     def onStop(self):
         """Execute when stop button is clicked. Stop loading."""
-        logger = logging.getLogger(__name__)
-        logger.info(  "Loading Idle" )
-        self.setIdle()
+        self.statemachine.processEvent( 'stopButton' )
 
     def setIdle(self):
         """Execute when the loading process is set to idle. Disable timer, do not
            pay attention to the count rate, and turn off the ionization laser and oven."""
-        if self.status == self.StatusOptions.Trapped:
-            self.historyTableModel.updateLast('trappingTime',datetime.now()-self.started)
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
-        if self.timer:
-            self.timer = None
+        self.timer = None
         self.elapsedLabel.setStyleSheet("QLabel { color:black; }")
-        self.status = self.StatusOptions.Idle
         self.statusLabel.setText("Idle")
         self.disconnectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
-
+    
+    def exitIdle(self):
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect( self.onTimer )
+        self.timer.start(100)
+        self.connectDataSignal()
+        self.timerNullTime = datetime.now()
     
     def setPreheat(self):
         """Execute when the loading process begins. Turn on timer, turn on oven."""
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
-        logger = logging.getLogger(__name__)
-        logger.info( "Loading Preheat" )
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect( self.onTimer )
-        self.timer.start(100)
-        self.started = datetime.now()
-        self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
         self.elapsedLabel.setStyleSheet("QLabel { color:red; }")
-        self.status = self.StatusOptions.Preheat
         self.statusLabel.setText("Preheating")
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
+        self.timerNullTime = datetime.now()
     
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
            monitoring count rate."""
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
-        logger = logging.getLogger(__name__)
-        logger.info( "Loading Load" )
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
-        self.status = self.StatusOptions.Load
         self.statusLabel.setText("Loading")
-        self.connectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
     
@@ -324,147 +364,82 @@ class AutoLoad(UiForm,UiBase):
         """Execute when count rate goes over threshold."""
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
-        logger = logging.getLogger(__name__)
-        logger.info(  "Loading Check" )
         self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
-        self.status = self.StatusOptions.Check
         self.checkStarted = datetime.now()
         self.statusLabel.setText("Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         
-    def setTrapped(self,reappeared=False):
+    def loadingToTrapped(self, check, trapped):
+        logger = logging.getLogger(__name__)
+        logger.info(  "Loading Trapped" )
+        self.trappingTime = check.enterTime
+        self.historyTableModel.append( LoadingEvent(self.trappingTime,self.checkStarted) )
+           
+    def setTrapped(self):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
-        if not reappeared:
-            logger = logging.getLogger(__name__)
-            logger.info(  "Loading Trapped" )
-            self.loadingTime = datetime.now() - self.started
-            self.started = self.checkStarted
-            self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
-        self.status=self.StatusOptions.Trapped
         self.elapsedLabel.setStyleSheet("QLabel { color:green; }")
         self.statusLabel.setText("Trapped :)")       
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.numFailedAutoload = 0
+        self.timerNullTime = self.trappingTime
+    
+    def exitTrapped(self):
+        self.historyTableModel.updateLast('trappingTime',datetime.now()-self.trappingTime)
     
     def setFrozen(self):
         self.startButton.setEnabled( False )
         self.stopButton.setEnabled( False )       
         self.elapsedLabel.setStyleSheet("QLabel { color:grey; }")
         self.statusLabel.setText("Currently running pulse program")       
-        self.status=self.StatusOptions.Frozen        
     
     def setDisappeared(self):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
-        self.status = self.StatusOptions.Disappeared
-        self.disappearedAt = datetime.now()
         self.statusLabel.setText("Disappeared :(")
 
     def setWaitingForComeback(self):
         self.statusLabel.setText("Waiting to see if ion comes back")
-        self.status = self.StatusOptions.WaitingForComeback
+        self.timerNullTime = datetime.now()
     
     def setCoolingOven(self):
         self.statusLabel.setText("Cooling Oven")
-        self.status = self.StatusOptions.CoolingOven
-        self.started = datetime.now()
+        self.timerNullTime = datetime.now()
+        self.numFailedAutoload += 1
     
     def setAutoReloadFailed(self):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
         self.timer = None
         self.elapsedLabel.setStyleSheet("QLabel { color:black; }")
-        self.status = self.StatusOptions.AutoReloadFailed
         self.statusLabel.setText("Auto reload failed")
         self.disconnectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
         
-        
     def onIonIsStillTrapped(self):
-        if self.status == self.StatusOptions.Idle and len(self.historyTableModel.history)>0:
-            self.timer = QtCore.QTimer()
-            self.timer.timeout.connect( self.onTimer )
-            self.timer.start(100)
-            self.started = self.historyTableModel.history[-1].trappedAt
-            self.checkStarted = self.started
-            self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
-            self.setTrapped(reappeared=True) 
-            self.connectDataSignal()                
+        self.statemachine.processEvent( 'ionStillTrapped' )
         
     def onTrappedIonNow(self):
-        if self.status == self.StatusOptions.Idle:
-            self.timer = QtCore.QTimer()
-            self.timer.timeout.connect( self.onTimer )
-            self.timer.start(100)
-            self.started = datetime.now()
-            self.checkStarted = self.started
-            self.elapsedLabel.setText(formatDelta(datetime.now()-self.started)) #Set time display to zero
-            self.setTrapped()     
-            self.connectDataSignal()            
+        self.trappingTime = datetime.now()
+        self.statemachine.processEvent('ionTrapped')           
     
     def onTimer(self):
         """Execute whenever the timer sends a timeout signal, which is every 100 ms.
            Trigger status changes based on elapsed time. This controls the flow
            of the loading process."""
-        self.elapsed = datetime.now()-self.started
+        self.elapsed = datetime.now()-self.timerNullTime
         self.elapsedLabel.setText(formatDelta(self.elapsed) )
-        if self.status==self.StatusOptions.Preheat:
-            if self.elapsed.total_seconds() > self.settings.laserDelay.toval('s'):
-                self.setLoad()
-        elif self.status==self.StatusOptions.Load:
-            if self.elapsed.total_seconds() > self.settings.maxTime.toval('s'):
-                self.numFailedAutoload += 1
-                if self.settings.autoReload:
-                    if self.numFailedAutoload<=self.settings.maxFailedAutoload:
-                        self.setCoolingOven()
-                    else:
-                        self.setAutoReloadFailed()
-                else:
-                    self.setIdle()
-        elif self.status==self.StatusOptions.Disappeared:
-            if (datetime.now()-self.disappearedAt).total_seconds() > self.settings.checkTime.toval('s'):
-                self.historyTableModel.updateLast('trappingTime',self.disappearedAt-self.started)
-                self.setWaitingForComeback()
-        elif self.status==self.StatusOptions.WaitingForComeback:
-            if (datetime.now()-self.disappearedAt).total_seconds() > self.settings.waitForComebackTime.toval('s'):
-                if self.settings.autoReload and self.numFailedAutoload<=self.settings.maxFailedAutoload:
-                    self.setPreheat()
-        elif self.status==self.StatusOptions.CoolingOven:
-            if (datetime.now()-self.started).total_seconds() > self.settings.waitForComebackTime.toval('s'):
-                if self.settings.autoReload and self.numFailedAutoload<=self.settings.maxFailedAutoload:
-                    self.setPreheat()
-            
+        self.statemachine.processEvent( 'timer' )
     
     def onData(self, data ):
         """Execute when count rate data is received. Change state based on count rate."""
-        if self.status==self.StatusOptions.Load:
-            if data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven:
-                self.setCheck()
-        elif self.status==self.StatusOptions.Check:
-            if data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare:
-                self.setLoad()
-            elif (datetime.now()-self.checkStarted).total_seconds() > self.settings.checkTime.toval('s'):
-                self.setTrapped()
-        elif self.status==self.StatusOptions.Trapped:
-            if data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare:
-                self.setDisappeared()
-        elif self.status==self.StatusOptions.Disappeared:
-            if data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare:
-                self.ionReappeared.emit()
-                self.setTrapped(True)
-        elif self.status==self.StatusOptions.WaitingForComeback:
-            if data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare:
-                self.ionReappeared.emit()
-                self.setTrapped(True)
-            
+        self.statemachine.processEvent( 'data', data )
     
     def onClose(self):
-        if not self.status==self.StatusOptions.Idle:
-            self.setIdle()
+        self.statemachine.processEvent( 'stopButton' )
             
     def saveConfig(self):
         self.config['AutoLoad.Settings'] = self.settings
@@ -472,21 +447,13 @@ class AutoLoad(UiForm,UiBase):
 
     def setDisabled(self, disable):
         if disable:
-            if self.status in [ self.StatusOptions.Preheat, self.StatusOptions.Load ]:
-                self.setIdle()   # if we are loading we interrupt
-            elif self.status == self.StatusOptions.Check:
-                self.setTrapped()
-                self.setFrozen()
-            elif self.status in [self.StatusOptions.Trapped, self.StatusOptions.Disappeared ]:
-                self.setFrozen()
+            self.statemachine.processEvent( 'ppStarted' )
         else:
-            if self.status == self.StatusOptions.Frozen:
-                self.setTrapped(True)
-
+            self.statemachine.processEvent( 'ppStopped' )
+            
     def connectDataSignal(self):
         self.dataSignal.connect( self.onData, QtCore.Qt.UniqueConnection )
         self.dataSignalConnected = True
-
     
     def disconnectDataSignal(self):
         if self.dataSignalConnected:

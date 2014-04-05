@@ -210,6 +210,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )
+        traceFilename, _ = DataDirectory.DataDirectory().sequencefile("Trace.log")
+        LoggingSetup.setTraceFilename( traceFilename )
         
     def onClearConsole(self):
         self.textEditConsole.clear()
