@@ -1,10 +1,9 @@
 '''
-Created on Apr 3, 2014
+Created on Apr 5, 2014
 
-@author: wolverine
+@author: pmaunz
 '''
-
-from pulser.PulserHardwareClient import PulserHardware
+from pulser.PulserHardwareServer import PulserHardwareServer
 import sys
 from PyQt4 import QtGui
 import time
@@ -53,18 +52,17 @@ def testExpectedData( address, data):
 #         print readData
 
 if __name__=="__main__":
-    app = QtGui.QApplication(sys.argv)
-    pulser = PulserHardware()
+    pulser = PulserHardwareServer()
     pulser.openBySerial("132800061D")
     pulser.uploadBitfile(r"C:\Users\pmaunz\Documents\Programming\IonControl-firmware\fpgafirmware.bit")
-#     for factor in range(1,256):
-#         testSequentialData(128*1024*factor) 
-    for address in range(0,257):
-        writtendata[128*address*4*1024] = testWriteAddress( 128*address*4*1024, 128*1024 )
-    for address, data in writtendata.iteritems():
-        testExpectedData( address, data )
-    
-    print "done"
+    for factor in [128]: #range(28,256):
+        testSequentialData(128*1024*factor) 
+#     for address in range(0,257):
+#         writtendata[128*address*4*1024] = testWriteAddress( 128*address*4*1024, 128*1024 )
+#     for address, data in writtendata.iteritems():
+#         testExpectedData( address, data )
+#     
+#     print "done"
     #sys.exit(app.exec_())
  
  

@@ -6,6 +6,7 @@ import logging
 import math
 from multiprocessing import Process
 import struct
+import numpy
 
 import ok
 
@@ -135,7 +136,7 @@ class FinishException(Exception):
 
 class PulserHardwareServer(Process):
     timestep = magnitude.mg(20,'ns')
-    def __init__(self, dataQueue, commandPipe, loggingQueue):
+    def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None):
         super(PulserHardwareServer,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
@@ -506,17 +507,10 @@ class PulserHardwareServer(Process):
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
-        self.binarycode = bytearray()
-        for word in wordlist:
-            self.binarycode += struct.pack('I', word)
-        return self.binarycode        
+        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
 
     def bytearrayToWordList(self, barray):
-        wordlist = list()
-        for offset in range(0,len(barray),4):
-            (w,) = struct.unpack_from('I',buffer(barray),offset)
-            wordlist.append(w)
-        return wordlist
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
             
     def ppWriteRam(self,data,address):
         if self.xem:
@@ -544,12 +538,19 @@ class PulserHardwareServer(Process):
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             
+    quantum = 128*1024
+    from modules.doProfile import doprofile
+    @doprofile
     def ppWriteRamWordlist(self,wordlist,address):
         logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(wordlist)
-        self.ppWriteRam( data, address)
+        for start in range(0, len(data), self.quantum ):
+            self.ppWriteRam( data[start:start+self.quantum], address+start)
         testdata = bytearray([0]*len(data))
-        self.ppReadRam( testdata, address)
+        myslice = bytearray(self.quantum)
+        for start in range(0, len(data), self.quantum ):
+            self.ppReadRam(myslice, address+start)
+            testdata[start:start+self.quantum] = myslice
         logger.info( "ppWriteRamWordlist {0} {1} {2}".format( len(data), len(testdata), data==testdata ) )
         if data!=testdata:
             logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(testdata)))
@@ -559,7 +560,10 @@ class PulserHardwareServer(Process):
 
     def ppReadRamWordList(self, wordlist, address):
         data = bytearray([0]*len(wordlist)*4)
-        self.ppReadRam(data,address)
+        myslice = bytearray(self.quantum)
+        for start in range(0, len(data), self.quantum ):
+            self.ppReadRam(myslice, address+start)
+            data[start:start+self.quantum] = myslice
         wordlist = self.bytearrayToWordList(data)
         return wordlist
                 
