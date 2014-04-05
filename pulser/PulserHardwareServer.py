@@ -464,6 +464,20 @@ class PulserHardwareServer(Process):
     def interruptRead(self):
         self.sleepQueue.put(False)
 
+    def ppWriteData(self,data):
+        if self.xem:
+            if isinstance(data,bytearray):
+                return self.xem.WriteToPipeIn(0x81,data)
+            else:
+                code = bytearray()
+                for item in data:
+                    code.extend(struct.pack('I',item))
+                #print "ppWriteData length",len(code)
+                return self.xem.WriteToPipeIn(0x81,code)
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            return None
+                
     def ppReadData(self,minbytes=4):
         if self.xem:
             self.xem.UpdateWireOuts()
@@ -489,34 +503,6 @@ class PulserHardwareServer(Process):
                 return data, overrun
         return None, False
                         
-    def ppWriteData(self,data):
-        if self.xem:
-            if isinstance(data,bytearray):
-                return self.xem.WriteToPipeIn(0x81,data)
-            else:
-                code = bytearray()
-                for item in data:
-                    code.extend(struct.pack('I',item))
-                #print "ppWriteData length",len(code)
-                return self.xem.WriteToPipeIn(0x81,code)
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return None
-                
-    def ppWriteRam(self,data,address):
-        if self.xem:
-            appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
-            data += bytearray([0]*appendlength)
-            logging.getLogger(__name__).info( "set write address {0}".format(address) )
-            self.xem.SetWireInValue( 0x01, address & 0xffff )
-            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-            self.xem.UpdateWireIns()
-            self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
-            return self.xem.WriteToPipeIn( 0x82, data )
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return None
-            
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
@@ -532,6 +518,32 @@ class PulserHardwareServer(Process):
             wordlist.append(w)
         return wordlist
             
+    def ppWriteRam(self,data,address):
+        if self.xem:
+            appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
+            data += bytearray([0]*appendlength)
+            logging.getLogger(__name__).info( "set write address {0}".format(address) )
+            self.xem.SetWireInValue( 0x01, address & 0xffff )
+            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x41, 6 ) # ram set wwrite address
+            return self.xem.WriteToPipeIn( 0x82, data )
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            return None
+            
+    def ppReadRam(self,data,address):
+        if self.xem:
+#           print "set read address"
+            self.xem.SetWireInValue( 0x01, address & 0xffff )
+            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
+            self.xem.ReadFromPipeOut( 0xa3, data )
+#           print "read", len(data)
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            
     def ppWriteRamWordlist(self,wordlist,address):
         logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(wordlist)
@@ -545,18 +557,6 @@ class PulserHardwareServer(Process):
             logger.debug( "Received {0}".format(list(testdata)))
             raise PulserHardwareException("RAM write unsuccessful")
 
-    def ppReadRam(self,data,address):
-        if self.xem:
-#           print "set read address"
-            self.xem.SetWireInValue( 0x01, address & 0xffff )
-            self.xem.SetWireInValue( 0x02, (address >> 16) & 0xffff )
-            self.xem.UpdateWireIns()
-            self.xem.ActivateTriggerIn( 0x41, 7 ) # Ram set read address
-            self.xem.ReadFromPipeOut( 0xa3, data )
-#           print "read", len(data)
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            
     def ppReadRamWordList(self, wordlist, address):
         data = bytearray([0]*len(wordlist)*4)
         self.ppReadRam(data,address)
