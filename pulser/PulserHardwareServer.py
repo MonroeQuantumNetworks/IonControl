@@ -136,7 +136,7 @@ class FinishException(Exception):
 
 class PulserHardwareServer(Process):
     timestep = magnitude.mg(20,'ns')
-    def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None):
+    def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         super(PulserHardwareServer,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
@@ -144,6 +144,7 @@ class PulserHardwareServer(Process):
         self.openModule = None
         self.xem = None
         self.loggingQueue = loggingQueue
+        self.sharedMemoryArray = sharedMemoryArray
         
         # PipeReader stuff
         self.state = self.analyzingState.normal
@@ -538,35 +539,52 @@ class PulserHardwareServer(Process):
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             
-    quantum = 128*1024
-    from modules.doProfile import doprofile
-    @doprofile
+    quantum = 1024*1024
     def ppWriteRamWordlist(self,wordlist,address):
         logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(wordlist)
         for start in range(0, len(data), self.quantum ):
             self.ppWriteRam( data[start:start+self.quantum], address+start)
-        testdata = bytearray([0]*len(data))
+        matches = True
         myslice = bytearray(self.quantum)
         for start in range(0, len(data), self.quantum ):
             self.ppReadRam(myslice, address+start)
-            testdata[start:start+self.quantum] = myslice
-        logger.info( "ppWriteRamWordlist {0} {1} {2}".format( len(data), len(testdata), data==testdata ) )
-        if data!=testdata:
-            logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(testdata)))
-            logger.debug( "Sent     {0}".format(list(data)))
-            logger.debug( "Received {0}".format(list(testdata)))
+            length = min(self.quantum,len(data)-start)
+            matches = matches and data[start:start+self.quantum] == myslice[:length]
+        logger.info( "ppWriteRamWordlist {0}".format( len(data)) )
+        if not matches:
+            logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
             raise PulserHardwareException("RAM write unsuccessful")
 
     def ppReadRamWordList(self, wordlist, address):
         data = bytearray([0]*len(wordlist)*4)
         myslice = bytearray(self.quantum)
         for start in range(0, len(data), self.quantum ):
+            length = min(self.quantum, len(data)-start )
             self.ppReadRam(myslice, address+start)
-            data[start:start+self.quantum] = myslice
+            data[start:start+length] = myslice[:length]
         wordlist = self.bytearrayToWordList(data)
         return wordlist
+
+    def ppWriteRamWordlistShared(self, length, address):
+        #self.ppWriteRamWordlist(self.sharedMemoryArray[:length], address)
+        logger = logging.getLogger(__name__)
+        data = self.wordListToBytearray(self.sharedMemoryArray[:length])
+        self.ppWriteRam( data, address)
+        myslice = bytearray(len(data))
+        self.ppReadRam(myslice, address)
+        matches = data == myslice
+        logger.info( "ppWriteRamWordlist {0}".format( len(data)) )
+        if not matches:
+            logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
+            raise PulserHardwareException("RAM write unsuccessful")
                 
+    def ppReadRamWordlistShared(self, length, address):
+        data = bytearray([0]*length*4)
+        self.ppReadRam(data, address)
+        self.sharedMemoryArray[:length] = self.bytearrayToWordList(data)
+        return True
+
     def ppClearWriteFifo(self):
         if self.xem:
             self.xem.ActivateTriggerIn(0x41, 3)

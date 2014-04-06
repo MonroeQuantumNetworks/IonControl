@@ -5,6 +5,7 @@ Encapsulation of the Pulse Programmer Hardware
 from Queue import Queue
 import logging
 import multiprocessing
+from multiprocessing.sharedctypes import Array
 import struct
 
 from PyQt4 import QtCore 
@@ -88,6 +89,7 @@ class PulserHardware(QtCore.QObject):
     
     timestep = magnitude.mg(20,'ns')
 
+    sharedMemorySize = 256*1024
     def __init__(self):
         super(PulserHardware,self).__init__()
         self._shutter = 0
@@ -100,8 +102,9 @@ class PulserHardware(QtCore.QObject):
         self.dataQueue = multiprocessing.Queue()
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
         self.loggingQueue = multiprocessing.Queue()
+        self.sharedMemoryArray = Array( 'L', self.sharedMemorySize , lock=True )
                 
-        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue )
+        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue, self.sharedMemoryArray )
         self.serverProcess.start()
 
         self.queueReader = QueueReader(self, self.dataQueue)
@@ -210,7 +213,23 @@ class PulserHardware(QtCore.QObject):
             (w,) = struct.unpack_from('I',buffer(barray),offset)
             wordlist.append(w)
         return wordlist
+    
+    def ppWriteRamWordlist(self, wordlist, address):
+        for start in range(0, len(wordlist), self.sharedMemorySize ):
+            length = min( self.sharedMemorySize, len(wordlist)-start )
+            self.sharedMemoryArray[0:length] = wordlist[start:start+length]
+            self.clientPipe.send( ('ppWriteRamWordlistShared', (length, address+4*start) ) )
+            processReturn( self.clientPipe.recv() )
+        return True
             
+    def ppReadRamWordlist(self, wordlist, address):
+        readlist = list()
+        for start in range(0, len(wordlist), self.sharedMemorySize ):
+            length = min( self.sharedMemorySize, len(wordlist)-start )
+            self.clientPipe.send( ('ppReadRamWordlistShared', (length, address+4*start) ) )
+            processReturn( self.clientPipe.recv() )
+            readlist.extend( self.sharedMemoryArray[0:length] )
+        return readlist
 
 def processReturn( returnvalue ):
     if isinstance( returnvalue, Exception ):
