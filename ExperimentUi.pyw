@@ -171,7 +171,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         
-        self.todoList = TodoList( self.tabDict, self.config )
+        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab )
         self.todoList.setupUi()
         self.todoListDock = QtGui.QDockWidget("Todo List")
         self.todoListDock.setWidget(self.todoList)
@@ -220,6 +220,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )
         traceFilename, _ = DataDirectory.DataDirectory().sequencefile("Trace.log")
         LoggingSetup.setTraceFilename( traceFilename )
+        
+        # connect signals and slots for todolist and auto resume
+        for name, widget in self.tabDict.iteritems():
+            if hasattr(widget,'onContinue'):
+                self.dedicatedCountersWindow.autoLoad.ionReappeared.connect( widget.onContinue )
         
     def onClearConsole(self):
         self.textEditConsole.clear()
@@ -288,8 +293,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     
     def onCurrentChanged(self, index):
         self.currentTab.deactivate()
+        if hasattr( self.currentTab, 'stateChanged' ):
+            self.currentTab.stateChanged.disconnect()
         self.currentTab = self.tabList[index]
         self.currentTab.activate()
+        if hasattr( self.currentTab, 'stateChanged' ):
+            self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
         self.initMenu()
         
     def initMenu(self):
@@ -369,6 +378,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
+        
+    def getCurrentTab(self):
+        return self.currentTab
         
         
 if __name__ == "__main__":

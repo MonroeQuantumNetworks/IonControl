@@ -23,7 +23,7 @@ class Settings:
         self.todoList = list()
 
 class TodoList(Form, Base):
-    def __init__(self,scanModules,config,parent=None):
+    def __init__(self,scanModules,config,currentScan,parent=None):
         Base.__init__(self,parent)    
         Form.__init__(self)
         self.config = config
@@ -31,14 +31,17 @@ class TodoList(Form, Base):
         self.scanModules = scanModules
         self.scanModuleMeasurements = dict()
         self.currentMeasurementsDisplayedForScan = None
+        self.currentScan = currentScan
 
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
         self.statemachine.addState( 'Idle', self.enterIdle  )
         self.statemachine.addState( 'MeasurementRunning', self.enterMeasurementRunning )
-        self.statemachine.addState( 'Checking', self.enterChecking )
         self.statemachine.addState( 'Paused', self.enterPaused )
         self.statemachine.initialize( 'Idle' )
+        self.statemachine.addTransition('startCommand', 'Idle', 'MeasurementRunning', self.checkReadyToRun )
+        self.statemachine.addTransitionList('stopCommand', ['Idle','MeasurementRunning', 'Paused'], 'Idle')
+        self.statemachine.addTransition('measurementFinished','MeasurementRunning','MeasurementRunning', self.checkReadyToRun )
                 
     def setupUi(self):
         super(TodoList,self).setupUi(self)
@@ -94,7 +97,23 @@ class TodoList(Form, Base):
     def onRun(self):
         pass
     
+    def checkReadyToRun(self):
+        pass
+    
+    def onStartMeasurement(self):
+        pass
+        # make sure the current tab is idle
+        
+        # switch to the scan for the first line
+        
+        # load the correct measurement
+        
+        # start
+    
     def onStop(self):
+        pass
+    
+    def onStateChanged(self, newstate ):
         pass
     
     def onRepeatChanged(self):
@@ -105,9 +124,6 @@ class TodoList(Form, Base):
         
     def enterMeasurementRunning(self):
         self.statusLabel.setText('Measurement Running')
-        
-    def enterChecking(self):
-        self.statusLabel.setText('Checking')
         
     def enterPaused(self):
         self.statusLabel.setText('Paused')

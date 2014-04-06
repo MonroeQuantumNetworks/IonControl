@@ -240,7 +240,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     NeedsDDSRewrite = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
     experimentName = 'Scan Sequence'
-
+    statusChanged = QtCore.pyqtSignal( object )
     def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -311,6 +311,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # ScanProgress
         self.progressUi = ScanProgress()
         self.progressUi.setupUi()
+        self.stateChanged = self.progressUi.stateChanged
         self.setupAsDockWidget(self.progressUi, "Progress", QtCore.Qt.RightDockWidgetArea)
         # Average View
         self.displayUi = AverageViewTable(self.config)
@@ -433,6 +434,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             for plottedTrace in self.plottedTraceList:
                 plottedTrace.plot(0) #unplot previous trace
         self.plottedTraceList = list() #reset plotted trace
+    
+    def onContinue(self):
+        if self.progressUi.state == self.OpStates.interrupted:
+            self.onPause
     
     def onPause(self):
         logger = logging.getLogger(__name__)
@@ -752,4 +757,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onClose(self):
         pass
 
+    def state(self):
+        return self.progressUi.state
         

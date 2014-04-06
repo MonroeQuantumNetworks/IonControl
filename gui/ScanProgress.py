@@ -11,6 +11,7 @@ Form, Base = PyQt4.uic.loadUiType(r'ui\ScanProgress.ui')
 
 class ScanProgress(Form,Base):
     OpStates = enum('idle','running','paused','starting','stopping', 'interrupted')
+    stateChanged = QtCore.pyqtSignal( object )
     def __init__(self):
         Form.__init__(self)
         Base.__init__(self)
@@ -51,6 +52,7 @@ class ScanProgress(Form,Base):
         self.statusLabel.setText("Idle")    
         self.progressBar.setValue(0)
         self.state = self.OpStates.idle
+        self.stateChanged.emit('idle')
         self.previouslyElapsedTime = time.time()-self.startTime
         self.widget.setStyleSheet( "QWidget { background: #ffffff; }")
     
@@ -62,6 +64,7 @@ class ScanProgress(Form,Base):
         #self.progressBar.setStyleSheet("")
         self.setTimeLabel()
         self.state = self.OpStates.running
+        self.stateChanged.emit('running')
         self.startTime = time.time()
         self.previouslyElapsedTime = 0
         self.widget.setStyleSheet( "QWidget { background: #a0ffa0; }")
@@ -72,6 +75,7 @@ class ScanProgress(Form,Base):
         self.progressBar.setValue(index)
         self.startTime = time.time()
         self.state = self.OpStates.running
+        self.stateChanged.emit('running')
         self.widget.setStyleSheet( "QWidget { background: #a0ffa0; }")
         self.startTimer()
     
@@ -80,23 +84,29 @@ class ScanProgress(Form,Base):
         self.statusLabel.setText("Paused")            
         self.setTimeLabel()
         self.state = self.OpStates.paused
+        self.stateChanged.emit('paused')
         self.previouslyElapsedTime = time.time()-self.startTime
         self.widget.setStyleSheet( "QWidget { background: #c0c0ff; }")
         self.stopTimer()
     
     def setStarting(self):
         self.statusLabel.setText("Starting") 
-        self.state = self.OpStates.starting           
+        self.state = self.OpStates.starting
+        self.stateChanged.emit('starting')
+      
     
     def setStopping(self):
         self.statusLabel.setText("Stopping")    
         self.state = self.OpStates.stopping
+        self.stateChanged.emit('stopping')
+
     
     def setInterrupted(self, reason):
         #self.progressBar.setStyleSheet(StyleSheets.RedProgressBar)
         self.previouslyElapsedTime = time.time()-self.startTime
         self.statusLabel.setText("Interrupted ({0})".format(reason))            
         self.state = self.OpStates.interrupted
+        self.stateChanged.emit('interrupted')
         self.setTimeLabel()
         self.widget.setStyleSheet( "QWidget { background: #ffa0a0; }")
         self.stopTimer()
