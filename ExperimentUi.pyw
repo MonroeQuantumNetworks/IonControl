@@ -37,7 +37,7 @@ from pulseProgram import PulseProgramUi
 from pulser import ShutterUi
 from gui import testExperiment
 from uiModules import MagnitudeParameter #@UnusedImport
-
+from gui.TodoList import TodoList
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -170,6 +170,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
+        
+        self.todoList = TodoList( self.tabDict, self.config )
+        self.todoList.setupUi()
+        self.todoListDock = QtGui.QDockWidget("Todo List")
+        self.todoListDock.setWidget(self.todoList)
+        self.todoListDock.setObjectName("_todoList")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.todoListDock)
+       
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
         
@@ -357,6 +365,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.saveConfig()
         self.globalVariablesUi.saveConfig()
         self.loggerUi.saveConfig()
+        self.todoList.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()

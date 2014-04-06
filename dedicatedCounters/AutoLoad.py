@@ -18,7 +18,6 @@ import PyQt4.uic
 
 from dedicatedCounters.LoadingHistoryModel import LoadingHistoryModel
 from dedicatedCounters.WavemeterInterlockTableModel import WavemeterInterlockTableModel
-from modules import enum
 from modules.SequenceDict import SequenceDict
 from modules.Utility import unique
 from modules.formatDelta import formatDelta

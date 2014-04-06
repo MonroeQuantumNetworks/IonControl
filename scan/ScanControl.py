@@ -144,6 +144,7 @@ class Scan:
 class ScanControl(ScanControlForm, ScanControlBase ):
     ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSequenceScan')
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
+    scanConfigurationListChanged = QtCore.pyqtSignal( object )
     logger = logging.getLogger(__name__)
     def __init__(self,config,parentname, plotnames=None, parent=None):
         logger = logging.getLogger(__name__)
@@ -157,6 +158,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         except TypeError:
             logger.info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.settingsDict = dict()
+        self.scanConfigurationListChanged.emit( self.settingsDict )
         self.settingsHistory = list()
         self.settingsHistoryPointer = None
         self.historyFinalState = None
@@ -414,12 +416,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.updateSaveStatus()
             
     def onRecentPPFilesChanged(self, name):
-        logger = logging.getLogger(__name__)
         if self.loadPPComboBox.findText(name)<0:
             self.loadPPComboBox.addItem(name)
         self.updateSaveStatus()
-#        if self.settings.loadPPName: 
-#            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
         
     def setPulseProgramUi(self, pulseProgramUi ):
         logger = logging.getLogger(__name__)
@@ -595,6 +594,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 if self.comboBox.findText(self.settingsName)==-1:
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
+            self.scanConfigurationListChanged.emit( self.settingsDict )
         self.updateSaveStatus()
 
     def onRemove(self):
@@ -605,7 +605,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             idx = self.comboBox.findText(name)
             if idx>=0:
                 self.comboBox.removeItem(idx)
-        
+            self.scanConfigurationListChanged.emit( self.settingsDict )
+       
     
     def onLoad(self,name):
         self.settingsName = str(name)
