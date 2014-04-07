@@ -38,7 +38,7 @@ class Transition:
     def __init__(self, fromstate, tostate, condition=None, transitionfunc=None):
         self.fromstate = fromstate
         self.tostate = tostate
-        self.condition = condition if condition is not None else lambda state: True
+        self.condition = condition if condition is not None else lambda *args: True
         self.transitionfunc = transitionfunc
         
     def transitionState(self, fromObj, toObj ):

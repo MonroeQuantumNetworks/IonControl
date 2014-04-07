@@ -38,6 +38,7 @@ from pulser import ShutterUi
 from gui import testExperiment
 from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
+from modules.SequenceDict import SequenceDict
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -89,8 +90,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
         
         self.parent = parent
-        self.tabList = list()
-        self.tabDict = dict()
+        self.tabDict = SequenceDict()
         
         
         # initialize PulseProgramUi
@@ -122,7 +122,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr(widget,'setPulseProgramUi'):
                 widget.setPulseProgramUi( self.pulseProgramDialog )
             self.tabWidget.addTab(widget, name)
-            self.tabList.append(widget)
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
@@ -171,7 +170,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         
-        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab )
+        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.setCurrentTab )
         self.todoList.setupUi()
         self.todoListDock = QtGui.QDockWidget("Todo List")
         self.todoListDock.setWidget(self.todoList)
@@ -196,9 +195,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
-        self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
+        self.currentTab = self.tabDict.at(self.config.get('MainWindow.currentIndex',0))
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
+        if hasattr( self.currentTab, 'stateChanged' ):
+            self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
@@ -295,7 +296,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.currentTab.deactivate()
         if hasattr( self.currentTab, 'stateChanged' ):
             self.currentTab.stateChanged.disconnect()
-        self.currentTab = self.tabList[index]
+        self.currentTab = self.tabDict.at(index)
         self.currentTab.activate()
         if hasattr( self.currentTab, 'stateChanged' ):
             self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
@@ -307,7 +308,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
-                     self.loggerDock ]:
+                     self.loggerDock, self.todoListDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         
     def onSettings(self):
@@ -339,7 +340,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
-        for tab in self.tabList:
+        for tab in self.tabDict.values():
             tab.onClose()
         self.currentTab.deactivate()
         self.pulseProgramDialog.done(0)
@@ -352,7 +353,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
-        for tab in self.tabList:
+        for tab in self.tabDict.values():
             tab.saveConfig()
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription
@@ -380,7 +381,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         ProjectSelectionUi.GetProjectSelection()
         
     def getCurrentTab(self):
-        return self.currentTab
+        index = self.tabWidget.currentIndex()
+        return self.tabDict.keyAt(index), self.tabDict.at(index)
+    
+    def setCurrentTab(self, name):
+        self.onCurrentChanged(self.tabDict.index(name))
         
         
 if __name__ == "__main__":

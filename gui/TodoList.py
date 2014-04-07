@@ -9,6 +9,7 @@ from modules.statemachine import Statemachine
 from TodoListTableModel import TodoListTableModel
 from uiModules.KeyboardFilter import KeyListFilter
 from modules.Utility import unique
+from functools import partial
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
@@ -21,9 +22,16 @@ class TodoListEntry:
 class Settings:
     def __init__(self):
         self.todoList = list()
+        self.currentIndex = 0
+        self.repeat = False
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'currentIndex', 0)
+        self.__dict__.setdefault( 'repeat', False)
 
 class TodoList(Form, Base):
-    def __init__(self,scanModules,config,currentScan,parent=None):
+    def __init__(self,scanModules,config,currentScan,setCurrentScan,parent=None):
         Base.__init__(self,parent)    
         Form.__init__(self)
         self.config = config
@@ -32,19 +40,24 @@ class TodoList(Form, Base):
         self.scanModuleMeasurements = dict()
         self.currentMeasurementsDisplayedForScan = None
         self.currentScan = currentScan
+        self.setCurrntScan = setCurrentScan
 
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
         self.statemachine.addState( 'Idle', self.enterIdle  )
         self.statemachine.addState( 'MeasurementRunning', self.enterMeasurementRunning )
+        self.statemachine.addState( 'Check' )
         self.statemachine.addState( 'Paused', self.enterPaused )
         self.statemachine.initialize( 'Idle' )
         self.statemachine.addTransition('startCommand', 'Idle', 'MeasurementRunning', self.checkReadyToRun )
         self.statemachine.addTransitionList('stopCommand', ['Idle','MeasurementRunning', 'Paused'], 'Idle')
-        self.statemachine.addTransition('measurementFinished','MeasurementRunning','MeasurementRunning', self.checkReadyToRun )
+        self.statemachine.addTransition('measurementFinished','MeasurementRunning','Check', self.checkReadyToRun )
+        self.statemachine.addTransition('docheck', 'Check', 'MeasurementRunning', lambda state: self.settings.currentIndex>0 or self.settings.repeat)
+        self.statemachine.addTransition('docheck', 'Check', 'Idle', lambda state: self.settings.currentIndex==0 and not self.settings.repeat)
                 
     def setupUi(self):
         super(TodoList,self).setupUi(self)
+        self.setupStatemachine()
         self.populateMeasurements()
         self.scanSelectionBox.addItems( self.scanModuleMeasurements.keys() )
         self.scanSelectionBox.currentIndexChanged[QtCore.QString].connect( self.updateMeasurementSelectionBox )
@@ -53,13 +66,12 @@ class TodoList(Form, Base):
         self.tableView.setModel( self.tableModel )
         self.addMeasurementButton.clicked.connect( self.onAddMeasurement )
         self.removeMeasurementButton.clicked.connect( self.onDropMeasurement )
-        self.runButton.clicked.connect( self.onRun )
-        self.stopButton.clicked.connect( self.onStop )
+        self.runButton.clicked.connect( partial( self.statemachine.processEvent, 'startCommand' ) )
+        self.stopButton.clicked.connect( partial( self.statemachine.processEvent, 'stopCommand' ) )
         self.repeatButton.clicked.connect( self.onRepeatChanged )
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
-        self.setupStatemachine()
         
     def updateMeasurementSelectionBox(self, newscan ):
         newscan = str(newscan)
@@ -92,29 +104,18 @@ class TodoList(Form, Base):
             self.tableModel.addMeasurement( TodoListEntry(self.currentMeasurementsDisplayedForScan, str(self.measurementSelectionBox.currentText())))
     
     def onDropMeasurement(self):
-        pass
+        for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
+            self.tableModel.dropMeasurement(index)
 
-    def onRun(self):
-        pass
+    def checkReadyToRun(self, state, _=True ):
+        _, current = self.currentScan()
+        return current.state()==0
     
-    def checkReadyToRun(self):
-        pass
-    
-    def onStartMeasurement(self):
-        pass
-        # make sure the current tab is idle
-        
-        # switch to the scan for the first line
-        
-        # load the correct measurement
-        
-        # start
-    
-    def onStop(self):
-        pass
     
     def onStateChanged(self, newstate ):
-        pass
+        if newstate=='idle':
+            self.statemachine.processEvent('measurementFinished')
+            self.statemachine.processEvent('doCheck')
     
     def onRepeatChanged(self):
         pass
@@ -123,7 +124,19 @@ class TodoList(Form, Base):
         self.statusLabel.setText('Idle')
         
     def enterMeasurementRunning(self):
+        currentname, currentwidget = self.currentScan()
+        entry = self.settings.todoList[ self.settings.currentIndex ]
+        # switch to the scan for the first line
+        if entry.scan!=currentname:
+            self.setCurrntScan(entry.scan)
+        # load the correct measurement
+        currentwidget.scanControlWidget.onLoad( entry.measurement )        
+        # start
+        currentwidget.onStart()
         self.statusLabel.setText('Measurement Running')
+        
+    def exitMeasurementRunning(self):
+        self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
         
     def enterPaused(self):
         self.statusLabel.setText('Paused')
