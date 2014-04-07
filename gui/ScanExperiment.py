@@ -437,7 +437,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onContinue(self):
         if self.progressUi.state == self.OpStates.interrupted:
-            self.onPause
+            self.onPause()
     
     def onPause(self):
         logger = logging.getLogger(__name__)

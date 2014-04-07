@@ -70,7 +70,7 @@ def invertIf( logic, invert ):
 
 class LoadingEvent:
     def __init__(self,loading=None,trappedAt=None):
-        self.trappingTime = loading
+        self.loadingTime = loading
         self.trappedAt = trappedAt
         self.trappingTime = None
 
@@ -116,11 +116,11 @@ class AutoLoad(UiForm,UiBase):
                                                        self.settings.autoReload and 
                                                        self.numFailedAutoload>=self.settings.maxFailedAutoload) 
         self.statemachine.addTransition( 'timer', 'Load', 'CoolingOven',
-                                         lambda state: state.timeInState() > self.settings.maxTime-self.settings.laserDelay and
+                                         lambda state: state.timeInState() > self.settings.maxTime and
                                                        self.settings.autoReload and
                                                        self.numFailedAutoload<self.settings.maxFailedAutoload )                                         
         self.statemachine.addTransition( 'timer', 'Load', 'Idle',
-                                         lambda state: state.timeInState() > self.settings.maxTime-self.settings.laserDelay and 
+                                         lambda state: state.timeInState() > self.settings.maxTime and 
                                                        not self.settings.autoReload )
         self.statemachine.addTransition( 'timer', 'Disappeared', 'WaitingForComeback',
                                          lambda state: state.timeInState() > self.settings.checkTime )
@@ -141,7 +141,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
         self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven'], 'Idle')
         self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
-        self.statemachine.addTransition( 'ppStarted', 'Trapped', 'Frozen' )
+        self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback'], 'Frozen' )
         self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' )
         self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load'], 'Idle' )
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 )
@@ -220,7 +220,7 @@ class AutoLoad(UiForm,UiBase):
         self.autoLoadTab.addAction( action )
         
     def deleteFromHistory(self):
-        for row in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=True):
+        for row in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=False):
             self.historyTableModel.removeRow(row)
         
     def onRemoveChannel(self):
@@ -382,8 +382,8 @@ class AutoLoad(UiForm,UiBase):
     def loadingToTrapped(self, check, trapped):
         logger = logging.getLogger(__name__)
         logger.info(  "Loading Trapped" )
-        self.trappingTime = check.enterTime
-        self.historyTableModel.append( LoadingEvent(self.trappingTime,self.checkStarted) )
+        self.loadingTime = check.enterTime - self.timerNullTime
+        self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
            
     def setTrapped(self):
         self.startButton.setEnabled( True )
@@ -393,6 +393,7 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.numFailedAutoload = 0
+        self.trappingTime = self.loadingHistory[-1].trappedAt
         self.timerNullTime = self.trappingTime
         self.ionReappeared.emit()        
     

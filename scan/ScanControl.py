@@ -607,12 +607,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 self.comboBox.removeItem(idx)
             self.scanConfigurationListChanged.emit( self.settingsDict )
        
-    
     def onLoad(self,name):
         self.settingsName = str(name)
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
         self.updateSaveStatus()
+
+    def loadSetting(self, name):
+        if name and self.comboBox.findText(self.settingsName):
+            self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )        
 
     def onReload(self):
         self.onLoad( self.comboBox.currentText() )

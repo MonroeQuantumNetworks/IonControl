@@ -31,7 +31,7 @@ def testSequentialDataShared( length ):
     print "testing {0:x} took {1} seconds".format(length, time.time()-start_time ), 
     print "passed" if data==datacopy else "failed"
 
-@doprofile
+#@doprofile
 def testSequentialData( length ):
     print "testing {0:x}".format(length)
     data = [ randint(0, 0x100000 ) for _ in range(length)]
@@ -63,11 +63,12 @@ def testExpectedData( address, data):
 
 
 def test(pulser):
-    pulser.openBySerial("132800061D")
-    pulser.uploadBitfile(r"C:\Users\pmaunz\Documents\Programming\IonControl-firmware\fpgafirmware.bit")
-    for factor in [128]:
+    #pulser.openBySerial("132800061D")
+    pulser.openBySerial("12230003NX")
+    pulser.uploadBitfile(r"C:\Users\Public\Documents\IonControl\FPGA_Ions\fpgafirmware.bit")
+    for factor in [32]:
         #testSequentialData(256*1024*factor) 
-        testSequentialDataShared(256*1024*factor)
+        testSequentialData(256*1024*factor)
 #     for address in range(0,257):
 #         writtendata[128*address*4*1024] = testWriteAddress( 128*address*4*1024, 128*1024 )
 #     for address, data in writtendata.iteritems():

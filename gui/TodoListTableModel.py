@@ -3,7 +3,7 @@ Created on Apr 6, 2014
 
 @author: pmaunz
 '''
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 
 class TodoListTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal( object )
@@ -16,7 +16,17 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
         self.todolist = todolist
         self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.todolist[row].scan,
                              (QtCore.Qt.DisplayRole,1): lambda row: self.todolist[row].measurement,
+                             (QtCore.Qt.BackgroundColorRole,0): lambda row: QtGui.QColor(0xd0, 0xff, 0xd0) if self.activeRow==row else QtCore.Qt.white
                              }
+        self.activeRow = None
+
+    def setActiveRow(self, row):
+        oldactive = self.activeRow
+        self.activeRow = row
+        if row is not None:
+            self.dataChanged.emit( self.createIndex(row,0), self.createIndex(row+1,3) )
+        if oldactive is not None:
+            self.dataChanged.emit( self.createIndex(oldactive,0), self.createIndex(oldactive+1,3) )
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.todolist) 

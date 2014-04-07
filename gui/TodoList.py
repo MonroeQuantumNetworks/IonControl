@@ -45,7 +45,7 @@ class TodoList(Form, Base):
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
         self.statemachine.addState( 'Idle', self.enterIdle  )
-        self.statemachine.addState( 'MeasurementRunning', self.enterMeasurementRunning )
+        self.statemachine.addState( 'MeasurementRunning', self.enterMeasurementRunning, self.exitMeasurementRunning )
         self.statemachine.addState( 'Check' )
         self.statemachine.addState( 'Paused', self.enterPaused )
         self.statemachine.initialize( 'Idle' )
@@ -115,10 +115,11 @@ class TodoList(Form, Base):
     def onStateChanged(self, newstate ):
         if newstate=='idle':
             self.statemachine.processEvent('measurementFinished')
-            self.statemachine.processEvent('doCheck')
+            self.statemachine.processEvent('docheck')
     
-    def onRepeatChanged(self):
-        pass
+    def onRepeatChanged(self, enabled):
+        self.settings.repeat = enabled
+        self.settings.currentIndex = 0
 
     def enterIdle(self):
         self.statusLabel.setText('Idle')
@@ -130,13 +131,15 @@ class TodoList(Form, Base):
         if entry.scan!=currentname:
             self.setCurrntScan(entry.scan)
         # load the correct measurement
-        currentwidget.scanControlWidget.onLoad( entry.measurement )        
+        currentwidget.scanControlWidget.loadSetting( entry.measurement )        
         # start
         currentwidget.onStart()
         self.statusLabel.setText('Measurement Running')
+        self.tableModel.setActiveRow(self.settings.currentIndex)
         
     def exitMeasurementRunning(self):
         self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
+        self.tableModel.setActiveRow(None)
         
     def enterPaused(self):
         self.statusLabel.setText('Paused')
