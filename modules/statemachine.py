@@ -35,11 +35,12 @@ class State:
         return mg( (datetime.now()-self.enterTime).total_seconds(), 's' )
         
 class Transition:
-    def __init__(self, fromstate, tostate, condition=None, transitionfunc=None):
+    def __init__(self, fromstate, tostate, condition=None, transitionfunc=None, description=None):
         self.fromstate = fromstate
         self.tostate = tostate
         self.condition = condition if condition is not None else lambda *args: True
         self.transitionfunc = transitionfunc
+        self.description = description
         
     def transitionState(self, fromObj, toObj ):
         if self.transitionfunc is not None:
@@ -83,12 +84,14 @@ class Statemachine:
         toStateObj = self.states[transition.tostate]
         fromStateObj.exitState()
         transition.transitionState( fromStateObj, toStateObj )
-        toStateObj.enterState()
         self.currentState = transition.tostate
+        toStateObj.enterState()
+        logging.getLogger(__name__).debug("Now in state {0}".format(self.currentState))
         
     def processEvent(self, eventType, *args, **kwargs ):
         for thistransition in self.transitions[(eventType,self.currentState)]:
             if thistransition.condition( self.states[self.currentState], *args, **kwargs ):
+                logging.getLogger(__name__).debug("Transition initiated by {0} in {1} from {2} to {3}".format(eventType, self.currentState, thistransition.fromstate, thistransition.tostate))
                 self.makeTransition( thistransition )
         return self.currentState
                 

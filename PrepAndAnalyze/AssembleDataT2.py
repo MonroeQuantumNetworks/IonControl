@@ -29,6 +29,7 @@ outputpath = datadirectory.path( datetime.date(2014,4,8))
 
 filenamebody = "GateSequenceTraining"
 expectedLength = 2599
+TrainingResultsTable = list()
 for date, filenolist in goodGateSetTraining:
     path = datadirectory.path( date )
     for fileno in filenolist:
@@ -48,6 +49,8 @@ for date, filenolist in goodGateSetTraining:
                 resultsTable = list()
                 resultsTable.append(t.x)
                 resultsTable.append(t.raw0)
+            # Accumulate data
+            TrainingResultsTable.extend( zip(t.x, t.raw0, t.raw3, t.timestamp) )
         else:
             print filename, "unexpected length {0} instead of expected {1}".format(len(t.x),expectedLength)
 

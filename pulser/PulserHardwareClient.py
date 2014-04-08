@@ -112,6 +112,7 @@ class PulserHardware(QtCore.QObject):
         
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
+        self.ppActive = False
 
 
     def shutdown(self):
@@ -184,12 +185,14 @@ class PulserHardware(QtCore.QObject):
     def ppStart(self):
         self.clientPipe.send( ('ppStart', () ) )
         value = processReturn( self.clientPipe.recv() )
+        self.ppActive = True
         self.ppActiveChanged.emit(True)
         return value
             
     def ppStop(self):
         self.clientPipe.send( ('ppStop', () ) )
         value = processReturn( self.clientPipe.recv() )
+        self.ppActive = False
         self.ppActiveChanged.emit(False)
         return value
             

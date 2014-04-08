@@ -19,7 +19,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         self.fitfunction = None
         
     def relConfidenceValue(self, row):
-        if len(self.fitfunction.parametersConfidence)>row and self.fitfunction.parameters[row] and self.fitfunction.parametersConfidence[row]:
+        if self.fitfunction.parametersConfidence and len(self.fitfunction.parametersConfidence)>row and self.fitfunction.parameters[row] and self.fitfunction.parametersConfidence[row]:
             return "{0}%".format(roundToNDigits(100*self.fitfunction.parametersConfidence[row]/abs(self.fitfunction.parameters[row]),2))
         return None
         

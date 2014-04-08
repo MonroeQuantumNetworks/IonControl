@@ -108,6 +108,7 @@ class ScanProgress(Form,Base):
         self.state = self.OpStates.interrupted
         self.stateChanged.emit('interrupted')
         self.setTimeLabel()
+        self.previouslyElapsedTime = time.time()-self.startTime
         self.widget.setStyleSheet( "QWidget { background: #ffa0a0; }")
         self.stopTimer()
        

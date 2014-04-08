@@ -144,10 +144,11 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
         self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven'], 'Idle')
         self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
-        self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback'], 'Frozen' )
+        self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback','Disappeared','Check'], 'Frozen' )
         self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' )
         self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load'], 'Idle' )
-        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 )
+        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 and not self.pulser.ppActive )
+        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive )
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped' )
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
