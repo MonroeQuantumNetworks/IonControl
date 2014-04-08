@@ -44,6 +44,9 @@ ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperimen
 
 ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
 
+class ScanException(Exception):
+    pass
+
 class ParameterScanGenerator:
     def __init__(self, scan):
         self.scan = scan
@@ -259,6 +262,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramTrace = None
         self.interruptReason = ""
         self.scan = None
+        self.otherDataFile = None
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -419,7 +423,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         (mycode, data) = self.generator.prepare(self.pulseProgramUi)
         self.progressUi.setRunning( max(len(self.scan.list),1) ) 
         if data:
-            self.pulserHardware.ppWriteRamWordlist(data,0)
+            self.pulserHardware.ppWriteRamWordList(data,0, check=False)
+            datacopy = [0]*len(data)
+            datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
+            if self.scan.gateSequenceSettings.debug:
+                dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
+                with open( dumpFilename, 'wb') as f:
+                    f.write( self.pulserHardware.wordListToBytearray(datacopy))
+            if data!=datacopy:
+                raise ScanException("Ram write unsuccessful")
         self.pulserHardware.ppFlushData()
         self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppUpload(PulseProgramBinary)
@@ -434,6 +446,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             for plottedTrace in self.plottedTraceList:
                 plottedTrace.plot(0) #unplot previous trace
         self.plottedTraceList = list() #reset plotted trace
+        self.otherDataFile = None 
     
     def onContinue(self):
         if self.progressUi.state == self.OpStates.interrupted:
@@ -482,6 +495,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
+        if data.other and self.scan.gateSequenceSettings.debug:
+            if self.otherDataFile is None:
+                dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
+                self.otherDataFile = open( dumpFilename, "wb" )
+            self.otherDataFile.write( self.pulserHardware.wordListToBytearray(data.other))
         if data.overrun:
             logger.error( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
@@ -574,6 +592,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def finalizeData(self, reason='end of scan'):
         logger = logging.getLogger(__name__)
         logger.info( "finalize Data" )
+        if self.otherDataFile is not None:
+            self.otherDataFile.close()
+            self.otherDataFile = None
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
                 trace.vars.traceFinalized = datetime.now()

@@ -6,7 +6,7 @@ from Queue import Queue
 import logging
 import multiprocessing
 from multiprocessing.sharedctypes import Array
-import struct
+import numpy
 
 from PyQt4 import QtCore 
 
@@ -202,27 +202,21 @@ class PulserHardware(QtCore.QObject):
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
-        self.binarycode = bytearray()
-        for word in wordlist:
-            self.binarycode += struct.pack('I', word)
-        return self.binarycode        
+        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
 
     def bytearrayToWordList(self, barray):
-        wordlist = list()
-        for offset in range(0,len(barray),4):
-            (w,) = struct.unpack_from('I',buffer(barray),offset)
-            wordlist.append(w)
-        return wordlist
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
+            
     
-    def ppWriteRamWordlist(self, wordlist, address):
+    def ppWriteRamWordList(self, wordlist, address, check=True):
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
             self.sharedMemoryArray[0:length] = wordlist[start:start+length]
-            self.clientPipe.send( ('ppWriteRamWordlistShared', (length, address+4*start) ) )
+            self.clientPipe.send( ('ppWriteRamWordlistShared', (length, address+4*start, check) ) )
             processReturn( self.clientPipe.recv() )
         return True
             
-    def ppReadRamWordlist(self, wordlist, address):
+    def ppReadRamWordList(self, wordlist, address):
         readlist = list()
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )

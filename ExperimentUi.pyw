@@ -295,7 +295,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     def onCurrentChanged(self, index):
         self.currentTab.deactivate()
         if hasattr( self.currentTab, 'stateChanged' ):
-            self.currentTab.stateChanged.disconnect()
+            try:
+                self.currentTab.stateChanged.disconnect()
+            except TypeError:
+                pass
         self.currentTab = self.tabDict.at(index)
         self.currentTab.activate()
         if hasattr( self.currentTab, 'stateChanged' ):

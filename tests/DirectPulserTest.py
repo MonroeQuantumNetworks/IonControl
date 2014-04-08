@@ -4,8 +4,8 @@ Created on Apr 5, 2014
 @author: pmaunz
 '''
 from pulser.PulserHardwareServer import PulserHardwareServer
-import sys
-from PyQt4 import QtGui
+#import sys
+#from PyQt4 import QtGui
 import time
 from random import randint
 from collections import OrderedDict

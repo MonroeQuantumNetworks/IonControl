@@ -5,7 +5,7 @@ Created on Apr 3, 2014
 '''
 
 from pulser.PulserHardwareClient import PulserHardware
-from pulser.PulserHardwareServer import PulserHardwareServer
+#from pulser.PulserHardwareServer import PulserHardwareServer
 import sys
 from PyQt4 import QtGui
 import time
@@ -63,10 +63,11 @@ def testExpectedData( address, data):
 
 
 def test(pulser):
-    #pulser.openBySerial("132800061D")
-    pulser.openBySerial("12230003NX")
-    pulser.uploadBitfile(r"C:\Users\Public\Documents\IonControl\FPGA_Ions\fpgafirmware.bit")
-    for factor in [32]:
+    pulser.openBySerial("132800061D")
+    #pulser.openBySerial("12230003NX")
+    #pulser.uploadBitfile(r"C:\Users\Public\Documents\IonControl\FPGA_Ions\fpgafirmware.bit")
+    pulser.uploadBitfile(r"C:\Users\pmaunz\Documents\Programming\IonControl\FPGA_Ions\fpgafirmware.bit")
+    for factor in [128]:
         #testSequentialData(256*1024*factor) 
         testSequentialData(256*1024*factor)
 #     for address in range(0,257):
@@ -85,7 +86,7 @@ if __name__=="__main__":
         print e
     pulser.shutdown()
     del pulser
-    
+
 #     pulser = PulserHardwareServer()
 #     test( pulser )
 #  

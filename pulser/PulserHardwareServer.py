@@ -286,7 +286,7 @@ class PulserHardwareServer(Process):
                     elif key==4: # other return value
                         self.data.other.append(value)
                     else:
-                        pass
+                        self.data.other.append(token)
             if self.data.overrun:
                 logger.info( "Overrun detected, triggered data queue" )
                 self.dataQueue.put( self.data )
@@ -566,18 +566,19 @@ class PulserHardwareServer(Process):
         wordlist = self.bytearrayToWordList(data)
         return wordlist
 
-    def ppWriteRamWordlistShared(self, length, address):
+    def ppWriteRamWordlistShared(self, length, address, check=True):
         #self.ppWriteRamWordlist(self.sharedMemoryArray[:length], address)
         logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(self.sharedMemoryArray[:length])
         self.ppWriteRam( data, address)
-        myslice = bytearray(len(data))
-        self.ppReadRam(myslice, address)
-        matches = data == myslice
-        logger.info( "ppWriteRamWordlist {0}".format( len(data)) )
-        if not matches:
-            logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
-            raise PulserHardwareException("RAM write unsuccessful")
+        if check:
+            myslice = bytearray(len(data))
+            self.ppReadRam(myslice, address)
+            matches = data == myslice
+            logger.info( "ppWriteRamWordlist {0}".format( len(data)) )
+            if not matches:
+                logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
+                raise PulserHardwareException("RAM write unsuccessful")
                 
     def ppReadRamWordlistShared(self, length, address):
         data = bytearray([0]*length*4)
