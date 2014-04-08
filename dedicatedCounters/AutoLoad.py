@@ -135,7 +135,7 @@ class AutoLoad(UiForm,UiBase):
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
                                                              data.data[self.settings.counterChannel]/data.integrationTime >= self.settings.thresholdBare )
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Disappeared', 
-                                         lambda state: state.timeInState() > self.settings.postSequenceWaitTime and
+                                         lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
                                                              data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
         self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven )
         self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )

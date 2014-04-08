@@ -125,6 +125,7 @@ class TodoList(Form, Base):
         self.statusLabel.setText('Idle')
         
     def enterMeasurementRunning(self):
+        self.statusLabel.setText('Measurement Running')
         currentname, currentwidget = self.currentScan()
         entry = self.settings.todoList[ self.settings.currentIndex ]
         # switch to the scan for the first line
@@ -134,7 +135,6 @@ class TodoList(Form, Base):
         currentwidget.scanControlWidget.loadSetting( entry.measurement )        
         # start
         currentwidget.onStart()
-        self.statusLabel.setText('Measurement Running')
         self.tableModel.setActiveRow(self.settings.currentIndex)
         
     def exitMeasurementRunning(self):

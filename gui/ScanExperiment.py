@@ -229,7 +229,7 @@ class GateSequenceScanGenerator:
     def expected(self, index):
         if self.gateSequenceAttributes is not None:
             try:
-                expected = ExpectedLoopkup[ self.gateSequenceAttributes[index]['expected'] ]
+                expected = ExpectedLoopkup[ self.gateSequenceAttributes[self.scan.index[index]]['expected'] ]
             except IndexError:
                 expected = None
             return expected
