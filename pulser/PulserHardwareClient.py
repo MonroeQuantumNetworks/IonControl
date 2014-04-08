@@ -212,7 +212,7 @@ class PulserHardware(QtCore.QObject):
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
             self.sharedMemoryArray[0:length] = wordlist[start:start+length]
-            self.clientPipe.send( ('ppWriteRamWordlistShared', (length, address+4*start, check) ) )
+            self.clientPipe.send( ('ppWriteRamWordListShared', (length, address+4*start, check) ) )
             processReturn( self.clientPipe.recv() )
         return True
             
@@ -220,7 +220,7 @@ class PulserHardware(QtCore.QObject):
         readlist = list()
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
-            self.clientPipe.send( ('ppReadRamWordlistShared', (length, address+4*start) ) )
+            self.clientPipe.send( ('ppReadRamWordListShared', (length, address+4*start) ) )
             processReturn( self.clientPipe.recv() )
             readlist.extend( self.sharedMemoryArray[0:length] )
         return readlist

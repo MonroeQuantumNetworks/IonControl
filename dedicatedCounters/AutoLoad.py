@@ -131,14 +131,17 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'timer', 'CoolingOven', 'Preheat',
                                         lambda state: state.timeInState() > self.settings.waitForComebackTime and
                                                       self.settings.autoReload )
-        self.statemachine.addTransition( 'timer', 'PostSequenceWait', 'Trapped', 
-                                         lambda state: state.timeInState() > self.settings.postSequenceWaitTime )
+        self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Trapped', 
+                                         lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
+                                                             data.data[self.settings.counterChannel]/data.integrationTime >= self.settings.thresholdBare )
+        self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Disappeared', 
+                                         lambda state: state.timeInState() > self.settings.postSequenceWaitTime and
+                                                             data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
         self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven )
         self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
         self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare)
         self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
         self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
-        self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
         self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven'], 'Idle')
         self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
         self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback'], 'Frozen' )

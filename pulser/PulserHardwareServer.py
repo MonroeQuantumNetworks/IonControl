@@ -540,7 +540,7 @@ class PulserHardwareServer(Process):
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             
     quantum = 1024*1024
-    def ppWriteRamWordlist(self,wordlist,address):
+    def ppWriteRamWordList(self,wordlist,address):
         logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(wordlist)
         for start in range(0, len(data), self.quantum ):
@@ -551,7 +551,7 @@ class PulserHardwareServer(Process):
             self.ppReadRam(myslice, address+start)
             length = min(self.quantum,len(data)-start)
             matches = matches and data[start:start+self.quantum] == myslice[:length]
-        logger.info( "ppWriteRamWordlist {0}".format( len(data)) )
+        logger.info( "ppWriteRamWordList {0}".format( len(data)) )
         if not matches:
             logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
             raise PulserHardwareException("RAM write unsuccessful")
@@ -566,8 +566,8 @@ class PulserHardwareServer(Process):
         wordlist = self.bytearrayToWordList(data)
         return wordlist
 
-    def ppWriteRamWordlistShared(self, length, address, check=True):
-        #self.ppWriteRamWordlist(self.sharedMemoryArray[:length], address)
+    def ppWriteRamWordListShared(self, length, address, check=True):
+        #self.ppWriteRamWordList(self.sharedMemoryArray[:length], address)
         logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(self.sharedMemoryArray[:length])
         self.ppWriteRam( data, address)
@@ -575,12 +575,12 @@ class PulserHardwareServer(Process):
             myslice = bytearray(len(data))
             self.ppReadRam(myslice, address)
             matches = data == myslice
-            logger.info( "ppWriteRamWordlist {0}".format( len(data)) )
+            logger.info( "ppWriteRamWordList {0}".format( len(data)) )
             if not matches:
                 logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
                 raise PulserHardwareException("RAM write unsuccessful")
                 
-    def ppReadRamWordlistShared(self, length, address):
+    def ppReadRamWordListShared(self, length, address):
         data = bytearray([0]*length*4)
         self.ppReadRam(data, address)
         self.sharedMemoryArray[:length] = self.bytearrayToWordList(data)

@@ -21,13 +21,13 @@ def testSequentialDataShared( length ):
     data = [ randint(0, 0x100000 ) for _ in range(length)]
     start_time = time.time()
     try:
-        pulser.ppWriteRamWordlistShared( data, 0 )
+        pulser.ppWriteRamWordListShared( data, 0 )
     except Exception:
         print "exception"
     print "writing {0:x} took {1} seconds".format(length, time.time()-start_time )
     start_time = time.time()
     datacopy = list([0]*len(data))
-    datacopy = pulser.ppReadRamWordlistShared( datacopy, 0 )
+    datacopy = pulser.ppReadRamWordListShared( datacopy, 0 )
     print "testing {0:x} took {1} seconds".format(length, time.time()-start_time ), 
     print "passed" if data==datacopy else "failed"
 
@@ -37,7 +37,7 @@ def testSequentialData( length ):
     data = [ randint(0, 0x100000 ) for _ in range(length)]
     start_time = time.time()
     try:
-        pulser.ppWriteRamWordlist( data, 0 )
+        pulser.ppWriteRamWordList( data, 0 )
     except Exception:
         print "exception"
     print "writing {0:x} took {1} seconds".format(length, time.time()-start_time )
@@ -50,7 +50,7 @@ def testSequentialData( length ):
 def testWriteAddress( address, length ):
     data = [ randint(0, 0x100000000 ) for _ in range(length)]
     start_time = time.time()
-    pulser.ppWriteRamWordlist( data, address )
+    pulser.ppWriteRamWordList( data, address )
     print "testing {0} at address {2:x} took {1} seconds".format(length, time.time()-start_time, address )
     return data
 
@@ -63,11 +63,11 @@ def testExpectedData( address, data):
 
 
 def test(pulser):
-    pulser.openBySerial("132800061D")
-    #pulser.openBySerial("12230003NX")
-    #pulser.uploadBitfile(r"C:\Users\Public\Documents\IonControl\FPGA_Ions\fpgafirmware.bit")
-    pulser.uploadBitfile(r"C:\Users\pmaunz\Documents\Programming\IonControl\FPGA_Ions\fpgafirmware.bit")
-    for factor in [128]:
+    #pulser.openBySerial("132800061D")
+    pulser.openBySerial("12230003NX")
+    pulser.uploadBitfile(r"C:\Users\Public\Documents\IonControl\FPGA_Ions\fpgafirmware.bit")
+    #pulser.uploadBitfile(r"C:\Users\pmaunz\Documents\Programming\IonControl\FPGA_Ions\fpgafirmware.bit")
+    for factor in [64]:
         #testSequentialData(256*1024*factor) 
         testSequentialData(256*1024*factor)
 #     for address in range(0,257):

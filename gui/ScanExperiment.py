@@ -430,6 +430,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
                 with open( dumpFilename, 'wb') as f:
                     f.write( self.pulserHardware.wordListToBytearray(datacopy))
+                codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
+                with open( codeFilename, 'w') as f:
+                    for a in mycode:
+                        f.write( "{0}\n".format(a) )
             if data!=datacopy:
                 raise ScanException("Ram write unsuccessful")
         self.pulserHardware.ppFlushData()
@@ -450,6 +454,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     
     def onContinue(self):
         if self.progressUi.state == self.OpStates.interrupted:
+            logging.getLogger(__name__).info("Received ion reappeared signal, will continue.")
             self.onPause()
     
     def onPause(self):
@@ -506,7 +511,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         elif data.final and data.exitcode!=0:
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
-            logger.info( "onData {0} {1}".format( [len(data.count[i]) for i in range(16)], data.scanvalue ) )
+            logger.info( "onData {0} {1} {2}".format( self.currentIndex, [len(data.count[i]) for i in range(16)], data.scanvalue ) )
             # Evaluate as given in evalList
             expected = self.generator.expected( self.currentIndex )
             x = self.generator.xValue(self.currentIndex)

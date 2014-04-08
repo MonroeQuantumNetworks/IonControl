@@ -18,7 +18,7 @@ def testSequentialData( length ):
     data = [ randint(0, 0x100000 ) for _ in range(length)]
     start_time = time.time()
     try:
-        pulser.ppWriteRamWordlist( data, 0 )
+        pulser.ppWriteRamWordList( data, 0 )
     except Exception:
         print "exception"
     print "writing {0:x} took {1} seconds".format(length, time.time()-start_time )
@@ -31,7 +31,7 @@ def testSequentialData( length ):
 def testWriteAddress( address, length ):
     data = [ randint(0, 0x100000000 ) for _ in range(length)]
     start_time = time.time()
-    pulser.ppWriteRamWordlist( data, address )
+    pulser.ppWriteRamWordList( data, address )
     print "testing {0} at address {2:x} took {1} seconds".format(length, time.time()-start_time, address )
     return data
 
