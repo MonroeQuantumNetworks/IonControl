@@ -71,7 +71,11 @@ def saveResultsRaw(resultsTable, filename):
         for r in resultsTable:
             print >> f, r[0], r[1], r[2], r[3], r[3]
 
-    
+def saveLookupTable(sequence, filename):
+    with open(filename, 'w') as f:
+        for k, v in sequence.GateSequenceDict.iteritems():
+            print >> f, k, "".join(v) if v else "0"
+   
 def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength ):
     filenameBody, filenameExt = os.path.splitext(filenameTemplate)
     RawResultsTable = list()
@@ -107,5 +111,9 @@ def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength ):
     saveResultsRaw(RawResultsTable, os.path.join(outputpath,filenameBody+"_assemble_raw.txt") )
 
 assembleData( "GateSequenceTraining", goodGateSetTraining, trainingSequence, 2599)
+saveLookupTable(trainingSequence, os.path.join(outputpath,"GateSequenceTraining_lookup.txt"))
 assembleData( "GateSequenceTesting", goodGateSetTesting, testingSequence, 1910)
+saveLookupTable(testingSequence, os.path.join(outputpath,"GateSequenceTesting_lookup.txt"))
+assembleData( "CompositeGateSequenceTraining", goodCompositeGateSetTraining, trainingSequence, 2599)
+assembleData( "CompositeGateSequenceTesting", goodCompositeGateSetTesting, testingSequence, 1910)
 
