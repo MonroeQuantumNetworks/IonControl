@@ -150,7 +150,7 @@ class FitFunctionBase(object):
     
                 #-----------------------------------------------
         else:
-            self.parametersConfidence = None
+            self.parametersConfidence = [None]*len(self.parametersConfidence)
  
         return self.parameters
                 
