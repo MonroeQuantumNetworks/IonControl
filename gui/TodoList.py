@@ -73,6 +73,11 @@ class TodoList(Form, Base):
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
         self.tableModel.setActiveRow(self.settings.currentIndex, False)
+        self.tableView.doubleClicked.connect( self.setCurrentIndex )
+        
+    def setCurrentIndex(self, index):
+        self.settings.currentIndex = index.row()
+        self.tableModel.setActiveRow(self.settings.currentIndex, self.statemachine.currentState=='MeasurementRunning')        
         
     def updateMeasurementSelectionBox(self, newscan ):
         newscan = str(newscan)
