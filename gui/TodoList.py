@@ -72,6 +72,7 @@ class TodoList(Form, Base):
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
+        self.tableModel.setActiveRow(self.settings.currentIndex, False)
         
     def updateMeasurementSelectionBox(self, newscan ):
         newscan = str(newscan)
@@ -119,7 +120,6 @@ class TodoList(Form, Base):
     
     def onRepeatChanged(self, enabled):
         self.settings.repeat = enabled
-        self.settings.currentIndex = 0
 
     def enterIdle(self):
         self.statusLabel.setText('Idle')
@@ -135,11 +135,11 @@ class TodoList(Form, Base):
         currentwidget.scanControlWidget.loadSetting( entry.measurement )        
         # start
         currentwidget.onStart()
-        self.tableModel.setActiveRow(self.settings.currentIndex)
+        self.tableModel.setActiveRow(self.settings.currentIndex, True)
         
     def exitMeasurementRunning(self):
         self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
-        self.tableModel.setActiveRow(None)
+        self.tableModel.setActiveRow(self.settings.currentIndex, False)
         
     def enterPaused(self):
         self.statusLabel.setText('Paused')

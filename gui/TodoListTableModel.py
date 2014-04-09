@@ -16,16 +16,18 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
         self.todolist = todolist
         self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.todolist[row].scan,
                              (QtCore.Qt.DisplayRole,1): lambda row: self.todolist[row].measurement,
-                             (QtCore.Qt.BackgroundColorRole,0): lambda row: QtGui.QColor(0xd0, 0xff, 0xd0) if self.activeRow==row else QtCore.Qt.white
+                             (QtCore.Qt.BackgroundColorRole,0): lambda row: self.colorLookup[self.running] if self.activeRow==row else QtCore.Qt.white
                              }
+        self.colorLookup = { True: QtGui.QColor(0xd0, 0xff, 0xd0), False: QtGui.QColor(0xff, 0xd0, 0xd0) }
         self.activeRow = None
 
-    def setActiveRow(self, row):
+    def setActiveRow(self, row, running=True):
         oldactive = self.activeRow
         self.activeRow = row
+        self.running = running
         if row is not None:
             self.dataChanged.emit( self.createIndex(row,0), self.createIndex(row+1,3) )
-        if oldactive is not None:
+        if oldactive is not None and oldactive!=row:
             self.dataChanged.emit( self.createIndex(oldactive,0), self.createIndex(oldactive+1,3) )
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
