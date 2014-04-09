@@ -614,8 +614,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.updateSaveStatus()
 
     def loadSetting(self, name):
-        if name and self.comboBox.findText(self.settingsName):
-            self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )        
+        if name and self.comboBox.findText(name)>=0:
+            self.comboBox.setCurrentIndex( self.comboBox.findText(name) )  
+            self.onLoad(name)      
 
     def onReload(self):
         self.onLoad( self.comboBox.currentText() )
