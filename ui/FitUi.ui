@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>327</width>
-    <height>544</height>
+    <height>833</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -100,6 +100,7 @@
      </property>
      <widget class="TableViewExtended" name="parameterTableView"/>
      <widget class="TableViewExtended" name="resultsTableView"/>
+     <widget class="QTableView" name="pushTableView"/>
     </widget>
    </item>
    <item>

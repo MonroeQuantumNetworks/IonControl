@@ -23,8 +23,6 @@ class ResultRecord(object):
         self.name = name
         self.definition = definition
         self.value = value
-        self.globalname = globalname
-        self.push = push
 
 class FitFunctionBase(object):
     name = 'None'
