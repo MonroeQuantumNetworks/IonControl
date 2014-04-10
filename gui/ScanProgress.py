@@ -69,7 +69,8 @@ class ScanProgress(Form,Base):
         self.previouslyElapsedTime = 0
         self.widget.setStyleSheet( "QWidget { background: #a0ffa0; }")
         self.startTimer()
-    
+        self.previouslyElapsedTime = 0
+        
     def resumeRunning(self, index):
         self.statusLabel.setText("Running")    
         self.progressBar.setValue(index)
@@ -85,7 +86,7 @@ class ScanProgress(Form,Base):
         self.setTimeLabel()
         self.state = self.OpStates.paused
         self.stateChanged.emit('paused')
-        self.previouslyElapsedTime = time.time()-self.startTime
+        self.previouslyElapsedTime += time.time()-self.startTime
         self.widget.setStyleSheet( "QWidget { background: #c0c0ff; }")
         self.stopTimer()
     
@@ -108,7 +109,7 @@ class ScanProgress(Form,Base):
         self.state = self.OpStates.interrupted
         self.stateChanged.emit('interrupted')
         self.setTimeLabel()
-        self.previouslyElapsedTime = time.time()-self.startTime
+        self.previouslyElapsedTime += time.time()-self.startTime
         self.widget.setStyleSheet( "QWidget { background: #ffa0a0; }")
         self.stopTimer()
        
