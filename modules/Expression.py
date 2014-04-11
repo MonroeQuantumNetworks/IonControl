@@ -263,7 +263,7 @@ if __name__ == "__main__":
     test( "2*4 MHz" , magnitude.mg(8,'MHz') )
     test( "2 * sqrt ( 4s / 1 s)",4 )
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
-    test( "piTime",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10,'ms')} )
+    test( "piTime * 1  ms",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10)} )
 
     print ExprEval.evaluate( "4 MHz" )
     print ExprEval._evaluate_literal.cache_info()

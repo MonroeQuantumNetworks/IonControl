@@ -6,12 +6,9 @@ class FitResultsTableModel(QtCore.QAbstractTableModel):
     def __init__(self, config, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
-        self.dataLookup = { (QtCore.Qt.CheckStateRole,3): lambda row: QtCore.Qt.Checked if self.fitfunction.results.at(row).push else QtCore.Qt.Unchecked,
-                            (QtCore.Qt.DisplayRole,0): lambda row: self.fitfunction.results.at(row).name,
+        self.dataLookup = { (QtCore.Qt.DisplayRole,0): lambda row: self.fitfunction.results.at(row).name,
                             (QtCore.Qt.DisplayRole,1): lambda row: self.fitfunction.results.at(row).definition,
                             (QtCore.Qt.DisplayRole,2): lambda row: str(self.fitfunction.results.at(row).value),
-                            (QtCore.Qt.EditRole,4):    lambda row: self.fitfunction.results.at(row).globalname,
-                            (QtCore.Qt.DisplayRole,4): lambda row: self.fitfunction.results.at(row).globalname,
                             }                           
         self.fitfunction = None
                          
@@ -19,7 +16,7 @@ class FitResultsTableModel(QtCore.QAbstractTableModel):
         return len(self.fitfunction.results) if self.fitfunction else 0
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 5
+        return 3
  
     def setFitfunction(self, fitfunction):
         self.beginResetModel()
@@ -30,7 +27,7 @@ class FitResultsTableModel(QtCore.QAbstractTableModel):
         pass
     
     def fitDataChanged(self):
-        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),4))
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),2))
  
     def startDataChanged(self):
         self.dataChanged.emit( self.createIndex(0,2), self.createIndex(self.rowCount(),2))
@@ -52,11 +49,9 @@ class FitResultsTableModel(QtCore.QAbstractTableModel):
         self.fitfunction.startParameters[row] = value
 
     def flags(self, index ):
-        return { 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-                 4: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable,
-                 }.get(index.column(),QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
 
-    headerDataLookup = ['Name', 'Definition', 'Value', 'Push', 'Global']
+    headerDataLookup = ['Name', 'Definition', 'Value']
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 

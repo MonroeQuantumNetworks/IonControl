@@ -16,6 +16,7 @@ from modules import magnitude
 from modules.MagnitudeUtilit import value
 from modules.SequenceDict import SequenceDict
 import xml.etree.ElementTree as ElementTree
+from modules.Expression import Expression
 
 
 class ResultRecord(object):
@@ -23,8 +24,27 @@ class ResultRecord(object):
         self.name = name
         self.definition = definition
         self.value = value
-        self.globalname = globalname
-        self.push = push
+
+class PushVariable(object):
+    expression = Expression()
+    def __init__(self):
+        self.push = False
+        self.globalName = None
+        self.definition = ""
+        self.value = None
+        self.minimum = ""
+        self.maximum = ""
+        
+    def evaluate(self, variables=dict(), useFloat=False):
+        self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
+        
+    def pushRecord(self):
+        if (self.push and self.globalName is not None and self.globalName != 'None'and self.value is not None and 
+            (not self.minimum or self.value >= self.minimum) and 
+            (not self.maximum or self.value <= self.maximum)):
+            return [(self.globalName, self.value)]
+        return []
+
 
 class FitFunctionBase(object):
     name = 'None'
@@ -35,11 +55,13 @@ class FitFunctionBase(object):
         self.startParameters = []
         self.parameterEnabled = []
         self.parametersConfidence = []
+        self.pushVariables = SequenceDict()
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         
     def __setstate__(self, state):
         self.__dict__ = state
+        self.__dict__.setdefault( 'pushVariables', SequenceDict() )
 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -184,5 +206,10 @@ class FitFunctionBase(object):
         p = self.parameters if p is None else p
         return self.functionEval(x, *p )
 
-    
+    def pushVariableValues(self):
+        pushVarValues = list()
+        for pushvar in self.pushVariables.values():
+            pushVarValues.extend( pushvar.pushRecord() )
+        
+        
 fitFunctionMap = dict()    
