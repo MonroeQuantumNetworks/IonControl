@@ -115,6 +115,7 @@ class Trace(object):
         self.vars.comment = ""
         self.vars.traceCreation = datetime.now()
         self.header = None
+        self.headerDict = dict()
         self._filename = None
         self.filenameCallback = None   # function to result in filename for save
         self.dataChangedCallback = None # used to update the gui table
@@ -310,6 +311,10 @@ class Trace(object):
         self.vars.tracePlottingList = TracePlottingList.fromXmlElement(tpelement) if tpelement is not None else None
         for element in root.findall("./Variables/Element"):
             self.varFromXmlElement(element)
+        for header in root.findall("./Variables/Header"):
+            for line in header.text.splitlines():
+                key, value = line.split(None,1)
+                self.headerDict[key] = value
         
     def loadTraceText(self, stream):    
         data = []

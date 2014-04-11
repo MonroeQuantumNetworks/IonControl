@@ -14,7 +14,7 @@ from modules.DataDirectory import DataDirectory
 from trace.Trace import Trace
 from gateSequence.GateDefinition import GateDefinition
 from gateSequence.GateSequenceContainer import GateSequenceContainer
-
+from modules.MagnitudeParser import parse
 
 resultsTable = None
 headerList = list()
@@ -27,12 +27,14 @@ testingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSet
 
 goodGateSetTraining = [ (datetime.date(2014,4,3), [3, 4, 5] ),
                         (datetime.date(2014,4,4), [1] ),
-                        (datetime.date(2014,4,8), [1, 3, 5] ) ]
+                        (datetime.date(2014,4,8), [1, 3, 5] ),
+                        (datetime.date(2014,4,9), [1] ) ]
 
 goodGateSetTesting = [  (datetime.date(2014,4,3),[3, 4]),
-                        (datetime.date(2014,4,9), [1] )  ]
+                        (datetime.date(2014,4,9), [1, 2, 3] )  ]
 
-goodCompositeGateSetTraining = [  (datetime.date(2014,4,8),[5]) ]
+goodCompositeGateSetTraining = [  (datetime.date(2014,4,8),[5]),
+                                  (datetime.date(2014,4,9), [1,2] )  ]
 
 goodCompositeGateSetTesting = [  (datetime.date(2014,4,9),[1]) ]
 
@@ -75,6 +77,11 @@ def saveLookupTable(sequence, filename):
     with open(filename, 'w') as f:
         for k, v in sequence.GateSequenceDict.iteritems():
             print >> f, k, "".join(v) if v else "0"
+   
+def expectedDuration( trace, numPi, index, sequence ):
+    Pulses = sequence.GateSequenceAttributes[ str()]
+    SingleExperiment = ( parse(trace.headerDict['PreWaitTime'])+ sequence.*numPi*parse(trace.headerDict['piTime']) )
+    
    
 def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength ):
     filenameBody, filenameExt = os.path.splitext(filenameTemplate)
