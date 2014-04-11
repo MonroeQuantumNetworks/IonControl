@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>327</width>
+    <width>317</width>
     <height>833</height>
    </rect>
   </property>
@@ -140,6 +140,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/edit-delete-6.png</normaloff>:/openicon/icons/edit-delete-6.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -159,6 +162,9 @@
        <property name="icon">
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/archive-extract-2.png</normaloff>:/openicon/icons/archive-extract-2.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -180,6 +186,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/arrow-left-2.png</normaloff>:/openicon/icons/arrow-left-2.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -194,6 +203,34 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="addPushVariable">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/edit-add.png</normaloff>:/openicon/icons/edit-add.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="removePushVariable">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/edit_remove.png</normaloff>:/openicon/icons/edit_remove.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

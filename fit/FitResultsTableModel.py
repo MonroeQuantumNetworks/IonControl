@@ -27,7 +27,7 @@ class FitResultsTableModel(QtCore.QAbstractTableModel):
         pass
     
     def fitDataChanged(self):
-        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),4))
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),2))
  
     def startDataChanged(self):
         self.dataChanged.emit( self.createIndex(0,2), self.createIndex(self.rowCount(),2))
