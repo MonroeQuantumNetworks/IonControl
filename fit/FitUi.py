@@ -29,9 +29,6 @@ class AnalysisDefinition(object):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
         fitfunction.startParameters = list(self.startParameters)
         fitfunction.parameterEnabled = list(self.parameterEnabled)
-        for result in self.results.values():
-            fitfunction.results[result.name].push = result.push
-            fitfunction.results[result.name].globalname = result.globalname
         fitfunction.pushVariables = SequenceDict( (v.globalName, v) for v in self.pushVariables) 
         return fitfunction
     
@@ -41,7 +38,7 @@ class AnalysisDefinition(object):
         instance.startParameters = tuple(fitfunction.startParameters)
         instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
         for result in fitfunction.results.values():
-            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition, globalname=result.globalname, push=result.push)
+            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
         instance.pushVariables = tuple( fitfunction.pushVariables.values() )
         return instance
      

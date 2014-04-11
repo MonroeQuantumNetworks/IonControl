@@ -39,6 +39,7 @@ from modules import stringutilit
 from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+import copy
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -372,6 +373,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def setGlobalVariablesUi(self, globalVariablesUi ):
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
+        self.globalVariablesUi = globalVariablesUi
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
@@ -613,7 +615,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if averagePlottedTrace:
                     self.progressUi.setAveraged(averagePlottedTrace.childCount())
                     averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
-        self.dataAnalysis()
+        if reason == 'end of scan':
+            self.dataAnalysis()
         
     def dataAnalysis(self):
         for evaluation, plot in zip(self.scan.evalList, self.plottedTraceList):
@@ -625,10 +628,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 elif plot.hasTopColumn and plot.hasBottomColumn:
                     sigma = abs(plot.top + plot.bottom)
                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
-                #fitFunction = copy.deepcopy(self.fitfunction)
+                plot.fitFunction = copy.deepcopy(fitfunction)
                 plot.plot(-2)
                 if self.globalVariables is not None:
-                    self.globalVariables.update( fitfunction.pushVariableValues() )
+                    self.globalVariablesUi.update( fitfunction.pushVariableValues() )
                 
             
     def showTimestamps(self,data):

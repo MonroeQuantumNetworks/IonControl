@@ -112,6 +112,9 @@ class TodoList(Form, Base):
     def onDropMeasurement(self):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
             self.tableModel.dropMeasurement(index)
+        numEntries = self.tableModel.rowCount()
+        if self.currentScan >= numEntries:
+            self.currentScan = 0
 
     def checkReadyToRun(self, state, _=True ):
         _, current = self.currentScan()

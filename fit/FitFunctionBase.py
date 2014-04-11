@@ -20,7 +20,7 @@ from modules.Expression import Expression
 
 
 class ResultRecord(object):
-    def __init__(self, name=None, definition=None, value=None, globalname=None, push=False ):
+    def __init__(self, name=None, definition=None, value=None):
         self.name = name
         self.definition = definition
         self.value = value
@@ -193,10 +193,12 @@ class FitFunctionBase(object):
             e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': str(enabled)})
             e.text = str(value)
         for result in self.results.values():
-            e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition), 'globalname': str(result.globalname), 'push': str(result.push)})
+            e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition)})
             e.text = str(result.value)
+        for push in self.pushVariables.values():
+            e = ElementTree.SubElement( myroot, 'PushVariable', {'globalName':push.globalName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
         return myroot
-    
+   
     def residuals(self,p, y, x, sigma):
         p = self.allFitParameters(p)
         if sigma is not None:
@@ -213,6 +215,7 @@ class FitFunctionBase(object):
         pushVarValues = list()
         for pushvar in self.pushVariables.values():
             pushVarValues.extend( pushvar.pushRecord(replacement) )
+        return pushVarValues
             
     def updatePushVariables(self):
         replacement = dict(zip(self.parameterNames,self.parameters))
