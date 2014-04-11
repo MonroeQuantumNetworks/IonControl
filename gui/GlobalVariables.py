@@ -78,6 +78,10 @@ class GlobalVariableUi(Form, Base ):
                 selectionModel.clearSelection()
                 for index in indexes:
                     selectionModel.select( self.model.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
+                    
+    def update(self, updlist):
+        self.model.update(updlist)
+            
 
 if __name__=="__main__":
     import sys

@@ -132,4 +132,12 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 return True
         return False
     
-            
+    def update(self, updlist ):
+        for key, value in updlist:
+            if key in self.variables:
+                old = self.variables[key]
+                if value!=old:
+                    self.variables[key] = value
+                    self.valueChanged.emit(key)
+                    index = self.variables.index(key)
+                    self.dataChanged.emit( self.createIndex(index,1), self.createIndex(index,1))

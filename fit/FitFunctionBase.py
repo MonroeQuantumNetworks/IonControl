@@ -38,7 +38,9 @@ class PushVariable(object):
     def evaluate(self, variables=dict(), useFloat=False):
         self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
         
-    def pushRecord(self):
+    def pushRecord(self, variables=None):
+        if variables is not None:
+            self.evaluate(variables)
         if (self.push and self.globalName is not None and self.globalName != 'None'and self.value is not None and 
             (not self.minimum or self.value >= self.minimum) and 
             (not self.maximum or self.value <= self.maximum)):
@@ -207,9 +209,16 @@ class FitFunctionBase(object):
         return self.functionEval(x, *p )
 
     def pushVariableValues(self):
+        replacement = dict(zip(self.parameterNames,self.parameters))
         pushVarValues = list()
         for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord() )
+            pushVarValues.extend( pushvar.pushRecord(replacement) )
+            
+    def updatePushVariables(self):
+        replacement = dict(zip(self.parameterNames,self.parameters))
+        for pushvar in self.pushVariables.values():
+            pushvar.evaluate(replacement)
+
         
         
 fitFunctionMap = dict()    

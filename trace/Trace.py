@@ -313,8 +313,12 @@ class Trace(object):
             self.varFromXmlElement(element)
         for header in root.findall("./Variables/Header"):
             for line in header.text.splitlines():
-                key, value = line.split(None,1)
-                self.headerDict[key] = value
+                try:
+                    key, value = line.split(None,1)
+                    self.headerDict[key] = value
+                except ValueError:
+                    pass
+                    
         
     def loadTraceText(self, stream):    
         data = []

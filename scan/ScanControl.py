@@ -38,13 +38,15 @@ class EvaluationDefinition:
         self.plotname = None
         self.settingsCache = HashableDict()
         self.showHistogram = False
+        self.analysis = None
         
     def __setstate__(self, state):
         self.__dict__ = state
         if 'errorBars' in self.settings:   # remove errorBars property in old unpickled instances
             self.settings.pop('errorBars')
+        self.__dict__.setdefault( 'analysis', None )
         
-    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram'] 
+    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -146,7 +148,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     scanConfigurationListChanged = QtCore.pyqtSignal( object )
     logger = logging.getLogger(__name__)
-    def __init__(self,config,parentname, plotnames=None, parent=None):
+    def __init__(self,config,parentname, plotnames=None, parent=None, analysisNames=None):
         logger = logging.getLogger(__name__)
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
@@ -171,7 +173,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
         self.evalAlgorithmList = list()
         self.plotnames = plotnames
-
+        self.analysisNames = analysisNames
+        
     def setupUi(self, parent):
         logger = logging.getLogger(__name__)
         ScanControlForm.setupUi(self,parent)
@@ -181,14 +184,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.redoButton.clicked.connect( self.onRedo )
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
-        self.evalTableModel = EvaluationTableModel( self.updateSaveStatus, plotnames=self.plotnames )
+        self.evalTableModel = EvaluationTableModel( self.updateSaveStatus, plotnames=self.plotnames, analysisNames=self.analysisNames )
         self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
         self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.setModel( self.evalTableModel )
         self.evalTableView.clicked.connect( self.editEvaluationTable )
         delegate = ComboBoxDelegate()
-        self.evalTableView.setItemDelegateForColumn(1, delegate  )
+        self.evalTableView.setItemDelegateForColumn(1, delegate )
         self.evalTableView.setItemDelegateForColumn(4, delegate )
+        self.evalTableView.setItemDelegateForColumn(5, delegate )        
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
@@ -276,7 +280,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
         self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
         self.evalTableView.resizeColumnsToContents()
-        self.evalTableView.horizontalHeader().setStretchLastSection(True)
+        #self.evalTableView.horizontalHeader().setStretchLastSection(True)
 
     def addEvaluation(self, evaluation):
         algo =  CountEvaluation.EvaluationAlgorithms[evaluation.evaluation]()

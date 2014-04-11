@@ -61,6 +61,7 @@ class AnalysisDefinition(object):
         self.__dict__.setdefault( 'pushVariables', tuple() )
             
 class FitUi(fitForm, QtGui.QWidget):
+    analysisNamesChanged = QtCore.pyqtSignal(object)
     def __init__(self, traceui, config, parentname, parent=None):
         QtGui.QWidget.__init__(self,parent)
         fitForm.__init__(self)
@@ -196,14 +197,19 @@ class FitUi(fitForm, QtGui.QWidget):
             index = self.analysisNameComboBox.findText(name)
             if index>=0:
                 self.analysisNameComboBox.removeItem(index)
+            self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
+                
     
     def onSaveAnalysis(self):
         name = str(self.analysisNameComboBox.currentText())       
         definition = AnalysisDefinition.fromFitfunction(self.fitfunction)
         definition.name = name
+        isNew = name not in self.analysisDefinitions
         self.analysisDefinitions[name] = definition
         if self.analysisNameComboBox.findText(name)<0:
             self.analysisNameComboBox.addItem(name)
+        if isNew:
+            self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
         
     def onLoadAnalysis(self, name):
         name = str(name)
@@ -211,3 +217,8 @@ class FitUi(fitForm, QtGui.QWidget):
             if AnalysisDefinition.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
                 self.setFitfunction( self.analysisDefinitions[name].fitfunction() )
         
+    def analysisNames(self):
+        return self.analysisDefinitions.keys()
+    
+    def analysisFitfunction(self, name):
+        return self.analysisDefinitions[name].fitfunction()

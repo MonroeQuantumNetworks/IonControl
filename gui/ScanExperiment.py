@@ -322,7 +322,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys() )
+        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
 
@@ -613,6 +613,23 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if averagePlottedTrace:
                     self.progressUi.setAveraged(averagePlottedTrace.childCount())
                     averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
+        self.dataAnalysis()
+        
+    def dataAnalysis(self):
+        for evaluation, plot in zip(self.scan.evalList, self.plottedTraceList):
+            if evaluation.analysis is not None:
+                fitfunction = self.fitWidget.analysisFitfunction(evaluation.analysis)
+                sigma = None
+                if plot.hasHeightColumn:
+                    sigma = plot.height
+                elif plot.hasTopColumn and plot.hasBottomColumn:
+                    sigma = abs(plot.top + plot.bottom)
+                fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
+                #fitFunction = copy.deepcopy(self.fitfunction)
+                plot.plot(-2)
+                if self.globalVariables is not None:
+                    self.globalVariables.update( fitfunction.pushVariableValues() )
+                
             
     def showTimestamps(self,data):
         bins = int( (self.scan.roiWidth/self.scan.binwidth).toval() )
