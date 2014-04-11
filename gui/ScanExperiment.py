@@ -602,6 +602,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.otherDataFile is not None:
             self.otherDataFile.close()
             self.otherDataFile = None
+        if reason == 'end of scan':
+            self.dataAnalysis()
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
                 trace.vars.traceFinalized = datetime.now()
@@ -615,8 +617,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if averagePlottedTrace:
                     self.progressUi.setAveraged(averagePlottedTrace.childCount())
                     averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
-        if reason == 'end of scan':
-            self.dataAnalysis()
         
     def dataAnalysis(self):
         for evaluation, plot in zip(self.scan.evalList, self.plottedTraceList):
