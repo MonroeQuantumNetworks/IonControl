@@ -34,6 +34,7 @@ class LockSettings(object):
         self.mode = 0
         self.dcThreshold = mg(0,'V')
         self.enableDCThreshold = False
+        self.coreMode = 0
         
     def __setstate__(self, d):
         self.__dict__ = d
@@ -44,6 +45,7 @@ class LockSettings(object):
         self.__dict__.setdefault( 'resonanceFrequency', mg(12642.817,'MHz') )
         self.__dict__.setdefault( 'dcThreshold', mg(0,'V') )
         self.__dict__.setdefault( 'enableDCThreshold', False )
+        self.__dict__.setdefault( 'coreMode', 0 )
         self.mode = self.mode & (~1)  # clear the lock enable bit
         
 
@@ -92,6 +94,13 @@ class LockControl(Form, Base):
         self.dataChanged.emit( self.lockSettings )
         self.dcThresholdBox.setChecked( self.lockSettings.enableDCThreshold )
         self.dcThresholdBox.stateChanged.connect( self.onDCThresholdEnable )
+        self.coreModeBox.setCurrentIndex( self.lockSettings.coreMode )
+        self.coreModeBox.currentIndexChanged[int].connect( self.onCoreMode )
+        self.onCoreMode( self.lockSettings.coreMode )
+        
+    def onCoreMode(self, value):
+        self.lockSettings.coreMode = value
+        self.controller.setCoreMode( self.lockSettings.coreMode )
         
     def onDCThresholdEnable(self, state):
         self.lockSettings.enableDCThreshold = state == QtCore.Qt.Checked
@@ -167,6 +176,7 @@ class LockControl(Form, Base):
         binvalue = int(value.toval(''))
         self.controller.setHarmonic(binvalue)
         self.lockSettings.harmonic = value
+        self.controller.setFixedPointHarmonic( int(value.toval('')*1<<56) )
         self.dataChanged.emit( self.lockSettings )
         self.calculateOffset()
         
