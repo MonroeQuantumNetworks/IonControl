@@ -12,6 +12,9 @@ class SequenceDict(dict, MutableMapping):
         if not hasattr(self, '_keys'):
             self._keys = []
         self.update(*args, **kwds)
+        
+    def __hash__(self):
+        return hash(tuple(self.items()))
 
     def clear(self):
         del self._keys[:]
@@ -174,4 +177,6 @@ class SequenceDict(dict, MutableMapping):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+    d = SequenceDict([(4, 4), (1, 1), (2, 2), (3, 3)])
+    print d.items()
     

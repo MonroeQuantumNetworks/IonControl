@@ -60,6 +60,21 @@ class VariableDictionary(SequenceDict):
                 var.strerror = None
         self.recalculateAll()
         
+    def mergeFromVariabledict(self, variabledict ):
+        for name,var in variabledict.iteritems():
+            if var.type in ['parameter','address']:
+                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) )
+        for name in self.keys():
+            if name not in variabledict:
+                self.pop(name)
+                
+    def setFromVariabledict(self, variabledict):
+        self.clear()
+        for name,var in variabledict.iteritems():
+            if var.type in ['parameter','address']:
+                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) )
+        
+        
     def __setitem__(self, key, value):
         super(VariableDictionary,self).__setitem__(key, value)
         if hasattr(value,'strvalue'):
