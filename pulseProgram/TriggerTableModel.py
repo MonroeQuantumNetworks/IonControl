@@ -10,30 +10,29 @@ from PyQt4 import QtCore, QtGui
 
 
 class TriggerTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, variabledict, channelNameData, parent=None, *args): 
+    def __init__(self, triggerdict, channelNameData, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = variabledict
-        self.variablelist = [ x for x in self.variabledict.values() if x.type=='trigger' ]
+        self.triggerdict = triggerdict
         self.channelNames, self.channelSignal = channelNameData
         self.channelSignal.dataChanged.connect( self.onHeaderChanged )
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.variablelist) 
+        return len(self.triggerdict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 32
  
     def currentState(self,index):
-        data = self.variablelist[index.row()].data
+        data = self.triggerdict.at(index.row()).data
         bit = 0x80000000>>index.column()
         return bool( bit & data )
         
     def setState(self,index,state):
         bit = 0x80000000>>index.column()
-        var = self.variablelist[index.row()]
+        var = self.triggerdict.at(index.row())
         if state:
             var.data = (var.data & ~bit) | bit
         else:
@@ -67,7 +66,7 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
                     return self.channelNames.names[index]
                 return index
             elif (orientation == QtCore.Qt.Vertical): 
-                return self.variablelist[section].name
+                return self.triggerdict.at(section).name
         return None #QtCore.QVariant()
 
     def onClicked(self,index):
@@ -75,6 +74,6 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
 
     def getVariables(self):
         myvariables = dict()
-        for var in self.variablelist:
+        for var in self.triggerdict:
             myvariables[var.name] = var.data
         return myvariables

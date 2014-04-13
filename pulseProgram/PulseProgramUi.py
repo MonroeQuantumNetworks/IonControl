@@ -26,7 +26,9 @@ from pppCompiler.CompileException import CompileException
 from modules.PyqtUtility import BlockSignals
 from pyparsing import ParseException
 import copy
-from modules.SequenceDict import SequenceDict
+from ShutterDictionary import ShutterDictionary
+from TriggerDictionary import TriggerDictionary
+from CounterDictionary import CounterDictionary
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -48,9 +50,9 @@ def getPpFileName( filename ):
 class PulseProgramContext:
     def __init__(self):
         self.parameters = VariableDictionary()
-        self.shutters = SequenceDict()
-        self.triggers = SequenceDict()
-        self.counters = SequenceDict()
+        self.shutters = ShutterDictionary()
+        self.triggers = TriggerDictionary()
+        self.counters = CounterDictionary()
         self.pulseProgram = None
         
     def __setstate__(self, state):
@@ -69,6 +71,9 @@ class PulseProgramContext:
     
     def mergeFromPP(self, pulseProgram):
         self.parameters.mergeFromVariabledict( pulseProgram.variabledict )
+        for name,var in pulseProgram.variabledict.iteritems():
+            if var.type in ['parameter','address']:
+                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) )
     
     def setFromPP(self, pulseProgram):
         self.parameters.setFromVariabledict( pulseProgram.variabledict )
