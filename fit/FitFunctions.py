@@ -81,6 +81,19 @@ class ChripedSinSqFit(FitFunctionBase):
     def functionEval(self, x, T, x0, max_, min_, dt ):
         return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/(T+dt*x)*(x-x0)))+min_
     
+class SaturationFit(FitFunctionBase):
+    name = "Saturation"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString = 'A*(x/s)/(1+(x/s))+O'
+        self.parameterNames = [  'A', 's', 'O' ]
+        self.parameters = [10,10,0]
+        self.startParameters = [10,10,0]
+        self.parameterEnabled = [True]*3
+        self.parametersConfidence = [None]*3
+        
+    def functionEval(self, x, A, s, O ):
+        return A*(x/s)/(1+(x/s))+O
   
 class SinSqExpFit(FitFunctionBase):
     name = "Sin2 Exponential Decay"
@@ -211,7 +224,8 @@ fitFunctionMap.update({ GaussianFit.name: GaussianFit,
                        RabiCarrierFunction.name: RabiCarrierFunction,
                        FullRabiCarrierFunction.name: FullRabiCarrierFunction,
                        LinearFit.name: LinearFit,
-                       ChripedSinSqFit.name: ChripedSinSqFit
+                       ChripedSinSqFit.name: ChripedSinSqFit,
+                       SaturationFit.name: SaturationFit
                  } )       
         
 def fitFunctionFactory(text):
