@@ -44,11 +44,7 @@ class VariableDictionary(SequenceDict):
         self.dependencyGraph = DiGraph()
         self.globaldict = dict()
         super(VariableDictionary,self).__init__(*args, **kwargs)
-        
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.__dict__.setdefault( 'valueView', VariableDictionaryView(self) )
-        
+               
     def setGlobaldict(self, globaldict):
         self.globaldict = globaldict 
                 
@@ -214,9 +210,11 @@ if __name__=="__main__":
     print vd['L2'].value
     print vd2['L2'].value
     
-#     import pickle
-#     vd = VariableDictionary()
-#     print pickle.dumps(vd, 0)
+    import pickle
+    s = pickle.dumps(vd, 0)
+    vc = pickle.loads(s)
+    print 'unpickled', vc
+    print vc.at(1)
     
   
     

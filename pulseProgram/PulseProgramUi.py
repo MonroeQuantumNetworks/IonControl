@@ -106,8 +106,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         super(PulseProgramUi,self).setupUi(parent)
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
-        self.contextDict = dict() #self.config.get( self.configname+'.contextdict', dict() )
-        self.currentContext = PulseProgramContext(self.globaldict) #self.config.get( self.configname+'.currentContext' , PulseProgramContext() )
+        self.contextDict = self.config.get( self.configname+'.contextdict', dict() )
+        self.currentContext = self.config.get( self.configname+'.currentContext' , PulseProgramContext(self.globaldict) )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
@@ -150,12 +150,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
+        self.loadContext(self.currentContext)
 
     def loadContext(self, newContext ):
         previousContext = self.currentContext
         self.currentContext = copy.deepcopy(newContext)
         #changeMode = self.currentContext.pulseProgramMode != previousContext.pulseProgramMode
-        if self.currentContext.pulseProgramFile != previousContext.pulseProgramFile:
+        if self.currentContext.pulseProgramFile != previousContext.pulseProgramFile or len(self.sourceCodeEdits)==0:
             self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
         self.updateDisplayContext()
         
@@ -236,14 +237,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.adaptiveLoadFile(path)
             
     def adaptiveLoadFile(self, path):
-        _, ext = os.path.splitext(path)
-        if ext==".ppp":
-            self.sourceMode = self.SourceMode.ppp
-            self.loadpppFile(path)
-        else:
-            self.sourceMode = self.SourceMode.pp
-            self.loadFile(path)            
-        self.configParams.lastLoadFilename = path
+        if path:
+            _, ext = os.path.splitext(path)
+            if ext==".ppp":
+                self.sourceMode = self.SourceMode.ppp
+                self.loadpppFile(path)
+            else:
+                self.sourceMode = self.SourceMode.pp
+                self.loadFile(path)            
+            self.configParams.lastLoadFilename = path
             
     def onReset(self):
         if self.configParams.lastLoadFilename is not None:

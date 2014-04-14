@@ -200,4 +200,11 @@ if __name__ == '__main__':
     e = copy.deepcopy(d)
     print e.items()
     
+    import pickle
+    s = pickle.dumps(d,0)
+    print 'next is pickle.load'
+    ud = pickle.loads(s)
+    print 'unpickled', ud
+    print ud.at(1)
+    
     

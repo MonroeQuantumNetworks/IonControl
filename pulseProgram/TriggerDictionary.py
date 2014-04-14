@@ -23,12 +23,6 @@ class TriggerDictionary(SequenceDict):
                     self[var.name] = deepcopy(var)
         self.sortToMatch( variabledict.keys() )
 
-
-    def __getstate__(self):
-        return self.__dict__
-    
-    def __setstate__(self, state):
-        self.__dict__ = state
                         
 if __name__=="__main__":
     import copy
@@ -40,3 +34,4 @@ if __name__=="__main__":
     import pickle
     stringrep = pickle.dumps(g,0)
     h = pickle.loads(stringrep)
+    print h._keys
