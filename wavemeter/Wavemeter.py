@@ -27,6 +27,7 @@ class Wavemeter(QtCore.QObject):
         self.lastResult = dict()
         self.queryRunning = defaultdict( lambda: False )
         self.am = QtNetwork.QNetworkAccessManager()
+        self.callbackFuncs = dict()
         
     def onWavemeterError(self, channel, error):
         """Print out received error"""
@@ -55,9 +56,18 @@ class Wavemeter(QtCore.QObject):
             result = mg( round(float(reply), 4), 'GHz' )
             self.resultReceived.emit( channel, result ) 
             self.lastResult[channel] = (result, time())
+            if channel in self.callbackFuncs:
+                self.callbackFuncs.pop(channel)(result)
+        elif channel in self.callbackFuncs:
+            self.callbackFuncs.pop(channel)(None)
+            
         
     def get_frequency(self, channel, max_age = None):
         return self.set_frequency(None, channel, max_age if max_age else mg(3,'s'))
+    
+    def asyncGetFrequency(self, channel, callback):
+        self.getWavemeterData(channel)
+        self.callbackFuncs[channel] = callback
                    
     def set_frequency(self, freq, channel, max_age=None):
         max_age = max_age if max_age is not None else mg(3,'s')

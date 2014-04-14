@@ -336,6 +336,7 @@ class LaserWavemeterScan(AgilentPowerSupply):
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         AgilentPowerSupply.__init__(self,name,config,instrument)
         self.setDefaults()
+        self.wavemeter = None
     
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -354,7 +355,12 @@ class LaserWavemeterScan(AgilentPowerSupply):
             self.lastExternalValue = self.wavemeter.get_frequency(self.settings.wavemeter_channel)    
             self.detuning=(self.lastExternalValue-self.value)
             counter += 1
-        return self.lastExternalValue       
+        return self.lastExternalValue  
+    
+    def asyncCurrentExternalValue(self, callbackfunc ):
+        self.wavemeter = Wavemeter(self.settings.wavemeter_address) if self.wavemeter is None else self.wavemeter
+        self.wavemeter.asyncGetFrequency(self.settings.wavemeter_channel, callbackfunc)
+                    
 
     def paramDef(self):
         superior = AgilentPowerSupply.paramDef(self)
