@@ -430,11 +430,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.pulseProgramUi = pulseProgramUi
         with BlockSignals(self.loadPPComboBox):
             self.loadPPComboBox.clear()
-            if hasattr(pulseProgramUi.configParams,'recentFiles'):
-                self.loadPPComboBox.addItems(pulseProgramUi.configParams.recentFiles.keys())
+            self.loadPPComboBox.addItems(pulseProgramUi.contextDict.keys())
             if self.settings.loadPPName: 
                 self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-        self.pulseProgramUi.recentFilesChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()

@@ -86,7 +86,7 @@ class ConfiguredParams:
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
-    recentFilesChanged = QtCore.pyqtSignal(str)
+    contextDictChanged = QtCore.pyqtSignal(str)
     SourceMode = enum('pp','ppp') 
     def __init__(self,config,parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
@@ -168,6 +168,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.contextComboBox.findText(name)<0:
             with BlockSignals(self.contextComboBox) as w:
                 w.addItem(name)
+            self.contextDictChanged.emit(name)
     
     def onDeleteContext(self):
         pass
@@ -306,6 +307,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
         self.currentContext.merge( self.pulseProgram.variabledict )
         self.updateDisplayContext()
+        self.pulseProgramChanged.emit()
 
     def onRemoveCurrent(self):
         text = str(self.filenameComboBox.currentText())
