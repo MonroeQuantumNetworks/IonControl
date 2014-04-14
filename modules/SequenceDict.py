@@ -2,7 +2,7 @@
 from collections import MutableMapping
 from itertools import izip_longest
 from operator import itemgetter
-
+import copy
 
 class SequenceDict(dict, MutableMapping):
 
@@ -23,6 +23,14 @@ class SequenceDict(dict, MutableMapping):
     def __setitem__(self, key, value):
         if key not in self:
             self._keys.append(key)
+        dict.__setitem__(self, key, value)
+        
+    def insert(self, index, key, value):
+        if key not in self:
+            self._keys.insert(index,key)
+        else:
+            self._keys.remove(key)
+            self._keys.insert(index,key)            
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
@@ -79,6 +87,7 @@ class SequenceDict(dict, MutableMapping):
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
+    iteritems = MutableMapping.iteritems
 
     def __repr__(self):
         if not self:
@@ -175,8 +184,9 @@ class SequenceDict(dict, MutableMapping):
         self._keys = sorted( self._keys, key=lambda x: reverse[x])
             
     def __deepcopy__(self, mode):
-        new = self.__class__()
-        new.update( self.iteritems() )
+        new = type(self)()
+        for key, value in self.iteritems():
+            new[key] = copy.deepcopy(value, mode)
         return new
         
     
@@ -185,4 +195,9 @@ if __name__ == '__main__':
     doctest.testmod()
     d = SequenceDict([(4, 4), (1, 1), (2, 2), (3, 3)])
     print d.items()
+    print list(d.iteritems())
+    import copy
+    e = copy.deepcopy(d)
+    print e.items()
+    
     

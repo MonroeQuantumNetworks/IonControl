@@ -154,7 +154,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def loadContext(self, newContext ):
         previousContext = self.currentContext
         self.currentContext = copy.deepcopy(newContext)
-        changeMode = self.currentContext.pulseProgramMode != previousContext.pulseProgramMode
+        #changeMode = self.currentContext.pulseProgramMode != previousContext.pulseProgramMode
         if self.currentContext.pulseProgramFile != previousContext.pulseProgramFile:
             self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
         self.updateDisplayContext()
@@ -166,13 +166,18 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         name = str(self.contextComboBox.currentText())
         self.contextDict[ name ] = copy.deepcopy(self.currentContext)
         if self.contextComboBox.findText(name)<0:
-            self.contextComboBox.addItem(name)
+            with BlockSignals(self.contextComboBox) as w:
+                w.addItem(name)
     
     def onDeleteContext(self):
         pass
 
     def onLoadContext(self):
-        self.loadContext( self.contextDict[str(self.contextComboBox.currentText())] )
+        name = str(self.contextComboBox.currentText())
+        if name in self.contextDict:
+            self.loadContext( self.contextDict[name] )
+        else:
+            self.onSaveContext()
              
     def updatepppDisplay(self):
         for pppTab in self.pppCodeEdits.values():

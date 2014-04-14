@@ -75,6 +75,7 @@ class VariableDictionary(SequenceDict):
         for name,var in variabledict.iteritems():
             if var.type in ['parameter','address'] and (name not in self or overwrite):
                 self[name] = copy.deepcopy(var) 
+        self.sortToMatch( variabledict.keys() )        
         self.calculateDependencies()
                 
     def __setitem__(self, key, value):

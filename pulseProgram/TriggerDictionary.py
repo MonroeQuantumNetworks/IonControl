@@ -21,6 +21,8 @@ class TriggerDictionary(SequenceDict):
             if var.type == 'trigger':
                 if var.name not in self or overwrite:
                     self[var.name] = deepcopy(var)
+        self.sortToMatch( variabledict.keys() )
+
 
     def __getstate__(self):
         return self.__dict__
@@ -34,6 +36,7 @@ if __name__=="__main__":
     e = copy.deepcopy(d)
     f = TriggerDictionary()
     g = copy.deepcopy(f)
+    
     import pickle
     stringrep = pickle.dumps(g,0)
     h = pickle.loads(stringrep)

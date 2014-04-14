@@ -21,5 +21,6 @@ class CounterDictionary(SequenceDict):
             if var.type == 'counter':
                 if var.name not in self or overwrite:
                     self[var.name] = deepcopy(var)
+        self.sortToMatch( variabledict.keys() )
                         
         

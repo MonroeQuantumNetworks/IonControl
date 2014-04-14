@@ -24,6 +24,8 @@ class ShutterDictionary(SequenceDict):
                 if m and ( name not in self or overwrite):
                     mask = deepcopy(variabledict[m.group(1)]) if m.group(1) is not None and m.group(1) in variabledict else None
                     self[name] = (deepcopy(var),mask)
+        self.sortToMatch( variabledict.keys() )
+
                         
                     
 
