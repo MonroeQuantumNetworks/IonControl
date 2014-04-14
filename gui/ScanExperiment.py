@@ -36,6 +36,7 @@ from fit.FitUi import FitUi
 from modules import DataDirectory
 from modules import enum
 from modules import stringutilit
+from modules import magnitude
 from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
@@ -571,7 +572,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
                                                     yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
                                                     xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter)               
-                    xRange = self.generator.xRange()
+                    xRange = self.generator.xRange() if magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
                     if xRange:
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
                     else:
