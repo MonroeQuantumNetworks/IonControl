@@ -20,7 +20,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled ]
-    headerDataLookup = ['use','variable','value','encoding','evaluated']
+    headerDataLookup = ['use','variable','value','evaluated']
     def __init__(self, variabledict=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.variabledict = variabledict if variabledict is not None else dict()

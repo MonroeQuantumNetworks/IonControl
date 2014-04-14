@@ -19,6 +19,11 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
         self.channelNames, self.channelSignal = channelNameData
         self.channelSignal.dataChanged.connect( self.onHeaderChanged )
 
+    def setTriggerdict(self, triggerdict):
+        self.beginResetModel()
+        self.triggerdict = triggerdict
+        self.endResetModel()
+
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.triggerdict) 
         

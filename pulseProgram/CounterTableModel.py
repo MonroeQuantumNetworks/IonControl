@@ -29,13 +29,13 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         return 32
  
     def currentState(self,index):
-        data = self.counterdict[index.row()].data
+        data = self.counterdict.at(index.row()).data
         bit = 0x80000000>>index.column()
         return bool( bit & data )
         
     def setState(self,index,state):
         bit = 0x80000000>>index.column()
-        var = self.counterdict[index.row()]
+        var = self.counterdict.at(index.row())
         if state:
             var.data = (var.data & ~bit) | bit
         else:
@@ -63,7 +63,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
             if (orientation == QtCore.Qt.Horizontal): 
                 return str(31-section)
             elif (orientation == QtCore.Qt.Vertical): 
-                return self.counterdict[section].name
+                return self.counterdict.at(section).name
         return None #QtCore.QVariant()
 
     def onClicked(self,index):

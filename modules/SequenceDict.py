@@ -174,6 +174,12 @@ class SequenceDict(dict, MutableMapping):
         reverse = dict([ (value,index) for index,value in enumerate(keylist) ])
         self._keys = sorted( self._keys, key=lambda x: reverse[x])
             
+    def __deepcopy__(self, mode):
+        new = self.__class__()
+        new.update( self.iteritems() )
+        return new
+        
+    
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

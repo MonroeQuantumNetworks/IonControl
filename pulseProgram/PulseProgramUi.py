@@ -48,12 +48,14 @@ def getPpFileName( filename ):
 
 
 class PulseProgramContext:
-    def __init__(self):
+    def __init__(self, globaldict):
         self.parameters = VariableDictionary()
+        self.parameters.setGlobaldict(globaldict)
         self.shutters = ShutterDictionary()
         self.triggers = TriggerDictionary()
         self.counters = CounterDictionary()
-        self.pulseProgram = None
+        self.pulseProgramFile = None
+        self.pulseProgramMode = None
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -69,14 +71,11 @@ class PulseProgramContext:
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
     
-    def mergeFromPP(self, pulseProgram):
-        self.parameters.mergeFromVariabledict( pulseProgram.variabledict )
-        for name,var in pulseProgram.variabledict.iteritems():
-            if var.type in ['parameter','address']:
-                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) )
-    
-    def setFromPP(self, pulseProgram):
-        self.parameters.setFromVariabledict( pulseProgram.variabledict )
+    def merge(self, variabledict, overwrite=False):
+        self.parameters.merge(variabledict, overwrite=overwrite)
+        self.shutters.merge(variabledict, overwrite)
+        self.triggers.merge(variabledict, overwrite)
+        self.counters.merge(variabledict, overwrite)
         
 class ConfiguredParams:
     def __init__(self):
@@ -101,13 +100,14 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.channelNameData = channelNameData
         self.sourceMode = self.SourceMode.pp
         self.pppCompileException = None
+        self.globaldict = parameterdict
    
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
-        self.contextDict = self.config.get( self.configname+'context', dict() )
-        self.currentContext = self.config.get( self.configname+'currentContext' , PulseProgramContext() )
+        self.contextDict = dict() #self.config.get( self.configname+'.contextdict', dict() )
+        self.currentContext = PulseProgramContext(self.globaldict) #self.config.get( self.configname+'.currentContext' , PulseProgramContext() )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
@@ -133,7 +133,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
-        self.variableTableModel = VariableTableModel( self.currentConext.parameters )
+        self.variableTableModel = VariableTableModel( self.currentContext.parameters )
         if self.parameterChangedSignal:
             self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
         self.variableView.setModel(self.variableTableModel)
@@ -152,11 +152,31 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
 
     def loadContext(self, newContext ):
-        pass
+        previousContext = self.currentContext
+        self.currentContext = copy.deepcopy(newContext)
+        changeMode = self.currentContext.pulseProgramMode != previousContext.pulseProgramMode
+        if self.currentContext.pulseProgramFile != previousContext.pulseProgramFile:
+            self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
+        self.updateDisplayContext()
         
-    def updateDisplay(self, compileexception=None, pppCompileException=None):   # why does this not update the display?
-        self.sourceTabs.clear()
-        self.sourceCodeEdits = dict()
+    def onReloadContext(self):
+        self.loadContext( self.contextDict[str(self.contextComboBox.currentText())] )
+    
+    def onSaveContext(self):
+        name = str(self.contextComboBox.currentText())
+        self.contextDict[ name ] = copy.deepcopy(self.currentContext)
+        if self.contextComboBox.findText(name)<0:
+            self.contextComboBox.addItem(name)
+    
+    def onDeleteContext(self):
+        pass
+
+    def onLoadContext(self):
+        self.loadContext( self.contextDict[str(self.contextComboBox.currentText())] )
+             
+    def updatepppDisplay(self):
+        for pppTab in self.pppCodeEdits.values():
+            self.sourceTabs.removeTab( self.sourceTabs.indexOf(pppTab) )
         self.pppCodeEdits = dict()
         if self.sourceMode==self.SourceMode.ppp:
             for name, text in [(self.pppSourceFile,self.pppSource)]:
@@ -165,6 +185,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 textEdit.setPlainText(text)
                 self.pppCodeEdits[name] = textEdit
                 self.sourceTabs.addTab( textEdit, name )
+
+    def updateppDisplay(self):
+        for pppTab in self.sourceCodeEdits.values():
+            self.sourceTabs.removeTab( self.sourceTabs.indexOf(pppTab) )
+        self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
             textEdit = PulseProgramSourceEdit()
             textEdit.setupUi(textEdit)
@@ -172,30 +197,16 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
             textEdit.setReadOnly( self.sourceMode!=self.SourceMode.pp )
-        if self.combinedDict is not None:
-            self.variabledict = VariableDictionary( self.combinedDict, self.parameterdict )
-            self.variableTableModel = VariableTableModel( self.variabledict )
-            if self.parameterChangedSignal:
-                self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
-            self.variableView.setModel(self.variableTableModel)
-            self.variableView.resizeColumnToContents(0)
-            self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.combinedDict, self.channelNameData[0:2] )
-            self.shutterTableView.setModel(self.shutterTableModel)
-            self.shutterTableView.resizeColumnsToContents()
-            self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
-            self.triggerTableModel = TriggerTableModel.TriggerTableModel( self.combinedDict, self.channelNameData[2:4] )
-            self.triggerTableView.setModel(self.triggerTableModel)
-            self.triggerTableView.resizeColumnsToContents()
-            self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-            self.counterTableModel = CounterTableModel.CounterTableModel( self.combinedDict )
-            self.counterTableView.setModel(self.counterTableModel)
-            self.counterTableView.resizeColumnsToContents()
-            self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
-            self.pulseProgramChanged.emit()
-        if compileexception:
-            textEdit = self.sourceCodeEdits[ compileexception.file ].highlightError(str(compileexception), compileexception.line, compileexception.context )
-        if pppCompileException and self.sourceMode==self.SourceMode.ppp:
-            textEdit = self.pppCodeEdits[self.pppSourceFile].highlightError( pppCompileException.message(), pppCompileException.lineno(), col=pppCompileException.col())
+
+    def updateDisplayContext(self):
+        self.variableTableModel.setVariables( self.currentContext.parameters )
+        self.shutterTableModel.setShutterdict( self.currentContext.shutters )
+        self.triggerTableModel.setTriggerdict(self.currentContext.triggers)
+        self.counterTableModel.setCounterdict(self.currentContext.counters)
+
+################################
+###  below needs revision
+################################  
 
     def documentationString(self):
         messages = [ "PulseProgram {0}".format( self.configParams.lastLoadFilename ) ]
@@ -204,10 +215,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                
     def onFilenameChange(self, name ):
         name = str(name)
-        if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.configParams.lastLoadFilename:
+        if name in self.configParams.recentFiles and self.configParams.recentFiles[name]!=self.currentContext.pulseProgramFile:
             self.adaptiveLoadFile(self.configParams.recentFiles[name])
             if str(self.filenameComboBox.currentText())!=name:
-                self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText( name ))
+                with BlockSignals(self.filenameComboBox) as w:
+                    w.setCurrentIndex( self.filenameComboBox.findText( name ))
         
     def onOk(self):
         pass
@@ -233,26 +245,22 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.adaptiveLoadFile(self.configParams.lastLoadFilename)
     
     def loadpppFile(self, path):
-        if self.combinedDict is not None and self.configParams.lastppFilename is not None:
-            self.config[(self.configname,getPpFileName(self.configParams.lastppFilename))] = self.combinedDict
         self.pppSourcePath = path
         _, self.pppSourceFile = os.path.split(path)
         with open(path,"r") as f:
             self.pppSource = f.read()
-        self
+        self.updatepppDisplay()
         ppFilename = getPpFileName(path)
-        self.compileppp(ppFilename)
-        if self.pppCompileException is None:
-            self.loadFile(ppFilename, cache=False)
-        else:
-            self.updateDisplay(pppCompileException=self.pppCompileException)
+        if self.compileppp(ppFilename):
+            self.loadppFile(ppFilename, cache=False)
         filename = os.path.basename(path)
         if filename not in self.configParams.recentFiles:
             self.filenameComboBox.addItem(filename)
-            self.recentFilesChanged.emit(filename)
         self.configParams.recentFiles[filename]=path
         with BlockSignals(self.filenameComboBox) as w:
             w.setCurrentIndex( self.filenameComboBox.findText(filename))
+        self.currentContext.pulseProgramFile = path
+        self.currentContext.pulseProgramMode = 'ppp'
 
     def saveppp(self, path):
         if self.pppSource and path:
@@ -261,6 +269,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def compileppp(self, savefilename):
         self.pppSource = self.pppSource.expandtabs(4)
+        success = False
         try:
             compiler = pppCompiler()
             ppCode = compiler.compileString( self.pppSource )
@@ -268,37 +277,30 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             with open(savefilename,"w") as f:
                 f.write("# autogenerated from '{0}' \n# DO NOT EDIT DIRECTLY\n# The file will be overwritten by the compiler\n#\n".format(self.pppSourcePath))
                 f.write(ppCode)
+            success = True
         except CompileException as e:
-            self.pppCompileException = e
+            self.pppCodeEdits[self.pppSourceFile].highlightError( e.message(), e.lineno(), col=e.col())
         except ParseException as e:
             e.__class__ = CompileException  # cast to CompileException. Is possible because CompileException does ONLY add behavior
-            self.pppCompileException = e
+            self.pppCodeEdits[self.pppSourceFile].highlightError( e.message(), e.lineno(), col=e.col())
+        return success
     
-    def loadFile(self, path, cache=True):
-        logger = logging.getLogger(__name__)
-        logger.debug( "loadFile {0}".format( path ) )
-        if self.combinedDict is not None and self.configParams.lastppFilename is not None:
-            self.config[(self.configname,getPpFileName(self.configParams.lastppFilename))] = self.combinedDict
-        self.configParams.lastppFilename = getPpFileName(path)
-        key = self.configParams.lastppFilename
-        compileexception = None
+    def loadppFile(self, path, cache=True):
+        self.pulseProgram.loadSource(path, compile=False)
+        self.updateppDisplay()
         try:
-            self.pulseProgram.loadSource(path)
+            self.pulseProgram.compileCode()
         except PulseProgram.ppexception as compileexception:
-            # compilation failed, we save the exception and pass to to updateDisplay
-            pass
-        self.combinedDict = self.pulseProgram.variabledict.copy()
-        if (self.configname,key) in self.config:
-            self.combinedDict.update( dictutil.subdict(self.config[(self.configname,key)], self.combinedDict.keys() ) )
-        self.updateDisplay(compileexception, self.pppCompileException)
+            self.sourceCodeEdits[ compileexception.file ].highlightError(str(compileexception), compileexception.line, compileexception.context )
         if cache:
             filename = os.path.basename(path)
             if filename not in self.configParams.recentFiles:
                 self.filenameComboBox.addItem(filename)
-                logger.debug( "self.recentFilesChanged.emit({0})".format(filename) )
                 self.recentFilesChanged.emit(filename)
             self.configParams.recentFiles[filename]=path
             self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
+        self.currentContext.merge( self.pulseProgram.variabledict )
+        self.updateDisplayContext()
 
     def onRemoveCurrent(self):
         text = str(self.filenameComboBox.currentText())
@@ -367,13 +369,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
         
     def saveConfig(self):
-        logger = logging.getLogger(__name__)
         self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
         self.configParams.splitterVertical = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
-        if self.configParams.lastppFilename:
-            self.config[(self.configname,getPpFileName(self.configParams.lastppFilename))] = self.combinedDict
-        logger.debug("Save config for file '{1}' in tab {0}".format(self.configname,getPpFileName(self.configParams.lastppFilename)))
+        self.config[self.configname+'.contextdict'] = self.contextDict 
+        self.config[self.configname+'.currentContext'] = self.currentContext
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
@@ -399,7 +399,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
         return updatecode
 
-             
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
         pass
@@ -468,6 +467,7 @@ class PulseProgramSetUi(QtGui.QDialog):
                 
     def onClose(self):
         self.reject()
+        
 
 #    def resizeEvent(self, event):
 #        self.config['PulseProgramSetUi.size'] = event.size()

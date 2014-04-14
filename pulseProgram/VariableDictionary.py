@@ -38,15 +38,21 @@ class VariableDictionaryView(object):
 class VariableDictionary(SequenceDict):
     """Ordered Dictionary to hold variable values. It maintains a dependency graph
     to check for cycles and to recalculate the necessary values when one of the fields is updated"""   
-    def __init__(self, variabledict, globaldict, deepcopy=False):
-        super(VariableDictionary,self).__init__()
-        self.dependencyGraph = DiGraph()
-        self.expression = Expression()
-        self.globaldict = globaldict
+    expression = Expression()
+    def __init__(self, *args, **kwargs):
         self.valueView = VariableDictionaryView(self)
-        for name,var in variabledict.iteritems():
-            if var.type in ['parameter','address']:
-                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) if deepcopy else var)
+        self.dependencyGraph = DiGraph()
+        self.globaldict = dict()
+        super(VariableDictionary,self).__init__(*args, **kwargs)
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'valueView', VariableDictionaryView(self) )
+        
+    def setGlobaldict(self, globaldict):
+        self.globaldict = globaldict 
+                
+    def calculateDependencies(self):
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):
                 try:
@@ -60,28 +66,28 @@ class VariableDictionary(SequenceDict):
                 var.strerror = None
         self.recalculateAll()
         
-    def mergeFromVariabledict(self, variabledict ):
-        for name,var in variabledict.iteritems():
-            if var.type in ['parameter','address']:
-                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) )
+    def merge(self, variabledict, globaldict=None, overwrite=False ):
+        if globaldict is not None:
+            self.globaldict = globaldict
         for name in self.keys():
             if name not in variabledict:
                 self.pop(name)
-                
-    def setFromVariabledict(self, variabledict):
-        self.clear()
         for name,var in variabledict.iteritems():
-            if var.type in ['parameter','address']:
-                super(VariableDictionary,self).__setitem__(name, copy.deepcopy(var) )
-        
-        
+            if var.type in ['parameter','address'] and (name not in self or overwrite):
+                self[name] = copy.deepcopy(var) 
+        self.calculateDependencies()
+                
     def __setitem__(self, key, value):
         super(VariableDictionary,self).__setitem__(key, value)
         if hasattr(value,'strvalue'):
             self.setStrValue( key, value.strvalue )
 
     def __deepcopy__(self, memo):
-        return type(self)( self, self.globaldict, deepcopy = True)
+        new = type(self)()
+        new.update( (name, copy.deepcopy(value)) for name, value in self.items())
+        new.globaldict = self.globaldict
+        new.calculateDependencies()
+        return new
                 
     def addDependencies(self, graph, dependencies, name):
         """add all the dependencies to name"""
@@ -176,14 +182,14 @@ if __name__=="__main__":
             self.value = 0
             self.type = 'parameter'
             self.name = name
-    
+     
     globaldict = { 'G1': 1, 'G2': 8 }
-    
-    vd = VariableDictionary( { 'L1': variable('L1','G1*23+G2'), 'L2': variable('L2','2*L1'), 'L3': variable('L3','3*L2+L1') }, globaldict)
-    
+     
+    vd = VariableDictionary( { 'L1': variable('L1','G1*23+G2'), 'L2': variable('L2','2*L1'), 'L3': variable('L3','3*L2+L1') } )
+    vd.setGlobaldict( globaldict ) 
     for name, var in vd.iteritems():
         print name, var.value
-    
+     
     vd.setStrValue('L1', '17*pi')
     print
     vd.setStrValue('L2', '17*pi')
@@ -195,9 +201,21 @@ if __name__=="__main__":
     vd.setStrValue('L1', '12')
     print
     vd.setStrValue('L2', '1')
-    
+     
     print vd.valueView['L1']
     print vd.iteritems()
+    
+    vd2 = copy.deepcopy(vd)
+    vd.setStrValue('L2', '7')
+    
+    print vd.items()
+    print vd2.items()
+    print vd['L2'].value
+    print vd2['L2'].value
+    
+#     import pickle
+#     vd = VariableDictionary()
+#     print pickle.dumps(vd, 0)
     
   
     

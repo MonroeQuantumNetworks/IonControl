@@ -171,7 +171,7 @@ class PulseProgram:
             with open(os.path.join(self.pp_dir,name),'w') as f:
                 f.write(text)            
         
-    def loadSource(self, pp_file):
+    def loadSource(self, pp_file, compile=True):
         """ Load the source pp_file
         #include files are loaded recursively
         all code lines are added to self.sourcelines
@@ -181,7 +181,8 @@ class PulseProgram:
         self.pp_dir, self.pp_filename = os.path.split(pp_file)
         self.sourcelines = []
         self.insertSource(self.pp_filename)
-        self.compileCode()
+        if compile:
+            self.compileCode()
 
     def updateVariables(self, variables ):
         """ update the variable values in the bytecode
