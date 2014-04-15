@@ -117,6 +117,12 @@ class Variable:
         new.__dict__ = copy.deepcopy( self.__dict__ )
         return new 
 
+    def __eq__(self,other):
+        return self.__dict__==other.__dict__
+
+    def __ne__(self, other):
+        return not self == other
+
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
               'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
@@ -235,14 +241,15 @@ class PulseProgram:
             codelist[-2] &= 0x7fff 
         return codelist
                    
-    def loadFromMemory(self):
+    def loadFromMemory(self, compile=True):
         """Similar to loadSource
         only this routine loads from self.source
         """
         self.sourcelines = []
         self._exitcodes = dict()
         self.insertSource(self.pp_filename)
-        self.compileCode()
+        if compile:
+            self.compileCode()
 
     def toBinary(self):
         """ convert bytecode to binary

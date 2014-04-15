@@ -21,6 +21,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled ]
     headerDataLookup = ['use','variable','value','evaluated']
+    contentsChanged = QtCore.pyqtSignal()
     def __init__(self, variabledict=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.variabledict = variabledict if variabledict is not None else dict()
@@ -60,6 +61,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             for name in updatednames:
                 index = self.variabledict.index(name)
                 self.dataChanged.emit( self.createIndex(index,0), self.createIndex(index,4) )
+            self.contentsChanged.emit()
             return True
         except CyclicDependencyException as e:
             logger = logging.getLogger(__name__)
@@ -87,6 +89,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         
     def setVarEnabled(self,index,value):
         self.variabledict.setEnabledIndex(index.row(), value == QtCore.Qt.Checked)
+        self.contentsChanged.emit()
         return True      
 
     def setData(self,index, value, role):

@@ -11,6 +11,7 @@ from PyQt4 import QtCore, QtGui
 
 
 class ShutterTableModel(QtCore.QAbstractTableModel):
+    contentsChanged = QtCore.pyqtSignal()
     def __init__(self, shutterdict, channelNameData, parent=None, *args): 
         """ datain: a list where each item is a row
         
@@ -57,7 +58,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         elif state == 1:
             var.data = (var.data & ~bit) | bit
         self.dataChanged.emit(index,index)
-        
+        self.contentsChanged.emit()
         
     def displayData(self,index):
         return str(self.currentState(index))

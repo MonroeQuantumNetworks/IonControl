@@ -419,9 +419,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.pulseProgramUi.onFilenameChange( self.settings.loadPPName )
         self.updateSaveStatus()
             
-    def onRecentPPFilesChanged(self, name):
-        if self.loadPPComboBox.findText(name)<0:
-            self.loadPPComboBox.addItem(name)
+    def onRecentPPFilesChanged(self, namelist):
+        updateComboBoxItems( self.loadPPComboBox, namelist )
         self.updateSaveStatus()
         
     def setPulseProgramUi(self, pulseProgramUi ):

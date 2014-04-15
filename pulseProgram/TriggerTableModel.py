@@ -10,6 +10,7 @@ from PyQt4 import QtCore, QtGui
 
 
 class TriggerTableModel(QtCore.QAbstractTableModel):
+    contentsChanged = QtCore.pyqtSignal()
     def __init__(self, triggerdict, channelNameData, parent=None, *args): 
         """ datain: a list where each item is a row
         
@@ -43,6 +44,7 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
         else:
             var.data = var.data & ~bit 
         self.dataChanged.emit(index,index)
+        self.contentsChanged.emit()
                 
     def displayData(self,index):
         return str(self.currentState(index))
