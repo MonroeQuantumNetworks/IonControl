@@ -194,6 +194,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadContext( self.contextDict[name] )
         else:
             self.onSaveContext()
+            
+    def loadContextByName(self, name):
+        if name in self.contextDict:
+            self.loadContext( self.contextDict[name] )
+            with BlockSignals(self.contextComboBox) as w:
+                w.setCurrentIndex( w.findText( name ))
              
     def updatepppDisplay(self):
         for pppTab in self.pppCodeEdits.values():
@@ -237,7 +243,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             if str(self.filenameComboBox.currentText())!=name:
                 with BlockSignals(self.filenameComboBox) as w:
                     w.setCurrentIndex( self.filenameComboBox.findText( name ))
-        self.updateSaveStatus
+        self.updateSaveStatus()
         
     def onOk(self):
         pass
@@ -246,7 +252,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
         if path!="":
             self.adaptiveLoadFile(path)
-            
+        self.updateSaveStatus()
+           
     def adaptiveLoadFile(self, path):
         if path:
             _, ext = os.path.splitext(path)

@@ -416,7 +416,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.loadPPName = str(ppname)
         logger.debug( "ScanControl.onLoadPP {0} {1} {2}".format( self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName ) )
         if self.settings.loadPP and self.settings.loadPPName and hasattr(self,"pulseProgramUi"):
-            self.pulseProgramUi.onFilenameChange( self.settings.loadPPName )
+            self.pulseProgramUi.loadContextByName( self.settings.loadPPName )
         self.updateSaveStatus()
             
     def onRecentPPFilesChanged(self, namelist):
