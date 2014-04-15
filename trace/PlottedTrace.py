@@ -17,6 +17,8 @@ from modules import enum
 from trace.Trace import TracePlotting
 from functools import partial
 import time 
+import logging
+from weakref import WeakValueDictionary
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
@@ -39,7 +41,7 @@ class PlottedTrace(object):
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
         self.type = self.Types.default if plotType is None else plotType
-#Tree related data. Parent and children are set in the model's addTrace method, but declared here
+        #Tree related data. Parent and children are set in the model's addTrace method, but declared here
         self.isRootTrace = isRootTrace
         self.parentTrace = None
         self.childTraces = []
@@ -75,14 +77,13 @@ class PlottedTrace(object):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
                 self.trace.addColumn( yColumn )
-        self.stylesLookup = { self.Styles.lines: partial(self.plotLines, errorbars=False),
+        self.stylesLookup = WeakValueDictionary( { self.Styles.lines: partial(self.plotLines, errorbars=False),
                          self.Styles.points: partial(self.plotPoints, errorbars=False),
                          self.Styles.linespoints: partial(self.plotLinespoints, errorbars=False), 
                          self.Styles.lines_with_errorbars: partial(self.plotLines, errorbars=True),
                          self.Styles.points_with_errorbars: partial(self.plotPoints, errorbars=True),
-                         self.Styles.linepoints_with_errorbars: partial(self.plotLinespoints, errorbars=True)}
+                         self.Styles.linepoints_with_errorbars: partial(self.plotLinespoints, errorbars=True)} )
 
-          
     @property
     def hasTopColumn(self):
         return self._topColumn and hasattr(self.trace, self._topColumn)
@@ -310,5 +311,18 @@ class PlottedTrace(object):
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
         
-
+#     def __del__(self):
+#         logging.getLogger(__name__).debug("Delete PlottedTrace")
+#         print "Delete PlottedTrace"
+        
+        
+if __name__=="__main__":
+    from trace.Trace import Trace
+    import gc
+    import sys
+    plottedTrace = PlottedTrace(Trace(),None,pens.penList)
+    print sys.getrefcount(plottedTrace)
+    plottedTrace = None
+    del plottedTrace
+    gc.collect()
                 

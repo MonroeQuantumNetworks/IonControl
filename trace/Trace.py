@@ -20,6 +20,7 @@ from modules.XmlUtilit import prettify
 from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
 import time
+import logging
 
 try:
     from fit import FitFunctions
@@ -360,3 +361,15 @@ class Trace(object):
     @property 
     def tracePlottingList(self):
         return self.vars.tracePlottingList
+    
+#     def __del__(self):
+#         print "Deleting Trace"
+#         
+        
+if __name__=="__main__":
+    import sys
+    import gc
+    t = Trace()
+    print sys.getrefcount(t)
+    del t
+    gc.collect()
