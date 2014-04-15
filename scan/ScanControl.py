@@ -202,8 +202,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.setSettings( self.settings )
         except AttributeError:
             logger.error( "Ignoring exception" )
-        for name in self.settingsDict:
-            self.comboBox.addItem(name)
+        self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )

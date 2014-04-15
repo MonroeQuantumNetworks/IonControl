@@ -111,7 +111,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
-        self.contextComboBox.addItems( self.contextDict.keys() )
+        self.contextComboBox.addItems( sorted(self.contextDict.keys()) )
 
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
