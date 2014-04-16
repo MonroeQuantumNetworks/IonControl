@@ -73,6 +73,6 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         
     def getVariables(self):
         myvariables = dict()
-        for var in self.counterdict:
+        for var in self.counterdict.values():
             myvariables[var.name] = var.data
         return myvariables

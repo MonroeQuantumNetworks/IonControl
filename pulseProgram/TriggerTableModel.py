@@ -81,6 +81,6 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
 
     def getVariables(self):
         myvariables = dict()
-        for var in self.triggerdict:
+        for var in self.triggerdict.values():
             myvariables[var.name] = var.data
         return myvariables

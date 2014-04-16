@@ -393,7 +393,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
-        substitutes = dict( self.variabledict.valueView.iteritems() )
+        substitutes = dict( self.currentContext.parameters.valueView.iteritems() )
         for model in [self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
             substitutes.update( model.getVariables() )
         self.pulseProgram.updateVariables(substitutes)
@@ -406,10 +406,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         return self.variableTableModel.getVariableValue(name)
     
     def variableScanCode(self, variablename, values):
-        tempvariabledict = copy.deepcopy( self.variabledict )
+        tempparameters = copy.deepcopy( self.currentContext.parameters )
         updatecode = list()
         for currentval in values:
-            upd_names, upd_values = tempvariabledict.setValue(variablename, currentval)
+            upd_names, upd_values = tempparameters.setValue(variablename, currentval)
             upd_names.append( variablename )
             upd_values.append( currentval )
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
