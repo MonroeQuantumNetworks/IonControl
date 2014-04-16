@@ -11,7 +11,7 @@ from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
     nums,alphas,ParseException
 
 import modules.magnitude as magnitude
-
+from modules.lru_cache import lru_cache
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )
@@ -28,6 +28,7 @@ ident = Word(alphas, alphas+nums+"_$")
 valueexpr = ( fnumber + Optional(ident)  )
 precisionexpr = (  Word( "+-"+nums, nums ) + Optional(point + Optional(Word( nums, nums ))) )
 
+@lru_cache(maxsize=100)
 def parse( string ):
     val = valueexpr.parseString( string )
     precres = precisionexpr.parseString( string )
@@ -36,6 +37,7 @@ def parse( string ):
     retval.output_prec( prec )
     return retval
 
+@lru_cache(maxsize=100)
 def parseDelta( string, deltapos=0, parseAll=True ):
     string, deltapos = positionawareTrim(string,deltapos)
     val = valueexpr.parseString( string , parseAll=parseAll )
