@@ -196,7 +196,6 @@ if __name__ == '__main__':
     d = SequenceDict([(4, 4), (1, 1), (2, 2), (3, 3)])
     print d.items()
     print list(d.iteritems())
-    import copy
     e = copy.deepcopy(d)
     print e.items()
     

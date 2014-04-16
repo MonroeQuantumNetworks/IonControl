@@ -4,7 +4,6 @@ Created on Thu Feb 07 22:55:28 2013
 
 @author: pmaunz
 """
-import logging
 import os.path
 
 from PyQt4 import QtCore, QtGui
@@ -13,7 +12,6 @@ import PyQt4.uic
 from pulseProgram import CounterTableModel
 from gui import ProjectSelection
 from pulseProgram import TriggerTableModel
-from modules import dictutil
 from pulseProgram import PulseProgram
 from pulseProgram import ShutterTableModel
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
@@ -313,7 +311,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         return success
     
     def loadppFile(self, path, cache=True):
-        self.pulseProgram.loadSource(path, compile=False)
+        self.pulseProgram.loadSource(path, docompile=False)
         self.updateppDisplay()
         try:
             self.pulseProgram.compileCode()
@@ -427,7 +425,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             else:
                 self.contextSaveStatus = False
             self.saveContextButton.setEnabled( not self.contextSaveStatus )
-        except Exception as e:
+        except Exception:
             pass
 
 class PulseProgramSetUi(QtGui.QDialog):

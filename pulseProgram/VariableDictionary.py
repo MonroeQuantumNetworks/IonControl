@@ -1,8 +1,6 @@
 
 import logging
 
-from PyQt4 import QtCore
-
 from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_nodes
 
 from modules.Expression import Expression

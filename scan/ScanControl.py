@@ -17,7 +17,7 @@ import ScanList
 from gateSequence import GateSequenceUi
 from modules import MagnitudeUtilit
 from modules.HashableDict import HashableDict
-from modules.MagnitudeUtilit import valueAs, ensureCorrectUnit
+from modules.MagnitudeUtilit import valueAs #, ensureCorrectUnit
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique

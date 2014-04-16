@@ -20,7 +20,7 @@ from modules.XmlUtilit import prettify
 from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
 import time
-import logging
+#import logging
 
 try:
     from fit import FitFunctions
