@@ -21,19 +21,18 @@ class ref(object):
             self._func = f
             self._class = c
             
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         if self._obj is None:
-            return self._func
+            return self._func(*args, **kwargs)
         else:
             obj = self._obj()
-#            return new.instancemethod( self._func, obj, self._class ) if obj is not None else None
-            return self._func.__get__( obj, self._class ) if obj is not None else None
-
+            return self._func.__get__( obj, self._class )(*args, **kwargs) if obj is not None else None
         
 if __name__=="__main__":
+    from functools import partial
     class C(object):
-        def f(self):
-            print "Hallo"
+        def f(self, test=None):
+            print "Hallo", test
             
         def __del__(self):
             print "C says bye"
@@ -41,4 +40,10 @@ if __name__=="__main__":
     c = C()
     r = ref(c.f)
     r()()
+    
+    r2 = ref(c.f)
+    r2(test="Hallo")
+    r3 = partial( ref(c.f), test="Welt")
+    r3()
     del c
+    raw_input('Press enter\n')
