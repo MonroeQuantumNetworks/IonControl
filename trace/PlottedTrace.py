@@ -33,7 +33,7 @@ class PlottedTrace(object):
         if self.graphicsView != None:
             if not hasattr(self.graphicsView,'penUsageDict'):
                 self.graphicsView.penUsageDict = [0]*len(pens.penList)
-            self.penUsageDict = self.graphicsView.penUsageDict
+            self.penUsageDict = self.graphicsView.penUsageDict        # TODO circular reference
         self.trace = Trace
         self.curve = None
         self.fitcurve = None
@@ -69,9 +69,9 @@ class PlottedTrace(object):
             self._bottomColumn = bottomColumn
             self._heightColumn = heightColumn
             self._rawColumn = rawColumn
-            self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
+            self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,   # TODO double check for reference
                                                heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name, type_=self.type)
-            self.trace.addTracePlotting( self.tracePlotting )
+            self.trace.addTracePlotting( self.tracePlotting )   # TODO check for reference
             if not hasattr(self.trace,xColumn):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
