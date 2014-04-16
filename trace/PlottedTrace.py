@@ -16,7 +16,8 @@ from modules import DataDirectory
 from modules import enum
 from trace.Trace import TracePlotting
 import time 
-from modules.WeakPartial import WeakPartial
+from modules import WeakMethod
+from functools import partial
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
@@ -75,12 +76,12 @@ class PlottedTrace(object):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
                 self.trace.addColumn( yColumn )
-        self.stylesLookup = { self.Styles.lines: WeakPartial(self.plotLines, errorbars=False),
-                         self.Styles.points: WeakPartial(self.plotPoints, errorbars=False),
-                         self.Styles.linespoints: WeakPartial(self.plotLinespoints, errorbars=False), 
-                         self.Styles.lines_with_errorbars: WeakPartial(self.plotLines, errorbars=True),
-                         self.Styles.points_with_errorbars: WeakPartial(self.plotPoints, errorbars=True),
-                         self.Styles.linepoints_with_errorbars: WeakPartial(self.plotLinespoints, errorbars=True)}
+        self.stylesLookup = { self.Styles.lines: partial( WeakMethod.ref(self.plotLines), errorbars=False),
+                         self.Styles.points: partial( WeakMethod.ref(self.plotPoints), errorbars=False),
+                         self.Styles.linespoints: partial( WeakMethod.ref(self.plotLinespoints), errorbars=False), 
+                         self.Styles.lines_with_errorbars: partial( WeakMethod.ref(self.plotLines), errorbars=True),
+                         self.Styles.points_with_errorbars: partial( WeakMethod.ref(self.plotPoints), errorbars=True),
+                         self.Styles.linepoints_with_errorbars: partial( WeakMethod.ref(self.plotLinespoints), errorbars=True)}
 
     @property
     def hasTopColumn(self):
@@ -323,4 +324,5 @@ if __name__=="__main__":
     plottedTrace = None
     del plottedTrace
     gc.collect()
+    raw_input("Press Enter")
                 
