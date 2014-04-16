@@ -15,10 +15,8 @@ from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 from modules import DataDirectory 
 from modules import enum
 from trace.Trace import TracePlotting
-from functools import partial
 import time 
-import logging
-from weakref import WeakValueDictionary
+from modules.WeakPartial import WeakPartial
 
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
@@ -77,12 +75,12 @@ class PlottedTrace(object):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
                 self.trace.addColumn( yColumn )
-        self.stylesLookup = WeakValueDictionary( { self.Styles.lines: partial(self.plotLines, errorbars=False),
-                         self.Styles.points: partial(self.plotPoints, errorbars=False),
-                         self.Styles.linespoints: partial(self.plotLinespoints, errorbars=False), 
-                         self.Styles.lines_with_errorbars: partial(self.plotLines, errorbars=True),
-                         self.Styles.points_with_errorbars: partial(self.plotPoints, errorbars=True),
-                         self.Styles.linepoints_with_errorbars: partial(self.plotLinespoints, errorbars=True)} )
+        self.stylesLookup = { self.Styles.lines: WeakPartial(self.plotLines, errorbars=False),
+                         self.Styles.points: WeakPartial(self.plotPoints, errorbars=False),
+                         self.Styles.linespoints: WeakPartial(self.plotLinespoints, errorbars=False), 
+                         self.Styles.lines_with_errorbars: WeakPartial(self.plotLines, errorbars=True),
+                         self.Styles.points_with_errorbars: WeakPartial(self.plotPoints, errorbars=True),
+                         self.Styles.linepoints_with_errorbars: WeakPartial(self.plotLinespoints, errorbars=True)}
 
     @property
     def hasTopColumn(self):
@@ -311,9 +309,9 @@ class PlottedTrace(object):
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
         
-#     def __del__(self):
-#         logging.getLogger(__name__).debug("Delete PlottedTrace")
-#         print "Delete PlottedTrace"
+    def __del__(self):
+#        logging.getLogger(__name__).debug("Delete PlottedTrace")
+        print "Delete PlottedTrace"
         
         
 if __name__=="__main__":
