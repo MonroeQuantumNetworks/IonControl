@@ -143,7 +143,7 @@ class Expression:
             return self._evaluate_literal(op, useFloat)
         return 0
             
-    @lru_cache(maxsize=100)
+    @lru_cache(maxsize=100, docopy=True)
     def _evaluate_literal(self, literal, useFloat):
         l = self.fmag.parseString(literal)
         m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
