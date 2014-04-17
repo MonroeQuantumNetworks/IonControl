@@ -13,10 +13,10 @@ class GateSequenceCompilerException(Exception):
     pass
 
 class GateSequenceCompiler(object):
+    expression = Expression()
     def __init__(self, pulseProgram ):
         self.pulseProgram = pulseProgram
         self.compiledGates = dict()
-        self.expression = Expression()
         
     """Compile all gate sets into binary representation
         returns tuple of start address list and bytearray data"""

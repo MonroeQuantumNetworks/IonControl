@@ -463,7 +463,31 @@ class Magnitude():
         self.__dict__ = state
         self.__dict__.setdefault( 'strFormat' , self.Format.significantDigits )
 
-    def copy(self, with_format=False):
+    def __copy__(self):
+        """Builds and returns a copy of a magnitude.
+
+        The copy includes value and units.  If with_format is set to
+        True the default output unit, output factor, output precision
+        and output format are also copied.
+
+        >>> a = mg(1000/3., 'mm')
+        >>> print a.output_prec(2)
+        333.33 mm
+        >>> print a.copy()
+        333.3333 mm
+        >>> print a.copy(with_format=True)
+        333.33 mm
+        """
+        cp = Magnitude(self.val, *self.unit)
+        cp.out_unit = self.out_unit
+        cp.out_factor = self.out_factor
+        cp.oprec = self.oprec
+        cp.oformat = self.oformat
+        cp.strFormat = self.strFormat
+        cp.significantDigits = self.significantDigits
+        return cp
+
+    def copy(self, with_format=True):
         """Builds and returns a copy of a magnitude.
 
         The copy includes value and units.  If with_format is set to

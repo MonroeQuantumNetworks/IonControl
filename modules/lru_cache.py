@@ -1,6 +1,7 @@
 from collections import namedtuple
 from functools import update_wrapper
 from threading import RLock
+from copy import copy
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
@@ -33,7 +34,7 @@ def _make_key(args, kwds, typed,
         return key[0]
     return _HashedSeq(key)
 
-def lru_cache(maxsize=100, typed=False):
+def lru_cache(maxsize=100, typed=False, docopy=False):
     """Least-recently-used cache decorator.
 
     If *maxsize* is set to None, the LRU features are disabled and the cache
@@ -78,7 +79,7 @@ def lru_cache(maxsize=100, typed=False):
                 # no caching, just do a statistics update after a successful call
                 result = user_function(*args, **kwds)
                 stats[MISSES] += 1
-                return result
+                return result if not docopy else copy(result) 
 
         elif maxsize is None:
 
@@ -92,7 +93,7 @@ def lru_cache(maxsize=100, typed=False):
                 result = user_function(*args, **kwds)
                 cache[key] = result
                 stats[MISSES] += 1
-                return result
+                return result if not docopy else copy(result) 
 
         else:
 
@@ -112,7 +113,7 @@ def lru_cache(maxsize=100, typed=False):
                         link[PREV] = last
                         link[NEXT] = root
                         stats[HITS] += 1
-                        return result
+                        return result if not docopy else copy(result) 
                 result = user_function(*args, **kwds)
                 with lock:
                     root, = nonlocal_root
@@ -141,7 +142,7 @@ def lru_cache(maxsize=100, typed=False):
                         link = [last, root, key, result]
                         last[NEXT] = root[PREV] = cache[key] = link
                     stats[MISSES] += 1
-                return result
+                return result if not docopy else copy(result) 
 
         def cache_info():
             """Report cache statistics"""
