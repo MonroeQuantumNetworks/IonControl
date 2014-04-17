@@ -40,6 +40,7 @@ from modules import magnitude
 from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+from modules import WeakMethod
 import copy
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
@@ -583,7 +584,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
             self.plottedTraceList[0].trace.name = self.scan.settingsName
             self.plottedTraceList[0].trace.vars.comment = ""
-            self.plottedTraceList[0].trace.filenameCallback = functools.partial( self.plottedTraceList[0].traceFilename, self.scan.filename )
+            self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
                 if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
