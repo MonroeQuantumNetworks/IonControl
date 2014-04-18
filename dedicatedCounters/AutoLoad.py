@@ -175,7 +175,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
         self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback','Disappeared','Check'], 'Frozen' )
         self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' )
-        self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load'], 'Idle' )
+        self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load', 'ShuttleLoad', 'ShuttleCheck'], 'Idle' )
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 and not self.pulser.ppActive )
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive )
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped' )
