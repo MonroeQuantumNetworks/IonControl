@@ -69,11 +69,13 @@ class FitUi(fitForm, QtGui.QWidget):
         self.configname = "FitUi.{0}.".format(parentname)
         self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
         self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
+        self.globalVariablesUi = None
             
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
         self.fitButton.clicked.connect( self.onFit )
         self.plotButton.clicked.connect( self.onPlot )
+        self.pushToGlobalButton.clicked.connect( self.onPush )
         self.removePlotButton.clicked.connect( self.onRemoveFit )
         self.extractButton.clicked.connect( self.onExtractFit )
         self.copyButton.clicked.connect( self.onCopy )
@@ -148,6 +150,14 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitfunctionTableModel.fitDataChanged()
             self.fitResultsTableModel.fitDataChanged()
             self.pushTableModel.fitDataChanged()
+            
+    def setGlobalVariablesUi(self, globalVariablesUi ):
+        self.globalVariablesUi = globalVariablesUi
+
+    def onPush(self):
+        if self.globalVariablesUi is not None:
+            self.globalVariablesUi.update( self.fitfunction.pushVariableValues() )
+
                 
     def onPlot(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):

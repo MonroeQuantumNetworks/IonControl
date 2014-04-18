@@ -18,13 +18,13 @@ api2 = sip.getapi("QVariant")==2
 class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal( object )
     headerDataLookup = ['Name', 'Value']
+    expression = Expression.Expression()
     def __init__(self, variables, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variables = variables
-        self.expression = Expression.Expression()
         self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.variables.keyAt(row),
                              (QtCore.Qt.DisplayRole,1): lambda row: str(self.variables.at(row)),
                              (QtCore.Qt.EditRole,0):    lambda row: self.variables.keyAt(row),
@@ -136,7 +136,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         for key, value in updlist:
             if key in self.variables:
                 old = self.variables[key]
-                if value!=old:
+                if value.dimension()!=old.dimension() or value!=old:
                     self.variables[key] = value
                     self.valueChanged.emit(key)
                     index = self.variables.index(key)

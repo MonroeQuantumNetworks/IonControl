@@ -230,6 +230,10 @@ class Traceui(TraceuiForm, TraceuiBase):
                     if trace.curvePen != 0:
                         trace.plot(0)
                     self.model.dropTrace(parentIndex, row)
+        # remove invalid indices to prevent memory leak
+        for ind in reversed(range( len(self.tracePersistentIndexes) )): 
+            if not self.tracePersistentIndexes[ind].isValid():
+                self.tracePersistentIndexes.pop(ind)
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""

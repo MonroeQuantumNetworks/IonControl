@@ -40,6 +40,7 @@ from modules import magnitude
 from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+from modules import WeakMethod
 import copy
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
@@ -326,6 +327,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # Scan Control
         self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
         self.scanControlWidget.setupUi(self.scanControlWidget)
+        self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
 
         if self.experimentName+'.MainWindow.State' in self.config:
@@ -375,6 +377,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi
+        self.fitWidget.setGlobalVariablesUi( globalVariablesUi )
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
@@ -583,7 +586,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
             self.plottedTraceList[0].trace.name = self.scan.settingsName
             self.plottedTraceList[0].trace.vars.comment = ""
-            self.plottedTraceList[0].trace.filenameCallback = functools.partial( self.plottedTraceList[0].traceFilename, self.scan.filename )
+            self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
                 if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
@@ -631,7 +634,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
                 plot.fitFunction = copy.deepcopy(fitfunction)
                 plot.plot(-2)
-                if self.globalVariables is not None:
+                if self.globalVariablesUi is not None:
                     self.globalVariablesUi.update( fitfunction.pushVariableValues() )
                 
             
@@ -674,9 +677,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if evaluation.showHistogram:
                 y, x = numpy.histogram( data.count[evaluation.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
                 if self.scan.integrateHistogram and len(self.histogramList)>index:
-                    self.histogramList[index] = (self.histogramList[index][1] + y, self.histogramList[index][1] + x)
+                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1] + x)
                 elif len(self.histogramList)>index:
-                    self.histogramList[index] = (y,x,evaluation.name)
+                    self.histogramList[index] = (y,x,evaluation.name )
                 else:
                     self.histogramList.append( (y,x,evaluation.name) )
                 index += 1
@@ -684,7 +687,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if not self.histogramTrace:
             self.histogramTrace = Trace()            
         for index, histogram in enumerate(self.histogramList):
-            if len(self.histogramCurveList)>index:
+            if index<len(self.histogramCurveList):
                 self.histogramCurveList[index].x = histogram[1]
                 self.histogramCurveList[index].y = histogram[0]  
                 self.histogramCurveList[index].replot()
@@ -692,7 +695,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 yColumnName = 'y{0}'.format(index) 
                 self.histogramTrace.addColumn( yColumnName )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
-                                                     yColumn=yColumnName, name="Histogram "+histogram[2])
+                                                     yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else "") )
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]

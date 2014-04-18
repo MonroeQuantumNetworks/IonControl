@@ -50,6 +50,9 @@ class AutoLoadSettings:
         self.minLaserScatter = mg( 0.1, 'kHz' )
         self.maxFailedAutoload = 0
         self.postSequenceWaitTime = mg( 5, 's' )
+        self.loadAlgorithm = 0
+        self.shuttleLoadTime = mg( 500, 'ms')
+        self.shuttleCheckTime = mg( 1, 's')
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -63,6 +66,9 @@ class AutoLoadSettings:
         self.__dict__.setdefault( 'minLaserScatter', mg( 0.1, 'kHz' ) )
         self.__dict__.setdefault( 'maxFailedAutoload', 0 )
         self.__dict__.setdefault( 'postSequenceWaitTime', mg( 5, 's' ) )
+        self.__dict__.setdefault( 'loadAlgorithm', 0 )
+        self.__dict__.setdefault( 'shuttleLoadTime', mg( 500, 'ms') )
+        self.__dict__.setdefault( 'shuttleCheckTime', mg( 1, 's') )
 
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -91,6 +97,7 @@ class AutoLoad(UiForm,UiBase):
         self.constructStatemachine()
         self.timerNullTime = datetime.now()
         self.trappingTime = None
+        self.voltageControl = None
         
     def constructStatemachine(self):
         self.statemachine = Statemachine()
@@ -105,9 +112,30 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addState( 'AutoReloadFailed', self.setAutoReloadFailed )
         self.statemachine.addState( 'CoolingOven', self.setCoolingOven )
         self.statemachine.addState( 'PostSequenceWait', self.setPostSequenceWait )
+        self.statemachine.addState( 'ShuttleLoad', self.setShuttleLoad, self.exitShuttleLoad )
+        self.statemachine.addState( 'ShuttleCheck' , self.setShuttleCheck )
 
         self.statemachine.addTransition( 'timer', 'Preheat', 'Load', 
-                                         lambda state: state.timeInState() > self.settings.laserDelay )
+                                         lambda state: state.timeInState() > self.settings.laserDelay and
+                                                       self.settings.loadAlgorithm==0 )
+        self.statemachine.addTransition( 'timer', 'Preheat', 'ShuttleLoad', 
+                                         lambda state: state.timeInState() > self.settings.laserDelay and
+                                                       self.settings.loadAlgorithm==1 )
+        self.statemachine.addTransition( 'timer', 'ShuttleLoad', 'ShuttleCheck', 
+                                         lambda state: state.timeInState() > self.settings.shuttleLoadTime )
+        self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'ShuttleLoad', 
+                                         lambda state: state.timeInState() > self.settings.shuttleCheckTime )
+        self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'AutoReloadFailed', 
+                                         lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and 
+                                                       self.settings.autoReload and 
+                                                       self.numFailedAutoload>=self.settings.maxFailedAutoload) 
+        self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'CoolingOven',
+                                         lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and
+                                                       self.settings.autoReload and
+                                                       self.numFailedAutoload<self.settings.maxFailedAutoload )                                         
+        self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'Idle',
+                                         lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and
+                                                       not self.settings.autoReload  )                                         
         self.statemachine.addTransition( 'timer', 'Check', 'Trapped',
                                          lambda state: state.timeInState() > self.settings.checkTime,
                                          self.loadingToTrapped )
@@ -142,11 +170,12 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare)
         self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
         self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
+        self.statemachine.addTransition( 'data', 'ShuttleCheck', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven)
         self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven'], 'Idle')
         self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
         self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback','Disappeared','Check'], 'Frozen' )
         self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' )
-        self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load'], 'Idle' )
+        self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load', 'ShuttleLoad', 'ShuttleCheck'], 'Idle' )
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 and not self.pulser.ppActive )
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive )
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped' )
@@ -180,7 +209,13 @@ class AutoLoad(UiForm,UiBase):
         self.initMagnitude( self.waitForComebackBox, 'waitForComebackTime', Magnitude(1,s=1) )
         self.initMagnitude( self.maxFailedAutoloadBox, 'maxFailedAutoload' )
         self.initMagnitude( self.postSequenceWaitTimeBox, 'postSequenceWaitTime' )
-        
+        self.initMagnitude( self.shuttleLoadTimeBox, 'shuttleLoadTime',  Magnitude(1,s=1) )
+        self.initMagnitude( self.shuttleCheckTimeBox, 'shuttleCheckTime',  Magnitude(1,s=1) )
+       
+        self.loadAlgorithmBox.addItems( ['Static','Shuttling'])
+        self.loadAlgorithmBox.setCurrentIndex( self.settings.loadAlgorithm )
+        self.loadAlgorithmBox.currentIndexChanged[int].connect( self.onLoadAlgorithmChanged )
+       
         self.startButton.clicked.connect( self.onStart )
         self.stopButton.clicked.connect( self.onStop )
         self.historyTableModel = LoadingHistoryModel(self.loadingHistory)
@@ -217,6 +252,9 @@ class AutoLoad(UiForm,UiBase):
         self.createAction("Last ion is still trapped", self.onIonIsStillTrapped )
         self.createAction("Trapped an ion now", self.onTrappedIonNow )
         self.autoLoadTab.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        
+    def setVoltageControl(self, voltageControl ):
+        self.voltageControl = voltageControl
         
     def createAction(self, text, slot ):
         action = QtGui.QAction( text, self )
@@ -379,6 +417,32 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
+
+    def setShuttleLoad(self):
+        """Execute after preheating. Turn on ionization laser, and begin
+           monitoring count rate."""
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
+        self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
+        self.statusLabel.setText("Shuttle Loading")
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
+        if self.voltageControl:
+            self.voltageControl.onShuttleSequence()
+
+    def exitShuttleLoad(self):
+        if self.voltageControl:
+            self.voltageControl.onShuttleSequence()
+           
+    def setShuttleCheck(self):
+        """Execute when count rate goes over threshold."""
+        self.startButton.setEnabled( True )
+        self.stopButton.setEnabled( True )       
+        self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
+        self.checkStarted = datetime.now()
+        self.statusLabel.setText("Shuttle Checking for ion")
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
         
     def setPostSequenceWait(self):
         self.statusLabel.setText("Waiting after sequence finished.")
@@ -474,3 +538,6 @@ class AutoLoad(UiForm,UiBase):
         if self.dataSignalConnected:
             self.dataSignal.disconnect( self.onData )
             self.dataSignalConnected = False
+            
+    def onLoadAlgorithmChanged(self, number):
+        self.settings.loadAlgorithm = number

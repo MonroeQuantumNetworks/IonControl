@@ -232,9 +232,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.enableCheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'enableTimestamps' ) )
         self.saveRawDataCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData' ) )
         self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
-        self.channelSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'timestampsChannel') )
+        self.channelSpinBox.valueChanged.connect( functools.partial(self.onBareValueChanged, 'timestampsChannel') )
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
         self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
+        
+    def setAnalysisNames(self, names):
+        self.evalTableModel.setAnalysisNames(names)
         
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
@@ -497,7 +500,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
         self.commitChange()
         self.updateSaveStatus()
-        
+
+    def onBareValueChanged(self, attribute, value):
+        self.beginChange()
+        setattr( self.settings, attribute, value )
+        self.commitChange()
+        self.updateSaveStatus()
+       
     def onStartStopChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
