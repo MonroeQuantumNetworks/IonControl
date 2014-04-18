@@ -1,0 +1,14 @@
+This software depends on the following libraries
+
+library					License
+PyQt					Commercial License
+pyVISA 1.4				MIT license
+pyDAQmx 1.2.5.2			BSD license
+pyparsing 2.0.2			MIT license
+sqlalchemy 0.9.4		MIT license
+pyqtgraph 0.9.8			MIT license
+scipy 0.13.3			BSD license
+numpy 1.8.1				BSD license
+networkx 1.8.1			BSD license
+graphviz 0.2.2			MIT license
+		
