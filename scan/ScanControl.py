@@ -236,6 +236,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
         self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
         
+    def setAnalysisNames(self, names):
+        self.evalTableModel.setAnalysisNames(names)
+        
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )

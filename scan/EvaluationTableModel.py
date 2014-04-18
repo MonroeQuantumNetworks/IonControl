@@ -39,6 +39,9 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                               4: self.getPlotnames,
                               5: self.getAnalysisNames }
         
+    def setAnalysisNames(self, names):
+        self.analysisNames = names
+        
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
 
