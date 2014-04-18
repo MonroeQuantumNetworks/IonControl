@@ -377,6 +377,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi
+        self.fitWidget.setGlobalVariablesUi( globalVariablesUi )
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
@@ -633,7 +634,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
                 plot.fitFunction = copy.deepcopy(fitfunction)
                 plot.plot(-2)
-                if self.globalVariables is not None:
+                if self.globalVariablesUi is not None:
                     self.globalVariablesUi.update( fitfunction.pushVariableValues() )
                 
             

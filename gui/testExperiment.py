@@ -169,3 +169,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         directory = DataDirectory.DataDirectory()
         path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
         return path
+
+    def setGlobalVariablesUi(self, globalVariablesUi ):
+        self.globalVariables = globalVariablesUi.variables
+        self.globalVariablesChanged = globalVariablesUi.valueChanged
+        self.globalVariablesUi = globalVariablesUi
+        self.fitWidget.setGlobalVariablesUi( globalVariablesUi )
