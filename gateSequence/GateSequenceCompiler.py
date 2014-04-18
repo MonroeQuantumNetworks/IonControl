@@ -18,7 +18,7 @@ class GateSequenceCompiler(object):
         self.pulseProgram = pulseProgram
         self.compiledGates = dict()
         
-    """Compile all gate sets into binary representation
+    """Compile all gate sequences into binary representation
         returns tuple of start address list and bytearray data"""
     def gateSequencesCompile(self, gatesets ):
         logger = logging.getLogger(__name__)
