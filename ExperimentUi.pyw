@@ -218,6 +218,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
+        self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
+        
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )
         traceFilename, _ = DataDirectory.DataDirectory().sequencefile("Trace.log")
         LoggingSetup.setTraceFilename( traceFilename )
