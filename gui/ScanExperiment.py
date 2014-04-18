@@ -677,9 +677,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if evaluation.showHistogram:
                 y, x = numpy.histogram( data.count[evaluation.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
                 if self.scan.integrateHistogram and len(self.histogramList)>index:
-                    self.histogramList[index] = (self.histogramList[index][1] + y, self.histogramList[index][1] + x)
+                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1] + x)
                 elif len(self.histogramList)>index:
-                    self.histogramList[index] = (y,x,evaluation.name)
+                    self.histogramList[index] = (y,x,evaluation.name )
                 else:
                     self.histogramList.append( (y,x,evaluation.name) )
                 index += 1
@@ -687,7 +687,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if not self.histogramTrace:
             self.histogramTrace = Trace()            
         for index, histogram in enumerate(self.histogramList):
-            if len(self.histogramCurveList)>index:
+            if index<len(self.histogramCurveList):
                 self.histogramCurveList[index].x = histogram[1]
                 self.histogramCurveList[index].y = histogram[0]  
                 self.histogramCurveList[index].replot()
@@ -695,7 +695,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 yColumnName = 'y{0}'.format(index) 
                 self.histogramTrace.addColumn( yColumnName )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
-                                                     yColumn=yColumnName, name="Histogram "+histogram[2])
+                                                     yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else "") )
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]
