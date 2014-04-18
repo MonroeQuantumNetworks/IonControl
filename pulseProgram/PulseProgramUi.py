@@ -8,6 +8,7 @@ import os.path
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
+import logging
 
 from pulseProgram import CounterTableModel
 from gui import ProjectSelection
@@ -148,7 +149,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
-        self.loadContext(self.currentContext)
+        try:
+            self.loadContext(self.currentContext)
+        except:
+            logging.getLogger(__name__).exception("Loading of previous context failed")
         self.contextComboBox.editTextChanged.connect( self.updateSaveStatus ) 
         self.variableTableModel.contentsChanged.connect( self.updateSaveStatus )
         self.counterTableModel.contentsChanged.connect( self.updateSaveStatus )
