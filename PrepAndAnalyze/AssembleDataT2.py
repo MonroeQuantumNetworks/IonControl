@@ -33,7 +33,8 @@ goodGateSetTraining = [ (datetime.date(2014,4,3), [3, 4, 5] ),
                         (datetime.date(2014,4,11), [1] ),
                         (datetime.date(2014,4,14), [1,2,3,4,5,6,7] ),
                         (datetime.date(2014,4,15), [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] ),
-                        (datetime.date(2014,4,16), [1,2,3,4,5] )     ]
+                        (datetime.date(2014,4,16), [1,2,3,4,5,6,7,8,9,10,11,12,13,14] ),
+                        (datetime.date(2014,4,17), [1,2,3,4,5,6] )     ]
 
 goodGateSetTesting = [  (datetime.date(2014,4,3),[3, 4]),
                         (datetime.date(2014,4,9), [1, 2, 3, 4] ),
@@ -41,22 +42,25 @@ goodGateSetTesting = [  (datetime.date(2014,4,3),[3, 4]),
                         (datetime.date(2014,4,11), [1] ),
                         (datetime.date(2014,4,14), [1,2,3,4,5,6,7] ),
                         (datetime.date(2014,4,15), [1,2,3,4,5,6,7,8,9,10,11,12,13,14] ),
-                        (datetime.date(2014,4,16), [1,2,3,4,5] )      ]
+                        (datetime.date(2014,4,16), [1,2,3,4,5,6,7,8,9,10,11,12,13,14] ),
+                        (datetime.date(2014,4,17), [1,2,3,4,5,6] )       ]
 
 goodCompositeGateSetTraining = [  (datetime.date(2014,4,8),[5]),
                                   (datetime.date(2014,4,9), [1,2, 3, 4] ),
                         (datetime.date(2014,4,14), [1,2,3,4,5,6] ),
                         (datetime.date(2014,4,15), [1,2,3,4,5,6,7,8,9,10,11,12,13,14] ),
-                        (datetime.date(2014,4,16), [1,2,3,4] )    ]
+                        (datetime.date(2014,4,16), [1,2,3,4,5,6,7,8,9,10,11,12] ),
+                        (datetime.date(2014,4,17), [1,2,3,4,5,6] )     ]
 
 goodCompositeGateSetTesting = [  (datetime.date(2014,4,9),[1, 2]),
                         (datetime.date(2014,4,10), [1] ),
                         (datetime.date(2014,4,14), [1,2,3,4,5,6] ),
                         (datetime.date(2014,4,15), [1,2,3,4,5,6,7,8,9,10,11,12,13] ) ,
-                        (datetime.date(2014,4,16), [1,2,3,4,5] )   ]
+                        (datetime.date(2014,4,16), [1,2,3,4,5,6,7,8,9,10,11,12,13,14] ) ,
+                        (datetime.date(2014,4,17), [1,2,3,4,5,6] )   ]
 
 datadirectory = DataDirectory('QGA')
-outputpath = datadirectory.path( datetime.date(2014,4,16))
+outputpath = datadirectory.path( datetime.date(2014,4,17))
 
 
 
