@@ -87,7 +87,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.onClose()
         
     def onShuttleSequence(self, cont=False):
-        self.adjustUi.onShuttleSequence(cont)
+        self.adjustUi.onShuttleEdge(0)
   
 if __name__ == "__main__":
     class MyMainWindow(QtGui.QMainWindow):
