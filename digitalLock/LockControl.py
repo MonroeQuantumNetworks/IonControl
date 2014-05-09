@@ -176,7 +176,7 @@ class LockControl(Form, Base):
         binvalue = int(value.toval(''))
         self.controller.setHarmonic(binvalue)
         self.lockSettings.harmonic = value
-        self.controller.setFixedPointHarmonic( int(value.toval('')*1<<56) )
+        self.controller.setFixedPointHarmonic( int(value.toval('')*(1<<56)) )
         self.dataChanged.emit( self.lockSettings )
         self.calculateOffset()
         
