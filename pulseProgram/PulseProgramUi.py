@@ -76,6 +76,9 @@ class PulseProgramContext:
         self.triggers.merge(variabledict, overwrite)
         self.counters.merge(variabledict, overwrite)
         
+    def setGlobaldict(self, globaldict):
+        self.parameters.setGlobaldict(globaldict)
+        
 class ConfiguredParams:
     def __init__(self):
         self.recentFiles = dict()
@@ -106,7 +109,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
         self.contextDict = self.config.get( self.configname+'.contextdict', dict() )
+        for context in self.contextDict.values():    # set the global dict as this field does not survive pickling
+            context.setGlobaldict(self.globaldict)
         self.currentContext = self.config.get( self.configname+'.currentContext' , PulseProgramContext(self.globaldict) )
+        self.currentContext.setGlobaldict(self.globaldict)
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
