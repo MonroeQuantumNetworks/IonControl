@@ -422,7 +422,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.updateSaveStatus()
             
     def onRecentPPFilesChanged(self, namelist):
-        updateComboBoxItems( self.loadPPComboBox, namelist )
+        updateComboBoxItems( self.loadPPComboBox, sorted( namelist ) )
         self.updateSaveStatus()
         
     def setPulseProgramUi(self, pulseProgramUi ):

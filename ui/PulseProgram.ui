@@ -45,6 +45,9 @@
             <property name="editable">
              <bool>true</bool>
             </property>
+            <property name="maxVisibleItems">
+             <number>100</number>
+            </property>
            </widget>
           </item>
           <item>
@@ -149,6 +152,9 @@
           <widget class="QComboBox" name="contextComboBox">
            <property name="editable">
             <bool>true</bool>
+           </property>
+           <property name="maxVisibleItems">
+            <number>2147483647</number>
            </property>
           </widget>
          </item>
