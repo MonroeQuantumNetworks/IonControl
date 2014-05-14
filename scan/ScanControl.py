@@ -445,7 +445,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if pulseProgramUi.currentContext.parameters:
             self.gateSequenceUi.setVariables( pulseProgramUi.currentContext.parameters )
         self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
-
+        self.onLoadPP(self.settings.loadPPName)
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
