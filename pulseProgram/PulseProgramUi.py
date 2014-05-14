@@ -126,15 +126,16 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.resetButton.setDefaultAction( self.actionReset )
         self.shutterTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal, self.shutterTableView) )
         self.triggerTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal,self.triggerTableView ) )
+        self.counterTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal,self.counterTableView ) )
         self.reloadContextButton.clicked.connect( self.onReloadContext )
         self.saveContextButton.clicked.connect( self.onSaveContext )
         self.deleteContextButton.clicked.connect( self.onDeleteContext )
         self.contextComboBox.currentIndexChanged[str].connect( self.onLoadContext )
                 
-        if hasattr(self.configParams,'splitterHorizontal'):
-            self.splitterHorizontal.restoreState(self.configParams.splitterHorizontal)
-        if hasattr(self.configParams,'splitterVertical'):
-            self.splitterVertical.restoreState(self.configParams.splitterVertical)
+        if self.configname+".splitterHorizontal" in self.config:
+            self.splitterHorizontal.restoreState(self.config[self.configname+".splitterHorizontal"])
+        if self.configname+".splitterVertical" in self.config:
+            self.splitterVertical.restoreState(self.config[self.configname+".splitterVertical"])
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
@@ -395,8 +396,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
         
     def saveConfig(self):
-        self.configParams.splitterHorizontal = self.splitterHorizontal.saveState()
-        self.configParams.splitterVertical = self.splitterVertical.saveState()
+        self.config[self.configname+".splitterHorizontal"] = self.splitterHorizontal.saveState()
+        self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
         self.config[self.configname+'.contextdict'] = self.contextDict 
         self.config[self.configname+'.currentContext'] = self.currentContext
