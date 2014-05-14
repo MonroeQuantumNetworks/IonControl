@@ -103,15 +103,18 @@ class Statemachine:
         return self.currentState
                 
     def generateDiagram(self):
-        # convert from networkx -> pydot
-        pydot_graph = to_agraph(self.graph)
-        
-        # render pydot by calling dot, no file saved to disk
-        pydot_graph.graph_attr['overlap']='scale'
-        pydot_graph.edge_attr.update(fontsize='12',decorate=True)
-        pydot_graph.layout()
-        pydot_graph.draw(self.name+".png")
-        pydot_graph.write(self.name+'.dot')
+        try:
+            # convert from networkx -> pydot
+            pydot_graph = to_agraph(self.graph)
+            
+            # render pydot by calling dot, no file saved to disk
+            pydot_graph.graph_attr['overlap']='scale'
+            pydot_graph.edge_attr.update(fontsize='12',decorate=True)
+            pydot_graph.layout()
+            pydot_graph.draw(self.name+".png")
+            pydot_graph.write(self.name+'.dot')
+        except:
+            pass
 
                 
 if __name__=="__main__":
