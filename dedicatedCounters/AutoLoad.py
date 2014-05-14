@@ -100,7 +100,7 @@ class AutoLoad(UiForm,UiBase):
         self.voltageControl = None
         
     def constructStatemachine(self):
-        self.statemachine = Statemachine()
+        self.statemachine = Statemachine('AutoLoad')
         self.statemachine.addState( 'Idle' , self.setIdle, self.exitIdle )
         self.statemachine.addState( 'Preheat', self.setPreheat )
         self.statemachine.addState( 'Load', self.setLoad )
@@ -117,68 +117,97 @@ class AutoLoad(UiForm,UiBase):
 
         self.statemachine.addTransition( 'timer', 'Preheat', 'Load', 
                                          lambda state: state.timeInState() > self.settings.laserDelay and
-                                                       self.settings.loadAlgorithm==0 )
+                                                       self.settings.loadAlgorithm==0, description="laserDelay" )
         self.statemachine.addTransition( 'timer', 'Preheat', 'ShuttleLoad', 
                                          lambda state: state.timeInState() > self.settings.laserDelay and
-                                                       self.settings.loadAlgorithm==1 )
+                                                       self.settings.loadAlgorithm==1, description='laserDelay' )
         self.statemachine.addTransition( 'timer', 'ShuttleLoad', 'ShuttleCheck', 
-                                         lambda state: state.timeInState() > self.settings.shuttleLoadTime )
+                                         lambda state: state.timeInState() > self.settings.shuttleLoadTime,
+                                         description="shuttleLoadTime" )
         self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'ShuttleLoad', 
-                                         lambda state: state.timeInState() > self.settings.shuttleCheckTime )
+                                         lambda state: state.timeInState() > self.settings.shuttleCheckTime,
+                                         description="shuttleCheckTime" )
         self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'AutoReloadFailed', 
                                          lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and 
                                                        self.settings.autoReload and 
-                                                       self.numFailedAutoload>=self.settings.maxFailedAutoload) 
+                                                       self.numFailedAutoload>=self.settings.maxFailedAutoload,
+                                         description="maxTime" ) 
         self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'CoolingOven',
                                          lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and
                                                        self.settings.autoReload and
-                                                       self.numFailedAutoload<self.settings.maxFailedAutoload )                                         
+                                                       self.numFailedAutoload<self.settings.maxFailedAutoload,
+                                         description="maxTime" )                                         
         self.statemachine.addTransition( 'timer', 'ShuttleCheck', 'Idle',
                                          lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and
-                                                       not self.settings.autoReload  )                                         
+                                                       not self.settings.autoReload,
+                                         description="maxTime"  )                                         
         self.statemachine.addTransition( 'timer', 'Check', 'Trapped',
                                          lambda state: state.timeInState() > self.settings.checkTime,
-                                         self.loadingToTrapped )
+                                         self.loadingToTrapped,
+                                         description="checkTime" )
         self.statemachine.addTransition( 'timer', 'Load', 'AutoReloadFailed', 
                                          lambda state: state.timeInState() > self.settings.maxTime and 
                                                        self.settings.autoReload and 
-                                                       self.numFailedAutoload>=self.settings.maxFailedAutoload) 
+                                                       self.numFailedAutoload>=self.settings.maxFailedAutoload,
+                                         description="maxTime" ) 
         self.statemachine.addTransition( 'timer', 'Load', 'CoolingOven',
                                          lambda state: state.timeInState() > self.settings.maxTime and
                                                        self.settings.autoReload and
-                                                       self.numFailedAutoload<self.settings.maxFailedAutoload )                                         
+                                                       self.numFailedAutoload<self.settings.maxFailedAutoload,
+                                         description="maxTime"  )                                         
         self.statemachine.addTransition( 'timer', 'Load', 'Idle',
                                          lambda state: state.timeInState() > self.settings.maxTime and 
-                                                       not self.settings.autoReload )
+                                                       not self.settings.autoReload,
+                                         description="maxTime" )
         self.statemachine.addTransition( 'timer', 'Disappeared', 'WaitingForComeback',
-                                         lambda state: state.timeInState() > self.settings.checkTime )
+                                         lambda state: state.timeInState() > self.settings.checkTime,
+                                         description="checkTime" )
         self.statemachine.addTransition( 'timer', 'WaitingForComeback', 'Preheat',
                                          lambda state: state.timeInState() > self.settings.waitForComebackTime and
                                                        self.settings.autoReload and 
-                                                       self.numFailedAutoload<=self.settings.maxFailedAutoload)                                         
+                                                       self.numFailedAutoload<=self.settings.maxFailedAutoload,
+                                         description="waitForComebackTime")                                         
         self.statemachine.addTransition( 'timer', 'CoolingOven', 'Preheat',
                                         lambda state: state.timeInState() > self.settings.waitForComebackTime and
-                                                      self.settings.autoReload )
+                                                      self.settings.autoReload,
+                                         description="waitForComebackTime" )
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Trapped', 
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
-                                                             data.data[self.settings.counterChannel]/data.integrationTime >= self.settings.thresholdBare )
+                                                             data.data[self.settings.counterChannel]/data.integrationTime >= self.settings.thresholdBare,
+                                         description="postSequenceWaitTime" )
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Disappeared', 
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
-                                                             data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
-        self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven )
-        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare )
-        self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare)
-        self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
-        self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare)
-        self.statemachine.addTransition( 'data', 'ShuttleCheck', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven)
-        self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven'], 'Idle')
-        self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat')
-        self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback','Disappeared','Check'], 'Frozen' )
-        self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' )
-        self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load', 'ShuttleLoad', 'ShuttleCheck'], 'Idle' )
-        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 and not self.pulser.ppActive )
-        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive )
-        self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped' )
+                                                             data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
+                                         description="postSequenceWaitTime" )
+        self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven,
+                                         description="thresholdOven"  )
+        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
+                                         description="thresholdBare"  )
+        self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
+                                         description="thresholdBare" )
+        self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare,
+                                         description="thresholdBare" )
+        self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare,
+                                         description="thresholdBare" )
+        self.statemachine.addTransition( 'data', 'ShuttleCheck', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven,
+                                         self.loadingToTrapped,
+                                         description="thresholdOven" )
+        self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven', 'ShuttleCheck', 'ShuttleLoad'], 'Idle',
+                                         description="stopButton" )
+        self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat',
+                                         description="startButton" )
+        self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback','Disappeared','Check'], 'Frozen',
+                                         description="ppStarted"  )
+        self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' ,
+                                         description="ppStopped" )
+        self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load', 'ShuttleLoad', 'ShuttleCheck'], 'Idle',
+                                         description="outOfLock"  )
+        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 and not self.pulser.ppActive ,
+                                         description="ionStillTrapped" )
+        self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive ,
+                                         description="ionStillTrapped" )
+        self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped',
+                                         description="ionTrapped"  )
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
         ui.setValue( getattr( self.settings, settingsname  ) )

@@ -7,11 +7,16 @@ Created on Mar 22, 2014
 
 def max_iterable( iterable ):
     """return max of iterable, return None if empty"""
-    it = iter( iterable )
-    m = next(it, None)
-    if m is None:
+#    it = iter( iterable )
+#    m = next(it, None)
+#    if m is None:
+#        return None
+#    return max( max(it), m )
+    try:
+        mymax = max(iterable)
+    except ValueError:
         return None
-    return max( max(it), m )
+    return mymax
 
 def min_iterable( iterable ):
     """return min of iterable, return None if empty"""

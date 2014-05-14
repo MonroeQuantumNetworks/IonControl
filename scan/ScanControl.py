@@ -17,7 +17,7 @@ import ScanList
 from gateSequence import GateSequenceUi
 from modules import MagnitudeUtilit
 from modules.HashableDict import HashableDict
-from modules.MagnitudeUtilit import valueAs, ensureCorrectUnit
+from modules.MagnitudeUtilit import valueAs #, ensureCorrectUnit
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
@@ -202,8 +202,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.setSettings( self.settings )
         except AttributeError:
             logger.error( "Ignoring exception" )
-        for name in self.settingsDict:
-            self.comboBox.addItem(name)
+        self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
@@ -419,12 +418,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.loadPPName = str(ppname)
         logger.debug( "ScanControl.onLoadPP {0} {1} {2}".format( self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName ) )
         if self.settings.loadPP and self.settings.loadPPName and hasattr(self,"pulseProgramUi"):
-            self.pulseProgramUi.onFilenameChange( self.settings.loadPPName )
+            self.pulseProgramUi.loadContextByName( self.settings.loadPPName )
         self.updateSaveStatus()
             
-    def onRecentPPFilesChanged(self, name):
-        if self.loadPPComboBox.findText(name)<0:
-            self.loadPPComboBox.addItem(name)
+    def onRecentPPFilesChanged(self, namelist):
+        updateComboBoxItems( self.loadPPComboBox, sorted( namelist ) )
         self.updateSaveStatus()
         
     def setPulseProgramUi(self, pulseProgramUi ):
@@ -433,11 +431,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.pulseProgramUi = pulseProgramUi
         with BlockSignals(self.loadPPComboBox):
             self.loadPPComboBox.clear()
-            if hasattr(pulseProgramUi.configParams,'recentFiles'):
-                self.loadPPComboBox.addItems(pulseProgramUi.configParams.recentFiles.keys())
+            self.loadPPComboBox.addItems(pulseProgramUi.contextDict.keys())
             if self.settings.loadPPName: 
                 self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-        self.pulseProgramUi.recentFilesChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()
@@ -445,10 +442,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.gateSequenceUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
             self.gateSequenceUi.setupUi(self.gateSequenceUi)
             self.toolBox.addItem(self.gateSequenceUi,"Gate Sequences")
-        if pulseProgramUi.variabledict:
-            self.gateSequenceUi.setVariables( pulseProgramUi.variabledict )
+        if pulseProgramUi.currentContext.parameters:
+            self.gateSequenceUi.setVariables( pulseProgramUi.currentContext.parameters )
         self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
-
+        self.onLoadPP(self.settings.loadPPName)
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
