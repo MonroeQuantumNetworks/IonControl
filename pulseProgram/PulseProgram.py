@@ -93,6 +93,7 @@ OPS = {'NOP'    : 0x00,
        'ASYNCINVSHUTTER' : 0x50,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
+       'WAITFORTRIGGER': 0x53,
        'END'    : 0xFF }
 
 class Dimensions:
