@@ -210,6 +210,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive ,
                                          description="ionStillTrapped" )
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped',
+                                         transitionfunc = self.loadingToTrapped,
                                          description="ionTrapped"  )
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
