@@ -383,10 +383,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 for name, textEdit in self.pppCodeEdits.iteritems():
                     textEdit.clearHighlightError()
                     cursor = textEdit.textEdit.textCursor()
-                    cursorpos, scrollpos = positionCache[name]
-                    cursor.setPosition( cursorpos )
-                    textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                    textEdit.textEdit.setTextCursor( cursor )
+                    if name in positionCache:
+                        cursorpos, scrollpos = positionCache[name]
+                        cursor.setPosition( cursorpos )
+                        textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
+                        textEdit.textEdit.setTextCursor( cursor )
             
                     
     def onAccept(self):

@@ -174,6 +174,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalAlgorithmList = list()
         self.plotnames = plotnames
         self.analysisNames = analysisNames
+        self.pulseProgramUi = None
         
     def setupUi(self, parent):
         logger = logging.getLogger(__name__)
@@ -428,6 +429,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def setPulseProgramUi(self, pulseProgramUi ):
         logger = logging.getLogger(__name__)
         logger.debug( "ScanControl.setPulseProgramUi {0}".format(pulseProgramUi.configParams.recentFiles.keys()) )
+        isStartup = self.pulseProgramUi is None
         self.pulseProgramUi = pulseProgramUi
         with BlockSignals(self.loadPPComboBox):
             self.loadPPComboBox.clear()
@@ -445,7 +447,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if pulseProgramUi.currentContext.parameters:
             self.gateSequenceUi.setVariables( pulseProgramUi.currentContext.parameters )
         self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
-        self.onLoadPP(self.settings.loadPPName)
+        if isStartup:
+            self.onLoadPP(self.settings.loadPPName)
 
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
