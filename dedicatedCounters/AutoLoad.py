@@ -167,6 +167,9 @@ class AutoLoad(UiForm,UiBase):
                                                        self.settings.autoReload and 
                                                        self.numFailedAutoload<=self.settings.maxFailedAutoload,
                                          description="waitForComebackTime")                                         
+        self.statemachine.addTransition( 'timer', 'WaitingForComeback', 'Idle',
+                                         lambda state: state.timeInState() > self.settings.waitForComebackTime,
+                                         description="waitForComebackTime")                                         
         self.statemachine.addTransition( 'timer', 'CoolingOven', 'Preheat',
                                         lambda state: state.timeInState() > self.settings.waitForComebackTime and
                                                       self.settings.autoReload,
