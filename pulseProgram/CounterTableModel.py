@@ -10,34 +10,40 @@ from PyQt4 import QtCore, QtGui
 
 
 class CounterTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, variabledict, parent=None, *args): 
+    contentsChanged = QtCore.pyqtSignal()
+    def __init__(self, counterdict, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.variabledict = variabledict
-        self.variablelist = [ x for x in self.variabledict.values() if x.type=='counter' ]
-
+        self.counterdict = counterdict
+        
+    def setCounterdict(self, counterdict):
+        self.beginResetModel()
+        self.counterdict = counterdict
+        self.endResetModel()
+    
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.variablelist) 
+        return len(self.counterdict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 32
  
     def currentState(self,index):
-        data = self.variablelist[index.row()].data
+        data = self.counterdict.at(index.row()).data
         bit = 0x80000000>>index.column()
         return bool( bit & data )
         
     def setState(self,index,state):
         bit = 0x80000000>>index.column()
-        var = self.variablelist[index.row()]
+        var = self.counterdict.at(index.row())
         if state:
             var.data = (var.data & ~bit) | bit
         else:
             var.data = var.data & ~bit 
         self.dataChanged.emit(index,index)
-                
+        self.contentsChanged.emit()
+        
     def displayData(self,index):
         return str(self.currentState(index))
         
@@ -59,7 +65,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
             if (orientation == QtCore.Qt.Horizontal): 
                 return str(31-section)
             elif (orientation == QtCore.Qt.Vertical): 
-                return self.variablelist[section].name
+                return self.counterdict.at(section).name
         return None #QtCore.QVariant()
 
     def onClicked(self,index):
@@ -67,6 +73,6 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         
     def getVariables(self):
         myvariables = dict()
-        for var in self.variablelist:
+        for var in self.counterdict.values():
             myvariables[var.name] = var.data
         return myvariables

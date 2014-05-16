@@ -39,6 +39,7 @@ from gui import testExperiment
 from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
+from functools import partial
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -176,6 +177,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.todoListDock.setWidget(self.todoList)
         self.todoListDock.setObjectName("_todoList")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.todoListDock)
+        for name, widget in self.tabDict.iteritems():
+            if hasattr( widget, 'scanConfigurationListChanged' ) and widget.scanConfigurationListChanged is not None:
+                widget.scanConfigurationListChanged.connect( partial( self.todoList.populateMeasurementsItem, name)  )
        
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)

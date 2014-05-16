@@ -53,6 +53,9 @@
        <property name="editable">
         <bool>true</bool>
        </property>
+       <property name="maxVisibleItems">
+        <number>100</number>
+       </property>
       </widget>
      </item>
      <item>
@@ -212,7 +215,11 @@
         </widget>
        </item>
        <item>
-        <widget class="RedBlackComboBox" name="comboBoxParameter"/>
+        <widget class="RedBlackComboBox" name="comboBoxParameter">
+         <property name="maxVisibleItems">
+          <number>100</number>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout">
@@ -352,7 +359,11 @@
           </widget>
          </item>
          <item row="6" column="2" colspan="2">
-          <widget class="QComboBox" name="loadPPComboBox"/>
+          <widget class="QComboBox" name="loadPPComboBox">
+           <property name="maxVisibleItems">
+            <number>100</number>
+           </property>
+          </widget>
          </item>
          <item row="7" column="2" colspan="2">
           <widget class="QLineEdit" name="filenameEdit"/>

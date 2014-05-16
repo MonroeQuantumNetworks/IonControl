@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>330</width>
+    <width>359</width>
     <height>833</height>
    </rect>
   </property>
@@ -49,6 +49,9 @@
        </property>
        <property name="editable">
         <bool>true</bool>
+       </property>
+       <property name="maxVisibleItems">
+        <number>100</number>
        </property>
       </widget>
      </item>

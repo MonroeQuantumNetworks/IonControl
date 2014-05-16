@@ -105,10 +105,18 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QComboBox" name="scanSelectionBox"/>
+      <widget class="QComboBox" name="scanSelectionBox">
+       <property name="maxVisibleItems">
+        <number>100</number>
+       </property>
+      </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="measurementSelectionBox"/>
+      <widget class="QComboBox" name="measurementSelectionBox">
+       <property name="maxVisibleItems">
+        <number>100</number>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QToolButton" name="addMeasurementButton">
