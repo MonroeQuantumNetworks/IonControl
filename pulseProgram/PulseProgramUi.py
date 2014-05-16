@@ -222,7 +222,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 textEdit.setPlainText(text)
                 self.pppCodeEdits[name] = textEdit
                 self.sourceTabs.addTab( textEdit, name )
-
+                
     def updateppDisplay(self):
         for pppTab in self.sourceCodeEdits.values():
             self.sourceTabs.removeTab( self.sourceTabs.indexOf(pppTab) )
@@ -272,7 +272,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 self.loadpppFile(path)
             else:
                 self.sourceMode = self.SourceMode.pp
-                self.loadFile(path)            
+                self.loadppFile(path)            
             self.configParams.lastLoadFilename = path
             
     def onReset(self):
@@ -333,7 +333,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             filename = os.path.basename(path)
             if filename not in self.configParams.recentFiles:
                 self.filenameComboBox.addItem(filename)
-                self.recentFilesChanged.emit(filename)
             self.configParams.recentFiles[filename]=path
             self.filenameComboBox.setCurrentIndex( self.filenameComboBox.findText(filename))
         self.currentContext.merge( self.pulseProgram.variabledict )
@@ -362,7 +361,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                     positionCache[name] = ( textEdit.textEdit.textCursor().position(),
                                             textEdit.textEdit.verticalScrollBar().value() )
                 self.pulseProgram.loadFromMemory()
-                self.updateppDisplay(pppCompileException=self.pppCompileException)
+                self.updateppDisplay()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
                     textEdit.clearHighlightError()
                     cursor = textEdit.textEdit.textCursor()
