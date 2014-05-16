@@ -90,7 +90,13 @@ class TodoList(Form, Base):
         self.scanModuleMeasurements = dict()
         for name, widget in self.scanModules.iteritems():
             if hasattr(widget, 'scanControlWidget' ):
-                self.scanModuleMeasurements[name] = sorted(widget.scanControlWidget.settingsDict.keys())
+                self.populateMeasurementsItem( name, widget.scanControlWidget.settingsDict )
+                
+    def populateMeasurementsItem(self, name, settingsDict ):
+        self.scanModuleMeasurements[name] = sorted(settingsDict.keys())
+        if name == self.currentMeasurementsDisplayedForScan:
+            self.measurementSelectionBox.clear()
+            self.measurementSelectionBox.addItems( self.scanModuleMeasurements[name] )            
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:

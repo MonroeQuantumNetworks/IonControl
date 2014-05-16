@@ -247,6 +247,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
+    scanConfigurationListChanged = None
     def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -329,6 +330,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
+        self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
