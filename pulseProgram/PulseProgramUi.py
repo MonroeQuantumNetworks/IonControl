@@ -172,6 +172,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         #changeMode = self.currentContext.pulseProgramMode != previousContext.pulseProgramMode
         if self.currentContext.pulseProgramFile != previousContext.pulseProgramFile or len(self.sourceCodeEdits)==0:
             self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
+        self.currentContext.merge( self.pulseProgram.variabledict )
         self.updateDisplayContext()
         self.updateSaveStatus()
         
