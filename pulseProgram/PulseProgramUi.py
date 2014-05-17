@@ -210,7 +210,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.loadContext( self.contextDict[name] )
             with BlockSignals(self.contextComboBox) as w:
                 w.setCurrentIndex( w.findText( name ))
-             
+      
     def updatepppDisplay(self):
         for pppTab in self.pppCodeEdits.values():
             self.sourceTabs.removeTab( self.sourceTabs.indexOf(pppTab) )
@@ -272,6 +272,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 self.loadpppFile(path)
             else:
                 self.sourceMode = self.SourceMode.pp
+                self.updatepppDisplay()
                 self.loadppFile(path)            
             self.configParams.lastLoadFilename = path
             
