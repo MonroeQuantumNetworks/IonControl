@@ -54,7 +54,7 @@ class PulseProgramContext:
         self.triggers = TriggerDictionary()
         self.counters = CounterDictionary()
         self.pulseProgramFile = None
-        self.pulseProgramMode = None
+        self.pulseProgramMode = 'pp'
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -82,9 +82,11 @@ class PulseProgramContext:
 class ConfiguredParams:
     def __init__(self):
         self.recentFiles = dict()
+        self.lastContextName = None
         
     def __setstate__(self,d):
         self.recentFiles = d['recentFiles']
+        self.lastContextName = d.get('lastContextName', None )
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
@@ -100,7 +102,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.variableTableModel = None
         self.parameterChangedSignal = None
         self.channelNameData = channelNameData
-        self.sourceMode = self.SourceMode.pp
         self.pppCompileException = None
         self.globaldict = parameterdict
    
@@ -158,6 +159,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
         try:
             self.loadContext(self.currentContext)
+            if self.configParams.lastContextName:
+                index = self.contextComboBox.findText(self.configParams.lastContextName)
+                with BlockSignals(self.contextComboBox) as w:
+                    w.setCurrentIndex(index)
         except:
             logging.getLogger(__name__).exception("Loading of previous context failed")
         self.contextComboBox.editTextChanged.connect( self.updateSaveStatus ) 
@@ -215,7 +220,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         for pppTab in self.pppCodeEdits.values():
             self.sourceTabs.removeTab( self.sourceTabs.indexOf(pppTab) )
         self.pppCodeEdits = dict()
-        if self.sourceMode==self.SourceMode.ppp:
+        if self.currentContext.pulseProgramMode == 'ppp':
             for name, text in [(self.pppSourceFile,self.pppSource)]:
                 textEdit = PulseProgramSourceEdit(mode='ppp')
                 textEdit.setupUi(textEdit)
@@ -233,7 +238,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
-            textEdit.setReadOnly( self.sourceMode!=self.SourceMode.pp )
+            textEdit.setReadOnly( self.currentContext.pulseProgramMode!='pp' )
 
     def updateDisplayContext(self):
         self.variableTableModel.setVariables( self.currentContext.parameters )
@@ -267,11 +272,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def adaptiveLoadFile(self, path):
         if path:
             _, ext = os.path.splitext(path)
+            self.currentContext.pulseProgramFile = path
             if ext==".ppp":
-                self.sourceMode = self.SourceMode.ppp
+                self.currentContext.pulseProgramMode = 'ppp'
                 self.loadpppFile(path)
             else:
-                self.sourceMode = self.SourceMode.pp
+                self.currentContext.pulseProgramMode = 'pp'
                 self.updatepppDisplay()
                 self.loadppFile(path)            
             self.configParams.lastLoadFilename = path
@@ -296,8 +302,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.configParams.recentFiles[filename]=path
         with BlockSignals(self.filenameComboBox) as w:
             w.setCurrentIndex( self.filenameComboBox.findText(filename))
-        self.currentContext.pulseProgramFile = path
-        self.currentContext.pulseProgramMode = 'ppp'
 
     def saveppp(self, path):
         if self.pppSource and path:
@@ -348,13 +352,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def onSave(self):
         self.onApply()
-        if self.sourceMode==self.SourceMode.pp:
+        if self.currentContext.pulseProgramMode=='pp':
             self.pulseProgram.saveSource()
         else:
             self.saveppp(self.pppSourcePath)
     
     def onApply(self):
-        if self.sourceMode==self.SourceMode.pp:
+        if self.currentContext.pulseProgramMode=='pp':
             try:
                 positionCache = dict()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
@@ -398,6 +402,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
         
     def saveConfig(self):
+        self.configParams.lastContextName = str(self.contextComboBox.currentText())
         self.config[self.configname+".splitterHorizontal"] = self.splitterHorizontal.saveState()
         self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
         self.config[self.configname] = self.configParams
