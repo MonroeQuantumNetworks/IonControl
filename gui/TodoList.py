@@ -10,14 +10,19 @@ from TodoListTableModel import TodoListTableModel
 from uiModules.KeyboardFilter import KeyListFilter
 from modules.Utility import unique
 from functools import partial
+from modules.ScanDefinition import ScanSegmentDefinition
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
 
 class TodoListEntry:
-    def __init__(self, scan, measurement):
+    def __init__(self, scan=None, measurement=None):
+        self.parent = None
+        self.children = list()
         self.scan = scan
         self.measurement = measurement
+        self.scanParameter = None
+        self.scanSegment = ScanSegmentDefinition()
 
 class Settings:
     def __init__(self):
