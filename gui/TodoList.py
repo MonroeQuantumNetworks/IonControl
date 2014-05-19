@@ -45,7 +45,7 @@ class TodoList(Form, Base):
         self.scanModuleMeasurements = dict()
         self.currentMeasurementsDisplayedForScan = None
         self.currentScan = currentScan
-        self.setCurrntScan = setCurrentScan
+        self.setCurrentScan = setCurrentScan
 
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
@@ -124,11 +124,11 @@ class TodoList(Form, Base):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
             self.tableModel.dropMeasurement(index)
         numEntries = self.tableModel.rowCount()
-        if self.currentScan >= numEntries:
-            self.currentScan = 0
+        if self.settings.currentIndex >= numEntries:
+            self.settings.currentIndex = 0
 
     def checkReadyToRun(self, state, _=True ):
-        _, current = self.currentScan
+        _, current = self.currentScan()
         return current.state()==0
     
     
@@ -149,7 +149,7 @@ class TodoList(Form, Base):
         entry = self.settings.todoList[ self.settings.currentIndex ]
         # switch to the scan for the first line
         if entry.scan!=currentname:
-            self.setCurrntScan(entry.scan)
+            self.setCurrentScan(entry.scan)
         # load the correct measurement
         currentwidget.scanControlWidget.loadSetting( entry.measurement )        
         # start
