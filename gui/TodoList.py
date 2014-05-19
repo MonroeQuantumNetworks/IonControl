@@ -128,7 +128,7 @@ class TodoList(Form, Base):
             self.currentScan = 0
 
     def checkReadyToRun(self, state, _=True ):
-        _, current = self.currentScan()
+        _, current = self.currentScan
         return current.state()==0
     
     
