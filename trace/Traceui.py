@@ -194,7 +194,10 @@ class Traceui(TraceuiForm, TraceuiBase):
                     if trace.childCount() == 0:
                         if trace.curvePen != 0:
                             trace.plot(0)
-                        trace.trace.deleteFile()
+                        try:
+                            trace.trace.deleteFile()
+                        except WindowsError:
+                            pass   # we ignore if the file cannot be found
                         self.model.dropTrace(parentIndex, row)
                     else:
                         logger.error( "trace has children, please delete them first." )
