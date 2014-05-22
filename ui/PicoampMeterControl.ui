@@ -199,6 +199,16 @@
         </item>
        </widget>
       </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>Filename</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QLineEdit" name="filenameEdit"/>
+      </item>
      </layout>
     </widget>
    </item>
