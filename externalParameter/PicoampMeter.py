@@ -65,6 +65,12 @@ class PicoampMeter:
         else:
             logging.getLogger(__name__).error("Meter is not available")
         
+    def reset(self):
+        if self.instrument:        
+            self.instrument.write("*RST")
+        else:
+            logging.getLogger(__name__).error("Meter is not available")
+        
     
     def setVoltage(self, voltage):
         if self.instrument:        

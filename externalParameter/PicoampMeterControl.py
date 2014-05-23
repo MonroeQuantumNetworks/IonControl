@@ -15,6 +15,7 @@ from datetime import datetime
 from trace.PlottedTrace import PlottedTrace
 from trace import pens
 import time
+from modules import MagnitudeUtilit
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\PicoampMeterControl.ui')
 
@@ -22,7 +23,7 @@ class MeterState:
     def __init__(self):
         self.zeroCheck = True
         self.voltageEnabled = False
-        self.voltageRange = 10
+        self.voltageRange = 0
         self.currentLimit = 0
         self.voltage = 0
         self.autoRange = False
@@ -58,12 +59,20 @@ class PicoampMeterControl(Base, Form):
         self.loggingActive = False
         self.startTime = datetime.now()
             
+    def writeAll(self):
+        self.onVoltage(self.meterState.voltage)
+        self.onEnableOutput( self.meterState.voltageEnabled )
+        self.onCurrentLimit( self.meterState.currentLimit )
+        self.onVoltageRange( self.meterState.voltageRange )
+        self.onZeroCheck(self.meterState.zeroCheck )
+        self.onAutoRange( self.meterState.autoRange)
+            
     def setupUi(self, parent):
         super(PicoampMeterControl,self).setupUi(parent)
         self.instrumentEdit.setText( self.meterState.instrument )
         self.instrumentEdit.returnPressed.connect( self.openInstrument )
-        if self.meterState.instrument:
-            self.openInstrument()
+#         if self.meterState.instrument:
+#             self.openInstrument()
         self.enableMeasurementBox.stateChanged.connect( self.onZeroCheck )
         self.enableMeasurementBox.setChecked( not self.meterState.zeroCheck )
         self.autoRangeBox.stateChanged.connect( self.onAutoRange )
@@ -122,6 +131,7 @@ class PicoampMeterControl(Base, Form):
             self.plottedTrace.replot()
         if self.stopRequested:
             self.finalizeScan()
+            self.loggingActive = False
         else:
             QtCore.QTimer.singleShot(self.meterState.timeDelta.toval("ms"), self.takeLoggingPoint )
         
@@ -182,13 +192,14 @@ class PicoampMeterControl(Base, Form):
         setattr( self.meterState, attr, value )
         
     def onVoltage(self, value):
-        raw = value.toval("V")
+        raw = MagnitudeUtilit.value( value , "V")
         self.meter.setVoltage(raw)
+        self.meterState.voltage = value
         
     def onEnableOutput(self, value):
         enable = value == QtCore.Qt.Checked
         self.meter.voltageEnable(enable)
-        self.meterState.enableOutput = enable
+        self.meterState.voltageEnabled = enable
         
     currentLimits = [2.5e-5, 2.5e-4, 2.5e-3, 2.5e-2]
     def onCurrentLimit(self, index):
@@ -200,7 +211,7 @@ class PicoampMeterControl(Base, Form):
     def onVoltageRange(self, index):
         vrange = self.voltageRanges[index]
         self.meter.setVoltageRange( vrange )
-        self.meterState.voltageRange = vrange
+        self.meterState.voltageRange = index
         
     def onZeroCheck(self, value):
         enable = value != QtCore.Qt.Checked
@@ -215,6 +226,8 @@ class PicoampMeterControl(Base, Form):
     def openInstrument(self):
         self.meterState.instrument = str(self.instrumentEdit.text())
         self.meter.open( self.meterState.instrument )
+        self.meter.reset()
+        self.writeAll()
  
     def saveConfig(self):
         self.config["PicoampMeterState"] = self.meterState
