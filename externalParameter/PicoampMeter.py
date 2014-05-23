@@ -4,6 +4,8 @@ Created on May 21, 2014
 @author: pmaunz
 '''
 import logging
+import re
+from modules import MagnitudeUtilit
 
 try:
     import visa  #@UnresolvedImport
@@ -59,13 +61,14 @@ class PicoampMeter:
                 self.instrument.write("INIT")
                 self.instrument.write("SYST:ZCOR:ACQ")
                 self.instrument.write("SYST:ZCOR ON")
+                self.setAutoRange(True)
         else:
             logging.getLogger(__name__).error("Meter is not available")
         
     
     def setVoltage(self, voltage):
         if self.instrument:        
-            self.instrument.write("SOUR:VOLT {0}".format(voltage))
+            self.instrument.write("SOUR:VOLT {0}".format(MagnitudeUtilit.value( voltage, "V")))
             self.voltage = voltage
         else:
             logging.getLogger(__name__).error("Meter is not available")
@@ -83,7 +86,11 @@ class PicoampMeter:
     
     def read(self):
         if self.instrument:        
-            return self.instrument.ask("READ?")
+            answer = self.instrument.ask("READ?")
+            m = re.match("([-.+0-9E]+)([^,]*),([-.+0-9E]+),([-.+0-9E]+)",answer)
+            if m:
+                value, unit, second, third = m.groups()
+                return float(value) 
         else:
             logging.getLogger(__name__).error("Meter is not available")
         return 0

@@ -76,6 +76,9 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         #self.actionSettings.triggered.connect(self.onSettings)
         self.actionExit.triggered.connect(self.onClose)
         self.actionProject.triggered.connect( self.onProjectSelection)
+        
+        self.actionStart.triggered.connect(self.meterControl.onScan)
+        self.actionStop.triggered.connect(self.meterControl.onStop)
 
         self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
         self.addPlot.setToolTip("Add new plot")
