@@ -107,7 +107,8 @@ class ControlUi(UiForm,UiBase):
         UiForm.setupUi(self,MainWindow)
         self.tableModel = ExternalParameterControlTableModel(self)
         self.tableView.setModel( self.tableModel )
-        self.tableView.setItemDelegateForColumn(1,MagnitudeSpinBoxDelegate()) 
+        self.delegate = MagnitudeSpinBoxDelegate()
+        self.tableView.setItemDelegateForColumn(1,self.delegate) 
         self.setupParameters(EnabledParameters)
         
     def setupParameters(self,EnabledParameters):
