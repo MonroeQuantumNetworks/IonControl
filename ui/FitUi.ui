@@ -164,7 +164,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/archive-extract-2.png</normaloff>:/openicon/icons/archive-extract-2.png</iconset>
+         <normaloff>:/openicon/icons/color-picker-black.png</normaloff>:/openicon/icons/color-picker-black.png</iconset>
        </property>
        <property name="autoRaise">
         <bool>true</bool>
@@ -245,7 +245,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/emblem-web-2.png</normaloff>:/openicon/icons/emblem-web-2.png</iconset>
+         <normaloff>:/openicon/icons/applications-internet-5.png</normaloff>:/openicon/icons/applications-internet-5.png</iconset>
        </property>
        <property name="autoRaise">
         <bool>true</bool>

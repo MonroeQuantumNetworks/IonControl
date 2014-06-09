@@ -11,7 +11,7 @@ import os
 from modules.RunningStat import RunningStatHistogram
 
 MaxRecordingInterval = 120
-QueryInterval = 0.2
+QueryInterval = 0
 
 if __name__=="__main__":
     mks = TerranovaReader() #MKSReader()

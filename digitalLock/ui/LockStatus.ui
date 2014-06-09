@@ -333,7 +333,7 @@
        </property>
        <property name="icon">
         <iconset resource="RepetitionRate.qrc">
-         <normaloff>:/openicon/icons/edit_clear.png</normaloff>:/openicon/icons/edit_clear.png</iconset>
+         <normaloff>:/openicon/icons/edit-clear.png</normaloff>:/openicon/icons/edit-clear.png</iconset>
        </property>
        <property name="iconSize">
         <size>

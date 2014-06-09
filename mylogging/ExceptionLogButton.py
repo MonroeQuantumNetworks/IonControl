@@ -35,7 +35,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.setPopupMode(QtGui.QToolButton.InstantPopup)
         sys.excepthook = self.myexcepthook
         self.exceptionsListed = 0
-        self.NoExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-default.png")
+        self.NoExceptionsIcon = QtGui.QIcon(":/openicon/icons/dialog-ok-apply.png")
         self.ExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-important-4.png")
         self.setIcon( self.NoExceptionsIcon )
         
