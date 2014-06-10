@@ -21,7 +21,7 @@
      </property>
      <property name="icon">
       <iconset resource="Experiment.qrc">
-       <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
+       <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
      </property>
      <property name="autoRaise">
       <bool>true</bool>
@@ -45,7 +45,7 @@
      </property>
      <property name="icon">
       <iconset resource="Experiment.qrc">
-       <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
+       <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
      </property>
      <property name="autoRaise">
       <bool>true</bool>
@@ -72,7 +72,7 @@
      </property>
      <property name="icon">
       <iconset resource="Experiment.qrc">
-       <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
+       <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
      </property>
      <property name="autoRaise">
       <bool>true</bool>
@@ -103,7 +103,7 @@
      </property>
      <property name="icon">
       <iconset resource="Experiment.qrc">
-       <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
+       <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
      </property>
      <property name="autoRaise">
       <bool>true</bool>
