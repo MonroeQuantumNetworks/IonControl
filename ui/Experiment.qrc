@@ -25,6 +25,8 @@
     <file>icons/media-playback-stop-7.png</file>
   </qresource>
   <qresource prefix="petersIcons">
+    <file>icons/Error-01.png</file>
+    <file>icons/Success-01.png</file>
     <file>icons/Repeat-disabled-01.png</file>
     <file>icons/Repeat-enabled-01.png</file>
     <file>icons/FPGA.png</file>
