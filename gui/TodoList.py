@@ -10,14 +10,19 @@ from TodoListTableModel import TodoListTableModel
 from uiModules.KeyboardFilter import KeyListFilter
 from modules.Utility import unique
 from functools import partial
+from modules.ScanDefinition import ScanSegmentDefinition
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
 
 class TodoListEntry:
-    def __init__(self, scan, measurement):
+    def __init__(self, scan=None, measurement=None):
+        self.parent = None
+        self.children = list()
         self.scan = scan
         self.measurement = measurement
+        self.scanParameter = None
+        self.scanSegment = ScanSegmentDefinition()
 
 class Settings:
     def __init__(self):
@@ -40,7 +45,7 @@ class TodoList(Form, Base):
         self.scanModuleMeasurements = dict()
         self.currentMeasurementsDisplayedForScan = None
         self.currentScan = currentScan
-        self.setCurrntScan = setCurrentScan
+        self.setCurrentScan = setCurrentScan
 
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
@@ -90,7 +95,13 @@ class TodoList(Form, Base):
         self.scanModuleMeasurements = dict()
         for name, widget in self.scanModules.iteritems():
             if hasattr(widget, 'scanControlWidget' ):
-                self.scanModuleMeasurements[name] = sorted(widget.scanControlWidget.settingsDict.keys())
+                self.populateMeasurementsItem( name, widget.scanControlWidget.settingsDict )
+                
+    def populateMeasurementsItem(self, name, settingsDict ):
+        self.scanModuleMeasurements[name] = sorted(settingsDict.keys())
+        if name == self.currentMeasurementsDisplayedForScan:
+            self.measurementSelectionBox.clear()
+            self.measurementSelectionBox.addItems( self.scanModuleMeasurements[name] )            
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
@@ -113,8 +124,8 @@ class TodoList(Form, Base):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
             self.tableModel.dropMeasurement(index)
         numEntries = self.tableModel.rowCount()
-        if self.currentScan >= numEntries:
-            self.currentScan = 0
+        if self.settings.currentIndex >= numEntries:
+            self.settings.currentIndex = 0
 
     def checkReadyToRun(self, state, _=True ):
         _, current = self.currentScan()
@@ -138,7 +149,7 @@ class TodoList(Form, Base):
         entry = self.settings.todoList[ self.settings.currentIndex ]
         # switch to the scan for the first line
         if entry.scan!=currentname:
-            self.setCurrntScan(entry.scan)
+            self.setCurrentScan(entry.scan)
         # load the correct measurement
         currentwidget.scanControlWidget.loadSetting( entry.measurement )        
         # start

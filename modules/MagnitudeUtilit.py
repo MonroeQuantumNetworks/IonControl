@@ -8,6 +8,9 @@ Created on Tue Jul 02 14:25:44 2013
 import modules.magnitude as magnitude
 import math
 
+def isMagnitude(value):
+    return isinstance(value, magnitude.Magnitude)
+    
 def setSignificantDigits( mag_value, quantum ):
     """Sets the significant digits of a magnitude according the minimal step quantum
     and the current value

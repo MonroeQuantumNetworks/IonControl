@@ -51,7 +51,7 @@ class GlobalVariableUi(Form, Base ):
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
-
+        self.newNameEdit.returnPressed.connect( self.onAddVariable )
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))

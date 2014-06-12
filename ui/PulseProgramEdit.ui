@@ -169,7 +169,7 @@
         </property>
         <property name="icon">
          <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/go-down-4.png</normaloff>:/openicon/icons/go-down-4.png</iconset>
+          <normaloff>:/openicon/icons/go-down-7.png</normaloff>:/openicon/icons/go-down-7.png</iconset>
         </property>
         <property name="toolButtonStyle">
          <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -192,7 +192,7 @@
         </property>
         <property name="icon">
          <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/go-up-4.png</normaloff>:/openicon/icons/go-up-4.png</iconset>
+          <normaloff>:/openicon/icons/go-up-7.png</normaloff>:/openicon/icons/go-up-7.png</iconset>
         </property>
         <property name="toolButtonStyle">
          <enum>Qt::ToolButtonTextBesideIcon</enum>

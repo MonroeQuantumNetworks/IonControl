@@ -153,7 +153,7 @@
          </property>
          <property name="icon">
           <iconset resource="Experiment.qrc">
-           <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
+           <normaloff>:/kde/icons/edit-clear.png</normaloff>:/kde/icons/edit-clear.png</iconset>
          </property>
          <property name="autoRaise">
           <bool>true</bool>
@@ -213,7 +213,7 @@
   <action name="actionClear">
    <property name="icon">
     <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
+     <normaloff>:/kde/icons/edit-clear.png</normaloff>:/kde/icons/edit-clear.png</iconset>
    </property>
    <property name="text">
     <string>Clear</string>
@@ -271,7 +271,7 @@
    <property name="icon">
     <iconset resource="Experiment.qrc">
      <normaloff>:/openicon/icons/media-playback-pause-7.png</normaloff>
-     <normalon>:/kde/icons/edit_clear.png</normalon>:/openicon/icons/media-playback-pause-7.png</iconset>
+     <normalon>:/kde/icons/edit-clear.png</normalon>:/openicon/icons/media-playback-pause-7.png</iconset>
    </property>
    <property name="text">
     <string>Pause</string>
@@ -310,7 +310,7 @@
    </property>
    <property name="icon">
     <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/player_fwd.png</normaloff>:/kde/icons/player_fwd.png</iconset>
+     <normaloff>:/kde/icons/continue.png</normaloff>:/kde/icons/continue.png</iconset>
    </property>
    <property name="text">
     <string>Continue</string>

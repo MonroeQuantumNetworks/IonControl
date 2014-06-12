@@ -14,20 +14,57 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="1">
-    <widget class="MagnitudeSpinBox" name="globalGainBox"/>
-   </item>
    <item row="0" column="1">
-    <widget class="QComboBox" name="comboBox">
+    <widget class="MagnitudeSpinBox" name="lineBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>1</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
     </widget>
    </item>
    <item row="4" column="0" colspan="2">
+    <widget class="QFrame" name="shuttlingEdgesWidget">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="lineWidth">
+      <number>0</number>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>3</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>3</number>
+      </property>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="MagnitudeSpinBox" name="globalGainBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QToolButton" name="startShuttlingSeqFiniteButton">
@@ -100,30 +137,24 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="0">
+   <item row="2" column="0">
     <widget class="QLabel" name="label_4">
      <property name="text">
       <string>Global Gain</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="1" column="1">
+    <widget class="MagnitudeSpinBox" name="lineGainBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>175</height>
-      </size>
-     </property>
-    </spacer>
+    </widget>
    </item>
-   <item row="2" column="1">
-    <widget class="MagnitudeSpinBox" name="lineGainBox"/>
-   </item>
-   <item row="2" column="0">
+   <item row="1" column="0">
     <widget class="QLabel" name="label_2">
      <property name="text">
       <string>Line Gain</string>
@@ -131,13 +162,6 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Named Set</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
     <widget class="QLabel" name="lineLabel">
      <property name="contextMenuPolicy">
       <enum>Qt::ActionsContextMenu</enum>
@@ -145,39 +169,6 @@
      <property name="text">
       <string>Line</string>
      </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="MagnitudeSpinBox" name="lineBox"/>
-   </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="QFrame" name="shuttlingEdgesWidget">
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <property name="lineWidth">
-      <number>0</number>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="spacing">
-       <number>3</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>3</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>3</number>
-      </property>
-     </layout>
     </widget>
    </item>
   </layout>
@@ -190,7 +181,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>comboBox</tabstop>
   <tabstop>lineBox</tabstop>
   <tabstop>lineGainBox</tabstop>
   <tabstop>globalGainBox</tabstop>

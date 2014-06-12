@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>330</width>
+    <width>359</width>
     <height>833</height>
    </rect>
   </property>
@@ -49,6 +49,9 @@
        </property>
        <property name="editable">
         <bool>true</bool>
+       </property>
+       <property name="maxVisibleItems">
+        <number>100</number>
        </property>
       </widget>
      </item>
@@ -161,7 +164,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/archive-extract-2.png</normaloff>:/openicon/icons/archive-extract-2.png</iconset>
+         <normaloff>:/openicon/icons/color-picker-black.png</normaloff>:/openicon/icons/color-picker-black.png</iconset>
        </property>
        <property name="autoRaise">
         <bool>true</bool>
@@ -242,7 +245,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/emblem-web-2.png</normaloff>:/openicon/icons/emblem-web-2.png</iconset>
+         <normaloff>:/openicon/icons/applications-internet-5.png</normaloff>:/openicon/icons/applications-internet-5.png</iconset>
        </property>
        <property name="autoRaise">
         <bool>true</bool>

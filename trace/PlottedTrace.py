@@ -18,9 +18,15 @@ from trace.Trace import TracePlotting
 import time 
 from modules import WeakMethod
 from functools import partial
+from itertools import izip
 
+def sort_lists_by(lists, key_list=0, desc=False):
+    return izip(*sorted(izip(*lists), reverse=desc,
+                 key=lambda x: x[key_list]))
+    
 class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
+    PointsStyles = [ 1, 4 ]
     Types = enum.enum('default','steps')
     def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
@@ -208,7 +214,8 @@ class PlottedTrace(object):
     def plotLines(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot((self.x), (self.y), pen=self.penList[penindex][0])            
+        x, y = sort_lists_by( (self.x, self.y), key_list=0)
+        self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0])            
         if self.xAxisLabel:
             if self.xAxisUnit:
                 self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
@@ -230,7 +237,8 @@ class PlottedTrace(object):
     def plotLinespoints(self,penindex, errorbars=True ):
         if errorbars:
             self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot((self.x), (self.y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+        x, y = sort_lists_by( (self.x, self.y), key_list=0)
+        self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
             if self.xAxisUnit:
@@ -274,7 +282,11 @@ class PlottedTrace(object):
             
     def _replot(self):
         if hasattr(self,'curve') and self.curve is not None:
-            self.curve.setData( (self.x), (self.y) )
+            if self.style not in self.PointsStyles and self.type==self.Types.default:
+                x, y = sort_lists_by( (self.x, self.y), key_list=0)
+                self.curve.setData( numpy.array(x), numpy.array(y) )
+            else:
+                self.curve.setData( (self.x), (self.y) )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
             if self.hasHeightColumn:
                 self.errorBarItem.setData(x=(self.x), y=(self.y), height=(self.trace.height))

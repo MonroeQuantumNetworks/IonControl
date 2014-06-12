@@ -41,7 +41,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
+         <normaloff>:/kde/icons/edit-clear.png</normaloff>:/kde/icons/edit-clear.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -146,7 +146,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
+         <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
        </property>
        <property name="iconSize">
         <size>

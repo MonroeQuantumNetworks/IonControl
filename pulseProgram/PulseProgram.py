@@ -93,6 +93,7 @@ OPS = {'NOP'    : 0x00,
        'ASYNCINVSHUTTER' : 0x50,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
+       'WAITFORTRIGGER': 0x53,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -116,6 +117,12 @@ class Variable:
         new = Variable()
         new.__dict__ = copy.deepcopy( self.__dict__ )
         return new 
+
+    def __eq__(self,other):
+        return self.__dict__==other.__dict__
+
+    def __ne__(self, other):
+        return not self == other
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
@@ -171,7 +178,7 @@ class PulseProgram:
             with open(os.path.join(self.pp_dir,name),'w') as f:
                 f.write(text)            
         
-    def loadSource(self, pp_file):
+    def loadSource(self, pp_file, docompile=True):
         """ Load the source pp_file
         #include files are loaded recursively
         all code lines are added to self.sourcelines
@@ -181,7 +188,8 @@ class PulseProgram:
         self.pp_dir, self.pp_filename = os.path.split(pp_file)
         self.sourcelines = []
         self.insertSource(self.pp_filename)
-        self.compileCode()
+        if docompile:
+            self.compileCode()
 
     def updateVariables(self, variables ):
         """ update the variable values in the bytecode
@@ -234,14 +242,15 @@ class PulseProgram:
             codelist[-2] &= 0x7fff 
         return codelist
                    
-    def loadFromMemory(self):
+    def loadFromMemory(self, docompile=True):
         """Similar to loadSource
         only this routine loads from self.source
         """
         self.sourcelines = []
         self._exitcodes = dict()
         self.insertSource(self.pp_filename)
-        self.compileCode()
+        if docompile:
+            self.compileCode()
 
     def toBinary(self):
         """ convert bytecode to binary

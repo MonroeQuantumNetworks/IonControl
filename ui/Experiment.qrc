@@ -5,7 +5,7 @@
     <file>icons/configure.png</file>
     <file>icons/reload.png</file>
     <file>icons/colorize.png</file>
-    <file>icons/fileopen.png</file>
+    <file>icons/document-open-5.png</file>
     <file>icons/filesaveas.png</file>
     <file>icons/history.png</file>
     <file>icons/history_clear.png</file>
@@ -15,16 +15,18 @@
     <file>icons/messagebox_warning.png</file>
     <file>icons/remove.png</file>
     <file>icons/gear.png</file>
-    <file>icons/player_fwd.png</file>
+    <file>icons/continue.png</file>
     <file>icons/remove.png</file>
-    <file>icons/edit_clear.png</file>
+    <file>icons/edit-clear.png</file>
     <file>icons/exit.png</file>
     <file>icons/filesave.png</file>
-    <file>icons/player_pause.png</file>
-    <file>icons/player_play.png</file>
-    <file>icons/player_stop.png</file>
+    <file>icons/media-playback-pause-7.png</file>
+    <file>icons/media-playback-start-7.png</file>
+    <file>icons/media-playback-stop-7.png</file>
   </qresource>
   <qresource prefix="petersIcons">
+    <file>icons/Error-01.png</file>
+    <file>icons/Success-01.png</file>
     <file>icons/Repeat-disabled-01.png</file>
     <file>icons/Repeat-enabled-01.png</file>
     <file>icons/FPGA.png</file>
@@ -39,7 +41,7 @@
     <file>icons/ions.jpg</file>
   </qresource>
   <qresource prefix="openicon">
-    <file>icons/emblem-web-2.png</file>
+    <file>icons/applications-internet-5.png</file>
     <file>icons/view-bottom-new.png</file>
     <file>icons/office-chart-bar.png</file>
     <file>icons/update_misc.png</file>
@@ -47,12 +49,12 @@
     <file>icons/remove-plot.png</file>
     <file>icons/rename-plot.png</file>
     <file>icons/arrow-left-2.png</file>
-    <file>icons/archive-extract-2.png</file>
-    <file>icons/go-down-4.png</file>
-    <file>icons/go-up-4.png</file>
+    <file>icons/color-picker-black.png</file>
+    <file>icons/go-down-7.png</file>
+    <file>icons/go-up-7.png</file>
     <file>icons/office-chart-line.png</file>
     <file>icons/window-close.png</file>
-    <file>icons/emblem-default.png</file>
+    <file>icons/dialog-ok-apply.png</file>
     <file>icons/emblem-important-4.png</file>
     <file>icons/edit-delete-6.png</file>
     <file>icons/edit-add.png</file>
@@ -63,7 +65,6 @@
     <file>icons/media-playback-pause-3.png</file>
     <file>icons/media-playback-start-3.png</file>
     <file>icons/media-playback-stop-3.png</file>
-    <file>icons/edit-add-2.png</file>
     <file>icons/media-playback-pause-7.png</file>
     <file>icons/media-playback-start-7.png</file>
     <file>icons/media-playback-stop-7.png</file>
@@ -73,11 +74,8 @@
     <file>icons/edit-undo-8.png</file>
     <file>icons/pictogram-din-w008-electricisty.png</file>
     <file>icons/gnome-power-statistics.png</file>
-    <file>icons/document-open-2.png</file>
     <file>icons/document-open-5.png</file>
     <file>icons/document-open-7.png</file>
-    <file>icons/document-revert-2.png</file>
-    <file>icons/document-revert-3.png</file>
     <file>icons/document-revert-5.png</file>
   </qresource>
   <qresource prefix="penicon">
@@ -92,7 +90,7 @@
     <file>icons/blue-dash.png</file>
     <file>icons/cyan.png</file>
     <file>icons/cyan-dash.png</file>
-    <file>icons/edit_clear.png</file>
+    <file>icons/edit-clear.png</file>
     <file>icons/exit.png</file>
     <file>icons/filesave.png</file>
     <file>icons/green.png</file>
