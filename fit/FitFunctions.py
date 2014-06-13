@@ -264,8 +264,6 @@ def fromXmlElement(element):
         name= parameter.attrib['name']
         function.results[name] = ResultRecord( name=name,
                                definition = stringToStringOrNone( parameter.attrib['definition'] ),
-                               globalname = stringToStringOrNone( parameter.attrib['globalname'] ),
-                               push = stringToStringOrNone( parameter.attrib['globalname'] ),
                                value = MagnitudeParser.parse(parameter.text) )
     return function
         
