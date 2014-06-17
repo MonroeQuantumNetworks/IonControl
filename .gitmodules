@@ -1,6 +1,3 @@
-[submodule "IonControl-firmware"]
-	path = IonControl-firmware
-	url = C:\\Users\\pmaunz\\Documents\\Programming\\IonControl-firmware
 [submodule "firmware/RepetitionRateCompensation"]
 	path = firmware/RepetitionRateCompensation
 	url = C:\\Users\\pmaunz\\Documents\\Programming\\RepetitionRateCompensation
