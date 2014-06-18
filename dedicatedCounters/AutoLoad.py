@@ -314,9 +314,11 @@ class AutoLoad(UiForm,UiBase):
         """Run if useInterlock button is clicked. Change settings to match."""
         self.settings.useInterlock = self.useInterlockGui.isChecked()
 
-    def onWavemeterError(self, error):
+    def onWavemeterError(self, channel, reply, error):
         """Print out received error"""
         logging.getLogger(__name__).error( "Error {0} accessing wavemeter at '{1}'".format(error, self.settings.wavemeterAddress) )
+        reply.finished.disconnect()  # necessary to make reply garbage collectable
+        reply.error.disconnect()
 
     def getWavemeterData(self, channel):
         """Get the data from the wavemeter at the specified channel."""
@@ -324,18 +326,18 @@ class AutoLoad(UiForm,UiBase):
             if self.settings.interlock[channel].enable:
                 address = self.settings.wavemeterAddress + "/wavemeter/wavemeter/wavemeter-status?channel={0}".format(int(channel))
                 reply = self.am.get( QtNetwork.QNetworkRequest(QtCore.QUrl(address)))
-                reply.error.connect(self.onWavemeterError)
+                reply.error.connect(functools.partial(self.onWavemeterError, int(channel),  reply) )
                 reply.finished.connect(functools.partial(self.onWavemeterData, int(channel), reply))
             else:
                 self.checkFreqsInRange()
 
-    def onWavemeterData(self, channel, data):
-        """Execute when data is received from the wavemeter. Display it on the
+    def onWavemeterData(self, channel, reply):
+        """Execute when reply is received from the wavemeter. Display it on the
            GUI, and check whether it is in range."""
         if channel in self.settings.interlock:
             ilChannel = self.settings.interlock[channel]
-            if data.error()==0:
-                value = float(data.readAll())
+            if reply.error()==0:
+                value = float(reply.readAll())
                 self.tableModel.setCurrent( channel, round(value, 4) )
                 if ilChannel.lastReading==value:
                     ilChannel.identicalCount += 1
@@ -347,6 +349,8 @@ class AutoLoad(UiForm,UiBase):
             if ilChannel.enable:
                 QtCore.QTimer.singleShot(1000,functools.partial(self.getWavemeterData, channel))
         self.checkFreqsInRange()
+        reply.finished.disconnect()  # necessary to make reply garbage collectable
+        reply.error.disconnect()
         
     def checkFreqsInRange(self):
         """Check whether all laser frequencies being used by the interlock are in range.
