@@ -11,6 +11,7 @@ import sip
 
 from modules import Expression
 import modules.magnitude as magnitude
+from modules import MagnitudeUtilit
 
 
 api2 = sip.getapi("QVariant")==2
@@ -134,6 +135,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     
     def update(self, updlist ):
         for key, value in updlist:
+            value = MagnitudeUtilit.mg(value)
             if key in self.variables:
                 old = self.variables[key]
                 if value.dimension()!=old.dimension() or value!=old:
