@@ -24,7 +24,9 @@ from modules.Utility import unique
 from modules.enum import enum
 from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
-
+from modules.ScanDefinition import ScanSegmentDefinition
+from ScanSegmentTableModel import ScanSegmentTableModel
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate 
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -100,6 +102,7 @@ class Scan:
         self.saveRawData = False
         # GateSequence Settings
         self.gateSequenceSettings = GateSequenceUi.Settings()
+        self.scanSegmentList = [ScanSegmentDefinition()]
         
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -117,6 +120,7 @@ class Scan:
         self.__dict__.setdefault('startCenter',0)        
         self.__dict__.setdefault('gateSequenceSettings',GateSequenceUi.Settings())
         self.__dict__.setdefault('evalList',list())
+        self.__dict__.setdefault('scanSegmentList',[ScanSegmentDefinition()])
 
     def __eq__(self,other):
         try:
@@ -239,6 +243,23 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
         self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
         
+        self.tableModel = ScanSegmentTableModel(self.updateSaveStatus)
+        self.tableView.setModel( self.tableModel )
+        self.addSegmentButton.clicked.connect( self.onAddScanSegment )
+        self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
+        delegate = MagnitudeSpinBoxDelegate()
+        self.tableView.setItemDelegate( delegate )
+        
+        
+    def onAddScanSegment(self):
+        self.settings.scanSegmentList.append( ScanSegmentDefinition() )
+        self.tableModel.setScanList(self.settings.scanSegmentList)
+        
+    def onRemoveScanSegment(self):
+        for index in sorted(unique([ i.column() for i in self.tableView.selectedIndexes() ]),reverse=True):
+            del self.settings.scanSegmentList[index]
+            self.tableModel.setScanList(self.settings.scanSegmentList)
+        
     def setAnalysisNames(self, names):
         self.evalTableModel.setAnalysisNames(names)
         
@@ -288,6 +309,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
         self.evalTableView.resizeColumnsToContents()
         #self.evalTableView.horizontalHeader().setStretchLastSection(True)
+        self.tableModel.setScanList(self.settings.scanSegmentList)
 
     def addEvaluation(self, evaluation):
         algo =  CountEvaluation.EvaluationAlgorithms[evaluation.evaluation]()
