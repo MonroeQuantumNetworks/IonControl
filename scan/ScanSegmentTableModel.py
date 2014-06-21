@@ -1,8 +1,5 @@
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 from functools import partial
-
-from scan.CountEvaluation import EvaluationAlgorithms
-
 
 class ScanSegmentTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )
@@ -18,22 +15,28 @@ class ScanSegmentTableModel( QtCore.QAbstractTableModel):
                                  (QtCore.Qt.EditRole,4): partial( self.setField, 'steps'),
                                  (QtCore.Qt.EditRole,5): partial( self.setField, 'stepsize'),
                                 }
-        self.dataLookup = {  (QtCore.Qt.DisplayRole,0): lambda self, column: self.scanSegmentList[column].start,
-                             (QtCore.Qt.DisplayRole,1): lambda self, column: self.scanSegmentList[column].stop,
-                             (QtCore.Qt.DisplayRole,2): lambda self, column: self.scanSegmentList[column].center,
-                             (QtCore.Qt.DisplayRole,3): lambda self, column: self.scanSegmentList[column].span,
-                             (QtCore.Qt.DisplayRole,4): lambda self, column: self.scanSegmentList[column].steps,
-                             (QtCore.Qt.DisplayRole,5): lambda self, column: self.scanSegmentList[column].stepsize,
-                             (QtCore.Qt.EditRole,0):    lambda self, column: self.scanSegmentList[column].start,
-                             (QtCore.Qt.EditRole,1):    lambda self, column: self.scanSegmentList[column].stop,
-                             (QtCore.Qt.EditRole,2):    lambda self, column: self.scanSegmentList[column].center,
-                             (QtCore.Qt.EditRole,3):    lambda self, column: self.scanSegmentList[column].span,
-                             (QtCore.Qt.EditRole,4):    lambda self, column: self.scanSegmentList[column].steps,
-                             (QtCore.Qt.EditRole,5):    lambda self, column: self.scanSegmentList[column].stepsize,
+        self.dataLookup = {  (QtCore.Qt.DisplayRole,0): lambda self, column: str(self.scanSegmentList[column].start),
+                             (QtCore.Qt.DisplayRole,1): lambda self, column: str(self.scanSegmentList[column].stop),
+                             (QtCore.Qt.DisplayRole,2): lambda self, column: str(self.scanSegmentList[column].center),
+                             (QtCore.Qt.DisplayRole,3): lambda self, column: str(self.scanSegmentList[column].span),
+                             (QtCore.Qt.DisplayRole,4): lambda self, column: str(self.scanSegmentList[column].steps),
+                             (QtCore.Qt.DisplayRole,5): lambda self, column: str(self.scanSegmentList[column].stepsize),
+                             (QtCore.Qt.EditRole,0):    lambda self, column: str(self.scanSegmentList[column].start),
+                             (QtCore.Qt.EditRole,1):    lambda self, column: str(self.scanSegmentList[column].stop),
+                             (QtCore.Qt.EditRole,2):    lambda self, column: str(self.scanSegmentList[column].center),
+                             (QtCore.Qt.EditRole,3):    lambda self, column: str(self.scanSegmentList[column].span),
+                             (QtCore.Qt.EditRole,4):    lambda self, column: str(self.scanSegmentList[column].steps),
+                             (QtCore.Qt.EditRole,5):    lambda self, column: str(self.scanSegmentList[column].stepsize),
+                             (QtCore.Qt.BackgroundColorRole,0): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.BackgroundColorRole,1): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.BackgroundColorRole,2): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.BackgroundColorRole,3): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.BackgroundColorRole,4): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.BackgroundColorRole,5): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
                              }
 
     def setData(self, index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
+        return self.setDataLookup.get((role,index.row()), lambda index, value: False )(index, value)
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         return 6
@@ -62,7 +65,7 @@ class ScanSegmentTableModel( QtCore.QAbstractTableModel):
                 
     def setField(self, fieldname, index, value):
         setattr( self.scanSegmentList[index.column()], fieldname, value )
-        self.dataChanged.emit( index, index )
+        self.dataChanged.emit( self.createIndex(0,index.column()), self.createIndex(5,index.column()) )
         return True
     
     def setScanList(self, scanlist):

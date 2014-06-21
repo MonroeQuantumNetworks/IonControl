@@ -27,6 +27,9 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules.ScanDefinition import ScanSegmentDefinition
 from ScanSegmentTableModel import ScanSegmentTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate 
+import numpy
+from modules.concatenate_iter import concatenate_iter
+import random
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -204,7 +207,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.resizeColumnsToContents()
-        
+
+        self.tableModel = ScanSegmentTableModel(self.updateSaveStatus)
+        self.tableView.setModel( self.tableModel )
+        self.addSegmentButton.clicked.connect( self.onAddScanSegment )
+        self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.tableView.setItemDelegate( self.magnitudeDelegate )
+       
         try:
             self.setSettings( self.settings )
         except AttributeError:
@@ -216,10 +226,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBox.editTextChanged.connect( lambda x: self.updateSaveStatus() ) 
         # update connections
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )
-        self.startBox.valueChanged.connect( self.onStartChanged )
-        self.stopBox.valueChanged.connect( self.onStopChanged )
-        self.stepsBox.valueChanged.connect( self.onStepsValueChanged )
-        self.stepsCombo.currentIndexChanged[int].connect( self.onStepsSelectChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
@@ -227,7 +233,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
         self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
-        self.startCenterCombo.currentIndexChanged[int].connect( self.onStartCenterChanged )
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramCheckBox.stateChanged.connect( self.onIntegrateHistogramClicked )
@@ -241,15 +246,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
         self.channelSpinBox.valueChanged.connect( functools.partial(self.onBareValueChanged, 'timestampsChannel') )
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
-        self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
-        
-        self.tableModel = ScanSegmentTableModel(self.updateSaveStatus)
-        self.tableView.setModel( self.tableModel )
-        self.addSegmentButton.clicked.connect( self.onAddScanSegment )
-        self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
-        delegate = MagnitudeSpinBoxDelegate()
-        self.tableView.setItemDelegate( delegate )
-        
+        self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )        
         
     def onAddScanSegment(self):
         self.settings.scanSegmentList.append( ScanSegmentDefinition() )
@@ -266,10 +263,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
-        self.setStartCenter()
-        self.calculateSteps( self.settings )
-        self.setSteps( self.settings, True )
-        self.stepsCombo.setCurrentIndex(self.settings.stepsSelect)
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
         if self.settings.scanParameter: 
@@ -277,8 +270,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
             self.settings.scanParameter = self.comboBoxParameter.currentText()
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
-        self.startBox.setEnabled(self.settings.scanMode in [0,1])
-        self.stopBox.setEnabled(self.settings.scanMode in [0,1])
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )
         self.xExprEdit.setText( self.settings.xExpression )
@@ -355,91 +346,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         except MagnitudeError:
             pass
             
-    def onStartCenterChanged(self, value):   
-        self.settings.startCenter = value 
-        self.calculateBoundaries()
-        self.setStartCenter()
-        self.updateSaveStatus()
- 
-    def setStartCenter(self):
-        self.beginChange()
-        if self.settings.startCenter == 0:
-            self.startBox.setValue(self.settings.start)
-            self.stopBox.setValue(self.settings.stop)
-            self.startCenterCombo.setCurrentIndex(0)
-            self.stopLabel.setText("Stop")
-        elif self.settings.startCenter == 1:
-            self.startBox.setValue(self.settings.center)
-            self.stopBox.setValue(self.settings.span)
-            self.startCenterCombo.setCurrentIndex(1)
-            self.stopLabel.setText("Span")        
-        self.commitChange()
-        
-    def onStartChanged(self, value):
-        self.beginChange()
-        if self.settings.startCenter == 0:
-            self.settings.start = MagnitudeUtilit.mg(value)
-        elif self.settings.startCenter == 1:
-            self.settings.center = MagnitudeUtilit.mg(value)
-        self.calculateBoundaries()
-        self.commitChange()
-        self.updateSaveStatus()
-
-    def onStopChanged(self, value):
-        self.beginChange()
-        if self.settings.startCenter == 0:
-            self.settings.stop = MagnitudeUtilit.mg(value)
-        elif self.settings.startCenter == 1:
-            self.settings.span = MagnitudeUtilit.mg(value)
-        self.calculateBoundaries()
-        self.commitChange()
-        self.updateSaveStatus()
-            
-    def calculateBoundaries(self):
-        try:
-            if self.settings.startCenter == 0:
-                self.settings.center = (self.settings.start + self.settings.stop)/2
-                self.settings.span = abs(self.settings.start - self.settings.stop)
-            elif self.settings.startCenter == 1:
-                self.settings.start = self.settings.center - self.settings.span/2
-                self.settings.stop = self.settings.center + self.settings.span/2
-            self.startBox.setStyleSheet("")
-            self.stopBox.setStyleSheet("")
-            self.calculateSteps(self.settings)
-            self.setSteps(self.settings, False)
-        except Exception:
-            self.startBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
-            self.stopBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
-            
-                
-    def setSteps( self, settings, writeInput=False ):
-        if settings.stepsSelect == 0:
-            if writeInput:
-                self.stepsBox.setValue(settings.steps)
-            self.stepsLabel.setText( str(settings.stepSize) )
-        else:
-            if writeInput:
-                self.stepsBox.setValue(settings.stepSize)
-            self.stepsLabel.setText( str(settings.steps) )
-        self.updateSaveStatus()
-
-        
-    def calculateSteps(self, settings):
-        logger = logging.getLogger(__name__)
-        if settings.stepsSelect == 0:
-            try:
-                settings.stepSize = abs(settings.stop - settings.start)/(settings.steps - 1)
-                valueAs( settings.stepSize, settings.start )
-            except Exception:
-                logger.exception("calculateSteps")
-                settings.stepSize = None
-        else:
-            try:
-                settings.steps = int( round( abs(settings.stop - settings.start)/settings.stepSize ) ) + 1
-            except Exception:
-                logger.exception("calculateSteps")
-                settings.steps = None
-        
     def onLoadPP(self, ppname):
         logger = logging.getLogger(__name__)
         self.settings.loadPPName = str(ppname)
@@ -511,9 +417,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onModeChanged(self, index):
         self.beginChange()
         self.settings.scanMode = index
-        self.startBox.setEnabled(index ==0)
-        self.stopBox.setEnabled(index ==0)
-        self.stepsBox.setEnabled( index in [0,1] )
         self.scanTypeCombo.setEnabled(index in [0,2])
         self.scanRepeatComboBox.setEnabled( index in [0,2] )
         self.xUnitEdit.setEnabled( index==0)
@@ -533,35 +436,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         setattr( self.settings, attribute, value )
         self.commitChange()
         self.updateSaveStatus()
-       
-    def onStartStopChanged(self, attribute, value):
-        self.beginChange()
-        setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
-        self.calculateSteps( self.settings )
-        self.setSteps( self.settings )
-        self.commitChange()
-        self.updateSaveStatus()
-
-    def onStepsSelectChanged(self, select ):
-        self.settings.stepsSelect = select
-        self.calculateSteps( self.settings )
-        self.setSteps( self.settings, True )
-        self.updateSaveStatus()
-        
-    def onStepsValueChanged( self, value ):
-        if self.settings.stepsSelect==0:
-            self.settings.steps = int(value)
-            self.stepsBox.setStyleSheet("")
-        else: 
-            self.settings.stepSize = value
-            if MagnitudeUtilit.haveSameDimension(self.settings.stepSize, self.settings.start):
-                self.stepsBox.setStyleSheet("")
-            else:
-                self.stepsBox.setStyleSheet("MagnitudeSpinBox {background: #ffa0a0;}")
-        self.calculateSteps(self.settings)
-        self.setSteps( self.settings )
-        self.updateSaveStatus()
-
+              
     def onIntValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, value )
@@ -593,8 +468,22 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def getScan(self):
         scan = copy.deepcopy(self.settings)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
-        scan.list = ScanList.scanList( scan.start, scan.stop, scan.steps if scan.stepsSelect==0 else scan.stepSize, 
-                                       scan.type, scan.stepsSelect )
+        
+        scan.list = list( concatenate_iter( *( numpy.linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ) ) )
+        if scan.type==0:
+            scan.list = sorted( scan.list )
+            scan.start = scan.list[0]
+            scan.stop = scan.list[-1]
+        elif scan.type==1:
+            scan.list = sorted( scan.list, reverse=True )
+            scan.start = scan.list[-1]
+            scan.stop = scan.list[0]
+        elif scan.type==2:
+            scan.list = sorted( scan.list )
+            scan.start = scan.list[0]
+            scan.stop = scan.list[-1]
+            random.shuffle( scan.list )           
+            
         scan.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
         scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName

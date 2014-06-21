@@ -4,6 +4,7 @@ Created on May 18, 2014
 @author: pmaunz
 '''
 import math
+from modules.magnitude import MagnitudeError
 
 class ScanSegmentDefinition(object):
     def __init__(self):
@@ -14,6 +15,12 @@ class ScanSegmentDefinition(object):
         self._steps = 2
         self._stepsize = 1
         self._stepPreference = 'stepsize'
+        self._inconsistent = False
+        
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__dict__.setdefault('_inconsistent',False)
+        
         
     @property
     def start(self):
@@ -22,7 +29,7 @@ class ScanSegmentDefinition(object):
     @start.setter
     def start(self, start):
         self._start = start
-        self.calculateCenterSpan
+        self.calculateCenterSpan()
         
     @property
     def stop(self):
@@ -34,12 +41,16 @@ class ScanSegmentDefinition(object):
         self.calculateCenterSpan()
         
     def calculateCenterSpan(self):
-        self._span = abs(self._stop - self._start)
-        self._center = self._start + (self._stop-self._start)/2
-        if self._stepPreference=='steps' and self._steps>1:
-            self._stepsize = self._span / (self._steps-1)
-        else:
-            self._steps = math.ceil(self._span / self._stepsize)
+        try:
+            self._span = abs(self._stop - self._start)
+            self._center = self._start + (self._stop-self._start)/2
+            if self._stepPreference=='steps' and self._steps>1:
+                self._stepsize = self._span / (self._steps-1)
+            else:
+                self._steps = math.ceil(self._span / self._stepsize)
+            self._inconsistent = False
+        except MagnitudeError:
+            self._inconsistent = True
           
     @property
     def center(self):
@@ -48,7 +59,11 @@ class ScanSegmentDefinition(object):
     @center.setter  
     def center(self, center):
         self._center = center
-        self.calculateStartStop()
+        try:
+            self.calculateStartStop()
+            self._inconsistent = False
+        except MagnitudeError:
+            self._inconsistent = True
         
     @property
     def span(self):
@@ -57,11 +72,16 @@ class ScanSegmentDefinition(object):
     @span.setter
     def span(self, span):
         self._span = span
-        self.calculateStartStop()
-        if self._stepPreference=='steps' and self._steps>1:
-            self._stepsize = self._span / (self._steps-1)
-        else:
-            self._steps = math.ceil(self._span / self._stepsize)
+        try:
+            self.calculateStartStop()
+            if self._stepPreference=='steps' and self._steps>1:
+                self._stepsize = self._span / (self._steps-1)
+            else:
+                self._steps = math.ceil(self._span / self._stepsize)
+            self._inconsistent = False
+        except MagnitudeError:
+            self._inconsistent = True
+            
         
     def calculateStartStop(self):
         self._start = self._center - self._span/2
@@ -87,4 +107,6 @@ class ScanSegmentDefinition(object):
         self._stepPreference = 'stepsize'
         self._steps = math.ceil(self._span / self._stepsize)
         
-            
+    @property
+    def inconsistent(self):
+        return self._inconsistent
