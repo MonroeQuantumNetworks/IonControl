@@ -215,26 +215,13 @@
         </widget>
        </item>
        <item>
-        <widget class="RedBlackComboBox" name="comboBoxParameter">
-         <property name="maxVisibleItems">
-          <number>100</number>
-         </property>
-        </widget>
-       </item>
-       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+          <widget class="RedBlackComboBox" name="comboBoxParameter">
+           <property name="maxVisibleItems">
+            <number>100</number>
            </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
+          </widget>
          </item>
          <item>
           <widget class="QToolButton" name="addSegmentButton">
@@ -393,8 +380,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>216</width>
-        <height>219</height>
+        <width>374</width>
+        <height>589</height>
        </rect>
       </property>
       <attribute name="label">
@@ -499,8 +486,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>172</width>
-        <height>171</height>
+        <width>374</width>
+        <height>589</height>
        </rect>
       </property>
       <attribute name="label">
@@ -656,7 +643,6 @@
   <tabstop>undoButton</tabstop>
   <tabstop>redoButton</tabstop>
   <tabstop>scanModeComboBox</tabstop>
-  <tabstop>comboBoxParameter</tabstop>
   <tabstop>xExprEdit</tabstop>
   <tabstop>scanTypeCombo</tabstop>
   <tabstop>scanRepeatComboBox</tabstop>
