@@ -82,8 +82,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 return self.headerDataLookup[section]
         return None #QtCore.QVariant()
             
-    def setValue(self, row, value):
-        name = self.variables.keyAt(row)
+    def setValue(self, index, value):
+        name = self.variables.keyAt(index.row())
         old = self.variables[name]
         if not old.isIdenticalTo(value):
             self.variables[name] = value
