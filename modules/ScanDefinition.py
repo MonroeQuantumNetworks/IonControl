@@ -21,6 +21,16 @@ class ScanSegmentDefinition(object):
         self.__dict__ = d
         self.__dict__.setdefault('_inconsistent',False)
         
+    stateFields = ['_start', '_stop', '_center', '_span', '_steps', '_stepsize', '_stepPreference'] 
+        
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     @property
     def start(self):

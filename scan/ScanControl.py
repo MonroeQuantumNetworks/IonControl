@@ -89,7 +89,6 @@ class Scan:
         self.xExpression = ""
         self.loadPP = False
         self.loadPPName = ""
-        self.startCenter = 0    # 0: start, stop;  1:center, span
         # Evaluation
         self.histogramBins = 50
         self.integrateHistogram = False
@@ -120,7 +119,6 @@ class Scan:
         self.__dict__.setdefault('stepSize',1)
         self.__dict__.setdefault('center',0)
         self.__dict__.setdefault('span',0)
-        self.__dict__.setdefault('startCenter',0)        
         self.__dict__.setdefault('gateSequenceSettings',GateSequenceUi.Settings())
         self.__dict__.setdefault('evalList',list())
         self.__dict__.setdefault('scanSegmentList',[ScanSegmentDefinition()])
@@ -138,12 +136,12 @@ class Scan:
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
-    stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 
+    stateFields = ['scanParameter', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'autoSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
                 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSequenceSettings',
-                'center', 'span', 'startCenter', 'evalList']
+                'evalList', 'scanSegmentList' ]
 
-    documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 
+    documentationList = [ 'scanParameter', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
     def documentationString(self):
@@ -214,6 +212,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
         self.tableView.setItemDelegate( self.magnitudeDelegate )
+        self.tableView.resizeRowsToContents()
        
         try:
             self.setSettings( self.settings )

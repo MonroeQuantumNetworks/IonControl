@@ -66,6 +66,7 @@ class ScanSegmentTableModel( QtCore.QAbstractTableModel):
     def setField(self, fieldname, index, value):
         setattr( self.scanSegmentList[index.column()], fieldname, value )
         self.dataChanged.emit( self.createIndex(0,index.column()), self.createIndex(5,index.column()) )
+        self.updateSaveStatus()
         return True
     
     def setScanList(self, scanlist):

@@ -71,7 +71,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             return False
        
     def setData(self,index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda row, value: False )(index.row(), value)
+        return self.setDataLookup.get((role,index.column()), lambda row, value: False )(index, value)
 
     def flags(self, index ):
         return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled

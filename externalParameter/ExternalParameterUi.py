@@ -53,7 +53,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         return None
 
     def setData(self,index, value, role):
-        return { (QtCore.Qt.EditRole,1): functools.partial( self.setValue, index.row(), value ),
+        return { (QtCore.Qt.EditRole,1): functools.partial( self.setValue, index, value ),
                 }.get((role,index.column()), lambda: False )() 
                       
     def flags(self, index ):
@@ -78,14 +78,14 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     def setValue(self, index, value):
         logger = logging.getLogger(__name__)
         logger.debug( "setValue {0}".format( value ) )
-        self.targetValues[index] = value
+        self.targetValues[index.row()] = value
         self.setValueFollowup(index)
         
     def setValueFollowup(self, index):
         logger = logging.getLogger(__name__)
-        logger.debug( "setValueFollowup {0}".format( self.parameterList[index].currentValue() ) )
-        delay = int( self.parameterList[index].settings.delay.toval('ms') )
-        if not self.parameterList[index].setValue( self.targetValues[index] ):
+        logger.debug( "setValueFollowup {0}".format( self.parameterList[index.row()].currentValue() ) )
+        delay = int( self.parameterList[index.row()].settings.delay.toval('ms') )
+        if not self.parameterList[index.row()].setValue( self.targetValues[index.row()] ):
             QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,index) )
 
 
