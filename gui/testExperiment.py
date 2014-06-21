@@ -103,7 +103,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
 #end added
 
     def startScan(self):
-        if self.plottedTrace is not None:
+        if self.plottedTrace is not None and self.traceui.unplotLastTrace():
             self.plottedTrace.plot(0)
         self.plottedTrace = PlottedTrace(Trace(),self.graphicsView,pens.penList)
         self.xvalue = 0

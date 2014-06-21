@@ -454,7 +454,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampsNewRun = True
         self.displayUi.onClear()
         logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
-        if self.plottedTraceList:
+        if self.plottedTraceList and self.traceui.unplotLastTrace():
             for plottedTrace in self.plottedTraceList:
                 plottedTrace.plot(0) #unplot previous trace
         self.plottedTraceList = list() #reset plotted trace

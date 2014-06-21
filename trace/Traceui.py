@@ -29,6 +29,11 @@ class Settings:
         else:
             self.lastDir = lastDir
         self.plotstyle = plotstyle
+        self.unplotLastTrace = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'unplotLastTrace', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
 
@@ -92,6 +97,18 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.plotButton.clicked.connect(self.onPlot)
         self.shredderButton.clicked.connect(self.onShredder)
         self.selectAllButton.clicked.connect(self.traceTreeView.selectAll)
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.unplotSettingsAction = QtGui.QAction( "Unplot last trace", self )
+        self.unplotSettingsAction.setCheckable(True)
+        self.unplotSettingsAction.setChecked( self.settings.unplotLastTrace)
+        self.unplotSettingsAction.triggered.connect( self.onUnplotSetting )
+        self.addAction( self.unplotSettingsAction )
+
+    def onUnplotSetting(self, checked):
+        self.settings.unplotLastTrace = checked
+        
+    def unplotLastTrace(self):
+        return self.settings.unplotLastTrace
 
     def uniqueSelectedIndexes(self, useLastIfNoSelection=True):
         """From the selected elements, return one index from each row.

@@ -54,7 +54,7 @@ class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
             QtCore.QTimer.singleShot(100,self.startBottomHalf)
             self.displayUi.onClear()
             self.status = self.Status.Starting
-            if self.plottedTrace is not None:
+            if self.plottedTrace is not None and self.traceui.unplotLastTrace():
                 self.plottedTrace.plot(0) #unplot previous trace
                 if self.scan.autoSave:
                     self.plottedTrace.trace.resave()
