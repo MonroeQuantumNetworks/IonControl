@@ -81,6 +81,7 @@ class Scan:
         self.filename = ""
         self.autoSave = False
         self.xUnit = ""
+        self.xExpression = ""
         self.loadPP = False
         self.loadPPName = ""
         self.startCenter = 0    # 0: start, stop;  1:center, span
@@ -106,6 +107,7 @@ class Scan:
         """
         self.__dict__ = state
         self.__dict__.setdefault('xUnit', '')
+        self.__dict__.setdefault('xExpression', '')
         self.__dict__.setdefault('scanRepeat', 0)
         self.__dict__.setdefault('loadPP', False)
         self.__dict__.setdefault('loadPPName', "")
@@ -130,12 +132,12 @@ class Scan:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     stateFields = ['scanParameter', 'start', 'stop', 'steps', 'stepSize', 'stepsSelect', 'scantype', 'scanMode', 'scanRepeat', 
-                'filename', 'autoSave', 'xUnit', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
+                'filename', 'autoSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
                 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSequenceSettings',
                 'center', 'span', 'startCenter', 'evalList']
 
     documentationList = [ 'scanParameter', 'start', 'stop', 'steps', 'stepSize', 'scantype', 'scanMode', 'scanRepeat', 
-                'xUnit', 'loadPP', 'loadPPName' ]
+                'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
@@ -219,6 +221,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
         self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
+        self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
         self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
         self.startCenterCombo.currentIndexChanged[int].connect( self.onStartCenterChanged )
         # Evaluation
@@ -257,6 +260,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.stopBox.setEnabled(self.settings.scanMode in [0,1])
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )
+        self.xExprEdit.setText( self.settings.xExpression )
         self.scanRepeatComboBox.setCurrentIndex( self.settings.scanRepeat )
         self.loadPPcheckBox.setChecked( self.settings.loadPP )
         if self.settings.loadPPName: 
@@ -491,6 +495,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanTypeCombo.setEnabled(index in [0,2])
         self.scanRepeatComboBox.setEnabled( index in [0,2] )
         self.xUnitEdit.setEnabled( index==0)
+        self.xExprEdit.setEnabled( index==0)
         self.comboBoxParameter.setEnabled( index==0 )
         self.commitChange()       
         self.updateSaveStatus()

@@ -226,7 +226,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>x-axis unit</string>
+            <string>x-axis </string>
            </property>
           </widget>
          </item>
@@ -322,9 +322,6 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="2" colspan="2">
-          <widget class="QLineEdit" name="xUnitEdit"/>
-         </item>
          <item row="4" column="2" colspan="2">
           <widget class="QComboBox" name="scanTypeCombo">
            <item>
@@ -382,6 +379,20 @@
            </item>
           </widget>
          </item>
+         <item row="3" column="2">
+          <widget class="QLineEdit" name="xExprEdit">
+           <property name="toolTip">
+            <string>expression x is current value</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
+          <widget class="QLineEdit" name="xUnitEdit">
+           <property name="toolTip">
+            <string>unit</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
@@ -404,8 +415,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>216</width>
-        <height>219</height>
+        <width>274</width>
+        <height>452</height>
        </rect>
       </property>
       <attribute name="label">
@@ -510,8 +521,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>172</width>
-        <height>171</height>
+        <width>274</width>
+        <height>452</height>
        </rect>
       </property>
       <attribute name="label">
@@ -672,7 +683,7 @@
   <tabstop>stopBox</tabstop>
   <tabstop>stepsCombo</tabstop>
   <tabstop>stepsBox</tabstop>
-  <tabstop>xUnitEdit</tabstop>
+  <tabstop>xExprEdit</tabstop>
   <tabstop>scanTypeCombo</tabstop>
   <tabstop>scanRepeatComboBox</tabstop>
   <tabstop>filenameEdit</tabstop>
