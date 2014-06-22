@@ -7,22 +7,24 @@ Created on Jun 21, 2014
 from modules import magnitude
 from InstrumentLoggingReader import InstrumentLoggingReader
 from Queue import Queue
-from MKSReader import MKSReader
 from InstrumentReaderBase import InstrumentReaderBase
 import logging
 
 
-class MKSInstrumentReader( InstrumentReaderBase ):
+def wrapSerial(classname, serialclass):
+    return type(classname, (SerialInstrumentReader,), dict({"serialclass": serialclass}) )
+
+class SerialInstrumentReader( InstrumentReaderBase ):
     """test """
-    className = "MKS Vacuum Gauge"
-    def __init__(self, name, settings, instrument):
-        InstrumentReaderBase(self, name, settings)
+    def __init__(self, name, settings, instrument, newDataSlot=None ):
+        InstrumentReaderBase.__init__(self, name, settings)
         port = int(instrument)
-        reader = MKSReader(port=port)
+        reader = self.serialclass(port=port)
         reader.open()
         self.commandQueue = Queue()
         self.reader = InstrumentLoggingReader(reader, self.commandQueue)
-        self.newData = self.reader.newData
+        if newDataSlot is not None:
+            self.reader.newData.connect( newDataSlot )
          
     def close(self):
         self.commandQueue.put(("exiting",True))
@@ -30,7 +32,6 @@ class MKSInstrumentReader( InstrumentReaderBase ):
         
     def update(self,param, changes):
         InstrumentReaderBase.update(self, param, changes)
-        self.commandQueue.put( "readWait", self.settings.readWait )
-        self.commandQueue.put( "readTimeout", self.settings.readTimeout )
+        self.commandQueue.put( "readWait", self.settings.readWait.toval("s") )
+        self.commandQueue.put( "readTimeout", self.settings.readTimeout.toval("s") )
         
- 

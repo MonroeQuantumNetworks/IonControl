@@ -8,8 +8,8 @@ import logging
 from time import sleep
 import Queue
 
-class InstrumentLoggingReader(object, QtCore.QThread):  
-    newdata = QtCore.pyqtSignal( object )    
+class InstrumentLoggingReader(QtCore.QThread):  
+    newData = QtCore.pyqtSignal( object )    
     def __init__(self, reader, commandQueue, parent = None):
         QtCore.QThread.__init__(self, parent)
         self.exiting = False
