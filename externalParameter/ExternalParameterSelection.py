@@ -132,7 +132,8 @@ class SelectionUi(SelectionForm,SelectionBase):
     def disableInstrument(self,name):
         if name in self.enabledParametersObjects:
             logger = logging.getLogger(__name__)
-            self.enabledParametersObjects.pop( name )
+            instance = self.enabledParametersObjects.pop( name )
+            instance.close()
             self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
             self.selectionChanged.emit( self.enabledParametersObjects )
             parameter = self.parameters[name]

@@ -5,10 +5,12 @@ Created on May 16, 2014
 '''
 from time import sleep
 import random
+import logging
 
 class DummyReader:
     def __init__(self, port=0, timeout=1):
-        self.timeout = timeout
+        self.readTimeout = timeout
+        logging.getLogger(__name__).info("Created class dummy")
         
     def open(self):
         pass
@@ -17,8 +19,10 @@ class DummyReader:
         pass
                 
     def value(self):
-        sleep(self.timeout)
-        return random.gauss(1,0.1)
+        sleep(self.readTimeout)
+        value = random.gauss(1,0.1)
+        logging.getLogger(__name__).info("dummy reading value {0}".format(value))
+        return value
     
     
     

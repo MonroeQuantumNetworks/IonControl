@@ -64,7 +64,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.traceui.setupUi(self.traceui)
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments,newDataSlot=self.dataReceived)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
@@ -104,6 +104,8 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
        
+    def dataReceived(self, name, value ):
+        logging.getLogger(__name__).info( "{0}: {1}".format(name,value))
         
     def setupPlots(self):
         self.area = DockArea()
@@ -222,6 +224,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.config['PlotNames'] = self.plotDict.keys()
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
         self.loggerUi.saveConfig()
+        self.ExternalParametersSelectionUi.saveConfig()
 
 if __name__ == "__main__":
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer

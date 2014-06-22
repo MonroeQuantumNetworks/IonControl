@@ -1,7 +1,19 @@
+import logging
 
 from SerialInstrumentReader import wrapSerial
-#from MKSReader import MKSReader
-from DummyReader import DummyReader
+LoggingInstruments = dict()
 
-LoggingInstruments = { #"MKS Vacuum Gauge": wrapSerial( "MKSInstrumentReader", MKSReader),
-                       "Dummy": wrapSerial( "DummyInstrumentReader", DummyReader ) }
+try:
+    from MKSReader import MKSReader
+    LoggingInstruments["MKS Vacuum Gauge"] = wrapSerial( "MKSInstrumentReader", MKSReader)
+except:
+    logging.getLogger(__name__).info("MKS Vacuum gauge reader not available")
+    
+try:
+    from TerranovaReader import TerranovaReader
+    LoggingInstruments["Ion Gauge"] = wrapSerial( "TerranovaInstrumentReader", TerranovaReader)
+except:
+    logging.getLogger(__name__).info("Ion gauge reader not available")
+    
+from DummyReader import DummyReader
+LoggingInstruments["Dummy"] = wrapSerial( "DummyInstrumentReader", DummyReader ) 
