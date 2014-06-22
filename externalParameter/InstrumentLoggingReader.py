@@ -7,6 +7,7 @@ from PyQt4 import QtCore
 import logging
 from time import sleep
 import Queue
+import time
 
 class InstrumentLoggingReader(QtCore.QThread):  
     newData = QtCore.pyqtSignal( object, object )    
@@ -29,10 +30,11 @@ class InstrumentLoggingReader(QtCore.QThread):
                 except Queue.Empty:
                     pass
                 data = self.reader.value()
-                self.newData.emit( self.name, data )
+                self.newData.emit( self.name, (time.time(), data) )
                 sleep( self._readWait )
             except Exception:
                 logging.getLogger(__name__).exception("Exception in QueueReader")
+        self.newData.emit( self.name, None )
         logging.getLogger(__name__).info( "InstrumentLoggingReader thread finished." )
         self.reader.close()
         del self.reader

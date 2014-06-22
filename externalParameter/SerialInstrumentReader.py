@@ -4,11 +4,9 @@ Created on Jun 21, 2014
 @author: pmaunz
 '''
 
-from modules import magnitude
 from InstrumentLoggingReader import InstrumentLoggingReader
 from Queue import Queue
 from InstrumentReaderBase import InstrumentReaderBase
-import logging
 
 
 def wrapSerial(classname, serialclass):

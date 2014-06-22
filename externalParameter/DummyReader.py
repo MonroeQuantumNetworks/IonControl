@@ -21,7 +21,7 @@ class DummyReader:
     def value(self):
         sleep(self.readTimeout)
         value = random.gauss(1,0.1)
-        logging.getLogger(__name__).info("dummy reading value {0}".format(value))
+        logging.getLogger(__name__).debug("dummy reading value {0}".format(value))
         return value
     
     

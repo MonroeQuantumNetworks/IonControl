@@ -19,6 +19,7 @@ from pyqtgraph.dockarea import DockArea, Dock
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from externalParameter.InstrumentLogging import LoggingInstruments 
 from externalParameter import ExternalParameterSelection 
+from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\PicoampMeterUi.ui')
 
@@ -64,7 +65,9 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.traceui.setupUi(self.traceui)
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments,newDataSlot=self.dataReceived)
+        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict)
+
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
@@ -103,10 +106,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
-       
-    def dataReceived(self, name, value ):
-        logging.getLogger(__name__).info( "{0}: {1}".format(name,value))
-        
+                    
     def setupPlots(self):
         self.area = DockArea()
         self.setCentralWidget(self.area)
