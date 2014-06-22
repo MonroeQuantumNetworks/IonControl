@@ -21,7 +21,7 @@ from externalParameter.InstrumentLogging import LoggingInstruments
 from externalParameter import ExternalParameterSelection 
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\PicoampMeterUi.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingUi.ui')
 
 
 class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
@@ -97,7 +97,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.toolBar.addAction(self.renamePlot)
 
-        self.setWindowTitle("Digital Lock ({0})".format(project) )
+        self.setWindowTitle("Instrument Logger ({0})".format(project) )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
@@ -184,7 +184,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
     def onSave(self):
         logger = logging.getLogger(__name__)
         logger.info( "Saving config" )
-        filename, _ = DataDirectory.DataDirectory().sequencefile("digitalLock-configuration.db")
+        filename, _ = DataDirectory.DataDirectory().sequencefile("InstrumentLogger-configuration.db")
         self.saveConfig()
         self.config.saveConfig(filename)
     
@@ -229,7 +229,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
 if __name__ == "__main__":
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes, sys
-    myappid = 'TrappedIons.DigitalLockUi' # arbitrary string
+    myappid = 'TrappedIons.InstrumentLogging' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
     app = QtGui.QApplication(sys.argv)
