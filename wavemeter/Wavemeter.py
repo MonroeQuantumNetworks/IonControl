@@ -53,10 +53,10 @@ class Wavemeter(QtCore.QObject):
         logger = logging.getLogger(__name__)
         self.queryRunning[channel] = False
         if reply.error()==0:
-            reply = reply.readAll()
+            data = reply.readAll()
             logger.debug( str( self.query ) )
-            logger.debug( "reply: '{0}'".format(reply))
-            result = mg( round(float(reply), 4), 'GHz' )
+            logger.debug( "reply: '{0}'".format(data))
+            result = mg( round(float(data), 4), 'GHz' )
             if result.toval('GHz')<0 and self.callbackFailureCount[channel]<self.nMaxAttempts:
                 self.getWavemeterData(channel)
                 self.callbackFailureCount[channel] += 1                
