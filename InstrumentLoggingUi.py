@@ -20,6 +20,7 @@ from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from externalParameter.InstrumentLogging import LoggingInstruments 
 from externalParameter import ExternalParameterSelection 
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
+from fit.FitUi import FitUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingUi.ui')
 
@@ -64,6 +65,11 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict[self.plotDict.keys()[0]]["view"])
         self.traceui.setupUi(self.traceui)
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
+
+        # new fit widget
+        self.fitWidget = FitUi(self.traceui,self.config,"Main")
+        self.fitWidget.setupUi(self.fitWidget)
+        self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea)
 
         self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict)
 

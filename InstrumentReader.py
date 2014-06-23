@@ -21,7 +21,7 @@ from trace import pens
 from pyqtgraph.dockarea import DockArea, Dock
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\PicoampMeterUi.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentReader.ui')
 
 
 class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
@@ -101,7 +101,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.toolBar.addAction(self.renamePlot)
 
-        self.setWindowTitle("Digital Lock ({0})".format(project) )
+        self.setWindowTitle("Instrument Reader ({0})".format(project) )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
@@ -189,7 +189,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
     def onSave(self):
         logger = logging.getLogger(__name__)
         logger.info( "Saving config" )
-        filename, _ = DataDirectory.DataDirectory().sequencefile("digitalLock-configuration.db")
+        filename, _ = DataDirectory.DataDirectory().sequencefile("instrumentreader-configuration.db")
         self.saveConfig()
         self.config.saveConfig(filename)
     
@@ -235,7 +235,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
 if __name__ == "__main__":
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes, sys
-    myappid = 'TrappedIons.DigitalLockUi' # arbitrary string
+    myappid = 'TrappedIons.InstrumentReader' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
     app = QtGui.QApplication(sys.argv)
