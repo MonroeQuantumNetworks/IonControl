@@ -4,7 +4,7 @@ Created on May 16, 2014
 @author: wolverine
 '''
 
-import serial
+import serial   #@UnresolvedImport
 import re
 
 class MKSReader:
@@ -51,6 +51,9 @@ class MKSReader:
         
     def value(self):
         return self.pr3()
+    
+    
+
 
 if __name__=="__main__":
     mks = MKSReader()

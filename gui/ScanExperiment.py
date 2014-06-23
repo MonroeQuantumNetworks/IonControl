@@ -42,6 +42,7 @@ from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 import copy
+from modules.Expression import Expression
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -51,6 +52,7 @@ class ScanException(Exception):
     pass
 
 class ParameterScanGenerator:
+    expression = Expression()
     def __init__(self, scan):
         self.scan = scan
         self.nextIndexToWrite = 0
@@ -78,7 +80,10 @@ class ParameterScanGenerator:
         return self.scan.code[currentWordCount:]
         
     def xValue(self, index):
-        return self.scan.list[index].ounit(self.scan.xUnit).toval()
+        value = self.scan.list[index]
+        if self.scan.xExpression:
+            value = self.expression.evaluate( self.scan.xExpression, {"x": value} )
+        return value.ounit(self.scan.xUnit).toval()
         
     def dataNextCode(self, experiment, num_word_pairs ):
         if self.nextIndexToWrite<len(self.scan.code):
@@ -233,7 +238,7 @@ class GateSequenceScanGenerator:
         if self.gateSequenceAttributes is not None:
             try:
                 expected = ExpectedLoopkup[ self.gateSequenceAttributes[self.scan.index[index]]['expected'] ]
-            except IndexError:
+            except (IndexError, KeyError):
                 expected = None
             return expected
         return None 
@@ -454,7 +459,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampsNewRun = True
         self.displayUi.onClear()
         logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
-        if self.plottedTraceList:
+        if self.plottedTraceList and self.traceui.unplotLastTrace():
             for plottedTrace in self.plottedTraceList:
                 plottedTrace.plot(0) #unplot previous trace
         self.plottedTraceList = list() #reset plotted trace

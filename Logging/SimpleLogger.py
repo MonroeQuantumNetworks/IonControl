@@ -5,8 +5,8 @@ Created on May 16, 2014
 '''
 import datetime
 import time
-from MKSReader import MKSReader
-from TerranovaReader import TerranovaReader
+from externalParameter.MKSReader import MKSReader
+from externalParameter.TerranovaReader import TerranovaReader
 import os
 from modules.RunningStat import RunningStatHistogram
 

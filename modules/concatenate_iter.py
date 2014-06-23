@@ -32,3 +32,6 @@ if __name__ == "__main__":
     
     for i in concatenate_iter(a,b,c,d):
         print i
+        
+    for i in concatenate_iter( *(range(j) for j in [2,3,4]) ):
+        print i

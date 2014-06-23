@@ -64,7 +64,7 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
 
-    def setValue(self, row, value):
+    def setValue(self, index, value):
         pass
 
     def flags(self, index ):
