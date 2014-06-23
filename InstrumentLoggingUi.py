@@ -11,44 +11,42 @@ from gui import ProjectSelectionUi
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
-from externalParameter.PicoampMeter import PicoampMeter
-from externalParameter.PicoampMeterControl import PicoampMeterControl 
-from fit.FitUi import FitUi
 
 from trace import Traceui
 from trace import pens
 
 from pyqtgraph.dockarea import DockArea, Dock
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+from externalParameter.InstrumentLogging import LoggingInstruments 
+from externalParameter import ExternalParameterSelection 
+from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
+from fit.FitUi import FitUi
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentReader.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingUi.ui')
 
 
-class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
+class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     plotConfigurationChanged = QtCore.pyqtSignal( object )
     def __init__(self,config):
         self.config = config
-        super(InstrumentReaderUi, self).__init__()
+        super(InstrumentLoggingUi, self).__init__()
         self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
         self.consoleMaximumLines = config.get('Settings.consoleMaximumLines',0)
         self.dockWidgetList = list()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.plotDict = dict()
-        self.meter = None
         self.instrument = ""
         
     def __enter__(self):
-        self.meter = PicoampMeter()
         return self
     
     def __exit__(self, excepttype, value, traceback):
-        self.meter.close()
         return False
     
     def setupUi(self, parent):
-        super(InstrumentReaderUi,self).setupUi(parent)
+        super(InstrumentLoggingUi,self).setupUi(parent)
         self.dockWidgetConsole.hide()
         self.loggerUi = LoggerLevelsUi(self.config)
         self.loggerUi.setupUi(self.loggerUi)
@@ -66,25 +64,29 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict[self.plotDict.keys()[0]]["view"])
         self.traceui.setupUi(self.traceui)
+        self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
         # new fit widget
         self.fitWidget = FitUi(self.traceui,self.config,"Main")
         self.fitWidget.setupUi(self.fitWidget)
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea)
-        self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.fitWidgetDock)
 
-        # PicoampMeter Control
-        self.meterControl = PicoampMeterControl(self.config, self.traceui, self.plotDict, self.parent, self.meter)
-        self.meterControl.setupUi(self.meterControl)
-        self.setupAsDockWidget(self.meterControl, "Control", QtCore.Qt.RightDockWidgetArea)
+        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict)
+
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData)
+        self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
+        self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
+        self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
+        self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
     
         self.actionSave.triggered.connect(self.onSave)
         #self.actionSettings.triggered.connect(self.onSettings)
         self.actionExit.triggered.connect(self.onClose)
         self.actionProject.triggered.connect( self.onProjectSelection)
         
-        self.actionStart.triggered.connect(self.meterControl.onScan)
-        self.actionStop.triggered.connect(self.meterControl.onStop)
+#         self.actionStart.triggered.connect(self.meterControl.onScan)
+#         self.actionStop.triggered.connect(self.meterControl.onStop)
 
         self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
         self.addPlot.setToolTip("Add new plot")
@@ -101,7 +103,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.toolBar.addAction(self.renamePlot)
 
-        self.setWindowTitle("Instrument Reader ({0})".format(project) )
+        self.setWindowTitle("Instrument Logger ({0})".format(project) )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
@@ -110,8 +112,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
-       
-        
+                    
     def setupPlots(self):
         self.area = DockArea()
         self.setCentralWidget(self.area)
@@ -189,7 +190,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
     def onSave(self):
         logger = logging.getLogger(__name__)
         logger.info( "Saving config" )
-        filename, _ = DataDirectory.DataDirectory().sequencefile("instrumentreader-configuration.db")
+        filename, _ = DataDirectory.DataDirectory().sequencefile("InstrumentLogger-configuration.db")
         self.saveConfig()
         self.config.saveConfig(filename)
     
@@ -229,13 +230,12 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
         self.config['PlotNames'] = self.plotDict.keys()
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
         self.loggerUi.saveConfig()
-        self.meterControl.saveConfig()
-        self.fitWidget.saveConfig()
+        self.ExternalParametersSelectionUi.saveConfig()
 
 if __name__ == "__main__":
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes, sys
-    myappid = 'TrappedIons.InstrumentReader' # arbitrary string
+    myappid = 'TrappedIons.InstrumentLogging' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
     app = QtGui.QApplication(sys.argv)
@@ -248,7 +248,7 @@ if __name__ == "__main__":
         DataDirectory.DefaultProject = project
         
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with InstrumentReaderUi(config) as ui:
+            with InstrumentLoggingUi(config) as ui:
                 ui.setupUi(ui)
                 LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()

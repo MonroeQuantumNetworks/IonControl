@@ -11,6 +11,7 @@ import sip
 
 from modules import Expression
 import modules.magnitude as magnitude
+from modules import MagnitudeUtilit
 
 
 api2 = sip.getapi("QVariant")==2
@@ -70,7 +71,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             return False
        
     def setData(self,index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda row, value: False )(index.row(), value)
+        return self.setDataLookup.get((role,index.column()), lambda row, value: False )(index, value)
 
     def flags(self, index ):
         return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
@@ -81,8 +82,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 return self.headerDataLookup[section]
         return None #QtCore.QVariant()
             
-    def setValue(self, row, value):
-        name = self.variables.keyAt(row)
+    def setValue(self, index, value):
+        name = self.variables.keyAt(index.row())
         old = self.variables[name]
         if not old.isIdenticalTo(value):
             self.variables[name] = value
@@ -134,6 +135,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     
     def update(self, updlist ):
         for key, value in updlist:
+            value = MagnitudeUtilit.mg(value)
             if key in self.variables:
                 old = self.variables[key]
                 if value.dimension()!=old.dimension() or value!=old:

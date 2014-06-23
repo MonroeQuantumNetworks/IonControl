@@ -45,8 +45,8 @@ class FitResultsTableModel(QtCore.QAbstractTableModel):
             self.fitfunction.startParameters[index.row()] = value
         return False
     
-    def setValue(self, row, value):
-        self.fitfunction.startParameters[row] = value
+    def setValue(self, index, value):
+        self.fitfunction.startParameters[index.row()] = value
 
     def flags(self, index ):
         return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
