@@ -3,7 +3,7 @@ Created on May 16, 2014
 
 @author: wolverine
 '''
-import serial
+import serial  #@UnresolvedImport
 import re
 import math
 

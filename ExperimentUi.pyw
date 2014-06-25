@@ -40,6 +40,7 @@ from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
 from functools import partial
+from externalParameter.ExternalParameter import ExternalParameter
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -153,7 +154,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
         self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
         
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=ExternalParameter)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")

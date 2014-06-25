@@ -29,6 +29,11 @@ class Settings:
         else:
             self.lastDir = lastDir
         self.plotstyle = plotstyle
+        self.unplotLastTrace = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'unplotLastTrace', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
 
@@ -79,7 +84,8 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.model = TraceTreeModel([], self.penicons)
         self.tracePersistentIndexes = []
         self.traceTreeView.setModel(self.model)
-        self.traceTreeView.setItemDelegateForColumn(1,TraceComboDelegate(self.penicons)) #This is for selecting which pen to use in the plot
+        self.delegate = TraceComboDelegate(self.penicons)
+        self.traceTreeView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
         self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
@@ -92,6 +98,18 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.plotButton.clicked.connect(self.onPlot)
         self.shredderButton.clicked.connect(self.onShredder)
         self.selectAllButton.clicked.connect(self.traceTreeView.selectAll)
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.unplotSettingsAction = QtGui.QAction( "Unplot last trace", self )
+        self.unplotSettingsAction.setCheckable(True)
+        self.unplotSettingsAction.setChecked( self.settings.unplotLastTrace)
+        self.unplotSettingsAction.triggered.connect( self.onUnplotSetting )
+        self.addAction( self.unplotSettingsAction )
+
+    def onUnplotSetting(self, checked):
+        self.settings.unplotLastTrace = checked
+        
+    def unplotLastTrace(self):
+        return self.settings.unplotLastTrace
 
     def uniqueSelectedIndexes(self, useLastIfNoSelection=True):
         """From the selected elements, return one index from each row.
