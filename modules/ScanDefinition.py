@@ -57,7 +57,7 @@ class ScanSegmentDefinition(object):
             if self._stepPreference=='steps' and self._steps>1:
                 self._stepsize = self._span / (self._steps-1)
             else:
-                self._steps = math.ceil(self._span / self._stepsize) + 1
+                self._steps = math.ceil(self._span / self._stepsize + 1) 
             self._inconsistent = False
         except MagnitudeError:
             self._inconsistent = True
@@ -113,9 +113,13 @@ class ScanSegmentDefinition(object):
     
     @stepsize.setter
     def stepsize(self, stepsize):
-        self._stepsize = stepsize
-        self._stepPreference = 'stepsize'
-        self._steps = math.ceil(self._span / self._stepsize) +1
+        try:
+            self._stepsize = stepsize
+            self._stepPreference = 'stepsize'
+            self._steps = math.ceil(self._span / self._stepsize+1) 
+            self._inconsistent = False
+        except MagnitudeError:
+            self._inconsistent = True
         
     @property
     def inconsistent(self):

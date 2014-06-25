@@ -31,8 +31,8 @@ class ScanSegmentTableModel( QtCore.QAbstractTableModel):
                              (QtCore.Qt.BackgroundColorRole,1): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
                              (QtCore.Qt.BackgroundColorRole,2): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
                              (QtCore.Qt.BackgroundColorRole,3): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.BackgroundColorRole,4): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.BackgroundColorRole,5): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.BackgroundColorRole,4): lambda self, column: (QtGui.QColor(0xff,0xff,0x99) if self.scanSegmentList[column]._stepPreference=='steps' else  QtGui.QColor(QtCore.Qt.white)) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
+                             (QtCore.Qt.BackgroundColorRole,5): lambda self, column: (QtGui.QColor(0xff,0xff,0x99) if self.scanSegmentList[column]._stepPreference=='stepsize' else  QtGui.QColor(QtCore.Qt.white)) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
                              }
 
     def setData(self, index, value, role):
