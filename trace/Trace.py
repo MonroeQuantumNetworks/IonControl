@@ -20,7 +20,7 @@ from modules.XmlUtilit import prettify
 from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
 import time
-from modules.SequenceDict import SequenceDict
+from modules.SequenceDictSignal import SequenceDictSignal as SequenceDict
 
 try:
     from fit import FitFunctions

@@ -6,22 +6,21 @@ Created on Fri Feb 08 22:02:08 2013
 """
 
 from PyQt4 import QtCore
-from modules.SequenceDict import SequenceDict
 
 class TraceDescriptionTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Name', 'Value']
-    def __init__(self, description=None, parent=None, *args): 
+    def __init__(self, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        self.description = description if description is not None else SequenceDict()
+        self.description = None
         self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.description.keyAt(row),
                              (QtCore.Qt.DisplayRole,1): lambda row: str(self.description.at(row)),
                              }
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.description) 
+        return len(self.description) if self.description else 0
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
@@ -62,6 +61,15 @@ class TraceDescriptionTableModel(QtCore.QAbstractTableModel):
     
     def setDescription(self, description):
         self.beginResetModel()
+        if self.description:
+            self.description.dataChanged.disconnect()
         self.description = description
         self.description.sort()
+        self.description.dataChanged.connect( self.onUpdate )
         self.endResetModel()
+        
+    def onUpdate(self):
+        self.beginResetModel()
+        self.endResetModel()
+        
+        
