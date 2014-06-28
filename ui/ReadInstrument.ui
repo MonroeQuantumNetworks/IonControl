@@ -68,7 +68,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
+   <item row="3" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -80,6 +80,16 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="2" column="1" colspan="2">
+    <widget class="QComboBox" name="plotNameComboBox"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Plotname</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
