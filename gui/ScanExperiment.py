@@ -423,7 +423,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName, xAxisUnit = self.scan.xUnit,
                                                     xAxisLabel = self.scan.scanParameter)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
-            thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
+            thisAveragePlottedTrace.trace.description["comment"] = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
             self.averagePlottedTraceList.append( thisAveragePlottedTrace  )                
             self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
@@ -592,7 +592,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.plottedTraceList.append( plottedTrace )
             self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
             self.plottedTraceList[0].trace.name = self.scan.settingsName
-            self.plottedTraceList[0].trace.vars.comment = ""
+            self.plottedTraceList[0].trace.description["comment"] = ""
             self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
@@ -617,7 +617,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.dataAnalysis()
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
-                trace.vars.traceFinalized = datetime.now()
+                trace.description["traceFinalized"] = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
@@ -669,7 +669,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTimestampTrace.x = x
             self.currentTimestampTrace.y = y
             self.currentTimestampTrace.name = self.scan.settingsName
-            self.currentTimestampTrace.vars.comment = ""
+            self.currentTimestampTrace.description["comment"] = ""
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
             self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList)
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              

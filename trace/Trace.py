@@ -20,16 +20,13 @@ from modules.XmlUtilit import prettify
 from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
 import time
-#import logging
+from modules.SequenceDict import SequenceDict
 
 try:
     from fit import FitFunctions
     FitFunctionsAvailable = True
 except:
     FitFunctionsAvailable = False
-
-class Empty:
-    pass
 
 class TraceException(Exception):
     pass
@@ -87,6 +84,9 @@ class TracePlottingList(list):
                 plotting.fitFunction = FitFunctions.fromXmlElement( plottingelement.find("FitFunction") )
             l.append(plotting)
         return l    
+    
+    def __str__(self):
+        return "TracePlotting length {0}".format(len(self))        
 
 varFactory = { 'str': str,
                'datetime': lambda s: datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f'),
@@ -102,9 +102,9 @@ class Trace(object):
     _x -- array of x values
     _y -- array of y values
     name -- name to display in table of traces
-    vars --
-        vars.comment -- comment to add to file
-        vars.traceCreation -- the time the Trace object was created
+    description --
+        description["comment"] -- comment to add to file
+        description["traceCreation"] -- the time the Trace object was created
     header --
     curvePen -- which style pen to use for displaying the trace
     _filename -- filename to save the trace as
@@ -118,9 +118,9 @@ class Trace(object):
         self._x_ = numpy.array([]) #array of x values
         self._y_ = numpy.array([]) #array of y values
         self.name = "noname" #name to display in table of traces
-        self.vars = Empty()
-        self.vars.comment = ""
-        self.vars.traceCreation = datetime.now()
+        self.description = SequenceDict()
+        self.description["comment"] = ""
+        self.description["traceCreation"] = datetime.now()
         self.header = None
         self.headerDict = dict()
         self._filename = None
@@ -128,7 +128,7 @@ class Trace(object):
         self.dataChangedCallback = None # used to update the gui table
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
-        self.vars.tracePlottingList = TracePlottingList()
+        self.description["tracePlottingList"] = TracePlottingList()
         self.record_timestamps = record_timestamps
         if record_timestamps:
             self.addColumn('timestamp')
@@ -137,7 +137,7 @@ class Trace(object):
         name = element.attrib['name']
         mytype = element.attrib['type']
         value = varFactory.get( mytype, str)( element.text )
-        setattr( self.vars, name, value )
+        self.description[name] = value
     
     @property
     def x(self):
@@ -148,7 +148,7 @@ class Trace(object):
     def x(self, val):
         """Set x array"""
         self._x_ = val
-        self.vars.lastDataAquired = datetime.now()
+        self.description["lastDataAquired"]  = datetime.now()
         if self.record_timestamps:
             self.timestamp = numpy.append( self.timestamp, time.time() )
         
@@ -211,13 +211,14 @@ class Trace(object):
     
     def varstr(self,name):
         """return the variable value as a string"""
-        return str(self.vars.__dict__.get(name,""))
+        return str(self.description.get(name,""))
         
     def saveTraceHeader(self,outfile):
         """ save the header of the trace to outfile
         """
-        self.vars.fileCreation = datetime.now()
-        for var, value in sorted(self.vars.__dict__.iteritems()):
+        self.description["fileCreation"] = datetime.now()
+        self.description.sort()
+        for var, value in self.description.iteritems():
             print >>outfile, "# {0}\t{1}".format(var, value)
         if self.header is not None:
             print >>outfile, self.header
@@ -225,7 +226,8 @@ class Trace(object):
     def saveTraceHeaderXml(self,outfile):
         root = ElementTree.Element('DataFileHeader')
         varsElement = ElementTree.SubElement(root, 'Variables', {})
-        for var, value in sorted(self.vars.__dict__.iteritems()):
+        self.description.sort()
+        for var, value in self.description.iteritems():
             if hasattr(value,'toXmlElement'):
                 value.toXmlElement(varsElement)
             else:
@@ -238,9 +240,9 @@ class Trace(object):
 
     def saveTraceBare(self,filename):
         if self.rawdata:
-            self.vars.rawdata = self.rawdata.save()
+            self.description["rawdata"] = self.rawdata.save()
         if hasattr(self,'fitfunction'):
-            self.vars.fitfunction = self.fitfunction
+            self.description['fitfunction'] = self.fitfunction
         if filename!='':
             of = open(filename,'w')
             columnlist = [self._x_]
@@ -252,7 +254,7 @@ class Trace(object):
                 if hasattr(self, column):
                     columnlist.append( getattr(self,column) )
                     columnspec.append( column )
-            self.vars.columnspec = ",".join(columnspec)
+            self.description["columnspec"] = ",".join(columnspec)
             self.saveTraceHeader(of)
             for l in zip(*columnlist):
                 print >>of, "\t".join(map(repr,l))
@@ -264,9 +266,9 @@ class Trace(object):
         if self.record_timestamps and 'timestamp' in self.columnNames:
             self.columnNames.append( self.columnNames.pop(self.columnNames.index('timestamp')))
         if self.rawdata:
-            self.vars.rawdata = self.rawdata.save()
+            self.description["rawdata"] = self.rawdata.save()
         if hasattr(self,'fitfunction'):
-            self.vars.fitfunction = self.fitfunction
+            self.description["fitfunction"] = self.fitfunction
         if filename!='':
             of = open(filename,'w')
             columnlist = [self._x_]
@@ -278,7 +280,7 @@ class Trace(object):
                 if hasattr(self, column):
                     columnlist.append( getattr(self,column) )
                     columnspec.append( column )
-            self.vars.columnspec = columnspec #",".join(columnspec)
+            self.description["columnspec"] = columnspec #",".join(columnspec)
             self.saveTraceHeaderXml(of)
             for l in izip_longest(*columnlist, fillvalue=float('NaN')):
                 print >>of, "\t".join(map(repr,l))
@@ -294,7 +296,7 @@ class Trace(object):
                 self.loadTraceXml(instream)
             else:
                 self.loadTraceText(instream)
-                self.vars.tracePlottingList.append(TracePlotting())
+                self.description["tracePlottingList"].append(TracePlotting())
         self.filename = filename
 
         
@@ -315,7 +317,7 @@ class Trace(object):
                 a = numpy.array(d)
             setattr( self, attr, a )
         tpelement = root.find("./Variables/TracePlottingList")
-        self.vars.tracePlottingList = TracePlottingList.fromXmlElement(tpelement) if tpelement is not None else None
+        self.description["tracePlottingList"] = TracePlottingList.fromXmlElement(tpelement) if tpelement is not None else None
         for element in root.findall("./Variables/Element"):
             self.varFromXmlElement(element)
         for header in root.findall("./Variables/Header"):
@@ -329,7 +331,7 @@ class Trace(object):
         
     def loadTraceText(self, stream):    
         data = []
-        self.vars.columnspec = "x,y"
+        self.description["columnspec"] = "x,y"
         for line in stream:
             line = line.strip()
             if line[0]=='#':
@@ -339,15 +341,15 @@ class Trace(object):
                 else:
                     a = line.split('\t',1)
                 if len(a)>1:
-                    self.vars.__dict__[a[0]] = a[1]  
+                    self.description[a[0]] = a[1]  
             else:
                 data.append( map(float,line.split()) )
-        columnspec =  self.vars.columnspec.split(',')
+        columnspec =  self.description["columnspec"].split(',')
         for attr,d in zip( columnspec, zip(*data) ):
             setattr( self, attr, numpy.array(d) )
-        if hasattr(self.vars,'fitfunction') and FitFunctionsAvailable:
-            self.fitfunction = FitFunctions.fitFunctionFactory(self.vars.fitfunction)
-        self.vars.tracePlottingList = [TracePlotting(xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None, rawColumn=None,name="")]
+        if 'fitfunction' in self.description and FitFunctionsAvailable:
+            self.fitfunction = FitFunctions.fitFunctionFactory(self.description["fitfunction"])
+        self.description["tracePlottingList"] = [TracePlotting(xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None, rawColumn=None,name="")]
             
     def addColumn(self, name):
         """ adds a column with the given name, the column is saved in the file in the order added
@@ -362,11 +364,11 @@ class Trace(object):
         self.plotfunction = callback
         
     def addTracePlotting(self, traceplotting):
-        self.vars.tracePlottingList.append(traceplotting)
+        self.description["tracePlottingList"].append(traceplotting)
         
     @property 
     def tracePlottingList(self):
-        return self.vars.tracePlottingList
+        return self.description["tracePlottingList"]
     
 #     def __del__(self):
 #         print "Deleting Trace"

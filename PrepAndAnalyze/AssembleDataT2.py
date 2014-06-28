@@ -126,14 +126,14 @@ def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accu
             fullfilename =  os.path.join(path,filename)
             t = Trace()
             t.loadTrace(fullfilename)
-            #print t.vars.experiments, t.x, t.raw
+            #print t.description["experiments"], t.x, t.raw
             if len(t.x)==expectedLength:
                 #print filename, " has expected length."
                 headerList.append(filename)
                 totalexperiments += t.raw3[0]
                 RawResultsTable.extend( add_expected_time( zip(t.x, t.raw0, t.raw3, t.timestamp), t, sequence, accumPulseLength ) )
                 t.x, t.raw0 = zip(*sorted(zip(t.x,t.raw0)))
-                #print t.vars.experiments, t.x, t.raw
+                #print t.description["experiments"], t.x, t.raw
                 if resultsTable:
                     resultsTable.append(t.raw0)        
                 else:

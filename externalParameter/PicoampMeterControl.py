@@ -178,7 +178,7 @@ class PicoampMeterControl(Base, Form):
         QtCore.QTimer.singleShot(0, self.initPoint )
     
     def finalizeScan(self):
-        self.trace.vars.traceFinalized = datetime.now()
+        self.trace.description["traceFinalized"] = datetime.now()
         self.trace.resave(saveIfUnsaved=False)
         
     def onMeasure(self):
