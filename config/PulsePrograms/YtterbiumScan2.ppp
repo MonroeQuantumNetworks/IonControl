@@ -83,7 +83,7 @@ def detect():
     update( DetectTime )
     set_inv_shutter( DetectOn )
     clear_counter()
-    
+    update()
 
 # startup switching on cooling quickly
 set_shutter( InitializationShutter )
@@ -110,9 +110,9 @@ while not pipe_empty():
         if QubitWaitTime>0:
             update( QubitWaitTime )
         if QubitAnalyzeTime>0:
-        	qubitAnalyze()
+            qubitAnalyze()
         if DetectTime>0:
             detect()    
-    	currentexperiment += 1
+        currentexperiment += 1
 
 exit( endLabel )

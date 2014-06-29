@@ -263,7 +263,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def documentationString(self):
         messages = [ "PulseProgram {0}".format( self.configParams.lastLoadFilename ) ]
         r = "\n".join(messages)
-        return "\n".join( [r, self.pulseProgram.currentVariablesText()])        
+        return "\n".join( [r, self.pulseProgram.currentVariablesText()])      
+    
+    def description(self):
+        desc = dict()
+        desc["PulseProgram"] =  self.configParams.lastLoadFilename
+        desc.update( self.pulseProgram.variables() )
+        return desc
                
     def onFilenameChange(self, name ):
         name = str(name)

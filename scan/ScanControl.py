@@ -147,6 +147,10 @@ class Scan:
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
         r += self.gateSequenceSettings.documentationString()
         return r
+    
+    def description(self):
+        desc = dict( ((field,getattr(self,field)) for field in self.documentationList) )
+        return desc
 
 
 class ScanControlParameters:
