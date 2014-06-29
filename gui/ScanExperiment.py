@@ -590,8 +590,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.plottedTraceList.append( plottedTrace )
             self.plottedTraceList[0].trace.name = self.scan.settingsName
             self.plottedTraceList[0].trace.description["comment"] = ""
-            self.plottedTraceList[0].trace.description.update( self.pulseProgramUi.description() )
-            self.plottedTraceList[0].trace.description.update( self.scan.description() )
+            self.plottedTraceList[0].trace.description["PulseProgram"] = self.pulseProgramUi.description() 
+            self.plottedTraceList[0].trace.description["Scan"] = self.scan.description()
             self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):

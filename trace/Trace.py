@@ -133,11 +133,17 @@ class Trace(object):
         if record_timestamps:
             self.addColumn('timestamp')
         
-    def varFromXmlElement(self, element):
+    def varFromXmlElement(self, element, description):       
         name = element.attrib['name']
         mytype = element.attrib['type']
-        value = varFactory.get( mytype, str)( element.text )
-        self.description[name] = value
+        if mytype=='dict':
+            mydict = SequenceDict()
+            for subelement in element:
+                self.varFromXmlElement(subelement, mydict)
+            description[name] = mydict
+        else:
+            value = varFactory.get( mytype, str)( element.text )
+            description[name] = value
     
     @property
     def x(self):
@@ -227,16 +233,23 @@ class Trace(object):
         root = ElementTree.Element('DataFileHeader')
         varsElement = ElementTree.SubElement(root, 'Variables', {})
         self.description.sort()
-        for var, value in self.description.iteritems():
-            if hasattr(value,'toXmlElement'):
-                value.toXmlElement(varsElement)
-            else:
-                e = ElementTree.SubElement(varsElement, 'Element', {'name': var, 'type': type(value).__name__})
-                e.text = str(value)
+        for name, value in self.description.iteritems():
+            self.saveDescriptionElement(name, value, varsElement)
         if self.header:
             e = ElementTree.SubElement(varsElement, 'Header', {})
             e.text = self.header        
         outfile.write(prettify(root,'# '))
+        
+    def saveDescriptionElement(self, name, value, element):
+        if hasattr(value,'toXmlElement'):
+            value.toXmlElement(element)
+        elif isinstance(value, dict):
+            subElement = ElementTree.SubElement(element, 'Element', {'name': name, 'type': 'dict'})
+            for subname, subvalue in value.iteritems():
+                self.saveDescriptionElement(subname, subvalue, subElement)           
+        else:
+            e = ElementTree.SubElement(element, 'Element', {'name': name, 'type': type(value).__name__})
+            e.text = str(value)
 
     def saveTraceBare(self,filename):
         if self.rawdata:
@@ -319,7 +332,7 @@ class Trace(object):
         tpelement = root.find("./Variables/TracePlottingList")
         self.description["tracePlottingList"] = TracePlottingList.fromXmlElement(tpelement) if tpelement is not None else None
         for element in root.findall("./Variables/Element"):
-            self.varFromXmlElement(element)
+            self.varFromXmlElement(element, self.description)
         for header in root.findall("./Variables/Header"):
             for line in header.text.splitlines():
                 try:
