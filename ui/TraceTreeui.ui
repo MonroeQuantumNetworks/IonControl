@@ -336,7 +336,7 @@
       <enum>Qt::Vertical</enum>
      </property>
      <widget class="QTreeView" name="traceTreeView"/>
-     <widget class="QTableView" name="descriptionTableView"/>
+     <widget class="QTreeView" name="descriptionTreeView"/>
     </widget>
    </item>
   </layout>
