@@ -224,7 +224,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
        
         try:
             self.setSettings( self.settings )
-        except AttributeError:
+        except AttributeError as e:
             logger.error( "Ignoring exception" )
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
@@ -295,8 +295,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanRepeatComboBox.setCurrentIndex( self.settings.scanRepeat )
         self.loadPPcheckBox.setChecked( self.settings.loadPP )
         if self.settings.loadPPName: 
-            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-            self.onLoadPP(self.settings.loadPPName)
+            index = self.loadPPComboBox.findText(self.settings.loadPPName)
+            if index>=0:
+                self.loadPPComboBox.setCurrentIndex( index )
+                self.onLoadPP(self.settings.loadPPName)
         # Evaluation
         self.histogramBinsBox.setValue(self.settings.histogramBins)
         self.integrateHistogramCheckBox.setChecked( self.settings.integrateHistogram )
