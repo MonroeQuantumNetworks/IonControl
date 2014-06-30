@@ -157,14 +157,14 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
             return None
         col = traceIndex.column()
         return { (QtCore.Qt.DisplayRole,2): ", ".join([str(trace.trace.name), str(trace.name)]),
-                 (QtCore.Qt.DisplayRole,3): trace.trace.vars.comment,
+                 (QtCore.Qt.DisplayRole,3): trace.trace.description["comment"],
                  (QtCore.Qt.DisplayRole,4): getattr( trace.trace, 'fileleaf', None ),
                  (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if trace.curvePen > 0 else QtCore.Qt.Unchecked,
                  (QtCore.Qt.DecorationRole,1): QtGui.QIcon(self.penicons[trace.curvePen]) if hasattr(trace, 'curve') and trace.curve is not None else None,
                  (QtCore.Qt.BackgroundColorRole,1): QtGui.QColor(QtCore.Qt.white) if not (hasattr(trace, 'curve') and trace.curve is not None) else None,
                  (QtCore.Qt.EditRole,1): trace.curvePen,
-                 (QtCore.Qt.EditRole,2): trace.trace.vars.comment,
-                 (QtCore.Qt.EditRole,3): trace.trace.vars.comment
+                 (QtCore.Qt.EditRole,2): trace.trace.description["comment"],
+                 (QtCore.Qt.EditRole,3): trace.trace.description["comment"]
                  }.get((role,col))
 
     def flags(self, index):
@@ -213,8 +213,8 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         elif (role == QtCore.Qt.EditRole) and (col == 3):
             #If the comment changes, change it and resave the file.
             comment = value if api2 else str(value.toString())
-            if not comment == trace.trace.vars.comment:
-                trace.trace.vars.comment = comment
+            if not comment == trace.trace.description["comment"]:
+                trace.trace.description["comment"] = comment
                 trace.trace.resave()
             return True
         

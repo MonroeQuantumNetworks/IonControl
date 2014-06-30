@@ -38,12 +38,12 @@ for date, filenolist in goodGateSequences:
         fullfilename =  os.path.join(path,filename)
         t = Trace()
         t.loadTrace(fullfilename)
-        #print t.vars.experiments, t.x, t.raw
+        #print t.description["experiments"], t.x, t.raw
         if len(t.x)==expectedLength:
             #print filename, " has expected length."
             headerList.append(filename)
             t.x, t.raw = zip(*sorted(zip(t.x,t.raw)))
-            #print t.vars.experiments, t.x, t.raw
+            #print t.description["experiments"], t.x, t.raw
             if resultsTable:
                 resultsTable.append(t.raw)        
             else:
@@ -66,12 +66,12 @@ for date, filenolist in goodTestGateSequences:
         fullfilename =  os.path.join(path,filename)
         t = Trace()
         t.loadTrace(fullfilename)
-        #print t.vars.experiments, t.x, t.raw
+        #print t.description["experiments"], t.x, t.raw
         if len(t.x)==expectedLength:
             #print filename, " has expected length."
             headerList.append(filename)
             t.x, t.raw = zip(*sorted(zip(t.x,t.raw)))
-            #print t.vars.experiments, t.x, t.raw
+            #print t.description["experiments"], t.x, t.raw
             if resultsTable:
                 resultsTable.append(t.raw)        
             else:

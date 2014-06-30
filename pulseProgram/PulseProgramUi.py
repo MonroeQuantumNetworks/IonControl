@@ -83,10 +83,12 @@ class ConfiguredParams:
     def __init__(self):
         self.recentFiles = dict()
         self.lastContextName = None
+        self.autoSaveContext = False
         
     def __setstate__(self,d):
         self.recentFiles = d['recentFiles']
         self.lastContextName = d.get('lastContextName', None )
+        self.autoSaveContext = d.get('autoSaveContext', False)
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
@@ -165,11 +167,23 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                     w.setCurrentIndex(index)
         except:
             logging.getLogger(__name__).exception("Loading of previous context failed")
-        self.contextComboBox.editTextChanged.connect( self.updateSaveStatus ) 
+        #self.contextComboBox.editTextChanged.connect( self.updateSaveStatus )
+        self.contextComboBox.lineEdit().editingFinished.connect( self.updateSaveStatus ) 
         self.variableTableModel.contentsChanged.connect( self.updateSaveStatus )
         self.counterTableModel.contentsChanged.connect( self.updateSaveStatus )
         self.shutterTableModel.contentsChanged.connect( self.updateSaveStatus )
         self.triggerTableModel.contentsChanged.connect( self.updateSaveStatus )
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.autoSaveAction = QtGui.QAction("Automatically save configuration", self)
+        self.autoSaveAction.setCheckable(True)
+        self.autoSaveAction.setChecked( self.configParams.autoSaveContext )
+        self.autoSaveAction.triggered.connect( self.onAutoSave )
+        self.addAction( self.autoSaveAction )
+
+    def onAutoSave(self, checked):
+        self.configParams.autoSaveContext = checked
+        if checked:
+            self.onSaveContext()
 
     def loadContext(self, newContext ):
         previousContext = self.currentContext
@@ -249,7 +263,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def documentationString(self):
         messages = [ "PulseProgram {0}".format( self.configParams.lastLoadFilename ) ]
         r = "\n".join(messages)
-        return "\n".join( [r, self.pulseProgram.currentVariablesText()])        
+        return "\n".join( [r, self.pulseProgram.currentVariablesText()])      
+    
+    def description(self):
+        desc = dict()
+        desc["PulseProgram"] =  self.configParams.lastLoadFilename
+        desc.update( self.pulseProgram.variables() )
+        return desc
                
     def onFilenameChange(self, name ):
         name = str(name)
@@ -442,6 +462,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 self.contextSaveStatus = self.contextDict[currentText]==self.currentContext
             else:
                 self.contextSaveStatus = False
+            if self.configParams.autoSaveContext and not self.contextSaveStatus:
+                self.onSaveContext()
+                self.contextSaveStatus = True
             self.saveContextButton.setEnabled( not self.contextSaveStatus )
         except Exception:
             pass

@@ -17,58 +17,26 @@ from trace import pens
 import time
 from modules import MagnitudeUtilit
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\PicoampMeterControl.ui')
+Form, Base = PyQt4.uic.loadUiType(r'ui\ReadInstrument.ui')
 
-class MeterState:
+class ReadInstrumentState:
     def __init__(self):
-        self.zeroCheck = True
-        self.voltageEnabled = False
-        self.voltageRange = 0
-        self.currentLimit = 0
-        self.voltage = 0
-        self.autoRange = False
-        self.instrument = ""
-        self.start = mg(0,"V")
-        self.stop = mg(10,"V")
-        self.steps = mg(10)
-        self.scanType = 0
-        self.filename = "IV.txt"
-        self.timeDelta = mg(1,"s")
+        self.filename =""
+        self.autoSave = False
+        self.plotName = None
 
-    def __setstate__(self, state):
-        """this function ensures that the given fields are present in the class object
-        after unpickling. Only new class attributes need to be added here.
-        """
-        self.__dict__ = state
-        self.__dict__.setdefault('scanType', 0)
-        self.__dict__.setdefault('filename', 'IV.txt')
-        self.__dict__.setdefault('timeDelta', mg(1,"s"))
 
-class PicoampMeterControl(Base, Form):
+class ReadInstrumentControl(Base, Form):
     def __init__(self,config, traceui, plotdict, parent, meter):
         self.config = config
         self.traceui = traceui
         self.plotDict = plotdict
         self.parent = parent
-        self.meter = meter
-        super(PicoampMeterControl, self).__init__()
-        self.meterState = self.config.get("PicoampMeterState", MeterState() )
-        self.trace = None
-        self.stopRequested = False
-        self.scanMode = "V"
-        self.loggingActive = False
-        self.startTime = datetime.now()
-            
-    def writeAll(self):
-        self.onVoltage(self.meterState.voltage)
-        self.onEnableOutput( self.meterState.voltageEnabled )
-        self.onCurrentLimit( self.meterState.currentLimit )
-        self.onVoltageRange( self.meterState.voltageRange )
-        self.onZeroCheck(self.meterState.zeroCheck )
-        self.onAutoRange( self.meterState.autoRange)
-            
+        super(ReadInstrumentControl, self).__init__()
+        self.state = self.config.get("PicoampMeterState", ReadInstrumentState() )
+                      
     def setupUi(self, parent):
-        super(PicoampMeterControl,self).setupUi(parent)
+        super(ReadInstrumentControl,self).setupUi(parent)
         self.instrumentEdit.setText( self.meterState.instrument )
         self.instrumentEdit.returnPressed.connect( self.openInstrument )
 #         if self.meterState.instrument:

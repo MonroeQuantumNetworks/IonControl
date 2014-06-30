@@ -19,20 +19,20 @@ class N9010A(ReadGeneric.ReadGeneric):
         
     def readTrace(self):
         self.t = Trace.Trace()
-        self.t.vars.Instrument = self.GPIB.ask("*IDN?")
-        self.t.vars.Center = float(self.GPIB.ask(":FREQuency:CENTer?"))
-        self.t.vars.Start = float(self.GPIB.ask(":FREQuency:STARt?") )
-        self.t.vars.Stop = float(self.GPIB.ask(":FREQuency:STOP?"))
-        self.t.vars.Attenuation = self.GPIB.ask(":POWer:ATTenuation?")
-        self.t.vars.PreAmp = self.GPIB.ask(":POWer:GAIN:STATe?")
-        #self.t.vars.IntegrationBandwidth = self.GPIB.ask("BANDwidth:INTegration?")
-        self.t.vars.ResolutionBandwidth = float(self.GPIB.ask(":BANDwidth:RESolution?"))
-        self.t.vars.VideoBandwidth = float(self.GPIB.ask(":BANDwidth:VIDeo?"))
-        #self.t.vars.ReferenceLevel = self.GPIB.ask(":DISPlay:WINDow:TRACe:Y:NRLevel?")
+        self.t.description["Instrument"] = self.GPIB.ask("*IDN?")
+        self.t.description["Center"] = float(self.GPIB.ask(":FREQuency:CENTer?"))
+        self.t.description["Start"] = float(self.GPIB.ask(":FREQuency:STARt?") )
+        self.t.description["Stop"] = float(self.GPIB.ask(":FREQuency:STOP?"))
+        self.t.description["Attenuation"] = self.GPIB.ask(":POWer:ATTenuation?")
+        self.t.description["PreAmp"] = self.GPIB.ask(":POWer:GAIN:STATe?")
+        #self.t.description["IntegrationBandwidth"] = self.GPIB.ask("BANDwidth:INTegration?")
+        self.t.description["ResolutionBandwidth"] = float(self.GPIB.ask(":BANDwidth:RESolution?"))
+        self.t.description["VideoBandwidth"] = float(self.GPIB.ask(":BANDwidth:VIDeo?"))
+        #self.t.description["ReferenceLevel"] = self.GPIB.ask(":DISPlay:WINDow:TRACe:Y:NRLevel?")
         self.t.rawTrace = numpy.array(self.GPIB.ask(":TRACe:DATA? TRACe1").split(","),dtype=float)
         self.t.Trace = self.t.rawTrace
-        self.t.vars.Step = (self.t.vars.Stop-self.t.vars.Start)/(self.t.Trace.size-1)
-        self.t.x = numpy.arange(self.t.vars.Start,self.t.vars.Stop+0.5*self.t.vars.Step,self.t.vars.Step)
+        self.t.description["Step"] = (self.t.description["Stop"]-self.t.description["Start"])/(self.t.Trace.size-1)
+        self.t.x = numpy.arange(self.t.description["Start"],self.t.description["Stop"]+0.5*self.t.description["Step"],self.t.description["Step"])
         self.t.y = self.t.Trace
         return self.t
         
@@ -40,7 +40,7 @@ class N9010A(ReadGeneric.ReadGeneric):
 if __name__== "__main__":
     Inst = N9010A("USB0::0x0957::0xFFEF::SG05300073")
     t = Inst.readTrace()
-    print t.vars.__dict__
+    print t.description
     print t.Trace
     print t.Trace.size
     print t.TraceX.size

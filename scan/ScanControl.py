@@ -17,7 +17,6 @@ import ScanList
 from gateSequence import GateSequenceUi
 from modules import MagnitudeUtilit
 from modules.HashableDict import HashableDict
-from modules.MagnitudeUtilit import valueAs #, ensureCorrectUnit
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
@@ -148,7 +147,15 @@ class Scan:
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
         r += self.gateSequenceSettings.documentationString()
         return r
+    
+    def description(self):
+        desc = dict( ((field,getattr(self,field)) for field in self.documentationList) )
+        return desc
 
+
+class ScanControlParameters:
+    def __init__(self):
+        self.autoSave = False
 
 class ScanControl(ScanControlForm, ScanControlBase ):
     ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSequenceScan')
@@ -182,6 +189,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.plotnames = plotnames
         self.analysisNames = analysisNames
         self.pulseProgramUi = None
+        self.parameters = self.config.get( self.configname+'.parameters', ScanControlParameters() )
         
     def setupUi(self, parent):
         logger = logging.getLogger(__name__)
@@ -222,7 +230,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
-        self.comboBox.editTextChanged.connect( lambda x: self.updateSaveStatus() ) 
+        #self.comboBox.editTextChanged.connect( lambda x: self.updateSaveStatus() )
+        self.comboBox.lineEdit().editingFinished.connect( self.updateSaveStatus ) 
         # update connections
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
@@ -245,7 +254,18 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
         self.channelSpinBox.valueChanged.connect( functools.partial(self.onBareValueChanged, 'timestampsChannel') )
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
-        self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )        
+        self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.autoSaveAction = QtGui.QAction( "auto save" , self)
+        self.autoSaveAction.setCheckable(True)
+        self.autoSaveAction.setChecked(self.parameters.autoSave )
+        self.autoSaveAction.triggered.connect( self.onAutoSave )
+        self.addAction( self.autoSaveAction )
+        
+    def onAutoSave(self, checked):
+        self.parameters.autoSave = checked
+        if self.parameters.autoSave:
+            self.onSave()     
         
     def onAddScanSegment(self):
         self.settings.scanSegmentList.append( ScanSegmentDefinition() )
@@ -341,6 +361,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 self.saveStatus = self.settingsDict[self.settingsName]==self.settings and currentText==self.settingsName
             else:
                 self.saveStatus = False
+            if self.parameters.autoSave and not self.saveStatus:
+                self.onSave()
+                self.saveStatus = True
             self.saveButton.setEnabled( not self.saveStatus )
         except MagnitudeError:
             pass
@@ -497,6 +520,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.config[self.configname] = self.settings
         self.config[self.configname+'.dict'] = self.settingsDict
         self.config[self.configname+'.settingsName'] = self.settingsName
+        self.config[self.configname+'.parameters'] = self.parameters
     # History stuff
     
     def onRedo(self):
