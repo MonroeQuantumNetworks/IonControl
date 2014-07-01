@@ -364,7 +364,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             else:
                 self.saveStatus = False
             if self.parameters.autoSave and not self.saveStatus:
-                self.onSave()
+                self.onSave( updateSaveStatus=False )
                 self.saveStatus = True
             self.saveButton.setEnabled( not self.saveStatus )
         except MagnitudeError:
@@ -541,7 +541,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settingsHistoryPointer -= 1
             self.setSettings( self.settingsHistory[self.settingsHistoryPointer] )
     
-    def onSave(self):
+    def onSave(self, updateSaveStatus=True):
         self.settingsName = str(self.comboBox.currentText())
         if self.settingsName != '':
             if self.settingsName not in self.settingsDict:
@@ -549,7 +549,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.scanConfigurationListChanged.emit( self.settingsDict )
-        self.updateSaveStatus()
+        if updateSaveStatus:
+            self.updateSaveStatus()
 
     def onRemove(self):
         name = str(self.comboBox.currentText())

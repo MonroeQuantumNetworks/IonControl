@@ -173,7 +173,7 @@ class RangeEvaluation(EvaluationBase):
         else:
             descriminated = [ 1 if self.settings['min'] <= count <= self.settings['max'] else 0 for count in countarray ]
         x = numpy.sum( descriminated )
-        p = x/N
+        p = float(x)/N
         # Wilson score interval with continuity correction
         # see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
         # caution: not applicable to this situation, needs to be fixed
