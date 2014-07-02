@@ -90,6 +90,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
     def setVarEnabled(self,index,value):
         self.variabledict.setEnabledIndex(index.row(), value == QtCore.Qt.Checked)
         self.contentsChanged.emit()
+        self.recalculateDependent(self.variabledict.keyAt(index.row()))
         return True      
 
     def setData(self,index, value, role):

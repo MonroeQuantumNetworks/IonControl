@@ -23,7 +23,10 @@ class VariableDictionaryView(object):
         if it is in the global dictionary return that value,
         otherwise raise KeyError"""
         if key in self.variableDictionary:
-            return self.variableDictionary[key].value
+            if self.variableDictionary[key].enabled:
+                return self.variableDictionary[key].value
+            else:
+                return self.variableDictionary[key].value * 0  # get zero with the right unit
         if key in self.variableDictionary.globaldict:
             return self.variableDictionary.globaldict.get(key)
         raise KeyError()
