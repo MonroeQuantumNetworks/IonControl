@@ -30,7 +30,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole,2):    lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
                              (QtCore.Qt.BackgroundColorRole,2): lambda var: QtGui.QColor( 255, 200, 200)  if hasattr(var,'strerror') and var.strerror else QtCore.Qt.white,
                              (QtCore.Qt.ToolTipRole,2):    lambda var: var.strerror if hasattr(var,'strerror') and var.strerror else None,
-                             (QtCore.Qt.DisplayRole,3):    lambda var: str(var.value),
+                             (QtCore.Qt.DisplayRole,3):    lambda var: str(var.outValue()),
                              (QtCore.Qt.EditRole,2):       lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
                              }
         self.setDataLookup ={    (QtCore.Qt.CheckStateRole,0): self.setVarEnabled,
@@ -90,6 +90,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
     def setVarEnabled(self,index,value):
         self.variabledict.setEnabledIndex(index.row(), value == QtCore.Qt.Checked)
         self.contentsChanged.emit()
+        self.dataChanged.emit( self.createIndex(index.row(),0), self.createIndex(index.row(),4) )
         self.recalculateDependent(self.variabledict.keyAt(index.row()))
         return True      
 
