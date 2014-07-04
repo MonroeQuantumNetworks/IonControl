@@ -689,7 +689,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 else:
                     self.histogramList.append( (y,x,evaluation.name) )
                 index += 1
-        del self.histogramList[index+1:]   # remove elements that are not needed any more
+        numberTraces = index
+        del self.histogramList[numberTraces:]   # remove elements that are not needed any more
         if not self.histogramTrace:
             self.histogramTrace = Trace()            
         for index, histogram in enumerate(self.histogramList):
@@ -699,7 +700,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.histogramCurveList[index].replot()
             else:
                 yColumnName = 'y{0}'.format(index) 
-                self.histogramTrace.addColumn( yColumnName )
+                self.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
                                                      yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else "") )
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
@@ -708,9 +709,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 plottedHistogramTrace.trace.name = self.scan.settingsName
                 self.histogramCurveList.append(plottedHistogramTrace)
                 plottedHistogramTrace.plot()
-        for i in range(index+1,len(self.histogramCurveList)):
-            self.histogramCurveList[i].removePlot()
-        del self.histogramCurveList[index+1:]
+        for i in range(numberTraces,len(self.histogramCurveList)):
+            self.histogramCurveList[i].removePlots()
+        del self.histogramCurveList[numberTraces:]
 
     def onCopyHistogram(self):
         for plottedtrace in self.histogramCurveList:

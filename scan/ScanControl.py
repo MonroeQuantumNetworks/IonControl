@@ -66,7 +66,7 @@ class EvaluationDefinition:
  
 
 class Scan:
-    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan')
+    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan','CenterOut')
     ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized')
     ScanRepeat = enum('SingleScan','RepeatedScan')
     def __init__(self):
@@ -224,7 +224,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
        
         try:
             self.setSettings( self.settings )
-        except AttributeError:
+        except AttributeError as e:
             logger.error( "Ignoring exception" )
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
@@ -295,8 +295,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanRepeatComboBox.setCurrentIndex( self.settings.scanRepeat )
         self.loadPPcheckBox.setChecked( self.settings.loadPP )
         if self.settings.loadPPName: 
-            self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-            self.onLoadPP(self.settings.loadPPName)
+            index = self.loadPPComboBox.findText(self.settings.loadPPName)
+            if index>=0:
+                self.loadPPComboBox.setCurrentIndex( index )
+                self.onLoadPP(self.settings.loadPPName)
         # Evaluation
         self.histogramBinsBox.setValue(self.settings.histogramBins)
         self.integrateHistogramCheckBox.setChecked( self.settings.integrateHistogram )
@@ -362,7 +364,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             else:
                 self.saveStatus = False
             if self.parameters.autoSave and not self.saveStatus:
-                self.onSave()
+                self.onSave( updateSaveStatus=False )
                 self.saveStatus = True
             self.saveButton.setEnabled( not self.saveStatus )
         except MagnitudeError:
@@ -539,7 +541,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settingsHistoryPointer -= 1
             self.setSettings( self.settingsHistory[self.settingsHistoryPointer] )
     
-    def onSave(self):
+    def onSave(self, updateSaveStatus=True):
         self.settingsName = str(self.comboBox.currentText())
         if self.settingsName != '':
             if self.settingsName not in self.settingsDict:
@@ -547,7 +549,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.scanConfigurationListChanged.emit( self.settingsDict )
-        self.updateSaveStatus()
+        if updateSaveStatus:
+            self.updateSaveStatus()
 
     def onRemove(self):
         name = str(self.comboBox.currentText())

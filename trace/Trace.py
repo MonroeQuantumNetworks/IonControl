@@ -364,13 +364,15 @@ class Trace(object):
             self.fitfunction = FitFunctions.fitFunctionFactory(self.description["fitfunction"])
         self.description["tracePlottingList"] = [TracePlotting(xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None, rawColumn=None,name="")]
             
-    def addColumn(self, name):
+    def addColumn(self, name, ignoreExisting=False):
         """ adds a column with the given name, the column is saved in the file in the order added
         """
         if hasattr( self, name):
-            raise TraceException("cannot add column '{0}' trace already has attribute with this name.".format(name))
-        self.columnNames.append(name)
-        setattr( self, name, numpy.array([]))
+            if not ignoreExisting:
+                raise TraceException("cannot add column '{0}' trace already has attribute with this name.".format(name))
+        else:
+            self.columnNames.append(name)
+            setattr( self, name, numpy.array([]))
             
     
     def setPlotfunction(self, callback):

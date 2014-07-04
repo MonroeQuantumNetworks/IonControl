@@ -299,6 +299,11 @@
                <string>Randomized</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>Center Out</string>
+              </property>
+             </item>
             </widget>
            </item>
            <item row="4" column="2" colspan="2">
@@ -380,8 +385,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>374</width>
-        <height>589</height>
+        <width>216</width>
+        <height>219</height>
        </rect>
       </property>
       <attribute name="label">
@@ -486,8 +491,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>374</width>
-        <height>589</height>
+        <width>172</width>
+        <height>171</height>
        </rect>
       </property>
       <attribute name="label">

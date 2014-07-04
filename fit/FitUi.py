@@ -81,7 +81,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.copyButton.clicked.connect( self.onCopy )
         self.removeAnalysisButton.clicked.connect( self.onRemoveAnalysis )
         self.saveButton.clicked.connect( self.onSaveAnalysis )
-        self.fitSelectionComboBox.addItems( fitFunctionMap.keys() )
+        self.fitSelectionComboBox.addItems( sorted(fitFunctionMap.keys()) )
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)

@@ -256,6 +256,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def updateDisplayContext(self):
         self.variableTableModel.setVariables( self.currentContext.parameters )
+        self.variableView.resizeColumnsToContents()
         self.shutterTableModel.setShutterdict( self.currentContext.shutters )
         self.triggerTableModel.setTriggerdict(self.currentContext.triggers)
         self.counterTableModel.setCounterdict(self.currentContext.counters)
