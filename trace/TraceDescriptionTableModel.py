@@ -7,7 +7,7 @@ Created on Fri Feb 08 22:02:08 2013
 
 from PyQt4 import QtCore
 
-class TraceDescriptionTreeModel(QtCore.QAbstractItemModel):
+class TraceDescriptionTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Name', 'Value']
     def __init__(self, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
@@ -19,51 +19,12 @@ class TraceDescriptionTreeModel(QtCore.QAbstractItemModel):
                              (QtCore.Qt.DisplayRole,1): lambda row: str(self.description.at(row)),
                              }
 
-    def rowCount(self, index=QtCore.QModelIndex()): 
-        parentItem = self.item(index)
-        return parentItem.childCount()
+    def rowCount(self, parent=QtCore.QModelIndex()): 
+        return len(self.description) if self.description else 0
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
  
-    def item(self, index):
-        if isinstance(index, QtCore.QPersistentModelIndex ):
-            index = QtCore.QModelIndex(index)
-        if index and index.isValid():
-            return index.internalPointer()
-        return self.rootNode      
-        
-    def parent(self, index):
-        if not index.isValid():
-            return QtCore.QModelIndex();
-
-        childItem = self.item(index)
-        parentItem = childItem.parent() 
-        if parentItem == self.rootNode:
-            return QtCore.QModelIndex()
-        return self.createIndex(parentItem.childNumber(), 0, parentItem )
-        
-    def index(self, row, column, parent):
-        if parent.isValid() and parent.column()!=0:
-            return QtCore.QModelIndex()
-        
-        parentItem = self.item(parent)
-        childItem = parentItem[row]
-        
-        if childItem:
-            return self.createIndex(row, column, childItem)
-        else:
-            return QtCore.QModelIndex()
-        
-    def next(self, index, recurse=True):
-        entry = self.item(index)
-        if recurse and entry.childCount()>0:
-            return self.createIndex(0, 0, index)
-        _next = index.sibling( index.row()+1, 0 )
-        if not _next.isValid() and index.parent().isValid():
-            return self.next( index.parent(), recurse=False)
-        return _next
-            
     def data(self, index, role): 
         if index.isValid():
             return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())

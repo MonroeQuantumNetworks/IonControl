@@ -105,8 +105,9 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.unplotSettingsAction.triggered.connect( self.onUnplotSetting )
         self.addAction( self.unplotSettingsAction )
         self.descriptionModel = TraceDescriptionTableModel() 
-        self.descriptionTreeView.setModel( self.descriptionModel )
+        self.descriptionTableView.setModel( self.descriptionModel )
         self.traceTreeView.clicked.connect( self.onActiveTraceChanged )
+        self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
 
     def onActiveTraceChanged(self, modelIndex ):
         trace = self.model.getTrace(modelIndex)
