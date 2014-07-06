@@ -51,6 +51,7 @@
    <addaction name="actionContinue"/>
    <addaction name="actionSave"/>
    <addaction name="actionClear"/>
+   <addaction name="actionPrint"/>
    <addaction name="separator"/>
    <addaction name="actionDedicatedCounters"/>
    <addaction name="actionPulses"/>
@@ -78,6 +79,7 @@
     <addaction name="actionExit"/>
     <addaction name="actionClear"/>
     <addaction name="actionSave"/>
+    <addaction name="actionPrint"/>
     <addaction name="separator"/>
     <addaction name="actionProject"/>
    </widget>
@@ -388,6 +390,18 @@
    </property>
    <property name="text">
     <string>Logic</string>
+   </property>
+  </action>
+  <action name="actionPrint">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/print_printer.png</normaloff>:/kde/icons/print_printer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Print</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

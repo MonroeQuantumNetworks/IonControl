@@ -26,6 +26,7 @@ import PyQt4.uic
 import numpy
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
+import pyqtgraph
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
@@ -817,3 +818,34 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def state(self):
         return self.progressUi.state
         
+    def onPrint(self, printer, pdfPrinter):
+        logger = logging.getLogger(__name__)
+        pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat);
+        pdfPrinter.setOutputFileName("test.pdf")
+        
+        logger.info("Printing page origin ( {0}, {1} ) size ( {2}, {3} )".format(printer.pageRect().x(),printer.pageRect().y(),printer.pageRect().width(),printer.pageRect().height()))
+        logger.info("Printing paper origin ( {0}, {1} ) size ( {2}, {3} )".format(printer.paperRect().x(),printer.paperRect().y(),printer.paperRect().width(),printer.paperRect().height()))
+        widget = self.plotDict["Scan Data"]['widget']
+        widget.setPrintView(True)
+        view = self.plotDict["Scan Data"]['view']
+        painter = QtGui.QPainter(pdfPrinter)
+        widget.render( painter )
+        del painter
+        
+        printer.setResolution(1200)
+        # create an exporter instance, as an argument give it
+        # the item you wish to export
+        widget.graphicsView.hideAllButtons(True)
+        exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene())
+  
+        # set export parameters if needed
+        pageWidth = printer.pageRect().width()
+        exporter.parameters()['width'] = pageWidth*0.8   # (note this also affects height parameter)
+          
+        # save to file
+        png = exporter.export(toBytes=True)
+        widget.setPrintView(False)
+         
+        painter = QtGui.QPainter( printer )
+        painter.drawImage(QtCore.QPoint(pageWidth*0.1,pageWidth*0.1), png)
+              

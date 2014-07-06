@@ -197,6 +197,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
         self.actionProject.triggered.connect( self.onProjectSelection)
+        self.actionPrint.triggered.connect( self.onPrint )
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
@@ -396,7 +397,17 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     
     def setCurrentTab(self, name):
         self.onCurrentChanged(self.tabDict.index(name))
-        
+
+    def onPrint(self):
+        if hasattr( self.currentTab, 'onPrint' ):
+            printer = QtGui.QPrinter(mode=QtGui.QPrinter.ScreenResolution)
+            dialog = QtGui.QPrintDialog(printer, self)
+            dialog.setWindowTitle("Print Document")
+            if dialog.exec_() != QtGui.QDialog.Accepted:
+                return;        
+            pdfPrinter = QtGui.QPrinter()
+            self.currentTab.onPrint(printer, pdfPrinter)
+    
         
 if __name__ == "__main__":
     import sys

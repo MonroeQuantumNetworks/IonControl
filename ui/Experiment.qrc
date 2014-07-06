@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="kde">
+    <file>icons/print_printer.png</file>
     <file>icons/Repeat-disabled-01.png</file>
     <file>icons/Repeat-enabled-01.png</file>
     <file>icons/configure.png</file>
