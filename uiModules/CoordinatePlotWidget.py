@@ -178,7 +178,7 @@ class CustomPlotItem(PlotItem):
         
         In the parent method, the auto button disappears when autoranging is enabled, or when the mouse moved off the plot window.
         I didn't like that feature, so this method disables it."""
-        if self.allButtonsHidden:
+        if hasattr(self,'allButtonsHidden') and self.allButtonsHidden:
             self.autoBtn.hide()
         else:
             self.autoBtn.show()

@@ -36,4 +36,7 @@ class MainWindowWidget(QtGui.QMainWindow):
         pass
 
     def viewActions(self):
-        return [ widget.toggleViewAction() for widget in self.dockWidgetList ]    
+        return [ widget.toggleViewAction() for widget in self.dockWidgetList ]
+    
+    def printActions(self):
+        return [] 
