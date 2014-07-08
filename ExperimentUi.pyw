@@ -61,6 +61,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameMap())
         self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
+        self.printMenu = None
         
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -123,6 +124,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 widget.setGlobalVariablesUi( self.globalVariablesUi )
             if hasattr(widget,'setPulseProgramUi'):
                 widget.setPulseProgramUi( self.pulseProgramDialog )
+            if hasattr(widget, 'plotsChanged'):
+                widget.plotsChanged.connect( self.initMenu )
             self.tabWidget.addTab(widget, name)
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
@@ -197,7 +200,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
         self.actionProject.triggered.connect( self.onProjectSelection)
-        self.actionPrint.triggered.connect( self.onPrint )
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
@@ -321,7 +323,17 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
                      self.loggerDock, self.todoListDock ]:
             self.menuView.addAction(dock.toggleViewAction())
-        
+        # Print menu
+        if self.printMenu is not None:
+            self.printMenu.clear()
+        else:
+            self.printMenu = self.menuFile.addMenu("Print")
+        if hasattr(self.currentTab,'printTargets'):
+            for plot in self.currentTab.printTargets():
+                action = self.printMenu.addAction( plot )
+                action.triggered.connect( partial(self.onPrint, plot ))
+                
+         
     def onSettings(self):
         self.settingsDialog.show()
         
@@ -398,15 +410,21 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     def setCurrentTab(self, name):
         self.onCurrentChanged(self.tabDict.index(name))
 
-    def onPrint(self):
+    def onPrint(self, target):
         if hasattr( self.currentTab, 'onPrint' ):
             printer = QtGui.QPrinter(mode=QtGui.QPrinter.ScreenResolution)
             dialog = QtGui.QPrintDialog(printer, self)
             dialog.setWindowTitle("Print Document")
             if dialog.exec_() != QtGui.QDialog.Accepted:
-                return;        
+                return;    
+            printer.setResolution(1200)
+    
             pdfPrinter = QtGui.QPrinter()
-            self.currentTab.onPrint(printer, pdfPrinter)
+            pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat);
+            pdfPrinter.setOutputFileName(DataDirectory.DataDirectory().sequencefile(target+".pdf")[0])
+        
+            
+            self.currentTab.onPrint(target, printer, pdfPrinter, relwidth=0.8, relx=0.1, rely=0.1)
     
         
 if __name__ == "__main__":

@@ -250,6 +250,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
+    plotsChanged = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
@@ -361,6 +362,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.setToolTip("Rename a plot")
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
+        
+    def printTargets(self):
+        return self.plotDict.keys()
 
 
     def setupAsDockWidget(self, widget, name, area=QtCore.Qt.RightDockWidgetArea, stackAbove=None, stackBelow=None ):
@@ -730,6 +734,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
             self.scanControlWidget.plotnames.append(name)
             self.saveConfig() #In case the program suddenly shuts down
+            self.plotsChanged.emit()
             
     def onRemovePlot(self):
         logger = logging.getLogger(__name__)
@@ -751,6 +756,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             logger.info("There are no plots which can be removed")
         self.saveConfig()
+        self.plotsChanged.emit()
+
                 
     def onRenamePlot(self):
         logger = logging.getLogger(__name__)
@@ -780,6 +787,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.saveConfig() #In case the program suddenly shuts down
         else:
             logger.info("There are no plots which can be renamed")
+        self.plotsChanged.emit()
+
 
     def activate(self):
         logger = logging.getLogger(__name__)
@@ -818,34 +827,26 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def state(self):
         return self.progressUi.state
         
-    def onPrint(self, printer, pdfPrinter):
-        logger = logging.getLogger(__name__)
-        pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat);
-        pdfPrinter.setOutputFileName("test.pdf")
-        
-        logger.info("Printing page origin ( {0}, {1} ) size ( {2}, {3} )".format(printer.pageRect().x(),printer.pageRect().y(),printer.pageRect().width(),printer.pageRect().height()))
-        logger.info("Printing paper origin ( {0}, {1} ) size ( {2}, {3} )".format(printer.paperRect().x(),printer.paperRect().y(),printer.paperRect().width(),printer.paperRect().height()))
-        widget = self.plotDict["Scan Data"]['widget']
+    def onPrint(self, target, printer, pdfPrinter, relwidth=0.8, relx=0.1, rely=0.1):
+        widget = self.plotDict[target]['widget']
         widget.setPrintView(True)
-        view = self.plotDict["Scan Data"]['view']
         painter = QtGui.QPainter(pdfPrinter)
         widget.render( painter )
-        del painter
         
-        printer.setResolution(1200)
         # create an exporter instance, as an argument give it
         # the item you wish to export
         widget.graphicsView.hideAllButtons(True)
-        exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene())
+        exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene()) #@UndefinedVariable
   
         # set export parameters if needed
         pageWidth = printer.pageRect().width()
-        exporter.parameters()['width'] = pageWidth*0.8   # (note this also affects height parameter)
+        pageHeight = printer.pageRect().height()
+        exporter.parameters()['width'] = pageWidth*relwidth   # (note this also affects height parameter)
           
         # save to file
         png = exporter.export(toBytes=True)
         widget.setPrintView(False)
          
         painter = QtGui.QPainter( printer )
-        painter.drawImage(QtCore.QPoint(pageWidth*0.1,pageWidth*0.1), png)
+        painter.drawImage(QtCore.QPoint(pageWidth*relx,pageHeight*rely), png)
               

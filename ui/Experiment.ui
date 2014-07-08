@@ -51,7 +51,6 @@
    <addaction name="actionContinue"/>
    <addaction name="actionSave"/>
    <addaction name="actionClear"/>
-   <addaction name="actionPrint"/>
    <addaction name="separator"/>
    <addaction name="actionDedicatedCounters"/>
    <addaction name="actionPulses"/>
@@ -79,7 +78,6 @@
     <addaction name="actionExit"/>
     <addaction name="actionClear"/>
     <addaction name="actionSave"/>
-    <addaction name="actionPrint"/>
     <addaction name="separator"/>
     <addaction name="actionProject"/>
    </widget>
@@ -96,9 +94,15 @@
      <string>View</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuPrint">
+    <property name="title">
+     <string>Print</string>
+    </property>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuOperation"/>
    <addaction name="menuView"/>
+   <addaction name="menuPrint"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetConsole">
    <property name="windowTitle">
@@ -390,18 +394,6 @@
    </property>
    <property name="text">
     <string>Logic</string>
-   </property>
-  </action>
-  <action name="actionPrint">
-   <property name="icon">
-    <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/print_printer.png</normaloff>:/kde/icons/print_printer.png</iconset>
-   </property>
-   <property name="text">
-    <string>Print</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

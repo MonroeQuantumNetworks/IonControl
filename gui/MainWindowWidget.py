@@ -38,5 +38,5 @@ class MainWindowWidget(QtGui.QMainWindow):
     def viewActions(self):
         return [ widget.toggleViewAction() for widget in self.dockWidgetList ]
     
-    def printActions(self):
+    def printTargets(self):
         return [] 
