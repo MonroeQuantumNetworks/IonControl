@@ -26,7 +26,7 @@ import PyQt4.uic
 import numpy
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
-import pyqtgraph
+import pyqtgraph.exporters
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
@@ -836,7 +836,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # create an exporter instance, as an argument give it
         # the item you wish to export
         widget.graphicsView.hideAllButtons(True)
-        exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene()) #@UndefinedVariable
+        exporter = pyqtgraph.exporters.ImageExporter(widget.graphicsView.scene()) #@UndefinedVariable
   
         # set export parameters if needed
         pageWidth = printer.pageRect().width()
