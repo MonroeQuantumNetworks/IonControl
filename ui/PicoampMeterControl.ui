@@ -173,14 +173,14 @@
       <item row="3" column="1">
        <widget class="MagnitudeSpinBox" name="stepsEdit"/>
       </item>
-      <item row="4" column="0">
+      <item row="5" column="0">
        <widget class="QLabel" name="label_8">
         <property name="text">
          <string>TextLabel</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="5" column="1">
        <widget class="QComboBox" name="scanTypeCombo">
         <item>
          <property name="text">
@@ -199,15 +199,25 @@
         </item>
        </widget>
       </item>
-      <item row="5" column="0">
+      <item row="6" column="0">
        <widget class="QLabel" name="label_10">
         <property name="text">
          <string>Filename</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
+      <item row="6" column="1">
        <widget class="QLineEdit" name="filenameEdit"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_12">
+        <property name="text">
+         <string>Setting delay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="MagnitudeSpinBox" name="settlingDelayEdit"/>
       </item>
      </layout>
     </widget>

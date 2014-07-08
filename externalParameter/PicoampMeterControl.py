@@ -91,6 +91,8 @@ class PicoampMeterControl(Base, Form):
         self.stopEdit.valueChanged.connect( partial( self.onValueChanged, 'stop') )
         self.stepsEdit.setValue( self.meterState.steps )
         self.stepsEdit.valueChanged.connect( partial( self.onValueChanged, 'steps') )
+        self.settlingDelayEdit.setValue( self.meterState.settlingDelay )
+        self.settlingDelayEdit.valueChanged.connect( partial( self.onValueChanged, 'settlingDelay') )
         self.timeDeltaEdit.setValue( self.meterState.timeDelta )
         self.timeDeltaEdit.valueChanged.connect( partial( self.onValueChanged, 'timeDelta') )
         self.zeroButton.clicked.connect( self.onZero )
@@ -160,7 +162,7 @@ class PicoampMeterControl(Base, Form):
     def initPoint(self):
         if self.currentIndex<len(self.scanList) and not self.stopRequested:
             self.meter.setVoltage( self.scanList[self.currentIndex] )
-            QtCore.QTimer.singleShot(0, self.takeScanPoint )
+            QtCore.QTimer.singleShot(self.meterState.settlingDelay, self.takeScanPoint )
         else:
             self.meter.setVoltage( self.meterState.voltage )
             self.finalizeScan()
