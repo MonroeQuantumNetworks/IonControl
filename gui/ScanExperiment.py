@@ -44,6 +44,7 @@ from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 import copy
 from modules.Expression import Expression
+from modules.SceneToPrint import SceneToPrint
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -827,7 +828,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def state(self):
         return self.progressUi.state
         
-    def onPrint(self, target, printer, pdfPrinter, relwidth=0.8, relx=0.1, rely=0.1):
+    def onPrint(self, target, printer, pdfPrinter, preferences):
         widget = self.plotDict[target]['widget']
         widget.setPrintView(True)
         painter = QtGui.QPainter(pdfPrinter)
@@ -835,18 +836,21 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
         # create an exporter instance, as an argument give it
         # the item you wish to export
-        widget.graphicsView.hideAllButtons(True)
-        exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene()) #@UndefinedVariable
-  
-        # set export parameters if needed
-        pageWidth = printer.pageRect().width()
-        pageHeight = printer.pageRect().height()
-        exporter.parameters()['width'] = pageWidth*relwidth   # (note this also affects height parameter)
-          
-        # save to file
-        png = exporter.export(toBytes=True)
-        widget.setPrintView(False)
-         
-        painter = QtGui.QPainter( printer )
-        painter.drawImage(QtCore.QPoint(pageWidth*relx,pageHeight*rely), png)
+        with SceneToPrint(widget, preferences.linewidth):
+            exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene()) #@UndefinedVariable
+      
+            # set export parameters if needed
+            pageWidth = printer.pageRect().width()
+            pageHeight = printer.pageRect().height()
+            exporter.parameters()['width'] = pageWidth*preferences.printWidth   # (note this also affects height parameter)
               
+            # save to file
+            png = exporter.export(toBytes=True)
+            widget.setPrintView(False)
+            png.save(DataDirectory.DataDirectory().sequencefile(target+".png")[0])
+             
+            painter = QtGui.QPainter( printer )
+            painter.drawImage(QtCore.QPoint(pageWidth*preferences.printX,pageHeight*preferences.printY), png)
+
+                
+                

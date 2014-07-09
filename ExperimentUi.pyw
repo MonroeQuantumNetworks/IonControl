@@ -41,6 +41,7 @@ from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
 from functools import partial
 from externalParameter.ExternalParameter import ExternalParameter
+from gui.Preferences import PreferencesUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -146,6 +147,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
         self.triggerDockWidget.setWidget( self.triggerUi )
 
+        self.preferencesUi = PreferencesUi(config, self)
+        self.preferencesUi.setupUi(self.preferencesUi)
+        self.preferencesUiDock = QtGui.QDockWidget("Preferences")
+        self.preferencesUiDock.setWidget(self.preferencesUi)
+        self.preferencesUiDock.setObjectName("_preferencesUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
+
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulser )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
@@ -153,6 +161,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
         # tabify the dock widgets
+        self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
         self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
@@ -399,6 +408,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesUi.saveConfig()
         self.loggerUi.saveConfig()
         self.todoList.saveConfig()
+        self.preferencesUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
@@ -417,14 +427,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             dialog.setWindowTitle("Print Document")
             if dialog.exec_() != QtGui.QDialog.Accepted:
                 return;    
-            printer.setResolution(1200)
+            printer.setResolution(self.preferencesUi.preferences().printResolution)
     
             pdfPrinter = QtGui.QPrinter()
             pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat);
             pdfPrinter.setOutputFileName(DataDirectory.DataDirectory().sequencefile(target+".pdf")[0])
         
             
-            self.currentTab.onPrint(target, printer, pdfPrinter, relwidth=0.8, relx=0.1, rely=0.1)
+            self.currentTab.onPrint(target, printer, pdfPrinter, self.preferencesUi.preferences())
     
         
 if __name__ == "__main__":
