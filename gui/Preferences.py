@@ -29,12 +29,12 @@ class Preferences(object):
         
     def paramDef(self):
         return [{'name': 'Print Preferences', 'type': 'group', 'children': [
-                        {'name': 'printResolution', 'field': 'printResolution', 'type': 'int', 'value': self.printResolution},
-                        {'name': 'printWidth', 'field': 'printWidth', 'type': 'float', 'value': self.printWidth},
-                        {'name': 'printX', 'field': 'printX', 'type': 'float', 'value': self.printX}, 
-                        {'name': 'printY', 'field': 'printY', 'type': 'float', 'value': self.printY},
-                        {'name': 'grid linewidth', 'field': 'gridLinewidth', 'type': 'int', 'value': self.gridLinewidth},
-                        {'name': 'curve linewidth', 'field': 'curveLinewidth', 'type': 'int', 'value': self.curveLinewidth},
+                        {'name': 'resolution (dpi)', 'field': 'printResolution', 'type': 'int', 'value': self.printResolution},
+                        {'name': 'width (page width)', 'field': 'printWidth', 'type': 'float', 'value': self.printWidth},
+                        {'name': 'x (page width)', 'field': 'printX', 'type': 'float', 'value': self.printX}, 
+                        {'name': 'y (page height)', 'field': 'printY', 'type': 'float', 'value': self.printY},
+                        {'name': 'grid linewidth (px)', 'field': 'gridLinewidth', 'type': 'int', 'value': self.gridLinewidth},
+                        {'name': 'curve linewidth (px)', 'field': 'curveLinewidth', 'type': 'int', 'value': self.curveLinewidth},
                         {'name': 'save pdf', 'field': 'savePdf', 'type': 'bool', 'value': self.savePdf},
                         {'name': 'save png', 'field': 'savePng', 'type': 'bool', 'value': self.savePng},
                         {'name': 'print', 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint}] }]
