@@ -9,7 +9,7 @@ a record of all loads, and an interlock to the laser frequencies returned by
 the wavemeter.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import functools
 import logging
 
@@ -210,7 +210,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive ,
                                          description="ionStillTrapped" )
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped',
-                                         transitionfunc = self.loadingToTrapped,
+                                         transitionfunc = self.idleToTrapped,
                                          description="ionTrapped"  )
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
@@ -490,6 +490,12 @@ class AutoLoad(UiForm,UiBase):
         self.loadingTime = check.enterTime - self.timerNullTime
         self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
            
+    def idleToTrapped(self, check, trapped):
+        logger = logging.getLogger(__name__)
+        logger.info(  "Idle Trapped" )
+        self.loadingTime = timedelta(0)
+        self.historyTableModel.append( LoadingEvent(self.loadingTime,datetime.now()) )
+           
     def setTrapped(self):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
@@ -539,7 +545,10 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.processEvent( 'ionStillTrapped' )
         
     def onTrappedIonNow(self):
-        self.trappingTime = datetime.now()
+        current = datetime.now()
+        self.timerNullTime = current
+        self.trappingTime = current
+        self.checkStarted = current
         self.statemachine.processEvent('ionTrapped')           
     
     def onTimer(self):
