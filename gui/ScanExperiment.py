@@ -26,7 +26,7 @@ import PyQt4.uic
 import numpy
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
-import pyqtgraph
+from pyqtgraph.exporters.ImageExporter import ImageExporter
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
@@ -839,7 +839,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # create an exporter instance, as an argument give it
         # the item you wish to export
         with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):
-            exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene()) #@UndefinedVariable
+            exporter = ImageExporter(widget.graphicsView.scene()) 
       
             # set export parameters if needed
             pageWidth = printer.pageRect().width()
