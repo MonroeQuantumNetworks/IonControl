@@ -423,10 +423,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     def onPrint(self, target):
         if hasattr( self.currentTab, 'onPrint' ):
             printer = QtGui.QPrinter(mode=QtGui.QPrinter.ScreenResolution)
-            dialog = QtGui.QPrintDialog(printer, self)
-            dialog.setWindowTitle("Print Document")
-            if dialog.exec_() != QtGui.QDialog.Accepted:
-                return;    
+            if self.preferencesUi.preferences().doPrint:
+                dialog = QtGui.QPrintDialog(printer, self)
+                dialog.setWindowTitle("Print Document")
+                if dialog.exec_() != QtGui.QDialog.Accepted:
+                    return;    
             printer.setResolution(self.preferencesUi.preferences().printResolution)
     
             pdfPrinter = QtGui.QPrinter()

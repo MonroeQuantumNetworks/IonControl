@@ -830,13 +830,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
     def onPrint(self, target, printer, pdfPrinter, preferences):
         widget = self.plotDict[target]['widget']
-        widget.setPrintView(True)
-        painter = QtGui.QPainter(pdfPrinter)
-        widget.render( painter )
+        if preferences.savePdf:
+            with SceneToPrint(widget):
+                painter = QtGui.QPainter(pdfPrinter)
+                widget.render( painter )
+                del painter
         
         # create an exporter instance, as an argument give it
         # the item you wish to export
-        with SceneToPrint(widget, preferences.linewidth):
+        with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):
             exporter = pyqtgraph.exporters.ImageExporter.ImageExporter(widget.graphicsView.scene()) #@UndefinedVariable
       
             # set export parameters if needed
@@ -846,11 +848,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
               
             # save to file
             png = exporter.export(toBytes=True)
-            widget.setPrintView(False)
-            png.save(DataDirectory.DataDirectory().sequencefile(target+".png")[0])
-             
-            painter = QtGui.QPainter( printer )
-            painter.drawImage(QtCore.QPoint(pageWidth*preferences.printX,pageHeight*preferences.printY), png)
+            if preferences.savePng:
+                png.save(DataDirectory.DataDirectory().sequencefile(target+".png")[0])
+            
+            if preferences.doPrint:
+                painter = QtGui.QPainter( printer )
+                painter.drawImage(QtCore.QPoint(pageWidth*preferences.printX,pageHeight*preferences.printY), png)
 
                 
                 
