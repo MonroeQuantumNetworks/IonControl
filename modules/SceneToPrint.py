@@ -33,6 +33,7 @@ class SceneToPrint:
         return self.widget
 
     def __exit__(self, exittype, value, traceback):
+        self.widget.graphicsView.hideAllButtons(False)
         for item, width in self.pencache.iteritems():
             pen = item.pen()
             pen.setWidth( width )  

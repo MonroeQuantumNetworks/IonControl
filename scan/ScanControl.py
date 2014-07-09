@@ -491,7 +491,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)
-        scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized][self.settings.scantype]
+        scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized, ScanList.ScanType.CenterOut][self.settings.scantype]
         
         scan.list = list( concatenate_iter( *( numpy.linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ) ) )
         if scan.type==0:
