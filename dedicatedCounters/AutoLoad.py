@@ -53,6 +53,7 @@ class AutoLoadSettings:
         self.loadAlgorithm = 0
         self.shuttleLoadTime = mg( 500, 'ms')
         self.shuttleCheckTime = mg( 1, 's')
+        self.ovenCoolingTime = mg( 80, 's' )
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -69,6 +70,7 @@ class AutoLoadSettings:
         self.__dict__.setdefault( 'loadAlgorithm', 0 )
         self.__dict__.setdefault( 'shuttleLoadTime', mg( 500, 'ms') )
         self.__dict__.setdefault( 'shuttleCheckTime', mg( 1, 's') )
+        self.__dict__.setdefault( 'ovenCoolingTime', mg( 80, 's') )
 
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -171,7 +173,7 @@ class AutoLoad(UiForm,UiBase):
                                          lambda state: state.timeInState() > self.settings.waitForComebackTime,
                                          description="waitForComebackTime")                                         
         self.statemachine.addTransition( 'timer', 'CoolingOven', 'Preheat',
-                                        lambda state: state.timeInState() > self.settings.waitForComebackTime and
+                                        lambda state: state.timeInState() > self.settings.ovenCoolingTime and
                                                       self.settings.autoReload,
                                          description="waitForComebackTime" )
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Trapped', 
@@ -244,6 +246,7 @@ class AutoLoad(UiForm,UiBase):
         self.initMagnitude( self.postSequenceWaitTimeBox, 'postSequenceWaitTime' )
         self.initMagnitude( self.shuttleLoadTimeBox, 'shuttleLoadTime',  Magnitude(1,s=1) )
         self.initMagnitude( self.shuttleCheckTimeBox, 'shuttleCheckTime',  Magnitude(1,s=1) )
+        self.initMagnitude( self.ovenCoolingTimeBox, 'ovenCoolingTime', Magnitude(1,s=1) )
        
         self.loadAlgorithmBox.addItems( ['Static','Shuttling'])
         self.loadAlgorithmBox.setCurrentIndex( self.settings.loadAlgorithm )
