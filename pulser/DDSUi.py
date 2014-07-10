@@ -9,30 +9,39 @@ from modules.magnitude import mg
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
+def extendTo(array, length, defaulttype):
+    for _ in range( len(array), length ):
+        array.append(defaulttype())
+
 class DDSUi(DDSForm, DDSBase):
     def __init__(self,config,pulser,parent=None):
         DDSBase.__init__(self,parent)
         DDSForm.__init__(self)
+        self.numChannels = 8
         self.config = config
         self.frequency = self.config.get('DDSUi.Frequency',[mg(0,'MHz')]*6)
+        extendTo(self.frequency, self.numChannels, lambda: mg(0,'MHz') )
         self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*6)
+        extendTo(self.phase, self.numChannels, lambda: mg(0,'rad') )
         self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
+        extendTo(self.amplitude, self.numChannels, lambda: 0 )
         self.names = self.config.get('DDSUi.Names',['']*6)
+        extendTo(self.names, self.numChannels, lambda: '' )
         self.ad9912 = Ad9912.Ad9912(pulser)
         self.autoApply = self.config.get('DDSUi.autoApply',False)
         
     def setupUi(self,parent):
         DDSForm.setupUi(self,parent)
-        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5]):
+        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]):
             box.setValue( self.frequency[channel] )
             box.valueChanged.connect( functools.partial(self.onFrequency, box,channel))
-        for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5]):
+        for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
             box.setValue( self.phase[channel] )
             box.valueChanged.connect( functools.partial(self.onPhase, box,channel))
-        for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]):
+        for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5, self.amplitudeBox6, self.amplitudeBox7]):
             box.setValue( self.amplitude[channel] )
             box.editingFinished.connect( functools.partial(self.onAmplitude, box,channel))
-        for channel, box in enumerate([self.channelEdit0, self.channelEdit1, self.channelEdit2, self.channelEdit3, self.channelEdit4, self.channelEdit5]):
+        for channel, box in enumerate([self.channelEdit0, self.channelEdit1, self.channelEdit2, self.channelEdit3, self.channelEdit4, self.channelEdit5, self.channelEdit6, self.channelEdit7]):
             box.setText(self.names[channel])
             box.textChanged.connect( functools.partial(self.onName, box,channel) )
         self.applyButton.clicked.connect( self.onApply )
@@ -44,9 +53,9 @@ class DDSUi(DDSForm, DDSBase):
         self.onApply()
             
     def setDisabled(self, disabled):
-        for widget  in [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5,
-                        self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5,
-                        self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]:
+        for widget  in [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7,
+                        self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7,
+                        self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5, self.amplitudeBox6, self.amplitudeBox7]:
             widget.setEnabled( not disabled )        
             
     def onStateChanged(self, state ):
@@ -71,11 +80,11 @@ class DDSUi(DDSForm, DDSBase):
         self.names[channel] = str(text)
         
     def onWriteAll(self):
-        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5]):
+        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]):
             self.onFrequency( box, channel, box.value() )
-        for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5]):
+        for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
             self.onPhase( box, channel, box.value() )
-        for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5]):
+        for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5, self.amplitudeBox6, self.amplitudeBox7]):
             self.onAmplitude( box, channel )
         if self.autoApply: self.onApply
         
@@ -87,10 +96,10 @@ class DDSUi(DDSForm, DDSBase):
         self.config['DDSUi.autoApply'] = self.autoApply
         
     def onApply(self):
-        self.ad9912.update(0x3f)
+        self.ad9912.update(0xff)
         
     def onReset(self):
-        self.ad9912.reset(0x3f)
+        self.ad9912.reset(0xff)
              
 if __name__ == "__main__":
     import sys
