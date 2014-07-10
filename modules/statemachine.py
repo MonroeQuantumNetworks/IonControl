@@ -11,6 +11,9 @@ from modules.magnitude import mg
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 
+def timedeltaToMagnitude( timedelta ):
+    return mg( (timedelta).total_seconds(), 's' )
+
 class StatemachineException(Exception):
     pass
 

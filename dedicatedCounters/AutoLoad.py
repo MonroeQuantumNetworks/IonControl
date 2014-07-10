@@ -25,7 +25,7 @@ from modules.magnitude import Magnitude, mg
 from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.mymath import max_iterable
-from modules.statemachine import Statemachine
+from modules.statemachine import Statemachine, timedeltaToMagnitude
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -100,6 +100,7 @@ class AutoLoad(UiForm,UiBase):
         self.timerNullTime = datetime.now()
         self.trappingTime = None
         self.voltageControl = None
+        self.preheatStartTime = datetime.now()
         
     def constructStatemachine(self):
         self.statemachine = Statemachine('AutoLoad')
@@ -148,17 +149,17 @@ class AutoLoad(UiForm,UiBase):
                                          self.loadingToTrapped,
                                          description="checkTime" )
         self.statemachine.addTransition( 'timer', 'Load', 'AutoReloadFailed', 
-                                         lambda state: state.timeInState() > self.settings.maxTime and 
+                                         lambda state: self.ovenLimitReached() and 
                                                        self.settings.autoReload and 
                                                        self.numFailedAutoload>=self.settings.maxFailedAutoload,
                                          description="maxTime" ) 
         self.statemachine.addTransition( 'timer', 'Load', 'CoolingOven',
-                                         lambda state: state.timeInState() > self.settings.maxTime and
+                                         lambda state: self.ovenLimitReached() and
                                                        self.settings.autoReload and
                                                        self.numFailedAutoload<self.settings.maxFailedAutoload,
                                          description="maxTime"  )                                         
         self.statemachine.addTransition( 'timer', 'Load', 'Idle',
-                                         lambda state: state.timeInState() > self.settings.maxTime and 
+                                         lambda state: self.ovenLimitReached() and 
                                                        not self.settings.autoReload,
                                          description="maxTime" )
         self.statemachine.addTransition( 'timer', 'Disappeared', 'WaitingForComeback',
@@ -214,6 +215,10 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped',
                                          transitionfunc = self.idleToTrapped,
                                          description="ionTrapped"  )
+        
+    def ovenLimitReached(self):
+        return timedeltaToMagnitude(datetime.now() - self.preheatStartTime) > self.settings.maxTime
+        
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
         ui.setValue( getattr( self.settings, settingsname  ) )
@@ -437,6 +442,7 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Preheating")
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
         self.timerNullTime = datetime.now()
+        self.preheatStartTime = datetime.now()
     
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
