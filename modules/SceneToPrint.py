@@ -3,7 +3,7 @@ Created on Jul 8, 2014
 
 @author: pmaunz
 '''
-import pyqtgraph
+from pyqtgraph.graphicsItems.AxisItem import AxisItem
 
 class SceneToPrint:
     def __init__(self, widget, gridLinewidth=1, curveLinewidth=1):
@@ -17,12 +17,13 @@ class SceneToPrint:
         self.curveitemcache = dict()
         if self.gridLinewidth!=1 or self.curveLinewidth!=1:
             for item in self.widget.graphicsView.scene().items():
-                if hasattr(item, 'pen'):
+                if hasattr(item, 'pen') and isinstance(item, AxisItem) and self.gridLinewidth!=1:
                     pen = item.pen()
-                    self.pencache[item] = pen.width()
-                    pen.setWidth( pen.width()*self.gridLinewidth )  
-                    item.setPen( pen )      
-                elif hasattr(item, 'opts'):
+                    width = pen.width()
+                    self.pencache[item] = width
+                    pen.setWidth( width*self.gridLinewidth )  
+                    item.setPen( pen )
+                elif hasattr(item, 'opts') and self.curveLinewidth!=1:
                     shadowPen = item.opts.get('shadowPen')
                     pen = item.opts.get('pen')
                     self.curveitemcache[item] = (shadowPen.width() if shadowPen else None, pen.width() if pen else None)
