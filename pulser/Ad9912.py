@@ -50,7 +50,7 @@ class Ad9912:
     def update(self, channelmask):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x08, channelmask & 0x3f), "Ad9912 apply" )
+            check( self.pulser.SetWireInValue(0x08, channelmask & 0xff), "Ad9912 apply" )
             self.pulser.UpdateWireIns()
             self.pulser.ActivateTriggerIn(0x41,2)
         else:

@@ -166,8 +166,8 @@ class PulseProgram:
         class Board:
             channelLimit = 1    
             halfClockLimit = 500000000
-        self.adIndexList = [(x,0) for x in range(6) ]
-        self.adBoards = [ Board() ]*6
+        self.adIndexList = [(x,0) for x in range(8) ]
+        self.adBoards = [ Board() ]*8
         
         self.timestep = magnitude.mg(20.0,'ns')
 
