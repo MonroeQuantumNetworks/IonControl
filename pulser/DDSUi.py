@@ -1,6 +1,6 @@
 import functools
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 from pulser import Ad9912
@@ -29,10 +29,13 @@ class DDSUi(DDSForm, DDSBase):
         extendTo(self.names, self.numChannels, lambda: '' )
         self.ad9912 = Ad9912.Ad9912(pulser)
         self.autoApply = self.config.get('DDSUi.autoApply',False)
+        self.frequencyEven = self.config.get('DDSUi.FrequencyEven',[False]*8)
+        self.intFrequency = [0]*8
         
     def setupUi(self,parent):
         DDSForm.setupUi(self,parent)
-        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]):
+        self.frequencyUis = [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]
+        for channel, box  in enumerate(self.frequencyUis[:7]):  # omit the hardcoded math for channel 7
             box.setValue( self.frequency[channel] )
             box.valueChanged.connect( functools.partial(self.onFrequency, box,channel))
         for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
@@ -44,6 +47,9 @@ class DDSUi(DDSForm, DDSBase):
         for channel, box in enumerate([self.channelEdit0, self.channelEdit1, self.channelEdit2, self.channelEdit3, self.channelEdit4, self.channelEdit5, self.channelEdit6, self.channelEdit7]):
             box.setText(self.names[channel])
             box.textChanged.connect( functools.partial(self.onName, box,channel) )
+        for channel, box in enumerate([self.evenBox0, self.evenBox1, self.evenBox2, self.evenBox3, self.evenBox4, self.evenBox5, self.evenBox6, self.evenBox7]):
+            box.setChecked( self.frequencyEven[channel])
+            box.stateChanged.connect( functools.partial(self.onEvenChanged, box, channel) )
         self.applyButton.clicked.connect( self.onApply )
         self.resetButton.clicked.connect( self.onReset )
         self.writeAllButton.clicked.connect( self.onWriteAll )
@@ -61,9 +67,23 @@ class DDSUi(DDSForm, DDSBase):
     def onStateChanged(self, state ):
         self.autoApply = self.autoApplyBox.isChecked()
 
+    def onEvenChanged(self, box, channel, state):
+        even = state == QtCore.Qt.Checked
+        self.frequencyEven[channel] = even
+        self.onFrequency(self.frequencyUis[channel], channel, self.frequency[channel])
+
     def onFrequency(self, box, channel, value):
-        self.ad9912.setFrequency(channel, box.value() )
+        intFreq = self.ad9912.setFrequency(channel, box.value(), even=self.frequencyEven[channel] )
+        self.intFrequency[channel] = intFreq
+        box.setToolTip( hex(intFreq) )
         self.frequency[channel] = box.value()
+        if channel in [0,4]:
+            intFreq7 = int( (self.intFrequency[4]+self.intFrequency[0])/2 )
+            box.setToolTip( hex(intFreq7) )
+            value = self.ad9912.rawToMagnitude(intFreq7)
+            self.frequencyBox7.setValue(  value )
+            self.frequency[7] = value
+            self.ad9912.setFrequencyRaw(7, intFreq7)
         if self.autoApply: self.onApply()
         
     def onPhase(self, box, channel, value):
@@ -80,7 +100,7 @@ class DDSUi(DDSForm, DDSBase):
         self.names[channel] = str(text)
         
     def onWriteAll(self):
-        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]):
+        for channel, box  in enumerate(self.frequencyUis[:7]):
             self.onFrequency( box, channel, box.value() )
         for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
             self.onPhase( box, channel, box.value() )
@@ -94,6 +114,7 @@ class DDSUi(DDSForm, DDSBase):
         self.config['DDSUi.Amplitude'] = self.amplitude
         self.config['DDSUi.Names'] = self.names
         self.config['DDSUi.autoApply'] = self.autoApply
+        self.config['DDSUi.FrequencyEven'] = self.frequencyEven
         
     def onApply(self):
         self.ad9912.update(0xff)
