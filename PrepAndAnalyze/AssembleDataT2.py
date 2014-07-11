@@ -15,6 +15,7 @@ from trace.Trace import Trace
 from gateSequence.GateDefinition import GateDefinition
 from gateSequence.GateSequenceContainer import GateSequenceContainer
 from modules.MagnitudeParser import parse
+from collections import defaultdict
 
 resultsTable = None
 headerList = list()
@@ -22,7 +23,8 @@ headerList = list()
 gateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave.xml"
 compositeGateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-B2.xml"
 
-trainingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\TrainingSequenceT2.xml"
+#trainingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\TrainingSequenceT2.xml"
+trainingSequenceFile = r"TrainingSequenceT2.xml"
 testingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\TestingSequenceT2.xml"
 
 goodGateSetTraining = [ (datetime.date(2014,4,3), [3, 4, 5] ),
@@ -71,7 +73,7 @@ trainingSequence = GateSequenceContainer(gatedef)
 trainingSequence.loadXml(trainingSequenceFile)
 
 testingSequence = GateSequenceContainer(gatedef)
-testingSequence.loadXml(trainingSequenceFile)
+testingSequence.loadXml(testingSequenceFile)
 
 compositeGatedef = GateDefinition()
 compositeGatedef.loadGateDefinition(compositeGateDefinitionFile)    
@@ -82,12 +84,57 @@ compositeTrainingSequence.loadXml(trainingSequenceFile)
 compositeTestingSequence = GateSequenceContainer(compositeGatedef)
 compositeTestingSequence.loadXml(trainingSequenceFile)
 
+from itertools import groupby
+
+def runLengthEncode (plainText):
+    res = []
+
+    for k,i in groupby(plainText):
+        run = list(i)
+        if(len(run) > 4):
+            res.append("(G{1})^{0}".format(len(run), k))
+        else:
+            res.append('G')
+            res.append('G'.join(run))
+
+    return "".join(res)
+
+def addGs(raw):
+    result = list()
+    for char in raw:
+        if char not in '()^0123456789':
+            result.append('G'+char)
+        else:
+            result.append(char)
+    return ''.join(result)
+
 def saveResultsWithLookup(resultsTable, sequence, filename):
     with open(filename, 'w') as f:
         for r in resultsTable:
             gateseq = sequence.GateSequenceDict[ str(int(r[0]))]
             gateseq = "".join(gateseq) if gateseq else "0"
             print >> f, gateseq, " ".join( map(str, r[1:]))
+
+def saveCondensedResults(resultsTable, sequence, filename):
+    bright =  defaultdict( lambda: 0 )
+    total = defaultdict( lambda:0 )
+    for x, b, t, _, _ in resultsTable:
+        bright[x] += b
+        total[x] += t
+        
+    with open(filename, 'w') as f:
+        for (x1, b), (x2, t) in zip( sorted(bright.iteritems()), sorted(total.iteritems()) ):
+            gateseq = sequence.GateSequenceAttributes[str(int(x1))].get('condensed', None)
+            if gateseq is None:
+                gateseq = sequence.GateSequenceDict[ str(int(x1))]
+                if gateseq:
+                    gateseq = runLengthEncode(gateseq)
+                else:
+                    gateseq = '{}'
+            else:
+                gateseq = addGs(gateseq)
+            print >> f, gateseq, b, t, 0, 0
+
 
 def saveResultsRaw(resultsTable, filename):
     with open(filename, 'w') as f:
@@ -149,7 +196,9 @@ def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accu
     
     saveResultsWithLookup(RawResultsTable, sequence, os.path.join(outputpath,filenameBody+"_assemble.txt") )
     saveResultsRaw(RawResultsTable, os.path.join(outputpath,filenameBody+"_assemble_raw.txt") )
+    saveCondensedResults(RawResultsTable, sequence, os.path.join(outputpath,filenameBody+"_condensed.txt"))
     print "Total experiments {0}".format(totalexperiments)
+    
 
 assembleData( "GateSequenceTraining", goodGateSetTraining, trainingSequence, 2599, 0.5)
 saveLookupTable(trainingSequence, os.path.join(outputpath,"GateSequenceTraining_lookup.txt"))
