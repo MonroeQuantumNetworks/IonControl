@@ -35,7 +35,7 @@ class DDSUi(DDSForm, DDSBase):
     def setupUi(self,parent):
         DDSForm.setupUi(self,parent)
         self.frequencyUis = [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]
-        for channel, box  in enumerate(self.frequencyUis):
+        for channel, box  in enumerate(self.frequencyUis[:7]):  # omit the hardcoded math for channel 7
             box.setValue( self.frequency[channel] )
             box.valueChanged.connect( functools.partial(self.onFrequency, box,channel))
         for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
@@ -77,6 +77,13 @@ class DDSUi(DDSForm, DDSBase):
         self.intFrequency[channel] = intFreq
         box.setToolTip( hex(intFreq) )
         self.frequency[channel] = box.value()
+        if channel in [0,4]:
+            intFreq7 = int( (self.intFrequency[4]+self.intFrequency[0])/2 )
+            box.setToolTip( hex(intFreq7) )
+            value = self.ad9912.rawToMagnitude(intFreq7)
+            self.frequencyBox7.setValue(  value )
+            self.frequency[7] = value
+            self.ad9912.setFrequencyRaw(7, intFreq7)
         if self.autoApply: self.onApply()
         
     def onPhase(self, box, channel, value):
@@ -93,7 +100,7 @@ class DDSUi(DDSForm, DDSBase):
         self.names[channel] = str(text)
         
     def onWriteAll(self):
-        for channel, box  in enumerate([self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]):
+        for channel, box  in enumerate(self.frequencyUis[:7]):
             self.onFrequency( box, channel, box.value() )
         for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
             self.onPhase( box, channel, box.value() )
