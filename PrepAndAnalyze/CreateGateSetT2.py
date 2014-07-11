@@ -13,6 +13,7 @@ from xml.dom import minidom
 from itertools import chain
 import xml.etree.ElementTree as ElementTree
 import random
+import collections
 
 fiducials = [ ['I'], ['x'], ['y'], ['x','x'], ['x','x','x'], ['y','y','y'] ]
 training1 = [ ['I'], ['x'], ['y'] ]
@@ -63,6 +64,13 @@ def flatten(listOfLists):
     "Flatten one level of nesting"
     return chain.from_iterable(listOfLists)
 
+def flattenAll(l):
+    for el in l:
+        if isinstance(el, collections.Iterable) and not isinstance(el, basestring):
+            for sub in flatten(el):
+                yield sub
+        else:
+            yield el
     
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -71,7 +79,7 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def gateSequence(parent, name, sequence, i):
+def gateSequence(parent, name, sequence, i, **kwargs):
     """Add a new GateSequence element to the XML element tree. 
     'sequence' is the gate sequence string itself.
     'parent' is the top level XML header.
@@ -80,7 +88,8 @@ def gateSequence(parent, name, sequence, i):
     state = BlochState()
     for op in flatten(sequence):
         state.transition(op)
-    e  = ElementTree.SubElement(parent, 'GateSequence', {'name': name, 'index': str(i), 'expected':state.state, 'length':str(len(state))})
+    kwargs.update({'name': name, 'index': str(i), 'expected':state.state, 'length':str(len(state))})
+    e  = ElementTree.SubElement(parent, 'GateSequence', kwargs)
     e.text = ", ".join(flatten(sequence))
 
 def allstrings(alphabet, length):
@@ -125,6 +134,15 @@ def gst_strings(fiducials, alphabet, length):
     """
     #Triply nested loop, as each element of alphabet can be the first, middle, or last gate
     return [[x] + [alphabet[i]]*length + [y] for i in range(0,len(alphabet)) for x in fiducials for y in fiducials]
+
+def gst_strings_condensed(fiducials, alphabet, length):
+    """return the list of all gate set tomography strings with gates taken from 'alphabet'.
+    
+    A single gate from 'alphabet' is repeated 'length' times. Each element of alphabet is used to prepare
+    and analyze. The total length of the returned string is length + 2.    
+    """
+    #Triply nested loop, as each element of alphabet can be the first, middle, or last gate
+    return [flattenAll([x, '(' , alphabet[i],  ')^', str(length) ,y]) for i in range(0,len(alphabet)) for x in fiducials for y in fiducials]
        
 root = ElementTree.Element('GateSequenceDefinition')
 
@@ -148,24 +166,24 @@ for length in range(1,4):
 seqlengths = [2**n for n in range(1, nmax+1)]
 for length in seqlengths:    
     root.append( ElementTree.Comment('GST sequences G^n, n = {0}'.format(length)))
-    for sequence in gst_strings(fiducials, training1, length):
-        gateSequence(root, str(i), sequence, i)
+    for sequence, condensed in zip( gst_strings(fiducials, training1, length), gst_strings_condensed(fiducials, training1, length)):
+        gateSequence(root, str(i), sequence, i, condensed=''.join(list(condensed)))
         i += 1
         totalTime += spamTime + gateTime*len(list(flatten(sequence)))
 
 seqlengths = [2**n for n in range(0, nmax)]
 for length in seqlengths:    
     root.append( ElementTree.Comment('GST sequences G^n, n = {0} for products of gates'.format(length)))
-    for sequence in gst_strings(fiducials, training2, length):
-        gateSequence(root, str(i), sequence, i)
+    for sequence, condensed in zip( gst_strings(fiducials, training2, length), gst_strings_condensed(fiducials, training2, length)):
+        gateSequence(root, str(i), sequence, i, condensed=''.join(list(condensed)))
         i += 1
         totalTime += spamTime + gateTime*len(list(flatten(sequence)))
 
 seqlengths = [2**n for n in range(0, nmax-1)]
 for length in seqlengths:    
     root.append( ElementTree.Comment('GST sequences G^n, n = {0} for products of three gates'.format(length)))
-    for sequence in gst_strings(fiducials, training2, length):
-        gateSequence(root, str(i), sequence, i)
+    for sequence, condensed in zip( gst_strings(fiducials, training2, length), gst_strings_condensed(fiducials, training2, length)):
+        gateSequence(root, str(i), sequence, i, condensed=''.join(list(condensed)))
         i += 1
         totalTime += spamTime + gateTime*len(list(flatten(sequence)))
         
