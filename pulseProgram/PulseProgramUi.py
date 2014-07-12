@@ -193,7 +193,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
         self.currentContext.merge( self.pulseProgram.variabledict )
         self.updateDisplayContext()
-        self.updateSaveStatus()
+        self.updateSaveStatus(isSaved=True)
         
     def onReloadContext(self):
         self.loadContext( self.contextDict[str(self.contextComboBox.currentText())] )
@@ -454,18 +454,21 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
         return updatecode
 
-    def updateSaveStatus(self):
-        currentText = str(self.contextComboBox.currentText())
+    def updateSaveStatus(self, isSaved=None):
         try:
-            if not currentText:
-                self.contextSaveStatus = True
-            elif currentText in self.contextDict:
-                self.contextSaveStatus = self.contextDict[currentText]==self.currentContext
+            if isSaved is None:
+                currentText = str(self.contextComboBox.currentText())
+                if not currentText:
+                    self.contextSaveStatus = True
+                elif currentText in self.contextDict:
+                    self.contextSaveStatus = self.contextDict[currentText]==self.currentContext
+                else:
+                    self.contextSaveStatus = False
+                if self.configParams.autoSaveContext and not self.contextSaveStatus:
+                    self.onSaveContext()
+                    self.contextSaveStatus = True
             else:
-                self.contextSaveStatus = False
-            if self.configParams.autoSaveContext and not self.contextSaveStatus:
-                self.onSaveContext()
-                self.contextSaveStatus = True
+                self.contextSaveStatus = isSaved
             self.saveContextButton.setEnabled( not self.contextSaveStatus )
         except Exception:
             pass
