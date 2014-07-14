@@ -9,7 +9,7 @@ import logging
 import math
 
 from pulser.PulserHardwareClient import check
-
+from modules.magnitude import mg
 
 class Ad9912Exception(Exception):
     pass
@@ -22,10 +22,20 @@ class Ad9912:
         self.phase = [None]*self.channels
         self.amplitude = [None]*self.channels
 
-    def setFrequency(self, channel, frequency):
+    def rawToMagnitude(self, raw):
+        return mg(1000,' MHz') * (raw / float(2**48))
+
+    def setFrequency(self, channel, frequency, even=False):
         intFrequency = int(round(2**48 * frequency.ounit('GHz').toval()))
+        intFrequency = intFrequency &0xfffffffffffe if even else intFrequency
         self.sendCommand(channel, 0, intFrequency >> 16 )
         self.sendCommand(channel, 4, intFrequency & 0xffff )
+        return intFrequency
+    
+    def setFrequencyRaw(self, channel, intFrequency):
+        self.sendCommand(channel, 0, intFrequency >> 16 )
+        self.sendCommand(channel, 4, intFrequency & 0xffff )
+        return intFrequency        
     
     def setPhase(self, channel, phase):
         intPhase = int(round(2**14 * phase.ounit('rad').toval()/(2*math.pi)))
