@@ -24,7 +24,7 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
            The for loop adds each pen icon into the combo box."""
         editor = MagnitudeSpinBox(parent)
         editor.dimension = index.model().data(index,QtCore.Qt.UserRole)
-        editor.valueChanged.connect( partial( index.model().setValue, index.row() ))
+        editor.valueChanged.connect( partial( index.model().setValue, index ))
         return editor
         
     def setEditorData(self, editor, index):

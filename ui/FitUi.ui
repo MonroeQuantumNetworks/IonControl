@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>327</width>
-    <height>544</height>
+    <width>359</width>
+    <height>833</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,6 +50,9 @@
        <property name="editable">
         <bool>true</bool>
        </property>
+       <property name="maxVisibleItems">
+        <number>100</number>
+       </property>
       </widget>
      </item>
      <item>
@@ -78,7 +81,11 @@
     </layout>
    </item>
    <item>
-    <widget class="QComboBox" name="fitSelectionComboBox"/>
+    <widget class="QComboBox" name="fitSelectionComboBox">
+     <property name="maxVisibleItems">
+      <number>100</number>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QLabel" name="descriptionLabel">
@@ -100,6 +107,7 @@
      </property>
      <widget class="TableViewExtended" name="parameterTableView"/>
      <widget class="TableViewExtended" name="resultsTableView"/>
+     <widget class="QTableView" name="pushTableView"/>
     </widget>
    </item>
    <item>
@@ -139,6 +147,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/edit-delete-6.png</normaloff>:/openicon/icons/edit-delete-6.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -157,7 +168,10 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/archive-extract-2.png</normaloff>:/openicon/icons/archive-extract-2.png</iconset>
+         <normaloff>:/openicon/icons/color-picker-black.png</normaloff>:/openicon/icons/color-picker-black.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -179,6 +193,9 @@
         <iconset resource="Experiment.qrc">
          <normaloff>:/openicon/icons/arrow-left-2.png</normaloff>:/openicon/icons/arrow-left-2.png</iconset>
        </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -193,6 +210,51 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="addPushVariable">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/edit-add.png</normaloff>:/openicon/icons/edit-add.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="removePushVariable">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/edit_remove.png</normaloff>:/openicon/icons/edit_remove.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="pushToGlobalButton">
+       <property name="toolTip">
+        <string>Push results to global variables</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/applications-internet-5.png</normaloff>:/openicon/icons/applications-internet-5.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

@@ -24,7 +24,7 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
     def data(self, index, role): 
         if index.isValid():
             item = self.history[len(self.history)-index.row()-1]
-            #print item.trappedAt, item.loadingTime, item.trappingTime
+            #print item.trappedAt, item.trappingTime, item.trappingTime
             return { (QtCore.Qt.DisplayRole,0): item.trappedAt.strftime('%Y-%m-%d %H:%M:%S'),
                      (QtCore.Qt.DisplayRole,1): self.formatDelta(item.loadingTime) if item.loadingTime else None,
                      (QtCore.Qt.DisplayRole,2): self.formatDelta(item.trappingTime) if item.trappingTime else None,
@@ -72,6 +72,6 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         
     def removeRow(self,row):
         index = len(self.history)-row-1
-        self.beginRemoveRows( QtCore.QModelIndex(), index, index   )
-        del self._history[0]
+        self.beginRemoveRows( QtCore.QModelIndex(), row, row   )
+        self._history.pop(index)
         self.endRemoveRows()

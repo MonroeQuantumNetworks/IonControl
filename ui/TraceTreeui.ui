@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>287</width>
-    <height>300</height>
+    <width>319</width>
+    <height>693</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/kde/icons/edit_clear.png</normaloff>:/kde/icons/edit_clear.png</iconset>
+         <normaloff>:/kde/icons/edit-clear.png</normaloff>:/kde/icons/edit-clear.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -149,7 +149,7 @@
        </property>
        <property name="icon">
         <iconset resource="Experiment.qrc">
-         <normaloff>:/openicon/icons/document-open-2.png</normaloff>:/openicon/icons/document-open-2.png</iconset>
+         <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -311,12 +311,33 @@
          <string>linespoints</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>lines errors</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>points errors</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>linespoints errors</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>
    </item>
    <item>
-    <widget class="QTreeView" name="traceTreeView"/>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <widget class="QTreeView" name="traceTreeView"/>
+     <widget class="QTableView" name="descriptionTableView"/>
+    </widget>
    </item>
   </layout>
  </widget>

@@ -188,7 +188,7 @@ class LockStatus(Form, Base):
     
     logFrequency = ['regulatorFrequency', 'referenceFrequency', 'referenceFrequencyMin', 'referenceFrequencyMax', 
                       'outputFrequency', 'outputFrequencyMin', 'outputFrequencyMax']
-    logVoltage = ['errorSigAvg', 'errorSigMin', 'errorSigMax', 'errorSigRMS']                 
+    logVoltage = ['errorSigAvg', 'errorSigMin', 'errorSigMax', 'errorSigRMS', 'externalAvg', 'externalMin', 'externalMax']                 
     def writeToLogFile(self, status):
         if self.lockSettings and self.lockSettings.mode & 1 == 1:  # if locked
             if not self.logFile:

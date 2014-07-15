@@ -4,13 +4,15 @@ import logging
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-from fit.FitFunctionBase import fitFunctionMap, ResultRecord
+from fit.FitFunctionBase import fitFunctionMap, ResultRecord, PushVariable
 from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitUiTableModel import FitUiTableModel
 from modules.HashableDict import HashableDict
 from modules.MagnitudeUtilit import value
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-
+from modules.SequenceDict import SequenceDict
+from PushVariableTableModel import PushVariableTableModel
+from modules.Utility import unique
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -21,14 +23,13 @@ class AnalysisDefinition(object):
         self.startParameters = tuple()
         self.parameterEnabled = tuple()
         self.results = HashableDict()
+        self.pushVariables = tuple()
 
     def fitfunction(self):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
         fitfunction.startParameters = list(self.startParameters)
         fitfunction.parameterEnabled = list(self.parameterEnabled)
-        for result in self.results.values():
-            fitfunction.results[result.name].push = result.push
-            fitfunction.results[result.name].globalname = result.globalname
+        fitfunction.pushVariables = SequenceDict( (v.globalName, v) for v in self.pushVariables) 
         return fitfunction
     
     @classmethod
@@ -37,10 +38,11 @@ class AnalysisDefinition(object):
         instance.startParameters = tuple(fitfunction.startParameters)
         instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
         for result in fitfunction.results.values():
-            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition, globalname=result.globalname, push=result.push)
+            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
+        instance.pushVariables = tuple( fitfunction.pushVariables.values() )
         return instance
      
-    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results'] 
+    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'pushVariables'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -51,8 +53,12 @@ class AnalysisDefinition(object):
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'pushVariables', tuple() )
             
 class FitUi(fitForm, QtGui.QWidget):
+    analysisNamesChanged = QtCore.pyqtSignal(object)
     def __init__(self, traceui, config, parentname, parent=None):
         QtGui.QWidget.__init__(self,parent)
         fitForm.__init__(self)
@@ -63,23 +69,31 @@ class FitUi(fitForm, QtGui.QWidget):
         self.configname = "FitUi.{0}.".format(parentname)
         self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
         self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
+        self.globalVariablesUi = None
             
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
         self.fitButton.clicked.connect( self.onFit )
         self.plotButton.clicked.connect( self.onPlot )
+        self.pushToGlobalButton.clicked.connect( self.onPush )
         self.removePlotButton.clicked.connect( self.onRemoveFit )
         self.extractButton.clicked.connect( self.onExtractFit )
         self.copyButton.clicked.connect( self.onCopy )
         self.removeAnalysisButton.clicked.connect( self.onRemoveAnalysis )
         self.saveButton.clicked.connect( self.onSaveAnalysis )
-        self.fitSelectionComboBox.addItems( fitFunctionMap.keys() )
+        self.fitSelectionComboBox.addItems( sorted(fitFunctionMap.keys()) )
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
-        self.parameterTableView.setItemDelegateForColumn(2,MagnitudeSpinBoxDelegate())
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
+        self.pushTableModel = PushVariableTableModel(self.config)
+        self.pushTableView.setModel( self.pushTableModel )
+        self.pushItemDelegate = MagnitudeSpinBoxDelegate()
+        self.pushTableView.setItemDelegateForColumn(4,self.pushItemDelegate)
+        self.pushTableView.setItemDelegateForColumn(5,self.pushItemDelegate)
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
         if self.configname+'splitter' in self.config:
             self.splitter.restoreState( self.config[self.configname+'splitter'])
@@ -91,10 +105,18 @@ class FitUi(fitForm, QtGui.QWidget):
             self.analysisNameComboBox.setCurrentIndex( self.analysisNameComboBox.findText(lastAnalysisName))
         fitfunction = self.config.get(self.configname+"LastFitfunction",None)
         if fitfunction:
-            self.fitfunction = fitfunction
+            self.setFitfunction( fitfunction )
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )
+        self.addPushVariable.clicked.connect( self.onAddPushVariable )
+        self.removePushVariable.clicked.connect( self.onRemovePushVariable )
 
-       
+    def onAddPushVariable(self):
+        self.pushTableModel.addVariable( PushVariable() )
+    
+    def onRemovePushVariable(self):
+        for index in sorted(unique([ i.row() for i in self.pushTableView.selectedIndexes() ]),reverse=True):
+            self.pushTableModel.removeVariable(index)
+             
     def onFitfunctionChanged(self, name):
         name = str(name)
         if self.fitfunction:
@@ -108,11 +130,13 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction = fitfunction
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
+        self.pushTableModel.setFitfunction(self.fitfunction)
         self.parameterTableView.resizeColumnsToContents()
         self.descriptionLabel.setText( self.fitfunction.functionString )
         if str(self.fitSelectionComboBox.currentText())!= self.fitfunction.name:
             self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
         self.resultsTableView.resizeColumnsToContents()
+        self.pushTableView.resizeColumnsToContents()
         
     def onFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
@@ -126,6 +150,15 @@ class FitUi(fitForm, QtGui.QWidget):
             plot.plot(-2)
             self.fitfunctionTableModel.fitDataChanged()
             self.fitResultsTableModel.fitDataChanged()
+            self.pushTableModel.fitDataChanged()
+            
+    def setGlobalVariablesUi(self, globalVariablesUi ):
+        self.globalVariablesUi = globalVariablesUi
+
+    def onPush(self):
+        if self.globalVariablesUi is not None:
+            self.globalVariablesUi.update( self.fitfunction.pushVariableValues() )
+
                 
     def onPlot(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
@@ -172,14 +205,19 @@ class FitUi(fitForm, QtGui.QWidget):
             index = self.analysisNameComboBox.findText(name)
             if index>=0:
                 self.analysisNameComboBox.removeItem(index)
+            self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
+                
     
     def onSaveAnalysis(self):
         name = str(self.analysisNameComboBox.currentText())       
         definition = AnalysisDefinition.fromFitfunction(self.fitfunction)
         definition.name = name
+        isNew = name not in self.analysisDefinitions
         self.analysisDefinitions[name] = definition
         if self.analysisNameComboBox.findText(name)<0:
             self.analysisNameComboBox.addItem(name)
+        if isNew:
+            self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
         
     def onLoadAnalysis(self, name):
         name = str(name)
@@ -187,3 +225,8 @@ class FitUi(fitForm, QtGui.QWidget):
             if AnalysisDefinition.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
                 self.setFitfunction( self.analysisDefinitions[name].fitfunction() )
         
+    def analysisNames(self):
+        return self.analysisDefinitions.keys()
+    
+    def analysisFitfunction(self, name):
+        return self.analysisDefinitions[name].fitfunction()

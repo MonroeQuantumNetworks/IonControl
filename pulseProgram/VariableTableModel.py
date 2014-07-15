@@ -6,7 +6,7 @@ Created on Fri Feb 08 22:02:08 2013
 """
 import logging
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 import sip
 
 from pulseProgram.VariableDictionary import CyclicDependencyException
@@ -20,28 +20,33 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled ]
-    headerDataLookup = ['use','variable','value','encoding','evaluated']
-    def __init__(self, variabledict, parent=None, *args): 
+    headerDataLookup = ['use','variable','value','evaluated']
+    contentsChanged = QtCore.pyqtSignal()
+    def __init__(self, variabledict=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self.variabledict = variabledict
+        self.variabledict = variabledict if variabledict is not None else dict()
         self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda var: QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
                              (QtCore.Qt.DisplayRole,1):    lambda var: var.name,
                              (QtCore.Qt.DisplayRole,2):    lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                             (QtCore.Qt.DisplayRole,3):    lambda var: str(var.encoding),
-                             (QtCore.Qt.DisplayRole,4):    lambda var: str(var.value),
+                             (QtCore.Qt.BackgroundColorRole,2): lambda var: QtGui.QColor( 255, 200, 200)  if hasattr(var,'strerror') and var.strerror else QtCore.Qt.white,
+                             (QtCore.Qt.ToolTipRole,2):    lambda var: var.strerror if hasattr(var,'strerror') and var.strerror else None,
+                             (QtCore.Qt.DisplayRole,3):    lambda var: str(var.outValue()),
                              (QtCore.Qt.EditRole,2):       lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                             (QtCore.Qt.EditRole,3):       lambda var: str(var.encoding),
                              }
         self.setDataLookup ={    (QtCore.Qt.CheckStateRole,0): self.setVarEnabled,
                                  (QtCore.Qt.EditRole,2):       self.setDataValue,
-                                 (QtCore.Qt.EditRole,3):       self.setDataEncoding,
                                 }
+        
+    def setVariables(self, variabledict ):
+        self.beginResetModel()
+        self.variabledict = variabledict
+        self.endResetModel()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.variabledict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 5
+        return 4
  
     def data(self, index, role): 
         if index.isValid():
@@ -56,6 +61,7 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             for name in updatednames:
                 index = self.variabledict.index(name)
                 self.dataChanged.emit( self.createIndex(index,0), self.createIndex(index,4) )
+            self.contentsChanged.emit()
             return True
         except CyclicDependencyException as e:
             logger = logging.getLogger(__name__)
@@ -83,6 +89,9 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         
     def setVarEnabled(self,index,value):
         self.variabledict.setEnabledIndex(index.row(), value == QtCore.Qt.Checked)
+        self.contentsChanged.emit()
+        self.dataChanged.emit( self.createIndex(index.row(),0), self.createIndex(index.row(),4) )
+        self.recalculateDependent(self.variabledict.keyAt(index.row()))
         return True      
 
     def setData(self,index, value, role):

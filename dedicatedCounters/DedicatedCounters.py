@@ -172,7 +172,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 trace = Trace()
                 trace.x = self.xData[counter]
                 trace.y = self.yData[counter]
-                trace.vars.counter = counter
+                trace.description["counter"] = counter
                 filename, _ = DataDirectory().sequencefile("DedicatedCounter_{0}.txt".format(counter))
                 trace.addTracePlotting( TracePlotting(name="Counter {0}".format(counter)) )
                 trace.saveTrace(filename)

@@ -5,7 +5,8 @@ Encapsulation of the Pulse Programmer Hardware
 from Queue import Queue
 import logging
 import multiprocessing
-import struct
+from multiprocessing.sharedctypes import Array
+import numpy
 
 from PyQt4 import QtCore 
 
@@ -27,10 +28,10 @@ class QueueReader(QtCore.QThread):
         self.running = False
         self.dataMutex = QtCore.QMutex()           # protects the thread data
         self.dataQueue = dataQueue
-        self.dataHandler = { 'Data': lambda data : self.pulserHardware.dataAvailable.emit(data),
-                             'DedicatedData': lambda data: self.pulserHardware.dedicatedDataAvailable.emit(data),
-                             'FinishException': lambda data: self.raise_(FinishException()),
-                             'LogicAnalyzerData': lambda data: self.onLogicAnalyzerData(data) }
+        self.dataHandler = { 'Data': lambda data, size : self.pulserHardware.dataAvailable.emit(data, size),
+                             'DedicatedData': lambda data, size: self.pulserHardware.dedicatedDataAvailable.emit(data),
+                             'FinishException': lambda data, size: self.raise_(FinishException()),
+                             'LogicAnalyzerData': lambda data, size: self.onLogicAnalyzerData(data) }
    
     def onLogicAnalyzerData(self, data): 
         self.pulserHardware.logicAnalyzerDataAvailable.emit(data)
@@ -44,7 +45,7 @@ class QueueReader(QtCore.QThread):
         while True:
             try:
                 data = self.dataQueue.get()
-                self.dataHandler[ data.__class__.__name__ ]( data )
+                self.dataHandler[ data.__class__.__name__ ]( data, self.dataQueue.qsize() )
             except (KeyboardInterrupt, SystemExit, FinishException):
                 break
             except Exception:
@@ -80,7 +81,7 @@ class LoggingReader(QtCore.QThread):
 class PulserHardware(QtCore.QObject):
     sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
 
-    dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
+    dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject', object )
     dedicatedDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     logicAnalyzerDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )
@@ -88,6 +89,7 @@ class PulserHardware(QtCore.QObject):
     
     timestep = magnitude.mg(20,'ns')
 
+    sharedMemorySize = 256*1024
     def __init__(self):
         super(PulserHardware,self).__init__()
         self._shutter = 0
@@ -100,8 +102,9 @@ class PulserHardware(QtCore.QObject):
         self.dataQueue = multiprocessing.Queue()
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
         self.loggingQueue = multiprocessing.Queue()
+        self.sharedMemoryArray = Array( 'L', self.sharedMemorySize , lock=True )
                 
-        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue )
+        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue, self.sharedMemoryArray )
         self.serverProcess.start()
 
         self.queueReader = QueueReader(self, self.dataQueue)
@@ -109,6 +112,7 @@ class PulserHardware(QtCore.QObject):
         
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
+        self.ppActive = False
 
 
     def shutdown(self):
@@ -181,12 +185,14 @@ class PulserHardware(QtCore.QObject):
     def ppStart(self):
         self.clientPipe.send( ('ppStart', () ) )
         value = processReturn( self.clientPipe.recv() )
+        self.ppActive = True
         self.ppActiveChanged.emit(True)
         return value
             
     def ppStop(self):
         self.clientPipe.send( ('ppStop', () ) )
         value = processReturn( self.clientPipe.recv() )
+        self.ppActive = False
         self.ppActiveChanged.emit(False)
         return value
             
@@ -199,18 +205,28 @@ class PulserHardware(QtCore.QObject):
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
-        self.binarycode = bytearray()
-        for word in wordlist:
-            self.binarycode += struct.pack('I', word)
-        return self.binarycode        
+        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
 
     def bytearrayToWordList(self, barray):
-        wordlist = list()
-        for offset in range(0,len(barray),4):
-            (w,) = struct.unpack_from('I',buffer(barray),offset)
-            wordlist.append(w)
-        return wordlist
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
             
+    
+    def ppWriteRamWordList(self, wordlist, address, check=True):
+        for start in range(0, len(wordlist), self.sharedMemorySize ):
+            length = min( self.sharedMemorySize, len(wordlist)-start )
+            self.sharedMemoryArray[0:length] = wordlist[start:start+length]
+            self.clientPipe.send( ('ppWriteRamWordListShared', (length, address+4*start, check) ) )
+            processReturn( self.clientPipe.recv() )
+        return True
+            
+    def ppReadRamWordList(self, wordlist, address):
+        readlist = list()
+        for start in range(0, len(wordlist), self.sharedMemorySize ):
+            length = min( self.sharedMemorySize, len(wordlist)-start )
+            self.clientPipe.send( ('ppReadRamWordListShared', (length, address+4*start) ) )
+            processReturn( self.clientPipe.recv() )
+            readlist.extend( self.sharedMemoryArray[0:length] )
+        return readlist
 
 def processReturn( returnvalue ):
     if isinstance( returnvalue, Exception ):

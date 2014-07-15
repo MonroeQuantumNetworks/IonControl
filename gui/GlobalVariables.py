@@ -45,13 +45,14 @@ class GlobalVariableUi(Form, Base ):
         self.dropButton.clicked.connect( self.onDropVariable )
         self.model = GlobalVariableTableModel(self.variables)
         self.tableView.setModel( self.model )
-        self.tableView.setItemDelegateForColumn(1,MagnitudeSpinBoxDelegate()) 
+        self.delegate = MagnitudeSpinBoxDelegate()
+        self.tableView.setItemDelegateForColumn(1,self.delegate) 
         self.tableView.setSortingEnabled(True)
         self.tableView.clicked.connect(self.onViewClicked)
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
-
+        self.newNameEdit.returnPressed.connect( self.onAddVariable )
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))
@@ -78,6 +79,10 @@ class GlobalVariableUi(Form, Base ):
                 selectionModel.clearSelection()
                 for index in indexes:
                     selectionModel.select( self.model.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
+                    
+    def update(self, updlist):
+        self.model.update(updlist)
+            
 
 if __name__=="__main__":
     import sys

@@ -11,6 +11,7 @@ import sip
 
 from modules import Expression
 import modules.magnitude as magnitude
+from modules import MagnitudeUtilit
 
 
 api2 = sip.getapi("QVariant")==2
@@ -18,13 +19,13 @@ api2 = sip.getapi("QVariant")==2
 class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal( object )
     headerDataLookup = ['Name', 'Value']
+    expression = Expression.Expression()
     def __init__(self, variables, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variables = variables
-        self.expression = Expression.Expression()
         self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.variables.keyAt(row),
                              (QtCore.Qt.DisplayRole,1): lambda row: str(self.variables.at(row)),
                              (QtCore.Qt.EditRole,0):    lambda row: self.variables.keyAt(row),
@@ -70,7 +71,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             return False
        
     def setData(self,index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda row, value: False )(index.row(), value)
+        return self.setDataLookup.get((role,index.column()), lambda row, value: False )(index, value)
 
     def flags(self, index ):
         return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
@@ -81,8 +82,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 return self.headerDataLookup[section]
         return None #QtCore.QVariant()
             
-    def setValue(self, row, value):
-        name = self.variables.keyAt(row)
+    def setValue(self, index, value):
+        name = self.variables.keyAt(index.row())
         old = self.variables[name]
         if not old.isIdenticalTo(value):
             self.variables[name] = value
@@ -132,4 +133,13 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 return True
         return False
     
-            
+    def update(self, updlist ):
+        for key, value in updlist:
+            value = MagnitudeUtilit.mg(value)
+            if key in self.variables:
+                old = self.variables[key]
+                if value.dimension()!=old.dimension() or value!=old:
+                    self.variables[key] = value
+                    self.valueChanged.emit(key)
+                    index = self.variables.index(key)
+                    self.dataChanged.emit( self.createIndex(index,1), self.createIndex(index,1))

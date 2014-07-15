@@ -11,6 +11,7 @@ import logging
 import math
 import re, os
 import struct
+import copy
 
 import modules.magnitude as magnitude
 
@@ -92,6 +93,7 @@ OPS = {'NOP'    : 0x00,
        'ASYNCINVSHUTTER' : 0x50,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
+       'WAITFORTRIGGER': 0x53,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -103,13 +105,28 @@ class Dimensions:
 
 class Variable:
     def __init__(self):
-        self.enabled = True        
+        self.enabled = True
+        self.value = 0        
         
     def __setstate__(self, d):
         self.__dict__ = d
         
     def __repr__(self):
         return str(self.__dict__)
+    
+    def __deepcopy__(self, mode):
+        new = Variable()
+        new.__dict__ = copy.deepcopy( self.__dict__ )
+        return new 
+
+    def __eq__(self,other):
+        return self.__dict__==other.__dict__
+
+    def __ne__(self, other):
+        return not self == other
+    
+    def outValue(self):
+        return self.value if self.enabled else self.value * 0
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
@@ -149,8 +166,8 @@ class PulseProgram:
         class Board:
             channelLimit = 1    
             halfClockLimit = 500000000
-        self.adIndexList = [(x,0) for x in range(6) ]
-        self.adBoards = [ Board() ]*6
+        self.adIndexList = [(x,0) for x in range(8) ]
+        self.adBoards = [ Board() ]*8
         
         self.timestep = magnitude.mg(20.0,'ns')
 
@@ -165,7 +182,7 @@ class PulseProgram:
             with open(os.path.join(self.pp_dir,name),'w') as f:
                 f.write(text)            
         
-    def loadSource(self, pp_file):
+    def loadSource(self, pp_file, docompile=True):
         """ Load the source pp_file
         #include files are loaded recursively
         all code lines are added to self.sourcelines
@@ -175,7 +192,8 @@ class PulseProgram:
         self.pp_dir, self.pp_filename = os.path.split(pp_file)
         self.sourcelines = []
         self.insertSource(self.pp_filename)
-        self.compileCode()
+        if docompile:
+            self.compileCode()
 
     def updateVariables(self, variables ):
         """ update the variable values in the bytecode
@@ -219,14 +237,24 @@ class PulseProgram:
         # [item for sublist in l for item in sublist] idiom for flattening of list
         return self.flattenList( [ (var.address,self.convertParameter(x,var.encoding)) for x in values ] )
                    
-    def loadFromMemory(self):
+    def multiVariableUpdateCode(self, variablenames, values):
+        varslist = [ self.variabledict[name] for name in  variablenames]
+        codelist = list()
+        for var, value in zip(varslist,values):
+            codelist.extend( ( var.address | 0x8000, self.convertParameter(value,var.encoding)) )  # bit 15 set means there is more to come
+        if len(codelist)>1:
+            codelist[-2] &= 0x7fff 
+        return codelist
+                   
+    def loadFromMemory(self, docompile=True):
         """Similar to loadSource
         only this routine loads from self.source
         """
         self.sourcelines = []
         self._exitcodes = dict()
         self.insertSource(self.pp_filename)
-        self.compileCode()
+        if docompile:
+            self.compileCode()
 
     def toBinary(self):
         """ convert bytecode to binary

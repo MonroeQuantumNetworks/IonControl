@@ -7,15 +7,6 @@ This is the main gui program for the ExperimentalUi
 @author: pmaunz
 """
 
-#import sip
-#sip.setapi("QString",2)
-#sip.setapi("QVariant",2)
-#sip.setapi("QDate",2)
-#sip.setapi("QDateTime",2)
-#sip.setapi("QTextStream",2)
-#sip.setapi("QTime",2)
-#sip.setapi("QUrl",2)
-
 import argparse
 import logging
 
@@ -46,7 +37,11 @@ from pulseProgram import PulseProgramUi
 from pulser import ShutterUi
 from gui import testExperiment
 from uiModules import MagnitudeParameter #@UnusedImport
-
+from gui.TodoList import TodoList
+from modules.SequenceDict import SequenceDict
+from functools import partial
+from externalParameter.ExternalParameter import ExternalParameter
+from gui.Preferences import PreferencesUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -67,6 +62,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameMap())
         self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
+        self.printMenu = None
         
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -98,8 +94,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
         
         self.parent = parent
-        self.tabList = list()
-        self.tabDict = dict()
+        self.tabDict = SequenceDict()
         
         
         # initialize PulseProgramUi
@@ -130,8 +125,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 widget.setGlobalVariablesUi( self.globalVariablesUi )
             if hasattr(widget,'setPulseProgramUi'):
                 widget.setPulseProgramUi( self.pulseProgramDialog )
+            if hasattr(widget, 'plotsChanged'):
+                widget.plotsChanged.connect( self.initMenu )
             self.tabWidget.addTab(widget, name)
-            self.tabList.append(widget)
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
@@ -151,6 +147,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.triggerUi.setDisabled )
         self.triggerDockWidget.setWidget( self.triggerUi )
 
+        self.preferencesUi = PreferencesUi(config, self)
+        self.preferencesUi.setupUi(self.preferencesUi)
+        self.preferencesUiDock = QtGui.QDockWidget("Preferences")
+        self.preferencesUiDock.setWidget(self.preferencesUi)
+        self.preferencesUiDock.setObjectName("_preferencesUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
+
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulser )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
@@ -158,11 +161,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
         # tabify the dock widgets
+        self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
         self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
         
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=ExternalParameter)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
@@ -179,6 +183,17 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
+        
+        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.setCurrentTab )
+        self.todoList.setupUi()
+        self.todoListDock = QtGui.QDockWidget("Todo List")
+        self.todoListDock.setWidget(self.todoList)
+        self.todoListDock.setObjectName("_todoList")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.todoListDock)
+        for name, widget in self.tabDict.iteritems():
+            if hasattr( widget, 'scanConfigurationListChanged' ) and widget.scanConfigurationListChanged is not None:
+                widget.scanConfigurationListChanged.connect( partial( self.todoList.populateMeasurementsItem, name)  )
+       
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
         
@@ -197,9 +212,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
-        self.currentTab = self.tabList[self.config.get('MainWindow.currentIndex',0)]
+        self.currentTab = self.tabDict.at(self.config.get('MainWindow.currentIndex',0))
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
+        if hasattr( self.currentTab, 'stateChanged' ):
+            self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
@@ -218,7 +235,16 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setupUi(self.voltageControlWindow)
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
+        self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
+        
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )
+        traceFilename, _ = DataDirectory.DataDirectory().sequencefile("Trace.log")
+        LoggingSetup.setTraceFilename( traceFilename )
+        
+        # connect signals and slots for todolist and auto resume
+        for name, widget in self.tabDict.iteritems():
+            if hasattr(widget,'onContinue'):
+                self.dedicatedCountersWindow.autoLoad.ionReappeared.connect( widget.onContinue )
         
     def onClearConsole(self):
         self.textEditConsole.clear()
@@ -287,8 +313,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     
     def onCurrentChanged(self, index):
         self.currentTab.deactivate()
-        self.currentTab = self.tabList[index]
+        if hasattr( self.currentTab, 'stateChanged' ):
+            try:
+                self.currentTab.stateChanged.disconnect()
+            except TypeError:
+                pass
+        self.currentTab = self.tabDict.at(index)
         self.currentTab.activate()
+        if hasattr( self.currentTab, 'stateChanged' ):
+            self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
         self.initMenu()
         
     def initMenu(self):
@@ -297,9 +330,19 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
-                     self.loggerDock ]:
+                     self.loggerDock, self.todoListDock ]:
             self.menuView.addAction(dock.toggleViewAction())
-        
+        # Print menu
+        if self.printMenu is not None:
+            self.printMenu.clear()
+        else:
+            self.printMenu = self.menuFile.addMenu("Print")
+        if hasattr(self.currentTab,'printTargets'):
+            for plot in self.currentTab.printTargets():
+                action = self.printMenu.addAction( plot )
+                action.triggered.connect( partial(self.onPrint, plot ))
+                
+         
     def onSettings(self):
         self.settingsDialog.show()
         
@@ -329,7 +372,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
-        for tab in self.tabList:
+        for tab in self.tabDict.values():
             tab.onClose()
         self.currentTab.deactivate()
         self.pulseProgramDialog.done(0)
@@ -342,7 +385,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
-        for tab in self.tabList:
+        for tab in self.tabDict.values():
             tab.saveConfig()
         self.config['Settings.deviceSerial'] = self.settings.deviceSerial
         self.config['Settings.deviceDescription'] = self.settings.deviceDescription
@@ -364,10 +407,36 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.saveConfig()
         self.globalVariablesUi.saveConfig()
         self.loggerUi.saveConfig()
+        self.todoList.saveConfig()
+        self.preferencesUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
         
+    def getCurrentTab(self):
+        index = self.tabWidget.currentIndex()
+        return self.tabDict.keyAt(index), self.tabDict.at(index)
+    
+    def setCurrentTab(self, name):
+        self.onCurrentChanged(self.tabDict.index(name))
+
+    def onPrint(self, target):
+        if hasattr( self.currentTab, 'onPrint' ):
+            printer = QtGui.QPrinter(mode=QtGui.QPrinter.ScreenResolution)
+            if self.preferencesUi.preferences().doPrint:
+                dialog = QtGui.QPrintDialog(printer, self)
+                dialog.setWindowTitle("Print Document")
+                if dialog.exec_() != QtGui.QDialog.Accepted:
+                    return;    
+            printer.setResolution(self.preferencesUi.preferences().printResolution)
+    
+            pdfPrinter = QtGui.QPrinter()
+            pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat);
+            pdfPrinter.setOutputFileName(DataDirectory.DataDirectory().sequencefile(target+".pdf")[0])
+        
+            
+            self.currentTab.onPrint(target, printer, pdfPrinter, self.preferencesUi.preferences())
+    
         
 if __name__ == "__main__":
     import sys

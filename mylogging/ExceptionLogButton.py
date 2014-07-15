@@ -35,8 +35,8 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.setPopupMode(QtGui.QToolButton.InstantPopup)
         sys.excepthook = self.myexcepthook
         self.exceptionsListed = 0
-        self.NoExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-default.png")
-        self.ExceptionsIcon = QtGui.QIcon(":/openicon/icons/emblem-important-4.png")
+        self.NoExceptionsIcon = QtGui.QIcon(":/petersIcons/icons/Success-01.png")
+        self.ExceptionsIcon = QtGui.QIcon(":/petersIcons/icons/Error-01.png")
         self.setIcon( self.NoExceptionsIcon )
         
     def removeAll(self):
@@ -73,7 +73,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
             self.removeAll()
         
     def myexcepthook(self, excepttype, value, tback):
-        logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__)
+        logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__ if tback is not None else "unknown")
         self.addMessage(value)
         logger.error( str(value), exc_info=(excepttype, value, tback) )
         #sys.__excepthook__(excepttype, value, tback)

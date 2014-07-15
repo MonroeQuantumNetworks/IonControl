@@ -50,7 +50,7 @@ def update( symboltable, arg=list(), kwarg=dict() ):
         if not kwarg['wait_dds']:
             code = list()
     if len(arg)==2:
-        symbol = symboltable.getVar( arg[1], type_ = "parameter" )
+        symbol = symboltable.getVar( arg[1] )
         return code + ["  WAIT",
                 "  UPDATE {0}".format(symbol.name) ]
     return code + ["  WAIT",
@@ -114,10 +114,16 @@ def read_ram( symboltable, arg=list(), kwarg=dict()):
 def wait_dds( symboltable, arg=list(), kwarg=dict()):
     return ["  WAITDDSWRITEDONE"]
 
+def wait_trigger( symboltable, arg=list(), kwarg=dict()):
+    if len(arg)!=2:
+        raise CompileException( "expected exactly one argument in wait_trigger" )
+    symbol = symboltable.getVar( arg[1] )
+    return ["  WAITFORTRIGGER {0}".format(symbol.name)]
+
 def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
     if len(arg)!=1:
         raise CompileException( "apply_next_scan_point does not take arguments" )
-    return [  "  READPIPEINDF",
+    return [  "apply_next_scan_point:  READPIPEINDF",
               "  NOP",
               "  WRITEPIPEINDF",
               "  NOP",
@@ -125,5 +131,6 @@ def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
               "  NOP",
               "  WRITEPIPE",
               "  NOP",
-              "  STWI"  ]
+              "  STWI",
+              "  JMPCMP apply_next_scan_point"  ]
     

@@ -19,7 +19,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         self.fitfunction = None
         
     def relConfidenceValue(self, row):
-        if len(self.fitfunction.parametersConfidence)>row and self.fitfunction.parameters[row] and self.fitfunction.parametersConfidence[row]:
+        if self.fitfunction.parametersConfidence and len(self.fitfunction.parametersConfidence)>row and self.fitfunction.parameters[row] and self.fitfunction.parametersConfidence[row]:
             return "{0}%".format(roundToNDigits(100*self.fitfunction.parametersConfidence[row]/abs(self.fitfunction.parameters[row]),2))
         return None
         
@@ -68,8 +68,8 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
             self.fitfunction.startParameters[index.row()] = value
         return False
     
-    def setValue(self, row, value):
-        self.fitfunction.startParameters[row] = value
+    def setValue(self, index, value):
+        self.fitfunction.startParameters[index.row()] = value
 
     def flags(self, index ):
         return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,

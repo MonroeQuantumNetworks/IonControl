@@ -2,7 +2,7 @@
 from collections import MutableMapping
 from itertools import izip_longest
 from operator import itemgetter
-
+import copy
 
 class SequenceDict(dict, MutableMapping):
 
@@ -12,6 +12,9 @@ class SequenceDict(dict, MutableMapping):
         if not hasattr(self, '_keys'):
             self._keys = []
         self.update(*args, **kwds)
+        
+    def __hash__(self):
+        return hash(tuple(self.items()))
 
     def clear(self):
         del self._keys[:]
@@ -20,6 +23,14 @@ class SequenceDict(dict, MutableMapping):
     def __setitem__(self, key, value):
         if key not in self:
             self._keys.append(key)
+        dict.__setitem__(self, key, value)
+        
+    def insert(self, index, key, value):
+        if key not in self:
+            self._keys.insert(index,key)
+        else:
+            self._keys.remove(key)
+            self._keys.insert(index,key)            
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
@@ -57,6 +68,13 @@ class SequenceDict(dict, MutableMapping):
         value = dict.pop(self, key)
         return key, value
 
+    def popAt(self, index):
+        if not self:
+            raise KeyError('dictionary is empty')
+        key = self._keys.pop(index)
+        value = dict.pop(self, key)
+        return key, value
+
     def __reduce__(self):
         items = [[k, self[k]] for k in self]
         inst_dict = vars(self).copy()
@@ -69,6 +87,7 @@ class SequenceDict(dict, MutableMapping):
     keys = MutableMapping.keys
     values = MutableMapping.values
     items = MutableMapping.items
+    iteritems = MutableMapping.iteritems
 
     def __repr__(self):
         if not self:
@@ -164,7 +183,27 @@ class SequenceDict(dict, MutableMapping):
         reverse = dict([ (value,index) for index,value in enumerate(keylist) ])
         self._keys = sorted( self._keys, key=lambda x: reverse[x])
             
+    def __deepcopy__(self, mode):
+        new = type(self)()
+        for key, value in self.iteritems():
+            new[key] = copy.deepcopy(value, mode)
+        return new
+        
+    
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+    d = SequenceDict([(4, 4), (1, 1), (2, 2), (3, 3)])
+    print d.items()
+    print list(d.iteritems())
+    e = copy.deepcopy(d)
+    print e.items()
+    
+    import pickle
+    s = pickle.dumps(d,0)
+    print 'next is pickle.load'
+    ud = pickle.loads(s)
+    print 'unpickled', ud
+    print ud.at(1)
+    
     

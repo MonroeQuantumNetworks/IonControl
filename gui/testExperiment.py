@@ -88,22 +88,22 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
             self.startScan()
 #end added
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(80)
+        self.timer.setInterval(10)
         self.timer.timeout.connect( self.onData )
-        self.timer.start(80)
+        self.timer.start(10)
         self.displayUi.onClear()
 
 #start added
     def createAverageScan(self):
         self.averagePlottedTrace = PlottedTrace(Trace(), self.graphicsView, pens.penList)
         self.averagePlottedTrace.trace.name = "test average trace"
-        self.averagePlottedTrace.trace.vars.comment = "average trace comment"
+        self.averagePlottedTrace.trace.description["comment"] = "average trace comment"
         self.averagePlottedTrace.trace.filenameCallback = functools.partial(self.traceFilename, '')
         self.traceui.addTrace(self.averagePlottedTrace, pen=0)
 #end added
 
     def startScan(self):
-        if self.plottedTrace is not None:
+        if self.plottedTrace is not None and self.traceui.unplotLastTrace():
             self.plottedTrace.plot(0)
         self.plottedTrace = PlottedTrace(Trace(),self.graphicsView,pens.penList)
         self.xvalue = 0
@@ -116,13 +116,13 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.plottedTrace.trace.filenameCallback = functools.partial( self.traceFilename, '' )
         if self.scanType == 0:
             self.plottedTrace.trace.name = "test trace"
-            self.plottedTrace.trace.vars.comment = "My Comment"
+            self.plottedTrace.trace.description["comment"] = "My Comment"
             self.traceui.addTrace(self.plottedTrace, pen=-1)
 #start added
         elif self.scanType == 1:
             self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
             self.plottedTrace.trace.name = "test trace {0}".format(self.averagePlottedTrace.childCount())
-            self.plottedTrace.trace.vars.comment = "My Comment {0}".format(self.averagePlottedTrace.childCount())
+            self.plottedTrace.trace.description["comment"] = "My Comment {0}".format(self.averagePlottedTrace.childCount())
 #end added
 
     def onData(self):
@@ -135,7 +135,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.plottedTrace.trace.bottom = numpy.append( self.plottedTrace.trace.bottom, 0.05)
         self.displayUi.add( [value] )
         self.plottedTrace.replot()
-        if self.xvalue > 3.5:
+        if self.xvalue > 500:
             if self.scanType == 0:
                 self.onStop()
 #start added
@@ -169,3 +169,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         directory = DataDirectory.DataDirectory()
         path = str(QtGui.QFileDialog.getSaveFileName(self, 'Save file',directory.path()))
         return path
+
+    def setGlobalVariablesUi(self, globalVariablesUi ):
+        self.globalVariables = globalVariablesUi.variables
+        self.globalVariablesChanged = globalVariablesUi.valueChanged
+        self.globalVariablesUi = globalVariablesUi
+        self.fitWidget.setGlobalVariablesUi( globalVariablesUi )

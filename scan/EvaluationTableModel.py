@@ -5,8 +5,8 @@ from scan.CountEvaluation import EvaluationAlgorithms
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )
-    headerDataLookup = ['Counter','Evaluation','Name','Hist', 'Plot' ]
-    def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None):
+    headerDataLookup = ['Counter','Evaluation','Name','Hist', 'Plot', 'Analysis' ]
+    def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None, analysisNames=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
             self.evalList = evalList
@@ -15,29 +15,45 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.plotnames = plotnames
         self.updateSaveStatus = updateSaveStatus
         self.evalAlgorithmList = list()
+        self.analysisNames = analysisNames if analysisNames is not None else list()
         self.setDataLookup =  {  (QtCore.Qt.EditRole,0): self.setCounter,
                                  (QtCore.Qt.EditRole,1): self.setAlgorithm,
                                  (QtCore.Qt.EditRole,2): self.setDataName,
                                  (QtCore.Qt.EditRole,4): self.setPlotName,
+                                 (QtCore.Qt.EditRole,5): self.setAnalysis,
                                  (QtCore.Qt.CheckStateRole,3): self.setShowHistogram,
                                 }
         self.dataLookup = {  (QtCore.Qt.DisplayRole,0): lambda self, row: self.evalList[row].counter,
                              (QtCore.Qt.DisplayRole,1): lambda self, row: self.evalList[row].evaluation,
                              (QtCore.Qt.DisplayRole,2): lambda self, row: self.evalList[row].name,
                              (QtCore.Qt.DisplayRole,4): lambda self, row: self.evalList[row].plotname,
+                             (QtCore.Qt.DisplayRole,5): lambda self, row: self.evalList[row].analysis,
                              (QtCore.Qt.EditRole,0):    lambda self, row: self.evalList[row].counter,
                              (QtCore.Qt.EditRole,1):    lambda self, row: self.evalList[row].evaluation,
                              (QtCore.Qt.EditRole,2):    lambda self, row: self.evalList[row].name,
                              (QtCore.Qt.EditRole,4):    lambda self, row: self.evalList[row].plotname,
+                             (QtCore.Qt.EditRole,5):    lambda self, row: self.evalList[row].analysis,
                              (QtCore.Qt.CheckStateRole,3): lambda self, row: QtCore.Qt.Checked if self.evalList[row].showHistogram else QtCore.Qt.Unchecked,
                              }
+        self.choiceLookup = { 1: EvaluationAlgorithms.keys,
+                              4: self.getPlotnames,
+                              5: self.getAnalysisNames }
+        
+    def setAnalysisNames(self, names):
+        self.analysisNames = names
         
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
 
+    def getPlotnames(self):
+        return self.plotnames
+    
+    def getAnalysisNames(self):
+        return [""]+self.analysisNames
+    
     def choice(self, index):
-        return {1:EvaluationAlgorithms.keys(),4:self.plotnames}[index]
-        
+        return self.choiceLookup[index]() 
+            
     def setEvalList(self, evalList, evalAlgorithmList):
         self.beginResetModel()
         self.evalList = evalList
@@ -48,7 +64,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return len(self.evalList)
     
     def columnCount(self,  parent=QtCore.QModelIndex()):
-        return 5
+        return 6
     
     def data(self, index, role): 
         if index.isValid():
@@ -56,7 +72,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return None
         
     def flags(self, index ):
-        if index.column() in [0,1,2,4]:
+        if index.column() in [0,1,2,4,5]:
             return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
         if index.column()==3:
             return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
@@ -93,6 +109,15 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
     def setPlotName(self, index, plotname):
         self.evalList[index.row()].plotname = str(plotname)
         self.dataChanged.emit( index, index )
+        return True
+    
+    def setAnalysis(self, index, name):
+        name = str(name)
+        if name=="":
+            self.evalList[index.row()].analysis = None
+        else:    
+            self.evalList[index.row()].analysis = name
+        self.dataChanged.emit( index, index)
         return True
         
     def setAlgorithm(self, index, algorithm):

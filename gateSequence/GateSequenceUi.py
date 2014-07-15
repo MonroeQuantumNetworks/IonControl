@@ -69,6 +69,10 @@ class Settings:
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
         return r
         
+    def description(self):
+        desc = dict( ((field,getattr(self,field)) for field in self.documentationList) )
+        return desc
+
 
 class GateSequenceUi(Form,Base):    
     Mode = enum('FullList', 'Gate')
@@ -147,7 +151,10 @@ class GateSequenceUi(Form,Base):
             logger.error( "{0} during loading of GateSequence Files, ignored.".format(err) )
 
     def documentationString(self):
-        return repr(self.settings)        
+        return repr(self.settings)   
+    
+    def descritpion(self):
+        return self.settings.description()     
             
     def onGateDefinitionChanged(self, name):
         name = str(name)
@@ -241,6 +248,11 @@ class GateSequenceUi(Form,Base):
             data = self.gateSequenceCompiler.gateSequenceCompile( self.settings.gate )
             address = [0]*self.settings.thisSequenceRepetition
         return address, data, self.settings
+    
+    def gateSequenceAttributes(self):
+        if self.settings.active == self.Mode.FullList:
+            return self.gateSequenceContainer.GateSequenceAttributes.values()
+        return None
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict

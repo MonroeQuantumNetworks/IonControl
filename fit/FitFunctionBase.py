@@ -16,15 +16,37 @@ from modules import magnitude
 from modules.MagnitudeUtilit import value
 from modules.SequenceDict import SequenceDict
 import xml.etree.ElementTree as ElementTree
+from modules.Expression import Expression
 
 
 class ResultRecord(object):
-    def __init__(self, name=None, definition=None, value=None, globalname=None, push=False ):
+    def __init__(self, name=None, definition=None, value=None):
         self.name = name
         self.definition = definition
         self.value = value
-        self.globalname = globalname
-        self.push = push
+
+class PushVariable(object):
+    expression = Expression()
+    def __init__(self):
+        self.push = False
+        self.globalName = None
+        self.definition = ""
+        self.value = None
+        self.minimum = ""
+        self.maximum = ""
+        
+    def evaluate(self, variables=dict(), useFloat=False):
+        self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
+        
+    def pushRecord(self, variables=None):
+        if variables is not None:
+            self.evaluate(variables)
+        if (self.push and self.globalName is not None and self.globalName != 'None'and self.value is not None and 
+            (not self.minimum or self.value >= self.minimum) and 
+            (not self.maximum or self.value <= self.maximum)):
+            return [(self.globalName, self.value)]
+        return []
+
 
 class FitFunctionBase(object):
     name = 'None'
@@ -35,11 +57,13 @@ class FitFunctionBase(object):
         self.startParameters = []
         self.parameterEnabled = []
         self.parametersConfidence = []
+        self.pushVariables = SequenceDict()
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         
     def __setstate__(self, state):
         self.__dict__ = state
+        self.__dict__.setdefault( 'pushVariables', SequenceDict() )
 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -150,7 +174,7 @@ class FitFunctionBase(object):
     
                 #-----------------------------------------------
         else:
-            self.parametersConfidence = None
+            self.parametersConfidence = [None]*len(self.parametersConfidence)
  
         return self.parameters
                 
@@ -169,8 +193,35 @@ class FitFunctionBase(object):
             e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': str(enabled)})
             e.text = str(value)
         for result in self.results.values():
-            e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition), 'globalname': str(result.globalname), 'push': str(result.push)})
+            e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition)})
             e.text = str(result.value)
+        for push in self.pushVariables.values():
+            e = ElementTree.SubElement( myroot, 'PushVariable', {'globalName':push.globalName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
         return myroot
-    
+   
+    def residuals(self,p, y, x, sigma):
+        p = self.allFitParameters(p)
+        if sigma is not None:
+            return (y-self.functionEval(x, *p))/sigma
+        else:
+            return y-self.functionEval(x, *p)
+        
+    def value(self,x,p=None):
+        p = self.parameters if p is None else p
+        return self.functionEval(x, *p )
+
+    def pushVariableValues(self):
+        replacement = dict(zip(self.parameterNames,self.parameters))
+        pushVarValues = list()
+        for pushvar in self.pushVariables.values():
+            pushVarValues.extend( pushvar.pushRecord(replacement) )
+        return pushVarValues
+            
+    def updatePushVariables(self):
+        replacement = dict(zip(self.parameterNames,self.parameters))
+        for pushvar in self.pushVariables.values():
+            pushvar.evaluate(replacement)
+
+        
+        
 fitFunctionMap = dict()    

@@ -18,6 +18,7 @@ class Parameter:
         self.strvalue = strvalue
 
 class ParameterTableModel(QtCore.QAbstractTableModel):
+    expression = Expression.Expression()
     def __init__(self, variabledict, parameterdict, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
@@ -25,7 +26,6 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.variabledict = variabledict
         self.parameterlist = [ Parameter(name, val ) for name, val in parameterdict.iteritems() ]
-        self.expression = Expression.Expression()
         self.parameterdict = parameterdict
 
     def rowCount(self, parent=QtCore.QModelIndex()): 

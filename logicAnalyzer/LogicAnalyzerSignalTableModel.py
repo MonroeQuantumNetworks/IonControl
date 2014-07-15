@@ -11,26 +11,30 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.shutterChannelNames, self.shutterNamesSignal, self.triggerChannelNames, self.triggerNamesSignal = channelNameData
-        self.dataSignals = 38
-        self.auxSignals = 4
+        self.dataSignals = 32
+        self.auxSignals = 10
+        self.gateSignals = 32
         self.triggerSignals = 7
         self.enabledList = config.get('LogicAnalyzer.EnabledChannels',[True]*(self.dataSignals+self.auxSignals+self.triggerSignals) )
+        if len(self.enabledList)!=self.rowCount():
+            self.enabledList.extend( [True]*(self.rowCount()-len(self.enabledList)))
         self.dataLookup = { (QtCore.Qt.DisplayRole,1): lambda row: self.channelName(row),
                             (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.enabledList[row] else QtCore.Qt.Unchecked,
                      }
         self.shutterNamesSignal.dataChanged.connect( lambda first, last: self.dataChanged.emit( self.createIndex(first,0), self.createIndex(last,0) ))
         self.triggerNamesSignal.dataChanged.connect( lambda first, last: self.dataChanged.emit( self.createIndex(first+self.dataSignals,0), self.createIndex(last+self.dataSignals,0) ))
         
-    highDataChannelNames = [ 'DDS 0 CS', 'DDS 1 CS', 'DDS 2 CS', 'DDS 3 CS', 'DDS 4 CS', 'DDS 5 CS']
-    auxChannelNames = ['dds write done', 'out fifo full', 'in fifo empty', 'ram fifo valid']
+    auxChannelNames = ['dds write done', 'out fifo full', 'in fifo empty', 'ram fifo valid', 'DDS 0 CS', 'DDS 1 CS', 'DDS 2 CS', 'DDS 3 CS', 'DDS 4 CS', 'DDS 5 CS']
             
     def channelName(self, index):
         if index<self.dataSignals:
             return self.primaryChannelName(index)
         elif index<self.dataSignals+self.auxSignals:
             return self.auxChannelName(index - self.dataSignals)
-        else:
+        elif index<self.dataSignals+self.auxSignals+self.triggerSignals:
             return self.triggerChannelName(index-self.dataSignals-self.auxSignals)
+        else:
+            return self.gateChannelName(index-self.dataSignals-self.auxSignals-self.triggerSignals)
                 
     def auxChannelName(self, index):
         return self.auxChannelNames[index]
@@ -44,16 +48,19 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
             return "Trigger {0}".format(index)
 
     def primaryChannelName(self, index):
-        if index<32:
-            if index in self.shutterChannelNames.names:
-                return self.shutterChannelNames.names[index]
-            else:
-                return "Shutter {0}".format(index)
+        if index in self.shutterChannelNames.names:
+            return self.shutterChannelNames.names[index]
         else:
-            return self.highDataChannelNames[index-32]      
+            return "Shutter {0}".format(index)
+
+    def gateChannelName(self, index):
+        if index>23: 
+            return "Timestamp {0}".format(index-24)
+        else:
+            return "Counter {0}".format(index)
          
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return self.dataSignals+self.auxSignals+self.triggerSignals
+        return self.dataSignals+self.auxSignals+self.triggerSignals+self.gateSignals
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
@@ -66,6 +73,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
     def setData(self,index, value, role):
         if (role, index.column()) == (QtCore.Qt.CheckStateRole,0): 
             self.enabledList[index.row()] = value==QtCore.Qt.Checked
+            
             self.enableChanged.emit()
             return True
         return False

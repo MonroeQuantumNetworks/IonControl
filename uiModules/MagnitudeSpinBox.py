@@ -28,10 +28,10 @@ class DimensionMismatch(Exception):
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
+    expression = Expression.Expression()
     
     def __init__(self,parent=None):
         super(MagnitudeSpinBox,self).__init__(parent)
-        self.expression = Expression.Expression()
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         self.editingFinished.connect( self.onEditingFinished )
         self.lineEdit().setDragEnabled(True)

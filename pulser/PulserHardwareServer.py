@@ -6,6 +6,7 @@ import logging
 import math
 from multiprocessing import Process
 import struct
+import numpy
 
 import ok
 
@@ -91,6 +92,7 @@ class Data:
         self.other = list()
         self.overrun = False
         self.exitcode = 0
+        self.dependentValues = list()
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -113,8 +115,11 @@ class LogicAnalyzerData:
         self.data = list()
         self.auxData = list()
         self.trigger = list()
+        self.gateData = list()
         self.stopMarker = None
         self.countOffset = 0
+        self.overrun = False
+        self.wordcount = 0
         
     def dataToStr(self, l):
         strlist = list()
@@ -123,14 +128,15 @@ class LogicAnalyzerData:
         return "["+", ".join(strlist)+"]"
                   
     def __str__(self):
-        return "data: {0} auxdata: {1} trigger: {2} stopMarker: {3} countOffset: {4}".format(self.dataToStr(self.data), self.dataToStr(self.auxData), self.dataToStr(self.trigger), self.stopMarker, self.countOffset)
+        return "data: {0} auxdata: {1} trigger: {2} gate: {3} stopMarker: {4} countOffset: {5}".format(self.dataToStr(self.data), self.dataToStr(self.auxData), self.dataToStr(self.trigger), 
+                                                                                                       self.dataToStr(self.gateData), self.stopMarker, self.countOffset)
 
 class FinishException(Exception):
     pass
 
 class PulserHardwareServer(Process):
     timestep = magnitude.mg(20,'ns')
-    def __init__(self, dataQueue, commandPipe, loggingQueue):
+    def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         super(PulserHardwareServer,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
@@ -138,6 +144,7 @@ class PulserHardwareServer(Process):
         self.openModule = None
         self.xem = None
         self.loggingQueue = loggingQueue
+        self.sharedMemoryArray = sharedMemoryArray
         
         # PipeReader stuff
         self.state = self.analyzingState.normal
@@ -154,11 +161,13 @@ class PulserHardwareServer(Process):
         self.logicAnalyzerStopAtEnd = False
         self.logicAnalyzerData = LogicAnalyzerData()
         
+        self.logicAnalyzerBuffer = bytearray()
+        
     def run(self):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
         while (self.running):
-            if self.commandPipe.poll(0.05):
+            if self.commandPipe.poll(0.01):
                 try:
                     commandstring, argument = self.commandPipe.recv()
                     command = getattr(self, commandstring)
@@ -178,7 +187,7 @@ class PulserHardwareServer(Process):
         self.running = False
         return True
 
-    analyzingState = enum.enum('normal','scanparameter')
+    analyzingState = enum.enum('normal','scanparameter', 'dependentscanparameter')
     def readDataFifo(self):
         """ run is responsible for reading the data back from the FPGA
             0xffffffff end of experiment marker
@@ -193,31 +202,46 @@ class PulserHardwareServer(Process):
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
             logicAnalyzerData, _ = self.ppReadLogicAnalyzerData(8)
-            if logicAnalyzerData is not None:
-                for s in sliceview(logicAnalyzerData,8):
-                    (code, ) = struct.unpack('Q',s)
-                    time = (code&0xffffff) + self.logicAnalyzerData.countOffset
-                    pattern = (code >> 24) & 0x3fffffffff
-                    header = (code >> 62 )
-                    if code==0x8000000000000000:  # overrun marker
-                        self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
-                    elif code&0xffffffffff000000==0x800000000f000000:  # end marker
-                        self.logicAnalyzerData.stopMarker = time
-                        self.dataQueue.put( self.logicAnalyzerData )
-                        self.logicAnalyzerData = LogicAnalyzerData()
-                    elif header==0: # trigger
-                        self.logicAnalyzerData.trigger.append( (time,pattern) )
-                    elif header==1: # standard
-                        self.logicAnalyzerData.data.append( (time,pattern) )  
-                    elif header==3: # aux data
-                        self.logicAnalyzerData.auxData.append( (time,pattern))                                          
-                    #logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+            if self.logicAnalyzerOverrun:
+                logger.error("Logic Analyzer Pipe overrun")
+                self.logicAnalyzerClearOverrun()
+                self.logicAnalyzerData.overrun = True
+            if logicAnalyzerData:
+                self.logicAnalyzerBuffer.extend(logicAnalyzerData)
+            for s in sliceview(self.logicAnalyzerBuffer,8):
+                (code, ) = struct.unpack('Q',s)
+                self.logicAnalyzerData.wordcount += 1
+                time = (code&0xffffff) + self.logicAnalyzerData.countOffset
+                pattern = (code >> 24) & 0xffffffff
+                header = (code >> 56 )
+                if header==2:  # overrun marker
+                    self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
+                elif header==1:  # end marker
+                    self.logicAnalyzerData.stopMarker = time
+                    self.dataQueue.put( self.logicAnalyzerData )
+                    self.logicAnalyzerData = LogicAnalyzerData()
+                elif header==4: # trigger
+                    self.logicAnalyzerData.trigger.append( (time,pattern) )
+                elif header==3: # standard
+                    self.logicAnalyzerData.data.append( (time,pattern) )  
+                elif header==5: # aux data
+                    self.logicAnalyzerData.auxData.append( (time,pattern))
+                elif header==6:
+                    self.logicAnalyzerData.gateData.append( (time,pattern) )                                          
+                logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+            self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
+
                    
         data, self.data.overrun = self.ppReadData(4)
         if data:
             for s in sliceview(data,4):
                 (token,) = struct.unpack('I',s)
-                if self.state == self.analyzingState.scanparameter:
+                if self.state == self.analyzingState.dependentscanparameter:
+                    self.data.dependentValues.append(token)
+                    logger.debug( "Dependent value {0} received".format(token) )
+                    self.state = self.analyzingState.normal
+                elif self.state == self.analyzingState.scanparameter:
+                    logger.debug( "Scan value {0} received".format(token) )
                     if self.data.scanvalue is None:
                         self.data.scanvalue = token
                     else:
@@ -247,7 +271,7 @@ class PulserHardwareServer(Process):
                     elif token == 0xff000000:
                         self.timestampOffset += 1<<28
                     elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
-                        self.state = self.analyzingState.scanparameter
+                        self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
                     key = token >> 28
                     channel = (token >>24) & 0xf
@@ -262,11 +286,12 @@ class PulserHardwareServer(Process):
                     elif key==4: # other return value
                         self.data.other.append(value)
                     else:
-                        pass
+                        self.data.other.append(token)
             if self.data.overrun:
                 logger.info( "Overrun detected, triggered data queue" )
                 self.dataQueue.put( self.data )
                 self.data = Data()
+                self.clearOverrun()
                 
             
      
@@ -441,6 +466,20 @@ class PulserHardwareServer(Process):
     def interruptRead(self):
         self.sleepQueue.put(False)
 
+    def ppWriteData(self,data):
+        if self.xem:
+            if isinstance(data,bytearray):
+                return self.xem.WriteToPipeIn(0x81,data)
+            else:
+                code = bytearray()
+                for item in data:
+                    code.extend(struct.pack('I',item))
+                #print "ppWriteData length",len(code)
+                return self.xem.WriteToPipeIn(0x81,code)
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            return None
+                
     def ppReadData(self,minbytes=4):
         if self.xem:
             self.xem.UpdateWireOuts()
@@ -457,7 +496,8 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x27)   # pipe_out_available
-            byteswaiting = (wirevalue & 0xffe)*2
+            byteswaiting = (wirevalue & 0x1ffe)*2
+            self.logicAnalyzerOverrun = (wirevalue & 0x4000) == 0x4000
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa1, data)
@@ -465,20 +505,14 @@ class PulserHardwareServer(Process):
                 return data, overrun
         return None, False
                         
-    def ppWriteData(self,data):
-        if self.xem:
-            if isinstance(data,bytearray):
-                return self.xem.WriteToPipeIn(0x81,data)
-            else:
-                code = bytearray()
-                for item in data:
-                    code.extend(struct.pack('I',item))
-                #print "ppWriteData length",len(code)
-                return self.xem.WriteToPipeIn(0x81,code)
-        else:
-            logging.getLogger(__name__).warning("Pulser Hardware not available")
-            return None
-                
+    def wordListToBytearray(self, wordlist):
+        """ convert list of words to binary bytearray
+        """
+        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
+
+    def bytearrayToWordList(self, barray):
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
+            
     def ppWriteRam(self,data,address):
         if self.xem:
             appendlength = int(math.ceil(len(data)/128.))*128 - len(data)
@@ -493,34 +527,6 @@ class PulserHardwareServer(Process):
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return None
             
-    def wordListToBytearray(self, wordlist):
-        """ convert list of words to binary bytearray
-        """
-        self.binarycode = bytearray()
-        for word in wordlist:
-            self.binarycode += struct.pack('I', word)
-        return self.binarycode        
-
-    def bytearrayToWordList(self, barray):
-        wordlist = list()
-        for offset in range(0,len(barray),4):
-            (w,) = struct.unpack_from('I',buffer(barray),offset)
-            wordlist.append(w)
-        return wordlist
-            
-    def ppWriteRamWordlist(self,wordlist,address):
-        logger = logging.getLogger(__name__)
-        data = self.wordListToBytearray(wordlist)
-        self.ppWriteRam( data, address)
-        testdata = bytearray([0]*len(data))
-        self.ppReadRam( testdata, address)
-        logger.info( "ppWriteRamWordlist {0} {1} {2}".format( len(data), len(testdata), data==testdata ) )
-        if data!=testdata:
-            logger.error( "Write unsuccessfull data does not match write length {0} read length {1}".format(len(data),len(testdata)))
-            logger.debug( "Sent     {0}".format(list(data)))
-            logger.debug( "Received {0}".format(list(testdata)))
-            raise PulserHardwareException("RAM write unsuccessful")
-
     def ppReadRam(self,data,address):
         if self.xem:
 #           print "set read address"
@@ -533,12 +539,53 @@ class PulserHardwareServer(Process):
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             
+    quantum = 1024*1024
+    def ppWriteRamWordList(self,wordlist,address):
+        logger = logging.getLogger(__name__)
+        data = self.wordListToBytearray(wordlist)
+        for start in range(0, len(data), self.quantum ):
+            self.ppWriteRam( data[start:start+self.quantum], address+start)
+        matches = True
+        myslice = bytearray(self.quantum)
+        for start in range(0, len(data), self.quantum ):
+            self.ppReadRam(myslice, address+start)
+            length = min(self.quantum,len(data)-start)
+            matches = matches and data[start:start+self.quantum] == myslice[:length]
+        logger.info( "ppWriteRamWordList {0}".format( len(data)) )
+        if not matches:
+            logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
+            raise PulserHardwareException("RAM write unsuccessful")
+
     def ppReadRamWordList(self, wordlist, address):
         data = bytearray([0]*len(wordlist)*4)
-        self.ppReadRam(data,address)
+        myslice = bytearray(self.quantum)
+        for start in range(0, len(data), self.quantum ):
+            length = min(self.quantum, len(data)-start )
+            self.ppReadRam(myslice, address+start)
+            data[start:start+length] = myslice[:length]
         wordlist = self.bytearrayToWordList(data)
         return wordlist
+
+    def ppWriteRamWordListShared(self, length, address, check=True):
+        #self.ppWriteRamWordList(self.sharedMemoryArray[:length], address)
+        logger = logging.getLogger(__name__)
+        data = self.wordListToBytearray(self.sharedMemoryArray[:length])
+        self.ppWriteRam( data, address)
+        if check:
+            myslice = bytearray(len(data))
+            self.ppReadRam(myslice, address)
+            matches = data == myslice
+            logger.info( "ppWriteRamWordList {0}".format( len(data)) )
+            if not matches:
+                logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
+                raise PulserHardwareException("RAM write unsuccessful")
                 
+    def ppReadRamWordListShared(self, length, address):
+        data = bytearray([0]*length*4)
+        self.ppReadRam(data, address)
+        self.sharedMemoryArray[:length] = self.bytearrayToWordList(data)
+        return True
+
     def ppClearWriteFifo(self):
         if self.xem:
             self.xem.ActivateTriggerIn(0x41, 3)
@@ -651,8 +698,20 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.ActivateTriggerIn( 0x40, 12 ) # Ram set read address
 
+    def logicAnalyzerClearOverrun(self):
+        if self.xem:
+            self.xem.ActivateTriggerIn( 0x40, 10 ) # Ram set read address
+            
+    def clearOverrun(self):
+        if self.xem:
+            self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
        
         
 def sliceview(view,length):
-    return tuple(buffer(view, i, length) for i in range(0, len(view), length))    
+    return tuple(buffer(view, i, length) for i in range(0, len(view)-length+1, length))
 
+def sliceview_remainder(view,length):
+    l = len(view)
+    full_items = l//length
+    appendix = l-length*full_items
+    return buffer(view, l-appendix, appendix )

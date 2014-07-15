@@ -13,7 +13,7 @@ from scipy.special import laguerre
 
 from FitFunctionBase import ResultRecord
 from fit.FitFunctionBase import FitFunctionBase
-from modules.MagnitudeUtilit import value
+from modules import MagnitudeUtilit
 from modules.magnitude import mg
 
 
@@ -25,36 +25,39 @@ class RabiCarrierFunction(FitFunctionBase):
         self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength']
         self.parameters = [1,7,0.28,40,0,1.578,729]
         self.startParameters = [1,7,0.28,40,0,mg(1.578,'MHz'),mg(729,'nm')]
-        self.units = [None, None, None, None, 'MHz', 'nm' ]
+        self.units = [None, None, None, None, None, 'MHz', 'nm' ]
+        self.parameterEnabled = [True]*7
+        self.parametersConfidence = [None]*7
         # constants
-        self.results['nstart'] = ResultRecord( name='nstart')
-        self.results['taufinal'] = ResultRecord( name='taufinal')
-        self.results['scTimeInit'] = ResultRecord( name='scTimeInit' )
-        self.results['scIncrement'] = ResultRecord( name='scIncrement' )
-        self.results['numberLoops'] = ResultRecord( name='numberLoops' )
+        self.results['taufinal'] = ResultRecord( name='taufinal',value=0)
+        self.results['scTimeInit'] = ResultRecord( name='scTimeInit',value=0)
+        self.results['scIncrement'] = ResultRecord( name='scIncrement',value=0 )
+        self.results['numberLoops'] = ResultRecord( name='numberLoops',value=0 )
+        self.results['eta'] = ResultRecord( name='eta',value=0 )
         self.update()
         
     def update(self,parameters=None):
         _,n,omega,mass,angle,trapFrequency,wavelength = self.parameters if parameters is None else parameters
         m = mass * constants.m_p
-        secfreq = trapFrequency.toval('Hz')
-        eta = ( (2*pi/wavelength.toval('m'))*cos(angle*pi/180)
+        secfreq = trapFrequency*10**6
+        eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
                      * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
         scTimeInit =  mg( (1/omega)/(eta*sqrt(n)), 'us')
         taufinal = mg( (1/omega)/(eta), 'us')
         nstart = 2*n
-        self.results['nstart'].value = nstart
-        self.results['scTimeInit'].value = scTimeInit
-        self.results['scIncrement'].value = (taufinal-scTimeInit)/nstart
-        self.results['taufinal'].value = taufinal
-        self.results['eta'] = self.eta
+        self.results['taufinal'] = ResultRecord( name='taufinal',value=taufinal)
+        self.results['scTimeInit'] = ResultRecord( name='scTimeInit',value=scTimeInit)
+        self.results['scIncrement'] = ResultRecord( name='scIncrement',value=(taufinal-scTimeInit)/nstart )
+        self.results['numberLoops'] = ResultRecord( name='numberLoops',value=nstart )
+        self.results['eta'] = ResultRecord( name='eta',value=eta )
+        
 
         
     def residuals(self,p, y, x, sigma):
         A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(p)
-        secfreq = value(trapFrequency,'Hz')
+        secfreq = trapFrequency*10**6
         m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
+        eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
                      * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
         eta2 = pow(eta,2)
         if sigma is not None:
@@ -66,9 +69,9 @@ class RabiCarrierFunction(FitFunctionBase):
         
     def value(self,x,p=None):
         A,n,omega,mass,angle,trapFrequency,wavelength  = self.parameters if p is None else p
-        secfreq = value(trapFrequency,'Hz')
+        secfreq = trapFrequency*10**6
         m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
+        eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
                      * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
         eta2 = pow(eta,2)
         value = ( A/2.*(1.-1./(n+1.)*(cos(2*omega*x)*(1-n/(n+1.)*cos(2*omega*x*eta2))+(n/(n+1.))*sin(2*omega*x)*sin(2*omega*x*eta2))/(1+(n/(n+1.))**2
@@ -90,15 +93,15 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
     def updateTables(self,beta):
         logger = logging.getLogger(__name__)
         A,n,omega,mass,angle,trapFrequency,wavelength = self.parameters #@UnusedVariable
-        secfreq = value(trapFrequency,'Hz')
+        secfreq = MagnitudeUtilit.value(trapFrequency,'Hz') * 10**6
         m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
+        eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
                      * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
         eta2 = pow(eta,2)
         if eta != self.laguerreCacheEta:
             logger.info( "Calculating Laguerre Table for eta^2={0}".format(eta2) )
             self.laguerreTable = array([ laguerre(n)(eta2) for n in range(200) ])
-            self.laguerreCacheEta2 = eta
+            self.laguerreCacheEta = eta
         if self.pnCacheBeta != beta:
             logger.info( "Calculating Probability Table for beta {0}".format(beta) )
             self.pnTable = array([ exp(-(n+1)*beta)*(exp(beta)-1) for n in range(200)])
@@ -107,11 +110,7 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
             
         
     def residuals(self,p, y, x, sigma):
-        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(p)
-        secfreq = value(trapFrequency,'Hz')
-        m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
-                     * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
+        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(self.parameters if p is None else p) #@UnusedVariable
         beta = log(1+1./n)
         self.updateTables(beta)
         if hasattr(x,'__iter__'):
@@ -129,11 +128,7 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
             return y-result
         
     def value(self,x,p=None):
-        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(p)
-        secfreq = value(trapFrequency,'Hz')
-        m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
-                     * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
+        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(self.parameters if p is None else p)  #@UnusedVariable
         beta = log(1+1./n)
         self.updateTables(beta)
         if hasattr(x,'__iter__'):

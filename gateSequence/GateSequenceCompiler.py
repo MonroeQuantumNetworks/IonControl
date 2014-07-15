@@ -9,14 +9,16 @@ import logging
 from modules.Expression import Expression
 import modules.magnitude as magnitude
 
+class GateSequenceCompilerException(Exception):
+    pass
 
 class GateSequenceCompiler(object):
+    expression = Expression()
     def __init__(self, pulseProgram ):
         self.pulseProgram = pulseProgram
         self.compiledGates = dict()
-        self.expression = Expression()
         
-    """Compile all gate sets into binary representation
+    """Compile all gate sequences into binary representation
         returns tuple of start address list and bytearray data"""
     def gateSequencesCompile(self, gatesets ):
         logger = logging.getLogger(__name__)
@@ -28,31 +30,42 @@ class GateSequenceCompiler(object):
         for gateset in gatesets.GateSequenceDict.values():
             gatesetdata = self.gateSequenceCompile( gateset )
             addresses.append(index)
-            data.append(gatesetdata)
+            data.extend(gatesetdata)
             index += len(gatesetdata)*4
-        return addresses, [item for sublist in data for item in sublist]
+        return addresses, data
     
     """Compile one gateset into its binary representation"""
     def gateSequenceCompile(self, gateset ):
         data = list()
+        length = 0
         for gate in gateset:
-            data.append( self.compiledGates[gate] )
-        return [len(gateset)] + [item for sublist in data for item in sublist]
+            thisCompiledGate = self.compiledGates[gate]
+            data.extend( thisCompiledGate )
+            length += len(thisCompiledGate)//self.pulseListLength
+        return [length] + data
 
     """Compile each gate definition into its binary representation"""
     def gateCompile(self, gateDefinition ):
         logger = logging.getLogger(__name__)
         variables = self.pulseProgram.variables()
-        for name, gate in gateDefinition.Gates.iteritems():  # for all defined gates
+        pulseList = gateDefinition.PulseDefinition.values()
+        self.pulseListLength = len(pulseList)
+        for gatename, gate in gateDefinition.Gates.iteritems():  # for all defined gates
             data = list()
-            for pulsename, pulse in gateDefinition.PulseDefinition.iteritems():
-                strvalue = gate.pulsedict[pulsename]
-                result = self.expression.evaluate(strvalue, variables )      
+            gateLength = 0
+            for name, strvalue in gate.pulsedict:
+                result = self.expression.evaluate(strvalue, variables )
                 if isinstance(result, magnitude.Magnitude) and result.dimensionless():
                     result.output_prec(0)
-                data.append( self.pulseProgram.convertParameter( result, pulse.encoding ) )
-            self.compiledGates[name] = data
-            logger.info( "compiled {0} to {1}".format(name,data) )
+                if name!=pulseList[ gateLength % self.pulseListLength ].name:
+                    raise GateSequenceCompilerException("In gate {0} entry {1} found '{2}' expected '{3}'".format(gatename, gateLength, name, pulseList[ gateLength % self.pulseListLength ]))
+                encoding = gateDefinition.PulseDefinition[name].encoding
+                data.append( self.pulseProgram.convertParameter( result, encoding ) ) 
+                gateLength += 1
+            if gateLength % self.pulseListLength != 0:
+                raise GateSequenceCompilerException("In gate {0} number of entries ({1}) is not a multiple of the pulse definition length ({2})".format(gatename, gateLength, self.pulseListLength))
+            self.compiledGates[gatename] = data
+            logger.info( "compiled {0} to {1}".format(gatename,data) )
                 
         
 if __name__=="__main__":

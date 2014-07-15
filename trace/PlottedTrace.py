@@ -7,7 +7,7 @@ Created on Fri Dec 28 18:40:30 2012
 import os.path
 from trace import pens
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import numpy
 from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
@@ -15,9 +15,18 @@ from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 from modules import DataDirectory 
 from modules import enum
 from trace.Trace import TracePlotting
+import time 
+from modules import WeakMethod
+from functools import partial
+from itertools import izip
 
+def sort_lists_by(lists, key_list=0, desc=False):
+    return izip(*sorted(izip(*lists), reverse=desc,
+                 key=lambda x: x[key_list]))
+    
 class PlottedTrace(object):
-    Styles = enum.enum('lines','points','linespoints')
+    Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
+    PointsStyles = [ 1, 4 ]
     Types = enum.enum('default','steps')
     def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
@@ -30,14 +39,14 @@ class PlottedTrace(object):
         if self.graphicsView != None:
             if not hasattr(self.graphicsView,'penUsageDict'):
                 self.graphicsView.penUsageDict = [0]*len(pens.penList)
-            self.penUsageDict = self.graphicsView.penUsageDict
+            self.penUsageDict = self.graphicsView.penUsageDict        # TODO circular reference
         self.trace = Trace
         self.curve = None
         self.fitcurve = None
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
         self.type = self.Types.default if plotType is None else plotType
-#Tree related data. Parent and children are set in the model's addTrace method, but declared here
+        #Tree related data. Parent and children are set in the model's addTrace method, but declared here
         self.isRootTrace = isRootTrace
         self.parentTrace = None
         self.childTraces = []
@@ -47,6 +56,8 @@ class PlottedTrace(object):
         self.xAxisUnit = xAxisUnit
         self.yAxisLabel = yAxisLabel
         self.yAxisUnit = yAxisUnit
+        self.lastPlotTime = time.time()
+        self.needsReplot = False
         # we use pointers to the relevant columns in trace
         if tracePlotting is not None:
             self.tracePlotting = tracePlotting
@@ -57,6 +68,8 @@ class PlottedTrace(object):
             self._heightColumn = tracePlotting.heightColumn
             self._rawColumn = tracePlotting.rawColumn
             self.type = tracePlotting.type
+            self.xAxisLabel = tracePlotting.xAxisLabel
+            self.xAxisUnit = tracePlotting.xAxisUnit
         elif self.trace:
             self._xColumn = xColumn
             self._yColumn = yColumn
@@ -64,14 +77,20 @@ class PlottedTrace(object):
             self._bottomColumn = bottomColumn
             self._heightColumn = heightColumn
             self._rawColumn = rawColumn
-            self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,
-                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name, type_=self.type)
-            self.trace.addTracePlotting( self.tracePlotting )
+            self.tracePlotting = TracePlotting(xColumn=self._xColumn, yColumn=self._yColumn, topColumn=self._topColumn, bottomColumn=self._bottomColumn,   # TODO double check for reference
+                                               heightColumn=self._heightColumn, rawColumn=self._rawColumn, name=name, type_=self.type, xAxisUnit=self.xAxisUnit, xAxisLabel=self.xAxisLabel)
+            self.trace.addTracePlotting( self.tracePlotting )   # TODO check for reference
             if not hasattr(self.trace,xColumn):
                 self.trace.addColumn( xColumn )
             if not hasattr(self.trace,yColumn):
                 self.trace.addColumn( yColumn )
-          
+        self.stylesLookup = { self.Styles.lines: partial( WeakMethod.ref(self.plotLines), errorbars=False),
+                         self.Styles.points: partial( WeakMethod.ref(self.plotPoints), errorbars=False),
+                         self.Styles.linespoints: partial( WeakMethod.ref(self.plotLinespoints), errorbars=False), 
+                         self.Styles.lines_with_errorbars: partial( WeakMethod.ref(self.plotLines), errorbars=True),
+                         self.Styles.points_with_errorbars: partial( WeakMethod.ref(self.plotPoints), errorbars=True),
+                         self.Styles.linepoints_with_errorbars: partial( WeakMethod.ref(self.plotLinespoints), errorbars=True)}
+
     @property
     def hasTopColumn(self):
         return self._topColumn and hasattr(self.trace, self._topColumn)
@@ -186,26 +205,29 @@ class PlottedTrace(object):
  
     def plotErrorBars(self,penindex):
         if self.hasHeightColumn:
-            self.errorBarItem = ErrorBarItem(x=self.x, y=self.y, height=self.height,
+            self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), height=(self.height),
                                                        pen=self.penList[penindex][0])
-            self.graphicsView.addItem(self.errorBarItem)
         elif self.hasTopColumn and self.hasBottomColumn:
-            self.errorBarItem = ErrorBarItem(x=self.x, y=self.y, top=self.top, bottom=self.bottom,
+            self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), top=(self.top), bottom=(self.bottom),
                                                        pen=self.penList[penindex][0])
             self.graphicsView.addItem(self.errorBarItem)
             
 
-    def plotLines(self,penindex):
-        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0])
+    def plotLines(self,penindex, errorbars=True ):
+        if errorbars:
+            self.plotErrorBars(penindex)
+        x, y = sort_lists_by( (self.x, self.y), key_list=0)
+        self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0])            
         if self.xAxisLabel:
             if self.xAxisUnit:
                 self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
             else:
                 self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
-        
     
-    def plotPoints(self,penindex):
-        self.curve = self.graphicsView.plot(self.x, self.y, pen=None, symbol=self.penList[penindex][1],
+    def plotPoints(self,penindex, errorbars=True ):
+        if errorbars:
+            self.plotErrorBars(penindex)
+        self.curve = self.graphicsView.plot((self.x), (self.y), pen=None, symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
             if self.xAxisUnit:
@@ -214,8 +236,11 @@ class PlottedTrace(object):
                 self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
 
     
-    def plotLinespoints(self,penindex):
-        self.curve = self.graphicsView.plot(self.x, self.y, pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+    def plotLinespoints(self,penindex, errorbars=True ):
+        if errorbars:
+            self.plotErrorBars(penindex)
+        x, y = sort_lists_by( (self.x, self.y), key_list=0)
+        self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
                                             symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
         if self.xAxisLabel:
             if self.xAxisUnit:
@@ -243,23 +268,34 @@ class PlottedTrace(object):
         if penindex>0:
             if self.type==self.Types.default:
                 self.plotFitfunction(penindex)
-                self.plotErrorBars(penindex)
-                { self.Styles.lines: self.plotLines,
-                  self.Styles.points: self.plotPoints,
-                  self.Styles.linespoints: self.plotLinespoints }.get(self.style,self.plotLines)(penindex)
+                self.stylesLookup.get(self.style,self.plotLines)(penindex)
             elif self.type ==self.Types.steps:
                 self.plotSteps(penindex)
             self.penUsageDict[penindex] += 1
         self.curvePen = penindex
         
     def replot(self):
+        if len(self.x)>500 and time.time()-self.lastPlotTime<len(self.x)/500.:
+            if not self.needsReplot:
+                self.needsReplot = True
+                QtCore.QTimer.singleShot(len(self.x)*2,self._replot) 
+        else:
+            self._replot()
+            
+    def _replot(self):
         if hasattr(self,'curve') and self.curve is not None:
-            self.curve.setData( self.x, self.y )
+            if self.style not in self.PointsStyles and self.type==self.Types.default:
+                x, y = sort_lists_by( (self.x, self.y), key_list=0)
+                self.curve.setData( numpy.array(x), numpy.array(y) )
+            else:
+                self.curve.setData( (self.x), (self.y) )
         if hasattr(self,'errorBarItem') and self.errorBarItem is not None:
             if self.hasHeightColumn:
-                self.errorBarItem.setData(x=self.x, y=self.y, height=self.trace.height)
+                self.errorBarItem.setData(x=(self.x), y=(self.y), height=(self.trace.height))
             else:
-                self.errorBarItem.setOpts(x=self.x, y=self.y, top=self.top, bottom=self.bottom)
+                self.errorBarItem.setOpts(x=(self.x), y=(self.y), top=(self.top), bottom=(self.bottom))
+        self.lastPlotTime = time.time()
+        self.needsReplot = False
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
@@ -288,5 +324,19 @@ class PlottedTrace(object):
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
         
-
+    def __del__(self):
+#        logging.getLogger(__name__).debug("Delete PlottedTrace")
+        print "Delete PlottedTrace"
+        
+        
+if __name__=="__main__":
+    from trace.Trace import Trace
+    import gc
+    import sys
+    plottedTrace = PlottedTrace(Trace(),None,pens.penList)
+    print sys.getrefcount(plottedTrace)
+    plottedTrace = None
+    del plottedTrace
+    gc.collect()
+    raw_input("Press Enter")
                 

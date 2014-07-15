@@ -20,7 +20,8 @@ import time
 from PyQt4 import QtCore
 
 import ScanExperiment
-
+from functools import partial
+from modules.magnitude import Magnitude
 
 class ScanNotAvailableException(Exception):
     pass
@@ -63,7 +64,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.displayUi.onClear()
             self.progressUi.setStarting()
             self.plottedTrace = None #reset plotted trace
-            if self.plottedTraceList:
+            if self.plottedTraceList and self.traceui.unplotLastTrace():
                 for plottedTrace in self.plottedTraceList:
                     plottedTrace.plot(0) #unplot previous trace
             self.plottedTraceList = list() #reset plotted trace
@@ -101,7 +102,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 self.progressUi.setIdle()
                 logger.info( "Status -> Idle" )
 
-    def onData(self, data ):
+    def onData(self, data, queuesize ):
         """ Called by worker with new data
         """
         logger = logging.getLogger(__name__)
@@ -111,31 +112,42 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.onPause()
         else:
             logger.info( "NewExternalScan onData {0}".format( data.scanvalue ) )
-            x = self.generator.xValue(self.externalParameterIndex)
-            evaluated = list()
-            for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
-                if data.count[evaluation.counter]:
-                    evaluated.append( (algo.evaluate( data.count[evaluation.counter]),algo.settings['errorBars'] ) ) # returns mean, error, raw
-                else:
-                    logger.info( "No data for counter {0}, ignoring it.".format(evaluation.counter) )
-            if len(evaluated)>0:
-                self.displayUi.add(  [ e[0][0] for e in evaluated ] )
-                self.updateMainGraph(x, evaluated )
-                self.showHistogram(data, self.scan.evalList )
-            self.currentIndex += 1
-            self.externalParameterIndex += 1
-            if self.scan.enableTimestamps: 
-                self.showTimestamps(data)
-            if self.progressUi.state == self.OpStates.running:
-                if data.final and data.exitcode not in [0,0xffff]:
-                    self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
-                elif self.externalParameterIndex < len(self.scan.list):
-                    self.dataBottomHalf()
-                    self.progressUi.onData( self.currentIndex )  
-                else:
-                    self.finalizeData(reason='end of scan')
-                    self.generator.dataOnFinal(self, self.progressUi.state )
-                    logger.info("Scan Completed")
+            if not self.externalParameter.useExternalValue():
+                x = self.generator.xValue(self.externalParameterIndex)
+                self.dataMiddlePart(data, queuesize, x)
+            else:
+                self.externalParameter.asyncCurrentExternalValue( partial( self.dataMiddlePart, data, queuesize) )
+            
+    def dataMiddlePart(self, data, queuesize, x):
+        if isinstance(x, Magnitude):
+            x = x.ounit(self.scan.xUnit).toval()
+        logger = logging.getLogger(__name__)
+        evaluated = list()
+        expected = self.generator.expected( self.currentIndex )
+        for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+            if len(data.count[evaluation.counter])>0:
+                evaluated.append( algo.evaluate( data.count[evaluation.counter], expected=expected ) ) # returns mean, error, raw
+            else:
+                evaluated.append( (0,None,0) )
+                logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))
+        if len(evaluated)>0:
+            self.displayUi.add(  [ e[0] for e in evaluated ] )
+            self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )
+            self.showHistogram(data, self.scan.evalList )
+        self.currentIndex += 1
+        self.externalParameterIndex += 1
+        if self.scan.enableTimestamps: 
+            self.showTimestamps(data)
+        if self.progressUi.state == self.OpStates.running:
+            if data.final and data.exitcode not in [0,0xffff]:
+                self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
+            elif self.externalParameterIndex < len(self.scan.list):
+                self.dataBottomHalf()
+                self.progressUi.onData( self.currentIndex )  
+            else:
+                self.finalizeData(reason='end of scan')
+                self.generator.dataOnFinal(self, self.progressUi.state )
+                logger.info("Scan Completed")
 
     def dataBottomHalf(self):
         logger = logging.getLogger(__name__)

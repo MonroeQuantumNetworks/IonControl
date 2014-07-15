@@ -23,7 +23,33 @@ class LevelThresholdFilter(logging.Filter):
             return (record.levelno >= self.passlevel)
         else:
             return (record.levelno < self.passlevel)
+        
+class LevelFilter(logging.Filter):
+    def __init__(self, passlevel):
+        self.passlevel = passlevel
+        
+    def filter(self, record):
+        return record.levelno == self.passlevel
 
+traceHandler = None
+def setTraceFilename(filename):
+    global traceHandler
+    if traceHandler is not None:
+        logger.removeHandler(traceHandler)
+    traceHandler = logging.FileHandler(filename)
+    traceHandler.setFormatter(fileformatter)
+    traceHandler.addFilter( LevelFilter(logging.TRACE))  # @UndefinedVariable
+    logger.addHandler( traceHandler )
+
+
+TRACE_LEVEL_NUM = 25 
+logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
+def trace(self, message, *args, **kws):
+    # Yes, logger takes its '*args' as 'args'.
+    if self.isEnabledFor(TRACE_LEVEL_NUM):
+        self._log(TRACE_LEVEL_NUM, message, args, **kws) 
+logging.Logger.trace = trace
+logging.TRACE = TRACE_LEVEL_NUM
 
 logger = logging.getLogger("")
 logger.setLevel(logging.INFO)
@@ -42,7 +68,7 @@ fileformatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s(%(filename
 
 fileHandler = logging.FileHandler("messages")
 fileHandler.setFormatter(fileformatter)
-fileHandler.setLevel(logging.INFO)
+fileHandler.setLevel(logging.INFO) 
 
 qtHandler = QtLoggingHandler()
 qtHandler.setFormatter(formatter)

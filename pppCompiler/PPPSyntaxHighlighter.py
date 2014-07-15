@@ -34,7 +34,7 @@ class PPPHighlighter( QSyntaxHighlighter ):
         brush = QBrush(Qt.darkMagenta, Qt.SolidPattern)
         types.setForeground(brush)
         types.setFontWeight(QFont.Bold)
-        typekeywords = ['var','const','parameter','shutter','masked_shutter','trigger','counter','exitcode']
+        typekeywords = ['var','const','parameter','shutter','masked_shutter','trigger','counter','address','exitcode']
         for word in typekeywords:
             pattern = QRegExp("\\b" + word + "\\b")
             rule = HighlightingRule(pattern, types)

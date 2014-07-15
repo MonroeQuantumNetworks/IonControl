@@ -16,7 +16,7 @@ from gui import ProjectSelection
 from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
-
+from TraceDescriptionTableModel import TraceDescriptionTableModel
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
 
@@ -29,6 +29,11 @@ class Settings:
         else:
             self.lastDir = lastDir
         self.plotstyle = plotstyle
+        self.unplotLastTrace = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'unplotLastTrace', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
 
@@ -79,7 +84,8 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.model = TraceTreeModel([], self.penicons)
         self.tracePersistentIndexes = []
         self.traceTreeView.setModel(self.model)
-        self.traceTreeView.setItemDelegateForColumn(1,TraceComboDelegate(self.penicons)) #This is for selecting which pen to use in the plot
+        self.delegate = TraceComboDelegate(self.penicons)
+        self.traceTreeView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
         self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
@@ -92,6 +98,26 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.plotButton.clicked.connect(self.onPlot)
         self.shredderButton.clicked.connect(self.onShredder)
         self.selectAllButton.clicked.connect(self.traceTreeView.selectAll)
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.unplotSettingsAction = QtGui.QAction( "Unplot last trace", self )
+        self.unplotSettingsAction.setCheckable(True)
+        self.unplotSettingsAction.setChecked( self.settings.unplotLastTrace)
+        self.unplotSettingsAction.triggered.connect( self.onUnplotSetting )
+        self.addAction( self.unplotSettingsAction )
+        self.descriptionModel = TraceDescriptionTableModel() 
+        self.descriptionTableView.setModel( self.descriptionModel )
+        self.traceTreeView.clicked.connect( self.onActiveTraceChanged )
+        self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
+
+    def onActiveTraceChanged(self, modelIndex ):
+        trace = self.model.getTrace(modelIndex)
+        self.descriptionModel.setDescription(trace.trace.description)
+
+    def onUnplotSetting(self, checked):
+        self.settings.unplotLastTrace = checked
+        
+    def unplotLastTrace(self):
+        return self.settings.unplotLastTrace
 
     def uniqueSelectedIndexes(self, useLastIfNoSelection=True):
         """From the selected elements, return one index from each row.
@@ -104,7 +130,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         if (len(selectedIndexes) == 0) and useLastIfNoSelection:
             if len(self.tracePersistentIndexes) != 0:
                 #Find and return the most recently added trace that still has a valid index (i.e. has not been removed).
-                for ind in range(-1, -len(self.tracePersistentIndexes), -1): 
+                for ind in range(-1, -len(self.tracePersistentIndexes)-1, -1): 
                     if self.tracePersistentIndexes[ind].isValid():
                         return [QtCore.QModelIndex(self.tracePersistentIndexes[ind])]
                 return None #If the for loop failed to find a valid index, return None. This happens if all traces have been deleted.
@@ -126,13 +152,15 @@ class Traceui(TraceuiForm, TraceuiBase):
             if not self.traceTreeView.isExpanded(parentIndex):
                 self.traceTreeView.expand(parentIndex)
         trace.plot(pen,self.settings.plotstyle)
-        numcols = self.model.columnCount()
-        for column in range(numcols):
+                
+    def resizeColumnsToContents(self):
+        for column in range(self.model.columnCount()):
             self.traceTreeView.resizeColumnToContents(column)
 
     def setPlotStyle(self,value):
         """Set the plot style to 'value'."""
         self.settings.plotstyle = value
+        self.onApplyStyle()
         
     def onViewClicked(self,index):
         """If one of the editable columns is clicked, begin to edit it."""
@@ -192,7 +220,10 @@ class Traceui(TraceuiForm, TraceuiBase):
                     if trace.childCount() == 0:
                         if trace.curvePen != 0:
                             trace.plot(0)
-                        trace.trace.deleteFile()
+                        try:
+                            trace.trace.deleteFile()
+                        except WindowsError:
+                            pass   # we ignore if the file cannot be found
                         self.model.dropTrace(parentIndex, row)
                     else:
                         logger.error( "trace has children, please delete them first." )
@@ -228,6 +259,10 @@ class Traceui(TraceuiForm, TraceuiBase):
                     if trace.curvePen != 0:
                         trace.plot(0)
                     self.model.dropTrace(parentIndex, row)
+        # remove invalid indices to prevent memory leak
+        for ind in reversed(range( len(self.tracePersistentIndexes) )): 
+            if not self.tracePersistentIndexes[ind].isValid():
+                self.tracePersistentIndexes.pop(ind)
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
