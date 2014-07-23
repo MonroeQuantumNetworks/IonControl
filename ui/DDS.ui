@@ -501,9 +501,6 @@
      </item>
      <item row="18" column="0">
       <widget class="MagnitudeSpinBox" name="frequencyBox7">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -587,9 +584,6 @@
      </item>
      <item row="18" column="1">
       <widget class="QCheckBox" name="evenBox7">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
        <property name="text">
         <string/>
        </property>
