@@ -20,8 +20,10 @@ import time
 from PyQt4 import QtCore
 
 import ExternalScanExperiment
+import ScanExperiment
 from functools import partial
 from modules.magnitude import Magnitude
+from modules import DataDirectory
 
 class ScanNotAvailableException(Exception):
     pass
@@ -47,6 +49,41 @@ class HybridScanExperiment( ExternalScanExperiment.ExternalScanExperiment ):
         self.enabledParameters = enabledParameters
         self.scanControlWidget.setScanNames( self.enabledParameters.keys() )
         
+#     def startScan(self):
+#         PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
+#         self.generator = GeneratorList[self.scan.scanMode](self.scan)
+#         (mycode, data) = self.generator.prepare(self.pulseProgramUi)
+#         self.progressUi.setRunning( max(len(self.scan.list),1) ) 
+#         if data:
+#             self.pulserHardware.ppWriteRamWordList(data,0, check=False)
+#             datacopy = [0]*len(data)
+#             datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
+#             if self.scan.gateSequenceSettings.debug:
+#                 dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
+#                 with open( dumpFilename, 'wb') as f:
+#                     f.write( self.pulserHardware.wordListToBytearray(datacopy))
+#                 codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
+#                 with open( codeFilename, 'w') as f:
+#                     for a in mycode:
+#                         f.write( "{0}\n".format(a) )
+#             if data!=datacopy:
+#                 raise ScanException("Ram write unsuccessful")
+#         self.pulserHardware.ppFlushData()
+#         self.pulserHardware.ppClearWriteFifo()
+#         self.pulserHardware.ppUpload(PulseProgramBinary)
+#         self.pulserHardware.ppWriteData(mycode)
+#         logger.info( "Starting" )
+#         self.pulserHardware.ppStart()
+#         self.currentIndex = 0
+#         self.timestampsNewRun = True
+#         self.displayUi.onClear()
+#         logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
+#         if self.plottedTraceList and self.traceui.unplotLastTrace():
+#             for plottedTrace in self.plottedTraceList:
+#                 plottedTrace.plot(0) #unplot previous trace
+#         self.plottedTraceList = list() #reset plotted trace
+#         self.otherDataFile = None 
+
     def startScan(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
@@ -59,10 +96,26 @@ class HybridScanExperiment( ExternalScanExperiment.ExternalScanExperiment ):
             self.externalParameter.saveValue()
             self.externalParameterIndex = 0
             self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
+            (mycode, data) = self.generator.prepare(self.pulseProgramUi)
+            if data:
+                self.pulserHardware.ppWriteRamWordList(data,0, check=False)
+                datacopy = [0]*len(data)
+                datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
+                if self.scan.gateSequenceSettings.debug:
+                    dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
+                    with open( dumpFilename, 'wb') as f:
+                        f.write( self.pulserHardware.wordListToBytearray(datacopy))
+                    codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
+                    with open( codeFilename, 'w') as f:
+                        for a in mycode:
+                            f.write( "{0}\n".format(a) )
+                if data!=datacopy:
+                    raise ScanExperiment.ScanException("Ram write unsuccessful")
                     
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(self.pulseProgramUi.getPulseProgramBinary())
+            self.pulserHardware.ppWriteData(mycode)     #TODO make sure only one point is written
             self.displayUi.onClear()
             self.progressUi.setStarting()
             self.plottedTrace = None #reset plotted trace
