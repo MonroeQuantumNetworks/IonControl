@@ -21,6 +21,7 @@ class ConexLinear(ExternalParameterBase):
         logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = ConexInstrument() #open visa session
         self.instrument.open(instrument)
+        self.instrument.homeSearch()
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         self.value = self._getValue()
@@ -50,12 +51,17 @@ class ConexLinear(ExternalParameterBase):
     def close(self):
         del self.instrument
         
+    def setValue(self,value):
+        self._setValue( value )
+        if self.displayValueCallback:
+            self.displayValueCallback( self.value )
+        return not self.instrument.motionRunning()
         
 class ConexRotation(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
-    className = "Conex Linear Motion"
+    className = "Conex Rotation"
     dimension = magnitude.mg(1,'')
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
@@ -92,3 +98,8 @@ class ConexRotation(ExternalParameterBase):
     def close(self):
         del self.instrument
 
+    def setValue(self,value):
+        self._setValue( value )
+        if self.displayValueCallback:
+            self.displayValueCallback( self.value )
+        return not self.instrument.motionRunning()

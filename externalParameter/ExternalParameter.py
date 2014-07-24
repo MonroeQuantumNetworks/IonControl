@@ -20,8 +20,8 @@ ExternalParameter = { StandardExternalParameter.LaserWavemeterLockScan.className
 
 try:
     import MotionParameter
-    ExternalParameter[ MotionParameter.ConexLinear.className: MotionParameter.ConexLinear ]
-    ExternalParameter[ MotionParameter.ConexRotation.className: MotionParameter.ConexRotation ]
+    ExternalParameter[ MotionParameter.ConexLinear.className ] = MotionParameter.ConexLinear 
+    ExternalParameter[ MotionParameter.ConexRotation.className ] = MotionParameter.ConexRotation 
 except Exception as ex:
     logging.getLogger(__name__).exception(ex)
     logging.getLogger(__name__).error("Motion control devices are not available")
