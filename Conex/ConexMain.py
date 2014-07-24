@@ -25,7 +25,8 @@ def Start():
 	instr.open(instrumentKey)
 	print instr.controllerId
 	
-	NB_LOOPS = 2
+	NB_LOOPS = 1
+	
 
 	# Get controller revision information
 	print "Version:" , instr.controllerVersion()

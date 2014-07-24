@@ -69,6 +69,7 @@ class ConexRotation(ExternalParameterBase):
         logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = ConexInstrument() #open visa session
         self.instrument.open(instrument)
+        self.instrument.homeSearch()
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         self.value = self._getValue()
@@ -101,5 +102,5 @@ class ConexRotation(ExternalParameterBase):
     def setValue(self,value):
         self._setValue( value )
         if self.displayValueCallback:
-            self.displayValueCallback( self.value )
+            self.displayValueCallback( self._getValue() )
         return not self.instrument.motionRunning()
