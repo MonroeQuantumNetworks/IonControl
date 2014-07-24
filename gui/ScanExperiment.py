@@ -275,6 +275,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.interruptReason = ""
         self.scan = None
         self.otherDataFile = None
+        self.enableParameter = True
+        self.enableExternalParameter = False
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -334,7 +336,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
+        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
+                                                         internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
@@ -536,11 +539,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             x = self.generator.xValue(self.currentIndex)
             evaluated = list()
             for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
-                if len(data.count[evaluation.counter])>0:
-                    evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
-                else:
-                    evaluated.append( (0,None,0) )
-                    logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))
+                evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:

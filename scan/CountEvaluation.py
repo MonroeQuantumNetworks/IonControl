@@ -133,7 +133,7 @@ class ThresholdEvaluation(EvaluationBase):
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
         countarray = data.count[counter]
         if not countarray:
-            return None, None, None
+            return 0, None, 0
         N = float(len(countarray))
         if self.settings['invert']:
             descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
@@ -174,7 +174,7 @@ class RangeEvaluation(EvaluationBase):
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
         countarray = data.count[counter]
         if not countarray:
-            return None, None, None
+            return 0, None, 0
         N = float(len(countarray))
         if self.settings['invert']:
             descriminated = [ 0 if self.settings['min'] <= count <= self.settings['max'] else 1 for count in countarray ]
@@ -219,7 +219,7 @@ class DoubleRangeEvaluation(EvaluationBase):
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
         countarray = data.count[counter]
         if not countarray:
-            return None, None, None
+            return 0, None, 0
         N = float(len(countarray))
         if self.settings['invert']:
             descriminated = [ 0 if ( self.settings['min_1'] <= count <= self.settings['max_1'] ) or 
@@ -267,7 +267,7 @@ class FidelityEvaluation(EvaluationBase):
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
         countarray = data.count[counter]
         if not countarray:
-            return None, None, None
+            return 0, None, 0
         N = float(len(countarray))
         if self.settings['invert']:
             descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]

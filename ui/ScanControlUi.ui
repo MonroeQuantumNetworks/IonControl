@@ -217,11 +217,22 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="RedBlackComboBox" name="comboBoxParameter">
-           <property name="maxVisibleItems">
-            <number>100</number>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="RedBlackComboBox" name="comboBoxParameter">
+             <property name="maxVisibleItems">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="RedBlackComboBox" name="comboBoxExternalParameter">
+             <property name="maxVisibleItems">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QToolButton" name="addSegmentButton">
@@ -385,8 +396,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>216</width>
-        <height>219</height>
+        <width>374</width>
+        <height>589</height>
        </rect>
       </property>
       <attribute name="label">
@@ -491,8 +502,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>172</width>
-        <height>171</height>
+        <width>374</width>
+        <height>589</height>
        </rect>
       </property>
       <attribute name="label">

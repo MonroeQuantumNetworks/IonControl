@@ -23,6 +23,7 @@ from gui import ProjectSelection
 from gui import ProjectSelectionUi
 from pulser.PulserHardwareClient import PulserHardware 
 from gui import ScanExperiment
+from gui import HybridScanExperiment
 from gui import SettingsDialog
 from gui import VoltageScanExperiment
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
@@ -117,6 +118,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
                              (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan", toolBar=self.experimentToolBar), "External Scan"),
+                             (HybridScanExperiment.HybridScanExperiment(self.settings,self.pulser,"HybridScan", toolBar=self.experimentToolBar), "Hybrid Scan"),
                              (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,"VoltageScan", toolBar=self.experimentToolBar), "Voltage Scan"),
                              (testExperiment.test(),"test"),
                              ]:
