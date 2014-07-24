@@ -537,7 +537,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             evaluated = list()
             for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
                 if len(data.count[evaluation.counter])>0:
-                    evaluated.append( algo.evaluate( data.count[evaluation.counter], expected=expected ) ) # returns mean, error, raw
+                    evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
                 else:
                     evaluated.append( (0,None,0) )
                     logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))
