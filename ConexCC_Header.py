@@ -16,7 +16,6 @@ import sys
 print "Adding location of Newport.CONEXCC.CommandInterface.dll to sys.path"
 sys.path.append(r'C:\Program Files\Newport\MotionControl\CONEX-CC\Bin')
 sys.path.append(r'C:\Program Files (x86)\Newport\MotionControl\CONEX-CC\Bin')
-
 # The CLR module provide functions for interacting with the underlying 
 # .NET runtime
 import clr
