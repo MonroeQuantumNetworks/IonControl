@@ -579,13 +579,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         bottomColumnName = 'bottom{0}'.format(index)
                         trace.addColumn( topColumnName )
                         trace.addColumn( bottomColumnName )                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
-                                                    yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
+                                                    pens.penList, yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
                                                     rawColumn=rawColumnName, name=self.scan.evalList[index].name, xAxisUnit = self.scan.xUnit,
                                                     xAxisLabel = self.scan.scanParameter) 
                     else:                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
-                                                    yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
+                                                    pens.penList, yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
                                                     xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter)               
                     xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
                     if xRange:
