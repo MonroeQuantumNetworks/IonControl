@@ -82,7 +82,8 @@ class MeanEvaluation(EvaluationBase):
         stderr = numpy.std( countarray, ddof=1 ) / math.sqrt( max( len(countarray)-1, 1) )
         return mean, (stderr/2.,stderr/2.), numpy.sum( countarray )
     
-    def evaluate(self, countarray, timestamps=None, expected=None ):
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+        countarray = data.count[counter]
         if not countarray:
             return 0, (0,0), 0
         return self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
@@ -102,7 +103,8 @@ class NumberEvaluation(EvaluationBase):
     def setDefault(self):
         pass
     
-    def evaluate(self, countarray, timestamps=None, expected=None ):
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+        countarray = data.count[counter]
         if not countarray:
             return 0, None, 0
         return len(countarray), None, len(countarray)
@@ -126,7 +128,8 @@ class ThresholdEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, countarray, timestamps=None, expected=None ):
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+        countarray = data.count[counter]
         if not countarray:
             return None, None, None
         N = float(len(countarray))
@@ -134,6 +137,8 @@ class ThresholdEvaluation(EvaluationBase):
             descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
         else:
             descriminated = [ 1 if count > self.settings['threshold'] else 0 for count in countarray ]
+        if name:
+            data.evaluated[name] = descriminated
         x = numpy.sum( descriminated )
         p = x/N
         # Wilson score interval with continuity correction
@@ -164,7 +169,8 @@ class RangeEvaluation(EvaluationBase):
         self.settings.setdefault('max',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, countarray, timestamps=None, expected=None ):
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+        countarray = data.count[counter]
         if not countarray:
             return None, None, None
         N = float(len(countarray))
@@ -172,6 +178,8 @@ class RangeEvaluation(EvaluationBase):
             descriminated = [ 0 if self.settings['min'] <= count <= self.settings['max'] else 1 for count in countarray ]
         else:
             descriminated = [ 1 if self.settings['min'] <= count <= self.settings['max'] else 0 for count in countarray ]
+        if name:
+            data.evaluated[name] = descriminated
         x = numpy.sum( descriminated )
         p = float(x)/N
         # Wilson score interval with continuity correction
@@ -206,7 +214,8 @@ class DoubleRangeEvaluation(EvaluationBase):
         self.settings.setdefault('max_2',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, countarray, timestamps=None, expected=None ):
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+        countarray = data.count[counter]
         if not countarray:
             return None, None, None
         N = float(len(countarray))
@@ -216,6 +225,8 @@ class DoubleRangeEvaluation(EvaluationBase):
         else:
             descriminated = [ 1 if ( self.settings['min_1'] <= count <= self.settings['max_1'] ) or 
                              ( self.settings['min_2'] <= count <= self.settings['max_2'] )  else 0 for count in countarray ]
+        if name:
+            data.evaluated[name] = descriminated
         x = numpy.sum( descriminated )
         p = float(x)/N
         # Wilson score interval with continuity correction
@@ -251,7 +262,8 @@ class FidelityEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, countarray, timestamps=None, expected=None ):
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+        countarray = data.count[counter]
         if not countarray:
             return None, None, None
         N = float(len(countarray))
@@ -259,6 +271,8 @@ class FidelityEvaluation(EvaluationBase):
             descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
         else:
             descriminated = [ 1 if count > self.settings['threshold'] else 0 for count in countarray ]
+        if name:
+            data.evaluated[name] = descriminated
         x = numpy.sum( descriminated )
         p = x/N
         # Wilson score interval with continuity correction
@@ -277,11 +291,60 @@ class FidelityEvaluation(EvaluationBase):
         return [{'name':'threshold','type':'int','value':self.settings['threshold']},
                 {'name':'invert', 'type': 'bool', 'value':self.settings['invert'] }]     
         
+
+class ParityEvaluation(EvaluationBase):
+    """
+    simple threshold state detection: if more than threshold counts are observed 
+    the ion is considered bright. For threshold photons or less it is considered
+    dark.
+    In addition it receives the expected state and calculates the fidelity
+    """
+    name = "Parity"
+    tooltip = "Two ion parity evaluation"
+    def __init__(self,settings=None):
+        EvaluationBase.__init__(self,settings)
+        
+    def setDefault(self):
+        self.settings.setdefault('Ion_1','')
+        self.settings.setdefault('Ion_2','')
+        
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+        countarray = data.count[counter]
+        if not countarray:
+            return None, None, None
+        N = float(len(countarray))
+        if self.settings['invert']:
+            descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
+        else:
+            descriminated = [ 1 if count > self.settings['threshold'] else 0 for count in countarray ]
+        if name:
+            data.evaluated[name] = descriminated
+        x = numpy.sum( descriminated )
+        p = x/N
+        # Wilson score interval with continuity correction
+        # see http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
+        rootp = 3-1/N -4*p+4*N*(1-p)*p
+        top = min( 1, (2 + 2*N*p + math.sqrt(rootp))/(2*(N+1)) ) if rootp>=0 else 1
+        rootb = -1-1/N +4*p+4*N*(1-p)*p
+        bottom = max( 0, (2*N*p - math.sqrt(rootb))/(2*(N+1)) ) if rootb>=0 else 0  
+        if expected is not None:
+            p = abs(expected-p)
+            bottom = abs(expected-bottom)
+            top = abs(expected-top)
+        return p, (p-bottom, top-p), x
+        
+    def children(self):
+        return [{'name':'Ion_1','type':'str','value':self.settings['Ion_1']},
+                {'name':'Ion_2','type':'str','value':self.settings['Ion_2'] }]     
+
+
+
    
 EvaluationAlgorithms = { MeanEvaluation.name: MeanEvaluation, 
                          ThresholdEvaluation.name: ThresholdEvaluation,
                          RangeEvaluation.name: RangeEvaluation,
                          DoubleRangeEvaluation.name: DoubleRangeEvaluation,
                          NumberEvaluation.name: NumberEvaluation,
-                         FidelityEvaluation.name: FidelityEvaluation }
+                         FidelityEvaluation.name: FidelityEvaluation,
+                         ParityEvaluation.name: ParityEvaluation }
 

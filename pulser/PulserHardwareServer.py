@@ -93,6 +93,7 @@ class Data:
         self.overrun = False
         self.exitcode = 0
         self.dependentValues = list()
+        self.evaluated = dict()
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
