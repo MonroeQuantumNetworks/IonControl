@@ -17,12 +17,19 @@ sys.path.append(r'C:\Program Files (x86)\Newport\MotionControl\CONEX-CC\Python')
 from ConexCC_Header import *
 #=========================================================================
 
+def controllerId(CC, address):
+	print "Id:" , CC.ID_Get(address, None, None)
+	
+	
+def getDevices(CC):
+	print "Devices:", CC.GetDevices()
+
 #*************************************************
 # Procedure to initialize and connect instrument.
 #*************************************************
 def CONEXCC_Open (instrumentKey):	
 	# CONEX-CC interface
-	CC = ConexCC()
+	CC = ConexCC()   #@UndefinedVariable
 	print 'Instrument Key=>', instrumentKey
 	ret = CC.OpenInstrument(instrumentKey)
 	print 'OpenInstrument => ', ret
