@@ -84,7 +84,7 @@ class ExternalParameterBase(object):
         return [{'name': 'delay', 'type': 'magnitude', 'value': self.settings.delay, 'tip': "between steps"},
                 {'name': 'jump', 'type': 'bool', 'value': self.settings.jump}]
         
-    def update(self,param, changes):
+    def update(self, param, changes):
         """
         update the parameter, called by the signal of pyqtgraph parametertree
         """
