@@ -131,21 +131,22 @@ class PowerWaveplate(ExternalParameterBase):
         self.settings.__dict__.setdefault('angle_at_min' , magnitude.mg(1))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('angle_at_max' , magnitude.mg(45))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('power_limit' , magnitude.mg(1,'W'))       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('min_angle_limit' , magnitude(0))
-        self.settings.__dict__.setdefault('max_angle_limit' , magnitude(0))
+        self.settings.__dict__.setdefault('min_angle_limit' , magnitude.mg(0))
+        self.settings.__dict__.setdefault('max_angle_limit' , magnitude.mg(0))
         
             
     def power(self, angle):
         if self.settings.angle_at_min < angle < self.settings.angle_at_max:
-            k = 90/(self.settings.angle_at_max-self.settings.angle_at_min)
-            zeroangle = k*self.settings.angle_at_min
-            return (self.settings.max_power-self.settings.min_power)*math.sin((k*angle-zeroangle)*math.pi/180)+self.settings.min_power
+            k = 180/(self.settings.angle_at_max-self.settings.angle_at_min)
+            zeroangle = self.settings.angle_at_min
+            return (self.settings.max_power-self.settings.min_power)*(0.5*math.sin((k*(angle-zeroangle)-90)*math.pi/180)+0.5)+self.settings.min_power
         return None
     
     def angle(self, power):
         if self.settings.min_power < power < self.settings.max_power:
-            k = 90/(self.settings.angle_at_max-self.settings.angle_at_min)
-            math.asin((power-self.settings.min_power)/(self.settings.max_power-self.settings.min_power)+self.settings.angle_at_min)/k
+            k = 180/(self.settings.angle_at_max-self.settings.angle_at_min)
+            return (180/math.pi*math.asin(2*(power-self.settings.min_power)/(self.settings.max_power-self.settings.min_power)-1)+90)/k+self.settings.angle_at_min
+        return None
             
     def _setValue(self, v):
         setangle =self.angle(v)
@@ -189,5 +190,5 @@ class PowerWaveplate(ExternalParameterBase):
         highangle = self.angle( self.settings.power_limit )
         self.settings.min_angle_limit = min( self.settings.angle_at_min, highangle)
         self.settings.max_angle_limit = max( self.settings.angle_at_min, highangle)
-        self._parameter['min_angle_limit'].setValue(self.settings.min_angle_limit)
-        self._parameter['max_angle_limit'].setValue(self.settings.max_angle_limit)
+        self._parameter['min_angle_limit'] = self.settings.min_angle_limit
+        self._parameter['max_angle_limit'] = self.settings.max_angle_limit
