@@ -24,7 +24,7 @@ try:
     ExternalParameter[ MotionParameter.ConexRotation.className ] = MotionParameter.ConexRotation 
     ExternalParameter[ MotionParameter.PowerWaveplate.className ] = MotionParameter.PowerWaveplate 
 except Exception as ex:
-    logging.getLogger(__name__).exception(ex)
+    #logging.getLogger(__name__).exception(ex)
     logging.getLogger(__name__).error("Motion control devices are not available")
     
 
