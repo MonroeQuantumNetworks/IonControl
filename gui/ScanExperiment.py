@@ -45,6 +45,7 @@ from modules import WeakMethod
 import copy
 from modules.Expression import Expression
 from modules.SceneToPrint import SceneToPrint
+from collections import defaultdict
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -277,6 +278,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.otherDataFile = None
         self.enableParameter = True
         self.enableExternalParameter = False
+        self.histogramBuffer = defaultdict( list )
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -352,6 +354,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.copyHistogram.triggered.connect( self.onCopyHistogram )
         self.actionList.append( self.copyHistogram )
         
+        self.saveHistogram = QtGui.QAction( QtGui.QIcon(":/openicon/icons/office-chart-bar-save.png"), "Save histograms", self ) 
+        self.saveHistogram.setToolTip("Save histograms for last run to file")
+        self.saveHistogram.triggered.connect( self.onSaveHistogram )
+        self.actionList.append( self.saveHistogram )
+
         self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
         self.addPlot.setToolTip("Add new plot")
         self.addPlot.triggered.connect(self.onAddPlot)
@@ -472,7 +479,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             for plottedTrace in self.plottedTraceList:
                 plottedTrace.plot(0) #unplot previous trace
         self.plottedTraceList = list() #reset plotted trace
-        self.otherDataFile = None 
+        self.otherDataFile = None
+        self.histogramBuffer = defaultdict( list )
     
     def onContinue(self):
         if self.progressUi.state == self.OpStates.interrupted:
@@ -693,6 +701,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.histogramList[index] = (y,x,evaluation.name )
                 else:
                     self.histogramList.append( (y,x,evaluation.name) )
+                self.histogramBuffer[evaluation.name].append(y)
                 index += 1
         numberTraces = index
         del self.histogramList[numberTraces:]   # remove elements that are not needed any more
@@ -721,6 +730,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onCopyHistogram(self):
         for plottedtrace in self.histogramCurveList:
             self.traceui.addTrace(plottedtrace,pen=-1)        
+    
+    def onSaveHistogram(self):
+        for name, histogramlist in self.histogramBuffer.iteritems():
+            filename = DataDirectory.DataDirectory().sequencefile("Histogram_"+name+".txt")[0]
+            with open(filename,'w') as f:
+                for histogram in histogramlist:
+                    f.write( "\t".join(map(str,histogram)))
+                    f.write("\n")
     
     def onAddPlot(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Plot Name', 'Please enter a plot name: ')
