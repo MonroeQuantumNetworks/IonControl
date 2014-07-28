@@ -61,23 +61,25 @@ class ParameterScanGenerator:
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
         
-    def prepare(self, pulseProgramUi ):
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
         if self.scan.gateSequenceUi.settings.enabled:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
             data = []
-        self.scan.code = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list)
+        self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
         self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
-        if len(self.scan.code)>2040:
-            self.nextIndexToWrite = 2040
-            return ( self.scan.code[:2040], data)
+        maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
+        if len(self.scan.code)>maxWordsToWrite:
+            self.nextIndexToWrite = maxWordsToWrite
+            return ( self.scan.code[:maxWordsToWrite], data)
         self.nextIndexToWrite = len(self.scan.code)
         return ( self.scan.code, data)
         
-    def restartCode(self,currentIndex):
+    def restartCode(self,currentIndex ):
+        maxWordsToWrite = 2040 if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
         currentWordCount = 2*self.numUpdatedVariables*currentIndex
-        if len(self.scan.code)-currentWordCount>2040:
-            self.nextIndexToWrite = 2040+currentWordCount
+        if len(self.scan.code)-currentWordCount>maxWordsToWrite:
+            self.nextIndexToWrite = maxWordsToWrite+currentWordCount
             return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
@@ -88,10 +90,10 @@ class ParameterScanGenerator:
             value = self.expression.evaluate( self.scan.xExpression, {"x": value} )
         return value.ounit(self.scan.xUnit).toval()
         
-    def dataNextCode(self, experiment, num_word_pairs ):
+    def dataNextCode(self, experiment ):
         if self.nextIndexToWrite<len(self.scan.code):
             start = self.nextIndexToWrite
-            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*num_word_pairs )
+            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
             return self.scan.code[start:self.nextIndexToWrite]
         return []
         
@@ -121,7 +123,7 @@ class StepInPlaceGenerator:
     def __init__(self, scan):
         self.scan = scan
         
-    def prepare(self, pulseProgramUi ):
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
         if self.scan.gateSequenceUi.settings.enabled:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
@@ -136,7 +138,7 @@ class StepInPlaceGenerator:
     def restartCode(self,currentIndex):
         return self.scan.code * 5
         
-    def dataNextCode(self, experiment, num_word_pairs):
+    def dataNextCode(self, experiment):
         return self.scan.code
         
     def xValue(self,index):
@@ -176,9 +178,11 @@ class GateSequenceScanGenerator:
         self.scan = scan
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
+        self.maxWordsToWrite = 2040
         
-    def prepare(self, pulseProgramUi):
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None):
         logger = logging.getLogger(__name__)
+        self.maxUpdatesToWrite = maxUpdatesToWrite
         address, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()
         self.gateSequenceAttributes = self.scan.gateSequenceUi.gateSequenceAttributes()
         parameter = self.gateSequenceSettings.startAddressParam
@@ -193,17 +197,18 @@ class GateSequenceScanGenerator:
             random.shuffle(zipped)
             self.scan.index, self.scan.list = zip( *zipped )
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
+        self.numVariablesPerUpdate = 1
         logger.debug( "GateSequenceScanCode {0} {1}".format(self.scan.list, self.scan.code) )
-        if len(self.scan.code)>2040:
-            self.nextIndexToWrite = 2040
-            return ( self.scan.code[:2040], data)
+        if len(self.scan.code)>self.maxWordsToWrite:
+            self.nextIndexToWrite = self.maxWordsToWrite
+            return ( self.scan.code[:self.maxWordsToWrite], data)
         self.nextIndexToWrite = len(self.scan.code)
         return ( self.scan.code, data)
 
     def restartCode(self,currentIndex):
         currentWordCount = 2*self.numUpdatedVariables*currentIndex
-        if len(self.scan.code)-currentWordCount>2040:
-            self.nextIndexToWrite = 2040+currentWordCount
+        if len(self.scan.code)-currentWordCount>self.maxWordsToWrite:
+            self.nextIndexToWrite = self.maxWordsToWrite+currentWordCount
             return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
@@ -211,10 +216,10 @@ class GateSequenceScanGenerator:
     def xValue(self,index):
         return self.scan.index[index]
 
-    def dataNextCode(self, experiment, num_word_pairs):
+    def dataNextCode(self, experiment):
         if self.nextIndexToWrite<len(self.scan.code):
             start = self.nextIndexToWrite
-            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*num_word_pairs )
+            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
             return self.scan.code[start:self.nextIndexToWrite]
         return []
         
@@ -565,7 +570,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 else:
                     self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
             else:
-                mycode = self.generator.dataNextCode(self, len(data.dependentValues)+1 )
+                mycode = self.generator.dataNextCode(self )
                 if mycode:
                     self.pulserHardware.ppWriteData(mycode)
                 self.progressUi.onData( self.currentIndex )  

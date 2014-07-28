@@ -444,14 +444,18 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def getVariableValue(self,name):
         return self.variableTableModel.getVariableValue(name)
     
-    def variableScanCode(self, variablename, values):
+    def variableScanCode(self, variablename, values, extendedReturn=False):
         tempparameters = copy.deepcopy( self.currentContext.parameters )
         updatecode = list()
+        numVariablesPerUpdate = 0
         for currentval in values:
             upd_names, upd_values = tempparameters.setValue(variablename, currentval)
+            numVariablesPerUpdate = len(upd_names)
             upd_names.append( variablename )
             upd_values.append( currentval )
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
+        if extendedReturn:
+            return updatecode, numVariablesPerUpdate
         return updatecode
 
     def updateSaveStatus(self, isSaved=None):
