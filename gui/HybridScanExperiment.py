@@ -38,12 +38,10 @@ class HybridScanExperiment( ExternalScanExperiment.ExternalScanExperiment ):
         super(HybridScanExperiment,self).setupUi(MainWindow,config)
         
     def updatePulseProgram(self):
-        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+        ScanExperiment.ScanExperiment.updatePulseProgram(self)
 
     def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
-        self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
-        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+        ScanExperiment.ScanExperiment.setPulseProgramUi(self,pulseProgramUi)
         
     def updateEnabledParameters(self, enabledParameters ):
         self.enabledParameters = enabledParameters

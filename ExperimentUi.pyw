@@ -136,6 +136,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             
         self.ExternalScanExperiment = self.tabDict["External Scan"]
         self.voltageScanExperiment = self.tabDict["Voltage Scan"]
+        self.hybridScanExperiment = self.tabDict["Hybrid Scan"]
         
         self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal) )
         self.shutterUi.setupUi(self.shutterUi, True)
@@ -185,6 +186,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
+        self.hybridScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         
         self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.setCurrentTab )
         self.todoList.setupUi()
