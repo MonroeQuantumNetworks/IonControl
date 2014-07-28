@@ -34,6 +34,7 @@ class MeterState:
         self.scanType = 0
         self.filename = "IV.txt"
         self.timeDelta = mg(1,"s")
+        self.settlingDelay = mg(100,'ms')
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -162,7 +163,7 @@ class PicoampMeterControl(Base, Form):
     def initPoint(self):
         if self.currentIndex<len(self.scanList) and not self.stopRequested:
             self.meter.setVoltage( self.scanList[self.currentIndex] )
-            QtCore.QTimer.singleShot(self.meterState.settlingDelay, self.takeScanPoint )
+            QtCore.QTimer.singleShot(self.meterState.settlingDelay.to_val('ms'), self.takeScanPoint )
         else:
             self.meter.setVoltage( self.meterState.voltage )
             self.finalizeScan()
