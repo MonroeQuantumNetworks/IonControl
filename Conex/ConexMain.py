@@ -20,7 +20,7 @@ from ConexInstrument import ConexInstrument, instrumentCycle
 def Start():	
 	# Initialization
 	#instrumentKey="CONEX-CC (A6U1PBW3)"
-	instrumentKey="COM9"
+	instrumentKey="COM10"
 	instr = ConexInstrument()
 	instr.open(instrumentKey)
 	print instr.controllerId
@@ -38,7 +38,7 @@ def Start():
 	print instr.position
 	
 	# Motion cycle
-	instrumentCycle(instr, 1, NB_LOOPS, 100) 
+	instrumentCycle(instr, 1, NB_LOOPS, 5) 
 	# Close communication
 	instr.close()
 	print 'End of script'

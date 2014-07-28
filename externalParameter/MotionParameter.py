@@ -55,7 +55,7 @@ class ConexLinear(ExternalParameterBase):
     def setValue(self,value):
         self._setValue( value )
         if self.displayValueCallback:
-            self.displayValueCallback( self.value )
+            self.displayValueCallback( self._getValue() )
         return not self.instrument.motionRunning()
         
 class ConexRotation(ExternalParameterBase):
