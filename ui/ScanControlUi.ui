@@ -272,6 +272,9 @@
          <widget class="QTableView" name="tableView"/>
          <widget class="QWidget" name="layoutWidget">
           <layout class="QGridLayout" name="gridLayout">
+           <item row="4" column="2" colspan="2">
+            <widget class="QLineEdit" name="filenameEdit"/>
+           </item>
            <item row="0" column="2">
             <widget class="QLineEdit" name="xExprEdit">
              <property name="toolTip">
@@ -316,9 +319,6 @@
               </property>
              </item>
             </widget>
-           </item>
-           <item row="4" column="2" colspan="2">
-            <widget class="QLineEdit" name="filenameEdit"/>
            </item>
            <item row="3" column="2" colspan="2">
             <widget class="QComboBox" name="loadPPComboBox">
@@ -372,7 +372,7 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="3">
+           <item row="6" column="3">
             <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -385,6 +385,19 @@
              </property>
             </spacer>
            </item>
+           <item row="5" column="2" colspan="2">
+            <widget class="QLineEdit" name="histogramFilenameEdit"/>
+           </item>
+           <item row="5" column="0">
+            <widget class="QCheckBox" name="histogramSaveCheckBox">
+             <property name="toolTip">
+              <string>Checkbox: automatically save file</string>
+             </property>
+             <property name="text">
+              <string>Histogram file</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </widget>
@@ -396,8 +409,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>374</width>
-        <height>589</height>
+        <width>216</width>
+        <height>219</height>
        </rect>
       </property>
       <attribute name="label">
@@ -502,8 +515,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>374</width>
-        <height>589</height>
+        <width>172</width>
+        <height>171</height>
        </rect>
       </property>
       <attribute name="label">

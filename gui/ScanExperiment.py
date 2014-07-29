@@ -20,6 +20,7 @@ import random
 import time
 from trace import Traceui
 from trace import pens
+import os.path
 
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
@@ -645,6 +646,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if averagePlottedTrace:
                     self.progressUi.setAveraged(averagePlottedTrace.childCount())
                     averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
+        if self.scan.histogramSave:
+            self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
+            
         
     def dataAnalysis(self):
         for evaluation, plot in zip(self.scan.evalList, self.plottedTraceList):
@@ -736,9 +740,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for plottedtrace in self.histogramCurveList:
             self.traceui.addTrace(plottedtrace,pen=-1)        
     
-    def onSaveHistogram(self):
+    def onSaveHistogram(self, filenameTemplate="Histogram.txt"):
+        tName, tExtension = os.path.splitext(filenameTemplate)
         for name, histogramlist in self.histogramBuffer.iteritems():
-            filename = DataDirectory.DataDirectory().sequencefile("Histogram_"+name+".txt")[0]
+            filename = DataDirectory.DataDirectory().sequencefile(tName+"_"+name+tExtension)[0]
             with open(filename,'w') as f:
                 for histogram in histogramlist:
                     f.write( "\t".join(map(str,histogram)))

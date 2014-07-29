@@ -84,7 +84,9 @@ class Scan:
         self.scanMode = 0
         self.scanRepeat = 0
         self.filename = ""
+        self.histogramFilename = ""
         self.autoSave = False
+        self.histogramSave = False
         self.xUnit = ""
         self.xExpression = ""
         self.loadPP = False
@@ -123,6 +125,8 @@ class Scan:
         self.__dict__.setdefault('evalList',list())
         self.__dict__.setdefault('scanSegmentList',[ScanSegmentDefinition()])
         self.__dict__.setdefault('externalScanParameter', None)
+        self.__dict__.setdefault('histogramFilename', None)
+        self.__dict__.setdefault('histogramSave', False)
 
     def __eq__(self,other):
         try:
@@ -138,7 +142,7 @@ class Scan:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     stateFields = ['scanParameter', 'externalScanParameter', 'scantype', 'scanMode', 'scanRepeat', 
-                'filename', 'autoSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
+                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
                 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSequenceSettings',
                 'evalList', 'scanSegmentList' ]
 
@@ -244,8 +248,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBoxExternalParameter.currentIndexChanged['QString'].connect( self.onCurrentExternalTextChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
+        self.histogramSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'histogramSave') )
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
         self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
+        self.histogramFilenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.histogramFilenameEdit, 'histogramFilename') )
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
         self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
@@ -292,6 +298,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
+        self.histogramSaveCheckBox.setChecked(self.settings.histogramSave)
         if self.settings.scanParameter: 
             self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
@@ -301,6 +308,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         elif self.comboBoxExternalParameter.count()>0:  # if scanParameter is None set it to the current selection
             self.settings.externalScanParameter = self.comboBoxExternalParameter.currentText()
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
+        self.histogramFilenameEdit.setText( getattr(self.settings,'histogramFilename','') )
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )
         self.xExprEdit.setText( self.settings.xExpression )
