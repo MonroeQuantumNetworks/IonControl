@@ -98,19 +98,6 @@ class Data:
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
 
-class DedicatedData:
-    def __init__(self):
-        self.data = [None]*13
-        
-    def count(self):
-        return self.data[0:8]
-        
-    def analog(self):
-        return self.data[8:12]
-        
-    def integration(self):
-        return self.data[12]
-
 class LogicAnalyzerData:
     def __init__(self):
         self.data = list()
@@ -137,6 +124,18 @@ class FinishException(Exception):
 
 class PulserHardwareServer(Process):
     timestep = magnitude.mg(20,'ns')
+    class DedicatedData:
+        def __init__(self):
+            self.data = [None]*13
+            
+        def count(self):
+            return self.data[0:8]
+            
+        def analog(self):
+            return self.data[8:12]
+            
+        def integration(self):
+            return self.data[12]
     def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         super(PulserHardwareServer,self).__init__()
         self.dataQueue = dataQueue
@@ -150,7 +149,7 @@ class PulserHardwareServer(Process):
         # PipeReader stuff
         self.state = self.analyzingState.normal
         self.data = Data()
-        self.dedicatedData = DedicatedData()
+        self.dedicatedData = self.DedicatedData()
         self.timestampOffset = 0
 
         self._shutter = 0
@@ -254,7 +253,7 @@ class PulserHardwareServer(Process):
                     channel = (token >>24) & 0xf
                     if self.dedicatedData.data[channel] is not None:
                         self.dataQueue.put( self.dedicatedData )
-                        self.dedicatedData = DedicatedData()
+                        self.dedicatedData = self.DedicatedData()
                     self.dedicatedData.data[channel] = token & 0xffffff
                 elif token & 0xff000000 == 0xff000000:
                     if token == 0xffffffff:    # end of run
