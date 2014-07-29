@@ -95,7 +95,7 @@ class PicoampMeter:
             answer = self.instrument.ask("READ?")
             m = re.match("([-.+0-9E]+)([^,]*),([-.+0-9E]+),([-.+0-9E]+)",answer)
             if m:
-                value, unit, second, third = m.groups()
+                value, unit, second, third = m.groups() #@UnusedVariable
                 return float(value) 
         else:
             logging.getLogger(__name__).error("Meter is not available")

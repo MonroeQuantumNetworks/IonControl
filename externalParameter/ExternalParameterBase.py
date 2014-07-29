@@ -90,9 +90,12 @@ class ExternalParameterBase(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug( "ExternalParameterBase.update" )
-        for param, _, data in changes:
-            logger.debug( " ".join( [str(self), "update", param.name(), str(data)] ) )
-            setattr( self.settings, param.name(), data)
+        for param, change, data in changes:
+            if change=='value':
+                logger.debug( " ".join( [str(self), "update", param.name(), str(data)] ) )
+                setattr( self.settings, param.name(), data)
+            elif change=='action':
+                getattr( self, param.opt['field'] )()
             
     def close(self):
         pass

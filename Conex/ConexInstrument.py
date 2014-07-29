@@ -61,6 +61,8 @@ class ConexInstrument(object):
 
 	@position.setter
 	def position(self, position=0.0):
+		if not self.readyToMove():
+			raise ConexInstrumentException("Instrument {0} is not ready to move. Try a home search.".format(self.instrumentKey))
 		processResponse( 'write position' , self.CC.PA_Set(self.address, position, None) ) 
 		self._position = position
 		return self._position

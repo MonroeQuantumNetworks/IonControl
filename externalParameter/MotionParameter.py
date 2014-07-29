@@ -119,10 +119,14 @@ class PowerWaveplate(ExternalParameterBase):
         logger.info( "trying to open '{0}'".format(instrument) )
         self.instrument = ConexInstrument() #open visa session
         self.instrument.open(instrument)
-        self.instrument.homeSearch()
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         self.value = self._getValue()
+        if not self.instrument.readyToMove():
+            logger.error("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
+        
+    def homeSearch(self):
+        self.instrument.homeSearch()        
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -174,6 +178,7 @@ class PowerWaveplate(ExternalParameterBase):
         superior.append({'name': 'power_limit', 'type': 'magnitude', 'value': self.settings.power_limit})
         superior.append({'name': 'min_angle_limit', 'type': 'magnitude', 'value': self.settings.min_angle_limit, 'readonly': True})
         superior.append({'name': 'max_angle_limit', 'type': 'magnitude', 'value': self.settings.max_angle_limit, 'readonly': True})
+        superior.append({'name': 'Home search', 'type': 'action', 'field': 'homeSearch' })
         return superior
     
     def close(self):
