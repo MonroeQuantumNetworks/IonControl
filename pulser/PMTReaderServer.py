@@ -8,20 +8,22 @@ from PulserHardwareServer import PulserHardwareServer, sliceview
 import struct
 import logging
 
-class PMTReaderServer( PulserHardwareServer ):
-    class DedicatedData:
-        def __init__(self):
-            self.data = [None]*33
-            
-        def count(self):
-            return self.data[0:32]
-            
-        def analog(self):
-            return []
-            
-        def integration(self):
-            return self.data[32]
+class DedicatedData:
+    def __init__(self):
+        self.data = [None]*33
+        
+    def count(self):
+        return self.data[0:32]
+        
+    def analog(self):
+        return []
+        
+    def integration(self):
+        return self.data[32]
 
+
+class PMTReaderServer( PulserHardwareServer ):
+    dedicatedDataClass = DedicatedData
     def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         super( PMTReaderServer, self ).__init__(dataQueue, commandPipe, loggingQueue, sharedMemoryArray )
         
