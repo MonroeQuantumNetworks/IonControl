@@ -705,7 +705,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if evaluation.showHistogram:
                 y, x = numpy.histogram( data.count[evaluation.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
                 if self.scan.integrateHistogram and len(self.histogramList)>index:
-                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1] + x)
+                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name )
                 elif len(self.histogramList)>index:
                     self.histogramList[index] = (y,x,evaluation.name )
                 else:
@@ -738,10 +738,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 
     def onCopyHistogram(self):
         for plottedtrace in self.histogramCurveList:
-            self.traceui.addTrace(plottedtrace,pen=-1)        
+            self.traceui.addTrace(plottedtrace,pen=-1)   
+        self.histogramTrace = Trace()    
+        self.histogramCurveList = []        
+             
     
     def onSaveHistogram(self, filenameTemplate="Histogram.txt"):
-        tName, tExtension = os.path.splitext(filenameTemplate)
+        tName, tExtension = os.path.splitext(filenameTemplate) if filenameTemplate else "Histogram", ".txt"
         for name, histogramlist in self.histogramBuffer.iteritems():
             filename = DataDirectory.DataDirectory().sequencefile(tName+"_"+name+tExtension)[0]
             with open(filename,'w') as f:
