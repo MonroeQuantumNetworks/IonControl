@@ -125,8 +125,10 @@ class Scan:
         self.__dict__.setdefault('evalList',list())
         self.__dict__.setdefault('scanSegmentList',[ScanSegmentDefinition()])
         self.__dict__.setdefault('externalScanParameter', None)
-        self.__dict__.setdefault('histogramFilename', None)
+        self.__dict__.setdefault('histogramFilename', "")
         self.__dict__.setdefault('histogramSave', False)
+#         if self.histogramFilename is None:
+#             self.histogramFilename = ""
 
     def __eq__(self,other):
         try:

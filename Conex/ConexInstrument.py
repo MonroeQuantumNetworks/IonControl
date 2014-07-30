@@ -61,7 +61,7 @@ class ConexInstrument(object):
 
 	@position.setter
 	def position(self, position=0.0):
-		if not self.readyToMove():
+		if self.notHomed():
 			raise ConexInstrumentException("Instrument {0} is not ready to move. Try a home search.".format(self.instrumentKey))
 		processResponse( 'write position' , self.CC.PA_Set(self.address, position, None) ) 
 		self._position = position
@@ -86,6 +86,11 @@ class ConexInstrument(object):
 	def readyToMove(self):
 		(_, ControllerState) = self.status
 		return ControllerState in ['32','33','34']		
+	
+	def notHomed(self):
+		(_, ControllerState) = self.status
+		return ControllerState == '0A'		
+		
 		
 	def waitEndOfHomeSearch(self):
 		while self.homeSearchRunning():

@@ -67,10 +67,10 @@ solidPurplePen = mkPen(purple, width=penWidth, style=solid)
 solidDarkPinkPen = mkPen(darkpink, width=penWidth, style=solid)
 
 penList = [ (solidYellowPen,),
-            (solidOrangePen, 's', solidOrangePen, blank, yellow),
+            (solidBluePen, 'd', solidBluePen, blank, blue),
             (solidRedPen, 'o', solidRedPen, blank, red),
             (solidGreenPen, 't', solidGreenPen, blank, green),
-            (solidBluePen, 'd', solidBluePen, blank, blue),
+            (solidOrangePen, 's', solidOrangePen, blank, yellow),
             (solidCyanPen, 's', None, cyanBrush, cyan),
             (solidMagentaPen, 'o', None, magentaBrush, magenta),
             (solidBlackPen,'t',None, blackBrush, black),
@@ -94,10 +94,10 @@ class penicons:
         
     def loadicons(self):
         self.icons = [ QtGui.QIcon(), 
-            QtGui.QIcon(":/penicon/icons/247-153-0.png"),
+            QtGui.QIcon(":/penicon/icons/blue.png"),
             QtGui.QIcon(":/penicon/icons/red.png"),
             QtGui.QIcon(":/penicon/icons/green.png"),
-            QtGui.QIcon(":/penicon/icons/blue.png"),
+            QtGui.QIcon(":/penicon/icons/247-153-0.png"),
             QtGui.QIcon(":/penicon/icons/cyan.png"),
             QtGui.QIcon(":/penicon/icons/magenta.png"),
             QtGui.QIcon(":/penicon/icons/white.png"),
