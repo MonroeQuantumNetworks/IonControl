@@ -100,6 +100,10 @@ class ConexInstrument(object):
 		while self.motionRunning():
 			time.sleep(0.1)
 			
+	def reset(self):
+		processResponse( 'reset', self.CC.RS(self.address, None) ) 
+		
+			
 			
 #*************************************************
 # Procedure to perform a motion cycle

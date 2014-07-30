@@ -126,7 +126,10 @@ class PowerWaveplate(ExternalParameterBase):
             logger.error("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
         
     def homeSearch(self):
-        self.instrument.homeSearch()        
+        self.instrument.homeSearch()  
+        
+    def resetDevice(self):
+        self.instrument.reset()      
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -179,6 +182,7 @@ class PowerWaveplate(ExternalParameterBase):
         superior.append({'name': 'min_angle_limit', 'type': 'magnitude', 'value': self.settings.min_angle_limit, 'readonly': True})
         superior.append({'name': 'max_angle_limit', 'type': 'magnitude', 'value': self.settings.max_angle_limit, 'readonly': True})
         superior.append({'name': 'Home search', 'type': 'action', 'field': 'homeSearch' })
+        superior.append({'name': 'Reset device', 'type': 'action', 'field': 'resetDevice' })
         return superior
     
     def close(self):

@@ -94,8 +94,8 @@ class ExternalParameterBase(object):
             if change=='value':
                 logger.debug( " ".join( [str(self), "update", param.name(), str(data)] ) )
                 setattr( self.settings, param.name(), data)
-            elif change=='action':
-                getattr( self, param.opt['field'] )()
+            elif change=='activated':
+                getattr( self, param.opts['field'] )()
             
     def close(self):
         pass
