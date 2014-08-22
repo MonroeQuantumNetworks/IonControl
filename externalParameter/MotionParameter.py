@@ -29,8 +29,11 @@ class ConexLinear(ExternalParameterBase):
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('limit' , magnitude.mg(10,'mm'))       # if True go to the target value in one jump
             
     def _setValue(self, v):
+        if v>self.settings.limit:
+            v = self.settings.limit
         self.instrument.position = v.toval('mm')
         self.value = v
         
@@ -47,16 +50,21 @@ class ConexLinear(ExternalParameterBase):
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'limit', 'type': 'magnitude', 'value': self.settings.limit})
         return superior
     
     def close(self):
         del self.instrument
         
     def setValue(self,value):
-        self._setValue( value )
         if self.displayValueCallback:
             self.displayValueCallback( self._getValue() )
+        if self.instrument.motionRunning():
+            return False
+        if value != self.value:
+            self._setValue( value )
         return not self.instrument.motionRunning()
+
         
 class ConexRotation(ExternalParameterBase):
     """
@@ -77,8 +85,11 @@ class ConexRotation(ExternalParameterBase):
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('limit' , magnitude.mg(360,''))       # if True go to the target value in one jump
             
     def _setValue(self, v):
+        if v>self.settings.limit:
+            v = self.setting.limit
         self.instrument.position = v.toval()
         self.value = v
         
@@ -95,15 +106,19 @@ class ConexRotation(ExternalParameterBase):
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'limit', 'type': 'magnitude', 'value': self.settings.limit})
         return superior
     
     def close(self):
         del self.instrument
 
     def setValue(self,value):
-        self._setValue( value )
         if self.displayValueCallback:
             self.displayValueCallback( self._getValue() )
+        if self.instrument.motionRunning():
+            return False
+        if value != self.value:
+            self._setValue( value )
         return not self.instrument.motionRunning()
     
     

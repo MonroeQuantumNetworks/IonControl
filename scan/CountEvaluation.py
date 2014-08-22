@@ -372,7 +372,7 @@ class TwoIonEvaluation(EvaluationBase):
             raise EvaluationException("Evaluated arrays have different length {0}, {1}".format(len(eval1),len(eval2)))
         N = float(len(eval1))
         lookup = {(0,0): self.settings['dd'], (0,1): self.settings['db'], (1,0): self.settings['bd'], (1,1):self.settings['bb'] }
-        descriminated = [ lookup(pair) for pair in zip(eval1, eval2) ]
+        descriminated = [ lookup[pair] for pair in zip(eval1, eval2) ]
         if name:
             data.evaluated[name] = descriminated
         x = numpy.sum( descriminated )
