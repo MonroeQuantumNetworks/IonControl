@@ -89,7 +89,7 @@ class ParameterScanGenerator:
         value = self.scan.list[index]
         if self.scan.xExpression:
             value = self.expression.evaluate( self.scan.xExpression, {"x": value} )
-        if not self.scan.xUnit or not value.has_dimension(self.scan.xUnit):
+        if (not self.scan.xUnit and not value.dimensionless()) or not value.has_dimension(self.scan.xUnit):
             self.scan.xUnit = value.suggestedUnit() 
         return value.ounit(self.scan.xUnit).toval()
         
