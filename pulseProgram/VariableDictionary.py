@@ -68,9 +68,9 @@ class VariableDictionary(SequenceDict):
     def merge(self, variabledict, globaldict=None, overwrite=False ):
         if globaldict is not None:
             self.globaldict = globaldict
-#         for name in self.keys():
-#             if name not in variabledict:
-#                 self.pop(name)
+        for name in self.keys():
+            if name not in variabledict:
+                self.pop(name)
         for name,var in variabledict.iteritems():
             if var.type in ['parameter','address'] and (name not in self or overwrite):
                 self[name] = copy.deepcopy(var) 

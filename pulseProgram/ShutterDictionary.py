@@ -14,9 +14,9 @@ class ShutterDictionary(SequenceDict):
                     
     def merge(self, variabledict, overwrite=False):
         # pop all variables that are not in the variabledict
-#         for var, _ in self.values():
-#             if var.name not in variabledict:
-#                 self.pop(var.name)
+        for var, _ in self.values():
+            if var.name not in variabledict:
+                self.pop(var.name)
         # add missing ones
         for name, var in variabledict.iteritems():
             if var.type is not None:
