@@ -586,6 +586,14 @@ class Magnitude():
             return " ".join( self.toStringTuple(strFormat) )
         return self.toStringTuple( strFormat )[0]  
               
+    def suggestedUnit(self):
+        if self.out_unit:
+            return self.out_unit
+        outmag = _mags[_outputDimensions[tuple(self.unit)]]
+        m = self.copy(True)
+        m._div_by(outmag)
+        prefix = m._bestPrefix_()
+        return prefix+_outputDimensions[tuple(self.unit)]       
     
     def toStringTuple(self, strFormat=None ):
         unitTuple = tuple(self.unit)
