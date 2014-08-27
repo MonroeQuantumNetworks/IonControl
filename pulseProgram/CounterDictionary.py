@@ -13,9 +13,9 @@ class CounterDictionary(SequenceDict):
  
     def merge(self, variabledict, overwrite=False):
         # pop all variables that are not in the variabledict
-        for var in self.values():
-            if var.name not in variabledict or variabledict[var.name].type != 'counter':
-                self.pop(var.name)
+#         for var in self.values():
+#             if var.name not in variabledict or variabledict[var.name].type != 'counter':
+#                 self.pop(var.name)
         # add missing ones
         for var in variabledict.values():
             if var.type == 'counter':
