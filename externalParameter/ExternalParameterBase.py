@@ -23,6 +23,7 @@ class ExternalParameterBase(object):
         self.setDefaults()
         self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        self.savedValue = None
         
     @property
     def parameter(self):
@@ -36,11 +37,12 @@ class ExternalParameterBase(object):
         self.settings.__dict__.setdefault('jump' , False)       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('value', None )      # the current value       
     
-    def saveValue(self):
+    def saveValue(self, overwrite=True):
         """
         save current value
         """
-        self.savedValue = self.value
+        if not self.savedValue or overwrite:
+            self.savedValue = self.value
     
     def restoreValue(self):
         """

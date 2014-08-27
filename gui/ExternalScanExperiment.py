@@ -56,7 +56,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 logger.error(message)
                 raise ScanNotAvailableException(message) 
             self.externalParameter = self.enabledParameters[self.scan.externalScanParameter]
-            self.externalParameter.saveValue()
+            self.externalParameter.saveValue(overwrite=False)
             self.externalParameterIndex = 0
             self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
                     
