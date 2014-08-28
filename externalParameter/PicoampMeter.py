@@ -61,7 +61,7 @@ class PicoampMeter:
                 self.instrument.write("INIT")
                 self.instrument.write("SYST:ZCOR:ACQ")
                 self.instrument.write("SYST:ZCOR ON")
-                self.setAutoRange(True)
+                self.setAutoRange(False)
         else:
             logging.getLogger(__name__).error("Meter is not available")
         
@@ -95,7 +95,7 @@ class PicoampMeter:
             answer = self.instrument.ask("READ?")
             m = re.match("([-.+0-9E]+)([^,]*),([-.+0-9E]+),([-.+0-9E]+)",answer)
             if m:
-                value, unit, second, third = m.groups() #@UnusedVariable
+                value, unit, second, third = m.groups()
                 return float(value) 
         else:
             logging.getLogger(__name__).error("Meter is not available")

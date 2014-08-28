@@ -19,6 +19,11 @@ from modules import MagnitudeUtilit
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\PicoampMeterControl.ui')
 
+def find_index_nearest(array, value):
+    index = (numpy.abs(array-value)).argmin()
+    return index
+
+
 class MeterState:
     def __init__(self):
         self.zeroCheck = True
@@ -59,6 +64,7 @@ class PicoampMeterControl(Base, Form):
         self.scanMode = "V"
         self.loggingActive = False
         self.startTime = datetime.now()
+        self.scanRunning = False
             
     def writeAll(self):
         self.onVoltage(self.meterState.voltage)
@@ -114,9 +120,12 @@ class PicoampMeterControl(Base, Form):
         
     def startLogging(self):
         self.trace = Trace()
+        self.trace.addColumn('voltage')
         self.trace.name = "scan"
         self.plottedTrace =  PlottedTrace(self.trace, self.plotDict['Time']['view'], pens.penList )
+        self.voltagePlottedTrace = PlottedTrace(self.trace, self.plotDict['Voltage']['view'], yColumn='voltage', penList=pens.penList )
         self.plottedTrace.trace.filenameCallback =  partial( self.plottedTrace.traceFilename, self.meterState.filename )           
+        self.voltagePlottedTrace.trace.filenameCallback =  partial( self.plottedTrace.traceFilename, self.meterState.filename )           
         self.traceAdded = False
         self.stopRequested = False
         QtCore.QTimer.singleShot( 0, self.takeLoggingPoint )
@@ -127,11 +136,14 @@ class PicoampMeterControl(Base, Form):
         value = float(self.meter.read())
         self.trace.x = numpy.append( self.trace.x, time.time()-self.startTime )
         self.trace.y = numpy.append( self.trace.y, value )
+        self.trace.voltage = numpy.append( self.trace.voltage, self.meterState.voltage.toval('V') )
         if not self.traceAdded:
             self.traceui.addTrace( self.plottedTrace, pen=-1)
+            self.traceui.addTrace( self.voltagePlottedTrace, pen=0 )
             self.traceAdded = True
         else:
             self.plottedTrace.replot()
+            self.voltagePlottedTrace.replot()
         if self.stopRequested:
             self.finalizeScan()
             self.loggingActive = False
@@ -147,23 +159,31 @@ class PicoampMeterControl(Base, Form):
     def onStop(self):
         self.stopRequested = True
                 
+                
+                
     def startScan(self):
-        self.scanList = scanList(self.meterState.start, self.meterState.stop, self.meterState.steps,self.meterState.scanType)
-        self.currentIndex = 0
-        self.trace = Trace()
-        self.trace.name = "scan"
-        self.plottedTrace =  PlottedTrace(self.trace, self.plotDict['Scan']['view'], pens.penList )
-        self.plottedTrace.trace.filenameCallback =  partial( self.plottedTrace.traceFilename, self.meterState.filename )           
-        self.traceAdded = False
-        self.meter.setZeroCheck(False)
-        self.meter.voltageEnable(True)
-        self.stopRequested = False
-        QtCore.QTimer.singleShot(0, self.initPoint )
+        if not self.scanRunning:
+            self.scanList = scanList(self.meterState.start, self.meterState.stop, self.meterState.steps,self.meterState.scanType)
+            if self.meterState.scanType in [4,5]:
+                index = find_index_nearest(self.scanList, self.meterState.voltage)
+                self.scanList = numpy.roll( self.scanList, -index)
+            self.currentIndex = 0
+            self.trace = Trace()
+            self.trace.name = "scan"
+            self.plottedTrace =  PlottedTrace(self.trace, self.plotDict['Scan']['view'], pens.penList )
+            self.plottedTrace.trace.filenameCallback =  partial( self.plottedTrace.traceFilename, self.meterState.filename )           
+            self.traceAdded = False
+            self.meter.setZeroCheck(False)
+            self.meter.voltageEnable(True)
+            self.stopRequested = False
+            print "startScan"
+            self.scanRunning = True
+            QtCore.QTimer.singleShot(0, self.initPoint )
     
     def initPoint(self):
         if self.currentIndex<len(self.scanList) and not self.stopRequested:
             self.meter.setVoltage( self.scanList[self.currentIndex] )
-            QtCore.QTimer.singleShot(self.meterState.settlingDelay.to_val('ms'), self.takeScanPoint )
+            QtCore.QTimer.singleShot(self.meterState.settlingDelay.toval('ms'), self.takeScanPoint )
         else:
             self.meter.setVoltage( self.meterState.voltage )
             self.finalizeScan()
@@ -183,6 +203,7 @@ class PicoampMeterControl(Base, Form):
     def finalizeScan(self):
         self.trace.description["traceFinalized"] = datetime.now()
         self.trace.resave(saveIfUnsaved=False)
+        self.scanRunning = False
         
     def onMeasure(self):
         value = float(self.meter.read())
