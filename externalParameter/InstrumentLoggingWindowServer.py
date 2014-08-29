@@ -196,10 +196,33 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.size'] = self.size()
         self.config['PlotNames'] = self.plotDict.keys()
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
-        self.loggerUi.saveConfig()
         self.ExternalParametersSelectionUi.saveConfig()
 
+class CommandReader(QtCore.QThread):
+    quitProcess = QtCore.pyqtSignal()
+    def __init__(self, commandPipe, parent=None):
+        QtCore.QThread.__init__(self, parent)
+        self.running = False
+        self.commandPipe = commandPipe
+        
+    def run(self):
+        logger = logging.getLogger(__name__)
+        logger.debug("CommandReader Thread running")
+        print "CommandReader Thread running"
+        while (self.running):
+            if self.commandPipe.poll(0.1):
+                try:
+                    commandstring, argument = self.commandPipe.recv()
+                    command = getattr(self, commandstring)
+                    logger.debug( "InstrumentLoggingServer {0}".format(commandstring) )
+                    self.commandPipe.send(command(*argument))
+                except Exception as e:
+                    self.commandPipe.send(e)
 
+    def finish(self):
+        logging.getLogger(__name__).info("Shutdown Logger Process")
+        print "Shutdown Logger Process"
+        self.quitProcess.emit()
 
 class InstrumentLoggingProcess(Process):
     def __init__(self, project=None, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
@@ -216,6 +239,8 @@ class InstrumentLoggingProcess(Process):
     def run(self):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
+        
+        self.commandReader = CommandReader(self.commandPipe)
 
         #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
         import ctypes, sys
@@ -224,6 +249,8 @@ class InstrumentLoggingProcess(Process):
         
         app = QtGui.QApplication(["LoggingWindow"])    
         logger = logging.getLogger("")
+        self.commandReader.quitProcess.connect( app.quit )
+        self.commandReader.start()
                
         ProjectSelection.setProject(self.project)
                
@@ -238,4 +265,5 @@ class InstrumentLoggingProcess(Process):
         self.dataQueue.close()
         self.loggingQueue.put(None)
         self.loggingQueue.close()
+        self.commandReader.quit()
 

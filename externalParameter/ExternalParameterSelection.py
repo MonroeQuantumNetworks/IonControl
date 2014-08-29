@@ -30,10 +30,12 @@ class Parameter:
         self.settings = Settings()
         self.enabled = False
         self.plotName = None
+        self.loggingStrategy = None
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('plotName',None)
+        self.__dict__.setdefault('loggingStrategy',None)
 
 class SelectionUi(SelectionForm,SelectionBase):
     selectionChanged = QtCore.pyqtSignal(object)

@@ -102,4 +102,12 @@ class InstrumentLoggingWindow(QtCore.QObject):
         
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
+        
+    def shutdown(self):
+        self.clientPipe.send( ('finish', () ) )
+        self.serverProcess.join()
+        self.queueReader.quit()
+        self.loggingReader.quit()
+        logging.getLogger(__name__).debug("PulseHardwareClient Shutdown completed")
+
 

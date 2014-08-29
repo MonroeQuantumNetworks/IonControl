@@ -251,7 +251,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr(widget,'onContinue'):
                 self.dedicatedCountersWindow.autoLoad.ionReappeared.connect( widget.onContinue )
                 
-        self.instrumentLogger = InstrumentLoggingWindow(project)
+        self.instrumentLogger = None # InstrumentLoggingWindow(project)
         
     def onClearConsole(self):
         self.textEditConsole.clear()
@@ -389,6 +389,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.close()
         self.pulseProgramDialog.onClose()
         self.logicAnalyzerWindow.close()
+        if self.instrumentLogger:
+            self.instrumentLogger.shutdown()
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
