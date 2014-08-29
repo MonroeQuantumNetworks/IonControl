@@ -8,11 +8,8 @@ import logging
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
-from mylogging.ExceptionLogButton import ExceptionLogButton
-from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
 from gui import ProjectSelection
-from gui import ProjectSelectionUi
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
@@ -202,13 +199,12 @@ class CommandReader(QtCore.QThread):
     quitProcess = QtCore.pyqtSignal()
     def __init__(self, commandPipe, parent=None):
         QtCore.QThread.__init__(self, parent)
-        self.running = False
+        self.running = True
         self.commandPipe = commandPipe
         
     def run(self):
         logger = logging.getLogger(__name__)
         logger.debug("CommandReader Thread running")
-        print "CommandReader Thread running"
         while (self.running):
             if self.commandPipe.poll(0.1):
                 try:
@@ -221,8 +217,8 @@ class CommandReader(QtCore.QThread):
 
     def finish(self):
         logging.getLogger(__name__).info("Shutdown Logger Process")
-        print "Shutdown Logger Process"
         self.quitProcess.emit()
+        self.running = False
 
 class InstrumentLoggingProcess(Process):
     def __init__(self, project=None, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
@@ -244,8 +240,8 @@ class InstrumentLoggingProcess(Process):
 
         #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
         import ctypes, sys
-        #myappid = 'TrappedIons.InstrumentLogging' # arbitrary string
-        #ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         
         app = QtGui.QApplication(["LoggingWindow"])    
         logger = logging.getLogger("")
