@@ -70,6 +70,7 @@ class ParameterScanGenerator:
         self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
         self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
         maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
+        self.maxUpdatesToWrite = maxUpdatesToWrite
         if len(self.scan.code)>maxWordsToWrite:
             self.nextIndexToWrite = maxWordsToWrite
             return ( self.scan.code[:maxWordsToWrite], data)
