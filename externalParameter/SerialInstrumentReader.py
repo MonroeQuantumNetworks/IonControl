@@ -29,6 +29,7 @@ class SerialInstrumentReader( InstrumentReaderBase ):
          
     def close(self):
         self.commandQueue.put(("stop", ()) )
+        self.reader.wait()
          
     def update(self,param, changes):
         InstrumentReaderBase.update(self, param, changes)

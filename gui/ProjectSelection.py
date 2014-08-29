@@ -83,12 +83,13 @@ def guiConfigDir():
         os.makedirs(configDir)
     return configDir
 
-def guiConfigFile():
+def guiConfigFile(scriptname=None):
     global SpecificConfigFile
     if SpecificConfigFile:
         return SpecificConfigFile
     else:
-        scriptname,_ = os.path.splitext( os.path.basename(__main__.__file__))
+        if not scriptname:
+            scriptname,_ = os.path.splitext( os.path.basename(__main__.__file__))
         return os.path.join( guiConfigDir(), scriptname+".config.db" ) 
    
 def getBaseDir():

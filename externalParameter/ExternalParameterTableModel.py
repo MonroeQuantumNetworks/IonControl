@@ -5,26 +5,34 @@ from modules.SequenceDict import SequenceDict
 
 class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
     enableChanged = QtCore.pyqtSignal( object )
-    headerDataLookup = [ 'E', 'Name', 'Class', 'Instrument' ]
-    def __init__(self, parameterDict=None, parent=None):
+    plotNameChanged = QtCore.pyqtSignal( object, object )
+    headerDataLookup = [ 'E', 'Name', 'Class', 'Instrument', 'Plot' ]
+    def __init__(self, parameterDict=None, plotNames=None, parent=None):
         super(ExternalParameterTableModel, self).__init__(parent)
+        self.plotNames = plotNames
         self.parameterDict = parameterDict if parameterDict else SequenceDict()
         self.dataLookup = {  (QtCore.Qt.DisplayRole,2):    lambda row: self.parameterDict.at(row).className,
                              (QtCore.Qt.DisplayRole,3):    lambda row: self.parameterDict.at(row).instrument,
                              (QtCore.Qt.DisplayRole,1):    lambda row: self.parameterDict.at(row).name,
-                             (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.parameterDict.at(row).enabled else QtCore.Qt.Unchecked }
-        self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setEnabled  }
+                             (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.parameterDict.at(row).enabled else QtCore.Qt.Unchecked,
+                             (QtCore.Qt.DisplayRole,4):    lambda row: self.parameterDict.at(row).plotName }
+        self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setEnabled,
+                               (QtCore.Qt.EditRole,4): self.setPlotName  }
+        self.choiceLookup = { 4: self.plotNames }
         
     def setParameterDict(self, parameterDict):
         self.beginResetModel()
         self.parameterDict = parameterDict
         self.endResetModel()
         
+    def choice(self, index):
+        return self.choiceLookup.get(index,[])         
+        
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self.parameterDict) if self.parameterDict else 0
     
     def columnCount(self,  parent=QtCore.QModelIndex()):
-        return 4
+        return 4 if self.plotNames is None else 5
     
     def data(self, index, role): 
         if index.isValid():
@@ -66,4 +74,15 @@ class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
                     self.dataChanged.emit( self.createIndex(row,0), self.createIndex(row+1,3) )
                 return True
         return False
+
+    def setValue(self, index, value):
+        self.setData( index, value, QtCore.Qt.EditRole)
+
+    def setPlotName(self, index, plotname):
+        plotname = str(plotname)
+        self.parameterDict.at(index.row()).plotName = plotname
+        self.dataChanged.emit( index, index )
+        self.plotNameChanged.emit( self.parameterDict.at(index.row()).name, plotname )
+        return True
     
+   

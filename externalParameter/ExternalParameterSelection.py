@@ -14,6 +14,7 @@ from externalParameter.ExternalParameterTableModel import ExternalParameterTable
 from modules.SequenceDict import SequenceDict
 from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
 
 SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
@@ -28,19 +29,22 @@ class Parameter:
         self.instrument = None
         self.settings = Settings()
         self.enabled = False
+        self.plotName = None
         
     def __setstate__(self, state):
         self.__dict__ = state
+        self.__dict__.setdefault('plotName',None)
 
 class SelectionUi(SelectionForm,SelectionBase):
     selectionChanged = QtCore.pyqtSignal(object)
     
-    def __init__(self, config, classdict, instancename="ExternalParameterSelection.ParametersSequence", newDataSlot=None, parent=None):
+    def __init__(self, config, classdict, instancename="ExternalParameterSelection.ParametersSequence", newDataSlot=None, plotNames=None, parent=None):
         SelectionBase.__init__(self,parent)
         SelectionForm.__init__(self)
         self.config = config
         self.instancename = instancename
         self.parameters = self.config.get(self.instancename,SequenceDict())
+        self.plotNames = plotNames
         self.enabledParametersObjects = SequenceDict()
         self.classdict = classdict
         self.newDataSlot = newDataSlot
@@ -48,11 +52,13 @@ class SelectionUi(SelectionForm,SelectionBase):
     def setupUi(self,MainWindow):
         logger = logging.getLogger(__name__)
         SelectionForm.setupUi(self,MainWindow)
-        self.parameterTableModel = ExternalParameterTableModel( self.parameters )
+        self.parameterTableModel = ExternalParameterTableModel( self.parameters, self.plotNames )
         self.parameterTableModel.enableChanged.connect( self.onEnableChanged )
         self.tableView.setModel( self.parameterTableModel )
         self.tableView.resizeColumnsToContents()
         self.tableView.horizontalHeader().setStretchLastSection(True)   
+        self.delegate = ComboBoxDelegate()
+        self.tableView.setItemDelegateForColumn(4, self.delegate )
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
