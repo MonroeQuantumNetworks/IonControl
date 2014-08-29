@@ -29,6 +29,7 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 import numpy
 from modules.concatenate_iter import concatenate_iter
 import random
+from modules.concatenate_iter import interleave_iter
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -535,7 +536,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             scan.list = sorted( scan.list )
             scan.start = scan.list[0]
             scan.stop = scan.list[-1]
-            random.shuffle( scan.list )           
+            random.shuffle( scan.list )
+        elif scan.type==3:        
+            scan.list = sorted( scan.list )
+            center = len(scan.list)/2
+            scan.list = list( interleave_iter(scan.list[center:],reversed(scan.list[:center])) )
             
         scan.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
         scan.gateSequenceUi = self.gateSequenceUi
