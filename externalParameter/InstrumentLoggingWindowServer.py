@@ -68,7 +68,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.fitWidget.setupUi(self.fitWidget)
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea)
 
-        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict)
+        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict, self.config)
 
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData, plotNames=self.plotDict.keys())
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -180,10 +180,11 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.parent.close()
         
     def closeEvent(self,e):
+        logger = logging.getLogger(__name__)
+        logger.info( "Close Event" )
         logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
-
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
@@ -194,6 +195,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.config['PlotNames'] = self.plotDict.keys()
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
         self.ExternalParametersSelectionUi.saveConfig()
+        self.instrumentLoggingHandler.saveConfig()
 
 class CommandReader(QtCore.QThread):
     quitProcess = QtCore.pyqtSignal()
@@ -262,4 +264,6 @@ class InstrumentLoggingProcess(Process):
         self.loggingQueue.put(None)
         self.loggingQueue.close()
         self.commandReader.quit()
+        
+    
 
