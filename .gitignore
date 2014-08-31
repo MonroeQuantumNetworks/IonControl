@@ -28,3 +28,7 @@ config/PulsePrograms/YbGateSequence.pp
 config/PulsePrograms/generated_pp/
 config/testbench_PulsePrograms/generated_pp/
 manual/Manual.toc
+AutoLoad.dot
+AutoLoad.png
+Statemachine.dot
+Statemachine.png
