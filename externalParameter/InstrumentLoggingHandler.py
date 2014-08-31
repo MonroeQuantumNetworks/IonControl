@@ -92,11 +92,11 @@ class DataHandling(object):
         calMagnitude = self.calibration.convertMagnitude(value)
         return (takentime, calValue, calMin, calMax)
         
-    def addPoint(self, traceui, plot, data ):
+    def addPoint(self, traceui, plot, data, source ):
         takentime, value, minval, maxval = data
         if self.trace is None:
             self.trace = Trace(record_timestamps=True)
-            #self.trace.name = self.source
+            self.trace.name = source
             self.trace.x = numpy.array( [takentime - GlobalTimeOffset] )
             self.trace.y = numpy.array( [value] )
             self.trace.timestamp = takentime
@@ -105,7 +105,7 @@ class DataHandling(object):
             if minval is not None:
                 self.trace.bottom = numpy.array( [value - minval])
             self.plottedTrace = PlottedTrace(self.trace, plot, pens.penList, xAxisUnit = "s", xAxisLabel = "time") 
-            self.plottedTrace.trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTrace.traceFilename), self )
+            self.plottedTrace.trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTrace.traceFilename), self.filename )
             traceui.addTrace( self.plottedTrace, pen=-1)
             traceui.resizeColumnsToContents()
         else:
@@ -150,7 +150,7 @@ class InstrumentLoggingHandler(QtCore.QObject):
             plot = self.plotDict.get( handler.plotName, None ) 
             if plot is None:
                 plot = self.plotDict.values()[0]
-            handler.addPoint( self.traceui, plot["view"], data )
+            handler.addPoint( self.traceui, plot["view"], data, source )
             
     def saveConfig(self):
         self.config["InstrumentLogging.HandlerDict"] = self.handlerDict

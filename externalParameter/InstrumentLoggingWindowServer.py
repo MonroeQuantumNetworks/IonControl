@@ -226,8 +226,8 @@ class CommandReader(QtCore.QThread):
 
 class InstrumentLoggingProcess(Process):
     def __init__(self, project=None, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
-        super(InstrumentLoggingProcess,self).__init__()
         self.project = project
+        super(InstrumentLoggingProcess,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
         self.running = True
@@ -237,6 +237,8 @@ class InstrumentLoggingProcess(Process):
         self.sharedMemoryArray = sharedMemoryArray
         
     def run(self):
+        ProjectSelection.setProject(self.project)
+        ProjectSelection.setDefaultProject(self.project)
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
         
@@ -252,7 +254,6 @@ class InstrumentLoggingProcess(Process):
         self.commandReader.quitProcess.connect( app.quit )
         self.commandReader.start()
                
-        ProjectSelection.setProject(self.project)
                
         with configshelve.configshelve( ProjectSelection.guiConfigFile("LoggingWindow") ) as config:
             with InstrumentLoggingUi(self.project,config) as ui:
