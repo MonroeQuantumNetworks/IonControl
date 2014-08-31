@@ -73,10 +73,10 @@ class ValueHistoryStore:
         self.session.commit()
 #        self.session = self.Session()
 
-    def open(self):
+    def open_session(self):
         self.__enter__()
         
-    def close(self):
+    def close_session(self):
         self.session.commit()        
 
     def __enter__(self):

@@ -11,17 +11,17 @@ class DBPersist:
     store = None
     name = "DB Persist"
     def __init__(self):
-        if DBPersist.store is None:
-            DBPersist.store = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
-            DBPersist.store.open()
-    
+        self.initDB()
+        
     def __setstate__(self, state):
         self.__dict__.update(state)
+        self.initDB()
+        
+    def initDB(self):
         if DBPersist.store is None:
             DBPersist.store = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
-            DBPersist.store.open()
+            DBPersist.store.open_session()        
         
-    
     def persist(self, source, data):
         time, value, minval, maxval = data
         DBPersist.store.add( source, value, None, datetime.fromtimestamp(time), bottom=minval, top=maxval )

@@ -24,11 +24,13 @@ class DataHandling(object):
     def __init__(self):
         self.calibration = None
         self.decimation = None
+        self.persistenceDecimation = None
         self.plotName = None
         self.persistence = None
         self.calibrationCache = dict()
         self.decimationCache = dict()
         self.persistenceCache = dict()
+        self.persistenceDecimationCache = dict()
         self.trace = None
         self.plottedTrace = None
         self.filename = None
@@ -43,6 +45,16 @@ class DataHandling(object):
         if self.decimation is not None:
             self.decimationCache[self.decimation.name] = self.decimation 
         self.decimation = self.decimationCache.get(name, decimationDict[name]() ) if name != 'None' else None
+        
+    @property
+    def persistenceDecimationClass(self):
+        return self.persistenceDecimation.name if self.persistenceDecimation else 'None'
+    
+    @persistenceDecimationClass.setter
+    def persistenceDecimationClass(self, name):
+        if self.persistenceDecimation is not None:
+            self.persistenceDecimationCache[self.persistenceDecimation.name] = self.persistenceDecimation 
+        self.persistenceDecimation = self.persistenceDecimationCache.get(name, decimationDict[name]() ) if name != 'None' else None
         
     @property
     def calibrationClass(self):
@@ -82,6 +94,11 @@ class DataHandling(object):
         if self.decimation is None:
             return True, (takentime, value, None, None)
         return self.decimation.decimate( takentime, value )
+    
+    def persistenceDecimate(self, takentime, value ):
+        if self.persistenceDecimation is None:
+            return self.decimate(takentime, value)
+        return self.persistenceDecimation.decimate(takentime, value)
     
     def persist(self, source, data):
         if self.persistence is not None:
@@ -146,15 +163,17 @@ class InstrumentLoggingHandler(QtCore.QObject):
         if data is None:
             handler.finishTrace()
         else:
-            keep, data = handler.decimate( *data )
-            if not keep:
-                return
-            data = handler.convert( data )
-            handler.persist( source, data )
-            plot = self.plotDict.get( handler.plotName, None ) 
-            if plot is None:
-                plot = self.plotDict.values()[0]
-            handler.addPoint( self.traceui, plot["view"], data, source )
+            keep, convdata = handler.decimate( *data )
+            if keep:
+                convdata = handler.convert( convdata )
+                plot = self.plotDict.get( handler.plotName, None ) 
+                if plot is None:
+                    plot = self.plotDict.values()[0]
+                handler.addPoint( self.traceui, plot["view"], convdata, source )
+            keep, convdata = handler.persistenceDecimate( *data )
+            if keep:
+                convdata = handler.convert( convdata )
+                handler.persist( source, convdata )
             
     def saveConfig(self):
         self.config["InstrumentLogging.HandlerDict"] = self.handlerDict
@@ -176,6 +195,10 @@ class InstrumentLoggingHandler(QtCore.QObject):
                        'value': handler.persistence.name if handler.persistence else 'None', 'values': ['None'] + persistenceDict.keys() , 'reload': True} )
         if handler.persistence is not None:
             param.append( {'name': 'Persistence parameters', 'type': 'group', 'children': handler.persistence.paramDef()} ) 
+        param.append( {'name': 'persist decimation', 'type': 'list', 'object': handler, 'field': 'persistenceDecimationClass', 
+                       'value': handler.persistenceDecimation.name if handler.persistenceDecimation else 'None', 'values': ['None'] + decimationDict.keys() , 'reload': True} )
+        if handler.persistenceDecimation is not None:
+            param.append( {'name': 'Persistence Decimation params', 'type': 'group', 'children': handler.persistenceDecimation.paramDef()} ) 
         return param
 
     def parameter(self, source):
