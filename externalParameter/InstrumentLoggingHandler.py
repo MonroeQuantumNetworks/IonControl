@@ -17,6 +17,7 @@ from decimation import decimationDict
 from calibration import calibrationDict
 from persistence import persistenceDict
 from dedicatedCounters.AnalogInputCalibration import AnalogInputCalibrationMap
+from functools import partial
 
 GlobalTimeOffset = time.time()    
         
@@ -45,6 +46,7 @@ class DataHandling(object):
         if self.decimation is not None:
             self.decimationCache[self.decimation.name] = self.decimation 
         self.decimation = self.decimationCache.get(name, decimationDict[name]() ) if name != 'None' else None
+        self.trace = None
         
     @property
     def persistenceDecimationClass(self):
@@ -90,15 +92,17 @@ class DataHandling(object):
     def finishTrace(self):
         self.trace = None
         
-    def decimate(self, takentime, value):
+    def decimate(self, takentime, value, callback):
         if self.decimation is None:
-            return True, (takentime, value, None, None)
-        return self.decimation.decimate( takentime, value )
+            callback( (takentime, value, None, None) )
+        else:
+            self.decimation.decimate( takentime, value, callback )
     
-    def persistenceDecimate(self, takentime, value ):
+    def persistenceDecimate(self, takentime, value, callback ):
         if self.persistenceDecimation is None:
-            return self.decimate(takentime, value)
-        return self.persistenceDecimation.decimate(takentime, value)
+            callback( (takentime, value, None, None) )
+        else:
+            self.persistenceDecimation.decimate(takentime, value, callback)
     
     def persist(self, source, data):
         if self.persistence is not None:
@@ -163,17 +167,21 @@ class InstrumentLoggingHandler(QtCore.QObject):
         if data is None:
             handler.finishTrace()
         else:
-            keep, convdata = handler.decimate( *data )
-            if keep:
-                convdata = handler.convert( convdata )
-                plot = self.plotDict.get( handler.plotName, None ) 
-                if plot is None:
-                    plot = self.plotDict.values()[0]
-                handler.addPoint( self.traceui, plot["view"], convdata, source )
-            keep, convdata = handler.persistenceDecimate( *data )
-            if keep:
-                convdata = handler.convert( convdata )
-                handler.persist( source, convdata )
+            handler.decimate( data[0], data[1], partial(self.dataCallback, source ))
+            handler.persistenceDecimate( data[0], data[1], partial(self.persistenceCallback, source ) )
+
+    def dataCallback(self, source, data):
+        handler = self.handlerDict[source]
+        convdata = handler.convert( data )
+        plot = self.plotDict.get( handler.plotName, None ) 
+        if plot is None:
+            plot = self.plotDict.values()[0]
+        handler.addPoint( self.traceui, plot["view"], convdata, source )
+                
+    def persistenceCallback(self, source, data):
+        handler = self.handlerDict[source]
+        convdata = handler.convert( data )
+        handler.persist( source, convdata )
             
     def saveConfig(self):
         self.config["InstrumentLogging.HandlerDict"] = self.handlerDict
