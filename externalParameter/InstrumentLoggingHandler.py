@@ -60,7 +60,8 @@ class DataHandling(object):
     
     @persistenceClass.setter
     def persistenceClass(self, name):
-        self.persistenceCache[self.persistence.name] = self.persistence 
+        if self.persistence is not None:
+            self.persistenceCache[self.persistence.name] = self.persistence 
         self.persistence = self.persistenceCache.get(name, persistenceDict[name]() ) if name != 'None' else None
         
     def __getstate__(self):
@@ -81,6 +82,10 @@ class DataHandling(object):
         if self.decimation is None:
             return True, (takentime, value, None, None)
         return self.decimation.decimate( takentime, value )
+    
+    def persist(self, source, data):
+        if self.persistence is not None:
+            self.persistence.persist(source, data)
     
     def convert(self, data ):
         takentime, value, minVal, maxVal = data
@@ -145,8 +150,7 @@ class InstrumentLoggingHandler(QtCore.QObject):
             if not keep:
                 return
             data = handler.convert( data )
-            if handler.persistence is not None:
-                handler.persistence( data )
+            handler.persist( source, data )
             plot = self.plotDict.get( handler.plotName, None ) 
             if plot is None:
                 plot = self.plotDict.values()[0]
