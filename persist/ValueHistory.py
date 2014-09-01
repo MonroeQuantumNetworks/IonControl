@@ -39,7 +39,7 @@ class ValueHistoryEntry(Base):
         self.upd_date = upd_date
         
     def __repr__(self):
-        return "<'{0}.{1}' {2} {3} @ {4}>".format(self.category, self.parameter, self.value, self.unit, self.upd_date)
+        return "<'{0}' {1} {2} @ {3}>".format(self.parameter, self.value, self.unit, self.upd_date)
         
     
 class ValueHistoryElement:
@@ -69,6 +69,15 @@ class ValueHistoryStore:
             self.sourceDict[source] = s
             return s
         
+    def refreshSourceDict(self):
+        self.sourceDict = dict( [(s.name, s) for s in self.session.query(HistorySource).all()] )
+        return self.sourceDict    
+        
+    def getHistory(self, parameter, fromTime, toTime ):
+        return self.session.query(ValueHistoryEntry).filter(ValueHistoryEntry.source==self.getSource(parameter)).\
+                                              filter(ValueHistoryEntry.upd_date>fromTime).\
+                                              filter(ValueHistoryEntry.upd_date<toTime).order_by(ValueHistoryEntry.upd_date).all()
+        
     def commit(self, copyTo=None ):
         self.session.commit()
 #        self.session = self.Session()
@@ -83,7 +92,7 @@ class ValueHistoryStore:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
-        self.sourceDict.update( [(s.name, s) for s in self.session.query(HistorySource).all()] )
+        self.refreshSourceDict()
         return self
         
     def __exit__(self, exittype, value, tb):

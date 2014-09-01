@@ -25,6 +25,7 @@ from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
 from fit.FitUi import FitUi
 from multiprocessing import Process
 from mylogging.ServerLogging import configureServerLogging
+from InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingWindow.ui')
 
@@ -78,6 +79,10 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
         self.instrumentLoggingHandler.paramTreeChanged.connect( self.ExternalParametersSelectionUi.refreshParamTree)
+    
+        self.instrumentLoggingQueryUi = InstrumentLoggerQueryUi(self.config, self.traceui, self.plotDict )
+        self.instrumentLoggingQueryUi.setupUi( self.instrumentLoggingQueryUi )
+        self.instrumentLoggingQueryUiDock = self.setupAsDockWidget(self.instrumentLoggingQueryUi, "Query", QtCore.Qt.LeftDockWidgetArea)
     
         self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
         self.addPlot.setToolTip("Add new plot")
@@ -198,9 +203,11 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
         self.ExternalParametersSelectionUi.saveConfig()
         self.instrumentLoggingHandler.saveConfig()
+        self.instrumentLoggingQueryUi.saveConfig()
 
 class CommandReader(QtCore.QThread):
     quitProcess = QtCore.pyqtSignal()
+    saveConfig = QtCore.pyqtSignal()
     def __init__(self, commandPipe, parent=None):
         QtCore.QThread.__init__(self, parent)
         self.running = True
@@ -221,6 +228,7 @@ class CommandReader(QtCore.QThread):
 
     def finish(self):
         logging.getLogger(__name__).info("Shutdown Logger Process")
+        self.saveConfig.emit()
         self.quitProcess.emit()
         self.running = False
 
@@ -259,6 +267,7 @@ class InstrumentLoggingProcess(Process):
             with InstrumentLoggingUi(self.project,config) as ui:
                 ui.setupUi(ui)
                 ui.show()
+                self.commandReader.saveConfig.connect( ui.saveConfig )
                 sys.exit(app.exec_())
         
         self.dataQueue.put(FinishException())
