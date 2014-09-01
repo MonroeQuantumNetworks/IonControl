@@ -22,9 +22,8 @@ class DBPersist:
             DBPersist.store = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
             DBPersist.store.open_session()        
         
-    def persist(self, source, data):
-        time, value, minval, maxval = data
-        DBPersist.store.add( source, value, None, datetime.fromtimestamp(time), bottom=minval, top=maxval )
+    def persist(self, source, time, value, minval=None, maxval=None, unit=None):
+        DBPersist.store.add( source, value, unit, datetime.fromtimestamp(time), bottom=minval, top=maxval )
         
     def paramDef(self):
         return []

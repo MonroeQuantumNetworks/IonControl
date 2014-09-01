@@ -102,6 +102,8 @@ class HP8672A(ExternalParameterBase):
         self._setValue( newvalue )
         if self.displayValueCallback:
             self.displayValueCallback(self.value,"{0}".format( self.settings.lockPoint - self.value ) )
+        if arrived:
+            self.persist(self.value)
         return arrived
             
     def _setValue(self, value ):
@@ -312,7 +314,10 @@ class LaserWavemeterLockScan(ExternalParameterBase):
             if self.savedValue is None:
                 self.savedValue = self.currentFrequency
         logger.debug( "setFrequency {0}, current frequency {1}".format(self.value, self.currentFrequency) )
-        return self.currentFrequency is not None and abs(self.currentFrequency-self.value)<self.settings.maxDeviation
+        arrived = self.currentFrequency is not None and abs(self.currentFrequency-self.value)<self.settings.maxDeviation
+        if arrived:
+            self.persist(self.value)
+        return arrived
            
                 
     def currentExternalValue(self):

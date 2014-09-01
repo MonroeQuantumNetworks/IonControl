@@ -32,7 +32,8 @@ class PlottedTrace(object):
     def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
-                 yAxisLabel = None, yAxisUnit = None):
+                 yAxisLabel = None, yAxisUnit = None, fill=True):
+        self.fill = fill
         if penList is None:
             penList = pens.penList
         self.penList = penList
@@ -258,7 +259,7 @@ class PlottedTrace(object):
         if self.graphicsView is not None:
             mycolor = list(self.penList[penindex][4])
             mycolor[3] = 80
-            self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor, pen=self.penList[penindex][0])
+            self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0 if self.fill else None, brush=mycolor if self.fill else None, pen=self.penList[penindex][0])
             if self.xAxisLabel:
                 if self.xAxisUnit:
                     self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))

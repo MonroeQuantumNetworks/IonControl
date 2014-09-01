@@ -104,9 +104,9 @@ class DataHandling(object):
         else:
             self.persistenceDecimation.decimate(takentime, value, callback)
     
-    def persist(self, source, data):
+    def persist(self, source, time, value, minvalue, maxvalue):
         if self.persistence is not None:
-            self.persistence.persist(source, data)
+            self.persistence.persist(source, time, value, minvalue, maxvalue)
     
     def convert(self, data ):
         takentime, value, minVal, maxVal = data
@@ -180,8 +180,8 @@ class InstrumentLoggingHandler(QtCore.QObject):
                 
     def persistenceCallback(self, source, data):
         handler = self.handlerDict[source]
-        convdata = handler.convert( data )
-        handler.persist( source, convdata )
+        time, value, minvalue, maxvalue = handler.convert( data )
+        handler.persist( source, time, value, minvalue, maxvalue )
             
     def saveConfig(self):
         self.config["InstrumentLogging.HandlerDict"] = self.handlerDict
