@@ -43,7 +43,6 @@ class VariableDictionary(SequenceDict):
     to check for cycles and to recalculate the necessary values when one of the fields is updated"""   
     expression = Expression()
     def __init__(self, *args, **kwargs):
-        self.valueView = VariableDictionaryView(self)
         self.dependencyGraph = DiGraph()
         self.globaldict = dict()
         super(VariableDictionary,self).__init__(*args, **kwargs)
@@ -52,6 +51,7 @@ class VariableDictionary(SequenceDict):
         self.globaldict = globaldict 
                 
     def calculateDependencies(self):
+        self.dependencyGraph = DiGraph()   # clear the old dependency graph in case parameters got removed
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):
                 try:
