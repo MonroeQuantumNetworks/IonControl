@@ -6,7 +6,7 @@ Created on Jul 24, 2014
 
 import sys
 import glob
-import serial
+import serial #@UnresolvedImport
 
 
 def serial_ports():

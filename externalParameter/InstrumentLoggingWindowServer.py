@@ -8,11 +8,8 @@ import logging
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
-from mylogging.ExceptionLogButton import ExceptionLogButton
-from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
 from gui import ProjectSelection
-from gui import ProjectSelectionUi
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
@@ -23,11 +20,12 @@ from trace import pens
 from pyqtgraph.dockarea import DockArea, Dock
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from externalParameter.InstrumentLogging import LoggingInstruments 
-from externalParameter import ExternalParameterSelection 
+from externalParameter.InstrumentLoggingSelection import InstrumentLoggingSelection 
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
 from fit.FitUi import FitUi
 from multiprocessing import Process
 from mylogging.ServerLogging import configureServerLogging
+from InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingWindow.ui')
 
@@ -71,14 +69,20 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.fitWidget.setupUi(self.fitWidget)
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea)
 
-        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict)
+        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict, self.config)
 
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData, plotNames=self.plotDict.keys())
+        self.ExternalParametersSelectionUi = InstrumentLoggingSelection(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData, plotNames=self.plotDict.keys(),
+                                                                        instrumentLoggingHandler=self.instrumentLoggingHandler )
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
+        self.instrumentLoggingHandler.paramTreeChanged.connect( self.ExternalParametersSelectionUi.refreshParamTree)
+    
+        self.instrumentLoggingQueryUi = InstrumentLoggerQueryUi(self.config, self.traceui, self.plotDict )
+        self.instrumentLoggingQueryUi.setupUi( self.instrumentLoggingQueryUi )
+        self.instrumentLoggingQueryUiDock = self.setupAsDockWidget(self.instrumentLoggingQueryUi, "Query", QtCore.Qt.LeftDockWidgetArea)
     
         self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
         self.addPlot.setToolTip("Add new plot")
@@ -183,10 +187,11 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.parent.close()
         
     def closeEvent(self,e):
+        logger = logging.getLogger(__name__)
+        logger.info( "Close Event" )
         logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
-
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
@@ -197,18 +202,20 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.config['PlotNames'] = self.plotDict.keys()
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
         self.ExternalParametersSelectionUi.saveConfig()
+        self.instrumentLoggingHandler.saveConfig()
+        self.instrumentLoggingQueryUi.saveConfig()
 
 class CommandReader(QtCore.QThread):
     quitProcess = QtCore.pyqtSignal()
+    saveConfig = QtCore.pyqtSignal()
     def __init__(self, commandPipe, parent=None):
         QtCore.QThread.__init__(self, parent)
-        self.running = False
+        self.running = True
         self.commandPipe = commandPipe
         
     def run(self):
         logger = logging.getLogger(__name__)
         logger.debug("CommandReader Thread running")
-        print "CommandReader Thread running"
         while (self.running):
             if self.commandPipe.poll(0.1):
                 try:
@@ -221,13 +228,14 @@ class CommandReader(QtCore.QThread):
 
     def finish(self):
         logging.getLogger(__name__).info("Shutdown Logger Process")
-        print "Shutdown Logger Process"
+        self.saveConfig.emit()
         self.quitProcess.emit()
+        self.running = False
 
 class InstrumentLoggingProcess(Process):
     def __init__(self, project=None, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
-        super(InstrumentLoggingProcess,self).__init__()
         self.project = project
+        super(InstrumentLoggingProcess,self).__init__()
         self.dataQueue = dataQueue
         self.commandPipe = commandPipe
         self.running = True
@@ -237,6 +245,8 @@ class InstrumentLoggingProcess(Process):
         self.sharedMemoryArray = sharedMemoryArray
         
     def run(self):
+        ProjectSelection.setProject(self.project)
+        ProjectSelection.setDefaultProject(self.project)
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
         
@@ -244,20 +254,20 @@ class InstrumentLoggingProcess(Process):
 
         #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
         import ctypes, sys
-        #myappid = 'TrappedIons.InstrumentLogging' # arbitrary string
-        #ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         
         app = QtGui.QApplication(["LoggingWindow"])    
         logger = logging.getLogger("")
         self.commandReader.quitProcess.connect( app.quit )
         self.commandReader.start()
                
-        ProjectSelection.setProject(self.project)
                
         with configshelve.configshelve( ProjectSelection.guiConfigFile("LoggingWindow") ) as config:
             with InstrumentLoggingUi(self.project,config) as ui:
                 ui.setupUi(ui)
                 ui.show()
+                self.commandReader.saveConfig.connect( ui.saveConfig )
                 sys.exit(app.exec_())
         
         self.dataQueue.put(FinishException())
@@ -266,4 +276,6 @@ class InstrumentLoggingProcess(Process):
         self.loggingQueue.put(None)
         self.loggingQueue.close()
         self.commandReader.quit()
+        
+    
 

@@ -65,6 +65,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.printMenu = None
+        self.instrumentLogger = None
         
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -217,6 +218,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
+        self.actionLogging.triggered.connect(self.startLoggingProcess)
         self.currentTab = self.tabDict.at(self.config.get('MainWindow.currentIndex',0))
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
@@ -251,7 +253,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr(widget,'onContinue'):
                 self.dedicatedCountersWindow.autoLoad.ionReappeared.connect( widget.onContinue )
                 
-        self.instrumentLogger = None # InstrumentLoggingWindow(project)
+                
+    def startLoggingProcess(self):
+        if self.instrumentLogger is None or not self.instrumentLogger.is_alive():
+            self.instrumentLogger = InstrumentLoggingWindow(project)
         
     def onClearConsole(self):
         self.textEditConsole.clear()

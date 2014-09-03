@@ -19,6 +19,7 @@ import time
 from modules import WeakMethod
 from functools import partial
 from itertools import izip
+from gui import ProjectSelection
 
 def sort_lists_by(lists, key_list=0, desc=False):
     return izip(*sorted(izip(*lists), reverse=desc,
@@ -31,7 +32,8 @@ class PlottedTrace(object):
     def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
-                 yAxisLabel = None, yAxisUnit = None):
+                 yAxisLabel = None, yAxisUnit = None, fill=True):
+        self.fill = fill
         if penList is None:
             penList = pens.penList
         self.penList = penList
@@ -257,7 +259,7 @@ class PlottedTrace(object):
         if self.graphicsView is not None:
             mycolor = list(self.penList[penindex][4])
             mycolor[3] = 80
-            self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor, pen=self.penList[penindex][0])
+            self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0 if self.fill else None, brush=mycolor if self.fill else None, pen=self.penList[penindex][0])
             if self.xAxisLabel:
                 if self.xAxisUnit:
                     self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
@@ -305,7 +307,7 @@ class PlottedTrace(object):
         self.needsReplot = False
 
     def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory()
+        directory = DataDirectory.DataDirectory(ProjectSelection.Project)
         if self.parent().isRootTrace: 
             if pattern and pattern!='':
                 filename, _ = directory.sequencefile(pattern)

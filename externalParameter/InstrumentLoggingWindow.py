@@ -103,6 +103,9 @@ class InstrumentLoggingWindow(QtCore.QObject):
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
         
+    def is_alive(self):
+        self.serverProcess.is_alive()
+        
     def shutdown(self):
         self.clientPipe.send( ('finish', () ) )
         self.serverProcess.join()

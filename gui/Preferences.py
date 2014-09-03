@@ -18,6 +18,11 @@ class Preferences(object):
         self.savePdf = True
         self.savePng = False
         self.doPrint = True
+        # persistence database
+        self.databaseHost = None
+        self.databaseName = None
+        self.databaseUser = None
+        self.databasePassword = None
         
     def __setstate__(self, d):
         self.__dict__ = d
@@ -26,6 +31,10 @@ class Preferences(object):
         self.__dict__.setdefault('savePdf', True)
         self.__dict__.setdefault('savePng', False)
         self.__dict__.setdefault('doPrint', True)
+        self.__dict__.setdefault('databaseHost', None)
+        self.__dict__.setdefault('databaseName', None)
+        self.__dict__.setdefault('databaseUser', None)
+        self.__dict__.setdefault('databasePassword', None)
         
     def paramDef(self):
         return [{'name': 'Print Preferences', 'type': 'group', 'children': [
@@ -37,7 +46,12 @@ class Preferences(object):
                         {'name': 'curve linewidth (px)', 'field': 'curveLinewidth', 'type': 'int', 'value': self.curveLinewidth},
                         {'name': 'save pdf', 'field': 'savePdf', 'type': 'bool', 'value': self.savePdf},
                         {'name': 'save png', 'field': 'savePng', 'type': 'bool', 'value': self.savePng},
-                        {'name': 'print', 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint}] }]
+                        {'name': 'print', 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint}] },
+                {'name': 'Persistence Preferences', 'type': 'group', 'children': [
+                        {'name': 'Hostname', 'field': 'databaseHost', 'type': 'str', 'value': self.databaseHost},
+                        {'name': 'Databse name', 'field': 'databaseName', 'type': 'str', 'value': self.databaseName},
+                        {'name': 'Username', 'field': 'databaseUser', 'type': 'str', 'value': self.databaseUser},
+                        {'name': 'Password', 'field': 'databasePassword', 'type': 'password', 'value': self.databasePassword}]} ]
         
 
 Form, Base = uic.loadUiType(r'ui\Preferences.ui')

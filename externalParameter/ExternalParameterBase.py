@@ -7,6 +7,11 @@ from PyQt4 import QtCore
 from pyqtgraph.parametertree import Parameter
 import modules.magnitude as magnitude
 import logging
+from decimation import StaticDecimation
+from persistence import DBPersist
+import time
+from functools import partial
+from modules.magnitude import is_magnitude, mg
 
 def nextValue( current, target, stepsize, jump ):
     if current is None:
@@ -24,11 +29,13 @@ class ExternalParameterBase(object):
         self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         self.savedValue = None
+        self.decimation = StaticDecimation()
+        self.persistence = DBPersist()
         
     @property
     def parameter(self):
         # re-create the parameters each time to prevent a exception that says the signal is not connected
-        self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
+        self._parameter = Parameter.create(name=self.name, type='group',children=self.paramDef())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         return self._parameter        
         
@@ -36,6 +43,7 @@ class ExternalParameterBase(object):
         self.settings.__dict__.setdefault('delay', magnitude.mg(100,'ms') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('jump' , False)       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('value', None )      # the current value       
+        self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60,'s' ) )     # delay for persistency  
     
     def saveValue(self, overwrite=True):
         """
@@ -62,7 +70,19 @@ class ExternalParameterBase(object):
         self._setValue( newvalue )
         if self.displayValueCallback:
             self.displayValueCallback( self.value )
+        if arrived:
+            self.persist(self.value)
         return arrived
+    
+    def persist(self, value):
+        self.decimation.staticTime = self.settings.persistDelay
+        self.decimation.decimate(time.time(), value, partial(self.persistCallback, self.name) )
+        
+    def persistCallback(self, source, data):
+        time, value, minval, maxval = data
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+        self.persistence.persist(source, time, value, minval, maxval, unit)
     
     def _setValue(self, v):
         self.value = v
@@ -84,7 +104,8 @@ class ExternalParameterBase(object):
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
         return [{'name': 'delay', 'type': 'magnitude', 'value': self.settings.delay, 'tip': "between steps"},
-                {'name': 'jump', 'type': 'bool', 'value': self.settings.jump}]
+                {'name': 'jump', 'type': 'bool', 'value': self.settings.jump},
+                {'name': 'persistDelay', 'type': 'magnitude', 'value': self.settings.persistDelay }]
         
     def update(self, param, changes):
         """

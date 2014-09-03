@@ -512,7 +512,7 @@ class Magnitude():
         cp.significantDigits = self.significantDigits
         return cp
 
-    def toval(self, ounit=''):
+    def toval(self, ounit='', returnUnit=False):
         """Returns the numeric value of a magnitude.
 
         The value is given in ounit or in the Magnitude's default
@@ -530,6 +530,8 @@ class Magnitude():
         if ounit:
             out_factor = self.sunit2mag(ounit)
             m._div_by(out_factor)
+        if returnUnit:
+            return m.val, ounit
         return m.val
 
     def _unitRepr_(self):
@@ -593,7 +595,10 @@ class Magnitude():
         m = self.copy(True)
         m._div_by(outmag)
         prefix = m._bestPrefix_()
-        return prefix+_outputDimensions[tuple(self.unit)]       
+        return prefix+_outputDimensions[tuple(self.unit)]      
+    
+    def base_unit(self):
+        return _outputDimensions[tuple(self.unit)]
     
     def toStringTuple(self, strFormat=None ):
         unitTuple = tuple(self.unit)
