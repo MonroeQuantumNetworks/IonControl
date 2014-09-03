@@ -7,7 +7,8 @@ Created on Jul 8, 2014
 from pyqtgraph.parametertree import Parameter
 from PyQt4 import QtCore, uic
 
-class Preferences(object):
+
+class PrintPreferences(object):
     def __init__(self):
         self.printResolution = 1200
         self.printWidth = 0.4
@@ -18,40 +19,40 @@ class Preferences(object):
         self.savePdf = True
         self.savePng = False
         self.doPrint = True
-        # persistence database
+
+    def paramDef(self):
+        return [ {'name': 'resolution (dpi)', 'object': self, 'field': 'printResolution', 'type': 'int', 'value': self.printResolution},
+                {'name': 'width (page width)', 'object': self, 'field': 'printWidth', 'type': 'float', 'value': self.printWidth},
+                {'name': 'x (page width)', 'object': self, 'field': 'printX', 'type': 'float', 'value': self.printX}, 
+                {'name': 'y (page height)', 'object': self, 'field': 'printY', 'type': 'float', 'value': self.printY},
+                {'name': 'grid linewidth (px)', 'object': self, 'field': 'gridLinewidth', 'type': 'int', 'value': self.gridLinewidth},
+                {'name': 'curve linewidth (px)', 'object': self, 'field': 'curveLinewidth', 'type': 'int', 'value': self.curveLinewidth},
+                {'name': 'save pdf', 'object': self, 'field': 'savePdf', 'type': 'bool', 'value': self.savePdf},
+                {'name': 'save png', 'object': self, 'field': 'savePng', 'type': 'bool', 'value': self.savePng},
+                {'name': 'print', 'object': self, 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint}]    
+
+class DatabasePreferences(object):
+    def __init__(self):
         self.databaseHost = None
         self.databaseName = None
         self.databaseUser = None
         self.databasePassword = None
-        
-    def __setstate__(self, d):
-        self.__dict__ = d
-        self.__dict__.setdefault('curveLinewidth', 8)
-        self.__dict__.setdefault('gridLinewidth', 8)
-        self.__dict__.setdefault('savePdf', True)
-        self.__dict__.setdefault('savePng', False)
-        self.__dict__.setdefault('doPrint', True)
-        self.__dict__.setdefault('databaseHost', None)
-        self.__dict__.setdefault('databaseName', None)
-        self.__dict__.setdefault('databaseUser', None)
-        self.__dict__.setdefault('databasePassword', None)
-        
+
     def paramDef(self):
-        return [{'name': 'Print Preferences', 'type': 'group', 'children': [
-                        {'name': 'resolution (dpi)', 'field': 'printResolution', 'type': 'int', 'value': self.printResolution},
-                        {'name': 'width (page width)', 'field': 'printWidth', 'type': 'float', 'value': self.printWidth},
-                        {'name': 'x (page width)', 'field': 'printX', 'type': 'float', 'value': self.printX}, 
-                        {'name': 'y (page height)', 'field': 'printY', 'type': 'float', 'value': self.printY},
-                        {'name': 'grid linewidth (px)', 'field': 'gridLinewidth', 'type': 'int', 'value': self.gridLinewidth},
-                        {'name': 'curve linewidth (px)', 'field': 'curveLinewidth', 'type': 'int', 'value': self.curveLinewidth},
-                        {'name': 'save pdf', 'field': 'savePdf', 'type': 'bool', 'value': self.savePdf},
-                        {'name': 'save png', 'field': 'savePng', 'type': 'bool', 'value': self.savePng},
-                        {'name': 'print', 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint}] },
-                {'name': 'Persistence Preferences', 'type': 'group', 'children': [
-                        {'name': 'Hostname', 'field': 'databaseHost', 'type': 'str', 'value': self.databaseHost},
-                        {'name': 'Databse name', 'field': 'databaseName', 'type': 'str', 'value': self.databaseName},
-                        {'name': 'Username', 'field': 'databaseUser', 'type': 'str', 'value': self.databaseUser},
-                        {'name': 'Password', 'field': 'databasePassword', 'type': 'password', 'value': self.databasePassword}]} ]
+        return [ {'name': 'Hostname', 'object': self, 'field': 'databaseHost', 'type': 'str', 'value': self.databaseHost},
+                {'name': 'Databse name', 'object': self, 'field': 'databaseName', 'type': 'str', 'value': self.databaseName},
+                {'name': 'Username', 'object': self, 'field': 'databaseUser', 'type': 'str', 'value': self.databaseUser},
+                {'name': 'Password', 'object': self, 'field': 'databasePassword', 'type': 'password', 'value': self.databasePassword}]
+
+class Preferences(object):
+    def __init__(self):
+        self.printPreferences = PrintPreferences()
+        self.databasePreferences = DatabasePreferences()
+        # persistence database
+               
+    def paramDef(self):
+        return [{'name': 'Print Preferences', 'type': 'group', 'children': self.printPreferences.paramDef() },
+                {'name': 'Persistence Preferences', 'type': 'group', 'children': self.databasePreferences.paramDef() } ]
         
 
 Form, Base = uic.loadUiType(r'ui\Preferences.ui')
@@ -72,7 +73,7 @@ class PreferencesUi(Form, Base):
         update the parameter, called by the signal of pyqtgraph parametertree
         """
         for param, _, data in changes:
-            setattr( self._preferences, param.opts['field'], data)
+            setattr( param.opts['object'], param.opts['field'], data)
 
     def saveConfig(self):
         self.config['GlobalPreferences'] = self._preferences
