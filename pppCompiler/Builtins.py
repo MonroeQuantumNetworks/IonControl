@@ -82,7 +82,8 @@ def set_dds( symboltable, arg=list(), kwarg=dict()):
         commandlist.append( "  DDSAMP {0}, {1}".format(channel.name, freq.name))
     if 'freqfine' in kwarg:
         freq = symboltable.getVar( kwarg['freqfine'] )
-        commandlist.append( "  DDSFRQFINE {0}, {1}".format(channel.name, freq.name))        
+        commandlist.append( "  DDSFRQFINE {0}, {1}".format(channel.name, freq.name)) 
+        commandlist.append( "  NOP" )       
     return commandlist
   
 def read_pipe( symboltable, arg=list(), kwarg=dict()):
