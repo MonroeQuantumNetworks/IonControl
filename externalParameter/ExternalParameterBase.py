@@ -21,6 +21,7 @@ def nextValue( current, target, stepsize, jump ):
 
 class ExternalParameterBase(object):
     dimension = None
+    persistSpace = 'externalOutput'
     def __init__(self,name,settings):
         self.name = name
         self.settings = settings
@@ -82,7 +83,7 @@ class ExternalParameterBase(object):
         time, value, minval, maxval = data
         if is_magnitude(value):
             value, unit = value.toval(returnUnit=True)
-        self.persistence.persist(source, time, value, minval, maxval, unit)
+        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
     
     def _setValue(self, v):
         self.value = v

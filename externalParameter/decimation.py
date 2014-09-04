@@ -17,11 +17,7 @@ class StaticDecimation:
         self.lastValue = None
         
     def decimate(self, takentime, value, callback):
-        if self.lastValue is None:
-            self.lastChangedTime = takentime
-            self.lastValue = value
-            self.bottomHalf( value, callback)            
-        elif value!=self.lastValue:
+        if  value!=self.lastValue:
             self.lastChangedTime = takentime
             self.lastValue = value
             QtCore.QTimer.singleShot( self.staticTime.toval('ms'), partial(self.bottomHalf, value, callback) )

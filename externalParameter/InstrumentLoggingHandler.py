@@ -22,6 +22,7 @@ from functools import partial
 GlobalTimeOffset = time.time()    
         
 class DataHandling(object):
+    persistSpace = 'externalInput'
     def __init__(self):
         self.calibration = None
         self.decimation = None
@@ -106,7 +107,7 @@ class DataHandling(object):
     
     def persist(self, source, time, value, minvalue, maxvalue):
         if self.persistence is not None:
-            self.persistence.persist(source, time, value, minvalue, maxvalue)
+            self.persistence.persist(self.persistSpace, source, time, value, minvalue, maxvalue)
     
     def convert(self, data ):
         takentime, value, minVal, maxVal = data

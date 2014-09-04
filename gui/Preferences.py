@@ -49,6 +49,10 @@ class Preferences(object):
         self.printPreferences = PrintPreferences()
         self.databasePreferences = DatabasePreferences()
         # persistence database
+        
+    def __setstate__(self, state):
+        self.printPreferences = state.get('printpreferences', PrintPreferences())
+        self.databasePreferences = state.get('databasePreferences', DatabasePreferences())
                
     def paramDef(self):
         return [{'name': 'Print Preferences', 'type': 'group', 'children': self.printPreferences.paramDef() },
