@@ -22,5 +22,11 @@ try:
 except:
     logging.getLogger(__name__).info("Multi Meter reader not available")
     
+try:
+    from PhotodiodeReader import PhotoDiodeReader
+    LoggingInstruments['Photodiode'] = wrapSerial( "PhotodiodeInstrumentReader", PhotoDiodeReader )
+except:
+    logging.getLogger(__name__).info("Multi Meter reader not available")
+    
 from DummyReader import DummyReader
 LoggingInstruments["Dummy"] = wrapSerial( "DummyInstrumentReader", DummyReader ) 

@@ -95,10 +95,11 @@ class DataHandling(object):
         self.trace = None
         
     def decimate(self, takentime, value, callback):
-        if self.decimation is None:
-            callback( (takentime, value, None, None) )
-        else:
-            self.decimation.decimate( takentime, value, callback )
+        if value is not None:
+            if self.decimation is None:
+                callback( (takentime, value, None, None) )
+            else:
+                self.decimation.decimate( takentime, value, callback )
     
     def persistenceDecimate(self, takentime, value, callback ):
         if self.persistenceDecimation is None:
