@@ -29,6 +29,8 @@ class ScanNotAvailableException(Exception):
 class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
         super(ExternalScanExperiment,self).__init__(settings,pulserHardware,experimentName,toolBar=toolBar,parent=parent)
+        self.enableParameter = False
+        self.enableExternalParameter = True
         
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
@@ -49,12 +51,12 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
-            if self.scan.scanParameter not in self.enabledParameters:
-                message = "External Scan Parameter '{0}' is not enabled.".format(self.scan.scanParameter)
+            if self.scan.externalScanParameter not in self.enabledParameters:
+                message = "External Scan Parameter '{0}' is not enabled.".format(self.scan.externalScanParameter)
                 logger.error(message)
                 raise ScanNotAvailableException(message) 
-            self.externalParameter = self.enabledParameters[self.scan.scanParameter]
-            self.externalParameter.saveValue()
+            self.externalParameter = self.enabledParameters[self.scan.externalScanParameter]
+            self.externalParameter.saveValue(overwrite=False)
             self.externalParameterIndex = 0
             self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
                     
@@ -125,11 +127,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
         evaluated = list()
         expected = self.generator.expected( self.currentIndex )
         for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
-            if len(data.count[evaluation.counter])>0:
-                evaluated.append( algo.evaluate( data.count[evaluation.counter], expected=expected ) ) # returns mean, error, raw
-            else:
-                evaluated.append( (0,None,0) )
-                logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))
+            evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )

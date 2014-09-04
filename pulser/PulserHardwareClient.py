@@ -79,6 +79,7 @@ class LoggingReader(QtCore.QThread):
                 
 
 class PulserHardware(QtCore.QObject):
+    serverClass = PulserHardwareServer
     sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
 
     dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject', object )
@@ -104,7 +105,7 @@ class PulserHardware(QtCore.QObject):
         self.loggingQueue = multiprocessing.Queue()
         self.sharedMemoryArray = Array( 'L', self.sharedMemorySize , lock=True )
                 
-        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue, self.sharedMemoryArray )
+        self.serverProcess = self.serverClass(self.dataQueue, self.serverPipe, self.loggingQueue, self.sharedMemoryArray )
         self.serverProcess.start()
 
         self.queueReader = QueueReader(self, self.dataQueue)

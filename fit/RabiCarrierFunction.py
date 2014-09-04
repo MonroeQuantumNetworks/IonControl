@@ -13,7 +13,7 @@ from scipy.special import laguerre
 
 from FitFunctionBase import ResultRecord
 from fit.FitFunctionBase import FitFunctionBase
-from modules.MagnitudeUtilit import value
+from modules import MagnitudeUtilit
 from modules.magnitude import mg
 
 
@@ -93,15 +93,15 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
     def updateTables(self,beta):
         logger = logging.getLogger(__name__)
         A,n,omega,mass,angle,trapFrequency,wavelength = self.parameters #@UnusedVariable
-        secfreq = value(trapFrequency,'Hz')
+        secfreq = MagnitudeUtilit.value(trapFrequency,'Hz') * 10**6
         m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
+        eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
                      * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
         eta2 = pow(eta,2)
         if eta != self.laguerreCacheEta:
             logger.info( "Calculating Laguerre Table for eta^2={0}".format(eta2) )
             self.laguerreTable = array([ laguerre(n)(eta2) for n in range(200) ])
-            self.laguerreCacheEta2 = eta
+            self.laguerreCacheEta = eta
         if self.pnCacheBeta != beta:
             logger.info( "Calculating Probability Table for beta {0}".format(beta) )
             self.pnTable = array([ exp(-(n+1)*beta)*(exp(beta)-1) for n in range(200)])
@@ -110,11 +110,7 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
             
         
     def residuals(self,p, y, x, sigma):
-        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(p)
-        secfreq = value(trapFrequency,'Hz')
-        m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
-                     * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
+        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(self.parameters if p is None else p) #@UnusedVariable
         beta = log(1+1./n)
         self.updateTables(beta)
         if hasattr(x,'__iter__'):
@@ -132,11 +128,7 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
             return y-result
         
     def value(self,x,p=None):
-        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(p)
-        secfreq = value(trapFrequency,'Hz')
-        m = mass * constants.m_p
-        eta = ( (2*pi/value(wavelength,'m'))*cos(angle*pi/180)
-                     * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
+        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(self.parameters if p is None else p)  #@UnusedVariable
         beta = log(1+1./n)
         self.updateTables(beta)
         if hasattr(x,'__iter__'):

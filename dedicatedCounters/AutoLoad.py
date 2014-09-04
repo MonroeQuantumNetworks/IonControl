@@ -9,7 +9,7 @@ a record of all loads, and an interlock to the laser frequencies returned by
 the wavemeter.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import functools
 import logging
 
@@ -25,7 +25,7 @@ from modules.magnitude import Magnitude, mg
 from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.mymath import max_iterable
-from modules.statemachine import Statemachine
+from modules.statemachine import Statemachine, timedeltaToMagnitude
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -53,6 +53,7 @@ class AutoLoadSettings:
         self.loadAlgorithm = 0
         self.shuttleLoadTime = mg( 500, 'ms')
         self.shuttleCheckTime = mg( 1, 's')
+        self.ovenCoolingTime = mg( 80, 's' )
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -69,6 +70,7 @@ class AutoLoadSettings:
         self.__dict__.setdefault( 'loadAlgorithm', 0 )
         self.__dict__.setdefault( 'shuttleLoadTime', mg( 500, 'ms') )
         self.__dict__.setdefault( 'shuttleCheckTime', mg( 1, 's') )
+        self.__dict__.setdefault( 'ovenCoolingTime', mg( 80, 's') )
 
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -98,6 +100,7 @@ class AutoLoad(UiForm,UiBase):
         self.timerNullTime = datetime.now()
         self.trappingTime = None
         self.voltageControl = None
+        self.preheatStartTime = datetime.now()
         
     def constructStatemachine(self):
         self.statemachine = Statemachine('AutoLoad')
@@ -146,17 +149,17 @@ class AutoLoad(UiForm,UiBase):
                                          self.loadingToTrapped,
                                          description="checkTime" )
         self.statemachine.addTransition( 'timer', 'Load', 'AutoReloadFailed', 
-                                         lambda state: state.timeInState() > self.settings.maxTime and 
+                                         lambda state: self.ovenLimitReached() and 
                                                        self.settings.autoReload and 
                                                        self.numFailedAutoload>=self.settings.maxFailedAutoload,
                                          description="maxTime" ) 
         self.statemachine.addTransition( 'timer', 'Load', 'CoolingOven',
-                                         lambda state: state.timeInState() > self.settings.maxTime and
+                                         lambda state: self.ovenLimitReached() and
                                                        self.settings.autoReload and
                                                        self.numFailedAutoload<self.settings.maxFailedAutoload,
                                          description="maxTime"  )                                         
         self.statemachine.addTransition( 'timer', 'Load', 'Idle',
-                                         lambda state: state.timeInState() > self.settings.maxTime and 
+                                         lambda state: self.ovenLimitReached() and 
                                                        not self.settings.autoReload,
                                          description="maxTime" )
         self.statemachine.addTransition( 'timer', 'Disappeared', 'WaitingForComeback',
@@ -171,7 +174,7 @@ class AutoLoad(UiForm,UiBase):
                                          lambda state: state.timeInState() > self.settings.waitForComebackTime,
                                          description="waitForComebackTime")                                         
         self.statemachine.addTransition( 'timer', 'CoolingOven', 'Preheat',
-                                        lambda state: state.timeInState() > self.settings.waitForComebackTime and
+                                        lambda state: state.timeInState() > self.settings.ovenCoolingTime and
                                                       self.settings.autoReload,
                                          description="waitForComebackTime" )
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Trapped', 
@@ -182,7 +185,7 @@ class AutoLoad(UiForm,UiBase):
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
                                                              data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
                                          description="postSequenceWaitTime" )
-        self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven,
+        self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdOven"  )
         self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
                                          description="thresholdBare"  )
@@ -192,7 +195,7 @@ class AutoLoad(UiForm,UiBase):
                                          description="thresholdBare" )
         self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare,
                                          description="thresholdBare" )
-        self.statemachine.addTransition( 'data', 'ShuttleCheck', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven,
+        self.statemachine.addTransition( 'data', 'ShuttleCheck', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          self.loadingToTrapped,
                                          description="thresholdOven" )
         self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven', 'ShuttleCheck', 'ShuttleLoad'], 'Idle',
@@ -210,8 +213,12 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Frozen', lambda state: len(self.historyTableModel.history)>0 and self.pulser.ppActive ,
                                          description="ionStillTrapped" )
         self.statemachine.addTransition( 'ionTrapped', 'Idle', 'Trapped',
-                                         transitionfunc = self.loadingToTrapped,
+                                         transitionfunc = self.idleToTrapped,
                                          description="ionTrapped"  )
+        
+    def ovenLimitReached(self):
+        return timedeltaToMagnitude(datetime.now() - self.preheatStartTime) > self.settings.maxTime
+        
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
         ui.setValue( getattr( self.settings, settingsname  ) )
@@ -244,6 +251,7 @@ class AutoLoad(UiForm,UiBase):
         self.initMagnitude( self.postSequenceWaitTimeBox, 'postSequenceWaitTime' )
         self.initMagnitude( self.shuttleLoadTimeBox, 'shuttleLoadTime',  Magnitude(1,s=1) )
         self.initMagnitude( self.shuttleCheckTimeBox, 'shuttleCheckTime',  Magnitude(1,s=1) )
+        self.initMagnitude( self.ovenCoolingTimeBox, 'ovenCoolingTime', Magnitude(1,s=1) )
        
         self.loadAlgorithmBox.addItems( ['Static','Shuttling'])
         self.loadAlgorithmBox.setCurrentIndex( self.settings.loadAlgorithm )
@@ -434,6 +442,7 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Preheating")
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
         self.timerNullTime = datetime.now()
+        self.preheatStartTime = datetime.now()
     
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
@@ -490,6 +499,12 @@ class AutoLoad(UiForm,UiBase):
         self.loadingTime = check.enterTime - self.timerNullTime
         self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
            
+    def idleToTrapped(self, check, trapped):
+        logger = logging.getLogger(__name__)
+        logger.info(  "Idle Trapped" )
+        self.loadingTime = timedelta(0)
+        self.historyTableModel.append( LoadingEvent(self.loadingTime,datetime.now()) )
+           
     def setTrapped(self):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
@@ -539,7 +554,10 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.processEvent( 'ionStillTrapped' )
         
     def onTrappedIonNow(self):
-        self.trappingTime = datetime.now()
+        current = datetime.now()
+        self.timerNullTime = current
+        self.trappingTime = current
+        self.checkStarted = current
         self.statemachine.processEvent('ionTrapped')           
     
     def onTimer(self):

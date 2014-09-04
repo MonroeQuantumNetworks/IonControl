@@ -71,13 +71,14 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def gateSequence(parent, name, sequence, i):
+def gateSequence(parent, name, sequence, i, **kwargs):
     """Create XML element for gateSequence
     """
     state = BlochState()
     for op in flatten(sequence):
         state.transition(op)
-    e  = ElementTree.SubElement(parent, 'GateSequence', {'name': name, 'index': str(i), 'expected': state.state, 'length':str(len(state))})
+    kwargs.update({'name': name, 'index': str(i), 'expected': state.state, 'length':str(len(state))})
+    e  = ElementTree.SubElement(parent, 'GateSequence', kwargs)
     e.text = ", ".join(flatten(sequence))
 
 def allstrings(alphabet, length):
@@ -101,7 +102,8 @@ testsequences = [ ['I'] * sequencelength,
                   ['x'] * sequencelength,
                   ['y'] * sequencelength,
                   ['x','y'] * int(sequencelength/2)]
-                  
+
+germs = ['GI', 'Gx', 'Gy', 'GxGy']                  
 for i in range(randomizations):               
     testsequences.append([basis[random.randrange(0,len(basis))] for i in range(sequencelength)])
    
@@ -111,7 +113,7 @@ i = 0
 totalTime = 0
 for truncation in range(0,101):
     root.append( ElementTree.Comment("Strings of length {0}".format(truncation)))
-    for sequence in testsequences:
+    for index, sequence in enumerate(testsequences):
         gateSequence(root,str(i),sequence[0:truncation],i)
         i+=1
         totalTime += spamTime + gateTime*len(list(flatten(sequence[0:truncation])))

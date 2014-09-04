@@ -125,6 +125,18 @@ class CustomPlotItem(PlotItem):
         self.holdZeroBtn.clicked.connect(self.onHoldZero)
         self.autoBtn.setToolTip("Autorange x and y axes")
         self.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        self.allButtonsHidden = False
+        
+    def hideAllButtons(self, hide):
+        self.allButtonsHidden = hide
+        if self.allButtonsHidden:
+            self.holdZeroBtn.hide()
+            self.unityRangeBtn.hide()
+            self.autoBtn.hide()
+        else:
+            self.holdZeroBtn.show()
+            self.unityRangeBtn.show()
+            self.autoBtn.show()
         
     def resizeEvent(self, ev):
         """
@@ -166,7 +178,10 @@ class CustomPlotItem(PlotItem):
         
         In the parent method, the auto button disappears when autoranging is enabled, or when the mouse moved off the plot window.
         I didn't like that feature, so this method disables it."""
-        self.autoBtn.show()
+        if hasattr(self,'allButtonsHidden') and self.allButtonsHidden:
+            self.autoBtn.hide()
+        else:
+            self.autoBtn.show()
 
 class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
@@ -183,6 +198,13 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         self.mousePoint = None
         self.mousePointList = list()
         self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        
+    def setPrintView(self, printview=True):
+        self.graphicsView.hideAllButtons(printview)
+        if printview:
+            self.coordinateLabel.hide()
+        else:
+            self.coordinateLabel.show()
         
     def autoRange(self):
         """Set the display to autorange."""

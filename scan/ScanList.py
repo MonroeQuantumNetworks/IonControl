@@ -10,9 +10,9 @@ import random
 import numpy
 
 from modules import enum
+from modules.concatenate_iter import interleave_iter
 
-
-ScanType = enum.enum('LinearUp', 'LinearDown', 'Randomized')
+ScanType = enum.enum('LinearUp', 'LinearDown', 'Randomized', 'CenterOut', 'LinearUpDown', 'LinearDownUp')
 
 def shuffle( mylist ):
     random.shuffle(mylist)
@@ -28,11 +28,25 @@ def scanspace( start, stop, steps, scanSelect=0 ):
         
 def shuffled(start, stop, steps, scanSelect ):
     return shuffle(scanspace(start, stop, steps, scanSelect ))
+       
+def centerOut(start, stop, steps, scanSelect ):
+    full = scanspace(start, stop, steps, scanSelect )
+    center = len(full)/2
+    return list( interleave_iter(full[center:],reversed(full[:center])) )
+
+def upDownUp(start, stop, steps, scanSelect ):
+    return numpy.concatenate( (scanspace(start, stop, steps, scanSelect ), scanspace(stop, start, steps, scanSelect ) ))
+    
+def downUpDown(start, stop, steps, scanSelect ):
+    return numpy.concatenate( (scanspace(stop, start, steps, scanSelect ), scanspace(start, stop, steps, scanSelect ) ))    
 
 def scanList( start, stop, steps, scantype=ScanType.LinearUp, scanSelect=0 ): 
     return { ScanType.LinearUp: functools.partial(scanspace, start, stop, steps, scanSelect ),
              ScanType.LinearDown: functools.partial(scanspace, stop, start, steps, scanSelect ),
-             ScanType.Randomized: functools.partial(shuffled, stop, start, steps, scanSelect )
+             ScanType.Randomized: functools.partial(shuffled, stop, start, steps, scanSelect ),
+             ScanType.CenterOut: functools.partial(centerOut, start, stop, steps, scanSelect ),
+             ScanType.LinearUpDown: functools.partial(upDownUp, start, stop, steps, scanSelect ),
+             ScanType.LinearDownUp: functools.partial(downUpDown, start, stop, steps, scanSelect ),
              }.get(scantype,functools.partial(scanspace, start, stop, steps, scanSelect ))()
 
 
@@ -55,3 +69,5 @@ if __name__ == "__main__":
     print random.random()
 
     print scanList( mg(0), mg(360), mg(10) )
+    print 'CenterOut' , scanList( 0, 9, 10, ScanType.CenterOut )
+    print 'CenterOut' , scanList( 0, 10, 11, ScanType.CenterOut )

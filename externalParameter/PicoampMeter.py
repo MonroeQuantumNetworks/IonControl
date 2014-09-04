@@ -61,7 +61,7 @@ class PicoampMeter:
                 self.instrument.write("INIT")
                 self.instrument.write("SYST:ZCOR:ACQ")
                 self.instrument.write("SYST:ZCOR ON")
-                self.setAutoRange(True)
+                self.setAutoRange(False)
         else:
             logging.getLogger(__name__).error("Meter is not available")
         

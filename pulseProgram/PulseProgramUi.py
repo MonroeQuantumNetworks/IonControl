@@ -83,10 +83,12 @@ class ConfiguredParams:
     def __init__(self):
         self.recentFiles = dict()
         self.lastContextName = None
+        self.autoSaveContext = False
         
     def __setstate__(self,d):
         self.recentFiles = d['recentFiles']
         self.lastContextName = d.get('lastContextName', None )
+        self.autoSaveContext = d.get('autoSaveContext', False)
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
@@ -165,11 +167,23 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                     w.setCurrentIndex(index)
         except:
             logging.getLogger(__name__).exception("Loading of previous context failed")
-        self.contextComboBox.editTextChanged.connect( self.updateSaveStatus ) 
+        #self.contextComboBox.editTextChanged.connect( self.updateSaveStatus )
+        self.contextComboBox.lineEdit().editingFinished.connect( self.updateSaveStatus ) 
         self.variableTableModel.contentsChanged.connect( self.updateSaveStatus )
         self.counterTableModel.contentsChanged.connect( self.updateSaveStatus )
         self.shutterTableModel.contentsChanged.connect( self.updateSaveStatus )
         self.triggerTableModel.contentsChanged.connect( self.updateSaveStatus )
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.autoSaveAction = QtGui.QAction("Automatically save configuration", self)
+        self.autoSaveAction.setCheckable(True)
+        self.autoSaveAction.setChecked( self.configParams.autoSaveContext )
+        self.autoSaveAction.triggered.connect( self.onAutoSave )
+        self.addAction( self.autoSaveAction )
+
+    def onAutoSave(self, checked):
+        self.configParams.autoSaveContext = checked
+        if checked:
+            self.onSaveContext()
 
     def loadContext(self, newContext ):
         previousContext = self.currentContext
@@ -179,7 +193,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
         self.currentContext.merge( self.pulseProgram.variabledict )
         self.updateDisplayContext()
-        self.updateSaveStatus()
+        self.updateSaveStatus(isSaved=True)
         
     def onReloadContext(self):
         self.loadContext( self.contextDict[str(self.contextComboBox.currentText())] )
@@ -242,6 +256,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def updateDisplayContext(self):
         self.variableTableModel.setVariables( self.currentContext.parameters )
+        self.variableView.resizeColumnsToContents()
         self.shutterTableModel.setShutterdict( self.currentContext.shutters )
         self.triggerTableModel.setTriggerdict(self.currentContext.triggers)
         self.counterTableModel.setCounterdict(self.currentContext.counters)
@@ -249,7 +264,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def documentationString(self):
         messages = [ "PulseProgram {0}".format( self.configParams.lastLoadFilename ) ]
         r = "\n".join(messages)
-        return "\n".join( [r, self.pulseProgram.currentVariablesText()])        
+        return "\n".join( [r, self.pulseProgram.currentVariablesText()])      
+    
+    def description(self):
+        desc = dict()
+        desc["PulseProgram"] =  self.configParams.lastLoadFilename
+        desc.update( self.pulseProgram.variables() )
+        return desc
                
     def onFilenameChange(self, name ):
         name = str(name)
@@ -423,25 +444,35 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def getVariableValue(self,name):
         return self.variableTableModel.getVariableValue(name)
     
-    def variableScanCode(self, variablename, values):
+    def variableScanCode(self, variablename, values, extendedReturn=False):
         tempparameters = copy.deepcopy( self.currentContext.parameters )
         updatecode = list()
+        numVariablesPerUpdate = 0
         for currentval in values:
             upd_names, upd_values = tempparameters.setValue(variablename, currentval)
+            numVariablesPerUpdate = len(upd_names)
             upd_names.append( variablename )
             upd_values.append( currentval )
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
+        if extendedReturn:
+            return updatecode, numVariablesPerUpdate
         return updatecode
 
-    def updateSaveStatus(self):
-        currentText = str(self.contextComboBox.currentText())
+    def updateSaveStatus(self, isSaved=None):
         try:
-            if not currentText:
-                self.contextSaveStatus = True
-            elif currentText in self.contextDict:
-                self.contextSaveStatus = self.contextDict[currentText]==self.currentContext
+            if isSaved is None:
+                currentText = str(self.contextComboBox.currentText())
+                if not currentText:
+                    self.contextSaveStatus = True
+                elif currentText in self.contextDict:
+                    self.contextSaveStatus = self.contextDict[currentText]==self.currentContext
+                else:
+                    self.contextSaveStatus = False
+                if self.configParams.autoSaveContext and not self.contextSaveStatus:
+                    self.onSaveContext()
+                    self.contextSaveStatus = True
             else:
-                self.contextSaveStatus = False
+                self.contextSaveStatus = isSaved
             self.saveContextButton.setEnabled( not self.contextSaveStatus )
         except Exception:
             pass

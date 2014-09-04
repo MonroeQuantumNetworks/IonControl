@@ -19,10 +19,11 @@ from dedicatedCounters import InputCalibrationUi
 from modules import enum
 from trace.Trace import Trace, TracePlotting
 from modules.DataDirectory import DataDirectory
-
+from trace.pens import penList
+ 
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
-curvecolors = [ 'b', 'g', 'r', 'b', 'c', 'm', 'y', 'g' ]
+#curvecolors = [ 'b', 'g', 'r', 'b', 'c', 'm', 'y', 'g' ]
 
 class Settings:
     pass
@@ -119,7 +120,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         for index in range(8): 
             show = self.settings.counterMask & (1<<index)
             if  show and self.curves[index] is None:
-                self.curves[index] = self.graphicsView.plot(pen=curvecolors[index])
+                self.curves[index] = self.graphicsView.plot(pen=penList[index+1][0])
             elif (not show) and (self.curves[index] is not None):
                 self.graphicsView.removeItem( self.curves[index] )
                 self.curves[index] = None
@@ -172,7 +173,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 trace = Trace()
                 trace.x = self.xData[counter]
                 trace.y = self.yData[counter]
-                trace.vars.counter = counter
+                trace.description["counter"] = counter
                 filename, _ = DataDirectory().sequencefile("DedicatedCounter_{0}.txt".format(counter))
                 trace.addTracePlotting( TracePlotting(name="Counter {0}".format(counter)) )
                 trace.saveTrace(filename)

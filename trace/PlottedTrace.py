@@ -19,6 +19,7 @@ import time
 from modules import WeakMethod
 from functools import partial
 from itertools import izip
+from gui import ProjectSelection
 
 def sort_lists_by(lists, key_list=0, desc=False):
     return izip(*sorted(izip(*lists), reverse=desc,
@@ -31,7 +32,8 @@ class PlottedTrace(object):
     def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
-                 yAxisLabel = None, yAxisUnit = None):
+                 yAxisLabel = None, yAxisUnit = None, fill=True):
+        self.fill = fill
         if penList is None:
             penList = pens.penList
         self.penList = penList
@@ -186,7 +188,7 @@ class PlottedTrace(object):
         self.y = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
 
     def removePlots(self):
-        if self.curve is not None:
+        if self.curve is not None and self.graphicsView is not None:
             self.graphicsView.removeItem(self.curve)
             self.curve = None
             self.penUsageDict[self.curvePen] -= 1
@@ -198,89 +200,96 @@ class PlottedTrace(object):
                 self.fitcurve = None
                 
     def plotFitfunction(self,penindex):
-        if self.fitFunction:
+        if self.fitFunction and self.graphicsView is not None:
             self.fitx = numpy.linspace(numpy.min(self.x),numpy.max(self.x),300)
             self.fity = self.fitFunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
     def plotErrorBars(self,penindex):
-        if self.hasHeightColumn:
-            self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), height=(self.height),
-                                                       pen=self.penList[penindex][0])
-        elif self.hasTopColumn and self.hasBottomColumn:
-            self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), top=(self.top), bottom=(self.bottom),
-                                                       pen=self.penList[penindex][0])
-            self.graphicsView.addItem(self.errorBarItem)
+        if self.graphicsView is not None:
+            if self.hasHeightColumn:
+                self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), height=(self.height),
+                                                           pen=self.penList[penindex][0])
+            elif self.hasTopColumn and self.hasBottomColumn:
+                self.errorBarItem = ErrorBarItem(x=(self.x), y=(self.y), top=(self.top), bottom=(self.bottom),
+                                                           pen=self.penList[penindex][0])
+                self.graphicsView.addItem(self.errorBarItem)
             
 
     def plotLines(self,penindex, errorbars=True ):
-        if errorbars:
-            self.plotErrorBars(penindex)
-        x, y = sort_lists_by( (self.x, self.y), key_list=0)
-        self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0])            
-        if self.xAxisLabel:
-            if self.xAxisUnit:
-                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
-            else:
-                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
+        if self.graphicsView is not None:
+            if errorbars:
+                self.plotErrorBars(penindex)
+            x, y = sort_lists_by( (self.x, self.y), key_list=0)
+            self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0])            
+            if self.xAxisLabel:
+                if self.xAxisUnit:
+                    self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+                else:
+                    self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
     
     def plotPoints(self,penindex, errorbars=True ):
-        if errorbars:
-            self.plotErrorBars(penindex)
-        self.curve = self.graphicsView.plot((self.x), (self.y), pen=None, symbol=self.penList[penindex][1],
-                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
-        if self.xAxisLabel:
-            if self.xAxisUnit:
-                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
-            else:
-                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
+        if self.graphicsView is not None:
+            if errorbars:
+                self.plotErrorBars(penindex)
+            self.curve = self.graphicsView.plot((self.x), (self.y), pen=None, symbol=self.penList[penindex][1],
+                                                symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
+            if self.xAxisLabel:
+                if self.xAxisUnit:
+                    self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+                else:
+                    self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
 
     
     def plotLinespoints(self,penindex, errorbars=True ):
-        if errorbars:
-            self.plotErrorBars(penindex)
-        x, y = sort_lists_by( (self.x, self.y), key_list=0)
-        self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
-                                            symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
-        if self.xAxisLabel:
-            if self.xAxisUnit:
-                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
-            else:
-                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
+        if self.graphicsView is not None:
+            if errorbars:
+                self.plotErrorBars(penindex)
+            x, y = sort_lists_by( (self.x, self.y), key_list=0)
+            self.curve = self.graphicsView.plot( numpy.array(x), numpy.array(y), pen=self.penList[penindex][0], symbol=self.penList[penindex][1],
+                                                symbolPen=self.penList[penindex][2],symbolBrush=self.penList[penindex][3])
+            if self.xAxisLabel:
+                if self.xAxisUnit:
+                    self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+                else:
+                    self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
                 
     
     def plotSteps(self,penindex):
-        mycolor = list(self.penList[penindex][4])
-        mycolor[3] = 80
-        self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0, brush=mycolor, pen=self.penList[penindex][0])
-        if self.xAxisLabel:
-            if self.xAxisUnit:
-                self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
-            else:
-                self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
-        self.graphicsView.addItem( self.curve )
+        if self.graphicsView is not None:
+            mycolor = list(self.penList[penindex][4])
+            mycolor[3] = 80
+            self.curve = PlotCurveItem(self.x, self.y, stepMode=True, fillLevel=0 if self.fill else None, brush=mycolor if self.fill else None, pen=self.penList[penindex][0])
+            if self.xAxisLabel:
+                if self.xAxisUnit:
+                    self.graphicsView.setLabel('bottom', text = "{0} ({1})".format(self.xAxisLabel, self.xAxisUnit))
+                else:
+                    self.graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
+            self.graphicsView.addItem( self.curve )
     
     def plot(self,penindex=-1,style=None):
-        self.style = self.style if style is None else style
-        self.removePlots()
-        penindex = { -2: self.__dict__.get('curvePen',0),
-                     -1: sorted(zip(self.penUsageDict, range(len(self.penUsageDict))))[1][1] }.get(penindex, penindex)
-        if penindex>0:
-            if self.type==self.Types.default:
-                self.plotFitfunction(penindex)
-                self.stylesLookup.get(self.style,self.plotLines)(penindex)
-            elif self.type ==self.Types.steps:
-                self.plotSteps(penindex)
-            self.penUsageDict[penindex] += 1
-        self.curvePen = penindex
+        if self.graphicsView is not None:
+            self.style = self.style if style is None else style
+            self.removePlots()
+            penindex = { -2: self.__dict__.get('curvePen',0),
+                         -1: sorted(zip(self.penUsageDict, range(len(self.penUsageDict))))[1][1] }.get(penindex, penindex)
+            if penindex>0:
+                if self.type==self.Types.default:
+                    self.plotFitfunction(penindex)
+                    self.stylesLookup.get(self.style,self.plotLines)(penindex)
+                elif self.type ==self.Types.steps:
+                    self.plotSteps(penindex)
+                self.penUsageDict[penindex] += 1
+            self.curvePen = penindex
         
     def replot(self):
-        if len(self.x)>500 and time.time()-self.lastPlotTime<len(self.x)/500.:
-            if not self.needsReplot:
-                self.needsReplot = True
-                QtCore.QTimer.singleShot(len(self.x)*2,self._replot) 
-        else:
-            self._replot()
+        if self.graphicsView is not None:
+            if len(self.x)>500 and time.time()-self.lastPlotTime<len(self.x)/500.:
+                if not self.needsReplot:
+                    self.needsReplot = True
+                    QtCore.QTimer.singleShot(len(self.x)*2,self._replot) 
+            else:
+                self._replot()
             
     def _replot(self):
         if hasattr(self,'curve') and self.curve is not None:
@@ -298,7 +307,7 @@ class PlottedTrace(object):
         self.needsReplot = False
 
     def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory()
+        directory = DataDirectory.DataDirectory(ProjectSelection.Project)
         if self.parent().isRootTrace: 
             if pattern and pattern!='':
                 filename, _ = directory.sequencefile(pattern)

@@ -57,8 +57,8 @@ class ScanSegmentDefinition(object):
             if self._stepPreference=='steps' and self._steps>1:
                 self._stepsize = self._span / (self._steps-1)
             else:
-                self._steps = math.ceil(self._span / self._stepsize)
-            self._inconsistent = False
+                self._steps = math.ceil(self._span / self._stepsize + 1) 
+            self.checkConsistency()
         except MagnitudeError:
             self._inconsistent = True
           
@@ -71,7 +71,7 @@ class ScanSegmentDefinition(object):
         self._center = center
         try:
             self.calculateStartStop()
-            self._inconsistent = False
+            self.checkConsistency()
         except MagnitudeError:
             self._inconsistent = True
         
@@ -87,8 +87,8 @@ class ScanSegmentDefinition(object):
             if self._stepPreference=='steps' and self._steps>1:
                 self._stepsize = self._span / (self._steps-1)
             else:
-                self._steps = math.ceil(self._span / self._stepsize)
-            self._inconsistent = False
+                self._steps = math.ceil(self._span / self._stepsize) + 1
+            self.checkConsistency()
         except MagnitudeError:
             self._inconsistent = True
             
@@ -103,9 +103,13 @@ class ScanSegmentDefinition(object):
     
     @steps.setter
     def steps(self, steps):
-        self._steps = max( steps, 2 )
-        self._stepPreference = 'steps'
-        self._stepsize = self._span / (self._steps-1)
+        try:
+            self._steps = max( steps, 2 )
+            self._stepPreference = 'steps'
+            self._stepsize = self._span / (self._steps-1)
+            self.checkConsistency()
+        except MagnitudeError:
+            self._inconsistent = True
         
     @property
     def stepsize(self):
@@ -113,10 +117,18 @@ class ScanSegmentDefinition(object):
     
     @stepsize.setter
     def stepsize(self, stepsize):
-        self._stepsize = stepsize
-        self._stepPreference = 'stepsize'
-        self._steps = math.ceil(self._span / self._stepsize)
+        try:
+            self._stepsize = stepsize
+            self._stepPreference = 'stepsize'
+            self._steps = math.ceil(self._span / self._stepsize+1) 
+            self.checkConsistency()
+        except MagnitudeError:
+            self._inconsistent = True
         
     @property
     def inconsistent(self):
         return self._inconsistent
+    
+    def checkConsistency(self):
+        self._inconsistent = not ( self._start.unit == self._stop.unit == self._center.unit == self._span.unit == self._stepsize.unit )
+        

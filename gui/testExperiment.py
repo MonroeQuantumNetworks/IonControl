@@ -97,7 +97,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def createAverageScan(self):
         self.averagePlottedTrace = PlottedTrace(Trace(), self.graphicsView, pens.penList)
         self.averagePlottedTrace.trace.name = "test average trace"
-        self.averagePlottedTrace.trace.vars.comment = "average trace comment"
+        self.averagePlottedTrace.trace.description["comment"] = "average trace comment"
         self.averagePlottedTrace.trace.filenameCallback = functools.partial(self.traceFilename, '')
         self.traceui.addTrace(self.averagePlottedTrace, pen=0)
 #end added
@@ -116,13 +116,13 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.plottedTrace.trace.filenameCallback = functools.partial( self.traceFilename, '' )
         if self.scanType == 0:
             self.plottedTrace.trace.name = "test trace"
-            self.plottedTrace.trace.vars.comment = "My Comment"
+            self.plottedTrace.trace.description["comment"] = "My Comment"
             self.traceui.addTrace(self.plottedTrace, pen=-1)
 #start added
         elif self.scanType == 1:
             self.traceui.addTrace(self.plottedTrace, pen=-1, parentTrace=self.averagePlottedTrace)
             self.plottedTrace.trace.name = "test trace {0}".format(self.averagePlottedTrace.childCount())
-            self.plottedTrace.trace.vars.comment = "My Comment {0}".format(self.averagePlottedTrace.childCount())
+            self.plottedTrace.trace.description["comment"] = "My Comment {0}".format(self.averagePlottedTrace.childCount())
 #end added
 
     def onData(self):

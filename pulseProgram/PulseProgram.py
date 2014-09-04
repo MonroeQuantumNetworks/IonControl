@@ -105,7 +105,8 @@ class Dimensions:
 
 class Variable:
     def __init__(self):
-        self.enabled = True        
+        self.enabled = True
+        self.value = 0        
         
     def __setstate__(self, d):
         self.__dict__ = d
@@ -123,6 +124,9 @@ class Variable:
 
     def __ne__(self, other):
         return not self == other
+    
+    def outValue(self):
+        return self.value if self.enabled else self.value * 0
 
 encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
@@ -162,8 +166,8 @@ class PulseProgram:
         class Board:
             channelLimit = 1    
             halfClockLimit = 500000000
-        self.adIndexList = [(x,0) for x in range(6) ]
-        self.adBoards = [ Board() ]*6
+        self.adIndexList = [(x,0) for x in range(8) ]
+        self.adBoards = [ Board() ]*8
         
         self.timestep = magnitude.mg(20.0,'ns')
 

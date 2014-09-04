@@ -16,7 +16,7 @@ from gui import ProjectSelection
 from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
-
+from TraceDescriptionTableModel import TraceDescriptionTableModel
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
 
@@ -104,6 +104,14 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.unplotSettingsAction.setChecked( self.settings.unplotLastTrace)
         self.unplotSettingsAction.triggered.connect( self.onUnplotSetting )
         self.addAction( self.unplotSettingsAction )
+        self.descriptionModel = TraceDescriptionTableModel() 
+        self.descriptionTableView.setModel( self.descriptionModel )
+        self.traceTreeView.clicked.connect( self.onActiveTraceChanged )
+        self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
+
+    def onActiveTraceChanged(self, modelIndex ):
+        trace = self.model.getTrace(modelIndex)
+        self.descriptionModel.setDescription(trace.trace.description)
 
     def onUnplotSetting(self, checked):
         self.settings.unplotLastTrace = checked

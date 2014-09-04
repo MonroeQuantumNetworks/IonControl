@@ -86,7 +86,7 @@ class ReadSpectrum( ReadSpectrumForm ):
             self.FrequencyStep.setText(self.plot.trace.varstr('Step'))
             self.ResolutionBandwidth.setText(self.plot.trace.varstr('ResolutionBandwidth'))
             self.VideoBandwidth.setText(self.plot.trace.varstr('VideoBandwidth'))
-            self.Instrument.t.vars.comment = str(self.Comment.text())
+            self.Instrument.t.description["comment"] = str(self.Comment.text())
             self.onSaveTrace()
             if self.checkBoxPlotNew.isChecked():
                 self.plot.plot(-1)

@@ -40,10 +40,14 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         
     def __enter__(self):
         self.meter = PicoampMeter()
+        self.meter_2 = PicoampMeter()
+        self.meter_3 = PicoampMeter()
         return self
     
     def __exit__(self, excepttype, value, traceback):
         self.meter.close()
+        self.meter_2.close()
+        self.meter_3.close()
         return False
     
     def setupUi(self, parent):
@@ -68,7 +72,7 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
         # PicoampMeter Control
-        self.meterControl = PicoampMeterControl(self.config, self.traceui, self.plotDict, self.parent, self.meter)
+        self.meterControl = PicoampMeterControl(self.config, self.traceui, self.plotDict, self.parent, self.meter, self.meter_2, self.meter_3)
         self.meterControl.setupUi(self.meterControl)
         self.setupAsDockWidget(self.meterControl, "Control", QtCore.Qt.RightDockWidgetArea)
     

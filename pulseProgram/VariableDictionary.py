@@ -23,7 +23,10 @@ class VariableDictionaryView(object):
         if it is in the global dictionary return that value,
         otherwise raise KeyError"""
         if key in self.variableDictionary:
-            return self.variableDictionary[key].value
+            if self.variableDictionary[key].enabled:
+                return self.variableDictionary[key].value
+            else:
+                return self.variableDictionary[key].value * 0  # get zero with the right unit
         if key in self.variableDictionary.globaldict:
             return self.variableDictionary.globaldict.get(key)
         raise KeyError()
@@ -49,6 +52,7 @@ class VariableDictionary(SequenceDict):
         self.globaldict = globaldict 
                 
     def calculateDependencies(self):
+        self.dependencyGraph = DiGraph()   # clear the old dependency graph in case parameters got removed
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):
                 try:

@@ -20,12 +20,14 @@ import random
 import time
 from trace import Traceui
 from trace import pens
+import os.path
 
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 import numpy
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
+from pyqtgraph.exporters.ImageExporter import ImageExporter
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
@@ -43,6 +45,8 @@ from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 import copy
 from modules.Expression import Expression
+from modules.SceneToPrint import SceneToPrint
+from collections import defaultdict
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -58,23 +62,26 @@ class ParameterScanGenerator:
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
         
-    def prepare(self, pulseProgramUi ):
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
         if self.scan.gateSequenceUi.settings.enabled:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
             data = []
-        self.scan.code = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list)
+        self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
         self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
-        if len(self.scan.code)>2040:
-            self.nextIndexToWrite = 2040
-            return ( self.scan.code[:2040], data)
+        maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
+        self.maxUpdatesToWrite = maxUpdatesToWrite
+        if len(self.scan.code)>maxWordsToWrite:
+            self.nextIndexToWrite = maxWordsToWrite
+            return ( self.scan.code[:maxWordsToWrite], data)
         self.nextIndexToWrite = len(self.scan.code)
         return ( self.scan.code, data)
         
-    def restartCode(self,currentIndex):
+    def restartCode(self,currentIndex ):
+        maxWordsToWrite = 2040 if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
         currentWordCount = 2*self.numUpdatedVariables*currentIndex
-        if len(self.scan.code)-currentWordCount>2040:
-            self.nextIndexToWrite = 2040+currentWordCount
+        if len(self.scan.code)-currentWordCount>maxWordsToWrite:
+            self.nextIndexToWrite = maxWordsToWrite+currentWordCount
             return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
@@ -83,12 +90,14 @@ class ParameterScanGenerator:
         value = self.scan.list[index]
         if self.scan.xExpression:
             value = self.expression.evaluate( self.scan.xExpression, {"x": value} )
+        if (not self.scan.xUnit and not value.dimensionless()) or not value.has_dimension(self.scan.xUnit):
+            self.scan.xUnit = value.suggestedUnit() 
         return value.ounit(self.scan.xUnit).toval()
         
-    def dataNextCode(self, experiment, num_word_pairs ):
+    def dataNextCode(self, experiment ):
         if self.nextIndexToWrite<len(self.scan.code):
             start = self.nextIndexToWrite
-            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*num_word_pairs )
+            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
             return self.scan.code[start:self.nextIndexToWrite]
         return []
         
@@ -118,7 +127,7 @@ class StepInPlaceGenerator:
     def __init__(self, scan):
         self.scan = scan
         
-    def prepare(self, pulseProgramUi ):
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
         if self.scan.gateSequenceUi.settings.enabled:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
@@ -133,7 +142,7 @@ class StepInPlaceGenerator:
     def restartCode(self,currentIndex):
         return self.scan.code * 5
         
-    def dataNextCode(self, experiment, num_word_pairs):
+    def dataNextCode(self, experiment):
         return self.scan.code
         
     def xValue(self,index):
@@ -173,9 +182,11 @@ class GateSequenceScanGenerator:
         self.scan = scan
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
+        self.maxWordsToWrite = 2040
         
-    def prepare(self, pulseProgramUi):
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None):
         logger = logging.getLogger(__name__)
+        self.maxUpdatesToWrite = maxUpdatesToWrite
         address, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()
         self.gateSequenceAttributes = self.scan.gateSequenceUi.gateSequenceAttributes()
         parameter = self.gateSequenceSettings.startAddressParam
@@ -190,17 +201,18 @@ class GateSequenceScanGenerator:
             random.shuffle(zipped)
             self.scan.index, self.scan.list = zip( *zipped )
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
+        self.numVariablesPerUpdate = 1
         logger.debug( "GateSequenceScanCode {0} {1}".format(self.scan.list, self.scan.code) )
-        if len(self.scan.code)>2040:
-            self.nextIndexToWrite = 2040
-            return ( self.scan.code[:2040], data)
+        if len(self.scan.code)>self.maxWordsToWrite:
+            self.nextIndexToWrite = self.maxWordsToWrite
+            return ( self.scan.code[:self.maxWordsToWrite], data)
         self.nextIndexToWrite = len(self.scan.code)
         return ( self.scan.code, data)
 
     def restartCode(self,currentIndex):
         currentWordCount = 2*self.numUpdatedVariables*currentIndex
-        if len(self.scan.code)-currentWordCount>2040:
-            self.nextIndexToWrite = 2040+currentWordCount
+        if len(self.scan.code)-currentWordCount>self.maxWordsToWrite:
+            self.nextIndexToWrite = self.maxWordsToWrite+currentWordCount
             return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
@@ -208,10 +220,10 @@ class GateSequenceScanGenerator:
     def xValue(self,index):
         return self.scan.index[index]
 
-    def dataNextCode(self, experiment, num_word_pairs):
+    def dataNextCode(self, experiment):
         if self.nextIndexToWrite<len(self.scan.code):
             start = self.nextIndexToWrite
-            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*num_word_pairs )
+            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
             return self.scan.code[start:self.nextIndexToWrite]
         return []
         
@@ -249,6 +261,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
+    plotsChanged = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
@@ -272,6 +285,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.interruptReason = ""
         self.scan = None
         self.otherDataFile = None
+        self.enableParameter = True
+        self.enableExternalParameter = False
+        self.histogramBuffer = defaultdict( list )
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -331,7 +347,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
+        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
+                                                         internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
@@ -346,6 +363,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.copyHistogram.triggered.connect( self.onCopyHistogram )
         self.actionList.append( self.copyHistogram )
         
+        self.saveHistogram = QtGui.QAction( QtGui.QIcon(":/openicon/icons/office-chart-bar-save.png"), "Save histograms", self ) 
+        self.saveHistogram.setToolTip("Save histograms for last run to file")
+        self.saveHistogram.triggered.connect( self.onSaveHistogram )
+        self.actionList.append( self.saveHistogram )
+
         self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
         self.addPlot.setToolTip("Add new plot")
         self.addPlot.triggered.connect(self.onAddPlot)
@@ -360,6 +382,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.setToolTip("Rename a plot")
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
+        
+    def printTargets(self):
+        return self.plotDict.keys()
 
 
     def setupAsDockWidget(self, widget, name, area=QtCore.Qt.RightDockWidgetArea, stackAbove=None, stackBelow=None ):
@@ -423,7 +448,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName, xAxisUnit = self.scan.xUnit,
                                                     xAxisLabel = self.scan.scanParameter)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
-            thisAveragePlottedTrace.trace.vars.comment = "Average Trace"
+            thisAveragePlottedTrace.trace.description["comment"] = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
             self.averagePlottedTraceList.append( thisAveragePlottedTrace  )                
             self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
@@ -463,7 +488,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             for plottedTrace in self.plottedTraceList:
                 plottedTrace.plot(0) #unplot previous trace
         self.plottedTraceList = list() #reset plotted trace
-        self.otherDataFile = None 
+        self.otherDataFile = None
+        self.histogramBuffer = defaultdict( list )
     
     def onContinue(self):
         if self.progressUi.state == self.OpStates.interrupted:
@@ -530,11 +556,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             x = self.generator.xValue(self.currentIndex)
             evaluated = list()
             for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
-                if len(data.count[evaluation.counter])>0:
-                    evaluated.append( algo.evaluate( data.count[evaluation.counter], expected=expected ) ) # returns mean, error, raw
-                else:
-                    evaluated.append( (0,None,0) )
-                    logger.error("Counter results for channel {0} are missing. Please check pulse program.".format(evaluation.counter))
+                evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
@@ -552,7 +574,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 else:
                     self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
             else:
-                mycode = self.generator.dataNextCode(self, len(data.dependentValues)+1 )
+                mycode = self.generator.dataNextCode(self )
                 if mycode:
                     self.pulserHardware.ppWriteData(mycode)
                 self.progressUi.onData( self.currentIndex )  
@@ -574,25 +596,24 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         bottomColumnName = 'bottom{0}'.format(index)
                         trace.addColumn( topColumnName )
                         trace.addColumn( bottomColumnName )                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
-                                                    yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
+                                                    pens.penList, yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
                                                     rawColumn=rawColumnName, name=self.scan.evalList[index].name, xAxisUnit = self.scan.xUnit,
                                                     xAxisLabel = self.scan.scanParameter) 
                     else:                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"], pens.penList, 
-                                                    yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
+                                                    pens.penList, yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
                                                     xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter)               
                     xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
                     if xRange:
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
                     else:
                         self.plotDict["Scan Data"]["view"].enableAutoRange(axis=ViewBox.XAxis)     
-                    pulseProgramHeader = self.pulseProgramUi.documentationString()
-                    scanHeader = self.scan.documentationString()
                     self.plottedTraceList.append( plottedTrace )
-            self.plottedTraceList[0].trace.header = '\n'.join((pulseProgramHeader, scanHeader))
             self.plottedTraceList[0].trace.name = self.scan.settingsName
-            self.plottedTraceList[0].trace.vars.comment = ""
+            self.plottedTraceList[0].trace.description["comment"] = ""
+            self.plottedTraceList[0].trace.description["PulseProgram"] = self.pulseProgramUi.description() 
+            self.plottedTraceList[0].trace.description["Scan"] = self.scan.description()
             self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
@@ -617,7 +638,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.dataAnalysis()
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
-                trace.vars.traceFinalized = datetime.now()
+                trace.description["traceFinalized"] = datetime.now()
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
@@ -628,6 +649,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if averagePlottedTrace:
                     self.progressUi.setAveraged(averagePlottedTrace.childCount())
                     averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
+        if self.scan.histogramSave:
+            self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
+            
         
     def dataAnalysis(self):
         for evaluation, plot in zip(self.scan.evalList, self.plottedTraceList):
@@ -669,7 +693,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTimestampTrace.x = x
             self.currentTimestampTrace.y = y
             self.currentTimestampTrace.name = self.scan.settingsName
-            self.currentTimestampTrace.vars.comment = ""
+            self.currentTimestampTrace.description["comment"] = ""
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
             self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList)
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
@@ -684,13 +708,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if evaluation.showHistogram:
                 y, x = numpy.histogram( data.count[evaluation.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
                 if self.scan.integrateHistogram and len(self.histogramList)>index:
-                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1] + x)
+                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name )
                 elif len(self.histogramList)>index:
                     self.histogramList[index] = (y,x,evaluation.name )
                 else:
                     self.histogramList.append( (y,x,evaluation.name) )
+                self.histogramBuffer[evaluation.name].append(y)
                 index += 1
-        del self.histogramList[index+1:]   # remove elements that are not needed any more
+        numberTraces = index
+        del self.histogramList[numberTraces:]   # remove elements that are not needed any more
         if not self.histogramTrace:
             self.histogramTrace = Trace()            
         for index, histogram in enumerate(self.histogramList):
@@ -700,7 +726,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.histogramCurveList[index].replot()
             else:
                 yColumnName = 'y{0}'.format(index) 
-                self.histogramTrace.addColumn( yColumnName )
+                self.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
                                                      yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else "") )
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
@@ -709,13 +735,25 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 plottedHistogramTrace.trace.name = self.scan.settingsName
                 self.histogramCurveList.append(plottedHistogramTrace)
                 plottedHistogramTrace.plot()
-        for i in range(index+1,len(self.histogramCurveList)):
-            self.histogramCurveList[i].removePlot()
-        del self.histogramCurveList[index+1:]
+        for i in range(numberTraces,len(self.histogramCurveList)):
+            self.histogramCurveList[i].removePlots()
+        del self.histogramCurveList[numberTraces:]
 
     def onCopyHistogram(self):
         for plottedtrace in self.histogramCurveList:
-            self.traceui.addTrace(plottedtrace,pen=-1)        
+            self.traceui.addTrace(plottedtrace,pen=-1)   
+        self.histogramTrace = Trace()    
+        self.histogramCurveList = []        
+             
+    
+    def onSaveHistogram(self, filenameTemplate="Histogram.txt"):
+        tName, tExtension = os.path.splitext(filenameTemplate) if filenameTemplate else "Histogram", ".txt"
+        for name, histogramlist in self.histogramBuffer.iteritems():
+            filename = DataDirectory.DataDirectory().sequencefile(tName+"_"+name+tExtension)[0]
+            with open(filename,'w') as f:
+                for histogram in histogramlist:
+                    f.write( "\t".join(map(str,histogram)))
+                    f.write("\n")
     
     def onAddPlot(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Plot Name', 'Please enter a plot name: ')
@@ -729,6 +767,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
             self.scanControlWidget.plotnames.append(name)
             self.saveConfig() #In case the program suddenly shuts down
+            self.plotsChanged.emit()
             
     def onRemovePlot(self):
         logger = logging.getLogger(__name__)
@@ -750,6 +789,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             logger.info("There are no plots which can be removed")
         self.saveConfig()
+        self.plotsChanged.emit()
+
                 
     def onRenamePlot(self):
         logger = logging.getLogger(__name__)
@@ -779,6 +820,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.saveConfig() #In case the program suddenly shuts down
         else:
             logger.info("There are no plots which can be renamed")
+        self.plotsChanged.emit()
+
 
     def activate(self):
         logger = logging.getLogger(__name__)
@@ -817,3 +860,32 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def state(self):
         return self.progressUi.state
         
+    def onPrint(self, target, printer, pdfPrinter, preferences):
+        widget = self.plotDict[target]['widget']
+        if preferences.savePdf:
+            with SceneToPrint(widget):
+                painter = QtGui.QPainter(pdfPrinter)
+                widget.render( painter )
+                del painter
+        
+        # create an exporter instance, as an argument give it
+        # the item you wish to export
+        with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):
+            exporter = ImageExporter(widget.graphicsView.scene()) 
+      
+            # set export parameters if needed
+            pageWidth = printer.pageRect().width()
+            pageHeight = printer.pageRect().height()
+            exporter.parameters()['width'] = pageWidth*preferences.printWidth   # (note this also affects height parameter)
+              
+            # save to file
+            png = exporter.export(toBytes=True)
+            if preferences.savePng:
+                png.save(DataDirectory.DataDirectory().sequencefile(target+".png")[0])
+            
+            if preferences.doPrint:
+                painter = QtGui.QPainter( printer )
+                painter.drawImage(QtCore.QPoint(pageWidth*preferences.printX,pageHeight*preferences.printY), png)
+
+                
+                

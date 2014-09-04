@@ -58,6 +58,7 @@
    <addaction name="actionReload"/>
    <addaction name="actionSettings"/>
    <addaction name="actionLogic"/>
+   <addaction name="actionLogging"/>
    <addaction name="separator"/>
    <addaction name="actionExit"/>
   </widget>
@@ -94,9 +95,15 @@
      <string>View</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuPrint">
+    <property name="title">
+     <string>Print</string>
+    </property>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuOperation"/>
    <addaction name="menuView"/>
+   <addaction name="menuPrint"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetConsole">
    <property name="windowTitle">
@@ -388,6 +395,15 @@
    </property>
    <property name="text">
     <string>Logic</string>
+   </property>
+  </action>
+  <action name="actionLogging">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/measure.png</normaloff>:/openicon/icons/measure.png</iconset>
+   </property>
+   <property name="text">
+    <string>Logging</string>
    </property>
   </action>
  </widget>
