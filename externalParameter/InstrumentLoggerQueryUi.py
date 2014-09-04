@@ -78,8 +78,8 @@ class InstrumentLoggerQueryUi(Form,Base):
         
     def onRefresh(self):
         self.parameterNames = self.connection.refreshSourceDict().keys()
-        updateComboBoxItems( self.comboBoxParam, self.parameterNames )
-        updateComboBoxItems( self.comboBoxPlotName, self.plotDict.keys() )        
+        updateComboBoxItems( self.comboBoxParam, sorted(self.parameterNames) )
+        updateComboBoxItems( self.comboBoxPlotName, sorted(self.plotDict.keys()) )        
         
     def onCreatePlot(self):
         result = self.connection.getHistory( self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime )

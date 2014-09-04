@@ -63,7 +63,11 @@ class ConexLinear(ExternalParameterBase):
             return False
         if value != self.value:
             self._setValue( value )
-        return not self.instrument.motionRunning()
+        arrived = not self.instrument.motionRunning()
+        if arrived:
+            self.persist(self.value)
+        return arrived
+
 
         
 class ConexRotation(ExternalParameterBase):
@@ -119,7 +123,10 @@ class ConexRotation(ExternalParameterBase):
             return False
         if value != self.value:
             self._setValue( value )
-        return not self.instrument.motionRunning()
+        arrived = not self.instrument.motionRunning()
+        if arrived:
+            self.persist(self.value)
+        return arrived
     
     
 class PowerWaveplate(ExternalParameterBase):
@@ -207,7 +214,10 @@ class PowerWaveplate(ExternalParameterBase):
         self._setValue( value )
         if self.displayValueCallback:
             self.displayValueCallback( self._getValue() )
-        return not self.instrument.motionRunning()
+        arrived = not self.instrument.motionRunning()
+        if arrived:
+            self.persist(self.value)
+        return arrived
 
     def update(self, param, changes):
         super(PowerWaveplate, self).update(param, changes)

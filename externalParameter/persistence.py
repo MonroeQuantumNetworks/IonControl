@@ -23,7 +23,8 @@ class DBPersist:
             DBPersist.store.open_session()        
         
     def persist(self, source, time, value, minval=None, maxval=None, unit=None):
-        DBPersist.store.add( source, value, unit, datetime.fromtimestamp(time), bottom=minval, top=maxval )
+        if source:
+            DBPersist.store.add( source, value, unit, datetime.fromtimestamp(time), bottom=minval, top=maxval )
         
     def paramDef(self):
         return []
