@@ -40,9 +40,9 @@ class DatabasePreferences(object):
 
     def paramDef(self):
         return [ {'name': 'Hostname', 'object': self, 'field': 'databaseHost', 'type': 'str', 'value': self.databaseHost},
-                {'name': 'Databse name', 'object': self, 'field': 'databaseName', 'type': 'str', 'value': self.databaseName},
+                {'name': 'Database name', 'object': self, 'field': 'databaseName', 'type': 'str', 'value': self.databaseName},
                 {'name': 'Username', 'object': self, 'field': 'databaseUser', 'type': 'str', 'value': self.databaseUser},
-                {'name': 'Password', 'object': self, 'field': 'databasePassword', 'type': 'password', 'value': self.databasePassword}]
+                {'name': 'Password', 'object': self, 'field': 'databasePassword', 'type': 'str', 'value': self.databasePassword}]
 
 class Preferences(object):
     def __init__(self):
