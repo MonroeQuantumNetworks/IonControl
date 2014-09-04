@@ -1,6 +1,7 @@
 import logging
 
 from SerialInstrumentReader import wrapSerial, wrapVisa
+from ModbusInstrumentReader import wrapModbus
 LoggingInstruments = dict()
 
 try:
@@ -15,7 +16,6 @@ try:
 except:
     logging.getLogger(__name__).info("Ion gauge reader not available")
     
-    
 try:
     from MultiMeterReader import MultiMeterReader
     LoggingInstruments['Multi Meter'] = wrapVisa( "MultiMeterInstrumentReader", MultiMeterReader )
@@ -27,6 +27,12 @@ try:
     LoggingInstruments['Photodiode'] = wrapSerial( "PhotodiodeInstrumentReader", PhotoDiodeReader )
 except:
     logging.getLogger(__name__).info("Multi Meter reader not available")
+
+try:
+    from OmegaCN7500Reader import OmegaCN7500Reader
+    LoggingInstruments["Oven set point"] = wrapModbus( "OmegaCN7500InstrumentReader", OmegaCN7500Reader)
+except:
+    logging.getLogger(__name__).info("oven set point not available")
     
 from DummyReader import DummyReader
 LoggingInstruments["Dummy"] = wrapSerial( "DummyInstrumentReader", DummyReader ) 
