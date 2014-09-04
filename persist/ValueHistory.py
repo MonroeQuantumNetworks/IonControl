@@ -8,6 +8,7 @@ from sqlalchemy import Column, String, Float, DateTime, Integer, ForeignKey, Ind
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
+from modules.magnitude import is_magnitude
 
 Base = declarative_base()
     
@@ -91,6 +92,12 @@ class ValueHistoryStore:
         self.session.commit()
         
     def add(self, space, source, value, unit, upd_date, bottom=None, top=None):
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+            if is_magnitude(bottom):
+                bottom = bottom.toval(unit)
+            if is_magnitude(top):
+                top = top.toval(unit)           
         if space is not None and source is not None:
             paramObj = self.getSource(space, source)
             elem = ValueHistoryEntry(paramObj, value, unit, upd_date)
