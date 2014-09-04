@@ -527,12 +527,21 @@ class Magnitude():
         m = self.copy()
         if not ounit:
             ounit = self.out_unit
+        unitTuple = tuple(self.unit)
         if ounit:
             out_factor = self.sunit2mag(ounit)
             m._div_by(out_factor)
-        if returnUnit:
-            return m.val, ounit
-        return m.val
+        elif unitTuple in _outputDimensions:
+            outmag = _mags[_outputDimensions[unitTuple]]
+            m = self.copy(True)
+            m._div_by(outmag)
+            prefix = m._bestPrefix_()
+            if prefix != '':
+                m = self.copy(True)
+                outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
+                m._div_by(outmag)
+            ounit = (prefix + _outputDimensions[unitTuple]).strip() 
+        return (m.val, ounit) if returnUnit else m.val
 
     def _unitRepr_(self):
         u = self.unit

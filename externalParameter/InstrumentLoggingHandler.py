@@ -18,6 +18,7 @@ from calibration import calibrationDict
 from persistence import persistenceDict
 from dedicatedCounters.AnalogInputCalibration import AnalogInputCalibrationMap
 from functools import partial
+from modules.magnitude import is_magnitude
 
 GlobalTimeOffset = time.time()    
         
@@ -113,14 +114,19 @@ class DataHandling(object):
         takentime, value, minVal, maxVal = data
         if self.calibration is None:
             return data
-        calMin = self.calibration.convert(minVal)
-        calMax = self.calibration.convert(maxVal)
-        calValue = self.calibration.convert(value)
-        calMagnitude = self.calibration.convertMagnitude(value)
+        calMin = self.calibration.convertMagnitude(minVal)
+        calMax = self.calibration.convertMagnitude(maxVal)
+        calValue = self.calibration.convertMagnitude(value)
         return (takentime, calValue, calMin, calMax)
         
     def addPoint(self, traceui, plot, data, source ):
         takentime, value, minval, maxval = data
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+            if is_magnitude(minval):
+                minval = minval.toval(unit)
+            if is_magnitude(maxval):
+                maxval = maxval.toval(unit)
         if self.trace is None:
             self.trace = Trace(record_timestamps=True)
             self.trace.name = source
