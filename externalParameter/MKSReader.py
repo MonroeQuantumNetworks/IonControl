@@ -46,7 +46,7 @@ class MKSReader:
     def pr3(self):
         devicestr = "@{0}".format(self.deviceaddr)
         reply = self.query("{0}PR3?;FF".format(devicestr))  
-        m = re.match(devicestr+'ACK([0-9.E-]+);FF', reply)
+        m = re.match(devicestr+'ACK([0-9.E+-]+);FF', reply)
         return float(m.group(1))
         
     def value(self):

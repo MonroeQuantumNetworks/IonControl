@@ -21,7 +21,7 @@ class PowerDetectorCalibration:
     def convert(self, volt):
         if volt is None:
             return None
-        if volt < self.parameters.minimum or volt > self.parameters.maximum:
+        if volt < self.minimum or volt > self.maximum:
             return "oor"
         dBm = self.p * volt**2 + self.m*volt + self.c
         return dBm
@@ -29,7 +29,7 @@ class PowerDetectorCalibration:
     def convertMagnitude(self, volt):
         if volt is None:
             return None
-        if volt < self.parameters.minimum or volt > self.parameters.maximum:
+        if volt < self.minimum or volt > self.maximum:
             return "oor"
         dBm = self.p * volt**2 + self.m*volt + self.c
         return mg( 10**((dBm/10)-3), 'W' )

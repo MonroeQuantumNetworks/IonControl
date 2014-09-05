@@ -108,8 +108,8 @@ class InstrumentLoggerQueryUi(Form,Base):
         else:
             time = [(e.upd_date-self.parameters.timeOrigin) for e in result]
             value = [e.value for e in result]
-            bottom = [e.bottom if e.bottom is not None else e.value for e in result]
-            top = [e.top if e.top is not None else e.value for e in result]
+            bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
+            top = [e.top -e.value if e.top is not None else e.value for e in result]
             trace = Trace(record_timestamps=False)
             trace.name = self.parameters.parameter
             trace.y = numpy.array( value )

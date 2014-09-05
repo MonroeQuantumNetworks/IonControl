@@ -92,6 +92,12 @@ class ValueHistoryStore:
         self.session.commit()
         
     def add(self, space, source, value, unit, upd_date, bottom=None, top=None):
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+            if is_magnitude(bottom):
+                bottom = bottom.toval(unit)
+            if is_magnitude(top):
+                top = top.toval(unit)           
         if space is not None and source is not None:
             paramObj = self.getSource(space, source)
             if is_magnitude(value):
