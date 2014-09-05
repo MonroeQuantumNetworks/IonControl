@@ -1060,19 +1060,40 @@ class Magnitude():
         r.val = abs(r.val)
         return r
 
-    def __cmp__(self, m):
-        """Compare two Magnitude instances with the same dimensions.
-
-        >>> print mg(10, 'm/s') > (11, 'km/h')
-        True
-        >>> print mg(1, 'km') == (1000, 'm')
-        True
-        """
+#     def __cmp__(self, m):
+#         """Compare two Magnitude instances with the same dimensions.
+# 
+#         >>> print mg(10, 'm/s') > (11, 'km/h')
+#         True
+#         >>> print mg(1, 'km') == (1000, 'm')
+#         True
+#         """
+#         if m.unit != self.unit:
+#             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
+#                                  (m.unit, self.unit))
+#         return cmp(self.val, m.val)
+    
+    def __eq__(self, m):
+        return self.unit==m.unit and self.val==m.val
+    
+    def __ne__(self, m):
+        return self.unit!=m.unit or self.val!=m.val
+    
+    def __lt__(self, m):
         if m.unit != self.unit:
             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
                                  (m.unit, self.unit))
-        return cmp(self.val, m.val)
-
+        return self.val < m.val
+    
+    def __gt__(self, m):
+        return m<self
+    
+    def __le__(self, m):
+        return not m<self
+    
+    def __ge__(self, m):
+        return not self<m
+    
     def isIdenticalTo(self, other):
         """compare the magnitudes with all the metadata"""
         return ((self.val, self.unit, self.out_unit, self.out_factor, self.oprec, self.oformat, self.significantDigits)

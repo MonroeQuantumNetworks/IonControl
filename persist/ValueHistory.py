@@ -100,6 +100,8 @@ class ValueHistoryStore:
                 top = top.toval(unit)           
         if space is not None and source is not None:
             paramObj = self.getSource(space, source)
+            if is_magnitude(value):
+                value, unit = value.toval(returnUnit=True)
             elem = ValueHistoryEntry(paramObj, value, unit, upd_date)
             self.session.add(elem)
             elem.value = value

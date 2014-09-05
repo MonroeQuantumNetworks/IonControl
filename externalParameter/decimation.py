@@ -11,9 +11,9 @@ from functools import partial
 
 class StaticDecimation:
     name = 'Static'
-    def __init__(self):
+    def __init__(self, staticTime=None):
         self.lastChangedTime = 0
-        self.staticTime = mg(120,'s')
+        self.staticTime = mg(120,'s') if staticTime is None else staticTime
         self.lastValue = None
         
     def decimate(self, takentime, value, callback):

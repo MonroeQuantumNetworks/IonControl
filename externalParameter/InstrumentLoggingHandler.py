@@ -23,7 +23,6 @@ from modules.magnitude import is_magnitude
 GlobalTimeOffset = time.time()    
         
 class DataHandling(object):
-    persistSpace = 'externalInput'
     def __init__(self):
         self.calibration = None
         self.decimation = None
@@ -107,9 +106,9 @@ class DataHandling(object):
         else:
             self.persistenceDecimation.decimate(takentime, value, callback)
     
-    def persist(self, source, time, value, minvalue, maxvalue):
+    def persist(self, space, source, time, value, minvalue, maxvalue):
         if self.persistence is not None:
-            self.persistence.persist(self.persistSpace, source, time, value, minvalue, maxvalue)
+            self.persistence.persist(space, source, time, value, minvalue, maxvalue)
     
     def convert(self, data ):
         takentime, value, minVal, maxVal = data
@@ -162,13 +161,13 @@ class DataHandling(object):
 
 class InstrumentLoggingHandler(QtCore.QObject):
     paramTreeChanged = QtCore.pyqtSignal()
-    def __init__(self, traceui, plotDict, config):
+    def __init__(self, traceui, plotDict, config, persistSpace):
         super(InstrumentLoggingHandler, self).__init__()
         self.traceui = traceui
         self.plotDict = plotDict
         self.config = config
         self.handlerDict = self.config.get("InstrumentLogging.HandlerDict", defaultdict( DataHandling ) )
-        
+        self.persistSpace = persistSpace
         
     def addData(self, source, data ):
         handler = self.handlerDict[source]
@@ -189,7 +188,7 @@ class InstrumentLoggingHandler(QtCore.QObject):
     def persistenceCallback(self, source, data):
         handler = self.handlerDict[source]
         time, value, minvalue, maxvalue = handler.convert( data )
-        handler.persist( source, time, value, minvalue, maxvalue )
+        handler.persist( self.persistSpace, source, time, value, minvalue, maxvalue )
             
     def saveConfig(self):
         self.config["InstrumentLogging.HandlerDict"] = self.handlerDict
