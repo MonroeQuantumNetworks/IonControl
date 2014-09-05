@@ -248,7 +248,6 @@ class InstrumentLoggingProcess(Process):
         ProjectSelection.setProject(self.project)
         ProjectSelection.setDefaultProject(self.project)
         configureServerLogging(self.loggingQueue)
-        logger = logging.getLogger(__name__)
         
         self.commandReader = CommandReader(self.commandPipe)
 
