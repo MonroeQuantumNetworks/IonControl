@@ -1,6 +1,7 @@
 import logging
 
-from SerialInstrumentReader import wrapSerial, wrapVisa
+from SerialInstrumentReader import wrapSerial
+from VisaInstrumentReader import wrapVisa
 from ModbusInstrumentReader import wrapModbus
 LoggingInstruments = dict()
 

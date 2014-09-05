@@ -6,6 +6,7 @@ Created on May 16, 2014
 import serial  #@UnresolvedImport
 import re
 import numpy
+from modules.magnitude import mg
 
 class PhotoDiodeReader:
     def __init__(self, port=0, baud=115200, deviceaddr=253, timeout=1):
@@ -14,18 +15,27 @@ class PhotoDiodeReader:
         self.timeout = timeout
         self.conn = None
         self.deviceaddr = deviceaddr
+        self.measureSeparation = mg(500,'ms')
         
     def open(self):
         self.conn = serial.Serial( self.port, self.baud, timeout=self.timeout, parity='N', stopbits=1)
         self.conn.write('afe -agc1\n\r')
-        self.conn.write('sdds -p0500\n\r')
+        self.conn.read(1000)
+        self.writeMeasureSeparation()
+        
+    def writeMeasureSeparation(self):
+        self.conn.write('sdds -p{0:04d}\n\r'.format(int(self.measureSeparation.toval('ms'))))
+        self.conn.read(1000)       
         
     def close(self):
         self.conn.close()
         
-    def query(self, question=None, length=100):
+    def query(self, question=None, length=100, timeout=None):
         if question:
             self.conn.write(question)
+        if timeout is not None:
+            self.conn.timeout = timeout
+            self.timeout = timeout
         return self.conn.read(length)
                 
     def value(self):
@@ -38,6 +48,11 @@ class PhotoDiodeReader:
                 gain = int(gain)-1 if gain else 3
                 values.append( int(value) / 2.**gain )
         return  numpy.mean(values) if values else None
+    
+    def paramDef(self):
+        return [{'name': 'timeout', 'type': 'magnitude', 'value': self.timeout, 'tip': "wait time for communication", 'field': 'timeout', 'object': self},
+                {'name': 'measure separation', 'type': 'magnitude', 'value': self.measureSeparation, 'tip': "time between two reading", ' field': 'measureSeparation', 'object': self}]
+
 
 if __name__=="__main__":
     try:

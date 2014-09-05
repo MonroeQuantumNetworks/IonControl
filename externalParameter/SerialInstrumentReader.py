@@ -29,12 +29,13 @@ class SerialInstrumentReader( InstrumentReaderBase ):
          
     def close(self):
         self.commandQueue.put(("stop", ()) )
-        self.reader.wait()
+        #self.reader.wait()
          
-    def update(self,param, changes):
-        InstrumentReaderBase.update(self, param, changes)
-        self.commandQueue.put( ("setReadWait", (self.settings.readWait.toval("s"),) ) )
-        self.commandQueue.put( ("setTimeout", (self.settings.timeout.toval("s"),) ) )
+    def update(self, param, changes):
+        self.commandQueue.put( ("update", (param, changes)) )
+        
+    def paramDef(self):
+        return self.commandQueue.put( ("paramDef", tuple() ))
         
 def wrapSerialTalker(classname, serialclass):
     return type(classname, (SerialTalkerInstrumentReader,), dict({"serialclass": serialclass}) )
