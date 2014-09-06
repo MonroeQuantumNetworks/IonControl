@@ -8,41 +8,48 @@ import re
 import numpy
 from modules.magnitude import mg
 
+class Settings:
+    pass
+
 class PhotoDiodeReader(object):
-    def __init__(self, port=0, baud=115200, deviceaddr=253, timeout=1):
+    def __init__(self, port=0, baud=115200, deviceaddr=253, timeout=1, settings=None):
         self.port = port
         self.baud = baud
-        self._timeout = mg(500,'ms')
         self.conn = None
         self.deviceaddr = deviceaddr
-        self._measureSeparation = mg(500,'ms')
+        self.settings = settings if settings is not None else Settings()
+        self.setDefaults()
+        
+    def setDefaults(self):
+        self.settings.__dict__.setdefault('timeout', mg(500,'ms'))
+        self.settings.__dict__.setdefault('measureSeparation', mg(500,'ms'))
         
     @property
     def measureSeparation(self):
-        return self._measureSeparation
+        return self.settings.measureSeparation
     
     @measureSeparation.setter
     def measureSeparation(self, sep):
-        self._measureSeparation = sep
+        self.settings.measureSeparation = sep
         self.writeMeasureSeparation()    
         
     @property
     def timeout(self):
-        return self._timeout
+        return self.settings.timeout
     
     @timeout.setter
     def timeout(self, val):
         self.conn.timeout = val.toval('s')
-        self._timeout = val
+        self.settings.timeout = val
         
     def open(self):
-        self.conn = serial.Serial( self.port, self.baud, timeout=self.timeout.toval('s'), parity='N', stopbits=1)
+        self.conn = serial.Serial( self.port, self.baud, timeout=self.settings.timeout.toval('s'), parity='N', stopbits=1)
         self.conn.write('afe -agc1\n\r')
         self.conn.read(1000)
         self.writeMeasureSeparation()
         
     def writeMeasureSeparation(self):
-        self.conn.write('sdds -p{0:04d}\n\r'.format(int(self.measureSeparation.toval('ms'))))
+        self.conn.write('sdds -p{0:04d}\n\r'.format(int(self.settings.measureSeparation.toval('ms'))))
         self.conn.read(1000)       
         
     def close(self):
@@ -53,7 +60,7 @@ class PhotoDiodeReader(object):
             self.conn.write(question)
         if timeout is not None:
             self.conn.timeout = timeout
-            self.timeout = timeout
+            self.settings.timeout = timeout
         return self.conn.read(length)
                 
     def value(self):

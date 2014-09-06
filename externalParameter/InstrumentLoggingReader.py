@@ -47,10 +47,6 @@ class InstrumentLoggingReader(QtCore.QThread):
     def paramDef(self):
         return self.reader.paramDef()
         
-    def update(self, param, values):
-        for param, _, data in values:
-            setattr( param.opts['object'], param.opts['field'], data)
-            
     def directUpdate(self, field, data):
         setattr( self.reader, field, data )
        

@@ -9,6 +9,7 @@ from externalParameter.InstrumentLoggingReader import InstrumentLoggingReader, p
 
 class InstrumentReaderBase( ExternalParameterBase ):
     def __init__(self, name, settings, childobject, newDataSlot=None ):
+        self.settings = settings
         self.commandQueue = Queue()
         self.responseQueue = Queue()
         self.reader = InstrumentLoggingReader(name, childobject, self.commandQueue, self.responseQueue )
@@ -23,6 +24,7 @@ class InstrumentReaderBase( ExternalParameterBase ):
     def update(self, param, changes):
         for param, _, data in changes:
             self.commandQueue.put( ("directUpdate", (param.opts['field'], data)) )
+            setattr( self.settings, param.opts['field'], data )
             processReturn( self.responseQueue.get() )
                 
     def paramDef(self):

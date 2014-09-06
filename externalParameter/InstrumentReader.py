@@ -14,7 +14,7 @@ def wrapInstrument(classname, serialclass):
 class InstrumentReader( InstrumentReaderBase ):
     def __init__(self, name, settings, instrument, newDataSlot=None ):
         port = int(instrument)
-        child = self.serialclass(port=port)
+        child = self.serialclass(port=port, settings=settings)
         child.open()
         super( InstrumentReader, self ).__init__(name, settings, child, newDataSlot)
          
