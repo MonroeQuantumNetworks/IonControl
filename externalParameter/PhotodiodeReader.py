@@ -8,17 +8,35 @@ import re
 import numpy
 from modules.magnitude import mg
 
-class PhotoDiodeReader:
+class PhotoDiodeReader(object):
     def __init__(self, port=0, baud=115200, deviceaddr=253, timeout=1):
         self.port = port
         self.baud = baud
-        self.timeout = timeout
+        self._timeout = mg(500,'ms')
         self.conn = None
         self.deviceaddr = deviceaddr
-        self.measureSeparation = mg(500,'ms')
+        self._measureSeparation = mg(500,'ms')
+        
+    @property
+    def measureSeparation(self):
+        return self._measureSeparation
+    
+    @measureSeparation.setter
+    def measureSeparation(self, sep):
+        self._measureSeparation = sep
+        self.writeMeasureSeparation()    
+        
+    @property
+    def timeout(self):
+        return self._timeout
+    
+    @timeout.setter
+    def timeout(self, val):
+        self.conn.timeout = val.toval('s')
+        self._timeout = val
         
     def open(self):
-        self.conn = serial.Serial( self.port, self.baud, timeout=self.timeout, parity='N', stopbits=1)
+        self.conn = serial.Serial( self.port, self.baud, timeout=self.timeout.toval('s'), parity='N', stopbits=1)
         self.conn.write('afe -agc1\n\r')
         self.conn.read(1000)
         self.writeMeasureSeparation()
@@ -50,8 +68,8 @@ class PhotoDiodeReader:
         return  numpy.mean(values) if values else None
     
     def paramDef(self):
-        return [{'name': 'timeout', 'type': 'magnitude', 'value': self.timeout, 'tip': "wait time for communication", 'field': 'timeout', 'object': self},
-                {'name': 'measure separation', 'type': 'magnitude', 'value': self.measureSeparation, 'tip': "time between two reading", ' field': 'measureSeparation', 'object': self}]
+        return [{'name': 'timeout', 'type': 'magnitude', 'value': self.timeout, 'tip': "wait time for communication", 'field': 'timeout'},
+                {'name': 'measure separation', 'type': 'magnitude', 'value': self.measureSeparation, 'tip': "time between two reading", 'field': 'measureSeparation'}]
 
 
 if __name__=="__main__":
