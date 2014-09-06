@@ -7,13 +7,18 @@ import serial  #@UnresolvedImport
 import re
 import numpy
 from modules.magnitude import mg
+import serial.tools.list_ports
 
 class Settings:
     pass
 
 class PhotoDiodeReader(object):
-    def __init__(self, port=0, baud=115200, deviceaddr=253, timeout=1, settings=None):
-        self.port = port
+    @staticmethod
+    def connectedInstruments():
+        return [name for name,_,device in serial.tools.list_ports.comports() if device.find('FTDIBUS')!=-1 ]
+    
+    def __init__(self, instrument='COM1', baud=115200, deviceaddr=253, timeout=1, settings=None):
+        self.instrument = instrument
         self.baud = baud
         self.conn = None
         self.deviceaddr = deviceaddr
@@ -43,7 +48,7 @@ class PhotoDiodeReader(object):
         self.settings.timeout = val
         
     def open(self):
-        self.conn = serial.Serial( self.port, self.baud, timeout=self.settings.timeout.toval('s'), parity='N', stopbits=1)
+        self.conn = serial.Serial( self.instrument, self.baud, timeout=self.settings.timeout.toval('s'), parity='N', stopbits=1)
         self.conn.write('afe -agc1\n\r')
         self.conn.read(1000)
         self.writeMeasureSeparation()

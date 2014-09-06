@@ -13,8 +13,7 @@ def wrapInstrument(classname, serialclass):
 
 class InstrumentReader( InstrumentReaderBase ):
     def __init__(self, name, settings, instrument, newDataSlot=None ):
-        port = int(instrument)
-        child = self.serialclass(port=port, settings=settings)
+        child = self.serialclass(instrument=instrument, settings=settings)
         child.open()
         super( InstrumentReader, self ).__init__(name, settings, child, newDataSlot)
          
@@ -22,4 +21,10 @@ class InstrumentReader( InstrumentReaderBase ):
         self.commandQueue.put(("stop", ()) )
         processReturn( self.responseQueue.get() )
         self.reader.wait()
+        
+    @classmethod
+    def connectedInstruments(cls):
+        if hasattr( cls.serialclass, 'connectedInstruments' ):
+            return cls.serialclass.connectedInstruments()
+        return []
          
