@@ -20,7 +20,6 @@ from dedicatedCounters.AnalogInputCalibration import AnalogInputCalibrationMap
 from functools import partial
 from modules.magnitude import is_magnitude
 
-GlobalTimeOffset = time.time()    
         
 class DataHandling(object):
     def __init__(self):
@@ -130,7 +129,7 @@ class DataHandling(object):
         if self.trace is None:
             self.trace = Trace(record_timestamps=True)
             self.trace.name = source
-            self.trace.x = numpy.array( [takentime - GlobalTimeOffset] )
+            self.trace.x = numpy.array( [takentime] )
             self.trace.y = numpy.array( [value] )
             self.trace.timestamp = takentime
             if maxval is not None:
@@ -143,19 +142,20 @@ class DataHandling(object):
             traceui.resizeColumnsToContents()
         else:
             if self.maximumPoints==0 or len(self.trace.x)<self.maximumPoints:
-                self.trace.x = numpy.append( self.trace.x, takentime-GlobalTimeOffset )
+                self.trace.x = numpy.append( self.trace.x, takentime )
                 self.trace.y = numpy.append( self.trace.y, value )
                 if maxval is not None:
                     self.trace.top = numpy.append( self.trace.top, maxval - value )
                 if minval is not None:
                     self.trace.bottom = numpy.append( self.trace.bottom, value - minval )
             else:
-                self.trace.x = numpy.append( self.trace.x[1:], takentime-GlobalTimeOffset )
-                self.trace.y = numpy.append( self.trace.y[1:], value )
+                maxPoints = int(self.maximumPoints)
+                self.trace.x = numpy.append( self.trace.x[-maxPoints:], takentime )
+                self.trace.y = numpy.append( self.trace.y[-maxPoints:], value )
                 if maxval is not None:
-                    self.trace.top = numpy.append( self.trace.top[1:], maxval - value )
+                    self.trace.top = numpy.append( self.trace.top[-maxPoints:], maxval - value )
                 if minval is not None:
-                    self.trace.bottom = numpy.append( self.trace.bottom[1:], value - minval )                
+                    self.trace.bottom = numpy.append( self.trace.bottom[-maxPoints:], value - minval )                
             self.plottedTrace.replot()            
 
 

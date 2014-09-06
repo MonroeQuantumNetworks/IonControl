@@ -24,7 +24,6 @@ class Parameters:
         self.parameter = None
         self.fromTime = datetime(2014,8,30)
         self.toTime = datetime.now()
-        self.timeOrigin = datetime(2014,8,30)
         self.plotName = None 
         self.plotUnit = ""
         self.steps = False
@@ -58,9 +57,6 @@ class InstrumentLoggerQueryUi(Form,Base):
         if self.parameters.toTime is not None:
             self.dateTimeEditTo.setDateTime( self.parameters.toTime )
         self.dateTimeEditTo.dateTimeChanged.connect( partial(self.onValueChangedDateTime, 'toTime')  )
-        if self.parameters.timeOrigin is not None:
-            self.dateTimeEditOrigin.setDateTime( self.parameters.timeOrigin )
-        self.dateTimeEditOrigin.dateTimeChanged.connect( partial(self.onValueChangedDateTime, 'timeOrigin')  )
         if self.parameters.plotName is not None:
             self.comboBoxPlotName.setCurrentIndex( self.comboBoxPlotName.findText(self.parameters.plotName ))
         self.lineEditPlotUnit.setText( self.parameters.plotUnit )
@@ -106,7 +102,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         if not result:
             logging.getLogger(__name__).error("Database query returned empty set")
         else:
-            time = [(e.upd_date-self.parameters.timeOrigin) for e in result]
+            time = [(e.upd_date - datetime(1970, 1, 1)).total_seconds() for e in result]
             value = [e.value for e in result]
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]
@@ -116,10 +112,10 @@ class InstrumentLoggerQueryUi(Form,Base):
             if self.parameters.plotName is None:
                 self.parameters.plotName = str(self.comboBoxPlotName.currentText())
             if self.parameters.steps:
-                trace.x = numpy.array( [t.days*86400 + t.seconds + t.microseconds*1e-6 for t in time+[time[-1]]] )
+                trace.x = numpy.array( time+[time[-1]] )
                 plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisUnit = "s", xAxisLabel = "time", plotType=PlottedTrace.Types.steps, fill=False) #@UndefinedVariable
             else:
-                trace.x = numpy.array( [t.days*86400 + t.seconds + t.microseconds*1e-6 for t in time] )
+                trace.x = numpy.array( time )
                 trace.top = numpy.array( top )
                 trace.bottom = numpy.array( bottom )
                 plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisUnit = "s", xAxisLabel = "time") 

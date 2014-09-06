@@ -13,7 +13,7 @@ from trace import Traceui
 from trace import pens
 
 from pyqtgraph.dockarea import DockArea, Dock
-from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+from uiModules.DateTimePlotWidget import DateTimePlotWidget
 from externalParameter.InstrumentLogging import LoggingInstruments 
 from externalParameter.InstrumentLoggingSelection import InstrumentLoggingSelection 
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
@@ -112,7 +112,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
             plotNames.append('Scan')
         for name in plotNames:
             dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
+            widget = DateTimePlotWidget(self)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -135,7 +135,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         if ok:
             name = str(name)
             dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
+            widget = DateTimePlotWidget(self)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
