@@ -111,12 +111,12 @@ class CustomPlotItem(PlotItem):
         -A hold zero button which keeps the y minimum at zero while autoranging.
     resizeEvent is extended to set the position of the two new buttons correctly.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, axisItems=None):
         """
         Create a new CustomPlotItem. In addition to the ordinary PlotItem, adds buttons and uses the custom ViewBox.
         """
         cvb = CustomViewBox()
-        super(CustomPlotItem,self).__init__(parent, viewBox = cvb)
+        super(CustomPlotItem,self).__init__(parent, viewBox = cvb, axisItems=axisItems)
         self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=14, parentItem=self)
         self.unityRangeBtn.setToolTip("Set y range to (0,1)")
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
@@ -186,12 +186,12 @@ class CustomPlotItem(PlotItem):
 class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, and custom buttons."""
-    def __init__(self,parent=None):
+    def __init__(self,parent=None, axisItems=None):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = LabelItem(justify='right')
-        self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2)
+        self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2,axisItems=axisItems)
         self.addItem(self.coordinateLabel,row=1,col=1)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
@@ -263,6 +263,9 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
             self.mousePointList = [self.mousePoint]
 
 if __name__ == '__main__':
+    icons_dir = '.\\..\\ui\\icons\\'
+    range_icon_file = icons_dir + 'unity-range'
+    holdZero_icon_file = icons_dir + 'hold-zero'
     import sys    
     app = QtGui.QApplication(sys.argv)
     pg.setConfigOption('background', 'w') #set background to white
