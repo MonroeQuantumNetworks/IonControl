@@ -24,6 +24,7 @@ class PhotoDiodeReader(object):
         self.deviceaddr = deviceaddr
         self.settings = settings if settings is not None else Settings()
         self.setDefaults()
+        self.leftover = ""
         
     def setDefaults(self):
         self.settings.__dict__.setdefault('timeout', mg(500,'ms'))
@@ -69,7 +70,10 @@ class PhotoDiodeReader(object):
         return self.conn.read(length)
                 
     def value(self):
-        lines = self.query(length=500).split('\n\r')
+        raw = self.query(length=500)
+        lastlinebreak = raw.rfind("\n\r")
+        lines = (self.leftover + raw[:lastlinebreak]).split('\n\r')
+        self.leftover = raw[lastlinebreak+2:]
         values = list()
         for line in lines:
             m = re.match('^(\d+)\s+(\d+)$', line)

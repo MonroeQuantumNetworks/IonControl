@@ -35,7 +35,8 @@ class InstrumentLoggingReader(QtCore.QThread):
                 except Queue.Empty:
                     pass
                 data = self.reader.value()
-                self.newData.emit( self.name, (time.time(), data) )
+                if data is not None:
+                    self.newData.emit( self.name, (time.time(), data) )
             except Exception:
                 logging.getLogger(__name__).exception("Exception in QueueReader")
         self.newData.emit( self.name, None )
