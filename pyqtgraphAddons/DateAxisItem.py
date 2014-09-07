@@ -1,7 +1,7 @@
 import numpy as np
-import time
 from datetime import datetime
 from pyqtgraph.graphicsItems.AxisItem import AxisItem
+from pyqtgraph.python2_3 import asUnicode
 
 __all__ = ['DateAxisItem', 'ZoomLevel']
 
@@ -214,5 +214,21 @@ class DateAxisItem(AxisItem):
         self.zoomLevel = self.zoomLevels[key]
         self.zoomLevel.utcOffset = self.utcOffset
         
+    def labelString(self):
+#         if self.labelUnits == '':
+#             if not self.autoSIPrefix or self.autoSIPrefixScale == 1.0:
+#                 units = ''
+#             else:
+#                 units = asUnicode('(x%g)') % (1.0/self.autoSIPrefixScale)
+#         else:
+#             #print repr(self.labelUnitPrefix), repr(self.labelUnits)
+#             units = asUnicode('(%s%s)') % (asUnicode(self.labelUnitPrefix), asUnicode(self.labelUnits))
+            
+#        s = asUnicode('%s %s') % (asUnicode(self.labelText), asUnicode(units))
+        s = asUnicode(self.labelText)
         
+        style = ';'.join(['%s: %s' % (k, self.labelStyle[k]) for k in self.labelStyle])
+        
+        return asUnicode("<span style='%s'>%s</span>") % (style, asUnicode(s))
+       
         

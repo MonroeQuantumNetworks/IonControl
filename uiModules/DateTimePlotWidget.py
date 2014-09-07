@@ -6,7 +6,9 @@ Created on Sep 6, 2014
 
 from pyqtgraphAddons.DateAxisItem import DateAxisItem
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
-
+import math
+from modules.round import roundToNDigits
+from datetime import datetime
 
 class DateTimePlotWidget(CoordinatePlotWidget):
     """This is the main widget for plotting data. It consists of a plot, a
@@ -15,6 +17,17 @@ class DateTimePlotWidget(CoordinatePlotWidget):
         self.dateAxisItem = DateAxisItem('bottom')
         super(DateTimePlotWidget,self).__init__(parent, axisItems={'bottom': self.dateAxisItem})
 
+    def onMouseMoved(self,pos):
+        """Execute when mouse is moved. If mouse is over plot, show cursor
+           coordinates on coordinateLabel."""
+        if self.graphicsView.sceneBoundingRect().contains(pos):
+            self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
+            vR = self.graphicsView.vb.viewRange()
+            deltaY = vR[1][1]-vR[1][0] #Calculate x and y display ranges
+            precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
+            roundedy = roundToNDigits(self.mousePoint.y(), precy )
+            currentDateTime = datetime.fromtimestamp(self.mousePoint.x()) 
+            self.coordinateLabel.setText( self.template.format( str(currentDateTime), repr(roundedy) ))
 
 
 if __name__ == '__main__':
