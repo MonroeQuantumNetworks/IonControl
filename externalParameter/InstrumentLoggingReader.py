@@ -5,7 +5,6 @@ Created on Jun 21, 2014
 '''
 from PyQt4 import QtCore
 import logging
-from time import sleep
 import Queue
 import time
 

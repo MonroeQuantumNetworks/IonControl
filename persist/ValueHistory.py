@@ -31,7 +31,7 @@ class ValueHistoryEntry(Base):
     bottom = Column(Float)
     top = Column(Float)
     unit = Column(String)
-    upd_date = Column(DateTime, primary_key=True)
+    upd_date = Column(DateTime(timezone=True), primary_key=True)
     
     def __init__(self,sourceObj,value,unit,upd_date):
         self.source = sourceObj

@@ -172,7 +172,7 @@ class DateAxisItem(AxisItem):
     def __init__(self, orientation, **kvargs):
         super(DateAxisItem, self).__init__(orientation, **kvargs)
         # Set the zoom level to use depending on the time density on the axis
-        self.utcOffset = time.timezone
+        self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
         self.zoomLevel = YEAR_MONTH_ZOOM_LEVEL
         # we need about 60pt for our largest label
         self.maxTicksPerPt = 1/60.0

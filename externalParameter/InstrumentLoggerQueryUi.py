@@ -9,12 +9,13 @@ from PyQt4 import QtCore
 from functools import partial
 from persist.ValueHistory import ValueHistoryStore
 from modules.PyqtUtility import updateComboBoxItems
-from datetime import datetime
+from datetime import datetime, timedelta
 from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
 import numpy
 from collections import defaultdict
 import logging
+import pytz
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -40,6 +41,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.plotDict = plotDict
         self.connection = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
         self.connection.open_session()
+        self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
     
     def setupUi(self,MainWindow):
         Form.setupUi(self,MainWindow)
@@ -101,8 +103,9 @@ class InstrumentLoggerQueryUi(Form,Base):
         result = self.connection.getHistory( self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime )
         if not result:
             logging.getLogger(__name__).error("Database query returned empty set")
-        else:
-            time = [(e.upd_date - datetime(1970, 1, 1)).total_seconds() for e in result]
+        elif len(result)>0:
+            epoch = datetime(1970, 1, 1) + timedelta(seconds=self.utcOffset) if result[0].upd_date.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
+            time = [(e.upd_date - epoch).total_seconds() for e in result]
             value = [e.value for e in result]
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]
@@ -113,11 +116,11 @@ class InstrumentLoggerQueryUi(Form,Base):
                 self.parameters.plotName = str(self.comboBoxPlotName.currentText())
             if self.parameters.steps:
                 trace.x = numpy.array( time+[time[-1]] )
-                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisUnit = "s", xAxisLabel = "time", plotType=PlottedTrace.Types.steps, fill=False) #@UndefinedVariable
+                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False) #@UndefinedVariable
             else:
                 trace.x = numpy.array( time )
                 trace.top = numpy.array( top )
                 trace.bottom = numpy.array( bottom )
-                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisUnit = "s", xAxisLabel = "time") 
+                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time") 
             self.traceui.addTrace( plottedTrace, pen=-1)
             self.traceui.resizeColumnsToContents()

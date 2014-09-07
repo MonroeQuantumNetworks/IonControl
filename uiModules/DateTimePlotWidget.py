@@ -30,7 +30,7 @@ if __name__ == '__main__':
     myPlotWidget = DateTimePlotWidget()
     MainWindow.setCentralWidget(myPlotWidget)
     pi = myPlotWidget.getItem(0, 0)
-    pi.plot(x = [3,4,5,6], y = [9,16,25,36])
+    pi.plot(x = [0,3600,7200,10800], y = [9,16,25,36])
 
     MainWindow.show()
     sys.exit(app.exec_())
