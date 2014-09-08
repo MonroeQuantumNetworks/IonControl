@@ -21,13 +21,16 @@ class DateTimePlotWidget(CoordinatePlotWidget):
         """Execute when mouse is moved. If mouse is over plot, show cursor
            coordinates on coordinateLabel."""
         if self.graphicsView.sceneBoundingRect().contains(pos):
-            self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
-            vR = self.graphicsView.vb.viewRange()
-            deltaY = vR[1][1]-vR[1][0] #Calculate x and y display ranges
-            precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
-            roundedy = roundToNDigits(self.mousePoint.y(), precy )
-            currentDateTime = datetime.fromtimestamp(self.mousePoint.x()) 
-            self.coordinateLabel.setText( self.template.format( str(currentDateTime), repr(roundedy) ))
+            try:
+                self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
+                vR = self.graphicsView.vb.viewRange()
+                deltaY = vR[1][1]-vR[1][0] #Calculate x and y display ranges
+                precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
+                roundedy = roundToNDigits(self.mousePoint.y(), precy )
+                currentDateTime = datetime.fromtimestamp(self.mousePoint.x()) 
+                self.coordinateLabel.setText( self.template.format( str(currentDateTime), repr(roundedy) ))
+            except ValueError:
+                pass
 
 
 if __name__ == '__main__':
