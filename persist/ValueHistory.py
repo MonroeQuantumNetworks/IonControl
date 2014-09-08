@@ -8,7 +8,9 @@ from sqlalchemy import Column, String, Float, DateTime, Integer, ForeignKey, Ind
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.exc import InvalidRequestError
 from modules.magnitude import is_magnitude
+import logging
 
 Base = declarative_base()
     
@@ -92,24 +94,31 @@ class ValueHistoryStore:
         self.session.commit()
         
     def add(self, space, source, value, unit, upd_date, bottom=None, top=None):
-        if is_magnitude(value):
-            value, unit = value.toval(returnUnit=True)
-            if is_magnitude(bottom):
-                bottom = bottom.toval(unit)
-            if is_magnitude(top):
-                top = top.toval(unit)           
-        if space is not None and source is not None:
-            paramObj = self.getSource(space, source)
+        try:
             if is_magnitude(value):
                 value, unit = value.toval(returnUnit=True)
-            elem = ValueHistoryEntry(paramObj, value, unit, upd_date)
-            self.session.add(elem)
-            elem.value = value
-            if bottom is not None:
-                elem.bottom = bottom
-            if top is not None:
-                elem.top = top
-            self.commit()
+                if is_magnitude(bottom):
+                    bottom = bottom.toval(unit)
+                if is_magnitude(top):
+                    top = top.toval(unit)           
+            if space is not None and source is not None:
+                paramObj = self.getSource(space, source)
+                if is_magnitude(value):
+                    value, unit = value.toval(returnUnit=True)
+                elem = ValueHistoryEntry(paramObj, value, unit, upd_date)
+                self.session.add(elem)
+                elem.value = value
+                if bottom is not None:
+                    elem.bottom = bottom
+                if top is not None:
+                    elem.top = top
+                self.commit()
+        except InvalidRequestError as e:
+            self.session.rollback()
+            self.session = self.Session()
+            self.refreshSourceDict()
+            logging.getLogger(__name__).error( e.message )
+            
         
     def get(self, space, source ):
         return self.session.query(ValueHistoryEntry).filter(ValueHistoryEntry.source==self.getSource(space, source) )
