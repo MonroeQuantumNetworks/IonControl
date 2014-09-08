@@ -67,6 +67,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.checkBoxSteps.setChecked( self.parameters.steps )
         self.checkBoxSteps.stateChanged.connect( self.onStateChanged )
+        self.onSpaceChanged(self.parameters.space)
         
     def onStateChanged(self, state):
         self.parameters.steps = state==QtCore.Qt.Checked
@@ -110,10 +111,10 @@ class InstrumentLoggerQueryUi(Form,Base):
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]
             trace = Trace(record_timestamps=False)
-            trace.name = self.parameters.parameter
+            trace.name = self.parameters.parameter + " Query"
             trace.y = numpy.array( value )
             if self.parameters.plotName is None:
-                self.parameters.plotName = str(self.comboBoxPlotName.currentText()) + " Query"
+                self.parameters.plotName = str(self.comboBoxPlotName.currentText()) 
             if self.parameters.steps:
                 trace.x = numpy.array( time+[time[-1]] )
                 plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False) #@UndefinedVariable

@@ -131,7 +131,6 @@ class DataHandling(object):
             self.trace.name = source
             self.trace.x = numpy.array( [takentime] )
             self.trace.y = numpy.array( [value] )
-            self.trace.timestamp = takentime
             if maxval is not None:
                 self.trace.top = numpy.array( [maxval - value])
             if minval is not None:
