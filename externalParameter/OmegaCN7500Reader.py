@@ -11,7 +11,7 @@ class OmegaCN7500Reader:
     def connectedInstruments():
         return [name for name,_,_ in serial.tools.list_ports.comports() ]
 
-    def __init__(self, instrument="COM5", baud=9600, deviceaddr=1, timeout=1):
+    def __init__(self, instrument="COM5", baud=9600, deviceaddr=1, timeout=1, settings=None):
         self.instrument = instrument
         self.baud = baud
         self.timeout = timeout

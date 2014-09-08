@@ -104,7 +104,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         if not result:
             logging.getLogger(__name__).error("Database query returned empty set")
         elif len(result)>0:
-            epoch = datetime(1970, 1, 1) + timedelta(seconds=self.utcOffset) if result[0].upd_date.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
+            epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if result[0].upd_date.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
             time = [(e.upd_date - epoch).total_seconds() for e in result]
             value = [e.value for e in result]
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
@@ -113,7 +113,7 @@ class InstrumentLoggerQueryUi(Form,Base):
             trace.name = self.parameters.parameter
             trace.y = numpy.array( value )
             if self.parameters.plotName is None:
-                self.parameters.plotName = str(self.comboBoxPlotName.currentText())
+                self.parameters.plotName = str(self.comboBoxPlotName.currentText()) + " Query"
             if self.parameters.steps:
                 trace.x = numpy.array( time+[time[-1]] )
                 plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False) #@UndefinedVariable

@@ -45,7 +45,7 @@ class InstrumentLoggingReader(QtCore.QThread):
         del self.reader
         
     def paramDef(self):
-        return self.reader.paramDef()
+        return self.reader.paramDef() if hasattr(self.reader,'paramDef') else []
         
     def directUpdate(self, field, data):
         setattr( self.reader, field, data )

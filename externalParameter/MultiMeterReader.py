@@ -7,7 +7,7 @@ Created on May 16, 2014
 import visa   #@UnresolvedImport
 
 class MultiMeterReader:
-    def __init__(self, instrument=0, timeout=1):
+    def __init__(self, instrument=0, timeout=1, settings=None):
         self.instrument = instrument
         self.timeout = timeout
         self.conn = None

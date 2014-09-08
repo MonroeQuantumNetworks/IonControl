@@ -75,7 +75,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         className = str(className)
         myclass = self.classdict[className]
         if hasattr( myclass, 'connectedInstruments'):
-            updateComboBoxItems( self.instrumentComboBox, myclass.connectedInstruments() )
+            updateComboBoxItems( self.instrumentComboBox, sorted(myclass.connectedInstruments()) )
         else:
             self.instrumentComboBox.clear()
 
