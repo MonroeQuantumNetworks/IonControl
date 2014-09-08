@@ -18,7 +18,7 @@ from trace import Traceui
 from trace import pens
 
 from pyqtgraph.dockarea import DockArea, Dock
-from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+from uiModules.DateTimePlotWidget import DateTimePlotWidget
 from externalParameter.InstrumentLogging import LoggingInstruments 
 from externalParameter.InstrumentLoggingSelection import InstrumentLoggingSelection 
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
@@ -69,7 +69,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.fitWidget.setupUi(self.fitWidget)
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea)
 
-        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict, self.config)
+        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict, self.config, 'externalInput')
 
         self.ExternalParametersSelectionUi = InstrumentLoggingSelection(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData, plotNames=self.plotDict.keys(),
                                                                         instrumentLoggingHandler=self.instrumentLoggingHandler )
@@ -107,6 +107,8 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+        QtCore.QTimer.singleShot(60000, self.onCommitConfig )      
+
                     
     def setupPlots(self):
         self.area = DockArea()
@@ -118,7 +120,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
             plotNames.append('Scan')
         for name in plotNames:
             dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
+            widget = DateTimePlotWidget(self)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -141,7 +143,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         if ok:
             name = str(name)
             dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
+            widget = DateTimePlotWidget(self)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -204,6 +206,11 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.saveConfig()
         self.instrumentLoggingHandler.saveConfig()
         self.instrumentLoggingQueryUi.saveConfig()
+        
+    def onCommitConfig(self):
+        self.saveConfig()
+        QtCore.QTimer.singleShot(60000, self.onCommitConfig )      
+
 
 class CommandReader(QtCore.QThread):
     quitProcess = QtCore.pyqtSignal()
@@ -248,7 +255,6 @@ class InstrumentLoggingProcess(Process):
         ProjectSelection.setProject(self.project)
         ProjectSelection.setDefaultProject(self.project)
         configureServerLogging(self.loggingQueue)
-        logger = logging.getLogger(__name__)
         
         self.commandReader = CommandReader(self.commandPipe)
 

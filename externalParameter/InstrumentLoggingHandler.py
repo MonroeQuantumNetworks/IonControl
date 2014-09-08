@@ -18,8 +18,8 @@ from calibration import calibrationDict
 from persistence import persistenceDict
 from dedicatedCounters.AnalogInputCalibration import AnalogInputCalibrationMap
 from functools import partial
+from modules.magnitude import is_magnitude
 
-GlobalTimeOffset = time.time()    
         
 class DataHandling(object):
     def __init__(self):
@@ -93,10 +93,11 @@ class DataHandling(object):
         self.trace = None
         
     def decimate(self, takentime, value, callback):
-        if self.decimation is None:
-            callback( (takentime, value, None, None) )
-        else:
-            self.decimation.decimate( takentime, value, callback )
+        if value is not None:
+            if self.decimation is None:
+                callback( (takentime, value, None, None) )
+            else:
+                self.decimation.decimate( takentime, value, callback )
     
     def persistenceDecimate(self, takentime, value, callback ):
         if self.persistenceDecimation is None:
@@ -104,26 +105,31 @@ class DataHandling(object):
         else:
             self.persistenceDecimation.decimate(takentime, value, callback)
     
-    def persist(self, source, time, value, minvalue, maxvalue):
+    def persist(self, space, source, time, value, minvalue, maxvalue):
         if self.persistence is not None:
-            self.persistence.persist(source, time, value, minvalue, maxvalue)
+            self.persistence.persist(space, source, time, value, minvalue, maxvalue)
     
     def convert(self, data ):
         takentime, value, minVal, maxVal = data
         if self.calibration is None:
             return data
-        calMin = self.calibration.convert(minVal)
-        calMax = self.calibration.convert(maxVal)
-        calValue = self.calibration.convert(value)
-        calMagnitude = self.calibration.convertMagnitude(value)
+        calMin = self.calibration.convertMagnitude(minVal)
+        calMax = self.calibration.convertMagnitude(maxVal)
+        calValue = self.calibration.convertMagnitude(value)
         return (takentime, calValue, calMin, calMax)
         
     def addPoint(self, traceui, plot, data, source ):
         takentime, value, minval, maxval = data
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+            if is_magnitude(minval):
+                minval = minval.toval(unit)
+            if is_magnitude(maxval):
+                maxval = maxval.toval(unit)
         if self.trace is None:
             self.trace = Trace(record_timestamps=True)
             self.trace.name = source
-            self.trace.x = numpy.array( [takentime - GlobalTimeOffset] )
+            self.trace.x = numpy.array( [takentime] )
             self.trace.y = numpy.array( [value] )
             self.trace.timestamp = takentime
             if maxval is not None:
@@ -136,31 +142,32 @@ class DataHandling(object):
             traceui.resizeColumnsToContents()
         else:
             if self.maximumPoints==0 or len(self.trace.x)<self.maximumPoints:
-                self.trace.x = numpy.append( self.trace.x, takentime-GlobalTimeOffset )
+                self.trace.x = numpy.append( self.trace.x, takentime )
                 self.trace.y = numpy.append( self.trace.y, value )
                 if maxval is not None:
                     self.trace.top = numpy.append( self.trace.top, maxval - value )
                 if minval is not None:
                     self.trace.bottom = numpy.append( self.trace.bottom, value - minval )
             else:
-                self.trace.x = numpy.append( self.trace.x[1:], takentime-GlobalTimeOffset )
-                self.trace.y = numpy.append( self.trace.y[1:], value )
+                maxPoints = int(self.maximumPoints)
+                self.trace.x = numpy.append( self.trace.x[-maxPoints:], takentime )
+                self.trace.y = numpy.append( self.trace.y[-maxPoints:], value )
                 if maxval is not None:
-                    self.trace.top = numpy.append( self.trace.top[1:], maxval - value )
+                    self.trace.top = numpy.append( self.trace.top[-maxPoints:], maxval - value )
                 if minval is not None:
-                    self.trace.bottom = numpy.append( self.trace.bottom[1:], value - minval )                
+                    self.trace.bottom = numpy.append( self.trace.bottom[-maxPoints:], value - minval )                
             self.plottedTrace.replot()            
 
 
 class InstrumentLoggingHandler(QtCore.QObject):
     paramTreeChanged = QtCore.pyqtSignal()
-    def __init__(self, traceui, plotDict, config):
+    def __init__(self, traceui, plotDict, config, persistSpace):
         super(InstrumentLoggingHandler, self).__init__()
         self.traceui = traceui
         self.plotDict = plotDict
         self.config = config
         self.handlerDict = self.config.get("InstrumentLogging.HandlerDict", defaultdict( DataHandling ) )
-        
+        self.persistSpace = persistSpace
         
     def addData(self, source, data ):
         handler = self.handlerDict[source]
@@ -181,7 +188,7 @@ class InstrumentLoggingHandler(QtCore.QObject):
     def persistenceCallback(self, source, data):
         handler = self.handlerDict[source]
         time, value, minvalue, maxvalue = handler.convert( data )
-        handler.persist( source, time, value, minvalue, maxvalue )
+        handler.persist( self.persistSpace, source, time, value, minvalue, maxvalue )
             
     def saveConfig(self):
         self.config["InstrumentLogging.HandlerDict"] = self.handlerDict

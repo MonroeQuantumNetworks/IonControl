@@ -71,9 +71,9 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             logger = logging.getLogger(__name__)
             logger.error( "Expression '{0}' cannot be evaluated {1}".format(value.toString(),e.message) )
             return False
-        except Exception:
+        except Exception as e:
             logger = logging.getLogger(__name__)
-            logger.error( "No match for {0}".format(value.toString()) )
+            logger.error( "No match for '{0}' error '{1}'".format(value.toString(), e.message) )
             return False
         
     def recalculateDependent(self, name):

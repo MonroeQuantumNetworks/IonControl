@@ -527,12 +527,21 @@ class Magnitude():
         m = self.copy()
         if not ounit:
             ounit = self.out_unit
+        unitTuple = tuple(self.unit)
         if ounit:
             out_factor = self.sunit2mag(ounit)
             m._div_by(out_factor)
-        if returnUnit:
-            return m.val, ounit
-        return m.val
+        elif unitTuple in _outputDimensions:
+            outmag = _mags[_outputDimensions[unitTuple]]
+            m = self.copy(True)
+            m._div_by(outmag)
+            prefix = m._bestPrefix_()
+            if prefix != '':
+                m = self.copy(True)
+                outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
+                m._div_by(outmag)
+            ounit = (prefix + _outputDimensions[unitTuple]).strip() 
+        return (m.val, ounit) if returnUnit else m.val
 
     def _unitRepr_(self):
         u = self.unit
@@ -1051,19 +1060,40 @@ class Magnitude():
         r.val = abs(r.val)
         return r
 
-    def __cmp__(self, m):
-        """Compare two Magnitude instances with the same dimensions.
-
-        >>> print mg(10, 'm/s') > (11, 'km/h')
-        True
-        >>> print mg(1, 'km') == (1000, 'm')
-        True
-        """
+#     def __cmp__(self, m):
+#         """Compare two Magnitude instances with the same dimensions.
+# 
+#         >>> print mg(10, 'm/s') > (11, 'km/h')
+#         True
+#         >>> print mg(1, 'km') == (1000, 'm')
+#         True
+#         """
+#         if m.unit != self.unit:
+#             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
+#                                  (m.unit, self.unit))
+#         return cmp(self.val, m.val)
+    
+    def __eq__(self, m):
+        return self.unit==m.unit and self.val==m.val
+    
+    def __ne__(self, m):
+        return self.unit!=m.unit or self.val!=m.val
+    
+    def __lt__(self, m):
         if m.unit != self.unit:
             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
                                  (m.unit, self.unit))
-        return cmp(self.val, m.val)
-
+        return self.val < m.val
+    
+    def __gt__(self, m):
+        return m<self
+    
+    def __le__(self, m):
+        return not m<self
+    
+    def __ge__(self, m):
+        return not self<m
+    
     def isIdenticalTo(self, other):
         """compare the magnitudes with all the metadata"""
         return ((self.val, self.unit, self.out_unit, self.out_factor, self.oprec, self.oformat, self.significantDigits)

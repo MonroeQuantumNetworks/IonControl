@@ -52,6 +52,7 @@ class VariableDictionary(SequenceDict):
         self.globaldict = globaldict 
                 
     def calculateDependencies(self):
+        self.dependencyGraph = DiGraph()   # clear the old dependency graph in case parameters got removed
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):
                 try:

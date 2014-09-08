@@ -14,7 +14,7 @@ from externalParameter.ExternalParameterTableModel import ExternalParameterTable
 from modules.SequenceDict import SequenceDict
 from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
-
+from modules.PyqtUtility import updateComboBoxItems
 
 SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
 
@@ -57,6 +57,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
         self.classComboBox.addItems( self.classdict.keys() )
+        self.classComboBox.currentIndexChanged[QtCore.QString].connect( self.getInstrumentSuggestions )
         self.addParameterButton.clicked.connect( self.onAddParameter )
         self.removeParameterButton.clicked.connect( self.onRemoveParameter )
         for parameter in self.parameters.values():
@@ -69,6 +70,14 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
         self.selectionChanged.emit( self.enabledParametersObjects )
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
+
+    def getInstrumentSuggestions(self, className):
+        className = str(className)
+        myclass = self.classdict[className]
+        if hasattr( myclass, 'connectedInstruments'):
+            updateComboBoxItems( self.instrumentComboBox, sorted(myclass.connectedInstruments()) )
+        else:
+            self.instrumentComboBox.clear()
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
@@ -99,7 +108,7 @@ class SelectionUi(SelectionForm,SelectionBase):
                       
     def onAddParameter(self):
         parameter = Parameter()
-        parameter.instrument = str(self.instrumentLineEdit.text())
+        parameter.instrument = str(self.instrumentComboBox.currentText())
         parameter.className = str(self.classComboBox.currentText())
         parameter.name = str(self.nameEdit.currentText())
         if parameter.name not in self.parameters:

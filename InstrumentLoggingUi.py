@@ -3,11 +3,8 @@ import logging
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
-from mylogging.ExceptionLogButton import ExceptionLogButton
-from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
 from gui import ProjectSelection
-from gui import ProjectSelectionUi
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
@@ -16,26 +13,26 @@ from trace import Traceui
 from trace import pens
 
 from pyqtgraph.dockarea import DockArea, Dock
-from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
+from uiModules.DateTimePlotWidget import DateTimePlotWidget
 from externalParameter.InstrumentLogging import LoggingInstruments 
-from externalParameter import ExternalParameterSelection 
+from externalParameter.InstrumentLoggingSelection import InstrumentLoggingSelection 
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
 from fit.FitUi import FitUi
+from externalParameter.InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
+from gui import ProjectSelectionUi
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingUi.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingWindow.ui')
 
+class FinishException(Exception):
+    pass
 
 class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
-    levelNameList = ["debug", "info", "warning", "error", "critical"]
-    levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     plotConfigurationChanged = QtCore.pyqtSignal( object )
-    def __init__(self,config):
-        self.config = config
+    def __init__(self,project,config):
         super(InstrumentLoggingUi, self).__init__()
-        self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
-        self.consoleMaximumLines = config.get('Settings.consoleMaximumLines',0)
+        self.config = config
+        self.project = project
         self.dockWidgetList = list()
-        if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.plotDict = dict()
         self.instrument = ""
         
@@ -47,13 +44,8 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
     
     def setupUi(self, parent):
         super(InstrumentLoggingUi,self).setupUi(parent)
-        self.dockWidgetConsole.hide()
-        self.loggerUi = LoggerLevelsUi(self.config)
-        self.loggerUi.setupUi(self.loggerUi)
-        self.setupAsDockWidget(self.loggerUi, "Logging", QtCore.Qt.NoDockWidgetArea)
                 
         logger = logging.getLogger()        
-        self.toolBar.addWidget(ExceptionLogButton())
             
         self.parent = parent
         self.tabList = list()
@@ -71,23 +63,21 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.fitWidget.setupUi(self.fitWidget)
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea)
 
-        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict)
+        self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict, self.config, 'externalInput')
 
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData)
+        self.ExternalParametersSelectionUi = InstrumentLoggingSelection(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData, plotNames=self.plotDict.keys(),
+                                                                        instrumentLoggingHandler=self.instrumentLoggingHandler )
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
+        self.instrumentLoggingHandler.paramTreeChanged.connect( self.ExternalParametersSelectionUi.refreshParamTree)
     
-        self.actionSave.triggered.connect(self.onSave)
-        #self.actionSettings.triggered.connect(self.onSettings)
-        self.actionExit.triggered.connect(self.onClose)
-        self.actionProject.triggered.connect( self.onProjectSelection)
-        
-#         self.actionStart.triggered.connect(self.meterControl.onScan)
-#         self.actionStop.triggered.connect(self.meterControl.onStop)
-
+        self.instrumentLoggingQueryUi = InstrumentLoggerQueryUi(self.config, self.traceui, self.plotDict )
+        self.instrumentLoggingQueryUi.setupUi( self.instrumentLoggingQueryUi )
+        self.instrumentLoggingQueryUiDock = self.setupAsDockWidget(self.instrumentLoggingQueryUi, "Query", QtCore.Qt.LeftDockWidgetArea)
+    
         self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
         self.addPlot.setToolTip("Add new plot")
         self.addPlot.triggered.connect(self.onAddPlot)
@@ -103,10 +93,9 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.toolBar.addAction(self.renamePlot)
 
-        self.setWindowTitle("Instrument Logger ({0})".format(project) )
+        self.setWindowTitle("Instrument Logger ({0})".format(self.project) )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
-        self.initMenu()
         try:
             if 'pyqtgraph-dockareastate' in self.config:
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
@@ -123,7 +112,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
             plotNames.append('Scan')
         for name in plotNames:
             dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
+            widget = DateTimePlotWidget(self)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -146,7 +135,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         if ok:
             name = str(name)
             dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
+            widget = DateTimePlotWidget(self)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -181,12 +170,6 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         else:
             logger.info("There are no plots which can be renamed")
 
-    def onProjectSelection(self):
-        ProjectSelectionUi.GetProjectSelection()
-
-    def onSettings(self):
-        self.settingsDialog.show()
-        
     def onSave(self):
         logger = logging.getLogger(__name__)
         logger.info( "Saving config" )
@@ -194,30 +177,15 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.saveConfig()
         self.config.saveConfig(filename)
     
-    def onMessageWrite(self,message,level=logging.DEBUG):
-        if level>= self.loggingLevel:
-            cursor = self.textEditConsole.textCursor()
-            cursor.movePosition(QtGui.QTextCursor.End)
-            if level < logging.ERROR:
-                self.textEditConsole.setTextColor(QtCore.Qt.black)
-            else:
-                self.textEditConsole.setTextColor(QtCore.Qt.red)
-            cursor.insertText(message)
-            self.textEditConsole.setTextCursor(cursor)
-            self.textEditConsole.ensureCursorVisible()
-
     def onClose(self):
         self.parent.close()
         
     def closeEvent(self,e):
+        logger = logging.getLogger(__name__)
+        logger.info( "Close Event" )
         logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
-
-    def initMenu(self):
-        self.menuView.clear()
-        for dock in self.dockWidgetList:
-            self.menuView.addAction(dock.toggleViewAction())
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
@@ -225,18 +193,55 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
             tab.saveConfig()
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
-        self.config['Settings.loggingLevel'] = self.loggingLevel
-        self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
         self.config['PlotNames'] = self.plotDict.keys()
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
-        self.loggerUi.saveConfig()
         self.ExternalParametersSelectionUi.saveConfig()
+        self.instrumentLoggingHandler.saveConfig()
+        self.instrumentLoggingQueryUi.saveConfig()
+
+
+        
+#     def run(self):
+#         ProjectSelection.setProject(self.project)
+#         ProjectSelection.setDefaultProject(self.project)
+#         configureServerLogging(self.loggingQueue)
+#         logger = logging.getLogger(__name__)
+#         
+# 
+#         #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
+#         import ctypes, sys
+#         myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
+#         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+#         
+#         app = QtGui.QApplication(["LoggingWindow"])    
+#         logger = logging.getLogger("")
+#         self.commandReader.quitProcess.connect( app.quit )
+#         self.commandReader.start()
+#                
+#                
+#         with configshelve.configshelve( ProjectSelection.guiConfigFile("LoggingWindow") ) as config:
+#             with InstrumentLoggingUi(self.project,config) as ui:
+#                 ui.setupUi(ui)
+#                 ui.show()
+#                 self.commandReader.saveConfig.connect( ui.saveConfig )
+#                 sys.exit(app.exec_())
+#         
+#         self.dataQueue.put(FinishException())
+#         logger.info( "Pulser Hardware Server Process finished." )
+#         self.dataQueue.close()
+#         self.loggingQueue.put(None)
+#         self.loggingQueue.close()
+#         self.commandReader.quit()
+        
+    
+
 
 if __name__ == "__main__":
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes, sys
     myappid = 'TrappedIons.InstrumentLogging' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    logger = logging.getLogger(__name__)
     
     app = QtGui.QApplication(sys.argv)
 
@@ -248,9 +253,9 @@ if __name__ == "__main__":
         DataDirectory.DefaultProject = project
         
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with InstrumentLoggingUi(config) as ui:
+            with InstrumentLoggingUi(project, config) as ui:
                 ui.setupUi(ui)
-                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                #LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()
                 sys.exit(app.exec_())
     else:
