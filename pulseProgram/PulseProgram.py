@@ -472,11 +472,11 @@ class PulseProgram:
                 result = int((mag/self.timestep).round()) 
             else:
                 step, unit, _, mask = encodings[encoding]
-                result = int(round(mag.toval(unit)/step)) & mask
+                result = int(math.floor(mag.toval(unit)/step)) & mask
         else:
             if encoding:
                 step, unit, _, mask = encodings[encoding]
-                result = int(round(mag/step)) & mask
+                result = int(math.floor(mag/step)) & mask
             else:
                 result = mag
         return result
