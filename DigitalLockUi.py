@@ -135,7 +135,13 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+        QtCore.QTimer.singleShot(300000, self.onCommitConfig )      
        
+    def onCommitConfig(self):
+        self.saveConfig()
+        self.config.saveConfig() 
+        QtCore.QTimer.singleShot(300000, self.onCommitConfig )      
+            
         
     def setupPlots(self):
         self.area = DockArea()

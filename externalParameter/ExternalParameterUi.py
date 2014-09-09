@@ -23,6 +23,15 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.parameterList = list()
         self.names = list()
         self.controlUi = controlUi
+        self.headerLookup = ['Name', 'Control', 'External']
+        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.names[row],
+                             (QtCore.Qt.DisplayRole,1): lambda row: str(self.targetValues[row]),
+                             (QtCore.Qt.EditRole,1): lambda row: str(self.targetValues[row]),
+                             (QtCore.Qt.UserRole,1): lambda row: self.parameterList[row].dimension,
+                             (QtCore.Qt.DisplayRole,2): lambda row: str(self.externalValues[row]),
+                             (QtCore.Qt.ToolTipRole,2): lambda row: str(self.toolTips[row]),
+                     }
+
         
     def setParameterList(self, parameterList):
         self.beginResetModel()
@@ -43,29 +52,18 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     
     def data(self, index, role): 
         if index.isValid():
-            return { (QtCore.Qt.DisplayRole,0): self.names[index.row()],
-                     (QtCore.Qt.DisplayRole,1): str(self.targetValues[index.row()]),
-                     (QtCore.Qt.EditRole,1): str(self.targetValues[index.row()]),
-                     (QtCore.Qt.UserRole,1): self.parameterList[index.row()].dimension,
-                     (QtCore.Qt.DisplayRole,2): str(self.externalValues[index.row()]),
-                     (QtCore.Qt.ToolTipRole,2): str(self.toolTips[index.row()]),
-                     }.get((role,index.column()),None)
+            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
         return None
 
     def setData(self,index, value, role):
-        return { (QtCore.Qt.EditRole,1): functools.partial( self.setValue, index, value ),
-                }.get((role,index.column()), lambda: False )() 
+        return self.dataLookup.get( (role,index.column() ), lambda row: None)(index.row())
                       
     def flags(self, index ):
         return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable if index.column()==1 else QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
-            return {
-                0: 'Name',
-                1: 'Control',
-                2: 'External',
-                }.get(section)
+            return self.headerLookup[section]
         return None #QtCore.QVariant()
  
     def showValue(self, index, value, tooltip=None):

@@ -16,7 +16,12 @@ class PowerDetectorCalibration:
         self.c = 60.7152
         self.p = -1.79545
         self.minimum = 0.6
-        self.maximum = 2        
+        self.maximum = 2
+        self.digits = 5     
+        
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__dict__.setdefault( 'digits', 5)
         
     def convert(self, volt):
         if volt is None:
@@ -32,7 +37,9 @@ class PowerDetectorCalibration:
         if volt < self.minimum or volt > self.maximum:
             return "oor"
         dBm = self.p * volt**2 + self.m*volt + self.c
-        return mg( 10**((dBm/10)-3), 'W' )
+        value = mg( 10**((dBm/10)-3), 'W' )
+        value.significantDigits = self.digits
+        return value
         
     def paramDef(self):
         return [{'name': 'function', 'type': 'str', 'value': "dBm = p*V^2 + m*V + c",'readonly':True},
@@ -40,6 +47,7 @@ class PowerDetectorCalibration:
                          {'name': 'm', 'type': 'float', 'value': self.m, 'object': self },
                          {'name': 'c', 'type': 'float', 'value': self.c, 'object': self },
                          {'name': 'min', 'type': 'float', 'value': self.minimum, 'object': self },
-                         {'name': 'max', 'type': 'float', 'value': self.maximum, 'object': self }]
+                         {'name': 'max', 'type': 'float', 'value': self.maximum, 'object': self },
+                         {'name': 'digits', 'type': 'int', 'value': self.digits, 'object': self, 'tip': 'significant digits'} ]
 
 calibrationDict = { PowerDetectorCalibration.name: PowerDetectorCalibration }

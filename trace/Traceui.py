@@ -119,7 +119,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     def unplotLastTrace(self):
         return self.settings.unplotLastTrace
 
-    def uniqueSelectedIndexes(self, useLastIfNoSelection=True):
+    def uniqueSelectedIndexes(self, useLastIfNoSelection=True, allowUnplotted=True):
         """From the selected elements, return one index from each row.
         
         Using one index from each row prevents executing an action multiple times on the same row.
@@ -127,7 +127,12 @@ class Traceui(TraceuiForm, TraceuiBase):
         no selection.
         """
         selectedIndexes = self.traceTreeView.selectedIndexes()
-        if (len(selectedIndexes) == 0) and useLastIfNoSelection:
+        if (len(selectedIndexes) != 0):
+            uniqueIndexes = []
+            for traceIndex in selectedIndexes:
+                if traceIndex.column() == 0 and (allowUnplotted or self.model.getTrace(traceIndex).isPlotted()):
+                    uniqueIndexes.append(traceIndex)
+        if (len(uniqueIndexes) == 0) and useLastIfNoSelection:
             if len(self.tracePersistentIndexes) != 0:
                 #Find and return the most recently added trace that still has a valid index (i.e. has not been removed).
                 for ind in range(-1, -len(self.tracePersistentIndexes)-1, -1): 
@@ -136,12 +141,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                 return None #If the for loop failed to find a valid index, return None. This happens if all traces have been deleted.
             else:
                 return None #If there were no traces added, return None. This happens if no trace was ever added.
-        else:
-            uniqueIndexes = []
-            for traceIndex in selectedIndexes:
-                if traceIndex.column() == 0:
-                    uniqueIndexes.append(traceIndex)
-            return uniqueIndexes
+        return uniqueIndexes
 
     def addTrace(self, trace, pen, parentTrace=None):
         """Add a trace to the model, plot it, and resize the view appropriately."""
@@ -279,9 +279,9 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Execute when the UI is closed. Save the settings to the config file."""
         self.config[self.configname+".settings"] = self.settings
         
-    def selectedPlottedTraces(self, defaultToLastLine=False):
+    def selectedPlottedTraces(self, defaultToLastLine=False, allowUnplotted=True):
         """Return a list of the selected traces."""
-        selectedIndexes = self.uniqueSelectedIndexes()
+        selectedIndexes = self.uniqueSelectedIndexes(allowUnplotted=allowUnplotted)
         traceList = []
         if selectedIndexes:
             for traceIndex in selectedIndexes:

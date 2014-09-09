@@ -188,6 +188,11 @@ class SequenceDict(dict, MutableMapping):
         for key, value in self.iteritems():
             new[key] = copy.deepcopy(value, mode)
         return new
+    
+    def __setdefault__(self, key, value):
+        if key not in self:
+            self._keys.append(key)
+            dict.__setitem__(self, key, value)
         
     
 if __name__ == '__main__':
