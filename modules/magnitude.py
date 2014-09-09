@@ -1074,19 +1074,37 @@ class Magnitude():
 #         return cmp(self.val, m.val)
     
     def __eq__(self, m):
+        if not is_magnitude(m):
+            if self.dimensionless():
+                return self.val == m
+            else:
+                raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
         return self.unit==m.unit and self.val==m.val
     
     def __ne__(self, m):
-        return self.unit!=m.unit or self.val!=m.val
+        return not (self==m)
     
     def __lt__(self, m):
+        if not is_magnitude(m):
+            if self.dimensionless():
+                return self.val < m
+            else:
+                raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
         if m.unit != self.unit:
             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
                                  (m.unit, self.unit))
         return self.val < m.val
     
     def __gt__(self, m):
-        return m<self
+        if not is_magnitude(m):
+            if self.dimensionless():
+                return self.val > m
+            else:
+                raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
+        if m.unit != self.unit:
+            raise MagnitudeError("Incompatible units in comparison: %s and %s" %
+                                 (m.unit, self.unit))
+        return self.val > m.val
     
     def __le__(self, m):
         return not m<self
