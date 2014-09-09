@@ -26,6 +26,7 @@ from fit.FitUi import FitUi
 from multiprocessing import Process
 from mylogging.ServerLogging import configureServerLogging
 from InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
+from InstrumentLoggingDisplay import InstrumentLoggingDisplay
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingWindow.ui')
 
@@ -79,6 +80,15 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
         self.instrumentLoggingHandler.paramTreeChanged.connect( self.ExternalParametersSelectionUi.refreshParamTree)
+    
+        self.instrumentLoggingDisplay = InstrumentLoggingDisplay()
+        self.instrumentLoggingDisplay.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.instrumentLoggingDisplay )
+        self.instrumentLoggingDisplayDock = QtGui.QDockWidget("Params Reading")
+        self.instrumentLoggingDisplayDock.setObjectName("_ExternalParameterDisplayDock")
+        self.instrumentLoggingDisplayDock.setWidget(self.instrumentLoggingDisplay)
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.instrumentLoggingDisplayDock)
+        self.ExternalParametersSelectionUi.selectionChanged.connect( self.instrumentLoggingDisplay.setupParameters )
+        self.instrumentLoggingHandler.newData.connect( self.instrumentLoggingDisplay.update )
     
         self.instrumentLoggingQueryUi = InstrumentLoggerQueryUi(self.config, self.traceui, self.plotDict )
         self.instrumentLoggingQueryUi.setupUi( self.instrumentLoggingQueryUi )
