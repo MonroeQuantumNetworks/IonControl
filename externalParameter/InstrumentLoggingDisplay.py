@@ -33,7 +33,7 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
         # drop everything that is not in the enabled parameter keys
         for key in self.data.keys():
             if key not in enabledObjects:
-                self.data.pop()
+                self.data.pop(key)
         for key in enabledObjects.keys():
             self.data.__setdefault__( key, LoggingData() )
         self.endResetModel()
