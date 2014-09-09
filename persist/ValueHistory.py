@@ -10,6 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.exc import InvalidRequestError
 from modules.magnitude import is_magnitude
+from sqlalchemy.exc import OperationalError
 import logging
 
 Base = declarative_base()
@@ -50,6 +51,7 @@ class ValueHistoryStore:
         self.database_conn_str = database_conn_str
         self.engine = create_engine(self.database_conn_str, echo=False)
         self.sourceDict = dict()
+        self.databaseAvailable = False
         
     def getSource(self, space, source):
         if space is None or source is None:
@@ -81,44 +83,50 @@ class ValueHistoryStore:
         self.__enter__()
         
     def close_session(self):
-        self.session.commit()        
+        if self.databaseAvailable:
+            self.session.commit()        
 
     def __enter__(self):
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
-        self.session = self.Session()
-        self.refreshSourceDict()
+        try:
+            Base.metadata.create_all(self.engine)
+            self.Session = sessionmaker(bind=self.engine)
+            self.session = self.Session()
+            self.refreshSourceDict()
+            self.databaseAvailable = True
+        except OperationalError:
+            self.databaseAvailable = False
         return self
         
     def __exit__(self, exittype, value, tb):
         self.session.commit()
         
     def add(self, space, source, value, unit, upd_date, bottom=None, top=None):
-        try:
-            if is_magnitude(value):
-                value, unit = value.toval(returnUnit=True)
-                if is_magnitude(bottom):
-                    bottom = bottom.toval(unit)
-                if is_magnitude(top):
-                    top = top.toval(unit)           
-            if space is not None and source is not None:
-                paramObj = self.getSource(space, source)
+        if self.databaseAvailable:
+            try:
                 if is_magnitude(value):
                     value, unit = value.toval(returnUnit=True)
-                elem = ValueHistoryEntry(paramObj, value, unit, upd_date)
-                self.session.add(elem)
-                elem.value = value
-                if bottom is not None:
-                    elem.bottom = bottom
-                if top is not None:
-                    elem.top = top
-                self.commit()
-        except InvalidRequestError as e:
-            self.session.rollback()
-            self.session = self.Session()
-            self.refreshSourceDict()
-            logging.getLogger(__name__).error( e.message )
-            
+                    if is_magnitude(bottom):
+                        bottom = bottom.toval(unit)
+                    if is_magnitude(top):
+                        top = top.toval(unit)           
+                if space is not None and source is not None:
+                    paramObj = self.getSource(space, source)
+                    if is_magnitude(value):
+                        value, unit = value.toval(returnUnit=True)
+                    elem = ValueHistoryEntry(paramObj, value, unit, upd_date)
+                    self.session.add(elem)
+                    elem.value = value
+                    if bottom is not None:
+                        elem.bottom = bottom
+                    if top is not None:
+                        elem.top = top
+                    self.commit()
+            except InvalidRequestError as e:
+                self.session.rollback()
+                self.session = self.Session()
+                self.refreshSourceDict()
+                logging.getLogger(__name__).error( e.message )
+                
         
     def get(self, space, source ):
         return self.session.query(ValueHistoryEntry).filter(ValueHistoryEntry.source==self.getSource(space, source) )
