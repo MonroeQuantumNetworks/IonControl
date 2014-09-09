@@ -333,10 +333,11 @@ class PlottedTrace(object):
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
         
-    def __del__(self):
-#        logging.getLogger(__name__).debug("Delete PlottedTrace")
-        print "Delete PlottedTrace"
-        
+    def isPlotted(self):
+        return self.curvePen!=0
+    
+#     def __del__(self):
+#         super(PlottedTrace, self)__del__()
         
 if __name__=="__main__":
     from trace.Trace import Trace

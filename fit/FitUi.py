@@ -139,7 +139,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.pushTableView.resizeColumnsToContents()
         
     def onFit(self):
-        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
             sigma = None
             if plot.hasHeightColumn:
                 sigma = plot.height
@@ -161,7 +161,7 @@ class FitUi(fitForm, QtGui.QWidget):
 
                 
     def onPlot(self):
-        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
             fitfunction = copy.deepcopy(self.fitfunction)
             fitfunction.parameters = [value(param) for param in fitfunction.startParameters]
             plot.fitFunction = fitfunction
