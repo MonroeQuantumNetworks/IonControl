@@ -55,9 +55,10 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
                 message = "External Scan Parameter '{0}' is not enabled.".format(self.scan.externalScanParameter)
                 logger.error(message)
                 raise ScanNotAvailableException(message) 
-            self.externalParameter = self.enabledParameters[self.scan.externalScanParameter]
-            self.externalParameter.saveValue(overwrite=False)
-            self.externalParameterIndex = 0
+            if self.scan.scanMode==0:
+                self.externalParameter = self.enabledParameters[self.scan.externalScanParameter]
+                self.externalParameter.saveValue(overwrite=False)
+                self.externalParameterIndex = 0
             self.generator = ScanExperiment.GeneratorList[self.scan.scanMode](self.scan)
                     
             self.pulserHardware.ppFlushData()
@@ -75,7 +76,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def startBottomHalf(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state == self.OpStates.starting:
-            if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
+            if self.scan.scanMode!=0 or self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
                 """We are done adjusting"""
                 self.pulserHardware.ppStart()
                 self.currentIndex = 0
@@ -98,11 +99,12 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def stopBottomHalf(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state==self.OpStates.stopping:
-            if not self.externalParameter.restoreValue():
+            if self.scan.scanMode==0 and not self.externalParameter.restoreValue():
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
                 self.progressUi.setIdle()
                 logger.info( "Status -> Idle" )
+             
 
     def onData(self, data, queuesize ):
         """ Called by worker with new data
@@ -114,7 +116,9 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
             self.onPause()
         else:
             logger.info( "NewExternalScan onData {0}".format( data.scanvalue ) )
-            if not self.externalParameter.useExternalValue():
+            if self.scan.scanMode!=0:
+                x = self.currentIndex
+            elif not self.externalParameter.useExternalValue():
                 x = self.generator.xValue(self.externalParameterIndex)
                 self.dataMiddlePart(data, queuesize, x)
             else:
@@ -150,7 +154,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def dataBottomHalf(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state == self.OpStates.running:
-            if self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
+            if self.scan.scanMode!=0 or self.externalParameter.setValue( self.scan.list[self.externalParameterIndex]):
                 """We are done adjusting"""
                 self.pulserHardware.ppStart()
                 logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )

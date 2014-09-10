@@ -67,8 +67,8 @@ class EvaluationDefinition:
  
 
 class Scan:
-    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan','CenterOut')
-    ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized')
+    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan')
+    ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized','CenterOut')
     ScanRepeat = enum('SingleScan','RepeatedScan')
     def __init__(self):
         # Scan
