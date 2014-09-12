@@ -33,6 +33,10 @@ class GlobalVariableUi(Form, Base ):
     @property
     def variables(self):
         return self._variables_.variabledict
+    
+    def keys(self):
+        return self._variables_.variabledict.keys()
+        
         
     @property
     def valueChanged(self):

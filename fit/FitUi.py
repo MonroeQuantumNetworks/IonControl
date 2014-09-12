@@ -13,6 +13,7 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.SequenceDict import SequenceDict
 from PushVariableTableModel import PushVariableTableModel
 from modules.Utility import unique
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -69,7 +70,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.configname = "FitUi.{0}.".format(parentname)
         self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
         self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
-        self.globalVariablesUi = None
+        self.pushDestinations = dict()
             
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
@@ -92,6 +93,9 @@ class FitUi(fitForm, QtGui.QWidget):
         self.pushTableModel = PushVariableTableModel(self.config)
         self.pushTableView.setModel( self.pushTableModel )
         self.pushItemDelegate = MagnitudeSpinBoxDelegate()
+        self.pushComboDelegate = ComboBoxDelegate()
+        self.pushTableView.setItemDelegateForColumn(1,self.pushComboDelegate)
+        self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
         self.pushTableView.setItemDelegateForColumn(4,self.pushItemDelegate)
         self.pushTableView.setItemDelegateForColumn(5,self.pushItemDelegate)
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
@@ -152,12 +156,14 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitResultsTableModel.fitDataChanged()
             self.pushTableModel.fitDataChanged()
             
-    def setGlobalVariablesUi(self, globalVariablesUi ):
-        self.globalVariablesUi = globalVariablesUi
+    def addPushDestination(self, name, destination ):
+        self.pushDestinations[name] = destination
+        self.pushTableModel.updateDestinations(self.pushDestinations )
 
     def onPush(self):
-        if self.globalVariablesUi is not None:
-            self.globalVariablesUi.update( self.fitfunction.pushVariableValues() )
+        for destination, variable, value in self.fitfunction.pushVariableValues():
+            if destination in self.pushDestinations:
+                self.pushDestinations[destination].update( [(variable,value)] )
 
                 
     def onPlot(self):

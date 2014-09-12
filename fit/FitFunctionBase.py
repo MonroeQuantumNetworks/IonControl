@@ -29,23 +29,36 @@ class PushVariable(object):
     expression = Expression()
     def __init__(self):
         self.push = False
-        self.globalName = None
+        self.destinationName = None
+        self.variableName = None
         self.definition = ""
         self.value = None
         self.minimum = ""
         self.maximum = ""
         
+        
+    def __setstate__(self, s):
+        self.__dict__ = s
+        self.__dict__.setdefault( 'destinationName', None )
+        self.__dict__.setdefault( 'variableName', None )
+        
     def evaluate(self, variables=dict(), useFloat=False):
-        self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
+        if self.definition:
+            self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
         
     def pushRecord(self, variables=None):
         if variables is not None:
             self.evaluate(variables)
-        if (self.push and self.globalName is not None and self.globalName != 'None'and self.value is not None and 
+        if (self.push and self.destinationName is not None and self.destinationName != 'None' and 
+            self.variableName is not None and self.variableName != 'None' and self.value is not None and 
             (not self.minimum or self.value >= self.minimum) and 
             (not self.maximum or self.value <= self.maximum)):
-            return [(self.globalName, self.value)]
+            return [(self.destinationName, self.variableName, self.value)]
         return []
+    
+    @property
+    def key(self):
+        return (self.destinationName, self.variableName)
 
 
 class FitFunctionBase(object):

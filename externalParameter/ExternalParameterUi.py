@@ -32,7 +32,6 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
                              (QtCore.Qt.ToolTipRole,2): lambda row: str(self.toolTips[row]),
                      }
 
-        
     def setParameterList(self, parameterList):
         self.beginResetModel()
         self.parameterList = parameterList.values()
@@ -86,6 +85,9 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         if not self.parameterList[index.row()].setValue( self.targetValues[index.row()] ):
             QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,index) )
 
+    def update(self, iterable):
+        for name, value in iterable:
+            self.setValue( self.createIndex( self.names.index(name),1), value )
 
 class ControlUi(UiForm,UiBase):
     
@@ -116,6 +118,12 @@ class ControlUi(UiForm,UiBase):
         self.tableModel.setParameterList( self.enabledParameters )
         self.tableView.resizeColumnsToContents()
         self.tableView.horizontalHeader().setStretchLastSection(True)        
+        
+    def keys(self):
+        return self.tableModel.names
+    
+    def update(self, iterable):
+        self.tableModel.update( iterable )
         
 
     

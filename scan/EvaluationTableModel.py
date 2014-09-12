@@ -52,7 +52,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return [""]+self.analysisNames
     
     def choice(self, index):
-        return self.choiceLookup[index]() 
+        return self.choiceLookup[index.column()]() 
             
     def setEvalList(self, evalList, evalAlgorithmList):
         self.beginResetModel()

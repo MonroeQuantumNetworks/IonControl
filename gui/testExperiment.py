@@ -67,6 +67,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
 #end added
         self.tabifyDockWidget( self.dockWidgetFitUi, self.scanControlUi )
 
+    def addPushDestination(self, name, destination):
+        self.fitWidget.addPushDestination(name, destination)
+        
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi
         self.pulseProgramUi.addExperiment('Sequence')
@@ -174,4 +177,4 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi
-        self.fitWidget.setGlobalVariablesUi( globalVariablesUi )
+        self.fitWidget.addPushDestination('Global', globalVariablesUi )

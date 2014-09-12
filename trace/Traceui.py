@@ -126,9 +126,9 @@ class Traceui(TraceuiForm, TraceuiBase):
         If useLastifNoSelection is true, then an index to the last trace added is used if there is
         no selection.
         """
+        uniqueIndexes = []
         selectedIndexes = self.traceTreeView.selectedIndexes()
         if (len(selectedIndexes) != 0):
-            uniqueIndexes = []
             for traceIndex in selectedIndexes:
                 if traceIndex.column() == 0 and (allowUnplotted or self.model.getTrace(traceIndex).isPlotted()):
                     uniqueIndexes.append(traceIndex)

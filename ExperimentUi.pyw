@@ -253,6 +253,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr(widget,'onContinue'):
                 self.dedicatedCountersWindow.autoLoad.ionReappeared.connect( widget.onContinue )
                 
+        # add PushDestinations
+        for widget in self.tabDict.values():
+            if hasattr(widget, 'addPushDestination'):
+                widget.addPushDestination( 'External', self.ExternalParametersUi )
+
                 
     def startLoggingProcess(self):
         if self.instrumentLogger is None or not self.instrumentLogger.is_alive():
