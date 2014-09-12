@@ -17,7 +17,9 @@ except:
     
 try:
     from MultiMeterReader import MultiMeterReader
+    from Keithley2010Reader import Keithley2010Reader
     LoggingInstruments['Multi Meter'] = wrapInstrument( "MultiMeterInstrumentReader", MultiMeterReader )
+    LoggingInstruments['Keithley 2010'] = wrapInstrument( "Keithley2010ReaderInstrumentReader", Keithley2010Reader )
 except:
     logging.getLogger(__name__).info("Multi Meter reader not available")
     
@@ -25,7 +27,7 @@ try:
     from PhotodiodeReader import PhotoDiodeReader
     LoggingInstruments['Photodiode'] = wrapInstrument( "PhotodiodeInstrumentReader", PhotoDiodeReader )
 except:
-    logging.getLogger(__name__).info("Multi Meter reader not available")
+    logging.getLogger(__name__).info("Photodiode reader not available")
 
 try:
     from OmegaCN7500Reader import OmegaCN7500Reader
