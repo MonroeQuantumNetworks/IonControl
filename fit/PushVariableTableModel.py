@@ -117,7 +117,8 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         return self.setDataLookup[(role,index.column())](index.row(),value)
     
     def setValue(self, index, value):
-        self.fitfunction.startParameters[index.row()] = value
+        #self.fitfunction.startParameters[index.row()] = value
+        self.setData( index, value, QtCore.Qt.EditRole)
 
     def flags(self, index ):
         if index.column()==0:
