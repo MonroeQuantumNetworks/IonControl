@@ -17,6 +17,7 @@ from externalParameter.decimation import StaticDecimation
 import time
 from modules.magnitude import is_magnitude
 from functools import partial
+from collections import defaultdict
 
 api2 = sip.getapi("QVariant")==2
 
@@ -39,7 +40,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.EditRole,0): self.setDataName,
                                (QtCore.Qt.EditRole,1): self.setValue,
                                }
-        self.decimation = StaticDecimation(magnitude.mg(30,'s'))
+        self.decimation = defaultdict( lambda: StaticDecimation(magnitude.mg(30,'s')) )
         self.persistence = DBPersist()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -61,7 +62,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
             self.valueChanged.emit(name)
-            self.decimation.decimate( time.time(), result, partial(self.persistCallback, name) )
+            self.decimation[name].decimate( time.time(), result, partial(self.persistCallback, name) )
             return True    
         except Exception:
             logger.exception( "No match for {0}".format( str(value.toString()) ) )
