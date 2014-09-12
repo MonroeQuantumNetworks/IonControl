@@ -386,7 +386,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def printTargets(self):
         return self.plotDict.keys()
 
-
+    def addPushDestination(self, name, destination):
+        self.fitWidget.addPushDestination(name, destination)
+        
     def setupAsDockWidget(self, widget, name, area=QtCore.Qt.RightDockWidgetArea, stackAbove=None, stackBelow=None ):
         dock = QtGui.QDockWidget(name)
         dock.setObjectName(name)
