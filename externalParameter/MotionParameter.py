@@ -26,11 +26,13 @@ class ConexLinear(ExternalParameterBase):
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         self.value = self._getValue()
+        self.lastValue = None
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('limit' , magnitude.mg(10,'mm'))       # if True go to the target value in one jump
-            
+        self.settings.__dict__.setdefault('belowMargin' , magnitude.mg(0,'mm'))       # if True go to the target value in one jump
+           
     def _setValue(self, v):
         if v>self.settings.limit:
             v = self.settings.limit
@@ -51,6 +53,7 @@ class ConexLinear(ExternalParameterBase):
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'limit', 'type': 'magnitude', 'value': self.settings.limit})
+        superior.append({'name': 'belowMargin','type': 'magnitude', 'value': self.settings.belowMargin, 'tip': 'if not zero: if coming from above always go that far below and then up'})
         return superior
     
     def close(self):
@@ -62,7 +65,13 @@ class ConexLinear(ExternalParameterBase):
         if self.instrument.motionRunning():
             return False
         if value != self.value:
-            self._setValue( value )
+            if self.lastValue is None or value < self.lastValue:
+                self._setValue( value-self.settings.belowMargin )
+                self.lastValue = value-self.settings.belowMargin
+                return False
+            else:
+                self._setValue( value )
+                self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
             self.persist(self.value)
@@ -86,10 +95,12 @@ class ConexRotation(ExternalParameterBase):
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         self.value = self._getValue()
+        self.lastValue = None
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('limit' , magnitude.mg(360,''))       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('belowMargin' , magnitude.mg(0,''))       # if True go to the target value in one jump
             
     def _setValue(self, v):
         if v>self.settings.limit:
@@ -111,6 +122,7 @@ class ConexRotation(ExternalParameterBase):
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'limit', 'type': 'magnitude', 'value': self.settings.limit})
+        superior.append({'name': 'belowMargin','type': 'magnitude', 'value': self.settings.belowMargin, 'tip': 'if not zero: if coming from above always go that far below and then up'})
         return superior
     
     def close(self):
@@ -122,7 +134,13 @@ class ConexRotation(ExternalParameterBase):
         if self.instrument.motionRunning():
             return False
         if value != self.value:
-            self._setValue( value )
+            if self.lastValue is None or value < self.lastValue:
+                self._setValue( value-self.settings.belowMargin )
+                self.lastValue = value-self.settings.belowMargin
+                return False
+            else:
+                self._setValue( value )
+                self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
             self.persist(self.value)
@@ -162,6 +180,7 @@ class PowerWaveplate(ExternalParameterBase):
         self.settings.__dict__.setdefault('power_limit' , magnitude.mg(1,'W'))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('min_angle_limit' , magnitude.mg(0))
         self.settings.__dict__.setdefault('max_angle_limit' , magnitude.mg(0))
+        self.settings.__dict__.setdefault('belowMargin' , magnitude.mg(0,'mW'))       # if True go to the target value in one jump
         
             
     def power(self, angle):
@@ -205,15 +224,25 @@ class PowerWaveplate(ExternalParameterBase):
         superior.append({'name': 'max_angle_limit', 'type': 'magnitude', 'value': self.settings.max_angle_limit, 'readonly': True})
         superior.append({'name': 'Home search', 'type': 'action', 'field': 'homeSearch' })
         superior.append({'name': 'Reset device', 'type': 'action', 'field': 'resetDevice' })
+        superior.append({'name': 'belowMargin','type': 'magnitude', 'value': self.settings.belowMargin, 'tip': 'if not zero: if coming from above always go that far below and then up'})
         return superior
     
     def close(self):
         del self.instrument
 
     def setValue(self,value):
-        self._setValue( value )
         if self.displayValueCallback:
             self.displayValueCallback( self._getValue() )
+        if self.instrument.motionRunning():
+            return False
+        if value != self.value:
+            if self.lastValue is None or value < self.lastValue:
+                self._setValue( value-self.settings.belowMargin )
+                self.lastValue = value-self.settings.belowMargin
+                return False
+            else:
+                self._setValue( value )
+                self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
             self.persist(self.value)
