@@ -5,7 +5,12 @@ import PyQt4.uic
 
 from pulser import Ad9912
 from modules.magnitude import mg
-
+from externalParameter.persistence import DBPersist
+from externalParameter.decimation import StaticDecimation
+from modules.magnitude import is_magnitude, mg
+from functools import partial
+import time
+from collections import defaultdict
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
@@ -14,6 +19,7 @@ def extendTo(array, length, defaulttype):
         array.append(defaulttype())
 
 class DDSUi(DDSForm, DDSBase):
+    persistSpace = 'DDS'
     def __init__(self,config,pulser,parent=None):
         DDSBase.__init__(self,parent)
         DDSForm.__init__(self)
@@ -29,6 +35,8 @@ class DDSUi(DDSForm, DDSBase):
         extendTo(self.names, self.numChannels, lambda: '' )
         self.ad9912 = Ad9912.Ad9912(pulser)
         self.autoApply = self.config.get('DDSUi.autoApply',False)
+        self.decimation = defaultdict( lambda: StaticDecimation(mg(30,'s')) )
+        self.persistence = DBPersist()
         
     def setupUi(self,parent):
         DDSForm.setupUi(self,parent)
@@ -65,16 +73,25 @@ class DDSUi(DDSForm, DDSBase):
         self.ad9912.setFrequency(channel, box.value() )
         self.frequency[channel] = box.value()
         if self.autoApply: self.onApply()
+        self.decimation[(0,channel)].decimate( time.time(), value, partial(self.persistCallback, "Frequency:{0}".format(self.names[channel] if self.names[channel] else channel)) )
         
     def onPhase(self, box, channel, value):
         self.ad9912.setPhase(channel, box.value())
         self.phase[channel] = box.value()
         if self.autoApply: self.onApply()
-    
+        self.decimation[(1,channel)].decimate( time.time(), value, partial(self.persistCallback, "Phase:{0}".format(self.names[channel] if self.names[channel] else channel)) )
+
     def onAmplitude(self, box, channel):
         self.ad9912.setAmplitude(channel, box.value())
         self.amplitude[channel] = box.value()
         if self.autoApply: self.onApply()
+        self.decimation[(2,channel)].decimate( time.time(), box.value(), partial(self.persistCallback, "Amplitude:{0}".format(self.names[channel] if self.names[channel] else channel)) )
+ 
+    def persistCallback(self, source, data):
+        time, value, minval, maxval = data
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
     
     def onName(self, box, channel, text):
         self.names[channel] = str(text)
