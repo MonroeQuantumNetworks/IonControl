@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>263</width>
-    <height>532</height>
+    <height>549</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -73,19 +73,6 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="2">
-      <widget class="QSpinBox" name="amplitudeBox6">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
-     </item>
      <item row="10" column="1">
       <widget class="MagnitudeSpinBox" name="phaseBox4">
        <property name="sizePolicy">
@@ -120,19 +107,6 @@
        </item>
       </layout>
      </item>
-     <item row="10" column="2">
-      <widget class="QSpinBox" name="amplitudeBox4">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
-     </item>
      <item row="10" column="0">
       <widget class="MagnitudeSpinBox" name="frequencyBox4">
        <property name="sizePolicy">
@@ -166,19 +140,6 @@
         </widget>
        </item>
       </layout>
-     </item>
-     <item row="8" column="2">
-      <widget class="QSpinBox" name="amplitudeBox3">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
      </item>
      <item row="6" column="0">
       <widget class="MagnitudeSpinBox" name="frequencyBox2">
@@ -260,19 +221,6 @@
         </widget>
        </item>
       </layout>
-     </item>
-     <item row="6" column="2">
-      <widget class="QSpinBox" name="amplitudeBox2">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
      </item>
      <item row="8" column="1">
       <widget class="MagnitudeSpinBox" name="phaseBox3">
@@ -361,19 +309,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QSpinBox" name="amplitudeBox0">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="0" colspan="3">
       <layout class="QHBoxLayout" name="horizontalLayout_6">
        <item>
@@ -421,19 +356,6 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
-      <widget class="QSpinBox" name="amplitudeBox1">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
-     </item>
      <item row="12" column="0">
       <widget class="MagnitudeSpinBox" name="frequencyBox5">
        <property name="sizePolicy">
@@ -457,32 +379,6 @@
        </property>
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::NoButtons</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="2">
-      <widget class="QSpinBox" name="amplitudeBox5">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
-       </property>
-      </widget>
-     </item>
-     <item row="18" column="2">
-      <widget class="QSpinBox" name="amplitudeBox7">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximum">
-        <number>1023</number>
        </property>
       </widget>
      </item>
@@ -532,6 +428,110 @@
         </widget>
        </item>
       </layout>
+     </item>
+     <item row="2" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox0">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="18" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox7">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox6">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox5">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox4">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox3">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox2">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="2">
+      <widget class="MagnitudeSpinBox" name="amplitudeBox1">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
