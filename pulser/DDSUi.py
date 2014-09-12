@@ -89,6 +89,7 @@ class DDSUi(DDSForm, DDSBase):
  
     def persistCallback(self, source, data):
         time, value, minval, maxval = data
+        unit = None
         if is_magnitude(value):
             value, unit = value.toval(returnUnit=True)
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
