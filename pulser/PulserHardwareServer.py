@@ -200,6 +200,7 @@ class PulserHardwareServer(Process):
             0x2nxxxxxx timestamp result channel n
             0x3nxxxxxx timestamp gate start channel n
             0x4xxxxxxx other return
+            I think I just pre-padded these with 32'h0 - RN 2014-7-30
         """
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
@@ -213,7 +214,7 @@ class PulserHardwareServer(Process):
             for s in sliceview(self.logicAnalyzerBuffer,8):
                 (code, ) = struct.unpack('Q',s)
                 self.logicAnalyzerData.wordcount += 1
-                time = (code&0xffffff) + self.logicAnalyzerData.countOffset
+                time = (code & 0xffffff) + self.logicAnalyzerData.countOffset
                 pattern = (code >> 24) & 0xffffffff
                 header = (code >> 56 )
                 if header==2:  # overrun marker
@@ -237,7 +238,7 @@ class PulserHardwareServer(Process):
         data, self.data.overrun = self.ppReadData(4)
         if data:
             for s in sliceview(data,4):
-                (token,) = struct.unpack('I',s)
+                (token,) = struct.unpack('L',s)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -251,33 +252,33 @@ class PulserHardwareServer(Process):
                         self.data = Data()
                         self.data.scanvalue = token
                     self.state = self.analyzingState.normal
-                elif token & 0xf0000000 == 0xe0000000: # dedicated results
+                elif token & 0x00000000f0000000 == 0x00000000e0000000: # dedicated results
                     channel = (token >>24) & 0xf
                     if self.dedicatedData.data[channel] is not None:
                         self.dataQueue.put( self.dedicatedData )
                         self.dedicatedData = self.dedicatedDataClass()
                     self.dedicatedData.data[channel] = token & 0xffffff
-                elif token & 0xff000000 == 0xff000000:
-                    if token == 0xffffffff:    # end of run
+                elif token & 0x00000000ff000000 == 0x00000000ff000000:
+                    if token == 0x00000000ffffffff:    # end of run
                         self.data.final = True
                         self.data.exitcode = 0x0000
                         self.dataQueue.put( self.data )
                         logger.info( "End of Run marker received" )
                         self.data = Data()
-                    elif token & 0xffff0000 == 0xfffe0000:  # exitparameter
+                    elif token & 0x00000000ffff0000 == 0x00000000fffe0000:  # exitparameter
                         self.data.final = True
-                        self.data.exitcode = token & 0x0000ffff
+                        self.data.exitcode = token & 0x000000000000ffff
                         logger.info( "Exitcode {0} received".format(self.data.exitcode) )
                         self.dataQueue.put( self.data )
                         self.data = Data()
-                    elif token == 0xff000000:
+                    elif token == 0x00000000ff000000:
                         self.timestampOffset += 1<<28
-                    elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
+                    elif token & 0x00000000ffff0000 == 0x00000000ffff0000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
-                    key = token >> 28
-                    channel = (token >>24) & 0xf
-                    value = token & 0xffffff
+                    key = token >> 28 #I think this is still correct, although I have prepadded 32 bits. -RN 2014-7-30
+                    channel = (token >>24) & 0xf #And this.
+                    value = token & 0x00000000ffffff
                     #print hex(token)
                     if key==1:   # count
                         (self.data.count[channel]).append(value)
@@ -475,14 +476,14 @@ class PulserHardwareServer(Process):
             else:
                 code = bytearray()
                 for item in data:
-                    code.extend(struct.pack('I',item))
+                    code.extend(struct.pack('L',item))
                 #print "ppWriteData length",len(code)
                 return self.xem.WriteToPipeIn(0x81,code)
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return None
                 
-    def ppReadData(self,minbytes=4):
+    def ppReadData(self,minbytes=8):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available

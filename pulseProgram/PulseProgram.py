@@ -262,8 +262,8 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
-            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg))) ) )
-            self.binarycode += struct.pack('I', int((op<<24) + arg))
+            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(long(op)), hex(long(arg)), hex(long((long(op)<<(64-8)) + long(arg))) ) )
+            self.binarycode += struct.pack('L', long(op<<(64-8)) + long(arg))
         return self.binarycode
         
     def currentVariablesText(self):
@@ -453,7 +453,7 @@ class PulseProgram:
                     channel, data = line[2]
                     if isinstance(data,basestring):
                         data = self.variabledict[data].address
-                    bytedata = ((int(channel) & 0xf) << 16) | (int(data) & 0x0fff)
+                    bytedata = ((int(channel) & 0xf) << (64-16)) | (int(data) & 0x0fff)
             except KeyError:
                 logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)

@@ -26,15 +26,17 @@ class Ad9912:
         return mg(1000,' MHz') * (raw / float(2**48))
 
     def setFrequency(self, channel, frequency, even=False):
-        intFrequency = int(round(2**48 * frequency.ounit('GHz').toval()))
-        intFrequency = intFrequency &0xfffffffffffe if even else intFrequency
-        self.sendCommand(channel, 0, intFrequency >> 16 )
-        self.sendCommand(channel, 4, intFrequency & 0xffff )
+        intFrequency = int(round(2**48 * frequency.ounit('GHz').toval())) & 0xffffffffffff
+        #intFrequency = intFrequency &0xfffffffffffe if even else intFrequency
+        self.sendCommand(channel, 0, intFrequency)
+        #self.sendCommand(channel, 0, intFrequency >> 16 )
+        #self.sendCommand(channel, 4, intFrequency & 0xffff ) # Frequency fine
         return intFrequency
     
     def setFrequencyRaw(self, channel, intFrequency):
-        self.sendCommand(channel, 0, intFrequency >> 16 )
-        self.sendCommand(channel, 4, intFrequency & 0xffff )
+        self.sendCommand(channel, 0, intFrequency)
+        #self.sendCommand(channel, 0, intFrequency >> 16 )
+        #self.sendCommand(channel, 4, intFrequency & 0xffff ) # Frequency fine
         return intFrequency        
     
     def setPhase(self, channel, phase):
@@ -48,9 +50,11 @@ class Ad9912:
     def sendCommand(self, channel, cmd, data):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
+            check( self.pulser.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" ) 
             check( self.pulser.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
-            check( self.pulser.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" )
+            check( self.pulser.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" ) 
+            check( self.pulser.SetWireInValue(0x0e, (data >> 32) &0xffff ), "Ad9912" ) #now sending 64 bits
+            check( self.pulser.SetWireInValue(0x0f, (data >> 48) &0xffff ), "Ad9912" ) #now sending 64 bits
             self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
             self.pulser.UpdateWireIns()

@@ -25,13 +25,13 @@ class DDSUi(DDSForm, DDSBase):
         DDSForm.__init__(self)
         self.numChannels = 8
         self.config = config
-        self.frequency = self.config.get('DDSUi.Frequency',[mg(0,'MHz')]*6)
+        self.frequency = self.config.get('DDSUi.Frequency',[mg(0,'MHz')]*8)
         extendTo(self.frequency, self.numChannels, lambda: mg(0,'MHz') )
-        self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*6)
+        self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*8)
         extendTo(self.phase, self.numChannels, lambda: mg(0,'rad') )
-        self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
+        self.amplitude = self.config.get('DDSUi.Amplitude',[0]*8)
         extendTo(self.amplitude, self.numChannels, lambda: 0 )
-        self.names = self.config.get('DDSUi.Names',['']*6)
+        self.names = self.config.get('DDSUi.Names',['']*8)
         extendTo(self.names, self.numChannels, lambda: '' )
         self.ad9912 = Ad9912.Ad9912(pulser)
         self.autoApply = self.config.get('DDSUi.autoApply',False)
