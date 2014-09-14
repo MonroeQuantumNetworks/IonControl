@@ -52,6 +52,8 @@ ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperimen
 
 ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
 
+FifoDepth = 1020
+
 class ScanException(Exception):
     pass
 
@@ -69,7 +71,7 @@ class ParameterScanGenerator:
             data = []
         self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
         self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
-        maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
+        maxWordsToWrite = FifoDepth if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
         self.maxUpdatesToWrite = maxUpdatesToWrite
         if len(self.scan.code)>maxWordsToWrite:
             self.nextIndexToWrite = maxWordsToWrite
@@ -78,7 +80,7 @@ class ParameterScanGenerator:
         return ( self.scan.code, data)
         
     def restartCode(self,currentIndex ):
-        maxWordsToWrite = 2040 if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
+        maxWordsToWrite = FifoDepth if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
         currentWordCount = 2*self.numUpdatedVariables*currentIndex
         if len(self.scan.code)-currentWordCount>maxWordsToWrite:
             self.nextIndexToWrite = maxWordsToWrite+currentWordCount
@@ -182,7 +184,7 @@ class GateSequenceScanGenerator:
         self.scan = scan
         self.nextIndexToWrite = 0
         self.numUpdatedVariables = 1
-        self.maxWordsToWrite = 2040
+        self.maxWordsToWrite = FifoDepth
         
     def prepare(self, pulseProgramUi, maxUpdatesToWrite=None):
         logger = logging.getLogger(__name__)
