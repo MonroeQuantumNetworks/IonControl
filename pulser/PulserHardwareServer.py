@@ -192,15 +192,15 @@ class PulserHardwareServer(Process):
     analyzingState = enum.enum('normal','scanparameter', 'dependentscanparameter')
     def readDataFifo(self):
         """ run is responsible for reading the data back from the FPGA
-            0xffffffff end of experiment marker
-            0xfffexxxx exitcode marker
-            0xff000000 timestamping overflow marker
-            0xffffxxxx scan parameter, followed by scanparameter value
-            0x1nxxxxxx count result from channel n
-            0x2nxxxxxx timestamp result channel n
-            0x3nxxxxxx timestamp gate start channel n
-            0x4xxxxxxx other return
-            I think I just pre-padded these with 32'h0 - RN 2014-7-30
+            0xffffffffffffffff end of experiment marker
+            0xfffexxxxxxxxxxxx exitcode marker
+            0xfffd000000000000 timestamping overflow marker
+            0xfffcxxxxxxxxxxxx scan parameter, followed by scanparameter value
+            0x01nnxxxxxxxxxxxx count result from channel n
+            0x02nnxxxxxxxxxxxx timestamp result channel n
+            0x03nnxxxxxxxxxxxx timestamp gate start channel n
+            0x04nnxxxxxxxxxxxx other return
+            0xeennxxxxxxxxxxxx dedicated result
         """
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
@@ -252,33 +252,33 @@ class PulserHardwareServer(Process):
                         self.data = Data()
                         self.data.scanvalue = token
                     self.state = self.analyzingState.normal
-                elif token & 0x00000000f0000000 == 0x00000000e0000000: # dedicated results
-                    channel = (token >>24) & 0xf
+                elif token & 0xff00000000000000 == 0xee00000000000000: # dedicated results
+                    channel = (token >>48) & 0xff
                     if self.dedicatedData.data[channel] is not None:
                         self.dataQueue.put( self.dedicatedData )
                         self.dedicatedData = self.dedicatedDataClass()
-                    self.dedicatedData.data[channel] = token & 0xffffff
-                elif token & 0x00000000ff000000 == 0x00000000ff000000:
-                    if token == 0x00000000ffffffff:    # end of run
+                    self.dedicatedData.data[channel] = token & 0xffffffffffff
+                elif token & 0xff00000000000000 == 0xff00000000000000:
+                    if token == 0xffffffffffffffff:    # end of run
                         self.data.final = True
                         self.data.exitcode = 0x0000
                         self.dataQueue.put( self.data )
                         logger.info( "End of Run marker received" )
                         self.data = Data()
-                    elif token & 0x00000000ffff0000 == 0x00000000fffe0000:  # exitparameter
+                    elif token & 0xffff000000000000 == 0xfffe000000000000:  # exitparameter
                         self.data.final = True
-                        self.data.exitcode = token & 0x000000000000ffff
+                        self.data.exitcode = token & 0x0000ffffffffffff
                         logger.info( "Exitcode {0} received".format(self.data.exitcode) )
                         self.dataQueue.put( self.data )
                         self.data = Data()
-                    elif token == 0x00000000ff000000:
+                    elif token == 0xfffd000000000000:
                         self.timestampOffset += 1<<28
-                    elif token & 0x00000000ffff0000 == 0x00000000ffff0000:  # new scan parameter
+                    elif token & 0xffff000000000000 == 0xfffc000000000000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
-                    key = token >> 28 #I think this is still correct, although I have prepadded 32 bits. -RN 2014-7-30
-                    channel = (token >>24) & 0xf #And this.
-                    value = token & 0x00000000ffffff
+                    key = token >> 56 
+                    channel = (token >>48) & 0xff 
+                    value = token & 0x0000ffffffffffff
                     #print hex(token)
                     if key==1:   # count
                         (self.data.count[channel]).append(value)
@@ -388,8 +388,12 @@ class PulserHardwareServer(Process):
             
     def getIntegrationTimeBinary(self, value):
         return int( (value/self.timestep).toval() ) & 0xffffffff
-            
-    def ppUpload(self,binarycode,startaddress=0):
+    
+    def ppUpload(self, (code,data), codestartaddress=0, datastartaddress=0 ):
+        self.ppUploadCode(code, codestartaddress)
+        self.ppUploadData(data, datastartaddress)
+        
+    def ppUploadCode(self,binarycode,startaddress=0):
         if self.xem:
             logger = logging.getLogger(__name__)
             logger.info(  "starting PP upload" )
@@ -400,14 +404,14 @@ class PulserHardwareServer(Process):
             num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
             check(num, 'Write to program pipe' )
             logger.info(   "uploaded pp file {0} bytes".format(num) )
-            num, data = self.ppDownload(0,num)
+            num, data = self.ppDownloadCode(0,num)
             logger.info(   "Verified {0} bytes. {1}".format(num,data==binarycode) )
             return True
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return False
             
-    def ppDownload(self,startaddress,length):
+    def ppDownloadCode(self,startaddress,length):
         if self.xem:
             self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)	# start addr at 3900
             self.xem.UpdateWireIns()
@@ -415,6 +419,37 @@ class PulserHardwareServer(Process):
             self.xem.ActivateTriggerIn(0x41, 1)
             data = bytearray('\000'*length)
             num = self.xem.ReadFromPipeOut(0xA0, data)
+            return num, data
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            return 0,None
+        
+    def ppUploadData(self, binarydata,startaddress=0):
+        if self.xem:
+            logger = logging.getLogger(__name__)
+            logger.info(  "starting PP upload" )
+            check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )    # start addr at zero
+            self.xem.UpdateWireIns()
+            check( self.xem.ActivateTriggerIn(0x41, 10), "ppUpload trigger" )
+            logger.info(  "{0} bytes".format(len(binarydata)) )
+            num = self.xem.WriteToPipeIn(0x83, bytearray(binarydata) )
+            check(num, 'Write to program pipe' )
+            logger.info(   "uploaded pp file {0} bytes".format(num) )
+            num, data = self.ppDownloadData(0,num)
+            logger.info(   "Verified {0} bytes. {1}".format(num,data==binarydata) )
+            return True
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            return False
+        
+    def ppDownloadData(self,startaddress,length):
+        if self.xem:
+            self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)    # start addr at 3900
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn(0x41, 0)
+            self.xem.ActivateTriggerIn(0x41, 10)
+            data = bytearray('\000'*length)
+            num = self.xem.ReadFromPipeOut(0xA4, data)
             return num, data
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")

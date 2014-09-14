@@ -128,14 +128,15 @@ class Variable:
     def outValue(self):
         return self.value if self.enabled else self.value * 0
 
-encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
-              'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
+encodings = { 'AD9912_FRQ': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffffffffffff ),
+              'AD9910_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
+              'AD9910_PHASE': (360./2**16, '', Dimensions.dimensionless, 0xffff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
               'TIME' : ( 20, 'ns', Dimensions.time, 0x1 ),
-              None: (1, '', Dimensions.dimensionless, 0xffffffff ),
-              'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
+              None: (1, '', Dimensions.dimensionless, 0xffffffffffffffff ),
+              'None': (1, '', Dimensions.dimensionless, 0xffffffffffffffff ) }
 
 
 def variableValueDict( variabledict ):
@@ -262,9 +263,14 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
+            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(long(op)), hex(long(arg)), hex(long((long(op)<<(32-8)) + long(arg))) ) )
+            self.binarycode += struct.pack('I', long(op<<(32-8)) + long(arg))
+        self.dataBinarycode = bytearray()
+        for wordno, (op, arg) in enumerate(self.dataBytecode):
             logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(long(op)), hex(long(arg)), hex(long((long(op)<<(64-8)) + long(arg))) ) )
             self.binarycode += struct.pack('L', long(op<<(64-8)) + long(arg))
-        return self.binarycode
+            
+        return self.binarycode, self.dataBinaryCode
         
     def currentVariablesText(self):
         lines = list()
@@ -366,8 +372,8 @@ class PulseProgram:
                         logger.error( "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno) )
                         raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno),
                                           sourcename, lineno, text)
-        self.appendVariableCode()
-        return self.code
+        self.dataCode = self.appendVariableCode()
+        return self.code, self.dataCode
 
     def addLabel(self,label,address, sourcename, lineno):
         if label is not None:
@@ -380,10 +386,12 @@ class PulseProgram:
     def appendVariableCode(self):
         """ append all variables to the instruction part of the code
         """
+        self.dataCode = []
         for var in self.variabledict.values():
-            address = len(self.code)
-            self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin, 0 ))
-            var.address = address        
+            address = len(self.dataCode)
+            self.dataCode.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin, 0 ))
+            var.address = address    
+        return self.dataCode    
 
     def addVariable(self, m, lineno, sourcename):
         """ add a variable to the self.variablesdict
@@ -431,6 +439,7 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         logger.debug( "\nCode ---> ByteCode:" )
         self.bytecode = []
+        self.dataBytecode = []
         for line in self.code:
             logger.debug( "{0}: {1}".format(hex(line[0]),  line[1:] )) 
             bytedata = 0
@@ -460,7 +469,36 @@ class PulseProgram:
             self.bytecode.append((byteop, bytedata))
             logger.debug( "---> {0} {1}".format(hex(byteop), hex(bytedata)) )
     
-        return self.bytecode 
+        for line in self.dataCode:
+            logger.debug( "{0}: {1}".format(hex(line[0]),  line[1:] )) 
+            bytedata = 0
+            if line[1] not in OPS:
+                raise ppexception("Unknown command {0}".format(line[1]), line[4], line[5], line[1]) 
+            byteop = OPS[line[1]]
+            try:
+                data = line[2]
+                #attempt to locate commands with constant data
+                if (data == ''):
+                    #found empty data
+                    bytedata = 0
+                elif isinstance(data,(int,long)):
+                    bytedata = data
+                elif isinstance(data,float):
+                    bytedata = int(data)
+                elif isinstance(data,basestring): # now we are dealing with a variable and need its address
+                    bytedata = self.variabledict[line[2]].address if line[2] in self.variabledict else self.labeldict[line[2]]
+                elif isinstance(data,list): # list is what we have for DDS, will have 8bit channel and 16bit address
+                    channel, data = line[2]
+                    if isinstance(data,basestring):
+                        data = self.variabledict[data].address
+                    bytedata = ((int(channel) & 0xf) << (64-16)) | (int(data) & 0x0fff)
+            except KeyError:
+                logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
+                raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
+            self.bytecode.append((byteop, bytedata))
+            logger.debug( "---> {0} {1}".format(hex(byteop), hex(bytedata)) )
+
+        return self.bytecode, self.dataBytecode
 
 
     def convertParameter(self, mag, encoding=None ):
