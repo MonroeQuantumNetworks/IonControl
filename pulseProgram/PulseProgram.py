@@ -264,13 +264,13 @@ class PulseProgram:
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
             logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(long(op)), hex(long(arg)), hex(long((long(op)<<(32-8)) + long(arg))) ) )
-            self.binarycode += struct.pack('I', long(op<<(32-8)) + long(arg))
+            self.binarycode += struct.pack('I', (op<<(32-8)) + arg)
         self.dataBinarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.dataBytecode):
             logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(long(op)), hex(long(arg)), hex(long((long(op)<<(64-8)) + long(arg))) ) )
-            self.binarycode += struct.pack('L', long(op<<(64-8)) + long(arg))
+            self.dataBinarycode += struct.pack('Q', long(op<<(64-8)) + long(arg))
             
-        return self.binarycode, self.dataBinaryCode
+        return self.binarycode, self.dataBinarycode
         
     def currentVariablesText(self):
         lines = list()

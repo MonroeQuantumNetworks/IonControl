@@ -165,18 +165,18 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
-        self.DDSUi9910 = DDSUi9910.DDSUi(self.config, self.pulser )
-        self.DDSUi9910.setupUi(self.DDSUi9910)
-        self.DDS9910DockWidget.setWidget( self.DDSUi9910 )
-        self.pulser.ppActiveChanged.connect( self.DDSUi9910.setDisabled )
+#         self.DDSUi9910 = DDSUi9910.DDSUi(self.config, self.pulser )
+#         self.DDSUi9910.setupUi(self.DDSUi9910)
+#         self.DDS9910DockWidget.setWidget( self.DDSUi9910 )
+#        self.pulser.ppActiveChanged.connect( self.DDSUi9910.setDisabled )
         #self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi9910.onWriteAll )
         
         # tabify the dock widgets
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
-        self.tabifyDockWidget( self.DDSDockWidget, self.DDS9910DockWidget )
-        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
+#        self.tabifyDockWidget( self.DDSDockWidget, self.DDS9910DockWidget )
+#        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
         
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=ExternalParameter)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -354,7 +354,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
-                     self.DDS9910DockWidget, self.loggerDock, self.todoListDock ]:
+                     #self.DDS9910DockWidget, 
+                     self.loggerDock, self.todoListDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         # Print menu
         if self.printMenu is not None:
@@ -425,7 +426,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
-        self.DDSUi9910.saveConfig()
+        #self.DDSUi9910.saveConfig()
         self.shutterUi.saveConfig()
         self.triggerUi.saveConfig()
         self.dedicatedCountersWindow.saveConfig()
