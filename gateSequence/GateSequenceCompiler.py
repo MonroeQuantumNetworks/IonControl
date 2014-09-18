@@ -31,7 +31,7 @@ class GateSequenceCompiler(object):
             gatesetdata = self.gateSequenceCompile( gateset )
             addresses.append(index)
             data.extend(gatesetdata)
-            index += len(gatesetdata)*4
+            index += len(gatesetdata)*8
         return addresses, data
     
     """Compile one gateset into its binary representation"""

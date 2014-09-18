@@ -547,10 +547,10 @@ class PulserHardwareServer(Process):
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
-        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
+        return bytearray(numpy.array(wordlist, dtype=numpy.int64).view(dtype=numpy.int8))
 
     def bytearrayToWordList(self, barray):
-        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int64 ))
             
     def ppWriteRam(self,data,address):
         if self.xem:
