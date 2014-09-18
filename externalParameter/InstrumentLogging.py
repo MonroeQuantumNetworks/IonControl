@@ -18,8 +18,10 @@ except:
 try:
     from MultiMeterReader import MultiMeterReader
     from Keithley2010Reader import Keithley2010Reader
+    from ILX5900Reader import ILX5900Reader
     LoggingInstruments['Multi Meter'] = wrapInstrument( "MultiMeterInstrumentReader", MultiMeterReader )
     LoggingInstruments['Keithley 2010'] = wrapInstrument( "Keithley2010ReaderInstrumentReader", Keithley2010Reader )
+    LoggingInstruments['ILX-5900'] = wrapInstrument( "ILX5900InstrumentReader", ILX5900Reader )
 except:
     logging.getLogger(__name__).info("Multi Meter reader not available")
     

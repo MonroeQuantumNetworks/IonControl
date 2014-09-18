@@ -29,7 +29,8 @@ class InstrumentLoggingReader(QtCore.QThread):
         while not self.exiting:
             try:
                 try:
-                    command, arguments  = self.commandQueue.get(block=False)
+                    timeout = self.reader.waitTime if hasattr(self.reader, 'waitTime') else 0.1
+                    command, arguments  = self.commandQueue.get(timeout=timeout)
                     logging.getLogger(__name__).debug("{0} {1}".format(command,arguments))
                     self.responseQueue.put( getattr( self, command)( *arguments ) )
                 except Queue.Empty:
