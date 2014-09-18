@@ -58,11 +58,12 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
         return None #QtCore.QVariant()
  
     def update(self, key, value):
-        self.data[key].update(value)
-        index = self.data.index(key)
-        leftInd = self.createIndex(index, 1)
-        rightInd = self.createIndex(index, 3)
-        self.dataChanged.emit(leftInd, rightInd) 
+        if key in self.data:
+            self.data[key].update(value)
+            index = self.data.index(key)
+            leftInd = self.createIndex(index, 1)
+            rightInd = self.createIndex(index, 3)
+            self.dataChanged.emit(leftInd, rightInd) 
 
 class InstrumentLoggingDisplay(UiForm,UiBase):   
     def __init__(self, parent=None):
