@@ -235,10 +235,11 @@ class PulserHardwareServer(Process):
             self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
 
                    
-        data, self.data.overrun = self.ppReadData(4)
+        data, self.data.overrun = self.ppReadData(8)
         if data:
-            for s in sliceview(data,4):
-                (token,) = struct.unpack('L',s)
+            for s in sliceview(data,8):
+                (token,) = struct.unpack('Q',s)
+ #               print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -522,7 +523,7 @@ class PulserHardwareServer(Process):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-            byteswaiting = (wirevalue & 0xffe)*2
+            byteswaiting = (wirevalue & 0x1ffe)*2
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa2, data)
