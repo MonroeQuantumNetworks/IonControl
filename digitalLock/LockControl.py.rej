@@ -1,0 +1,11 @@
+diff a/digitalLock/LockControl.py b/digitalLock/LockControl.py	(rejected hunks)
+@@ -154,7 +154,8 @@
+         self.calculateOffset()
+         
+     def calculateOffset(self):
+-        offsetFrequency = abs( self.lockSettings.resonanceFrequency - abs( self.lockSettings.harmonic ) * self.lockSettings.referenceFrequency + 
++        offsetFrequency = abs( self.lockSettings.resonanceFrequency - abs( self.lockSettings.harmonic ) / self.lockSettings.errorsigHarmonic * 
++                               (self.lockSettings.referenceFrequency + self.lockSettings.errorsigFrequencyShift )  + 
+                                (-1 if self.lockSettings.harmonic<0 else 1) * self.lockSettings.outputFrequency )
+         self.magOffsetFreq.setValue(offsetFrequency)
+ 

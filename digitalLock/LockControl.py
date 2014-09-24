@@ -29,7 +29,7 @@ class LockSettings(object):
         self.offset = mg(0,'V')
         self.pCoefficient = mg(0)
         self.iCoefficient = mg(0)
-        self.errorsigFrequencyShift = mg(0,'Hz')
+        self.harmonicReferenceFrequency = mg(0,'Hz')
         self.resonanceFrequency = mg(12642.817,'MHz')
         self.filter = LockControl.FilterOptions.NoFilter
         self.harmonicOutput = LockControl.HarmonicOutputOptions.Off
@@ -45,7 +45,7 @@ class LockSettings(object):
         self.__dict__.setdefault( 'filter', LockControl.FilterOptions.NoFilter )
         self.__dict__.setdefault( 'harmonicOutput', LockControl.HarmonicOutputOptions.Off )
         self.__dict__.setdefault( 'resonanceFrequency', mg(12642.817,'MHz') )
-        self.__dict__.setdefault( 'errorsigFrequencyShift', mg(0,'MHz') )
+        self.__dict__.setdefault( 'harmonicReferenceFrequency', mg(0,'MHz') )
         self.__dict__.setdefault( 'dcThreshold', mg(0,'V') )
         self.__dict__.setdefault( 'enableDCThreshold', False )
         self.__dict__.setdefault( 'coreMode', 0 )
@@ -82,7 +82,7 @@ class LockControl(Form, Base):
         self.setupSpinBox('magOutputAmpl', 'outputAmplitude', self.setOutputAmplitude, '')
         self.setupSpinBox('magHarmonic', 'harmonic', self.setHarmonic, '')
         self.setupSpinBox('magErrorsigHarmonic', 'errorsigHarmonic', self.setErrorsigHarmonic, '')
-        self.setupSpinBox('magFrequencyShift', 'errorsigFrequencyShift', self.setErrorsigFrequencyShift, 'MHz')
+        self.setupSpinBox('magHarmonicReference', 'harmonicReferenceFrequency', self.setharmonicReferenceFrequency, 'MHz')
         self.setupSpinBox('magOffset', 'offset', self.setOffset, 'V')
         self.setupSpinBox('magPCoeff', 'pCoefficient', self.setpCoefficient, '')
         self.setupSpinBox('magICoeff', 'iCoefficient', self.setiCoefficient, '')
@@ -103,8 +103,8 @@ class LockControl(Form, Base):
         self.dcThresholdBox.stateChanged.connect( self.onDCThresholdEnable )
         self._setHarmonics()
                 
-    def setErrorsigFrequencyShift(self, value):
-        self.lockSettings.errorsigFrequencyShift = value
+    def setharmonicReferenceFrequency(self, value):
+        self.lockSettings.harmonicReferenceFrequency = value
         self.calculateOffset()
                       
     def onDCThresholdEnable(self, state):
@@ -154,8 +154,9 @@ class LockControl(Form, Base):
         self.calculateOffset()
         
     def calculateOffset(self):
-        offsetFrequency = abs( self.lockSettings.resonanceFrequency - abs( self.lockSettings.harmonic ) / self.lockSettings.errorsigHarmonic * 
-                               (self.lockSettings.referenceFrequency + self.lockSettings.errorsigFrequencyShift )  + 
+        offsetFrequency = abs( self.lockSettings.resonanceFrequency - abs( self.lockSettings.harmonic ) * 
+                               (self.lockSettings.referenceFrequency+self.lockSettings.harmonicReferenceFrequency) / 
+                               self.lockSettings.errorsigHarmonic + 
                                (-1 if self.lockSettings.harmonic<0 else 1) * self.lockSettings.outputFrequency )
         self.magOffsetFreq.setValue(offsetFrequency)
 
@@ -179,17 +180,18 @@ class LockControl(Form, Base):
         self.dataChanged.emit( self.lockSettings )
 
     def setHarmonic(self, value):
-        self.lockSettings.harmonic = int(value.toval(''))
+        self.lockSettings.harmonic = value
         self._setHarmonics()
         
     def setErrorsigHarmonic(self, value):
-        self.lockSettings.errorsigHarmonic = int(value.toval(''))
+        self.lockSettings.errorsigHarmonic = value
         self._setHarmonics()
         
     def _setHarmonics(self):
-        self.controller.setHarmonic(self.lockSettings.harmonic)
-        self.controller.setFixedPointHarmonic( int( self.lockSettings.harmonic*( (1<<56)/float(self.lockSettings.errorsigHarmonic)))  )
-        self.lockSettings.coreMode = 0 if self.lockSettings.errorsigHarmonic==1 else 1
+        errorsigHarmonic = int ( self.lockSettings.errorsigHarmonic.toval() )
+        self.controller.setHarmonic( int(self.lockSettings.harmonic) )
+        self.controller.setFixedPointHarmonic( int( self.lockSettings.harmonic*( (1<<56)/float(errorsigHarmonic)))  )
+        self.lockSettings.coreMode = 0 if errorsigHarmonic==1 else 1
         self.controller.setCoreMode( self.lockSettings.coreMode )
         self.dataChanged.emit( self.lockSettings )
         self.calculateOffset()
