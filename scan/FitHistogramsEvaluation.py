@@ -81,15 +81,15 @@ class FitHistogramEvaluation(EvaluationBase):
     def residuals(self, p, y, x):
         penalty = 0
         if p[0]<0:
-            penalty += abs(p[0])*100
+            penalty += abs(p[0])*1
         if p[0]>1:
-            penalty += (p[0]-1)*100
+            penalty += (p[0]-1)*1
         if p[1]<0:
-            penalty += abs(p[1])*100
+            penalty += abs(p[1])*1
         if p[1]>1:
-            penalty += (p[1]-1)*100
+            penalty += (p[1]-1)*1
         if p[0]+p[1]>1:
-            penalty += (p[0]+p[1]-1)*100  
+            penalty += (p[0]+p[1]-1)*1  
         return y-self.functionEval(x, p)+penalty
 
     def leastsq(self, x, y, parameters=None, sigma=None):
