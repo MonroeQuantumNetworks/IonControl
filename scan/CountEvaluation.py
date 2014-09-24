@@ -400,12 +400,4 @@ class TwoIonEvaluation(EvaluationBase):
 
 
    
-EvaluationAlgorithms = { MeanEvaluation.name: MeanEvaluation, 
-                         ThresholdEvaluation.name: ThresholdEvaluation,
-                         RangeEvaluation.name: RangeEvaluation,
-                         DoubleRangeEvaluation.name: DoubleRangeEvaluation,
-                         NumberEvaluation.name: NumberEvaluation,
-                         FidelityEvaluation.name: FidelityEvaluation,
-                         ParityEvaluation.name: ParityEvaluation,
-                         TwoIonEvaluation.name: TwoIonEvaluation }
 

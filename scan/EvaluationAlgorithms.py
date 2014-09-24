@@ -1,0 +1,17 @@
+'''
+Created on Sep 23, 2014
+
+@author: pmaunz
+'''
+
+from CountEvaluation import MeanEvaluation, ThresholdEvaluation, RangeEvaluation, DoubleRangeEvaluation
+from CountEvaluation import NumberEvaluation, FidelityEvaluation, ParityEvaluation, TwoIonEvaluation
+
+EvaluationAlgorithms = { MeanEvaluation.name: MeanEvaluation, 
+                         ThresholdEvaluation.name: ThresholdEvaluation,
+                         RangeEvaluation.name: RangeEvaluation,
+                         DoubleRangeEvaluation.name: DoubleRangeEvaluation,
+                         NumberEvaluation.name: NumberEvaluation,
+                         FidelityEvaluation.name: FidelityEvaluation,
+                         ParityEvaluation.name: ParityEvaluation,
+                         TwoIonEvaluation.name: TwoIonEvaluation }
