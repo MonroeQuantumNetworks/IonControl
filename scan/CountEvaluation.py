@@ -15,6 +15,7 @@ from pyqtgraph.parametertree import Parameter
 
 from modules.Observable import Observable
 from modules.enum import enum 
+import logging
 
 class EvaluationException(Exception):
     pass
@@ -37,12 +38,15 @@ class EvaluationBase(Observable):
         return []    
     
     def setSettings(self, settings, settingsName):
-        for name, value in self.settings.iteritems():
-            settings.setdefault(name, value)
-        self.settings = settings
-        for name, value in settings.iteritems():
-            self._parameter[name] = value
-        self.settingsName = settingsName if settingsName else "unnamed"
+        try:
+            for name, value in self.settings.iteritems():
+                settings.setdefault(name, value)
+            self.settings = settings
+            for name, value in settings.iteritems():
+                self._parameter[name] = value
+            self.settingsName = settingsName if settingsName else "unnamed"
+        except Exception as ex:
+            logging.getLogger(__name__).exception(ex)
         
     def setSettingsName(self, settingsName):
         self.settingsName = settingsName

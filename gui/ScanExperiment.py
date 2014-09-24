@@ -749,7 +749,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
              
     
     def onSaveHistogram(self, filenameTemplate="Histogram.txt"):
-        tName, tExtension = os.path.splitext(filenameTemplate) if filenameTemplate else "Histogram", ".txt"
+        tName, tExtension = os.path.splitext(filenameTemplate) if filenameTemplate else ("Histogram", ".txt")
         for name, histogramlist in self.histogramBuffer.iteritems():
             filename = DataDirectory.DataDirectory().sequencefile(tName+"_"+name+tExtension)[0]
             with open(filename,'w') as f:

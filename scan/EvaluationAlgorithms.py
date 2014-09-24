@@ -6,6 +6,7 @@ Created on Sep 23, 2014
 
 from CountEvaluation import MeanEvaluation, ThresholdEvaluation, RangeEvaluation, DoubleRangeEvaluation
 from CountEvaluation import NumberEvaluation, FidelityEvaluation, ParityEvaluation, TwoIonEvaluation
+from scan.FitHistogramsEvaluation import FitHistogramEvaluation
 
 EvaluationAlgorithms = { MeanEvaluation.name: MeanEvaluation, 
                          ThresholdEvaluation.name: ThresholdEvaluation,
@@ -14,4 +15,5 @@ EvaluationAlgorithms = { MeanEvaluation.name: MeanEvaluation,
                          NumberEvaluation.name: NumberEvaluation,
                          FidelityEvaluation.name: FidelityEvaluation,
                          ParityEvaluation.name: ParityEvaluation,
-                         TwoIonEvaluation.name: TwoIonEvaluation }
+                         TwoIonEvaluation.name: TwoIonEvaluation,
+                         FitHistogramEvaluation.name: FitHistogramEvaluation }
