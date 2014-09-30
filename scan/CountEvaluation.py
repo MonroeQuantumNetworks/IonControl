@@ -61,6 +61,9 @@ class EvaluationBase(Observable):
     def __deepcopy__(self, memo=None):
         return type(self)( copy.deepcopy(self.settings,memo) )
   
+    def histogram(self, data, counter=0, histogramBins=50 ):
+        y, x = numpy.histogram( data.count[counter] , range=(0,histogramBins), bins=histogramBins)
+        return y, x, None   # third parameter is optional function 
 
 class MeanEvaluation(EvaluationBase):
     """
