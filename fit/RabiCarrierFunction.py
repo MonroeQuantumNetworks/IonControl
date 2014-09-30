@@ -21,12 +21,12 @@ class RabiCarrierFunction(FitFunctionBase):
     name = "RabiCarrier"
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  'Explicit Carrier Rabi Trnasition with Lamb-Dicke approx'
+        self.functionString =  'Explicit Carrier Rabi Transition with Lamb-Dicke approximation'
         self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength']
         self.parameters = [1,7,0.28,40,0,1.578,729]
         self.startParameters = [1,7,0.28,40,0,mg(1.578,'MHz'),mg(729,'nm')]
         self.units = [None, None, None, None, None, 'MHz', 'nm' ]
-        self.parameterEnabled = [True]*7
+        self.parameterEnabled = [True, True, True, False, False, False, False]
         self.parametersConfidence = [None]*7
         # constants
         self.results['taufinal'] = ResultRecord( name='taufinal',value=0)
@@ -128,7 +128,7 @@ class FullRabiCarrierFunction(RabiCarrierFunction):
             return y-result
         
     def value(self,x,p=None):
-        A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(self.parameters if p is None else p)  #@UnusedVariable
+        A,n,omega,mass,angle,trapFrequency,wavelength = self.parameters if p is None else p  #@UnusedVariable
         beta = log(1+1./n)
         self.updateTables(beta)
         if hasattr(x,'__iter__'):

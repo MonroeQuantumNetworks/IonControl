@@ -8,7 +8,8 @@ import numpy
 
 from FitFunctionBase import ResultRecord, fitFunctionMap
 from fit.FitFunctionBase import FitFunctionBase
-from fit.RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction       
+from fit.RabiCarrierFunction import RabiCarrierFunction, FullRabiCarrierFunction  
+from fit.MotionalRabiFlopping import MotionalRabiFlopping     
 from modules import MagnitudeParser
 from modules.XmlUtilit import stringToStringOrNone
 
@@ -225,7 +226,8 @@ fitFunctionMap.update({ GaussianFit.name: GaussianFit,
                        FullRabiCarrierFunction.name: FullRabiCarrierFunction,
                        LinearFit.name: LinearFit,
                        ChripedSinSqFit.name: ChripedSinSqFit,
-                       SaturationFit.name: SaturationFit
+                       SaturationFit.name: SaturationFit,
+                       MotionalRabiFlopping.name: MotionalRabiFlopping
                  } )       
         
 def fitFunctionFactory(text):
