@@ -284,7 +284,7 @@ class PlottedTrace(object):
                     self.plotFitfunction(penindex)
                     self.stylesLookup.get(self.style,self.plotLines)(penindex)
                 elif self.type ==self.Types.steps:
-                    self.plotStepsFitfunction(penindex)
+                    self.plotStepsFitfunction(penindex+1)
                     self.plotSteps(penindex)
                 self.penUsageDict[penindex] += 1
             self.curvePen = penindex
