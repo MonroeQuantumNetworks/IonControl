@@ -6,6 +6,7 @@ Created on May 16, 2014
 
 import visa   #@UnresolvedImport
 from modules.magnitude import mg
+from modules.MagnitudeUtilit import value as toValue
 
 class Settings:
     pass
@@ -28,6 +29,9 @@ class ILX5900Reader(object):
         self.settings.__dict__.setdefault('C1', 9.7142e-4 )
         self.settings.__dict__.setdefault('C2', 2.3268e-4 )
         self.settings.__dict__.setdefault('C3', 8.0591e-8 )
+        self.settings.__dict__.setdefault('P', 0.1 )
+        self.settings.__dict__.setdefault('I', 0.1 )
+        self.settings.__dict__.setdefault('D', 0.1 )
 
     @property
     def waitTime(self):
@@ -71,9 +75,48 @@ class ILX5900Reader(object):
     def C3(self, value):
         self.settings.C3 = value
         self.conn.write("Const:Thermistor {0}, {1}, {2}".format(self.settings.C1, self.settings.C2, self.settings.C3 ))
+        
+    @property
+    def P(self):
+        return self.settings.P
+    
+    @P.setter
+    def P(self, value):
+        self.settings.P = toValue(value)
+        print "P:", self.settings.P
+        self.setPID()
+
+    @property
+    def I(self):
+        return self.settings.I
+    
+    @I.setter
+    def I(self, value):
+        self.settings.I = toValue(value)
+        print "I:", self.settings.I
+        self.setPID()
+
+    @property
+    def D(self):
+        return self.settings.D
+    
+    @D.setter
+    def D(self, value):
+        self.settings.D = toValue(value)
+        print "D:", self.settings.D
+        self.setPID()
+        
+    def setPID(self):
+        print "PID {0},{1},{2}".format(self.settings.P, self.settings.I, self.settings.D)
+        self.conn.write( "PID {0},{1},{2}".format(self.settings.P, self.settings.I, self.settings.D))
+        
+    def readPID(self):
+        answer = self.conn.ask("PID?")
+        self.settings.P, self.settings.I, self.settings.D = map( float, answer.split(",") )
 
     def open(self):
         self.conn = visa.instrument( self.instrument, timeout=self.settings.timeout.toval('s'))
+        self.readPID()
            
     def close(self):
         self.conn.close()
@@ -87,7 +130,10 @@ class ILX5900Reader(object):
                 {'name': 'waitTime', 'type': 'magnitude', 'value': self.settings.waitTime, 'tip': "wait time between queries", 'field': 'waitTime'},
                 {'name': 'C1', 'type': 'float', 'value': self.settings.C1, 'tip': "Steinhart Hart Thermistor calibration C1*1e3", 'field': 'C1'},
                 {'name': 'C2', 'type': 'float', 'value': self.settings.C2, 'tip': "Steinhart Hart Thermistor calibration C2*1e4", 'field': 'C2'},
-                {'name': 'C3', 'type': 'float', 'value': self.settings.C3, 'tip': "Steinhart Hart Thermistor calibration C3*1e7", 'field': 'C3'}]
+                {'name': 'C3', 'type': 'float', 'value': self.settings.C3, 'tip': "Steinhart Hart Thermistor calibration C3*1e7", 'field': 'C3'},
+                {'name': 'P', 'type': 'magnitude', 'value': self.settings.P, 'field': 'P'},
+                {'name': 'I', 'type': 'magnitude', 'value': self.settings.I, 'field': 'I'},
+                {'name': 'D', 'type': 'magnitude', 'value': self.settings.D, 'field': 'D'}]
 
     
 
