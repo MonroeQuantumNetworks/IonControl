@@ -238,7 +238,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
        
         try:
             self.setSettings( self.settings )
-        except AttributeError as e:
+        except AttributeError:
             logger.error( "Ignoring exception" )
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):

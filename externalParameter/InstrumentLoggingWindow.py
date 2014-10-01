@@ -8,7 +8,6 @@ from Queue import Queue
 import logging
 import multiprocessing
 from multiprocessing.sharedctypes import Array
-import numpy
 
 from PyQt4 import QtCore 
 

@@ -6,7 +6,6 @@ Created on May 21, 2014
 
 from PyQt4 import QtCore
 import PyQt4.uic
-from modules.magnitude import mg
 from functools import partial
 from scan.ScanList import scanList
 from trace.Trace import Trace

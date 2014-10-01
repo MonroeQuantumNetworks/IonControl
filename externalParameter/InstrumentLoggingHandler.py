@@ -8,7 +8,6 @@ from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
 from trace import pens
 from collections import defaultdict
-import time 
 import functools
 from modules import WeakMethod
 from pyqtgraph.parametertree import Parameter
@@ -16,7 +15,6 @@ from PyQt4 import QtCore
 from decimation import decimationDict
 from calibration import calibrationDict
 from persistence import persistenceDict
-from dedicatedCounters.AnalogInputCalibration import AnalogInputCalibrationMap
 from functools import partial
 from modules.magnitude import is_magnitude
 

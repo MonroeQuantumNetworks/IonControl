@@ -4,7 +4,7 @@ Created on Sep 30, 2014
 @author: wolverine
 '''
 
-from numpy import pi, cos, sqrt, sin, exp, dot, array, log
+from numpy import pi, cos, sqrt, sin, exp, dot, array
 from scipy import constants
 from scipy.special import genlaguerre
 

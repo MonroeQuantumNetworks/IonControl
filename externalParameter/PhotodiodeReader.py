@@ -3,7 +3,7 @@ Created on May 16, 2014
 
 @author: wolverine
 '''
-import serial  #@UnresolvedImport
+import serial  #@UnresolvedImport @UnusedImport
 import re
 import numpy
 from modules.magnitude import mg

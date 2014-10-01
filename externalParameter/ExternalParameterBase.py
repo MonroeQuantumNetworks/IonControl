@@ -11,7 +11,7 @@ from decimation import StaticDecimation
 from persistence import DBPersist
 import time
 from functools import partial
-from modules.magnitude import is_magnitude, mg
+from modules.magnitude import is_magnitude
 
 def nextValue( current, target, stepsize, jump ):
     if current is None:
