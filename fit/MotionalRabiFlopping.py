@@ -13,10 +13,11 @@ from fit.FitFunctionBase import FitFunctionBase
 from modules import MagnitudeUtilit
 from modules.magnitude import mg
 import logging
+from modules.lru_cache import lru_cache
 
 def factorialRatio(nl,ng):
     r = 1
-    for i in range(nl+1, ng+1):
+    for i in range(int(nl)+1, int(ng)+1):
         r *= i
     return r
 
@@ -26,6 +27,27 @@ def transitionAmplitude(eta, n, m):
     ng = max(n,m)
     d = abs(n-m)
     return exp(-eta2/2) * pow(eta, d) * genlaguerre(nl, d)(eta2) / sqrt( factorialRatio(nl, ng ) ) if n>=0 and m>=0 else 0
+
+@lru_cache(maxsize=20)
+def laguerreTable(eta, delta_n):
+    logging.getLogger(__name__).info( "Calculating Laguerre Table for eta={0} delta_n={1}".format(eta, delta_n) )
+    laguerreTable = array([ transitionAmplitude(eta, n, n+delta_n) for n in range(200) ])
+    return laguerreTable
+
+@lru_cache(maxsize=20)
+def probabilityTable(nBar):
+    logger = logging.getLogger(__name__)
+    logger.info( "Calculating Probability Table for nBar {0}".format(nBar) )
+    current = 1/(nBar+1)
+    a = [current]
+    factor = nBar*current
+    for _ in range(1,200):
+        current *= factor
+        a.append( current )
+    a = array(a)
+    logger.info( 1-sum(a) )
+    return a
+
 
 class MotionalRabiFlopping(FitFunctionBase):
     name = "MotionalRabiFlopping"
@@ -55,30 +77,14 @@ class MotionalRabiFlopping(FitFunctionBase):
         self.results['eta'] = ResultRecord( name='eta',value=eta )
                
     def updateTables(self,nBar):
-        logger = logging.getLogger(__name__)
         A,n,omega,mass,angle,trapFrequency,wavelength,delta_n = self.parameters #@UnusedVariable
         secfreq = MagnitudeUtilit.value(trapFrequency,'Hz') * 10**6
         m = mass * constants.m_p
         eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
                      * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
-        eta2 = pow(eta,2)
-        if eta != self.laguerreCacheEta:
-            logger.info( "Calculating Laguerre Table for eta^2={0}".format(eta2) )
-            self.laguerreTable = array([ transitionAmplitude(eta, n, n+delta_n) for n in range(200) ])
-            self.laguerreCacheEta = eta
-        if self.pnCache_nBar != nBar:
-            logger.info( "Calculating Probability Table for nBar {0}".format(nBar) )
-            current = 1/(nBar+1)
-            a = [current]
-            factor = nBar*current
-            for _ in range(1,200):
-                current *= factor
-                a.append( current )
-            self.pnTable = array(a)
-            self.pnCache_nBar = nBar
-            logger.info( 1-sum(self.pnTable) )
+        self.laguerreTable = laguerreTable(eta, delta_n)
+        self.pnTable = probabilityTable(nBar)
             
-        
     def residuals(self,p, y, x, sigma):
         A,n,omega,mass,angle,trapFrequency,wavelength,delta_n = self.allFitParameters(self.parameters if p is None else p) #@UnusedVariable
         self.updateTables(n)
