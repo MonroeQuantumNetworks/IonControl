@@ -4,7 +4,7 @@ Created on Sep 30, 2014
 @author: wolverine
 '''
 
-from numpy import pi, cos, sqrt, sin, exp, dot, array
+from numpy import pi, cos, sqrt, sin, exp, dot, array, outer
 from scipy import constants
 from scipy.special import genlaguerre
 
@@ -15,7 +15,7 @@ from modules.magnitude import mg
 import logging
 from modules.lru_cache import lru_cache
 
-def factorialRatio(nl,ng):
+def factorialRatio(ng,nl):
     r = 1
     for i in range(int(nl)+1, int(ng)+1):
         r *= i
@@ -26,7 +26,7 @@ def transitionAmplitude(eta, n, m):
     nl = min(n,m)
     ng = max(n,m)
     d = abs(n-m)
-    return exp(-eta2/2) * pow(eta, d) * genlaguerre(nl, d)(eta2) / sqrt( factorialRatio(nl, ng ) ) if n>=0 and m>=0 else 0
+    return exp(-eta2/2) * pow(eta, d) * genlaguerre(nl, d)(eta2) / sqrt( factorialRatio(ng, nl ) ) if n>=0 and m>=0 else 0
 
 @lru_cache(maxsize=20)
 def laguerreTable(eta, delta_n):
@@ -38,9 +38,9 @@ def laguerreTable(eta, delta_n):
 def probabilityTable(nBar):
     logger = logging.getLogger(__name__)
     logger.info( "Calculating Probability Table for nBar {0}".format(nBar) )
-    current = 1/(nBar+1)
+    current = 1/(nBar+1.)
+    factor = nBar/(nBar+1.)
     a = [current]
-    factor = nBar*current
     for _ in range(1,200):
         current *= factor
         a.append( current )
@@ -55,8 +55,8 @@ class MotionalRabiFlopping(FitFunctionBase):
         FitFunctionBase.__init__(self)
         self.functionString =  'Motional Rabi Flopping'
         self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength', 'delta_n']
-        self.parameters = [1,7,0.28,40,0,1.578,729,0]
-        self.startParameters = [1,7,0.28,40,0,mg(1.578,'MHz'),mg(729,'nm'),0]
+        self.parameters = [1.0,7.0,0.28,40,0,1.578,729,0.0]
+        self.startParameters = [1.0,7.0,0.28,40,0,mg(1.578,'MHz'),mg(729,'nm'),0.0]
         self.units = [None, None, None, None, None, 'MHz', 'nm', None ]
         self.parameterEnabled = [True, True, True, False, False, False, False, False ]
         self.parametersConfidence = [None]*8
@@ -116,4 +116,76 @@ class MotionalRabiFlopping(FitFunctionBase):
             result = A*dot( self.pnTable, valueList )
         return result
                 
+     
+     
+     
+class TwoModeMotionalRabiFlopping(FitFunctionBase):
+    name = "TwoModeMotionalRabiFlopping"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'Two Mode Motional Rabi Flopping'
+        self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength', 'delta_n', 'n_2', 'trapFrequency_2']
+        self.parameters = [1.0,7.0,0.28,40,0.0,1.578,729,0.0,0.0,1.5]
+        self.startParameters = [1.0,7.0,0.28,40,0.0,mg(1.578,'MHz'),mg(729,'nm'),0.0,0.0,mg(1.578,'MHz')]
+        self.units = [None, None, None, None, None, 'MHz', 'nm', None, None, 'MHz' ]
+        self.parameterEnabled = [True, True, True, False, False, False, False, False, False, False ]
+        self.parametersConfidence = [None]*10
+        # constants
+        self.results['eta'] = ResultRecord( name='eta',value=0 )
+        self.results['eta_2'] = ResultRecord( name='eta_2',value=0 )
+        self.update()
+        self.laguerreTable = None
+        self.laguerreTable2 = None
+        self.pnTable = None
+        self.pnTable2 = None
+
+    def update(self,parameters=None):
+        A,n,omega,mass,angle,trapFrequency,wavelength,delta_n,n_2,trapFrequency_2 = self.parameters if parameters is None else parameters #@UnusedVariable
+        m = mass * constants.m_p
+        secfreq = trapFrequency*10**6
+        secfreq2 = trapFrequency_2*10**6
+        eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
+                     * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
+        eta2 = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
+                     * sqrt(constants.hbar/(2*m*2*pi*secfreq2)) )
+        self.results['eta'] = ResultRecord( name='eta',value=eta )
+        self.results['eta_2'] = ResultRecord( name='eta_2',value=eta2 )
+               
+    def updateTables(self,p):
+        A,n,omega,mass,angle,trapFrequency,wavelength,delta_n,n_2,trapFrequency_2 = p #@UnusedVariable
+        secfreq = MagnitudeUtilit.value(trapFrequency,'Hz') * 10**6
+        secfreq2 = MagnitudeUtilit.value(trapFrequency_2,'Hz') * 10**6
+        m = mass * constants.m_p
+        eta = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
+                     * sqrt(constants.hbar/(2*m*2*pi*secfreq)) )
+        eta2 = ( (2*pi/(wavelength*10**-9))*cos(angle*pi/180)
+                     * sqrt(constants.hbar/(2*m*2*pi*secfreq2)) )
+        self.laguerreTable = laguerreTable(eta, delta_n)
+        self.laguerreTable2 = laguerreTable(eta2, 0)
+        self.pnTable = probabilityTable(n)
+        self.pnTable2 = probabilityTable(n_2)
+            
+    def residuals(self,p, y, x, sigma):
+        result = self.value(x,self.allFitParameters(p))
+        if sigma is not None:
+            return (y-result)/sigma
+        else:
+            return y-result
         
+    def value(self,x,p=None):
+        myp=self.parameters if p is None else p
+        A,n,omega,mass,angle,trapFrequency,wavelength,delta_n,n_2,trapFrequency_2 = myp  #@UnusedVariable
+        self.updateTables(myp)
+        if hasattr(x,'__iter__'):
+            result = list()
+            for xn in x:
+                valueList = sin((omega * xn )* outer( self.laguerreTable, self.laguerreTable2).flatten()  )**2
+                value = A*dot( outer( self.pnTable, self.pnTable2).flatten(), valueList )
+                result.append(value)
+        else:
+            valueList = sin(omega * outer( self.laguerreTable, self.laguerreTable2).flatten()  * x)**2
+            result = A*dot( outer( self.pnTable, self.pnTable2).flatten(), valueList )
+        return result
+                
+        
+   
