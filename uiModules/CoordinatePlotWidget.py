@@ -222,11 +222,16 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
            coordinates on coordinateLabel."""
         if self.graphicsView.sceneBoundingRect().contains(pos):
             self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
+            logY = self.graphicsView.ctrl.logYCheck.isChecked()
+            logX = self.graphicsView.ctrl.logXCheck.isChecked()
+            y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
+            x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
             vR = self.graphicsView.vb.viewRange()
-            deltaX, deltaY = vR[0][1]-vR[0][0], vR[1][1]-vR[1][0] #Calculate x and y display ranges
-            precx = int( math.ceil( math.log10(abs(self.mousePoint.x()/deltaX)) ) + 3 ) if self.mousePoint.x()!=0 and deltaX>0 else 1
-            precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
-            roundedx, roundedy = roundToNDigits( self.mousePoint.x(),precx), roundToNDigits(self.mousePoint.y(), precy )
+            deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+            deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
+            precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1
+            precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+            roundedx, roundedy = roundToNDigits( x,precx), roundToNDigits(y, precy )
             self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
             
     def onCopyLocation(self,which):
