@@ -13,9 +13,9 @@ from datetime import datetime
 class DateTimePlotWidget(CoordinatePlotWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, and custom buttons."""
-    def __init__(self,parent=None):
+    def __init__(self, parent=None, name=None):
         self.dateAxisItem = DateAxisItem('bottom')
-        super(DateTimePlotWidget,self).__init__(parent, axisItems={'bottom': self.dateAxisItem})
+        super(DateTimePlotWidget,self).__init__(parent, axisItems={'bottom': self.dateAxisItem}, name=name)
 
     def onMouseMoved(self,pos):
         """Execute when mouse is moved. If mouse is over plot, show cursor
