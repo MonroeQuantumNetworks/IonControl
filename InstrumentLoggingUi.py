@@ -75,7 +75,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
         self.instrumentLoggingHandler.paramTreeChanged.connect( self.ExternalParametersSelectionUi.refreshParamTree)
     
-        self.instrumentLoggingDisplay = InstrumentLoggingDisplay()
+        self.instrumentLoggingDisplay = InstrumentLoggingDisplay(self.config)
         self.instrumentLoggingDisplay.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.instrumentLoggingDisplay )
         self.instrumentLoggingDisplayDock = QtGui.QDockWidget("Params Reading")
         self.instrumentLoggingDisplayDock.setObjectName("_ExternalParameterDisplayDock")

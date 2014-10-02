@@ -4,7 +4,6 @@ from PyQt4 import QtGui
 import PyQt4.uic
 
 from pulser import Ad9912
-from modules.magnitude import mg
 from externalParameter.persistence import DBPersist
 from externalParameter.decimation import StaticDecimation
 from modules.magnitude import is_magnitude, mg

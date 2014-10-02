@@ -123,7 +123,7 @@ def saveCondensedResults(resultsTable, sequence, filename):
         total[x] += t
         
     with open(filename, 'w') as f:
-        for (x1, b), (x2, t) in zip( sorted(bright.iteritems()), sorted(total.iteritems()) ):
+        for (x1, b), (x2, t) in zip( sorted(bright.iteritems()), sorted(total.iteritems()) ): #@UnusedVariable
             gateseq = sequence.GateSequenceAttributes[str(int(x1))].get('condensed', None)
             if gateseq is None:
                 gateseq = sequence.GateSequenceDict[ str(int(x1))]

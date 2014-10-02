@@ -11,7 +11,7 @@ import logging
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
-import CountEvaluation
+from scan.EvaluationAlgorithms import EvaluationAlgorithms
 from EvaluationTableModel import EvaluationTableModel
 import ScanList
 from gateSequence import GateSequenceUi
@@ -238,7 +238,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
        
         try:
             self.setSettings( self.settings )
-        except AttributeError as e:
+        except AttributeError:
             logger.error( "Ignoring exception" )
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
@@ -347,7 +347,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.tableModel.setScanList(self.settings.scanSegmentList)
 
     def addEvaluation(self, evaluation):
-        algo =  CountEvaluation.EvaluationAlgorithms[evaluation.evaluation]()
+        algo =  EvaluationAlgorithms[evaluation.evaluation]()
         algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
         algo.setSettings( evaluation.settings, evaluation.name )
         self.evalAlgorithmList.append(algo)      
@@ -356,7 +356,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         evaluation = EvaluationDefinition()
         evaluation.counter = 0
         evaluation.plotname = "Scan Data" #Default to "Scan Data" plot
-        evaluation.evaluation = CountEvaluation.EvaluationAlgorithms.keys()[0]
+        evaluation.evaluation = EvaluationAlgorithms.keys()[0]
         self.settings.evalList.append( evaluation )
         self.addEvaluation( evaluation )
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"

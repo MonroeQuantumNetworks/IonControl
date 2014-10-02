@@ -201,7 +201,13 @@ class PlottedTrace(object):
                 
     def plotFitfunction(self,penindex):
         if self.fitFunction and self.graphicsView is not None:
-            self.fitx = numpy.linspace(numpy.min(self.x),numpy.max(self.x),300)
+            self.fitx = numpy.linspace(numpy.min(self.x), numpy.max(self.x) ,300)
+            self.fity = self.fitFunction.value(self.fitx)
+            self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
+ 
+    def plotStepsFitfunction(self,penindex):
+        if self.fitFunction and self.graphicsView is not None:
+            self.fitx = numpy.linspace(numpy.min(self.x)+0.5, numpy.max(self.x)-1.5 , len(self.x)-1 )
             self.fity = self.fitFunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
@@ -278,6 +284,7 @@ class PlottedTrace(object):
                     self.plotFitfunction(penindex)
                     self.stylesLookup.get(self.style,self.plotLines)(penindex)
                 elif self.type ==self.Types.steps:
+                    self.plotStepsFitfunction(penindex+1)
                     self.plotSteps(penindex)
                 self.penUsageDict[penindex] += 1
             self.curvePen = penindex

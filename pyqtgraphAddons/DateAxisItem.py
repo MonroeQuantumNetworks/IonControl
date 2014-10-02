@@ -45,7 +45,7 @@ def makeYStepper(stepSize):
 class TickSpec:
     """ Specifies the properties for a set of date ticks and computes ticks
     within a given utc timestamp range """
-    def __init__(self, spacing, stepper, format, autoSkip=None):
+    def __init__(self, spacing, stepper, format, autoSkip=None): #@AssignmentToReserved
         """
         ============= ==========================================================
         Arguments

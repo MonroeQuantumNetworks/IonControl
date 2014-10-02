@@ -4,7 +4,7 @@ Created on May 16, 2014
 @author: wolverine
 '''
 
-import serial   #@UnresolvedImport
+import serial   #@UnresolvedImport @UnusedImport
 import serial.tools.list_ports
 import re
 

@@ -566,7 +566,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if len(evaluated)>0:
                 self.displayUi.add( [ e[0] for e in evaluated ] )
                 self.updateMainGraph(x, evaluated, 0 if data.final else queuesize )
-                self.showHistogram(data, self.scan.evalList )
+                self.showHistogram(data, self.scan.evalList, self.scan.evalAlgorithmList )
             self.currentIndex += 1
             if self.scan.enableTimestamps: 
                 self.showTimestamps(data)
@@ -706,17 +706,17 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTimestampTrace.trace.header = '\n'.join((pulseProgramHeader, scanHeader)) 
         self.timestampsNewRun = False                       
         
-    def showHistogram(self, data, evalList ):
+    def showHistogram(self, data, evalList, evalAlgoList ):
         index = 0
-        for evaluation in evalList:
+        for evaluation, algo in zip(evalList, evalAlgoList):
             if evaluation.showHistogram:
-                y, x = numpy.histogram( data.count[evaluation.counter] , range=(0,self.scan.histogramBins), bins=self.scan.histogramBins) 
+                y, x, function = algo.histogram( data, evaluation.counter, self.scan.histogramBins) 
                 if self.scan.integrateHistogram and len(self.histogramList)>index:
-                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name )
+                    self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name, None )
                 elif len(self.histogramList)>index:
-                    self.histogramList[index] = (y,x,evaluation.name )
+                    self.histogramList[index] = (y,x,evaluation.name, function )
                 else:
-                    self.histogramList.append( (y,x,evaluation.name) )
+                    self.histogramList.append( (y,x,evaluation.name, function) )
                 self.histogramBuffer[evaluation.name].append(y)
                 index += 1
         numberTraces = index
@@ -727,6 +727,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if index<len(self.histogramCurveList):
                 self.histogramCurveList[index].x = histogram[1]
                 self.histogramCurveList[index].y = histogram[0]  
+                self.histogramCurveList[index].fitFunction = histogram[3]
                 self.histogramCurveList[index].replot()
             else:
                 yColumnName = 'y{0}'.format(index) 
@@ -737,6 +738,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]
                 plottedHistogramTrace.trace.name = self.scan.settingsName
+                plottedHistogramTrace.fitFunction = histogram[3]
                 self.histogramCurveList.append(plottedHistogramTrace)
                 plottedHistogramTrace.plot()
         for i in range(numberTraces,len(self.histogramCurveList)):
@@ -751,7 +753,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
              
     
     def onSaveHistogram(self, filenameTemplate="Histogram.txt"):
-        tName, tExtension = os.path.splitext(filenameTemplate) if filenameTemplate else "Histogram", ".txt"
+        tName, tExtension = os.path.splitext(filenameTemplate) if filenameTemplate else ("Histogram", ".txt")
         for name, histogramlist in self.histogramBuffer.iteritems():
             filename = DataDirectory.DataDirectory().sequencefile(tName+"_"+name+tExtension)[0]
             with open(filename,'w') as f:
