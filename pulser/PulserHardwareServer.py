@@ -14,6 +14,7 @@ from mylogging.ServerLogging import configureServerLogging
 from modules import enum
 import modules.magnitude as magnitude
 from bitfileHeader import BitfileInfo
+from time import time as time_time
 
 ModelStrings = {
         0: 'Unknown',
@@ -100,16 +101,16 @@ class Data:
 
 class DedicatedData:
     def __init__(self):
-        self.data = [None]*13
+        self.data = [None]*17
         
     def count(self):
         return self.data[0:8]
         
     def analog(self):
-        return self.data[8:12]
+        return self.data[8:16]
         
     def integration(self):
-        return self.data[12]
+        return self.data[16]
 
 class LogicAnalyzerData:
     def __init__(self):
@@ -259,6 +260,7 @@ class PulserHardwareServer(Process):
                         self.dataQueue.put( self.dedicatedData )
                         self.dedicatedData = self.dedicatedDataClass()
                     self.dedicatedData.data[channel] = token & 0xffffffffffff
+                    self.dedicatedData.timestamp = time_time()
                 elif token & 0xff00000000000000 == 0xff00000000000000:
                     if token == 0xffffffffffffffff:    # end of run
                         self.data.final = True

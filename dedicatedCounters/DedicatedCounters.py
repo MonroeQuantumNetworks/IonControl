@@ -190,8 +190,8 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.displayUi2.values = data.data[4:8]
         self.displayUiADC.values = self.convertAnalog(data.data[8:12])
         data.analogValues = self.displayUiADC.values
-        if data.data[12] is not None and data.data[12] in self.integrationTimeLookup:
-            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
+        if data.data[16] is not None and data.data[16] in self.integrationTimeLookup:
+            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[16] ]
         else:
             self.dataIntegrationTime = self.settings.integrationTime
         data.integrationTime = self.dataIntegrationTime 
@@ -200,7 +200,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval())
                 Start = max( 1+len(self.xData[counter])-self.settings.pointsToKeep, 0)
                 self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
-                self.xData[counter] = numpy.append(self.xData[counter][Start:], self.tick )
+                self.xData[counter] = numpy.append(self.xData[counter][Start:], data.timestamp )
                 if self.curves[counter] is not None:
                     self.curves[counter].setData(self.xData[counter],self.yData[counter])
         self.dataAvailable.emit(data)
