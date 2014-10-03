@@ -122,7 +122,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
             plotNames.append('Scan')
         for name in plotNames:
             dock = Dock(name)
-            widget = DateTimePlotWidget(self)
+            widget = DateTimePlotWidget(self, name=name)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)

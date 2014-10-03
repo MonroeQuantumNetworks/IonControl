@@ -311,7 +311,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # initialize all the plot windows we want
         for name in plotNames:
             dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
+            widget = CoordinatePlotWidget(self, name=name)
             view = widget.graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)

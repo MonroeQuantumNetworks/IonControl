@@ -111,12 +111,12 @@ class CustomPlotItem(PlotItem):
         -A hold zero button which keeps the y minimum at zero while autoranging.
     resizeEvent is extended to set the position of the two new buttons correctly.
     """
-    def __init__(self, parent=None, axisItems=None):
+    def __init__(self, parent=None, **kargs):
         """
         Create a new CustomPlotItem. In addition to the ordinary PlotItem, adds buttons and uses the custom ViewBox.
         """
         cvb = CustomViewBox()
-        super(CustomPlotItem,self).__init__(parent, viewBox = cvb, axisItems=axisItems)
+        super(CustomPlotItem,self).__init__(parent, viewBox = cvb, **kargs)
         self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=14, parentItem=self)
         self.unityRangeBtn.setToolTip("Set y range to (0,1)")
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
@@ -186,12 +186,12 @@ class CustomPlotItem(PlotItem):
 class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, and custom buttons."""
-    def __init__(self,parent=None, axisItems=None):
+    def __init__(self, parent=None, axisItems=None, name=None):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = LabelItem(justify='right')
-        self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2,axisItems=axisItems)
+        self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2,axisItems=axisItems,name=name)
         self.addItem(self.coordinateLabel,row=1,col=1)
         self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
@@ -222,11 +222,16 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
            coordinates on coordinateLabel."""
         if self.graphicsView.sceneBoundingRect().contains(pos):
             self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
+            logY = self.graphicsView.ctrl.logYCheck.isChecked()
+            logX = self.graphicsView.ctrl.logXCheck.isChecked()
+            y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
+            x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
             vR = self.graphicsView.vb.viewRange()
-            deltaX, deltaY = vR[0][1]-vR[0][0], vR[1][1]-vR[1][0] #Calculate x and y display ranges
-            precx = int( math.ceil( math.log10(abs(self.mousePoint.x()/deltaX)) ) + 3 ) if self.mousePoint.x()!=0 and deltaX>0 else 1
-            precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
-            roundedx, roundedy = roundToNDigits( self.mousePoint.x(),precx), roundToNDigits(self.mousePoint.y(), precy )
+            deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+            deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
+            precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1
+            precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+            roundedx, roundedy = roundToNDigits( x,precx), roundToNDigits(y, precy )
             self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
             
     def onCopyLocation(self,which):

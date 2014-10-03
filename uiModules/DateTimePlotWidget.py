@@ -13,9 +13,9 @@ from datetime import datetime
 class DateTimePlotWidget(CoordinatePlotWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, and custom buttons."""
-    def __init__(self,parent=None):
+    def __init__(self, parent=None, name=None):
         self.dateAxisItem = DateAxisItem('bottom')
-        super(DateTimePlotWidget,self).__init__(parent, axisItems={'bottom': self.dateAxisItem})
+        super(DateTimePlotWidget,self).__init__(parent, axisItems={'bottom': self.dateAxisItem}, name=name)
 
     def onMouseMoved(self,pos):
         """Execute when mouse is moved. If mouse is over plot, show cursor
@@ -23,10 +23,12 @@ class DateTimePlotWidget(CoordinatePlotWidget):
         if self.graphicsView.sceneBoundingRect().contains(pos):
             try:
                 self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
+                logY = self.graphicsView.ctrl.logYCheck.isChecked()
+                y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
                 vR = self.graphicsView.vb.viewRange()
-                deltaY = vR[1][1]-vR[1][0] #Calculate x and y display ranges
-                precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
-                roundedy = roundToNDigits(self.mousePoint.y(), precy )
+                deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+                precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+                roundedy = roundToNDigits(y, precy )
                 currentDateTime = datetime.fromtimestamp(self.mousePoint.x()) 
                 self.coordinateLabel.setText( self.template.format( str(currentDateTime), repr(roundedy) ))
             except ValueError:
