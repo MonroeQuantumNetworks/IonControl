@@ -4,15 +4,31 @@ exitcode endLabel = 0xfffe0001
 parameter<AD9912_FRQ> DetectFreq = 100 MHz
 parameter<AD9912_PHASE> DetectPhase = 0
 parameter DetectAmp = 1023
-masked_shutter begin
-masked_shutter end
+shutter initShutter
+masked_shutter first
+masked_shutter second
+masked_shutter third
+masked_shutter fourth
+parameter timeOne
+parameter timeTwo
+parameter timeThree
+parameter timeFour
 parameter initTime = 1 ms
 
-set_shutter( begin )
+set_shutter( initShutter )
 update (initTime)
 set_dds( channel=DDSDetect, freq=DetectFreq, phase=DetectPhase, amp=DetectAmp )
 wait_dds()
-set_shutter(end)
-update(wait_dds=False)
+set_shutter(first)
+update(  timeOne, wait_dds=False)
+set_inv_shutter(first)
+set_shutter(second)
+update( timeTwo )
+set_inv_shutter(second)
+set_shutter(third)
+update( timeThree )
+set_inv_shutter( third)
+set_shutter( fourth )
+update(timeFour)
 
 exit( endLabel )

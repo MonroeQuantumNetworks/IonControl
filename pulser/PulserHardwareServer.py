@@ -240,7 +240,7 @@ class PulserHardwareServer(Process):
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
-#               print hex(token)
+                print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -407,7 +407,7 @@ class PulserHardwareServer(Process):
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
             logger.info(  "{0} bytes".format(len(binarycode)) )
-            num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
+            num = self.xem.WriteToPipeIn(0x83, bytearray(binarycode) )
             check(num, 'Write to program pipe' )
             logger.info(   "uploaded pp file {0} bytes".format(num) )
             num, data = self.ppDownloadCode(0,num)
@@ -424,7 +424,7 @@ class PulserHardwareServer(Process):
             self.xem.ActivateTriggerIn(0x41, 0)
             self.xem.ActivateTriggerIn(0x41, 1)
             data = bytearray('\000'*length)
-            num = self.xem.ReadFromPipeOut(0xA0, data)
+            num = self.xem.ReadFromPipeOut(0xA4, data)
             return num, data
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
@@ -441,7 +441,7 @@ class PulserHardwareServer(Process):
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 10), "ppUpload trigger" )
             logger.info(  "{0} bytes".format(len(binarydata)) )
-            num = self.xem.WriteToPipeIn(0x83, bytearray(binarydata) )
+            num = self.xem.WriteToPipeIn(0x80, bytearray(binarydata) )
             check(num, 'Write to program pipe' )
             logger.info(   "uploaded pp file {0} bytes".format(num) )
             num, data = self.ppDownloadData(0,num)
@@ -458,7 +458,7 @@ class PulserHardwareServer(Process):
             self.xem.ActivateTriggerIn(0x41, 0)
             self.xem.ActivateTriggerIn(0x41, 10)
             data = bytearray('\000'*length)
-            num = self.xem.ReadFromPipeOut(0xA4, data)
+            num = self.xem.ReadFromPipeOut(0xA0, data)
             return num, data
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")

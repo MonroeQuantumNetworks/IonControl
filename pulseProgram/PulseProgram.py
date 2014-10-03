@@ -263,7 +263,7 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
-            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(op), hex(arg), hex(op<<(32-8) + arg)) ) 
+            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(op), hex(arg), hex((op<<(32-8)) + arg)) ) 
             self.binarycode += struct.pack('I', (op<<(32-8)) + arg)
         self.dataBinarycode = bytearray()
         for wordno, arg in enumerate(self.dataBytecode):

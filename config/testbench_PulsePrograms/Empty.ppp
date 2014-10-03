@@ -1,0 +1,10 @@
+const DDSDetect = 0
+
+exitcode endLabel = 0xfffe000000000001
+parameter initTime
+shutter initShutter
+
+#update(initTime)
+set_shutter(initShutter)
+update()
+exit( endLabel )
