@@ -240,7 +240,7 @@ class PulserHardwareServer(Process):
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
- #               print hex(token)
+#               print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -399,7 +399,10 @@ class PulserHardwareServer(Process):
     def ppUploadCode(self,binarycode,startaddress=0):
         if self.xem:
             logger = logging.getLogger(__name__)
-            logger.info(  "starting PP upload" )
+            logger.info( "PP Code segment uses {0} / {1} words {2:.0}%".format(len(binarycode)/4,4095,len(binarycode)/4/40.95))
+            if len(binarycode)/4 > 4095:
+                raise PulserHardwareException("Code segment exceeds 4095 words ({0})".format(len(binarycode)/4))
+            logger.info(  "starting PP Code upload" )
             check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )	# start addr at zero
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
@@ -430,7 +433,10 @@ class PulserHardwareServer(Process):
     def ppUploadData(self, binarydata,startaddress=0):
         if self.xem:
             logger = logging.getLogger(__name__)
-            logger.info(  "starting PP upload" )
+            logger.info( "PP Data segment uses {0} / {1} words ( {2:.0}% )".format(len(binarydata)/8,4095,len(binarydata)/8/40.95))
+            if len(binarydata)/8 > 4095:
+                raise PulserHardwareException("Code segment exceeds 4095 words ({0})".format(len(binarydata)/8))
+            logger.info(  "starting PP Datasegment upload" )
             check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )    # start addr at zero
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 10), "ppUpload trigger" )

@@ -207,7 +207,7 @@ class PulseProgram:
                 var.value = value
                 logger.debug( "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data)) )
                 var.data = self.convertParameter(value, var.encoding )
-                self.bytecode[address] = (self.bytecode[address][0], var.data )
+                self.dataBytecode[address] =  var.data 
                 self.variabledict[name] = var
             else:
                 logger.error( "variable {0} not found in dictionary.".format(name) )
@@ -263,12 +263,12 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
-            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(long(op)), hex(long(arg)), hex(long((long(op)<<(32-8)) + long(arg))) ) )
+            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(op), hex(arg), hex(op<<(32-8) + arg)) ) 
             self.binarycode += struct.pack('I', (op<<(32-8)) + arg)
         self.dataBinarycode = bytearray()
-        for wordno, (op, arg) in enumerate(self.dataBytecode):
-            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(long(op)), hex(long(arg)), hex(long((long(op)<<(64-8)) + long(arg))) ) )
-            self.dataBinarycode += struct.pack('Q', long(op<<(64-8)) + long(arg))
+        for wordno, arg in enumerate(self.dataBytecode):
+            logger.debug( "{0} {1}".format( hex(wordno), hex(arg) )) 
+            self.dataBinarycode += struct.pack('Q', long(arg))
             
         return self.binarycode, self.dataBinarycode
         
@@ -495,7 +495,7 @@ class PulseProgram:
             except KeyError:
                 logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
-            self.bytecode.append((byteop, bytedata))
+            self.dataBytecode.append( bytedata )
             logger.debug( "---> {0} {1}".format(hex(byteop), hex(bytedata)) )
 
         return self.bytecode, self.dataBytecode
