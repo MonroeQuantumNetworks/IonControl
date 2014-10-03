@@ -147,7 +147,7 @@ class HybridScanExperiment( ExternalScanExperiment.ExternalScanExperiment ):
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )
-            self.showHistogram(data, self.scan.evalList )
+            self.showHistogram(data, self.scan.evalList, self.scan.evalAlgorithmList )
         self.currentIndex += 1
         self.externalParameterIndex += 1
         if self.scan.enableTimestamps: 

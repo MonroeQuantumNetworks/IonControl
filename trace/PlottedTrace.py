@@ -315,7 +315,7 @@ class PlottedTrace(object):
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory(ProjectSelection.Project)
-        if self.parent().isRootTrace: 
+        if self.parent() is None or self.parent().isRootTrace: 
             if pattern and pattern!='':
                 filename, _ = directory.sequencefile(pattern)
                 return filename
