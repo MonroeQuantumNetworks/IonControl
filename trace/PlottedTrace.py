@@ -201,15 +201,36 @@ class PlottedTrace(object):
                 
     def plotFitfunction(self,penindex):
         if self.fitFunction and self.graphicsView is not None:
+            self.fitFunctionPenIndex = penindex
             self.fitx = numpy.linspace(numpy.min(self.x), numpy.max(self.x) ,300)
             self.fity = self.fitFunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
+    def replotFitfunction(self):
+        if self.fitFunction and self.graphicsView is not None:
+            self.fitx = numpy.linspace(numpy.min(self.x), numpy.max(self.x) ,300)
+            self.fity = self.fitFunction.value(self.fitx)
+            if self.fitcurve is not None:
+                self.fitcurve.setData( self.fitx, self.fity )
+            else:
+                self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[self.fitFunctionPenIndex][0])
+ 
     def plotStepsFitfunction(self,penindex):
         if self.fitFunction and self.graphicsView is not None:
+            self.fitFunctionPenIndex = penindex
             self.fitx = numpy.linspace(numpy.min(self.x)+0.5, numpy.max(self.x)-1.5 , len(self.x)-1 )
             self.fity = self.fitFunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
+            
+    def replotStepsFitFunction(self):
+        if self.fitFunction and self.graphicsView is not None:
+            self.fitx = numpy.linspace(numpy.min(self.x)+0.5, numpy.max(self.x)-1.5 , len(self.x)-1 )
+            self.fity = self.fitFunction.value(self.fitx)
+            if self.fitcurve is not None:
+                self.fitcurve.setData( self.fitx, self.fity )
+            else:
+                self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[self.fitFunctionPenIndex][0])
+                
  
     def plotErrorBars(self,penindex):
         if self.graphicsView is not None:
@@ -310,6 +331,14 @@ class PlottedTrace(object):
                 self.errorBarItem.setData(x=(self.x), y=(self.y), height=(self.trace.height))
             else:
                 self.errorBarItem.setOpts(x=(self.x), y=(self.y), top=(self.top), bottom=(self.bottom))
+        if self.fitFunction is not None:
+            if self.type==self.Types.default:
+                self.replotFitFunction()
+            elif self.type==self.Types.steps: 
+                self.replotStepsFitFunction()
+        elif self.fitcurve is not None:
+            self.graphicsView.removeItem(self.fitcurve)
+            self.fitcurve = None
         self.lastPlotTime = time.time()
         self.needsReplot = False
 
