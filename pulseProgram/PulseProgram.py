@@ -394,6 +394,7 @@ class PulseProgram:
         label, data, var.type, unit, var.encoding, var.comment = [ x if x is None else x.strip() for x in m.groups()]
         var.name = label
         var.origin = sourcename
+        var.lineno = lineno
         var.enabled = True
 
         if var.encoding not in encodings:

@@ -206,7 +206,7 @@ class PlottedTrace(object):
             self.fity = self.fitFunction.value(self.fitx)
             self.fitcurve = self.graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
-    def replotFitfunction(self):
+    def replotFitFunction(self):
         if self.fitFunction and self.graphicsView is not None:
             self.fitx = numpy.linspace(numpy.min(self.x), numpy.max(self.x) ,300)
             self.fity = self.fitFunction.value(self.fitx)
