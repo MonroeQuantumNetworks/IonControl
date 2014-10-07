@@ -10,6 +10,7 @@ class Settings:
     pass
 
 class Keithley2010Reader(object):
+    modeNames = ['Voltage:DC','Voltage:AC','Current:DC','Current:AC','Resistance']
     @staticmethod
     def connectedInstruments():
         return [name for name in visa.get_instruments_list(True) if name.find('COM')!=0 ]
@@ -24,12 +25,25 @@ class Keithley2010Reader(object):
     def setDefaults(self):
         self.settings.__dict__.setdefault('digits', 8)
         self.settings.__dict__.setdefault('averagePoints', 100 )
+        self.settings.__dict__.setdefault('mode','Voltage:DC')
 
     def open(self):
         self.conn = visa.instrument( self.instrument, timeout=self.timeout)
-        self.conn.write(":SENSE:FUNCTION Voltage:DC")
-        self.conn.write(":SENSE:Voltage:Digits {0}".format(self.settings.digits))
-        self.conn.write(":SENSE:Voltage:Average:Count {0}".format(self.settings.averagePoints))
+        self.mode = self.mode
+        self.digits = self.digits
+        self.averagePoints = self.averagePoints 
+        
+    @property
+    def mode(self):
+        return self.settings.mode
+    
+    @mode.setter
+    def mode(self, mode):
+        if self.conn:
+            self.conn.write(':SENSE:FUNCTION "{0}"'.format(mode))
+        self.settings.mode = mode
+        self.digits = self.digits
+        self.averagePoints = self.averagePoints
         
     @property
     def digits(self):
@@ -37,7 +51,7 @@ class Keithley2010Reader(object):
     
     @digits.setter
     def digits(self, d):
-        self.conn.write(":SENSE:Voltage:Digits {0}".format(d))
+        self.conn.write(":SENSE:{1}:Digits {0}".format(d, self.settings.mode))
         self.settings.digits = d
         
     @property
@@ -46,7 +60,7 @@ class Keithley2010Reader(object):
     
     @averagePoints.setter
     def averagePoints(self, p):
-        self.conn.write(":SENSE:Voltage:Average:Count {0}".format(p))
+        self.conn.write(":SENSE:{1}:Average:Count {0}".format(p, self.settings.mode))
         self.settings.averagePoints = p
     
     def close(self):
@@ -58,7 +72,8 @@ class Keithley2010Reader(object):
     
     def paramDef(self):
         return [{'name': 'timeout', 'type': 'int', 'value': self.settings.digits, 'limits': (4,8), 'tip': "wait time for communication", 'field': 'digits'},
-                {'name': 'average points', 'type': 'int', 'value': self.settings.averagePoints, 'limits': (1,100), 'tip': "points to average", 'field': 'averagePoints'}]
+                {'name': 'average points', 'type': 'int', 'value': self.settings.averagePoints, 'limits': (1,100), 'tip': "points to average", 'field': 'averagePoints'},
+                {'name': 'mode', 'type': 'list', 'values': self.modeNames, 'value': self.settings.mode, 'field': 'mode'}]
 
     
 

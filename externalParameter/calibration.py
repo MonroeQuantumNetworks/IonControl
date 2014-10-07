@@ -4,6 +4,7 @@ Created on Aug 30, 2014
 @author: pmaunz
 '''
 from modules.magnitude import mg
+from math import log
 
 class PowerDetectorCalibration:
     """
@@ -50,4 +51,37 @@ class PowerDetectorCalibration:
                          {'name': 'max', 'type': 'float', 'value': self.maximum, 'object': self },
                          {'name': 'digits', 'type': 'int', 'value': self.digits, 'object': self, 'tip': 'significant digits'} ]
 
-calibrationDict = { PowerDetectorCalibration.name: PowerDetectorCalibration }
+
+class SteinhartHartCalibration:
+    """
+        data is being fitted to p*x**2 + m*x + c 
+        is valid between minimum and maximum input voltage
+    """
+    name = "Steinhart Hart"
+    def __init__(self, name="default"):
+        self.a = 9.6542e-4
+        self.b = 2.3356e-4
+        self.c = 7.7781e-8
+        
+    def convert(self, resistance):
+        if resistance is None:
+            return None
+        lR = log(resistance)
+        return 1/(self.a + self.b * lR + self.c * lR**3)
+        
+    def convertMagnitude(self, resistance):
+        if resistance is None:
+            return None
+        lR = log(resistance)
+        m =  mg( 1/(self.a + self.b * lR + self.c * lR**3) - 273.15 , 'K' )
+        m.significantDigits = 7
+        return m
+       
+    def paramDef(self):
+        return [{'name': 'function', 'type': 'str', 'value': "Steinhart Hart",'readonly':True},
+                         {'name': 'a', 'type': 'float', 'value': self.a, 'object': self },
+                         {'name': 'b', 'type': 'float', 'value': self.b, 'object': self },
+                         {'name': 'c', 'type': 'float', 'value': self.c, 'object': self } ]
+
+calibrationDict = { PowerDetectorCalibration.name: PowerDetectorCalibration,
+                    SteinhartHartCalibration.name: SteinhartHartCalibration }
