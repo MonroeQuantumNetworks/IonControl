@@ -28,7 +28,8 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda var: QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
                              (QtCore.Qt.DisplayRole,1):    lambda var: var.name,
                              (QtCore.Qt.DisplayRole,2):    lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                             (QtCore.Qt.BackgroundColorRole,2): lambda var: QtGui.QColor( 255, 200, 200)  if hasattr(var,'strerror') and var.strerror else QtCore.Qt.white,
+                             (QtCore.Qt.BackgroundColorRole,2): lambda var: QtGui.QColor( 255, 200, 200)  if hasattr(var,'strerror') and var.strerror else 
+                                                                            QtCore.Qt.white if hasattr(var,'strvalue') else QtGui.QColor(200, 200, 255),
                              (QtCore.Qt.ToolTipRole,2):    lambda var: var.strerror if hasattr(var,'strerror') and var.strerror else None,
                              (QtCore.Qt.DisplayRole,3):    lambda var: str(var.outValue()),
                              (QtCore.Qt.EditRole,2):       lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),

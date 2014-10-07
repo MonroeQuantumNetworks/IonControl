@@ -421,6 +421,7 @@ class PulseProgram:
                                         # however, we do not want it replaced with a number but keep the name for the last stage of compilation
             pass
         var.data = data
+        var.strvalue = str(var.value)
         self.variabledict.update({ label: var})
         if var.type == "exitcode":
             self._exitcodes[data & 0x0000ffff] = var
