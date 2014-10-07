@@ -162,7 +162,7 @@ class VariableDictionary(SequenceDict):
                 except KeyError as e:
                     var.strerror = str(e)
             else:
-                logging.getLogger(__name__).warning("variable {0} does not have strvalue.".format(var))
+                logging.getLogger(__name__).error("variable {0} does not have strvalue. Value is {1}".format(var, var.value))
             return var.value
         return None
             
