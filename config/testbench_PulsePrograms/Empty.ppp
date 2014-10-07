@@ -6,5 +6,10 @@ shutter initShutter
 
 #update(initTime)
 set_shutter(initShutter)
-update()
+set_shutter(initShutter)
+set_shutter(initShutter)
+set_shutter(initShutter)
+update(initTime)
+update(initTime)
+update(initTime)
 exit( endLabel )
