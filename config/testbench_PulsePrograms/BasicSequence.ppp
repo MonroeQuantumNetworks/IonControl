@@ -18,7 +18,7 @@ parameter initTime = 1 ms
 set_shutter( initShutter )
 update (initTime)
 set_dds( channel=DDSDetect, freq=DetectFreq, phase=DetectPhase, amp=DetectAmp )
-wait_dds()
+#wait_dds()
 set_shutter(first)
 update(  timeOne, wait_dds=False)
 set_inv_shutter(first)
