@@ -165,6 +165,7 @@ class PulserHardwareServer(Process):
         self.logicAnalyzerData = LogicAnalyzerData()
         
         self.logicAnalyzerBuffer = bytearray()
+        self.logicAnalyzerReadStatus = 0      #
         
     def run(self):
         configureServerLogging(self.loggingQueue)
@@ -213,26 +214,43 @@ class PulserHardwareServer(Process):
             if logicAnalyzerData:
                 self.logicAnalyzerBuffer.extend(logicAnalyzerData)
             for s in sliceview(self.logicAnalyzerBuffer,8):
-                (code, ) = struct.unpack('Q',s)
-                self.logicAnalyzerData.wordcount += 1
-                time = (code & 0xffffff) + self.logicAnalyzerData.countOffset
-                pattern = (code >> 24) & 0xffffffff
-                header = (code >> 56 )
-                if header==2:  # overrun marker
-                    self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
-                elif header==1:  # end marker
-                    self.logicAnalyzerData.stopMarker = time
-                    self.dataQueue.put( self.logicAnalyzerData )
-                    self.logicAnalyzerData = LogicAnalyzerData()
-                elif header==4: # trigger
-                    self.logicAnalyzerData.trigger.append( (time,pattern) )
-                elif header==3: # standard
-                    self.logicAnalyzerData.data.append( (time,pattern) )  
-                elif header==5: # aux data
-                    self.logicAnalyzerData.auxData.append( (time,pattern))
-                elif header==6:
-                    self.logicAnalyzerData.gateData.append( (time,pattern) )                                          
-                logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+                if self.logicAnalyzerReadStatus==0:
+                    (code, ) = struct.unpack('Q',s)
+                    self.logicAnalyzerData.wordcount += 1
+                    self.logicAnalyzerTime = (code & 0xffffff) + self.logicAnalyzerData.countOffset
+                    pattern = (code >> 24) & 0xffffffff
+                    header = (code >> 56 )
+                    if header==2:  # overrun marker
+                        self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
+                    elif header==1:  # end marker
+                        self.logicAnalyzerData.stopMarker = self.logicAnalyzerTime
+                        self.dataQueue.put( self.logicAnalyzerData )
+                        self.logicAnalyzerData = LogicAnalyzerData()
+                    elif header==4: # trigger
+                        self.logicAnalyzerReadStatus = 4
+                    elif header==3: # standard
+                        self.logicAnalyzerReadStatus = 3  
+                    elif header==5: # aux data
+                        self.logicAnalyzerReadStatus = 5
+                    elif header==6:
+                        self.logicAnalyzerReadStatus = 6                                       
+                    logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(self.logicAnalyzerTime, header, pattern, code, self.logicAnalyzerData.countOffset))
+                elif self.logicAnalyzerReadStatus==3:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.data.append( (self.logicAnalyzerTime,pattern) )
+                    self.logicAnalyzerReadStatus = 0
+                elif self.logicAnalyzerReadStatus==4:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.trigger.append( (self.logicAnalyzerTime,pattern) )
+                    self.logicAnalyzerReadStatus = 0
+                elif self.logicAnalyzerReadStatus==5:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.auxData.append( (self.logicAnalyzerTime,pattern))
+                    self.logicAnalyzerReadStatus = 0
+                elif self.logicAnalyzerReadStatus==6:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.gateData.append( (self.logicAnalyzerTime,pattern) )
+                    self.logicAnalyzerReadStatus = 0
             self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
 
                    

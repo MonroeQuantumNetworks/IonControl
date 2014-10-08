@@ -19,7 +19,7 @@ Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
 class Settings:
     def __init__(self):
-        self.numChannels = 32
+        self.numChannels = 64
         self.numTriggerChannels = 7
         self.numAuxChannels = 10
         self.numGateChannels = 32
