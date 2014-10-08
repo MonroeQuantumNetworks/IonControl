@@ -141,22 +141,21 @@ class GaussianFit(FitFunctionBase):
     def functionEval(self, x, A, x0, s, O ):
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
 
-
 class SquareRabiFit(FitFunctionBase):
     name = "Square Rabi"
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  'A*R**2/(R**2+(x-C)**2) * sin**2(sqrt(R**2+(x-C)**2)*t/2) + O where R=pi/T'
+        self.functionString =  'A/(1+(2*pi*(x-C)/R)**2) * sin**2(sqrt(1+(2*pi*(x-C)/R)**2)*R*t/2) + O where R=pi/T'
         self.parameterNames = [ 'T', 'C', 'A', 'O', 't' ]
         self.parameters = [0]*5
-        self.startParameters = [1,42,1,0,100]
+        self.startParameters = [1.0,42.0,1.0,0.0,100.0]
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
-        
+          
     def functionEval(self, x, T, C, A, O, t ):
-        Rs = numpy.square(numpy.pi/T)
-        Ds = numpy.square(2*numpy.pi*(x-C))
-        return (A*Rs/(Rs+Ds)*numpy.square(numpy.sin(numpy.sqrt(Rs+Ds)*t/2.)))+O        
+        R = numpy.pi/T
+        u = numpy.square(2*numpy.pi*(x-C)/R)
+        return ((A/(1+u))*numpy.square(numpy.sin(numpy.sqrt(1+u)*R*t/2.))) + O  
 
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"

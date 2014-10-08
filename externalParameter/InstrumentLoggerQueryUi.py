@@ -16,6 +16,7 @@ import numpy
 from collections import defaultdict
 import logging
 import pytz
+from modules import WeakMethod 
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -123,5 +124,6 @@ class InstrumentLoggerQueryUi(Form,Base):
                 trace.top = numpy.array( top )
                 trace.bottom = numpy.array( bottom )
                 plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time") 
+                plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
             self.traceui.addTrace( plottedTrace, pen=-1)
             self.traceui.resizeColumnsToContents()
