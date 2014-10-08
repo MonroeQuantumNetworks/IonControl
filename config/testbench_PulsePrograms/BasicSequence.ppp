@@ -1,6 +1,6 @@
 const DDSDetect = 0
 
-exitcode endLabel = 0xfffe0001
+exitcode endLabel = 0xfffe000000000001
 parameter<AD9912_FRQ> DetectFreq = 100 MHz
 parameter<AD9912_PHASE> DetectPhase = 0
 parameter DetectAmp = 1023

@@ -32,9 +32,6 @@ OPS = {'NOP'    : 0x00,
        'DDSAMP' : 0x02,
        'DDSPHS' : 0x03,
        'DDSCHN' : 0x04,
-       'SHUTR'  : 0x05,
-       'COUNT'  : 0x06,
-       'DELAY'  : 0x07,
        'LDWR'   : 0x08,
        'LDWI'   : 0x09,
        'STWR'   : 0x0A,
@@ -51,14 +48,6 @@ OPS = {'NOP'    : 0x00,
        'JMPNZ'  : 0x15,
        'DAC'    : 0x17,
        'DACUP'  : 0x18,
-       'COUNT1'	: 0x20,
-       'COUNTBOTH' : 0x21,
-       'LDWR1'	: 0x22,
-       'STWR1'  : 0x23,
-       'CMP1'   : 0x24,
-       'JMPZ1'  : 0x25,
-       'JMPNZ1'	: 0x26,
-       'CLRW1'	: 0x27,
        'SHUTRVAR':0x28,
        'SHUTTERMASK' : 0x30,
        'ASYNCSHUTTER' : 0x31,
@@ -267,7 +256,7 @@ class PulseProgram:
             self.binarycode += struct.pack('I', (op<<(32-8)) + arg)
         self.dataBinarycode = bytearray()
         for wordno, arg in enumerate(self.dataBytecode):
-            logger.debug( "{0} {1}".format( hex(wordno), hex(arg) )) 
+            logger.debug( "{0} {1}".format( hex(wordno), hex(long(arg)) )) 
             self.dataBinarycode += struct.pack('Q', long(arg))
             
         return self.binarycode, self.dataBinarycode
