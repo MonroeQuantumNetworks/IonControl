@@ -98,6 +98,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
         self.pushTableView.setItemDelegateForColumn(4,self.pushItemDelegate)
         self.pushTableView.setItemDelegateForColumn(5,self.pushItemDelegate)
+        self.pushTableView.setItemDelegateForColumn(6,self.pushItemDelegate)
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
         if self.configname+'splitter' in self.config:
             self.splitter.restoreState( self.config[self.configname+'splitter'])

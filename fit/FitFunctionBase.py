@@ -224,16 +224,19 @@ class FitFunctionBase(object):
         return self.functionEval(x, *p )
 
     def pushVariableValues(self):
-        replacement = dict(zip(self.parameterNames,self.parameters))
         pushVarValues = list()
         for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord(replacement) )
+            pushVarValues.extend( pushvar.pushRecord(self.replacementDict()) )
         return pushVarValues
             
-    def updatePushVariables(self):
+    def replacementDict(self):
         replacement = dict(zip(self.parameterNames,self.parameters))
+        replacement.update( dict( ( (v.name, v.value) for v in self.results.values() ) ) )
+        return replacement
+    
+    def updatePushVariables(self):
         for pushvar in self.pushVariables.values():
-            pushvar.evaluate(replacement)
+            pushvar.evaluate(self.replacementDict())
 
         
         
