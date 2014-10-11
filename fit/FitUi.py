@@ -30,7 +30,7 @@ class AnalysisDefinition(object):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
         fitfunction.startParameters = list(self.startParameters)
         fitfunction.parameterEnabled = list(self.parameterEnabled)
-        fitfunction.pushVariables = SequenceDict( (v.globalName, v) for v in self.pushVariables) 
+        fitfunction.pushVariables = SequenceDict( (v.key, v) for v in self.pushVariables) 
         return fitfunction
     
     @classmethod
@@ -98,6 +98,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
         self.pushTableView.setItemDelegateForColumn(4,self.pushItemDelegate)
         self.pushTableView.setItemDelegateForColumn(5,self.pushItemDelegate)
+        self.pushTableView.setItemDelegateForColumn(6,self.pushItemDelegate)
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
         if self.configname+'splitter' in self.config:
             self.splitter.restoreState( self.config[self.configname+'splitter'])

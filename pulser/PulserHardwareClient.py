@@ -10,7 +10,8 @@ import numpy
 
 from PyQt4 import QtCore 
 
-from PulserHardwareServer import FinishException, ErrorMessages, FPGAException
+from PulserHardwareServer import FinishException
+from pulser.OKBase import ErrorMessages, FPGAException
 from PulserHardwareServer import PulserHardwareServer
 import modules.magnitude as magnitude
 
