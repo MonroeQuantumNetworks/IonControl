@@ -45,6 +45,7 @@ from externalParameter.ExternalParameter import ExternalParameter
 from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
+from pulser.OKBase import OKBase
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -109,6 +110,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog = FPGASettingsDialog( self.config, parent=self.parent)
         self.settingsDialog.setupUi()
         self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
+        self.okBase = OKBase()
+        self.settingsDialog.addEntry( "32 Channel PMT", self.okBase )
+        self.dac = OKBase()
+        self.settingsDialog.addEntry( "DAC system", self.dac)
         self.settingsDialog.initialize()
 
         self.settings = self.settingsDialog.settings        
@@ -409,8 +414,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.State'] = self.parent.saveState()
         for tab in self.tabDict.values():
             tab.saveConfig()
-        self.config['Settings.deviceSerial'] = self.settings.deviceSerial
-        self.config['Settings.deviceDescription'] = self.settings.deviceDescription
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()

@@ -27,10 +27,12 @@ class FPGASettingsDialogConfig:
         self.autoUpload = False
         self.lastInstrument = None
         self.lastBitfile = None
+        self.enabled = False
         
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object"""
         self.__dict__ = state
+        self.__dict__.setdefault( 'enabled', False )
 
 class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
     def __init__(self, pulser, config, target, parent=0):
@@ -49,7 +51,6 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
         self.renameButton.clicked.connect( self.onBoardRename )
         self.uploadButton.clicked.connect( self.onUploadBitfile )
         self.toolButtonOpenBitfile.clicked.connect( self.onLoadBitfile )
-        self.comboBoxInstruments.currentIndexChanged[str].connect( self.onIndexChanged )
         self.scanInstruments()
         self.configSettings = self.config.get(self.configName+'.Config',FPGASettingsDialogConfig() )
         self.bitfileCache = self.config.get(self.configName+'.bitfileCache',dict() )
@@ -60,7 +61,26 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
         if self.configSettings.lastBitfile:
             self.comboBoxBitfiles.setCurrentIndex( self.comboBoxBitfiles.findText(self.configSettings.lastBitfile))
         if self.configSettings.lastInstrument in self.deviceMap:
-            self.comboBoxInstruments.setCurrentIndex( self.comboBoxInstruments.findText(self.configSettings.lastInstrument) )
+            index  = self.comboBoxInstruments.findText(self.configSettings.lastInstrument)
+            self.comboBoxInstruments.setCurrentIndex( index )
+            self.onIndexChanged(self.configSettings.lastInstrument)
+        elif len(self.deviceMap)>0:
+            self.comboBoxInstruments.setCurrentIndex(0)
+            self.onIndexChanged(str(self.comboBoxInstruments.itemText(0)))
+        self.comboBoxInstruments.currentIndexChanged[str].connect( self.onIndexChanged )
+        self.enableCheckBox.setChecked( self.configSettings.enabled )
+        self.enableCheckBox.stateChanged.connect( self.onEnableChanged )
+        self.onEnableChanged( QtCore.Qt.Checked if self.configSettings.enabled else QtCore.Qt.Unchecked )
+            
+    def onEnableChanged(self, enable):
+        enable = enable == QtCore.Qt.Checked
+        self.comboBoxInstruments.setEnabled(enable)
+        self.comboBoxBitfiles.setEnabled(enable)
+        self.checkBoxAutoUpload.setEnabled(enable)
+        self.toolButtonOpenBitfile.setEnabled(enable)
+        self.pushButtonScan.setEnabled(enable)
+        self.uploadButton.setEnabled(enable)
+        self.configSettings.enabled = enable
             
     def showStatus(self, isopen):
         pass
@@ -68,7 +88,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
     def resourcesAvailable(self):
         return (self.settings.deviceSerial in self.deviceSerialMap and 
                 self.configSettings.lastBitfile is not None and os.path.exists(self.configSettings.lastBitfile) and 
-                self.configSettings.deviceMap[self.configSettings.deviceDescription].serial == self.deviceSerial )            
+                self.deviceMap[self.configSettings.lastInstrument].serial == self.settings.deviceSerial )            
             
     def initialize(self):
         if self.resourcesAvailable():
@@ -78,6 +98,12 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
             self.showStatus(True)
             return True
         return False
+    
+    def accept(self):
+        if self.configSettings.enabled:
+            self.configSettings.lastInstrument = self.settings.deviceDescription
+            return self.initialize()
+        return True
     
     def onStateChanged(self, attribute, state):
         setattr( self.configSettings, attribute, state==QtCore.Qt.Checked )
@@ -130,7 +156,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
             self.configSettings.lastInstrument = self.settings.deviceDescription
 
 
-class FPGASettingsDialog(SettingsDialogForm, SettingsDialogBase):
+class FPGASettingsDialog(ListForm, ListBase):
     def __init__(self, config, parent=0):
         ListBase.__init__(self,parent)    
         ListForm.__init__(self)
@@ -140,7 +166,7 @@ class FPGASettingsDialog(SettingsDialogForm, SettingsDialogBase):
         self.lastPos = self.config.get('FPGASettingsDialog.lastPos', None)
         
     def setupUi(self):
-        super(FPGASettingsWidget,self).setupUi(self)
+        super(FPGASettingsDialog,self).setupUi(self)
         
     def initialize(self):
         if not( all( ( widget.initialize() for widget in self.widgetDict.values() ) ) ) or self.showOnStartup:
@@ -152,12 +178,13 @@ class FPGASettingsDialog(SettingsDialogForm, SettingsDialogBase):
     
     def addEntry(self, target, pulser):
         newWidget = FPGASettingsWidget(pulser, self.config, target, self)
+        newWidget.setupUi()
         self.widgetDict[target] = newWidget
         self.toolBox.addItem( newWidget, target )
 
     def accept(self):
         self.lastPos = self.pos()
-        if all( ( widget.initialize() for widget in self.widgetDict.values() ) ):
+        if all( ( widget.accept() for widget in self.widgetDict.values() ) ):
             self.hide()
         
     def reject(self):
@@ -175,6 +202,8 @@ class FPGASettingsDialog(SettingsDialogForm, SettingsDialogBase):
         for widget in self.widgetDict.values():
             widget.saveConfig()
      
+    def settings(self, target):
+        return self.widgetDict[target].settings
             
 if __name__ == "__main__":
     import sys
@@ -186,7 +215,7 @@ if __name__ == "__main__":
     recipient = Recipient()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    ui = SettingsDialog(config)
+    ui = FPGASettingsDialog(config)
     ui.setupUi(recipient)
     MainWindow.setCentralWidget(ui)
     MainWindow.show()
