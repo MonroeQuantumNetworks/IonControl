@@ -44,6 +44,7 @@ from functools import partial
 from externalParameter.ExternalParameter import ExternalParameter
 from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
+from gui.FPGASettings import FPGASettingsDialog
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -105,8 +106,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
         
-        self.settingsDialog = SettingsDialog.SettingsDialog(self.pulser, self.config, self.parent)
+        self.settingsDialog = FPGASettingsDialog( self.config, parent=self.parent)
         self.settingsDialog.setupUi()
+        self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
+        self.settingsDialog.initialize()
 
         self.settings = self.settingsDialog.settings        
 
