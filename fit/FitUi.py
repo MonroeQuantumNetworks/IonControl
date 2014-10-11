@@ -30,7 +30,7 @@ class AnalysisDefinition(object):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
         fitfunction.startParameters = list(self.startParameters)
         fitfunction.parameterEnabled = list(self.parameterEnabled)
-        fitfunction.pushVariables = SequenceDict( (v.globalName, v) for v in self.pushVariables) 
+        fitfunction.pushVariables = SequenceDict( (v.key, v) for v in self.pushVariables) 
         return fitfunction
     
     @classmethod
