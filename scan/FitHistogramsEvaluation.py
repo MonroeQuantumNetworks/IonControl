@@ -81,7 +81,7 @@ class FitHistogramEvaluation(EvaluationBase):
         self.settings.setdefault('HistogramBins',50)
         self.settings.setdefault('NumberBright',0)
         self.settings.setdefault('OnlyOneIon',True)
-
+        self.settings.setdefault('Parity',True)
         
     def update(self, param, changes):
         super( FitHistogramEvaluation, self ).update(param, changes)
@@ -95,16 +95,18 @@ class FitHistogramEvaluation(EvaluationBase):
         
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
         params, confidence = data.evaluated.get('FitHistogramsResult',(None,None))
-        if params is not None:
+        if params is None:
+            y, x = numpy.histogram( data.count[counter] , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
+            y, self.fitFunction.totalCounts = self.normalizeHistogram(y, longOutput=True)
+            params, confidence = self.leastsq(x[0:-1], y, [0.3,0.3])
+            params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter
+            confidence = list(confidence)
+            confidence.append( 0 )  # don't know what to do :(
+            data.evaluated['FitHistogramsResult'] = (params, confidence)
+        if self.settings['Parity']:
+            return params[0]+params[2]-params[1], (None,None), params[0]+params[2]-params[1]
+        else:
             return params[self.settings['NumberBright']], (confidence[self.settings['NumberBright']],  confidence[self.settings['NumberBright']]) , params[self.settings['NumberBright']]
-        y, x = numpy.histogram( data.count[counter] , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
-        y, self.fitFunction.totalCounts = self.normalizeHistogram(y, longOutput=True)
-        params, confidence = self.leastsq(x[0:-1], y, [0.3,0.3])
-        params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter
-        confidence = list(confidence)
-        confidence.append( 0 )  # don't know what to do :(
-        data.evaluated['FitHistogramsResult'] = (params, confidence)
-        return params[self.settings['NumberBright']], (confidence[self.settings['NumberBright']],  confidence[self.settings['NumberBright']]) , params[self.settings['NumberBright']]
 
         
     def children(self):
@@ -113,7 +115,8 @@ class FitHistogramEvaluation(EvaluationBase):
                 {'name':'TwoBright','type':'str','value':self.settings['TwoBright'], 'tip': 'filename for TwoBright data' },
                 {'name':'NumberBright','type':'int','value':self.settings['NumberBright'], 'range': (0,2),  'tip': 'Number of bright ions' },
                 {'name':'HistogramBins','type':'int','value':self.settings['HistogramBins'], 'tip': 'Number of histogram bins in data' },
-                {'name':'OnlyOneIon','type':'bool','value':self.settings['OnlyOneIon'], 'tip': 'One ion vs Two ions' }]     
+                {'name':'OnlyOneIon','type':'bool','value':self.settings['OnlyOneIon'], 'tip': 'One ion vs Two ions' },
+                {'name':'Parity','type':'bool','value':self.settings['Parity'], 'tip': 'Return parity' }]     
 
 
     def leastsq(self, x, y, parameters=None, sigma=None):
