@@ -15,6 +15,7 @@ import copy
 
 import modules.magnitude as magnitude
 
+writeBinaryData = False
 
 # add deg to magnitude
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
@@ -258,10 +259,11 @@ class PulseProgram:
         for wordno, arg in enumerate(self.dataBytecode):
             logger.debug( "{0} {1}".format( hex(wordno), hex(long(arg)) )) 
             self.dataBinarycode += struct.pack('Q', long(arg))
-        self.writeBinaryCodeForSimulation(self.binarycode, 'ppcmdmem.mif')
-        self.writeBinaryCodeForSimulation(self.dataBinarycode, 'ppmem6.mif')
-        self.writeBinaryCodeForReference(self.binarycode, 'ppcmdmem.txt')
-        self.writeBinaryDataForReference(self.dataBinarycode, 'ppmem6.txt')
+        if writeBinaryData:
+            self.writeBinaryCodeForSimulation(self.binarycode, 'ppcmdmem.mif')
+            self.writeBinaryCodeForSimulation(self.dataBinarycode, 'ppmem6.mif')
+            self.writeBinaryCodeForReference(self.binarycode, 'ppcmdmem.txt')
+            self.writeBinaryDataForReference(self.dataBinarycode, 'ppmem6.txt')
         return self.binarycode, self.dataBinarycode
         
     def currentVariablesText(self):
