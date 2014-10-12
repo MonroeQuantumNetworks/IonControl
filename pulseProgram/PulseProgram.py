@@ -258,7 +258,10 @@ class PulseProgram:
         for wordno, arg in enumerate(self.dataBytecode):
             logger.debug( "{0} {1}".format( hex(wordno), hex(long(arg)) )) 
             self.dataBinarycode += struct.pack('Q', long(arg))
-            
+        self.writeBinaryCodeForSimulation(self.binarycode, 'ppcmdmem.mif')
+        self.writeBinaryCodeForSimulation(self.dataBinarycode, 'ppmem6.mif')
+        self.writeBinaryCodeForReference(self.binarycode, 'ppcmdmem.txt')
+        self.writeBinaryDataForReference(self.dataBinarycode, 'ppmem6.txt')
         return self.binarycode, self.dataBinarycode
         
     def currentVariablesText(self):
@@ -267,6 +270,26 @@ class PulseProgram:
             lines.append("{0} {1}".format(name,var.value))
         return '\n'.join(lines)
            
+    def writeBinaryCodeForSimulation(self, code, filename):
+        from pulser.PulserHardwareServer import sliceview
+        with open(filename,'w') as f:
+            for v in sliceview( code,2):
+                (value,) = struct.unpack('H',v)
+                f.write("{0:016b}\n".format(value))
+
+    def writeBinaryCodeForReference(self, code, filename):
+        from pulser.PulserHardwareServer import sliceview
+        with open(filename,'w') as f:
+            for v in sliceview( code,4):
+                (value,) = struct.unpack('I',v)
+                f.write("{0:08x}\n".format(value))
+
+    def writeBinaryDataForReference(self, code, filename):
+        from pulser.PulserHardwareServer import sliceview
+        with open(filename,'w') as f:
+            for v in sliceview( code,8):
+                (value,) = struct.unpack('Q',v)
+                f.write("{0:016x}\n".format(value))
 
 # routines below here should not be needed by the user   
 
@@ -408,7 +431,7 @@ class PulseProgram:
         else:
             var.value = magnitude.mg( float(data), '' )
             var.value.output_prec(0)   # without dimension the parameter has to be int. Thus, we do not want decimal places :)
-            data = int(round(float(data)))
+            data = int(data)
 
         if label in self.defines:
             logger.error( "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(sourcename,label,data,self.defines[label]) )
@@ -421,7 +444,7 @@ class PulseProgram:
         var.strvalue = str(var.value)
         self.variabledict.update({ label: var})
         if var.type == "exitcode":
-            self._exitcodes[data & 0x0000ffff] = var
+            self._exitcodes[data & 0x0000ffffffffffff] = var
 
     # code is (address, operation, data, label or variablename, currentfile)
     def toBytecode(self):
@@ -453,7 +476,7 @@ class PulseProgram:
                     channel, data = line[2]
                     if isinstance(data,basestring):
                         data = self.variabledict[data].address
-                    bytedata = ((int(channel) & 0xf) << (64-16)) | (int(data) & 0x0fff)
+                    bytedata = ((int(channel) & 0xf) << (32-16)) | (int(data) & 0x0fff)
             except KeyError:
                 logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)

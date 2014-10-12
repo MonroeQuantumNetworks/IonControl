@@ -7,7 +7,7 @@ import math
 from multiprocessing import Process
 import struct
 import numpy
-
+from time import time as time_time
 
 from mylogging.ServerLogging import configureServerLogging
 from modules import enum
@@ -347,7 +347,7 @@ class PulserHardwareServer(Process, OKBase):
     def ppUploadCode(self,binarycode,startaddress=0):
         if self.xem:
             logger = logging.getLogger(__name__)
-            logger.info( "PP Code segment uses {0} / {1} words {2:.0}%".format(len(binarycode)/4,4095,len(binarycode)/4/40.95))
+            logger.info( "PP Code segment uses {0} / {1} words {2:.0f} %".format(len(binarycode)/4,4095,len(binarycode)/4/40.95))
             if len(binarycode)/4 > 4095:
                 raise PulserHardwareException("Code segment exceeds 4095 words ({0})".format(len(binarycode)/4))
             logger.info(  "starting PP Code upload" )
@@ -381,7 +381,7 @@ class PulserHardwareServer(Process, OKBase):
     def ppUploadData(self, binarydata,startaddress=0):
         if self.xem:
             logger = logging.getLogger(__name__)
-            logger.info( "PP Data segment uses {0} / {1} words ( {2:.0}% )".format(len(binarydata)/8,4095,len(binarydata)/8/40.95))
+            logger.info( "PP Data segment uses {0} / {1} words ( {2:.0f} % )".format(len(binarydata)/8,4095,len(binarydata)/8/40.95))
             if len(binarydata)/8 > 4095:
                 raise PulserHardwareException("Code segment exceeds 4095 words ({0})".format(len(binarydata)/8))
             logger.info(  "starting PP Datasegment upload" )
@@ -468,7 +468,7 @@ class PulserHardwareServer(Process, OKBase):
             else:
                 code = bytearray()
                 for item in data:
-                    code.extend(struct.pack('L',item))
+                    code.extend(struct.pack('Q',item))
                 #print "ppWriteData length",len(code)
                 return self.xem.WriteToPipeIn(0x81,code)
         else:
