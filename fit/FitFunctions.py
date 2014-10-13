@@ -53,6 +53,20 @@ class CosSqFit(FitFunctionBase):
     def functionEval(self, x, A, T, theta, O ):
         return A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))+O
 
+class CosSqPeakFit(FitFunctionBase):
+    name = "Cos2 Peak"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*cos^2(pi*(x-x0)/(2*T))+O'
+        self.parameterNames = [ 'A', 'T', 'x0', 'O' ]
+        self.parameters = [1,100,0,0]
+        self.startParameters = [1,1,0,0]
+        self.parameterEnabled = [True]*4
+        self.parametersConfidence = [None]*4
+       
+    def functionEval(self, x, A, T, x0, O ):
+        return A*numpy.square(numpy.cos(numpy.pi/2/T*(x-x0)))+O
+
 
 class SinSqFit(FitFunctionBase):
     name = "Sin2"
@@ -215,6 +229,7 @@ class LinearFit(FitFunctionBase):
 fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
                        CosFit.name: CosFit, 
                        CosSqFit.name: CosSqFit,
+                       CosSqPeakFit.name: CosSqPeakFit,
                        SinSqFit.name: SinSqFit,
                        SinSqExpFit.name: SinSqExpFit,
                        SinSqGaussFit.name: SinSqGaussFit,
