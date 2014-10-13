@@ -600,7 +600,9 @@ class Magnitude():
     def suggestedUnit(self):
         if self.out_unit:
             return self.out_unit
-        outmag = _mags[_outputDimensions[tuple(self.unit)]]
+        if self.dimensionless():
+            return ""
+        outmag = _mags[_outputDimensions[tuple(self.unit)]] 
         m = self.copy(True)
         m._div_by(outmag)
         prefix = m._bestPrefix_()

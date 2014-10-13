@@ -209,7 +209,7 @@ class FitFunctionBase(object):
             e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition)})
             e.text = str(result.value)
         for push in self.pushVariables.values():
-            e = ElementTree.SubElement( myroot, 'PushVariable', {'globalName':push.globalName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
+            e = ElementTree.SubElement( myroot, 'PushVariable', {'destination':push.destinationName, 'variable':push.variableName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
         return myroot
    
     def residuals(self,p, y, x, sigma):
