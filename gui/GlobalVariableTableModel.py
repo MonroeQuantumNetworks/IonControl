@@ -151,9 +151,9 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return False
     
     def update(self, updlist):
-        for key, value in updlist:
+        for destination, key, value in updlist:
             value = MagnitudeUtilit.mg(value)
-            if key in self.variables:
+            if destination=='Global' and key in self.variables:
                 old = self.variables[key]
                 if value.dimension() != old.dimension() or value != old:
                     self.variables[key] = value

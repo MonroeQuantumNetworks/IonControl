@@ -164,7 +164,12 @@ class FitUi(fitForm, QtGui.QWidget):
     def onPush(self):
         for destination, variable, value in self.fitfunction.pushVariableValues():
             if destination in self.pushDestinations:
-                self.pushDestinations[destination].update( [(variable,value)] )
+                self.pushDestinations[destination].update( [(destination,variable,value)] )
+                
+    def pushVariables(self, pushVariables):
+        for destination, variable, value in pushVariables:
+            if destination in self.pushDestinations:
+                self.pushDestinations[destination].update( [(destination,variable,value)] )
 
                 
     def onPlot(self):

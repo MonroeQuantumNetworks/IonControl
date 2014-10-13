@@ -86,8 +86,9 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
             QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,index) )
 
     def update(self, iterable):
-        for name, value in iterable:
-            self.setValue( self.createIndex( self.names.index(name),1), value )
+        for destination, name, value in iterable:
+            if destination=='External':
+                self.setValue( self.createIndex( self.names.index(name),1), value )
 
 class ControlUi(UiForm,UiBase):
     
