@@ -269,9 +269,8 @@ class PulserHardwareServer(Process, OKBase):
          
     def setShutter(self, value):
         if self.xem:
-            check( self.xem.SetWireInValue(0x06, value, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
+            data = bytearray(struct.pack('=HQ', 0x10, value))
+            self.xem.WriteToPipeIn(0x84, data )
             self._shutter = value
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
@@ -287,10 +286,7 @@ class PulserHardwareServer(Process, OKBase):
             
     def setTrigger(self,value):
         if self.xem:
-            check( self.xem.SetWireInValue(0x08, value, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x09, value>>16, 0xFFFF)	, 'SetWireInValue' )
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
-            check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
+            self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x11, value)) )
             self._trigger = value
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")

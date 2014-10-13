@@ -7,6 +7,7 @@ Created on Tue Feb 19 14:53:26 2013
 
 import logging
 import math
+import struct
 
 from pulser.PulserHardwareClient import check
 from modules.magnitude import mg
@@ -52,9 +53,7 @@ class Ad9912:
         if self.pulser:
             check( self.pulser.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" ) 
             check( self.pulser.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
-            check( self.pulser.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" ) 
-            check( self.pulser.SetWireInValue(0x0e, (data >> 32) &0xffff ), "Ad9912" ) #now sending 64 bits
-            check( self.pulser.SetWireInValue(0x0f, (data >> 48) &0xffff ), "Ad9912" ) #now sending 64 bits
+            self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x12, data)) )
             self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
             self.pulser.UpdateWireIns()
