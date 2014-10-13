@@ -116,7 +116,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog.addEntry( "DAC system", self.dac)
         self.settingsDialog.initialize()
 
-        self.settings = self.settingsDialog.settings        
+        self.settings = self.settingsDialog.settings("Pulse Programmer")   
+        logger.info("Pulser Configuration {0}".format(self.pulser.getConfiguration()))
 
         # Global Variables
         self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
