@@ -463,7 +463,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         (mycode, data) = self.generator.prepare(self.pulseProgramUi)
         self.progressUi.setRunning( max(len(self.scan.list),1) ) 
         if data:
-            self.pulserHardware.ppWriteRamWordList(data,0, check=False)
+            self.pulserHardware.ppWriteRamWordList(data,0, check=True)
             datacopy = [0]*len(data)
             datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
             if self.scan.gateSequenceSettings.debug:
@@ -475,7 +475,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     for a in mycode:
                         f.write( "{0}\n".format(a) )
             if data!=datacopy:
-                raise ScanException("Ram write unsuccessful")
+                logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
+                logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
+                raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
         self.pulserHardware.ppFlushData()
         self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppUpload(PulseProgramBinary)
