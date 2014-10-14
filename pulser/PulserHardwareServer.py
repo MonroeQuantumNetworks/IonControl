@@ -502,12 +502,12 @@ class PulserHardwareServer(Process, OKBase):
         #self.ppWriteRamWordList(self.sharedMemoryArray[:length], address)
         logger = logging.getLogger(__name__)
         data = self.wordListToBytearray(self.sharedMemoryArray[:length])
-        logger.info( "write {0}".format([int(d) for d in data[0:100]]) )
+        logger.info( "write {0}".format([hex(int(d)) for d in data[0:100]]) )
         self.ppWriteRam( data, address)
         if check:
             myslice = bytearray(len(data))
             self.ppReadRam(myslice, address)
-            logger.info( "read {0}".format([int(d) for d in myslice[0:100]]) )
+            logger.info( "read {0}".format([hex(int(d)) for d in myslice[0:100]]) )
             matches = data == myslice
             logger.info( "ppWriteRamWordList {0}".format( len(data)) )
             if not matches:
