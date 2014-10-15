@@ -30,7 +30,7 @@ class AnalysisDefinition(object):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
         fitfunction.startParameters = list(self.startParameters)
         fitfunction.parameterEnabled = list(self.parameterEnabled)
-        fitfunction.pushVariables = SequenceDict( (v.key, v) for v in self.pushVariables) 
+        fitfunction.pushVariables = SequenceDict( (v.key, copy.deepcopy(v)) for v in self.pushVariables) 
         return fitfunction
     
     @classmethod
@@ -40,7 +40,7 @@ class AnalysisDefinition(object):
         instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
         for result in fitfunction.results.values():
             instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
-        instance.pushVariables = tuple( fitfunction.pushVariables.values() )
+        instance.pushVariables = tuple( (copy.deepcopy(v) for v in fitfunction.pushVariables.values()) )
         return instance
      
     stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'pushVariables'] 
