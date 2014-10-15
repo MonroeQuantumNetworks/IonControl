@@ -15,10 +15,10 @@ if __name__=='__main__':
     boards = pulser.listBoards()
     for name, desc in boards.iteritems():
         print "name: {0} desc: {1}".format(name, desc.__dict__)
-    serial = boards.values()[0].serial
+    serial = '132800062Y' #boards.values()[0].serial
     pulser.openBySerial( serial )
     #pulser.uploadBitfile( r"..\FPGA_Ions\fpgafirmware.bit")
-    pulser.uploadBitfile( r"C:\Users\pmaunz\Documents\Programming\IonControl-firmware\fpgafirmware.bit")
+    pulser.uploadBitfile( r"C:\Users\plmaunz\Documents\Programming\IonControl-firmware\fpgafirmware.bit")
     
     datalength = 128
     data = bytearray([ random.randint(0,255) for _ in range(datalength) ])

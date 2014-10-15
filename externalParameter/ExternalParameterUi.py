@@ -89,6 +89,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         for destination, name, value in iterable:
             if destination=='External':
                 self.setValue( self.createIndex( self.names.index(name),1), value )
+                logging.info("Pushed to external parameter {0} value {1}".format(name,value))
 
 class ControlUi(UiForm,UiBase):
     

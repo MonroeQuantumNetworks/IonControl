@@ -30,6 +30,7 @@ import numpy
 from modules.concatenate_iter import concatenate_iter
 import random
 from modules.concatenate_iter import interleave_iter
+from gateSequence.GateSequenceContainer import GateSequenceException
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -425,7 +426,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.toolBox.addItem(self.gateSequenceUi,"Gate Sequences")
         if pulseProgramUi.currentContext.parameters:
             self.gateSequenceUi.setVariables( pulseProgramUi.currentContext.parameters )
-        self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
+        try:
+            self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
+        except GateSequenceException as e:
+            logger.exception(e)
         if isStartup:
             self.onLoadPP(self.settings.loadPPName)
 
