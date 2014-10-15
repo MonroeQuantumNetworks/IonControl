@@ -412,6 +412,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi
         self.fitWidget.addPushDestination('Global', globalVariablesUi )
+        self.scanControlWidget.setGlobalVariables( globalVariablesUi.variables )
+        globalVariablesUi.valueChanged.connect( self.scanControlWidget.evaluate )
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
