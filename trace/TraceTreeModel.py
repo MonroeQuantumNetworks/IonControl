@@ -179,7 +179,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         if trace == self.rootTrace:
             return None
         col = traceIndex.column()
-        return self.dataLookup.get((role,col))(trace)
+        return self.dataLookup.get((role,col), lambda trace: None)(trace)
 
     def flags(self, index):
         """Required. Return the flags for the given index."""
