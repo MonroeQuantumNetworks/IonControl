@@ -80,7 +80,7 @@ class ReadSpectrum( ReadSpectrumForm ):
     def onReadInstrument(self):
         self.statusbar.clearMessage()
         try:
-            self.plot = Traceui.PlottedTrace( self.Instrument.readTrace(), self.graphicsView, pens.penList )
+            self.plot = Traceui.PlottedTrace( self.Instrument.readTrace(), self._graphicsView, pens.penList )
             self.StartFrequency.setText(self.plot.trace.varstr('Start'))
             self.StopFrequency.setText(self.plot.trace.varstr('Stop'))
             self.FrequencyStep.setText(self.plot.trace.varstr('Step'))

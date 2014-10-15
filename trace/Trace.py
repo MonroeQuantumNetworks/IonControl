@@ -44,7 +44,7 @@ class ColumnSpec(list):
 class TracePlotting(object):
     Types = enum('default','steps')
     def __init__(self, xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None,
-                 rawColumn=None,name="",type_ =None, xAxisUnit=None, xAxisLabel=None ):       
+                 rawColumn=None,name="",type_ =None, xAxisUnit=None, xAxisLabel=None, windowName=None ):       
         self.xColumn = xColumn
         self.yColumn = yColumn
         self.topColumn = topColumn
@@ -56,13 +56,15 @@ class TracePlotting(object):
         self.xAxisUnit = xAxisUnit
         self.xAxisLabel = xAxisLabel
         self.type = TracePlotting.Types.default if type_ is None else type_
+        self.windowName = windowName
         
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault( 'xAxisUnit', None )
         self.__dict__.setdefault( 'xAxisLabel', None )
+        self.__dict__.setdefault( 'windowName', None)
         
-    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name', 'type', 'xAxisUnit', 'xAxisLabel']
+    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name', 'type', 'xAxisUnit', 'xAxisLabel', 'windowName']
 
 class TracePlottingList(list):        
     def toXmlElement(self, root):

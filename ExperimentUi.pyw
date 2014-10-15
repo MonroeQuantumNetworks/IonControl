@@ -285,7 +285,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.setWindowState(QtCore.Qt.WindowActive)
         self.dedicatedCountersWindow.raise_()
         self.dedicatedCountersWindow.onStart() #Start displaying data immediately
-        self.dedicatedCountersWindow.graphicsView.onHoldZero() #Set the plot to "hold zero" autorange mode
+        self.dedicatedCountersWindow._graphicsView.onHoldZero() #Set the plot to "hold zero" autorange mode
 
     def showLogicAnalyzer(self):
         self.logicAnalyzerWindow.show()

@@ -67,7 +67,7 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         self.setupPlots()       
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict[self.plotDict.keys()[0]]["view"])
+        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict)
         self.traceui.setupUi(self.traceui)
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
@@ -121,7 +121,7 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -144,7 +144,7 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
             name = str(name)
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}

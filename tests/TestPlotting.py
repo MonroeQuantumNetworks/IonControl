@@ -59,14 +59,14 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
     def __init__(self,parent=None):
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = LabelItem(justify='right')
-        self.graphicsView = self.addPlotWithButtons(row=0,col=0,colspan=2)
+        self._graphicsView = self.addPlotWithButtons(row=0,col=0,colspan=2)
         self.addItem(self.coordinateLabel,row=1,col=1)
-        self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
+        self._graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
         self.mousePointList = list()
-        self.graphicsView.setYRange(0,1) #Range defaults to 0 to 1
-        self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        self._graphicsView.setYRange(0,1) #Range defaults to 0 to 1
+        self._graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         self.gridShown = True #Because we can't query whether the grid is on or off, we just keep track
 
     def addPlotWithButtons(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
@@ -77,9 +77,9 @@ class CoordinatePlotWidget(pyqtgraph.GraphicsLayoutWidget):
     def onMouseMoved(self,pos):
         """Execute when mouse is moved. If mouse is over plot, show cursor
            coordinates on coordinateLabel."""
-        if self.graphicsView.sceneBoundingRect().contains(pos):
-            self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
-            vR = self.graphicsView.vb.viewRange()
+        if self._graphicsView.sceneBoundingRect().contains(pos):
+            self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+            vR = self._graphicsView.vb.viewRange()
             deltaX, deltaY = vR[0][1]-vR[0][0], vR[1][1]-vR[1][0] #Calculate x and y display ranges
             precx = int( math.ceil( math.log10(abs(self.mousePoint.x()/deltaX)) ) + 3 ) if self.mousePoint.x()!=0 and deltaX>0 else 1
             precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
