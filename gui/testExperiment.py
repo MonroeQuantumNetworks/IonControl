@@ -40,9 +40,9 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         testForm.setupUi(self,MainWindow)
         self.config = config
         self.plottedTrace = None
-        self.graphicsView = self.graphicsLayout.graphicsView
+        self._graphicsView = self.graphicsLayout._graphicsView
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui(self.penicons,self.config,"testExperiment",self.graphicsView)
+        self.traceui = Traceui(self.penicons,self.config,"testExperiment",{ "Plot Window": {'view': self._graphicsView}})
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
@@ -98,7 +98,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
 
 #start added
     def createAverageScan(self):
-        self.averagePlottedTrace = PlottedTrace(Trace(), self.graphicsView, pens.penList)
+        self.averagePlottedTrace = PlottedTrace(Trace(), self._graphicsView, pens.penList)
         self.averagePlottedTrace.trace.name = "test average trace"
         self.averagePlottedTrace.trace.description["comment"] = "average trace comment"
         self.averagePlottedTrace.trace.filenameCallback = functools.partial(self.traceFilename, '')
@@ -108,7 +108,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def startScan(self):
         if self.plottedTrace is not None and self.traceui.unplotLastTrace():
             self.plottedTrace.plot(0)
-        self.plottedTrace = PlottedTrace(Trace(),self.graphicsView,pens.penList)
+        self.plottedTrace = PlottedTrace(Trace(),self._graphicsView,pens.penList)
         self.xvalue = 0
         self.phase = 0 #random.uniform(0,2*numpy.pi)
         self.plottedTrace.trace.x = numpy.array([self.xvalue])

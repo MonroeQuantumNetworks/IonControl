@@ -52,6 +52,12 @@ class ExternalParameterBase(object):
         """
         if not self.savedValue or overwrite:
             self.savedValue = self.value
+            
+    def setSavedValue(self, value):
+        """
+        write the saved value to control the way a parameter is restored
+        """
+        self.savedValue = value
     
     def restoreValue(self):
         """

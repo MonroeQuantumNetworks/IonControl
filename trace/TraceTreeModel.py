@@ -98,7 +98,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
     setData(self, traceIndex, value, role): Set the data in the model from the value set in the view.
     """
     
-    def __init__(self, traceList, penicons, parent=None, *args): 
+    def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
         """
         Construct the TraceTreeModel.
         
@@ -108,10 +108,33 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         super(TraceTreeModel, self).__init__(parent)
         self.rootTrace = PlottedTrace(None,None,None,isRootTrace=True) #rootTrace is an empty plotted trace
         self.penicons = penicons
+        self.graphicsViewDict = graphicsViewDict
         for trace in traceList: #set all top level traces to have rootTrace as parent
             if trace.parentTrace == None:
                 trace.parentTrace = self.rootTrace
                 self.rootTrace.appendChild(trace)
+        self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
+                 1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+                 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+                 5: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+                 }
+        self.dataLookup =  { (QtCore.Qt.DisplayRole,2): lambda trace: ", ".join([str(trace.trace.name), str(trace.name)]),
+                 (QtCore.Qt.DisplayRole,3): lambda trace: trace.trace.description["comment"],
+                 (QtCore.Qt.DisplayRole,4): lambda trace: getattr( trace.trace, 'fileleaf', None ),
+                 (QtCore.Qt.DisplayRole,5): lambda trace: trace.windowName,
+                 (QtCore.Qt.EditRole,5): lambda trace: trace.windowName,
+                 (QtCore.Qt.CheckStateRole,0): lambda trace: QtCore.Qt.Checked if trace.curvePen > 0 else QtCore.Qt.Unchecked,
+                 (QtCore.Qt.DecorationRole,1): lambda trace: QtGui.QIcon(self.penicons[trace.curvePen]) if hasattr(trace, 'curve') and trace.curve is not None else None,
+                 (QtCore.Qt.BackgroundColorRole,1): lambda trace: QtGui.QColor(QtCore.Qt.white) if not (hasattr(trace, 'curve') and trace.curve is not None) else None,
+                 (QtCore.Qt.EditRole,1): lambda trace: trace.curvePen,
+                 (QtCore.Qt.EditRole,2): lambda trace: trace.trace.description["comment"],
+                 (QtCore.Qt.EditRole,3): lambda trace: trace.trace.description["comment"]
+                 }
+                
+    def choice(self, index):
+        if index.column()==5:
+            return self.graphicsViewDict.keys()
+        return []
 
     def getTrace(self, traceIndex):
         """Return the trace at the given index. If the index is invalid, return the root trace."""
@@ -148,7 +171,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
 
     def columnCount(self, parent=QtCore.QModelIndex()): 
         """Required. Return the number of columns."""
-        return 5
+        return 6
 
     def data(self, traceIndex, role):
         """Required. Return the data at the given index for the given role."""
@@ -156,37 +179,24 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         if trace == self.rootTrace:
             return None
         col = traceIndex.column()
-        return { (QtCore.Qt.DisplayRole,2): ", ".join([str(trace.trace.name), str(trace.name)]),
-                 (QtCore.Qt.DisplayRole,3): trace.trace.description["comment"],
-                 (QtCore.Qt.DisplayRole,4): getattr( trace.trace, 'fileleaf', None ),
-                 (QtCore.Qt.CheckStateRole,0): QtCore.Qt.Checked if trace.curvePen > 0 else QtCore.Qt.Unchecked,
-                 (QtCore.Qt.DecorationRole,1): QtGui.QIcon(self.penicons[trace.curvePen]) if hasattr(trace, 'curve') and trace.curve is not None else None,
-                 (QtCore.Qt.BackgroundColorRole,1): QtGui.QColor(QtCore.Qt.white) if not (hasattr(trace, 'curve') and trace.curve is not None) else None,
-                 (QtCore.Qt.EditRole,1): trace.curvePen,
-                 (QtCore.Qt.EditRole,2): trace.trace.description["comment"],
-                 (QtCore.Qt.EditRole,3): trace.trace.description["comment"]
-                 }.get((role,col))
+        return self.dataLookup.get((role,col))(trace)
 
     def flags(self, index):
         """Required. Return the flags for the given index."""
         if not index.isValid():
             return QtCore.Qt.NoItemFlags
         col = index.column()
-        return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-                 1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
-                 }.get(col, QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        return self.flagsLookup.get(col, QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
+    headerLookup = [None, 'Plot   ', 'Name', 'Comment', 'Filename','Window']
     def headerData(self, section, orientation, role):
         """Required. Return the headers for each column."""
         if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
-            return {
-                1: 'Plot   ',
-                2: 'Name',
-                3: 'Comment',
-                4: 'Filename'
-                }.get(section)
+            return self.headerLookup[section]
         return None #QtCore.QVariant()
+
+    def setValue(self, index, value):
+        self.setData(index, value, QtCore.Qt.EditRole )
 
     def setData(self, traceIndex, value, role):
         """Required. Set the data in the model from the value set in the view."""
@@ -217,6 +227,11 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
                 trace.trace.description["comment"] = comment
                 trace.trace.resave()
             return True
+        
+        elif (role == QtCore.Qt.EditRole) and (col==5):
+            name = str(value)
+            if name in self.graphicsViewDict:
+                trace.setGraphicsView( self.graphicsViewDict[name]['view'], name )
         
         else:
             return False

@@ -118,12 +118,12 @@ class InstrumentLoggerQueryUi(Form,Base):
                 self.parameters.plotName = str(self.comboBoxPlotName.currentText()) 
             if self.parameters.steps:
                 trace.x = numpy.array( time+[time[-1]] )
-                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False) #@UndefinedVariable
+                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False, windowName=self.parameters.plotName) #@UndefinedVariable
             else:
                 trace.x = numpy.array( time )
                 trace.top = numpy.array( top )
                 trace.bottom = numpy.array( bottom )
-                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time") 
+                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time", windowName=self.parameters.plotName) 
                 plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
             self.traceui.addTrace( plottedTrace, pen=-1)
             self.traceui.resizeColumnsToContents()

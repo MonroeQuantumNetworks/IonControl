@@ -310,7 +310,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self, name=name)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -325,10 +325,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict["Scan Data"]["view"])
+        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
         self.traceui.setupUi(self.traceui)
         # traceui for timestamps
-        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict["Timestamps"]["view"])
+        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict)
         self.timestampTraceui.setupUi(self.timestampTraceui)
         self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
         # new fit widget
@@ -448,7 +448,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 #             rawColumnName = 'raw{0}'.format(index)
             trace.addColumn( yColumnName )
             thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter)
+                                                    xAxisLabel = self.scan.scanParameter, windowName=evaluation.plotname)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
             thisAveragePlottedTrace.trace.description["comment"] = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
@@ -603,11 +603,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
                                                     pens.penList, yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
                                                     rawColumn=rawColumnName, name=self.scan.evalList[index].name, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter) 
+                                                    xAxisLabel = self.scan.scanParameter, windowName=self.scan.evalList[index].plotname) 
                     else:                
                         plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
                                                     pens.penList, yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
-                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter)               
+                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter, windowName=self.scan.evalList[index].plotname)               
                     xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
                     if xRange:
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
@@ -698,7 +698,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTimestampTrace.name = self.scan.settingsName
             self.currentTimestampTrace.description["comment"] = ""
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
-            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList)
+            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList, windowName="Timestamps")
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
@@ -732,7 +732,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 yColumnName = 'y{0}'.format(index) 
                 self.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
-                                                     yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else "") )
+                                                     yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else ""), windowName="Histogram" )
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]
@@ -766,7 +766,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             name = str(name)
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -876,7 +876,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # create an exporter instance, as an argument give it
         # the item you wish to export
         with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):
-            exporter = ImageExporter(widget.graphicsView.scene()) 
+            exporter = ImageExporter(widget._graphicsView.scene()) 
       
             # set export parameters if needed
             pageWidth = printer.pageRect().width()
