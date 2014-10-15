@@ -47,3 +47,18 @@ if __name__=='__main__':
     print "data read   ", [hex(int(d)) for d in datacopy]
     pulser.ppReadRam(datacopy, 0)
     print "data read   ", [hex(int(d)) for d in datacopy]
+
+    data = bytearray([ random.randint(0,255) for _ in range(datalength) ])
+    print "data written", [hex(int(d)) for d in data]
+    pulser.ppWriteRam(data, 0)
+    datacopy = bytearray([0]*len(data))
+    pulser.xem.ActivateTriggerIn( 0x41, 8 ) # Ram set read address
+    pulser.ppReadRam(datacopy, 0)
+    print "data read   ", [hex(int(d)) for d in datacopy]
+    pulser.ppReadRam(datacopy, 0)
+    print "data read   ", [hex(int(d)) for d in datacopy]
+    pulser.ppReadRam(datacopy, 0)
+    print "data read   ", [hex(int(d)) for d in datacopy]
+    pulser.ppReadRam(datacopy, 0)
+    print "data read   ", [hex(int(d)) for d in datacopy]
+
