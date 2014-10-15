@@ -5,10 +5,8 @@ Created on May 18, 2014
 '''
 import math
 from modules.magnitude import MagnitudeError
-from modules import Expression
 
 class ScanSegmentDefinition(object):
-    expression = Expression.Expression()
     def __init__(self):
         self._start = 0
         self._stop = 1
@@ -18,24 +16,12 @@ class ScanSegmentDefinition(object):
         self._stepsize = 1
         self._stepPreference = 'stepsize'
         self._inconsistent = False
-        self._startText = None
-        self._stopText = None
-        self._centerText = None
-        self._spanText = None
-        self._stepsText = None
-        self._stepsizeText = None
         
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault('_inconsistent',False)
-        self.__dict__.setdefault('_startText',None)
-        self.__dict__.setdefault('_stopText',None)
-        self.__dict__.setdefault('_centerText',None)
-        self.__dict__.setdefault('_spanText',None)
-        self.__dict__.setdefault('_stepsText',None)
-        self.__dict__.setdefault('_stepsizeText',None)
         
-    stateFields = ['_start', '_stop', '_center', '_span', '_steps', '_stepsize', '_stepPreference', '_startText', '_stopText', '_centerText', '_spanText', '_stepsText', '_stepsizeText'] 
+    stateFields = ['_start', '_stop', '_center', '_span', '_steps', '_stepsize', '_stepPreference'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -47,54 +33,6 @@ class ScanSegmentDefinition(object):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     @property
-    def startText(self):
-        return self._startText if self._startText is not None else str(self._start)
-
-    @startText.setter
-    def startText(self, text):
-        self._startText = text
-
-    @property
-    def stopText(self):
-        return self._stopText if self._stopText is not None else str(self._stop)
-
-    @stopText.setter
-    def stopText(self, text):
-        self._stopText = text
-
-    @property
-    def centerText(self):
-        return self._centerText if self._centerText is not None else str(self._center)
-
-    @centerText.setter
-    def centerText(self, text):
-        self._centerText = text
-        
-    @property
-    def spanText(self):
-        return self._spanText if self._spanText is not None else str(self._span)
-
-    @spanText.setter
-    def spanText(self, text):
-        self._spanText = text
-
-    @property
-    def stepsText(self):
-        return self._stepsText if self._stepsText is not None else str(self._steps)
-
-    @stepsText.setter
-    def stepsText(self, text):
-        self._stepsText = text
-
-    @property
-    def stepsizeText(self):
-        return self._stepsizeText if self._stepsizeText is not None else str(self._stepsize)
-
-    @stepsizeText.setter
-    def stepsizeText(self, text):
-        self._stepsizeText = text
-
-    @property
     def start(self):
         return self._start
     
@@ -102,7 +40,7 @@ class ScanSegmentDefinition(object):
     def start(self, start):
         self._start = start
         self.calculateCenterSpan()
-                
+        
     @property
     def stop(self):
         return self._stop
@@ -121,8 +59,6 @@ class ScanSegmentDefinition(object):
             else:
                 self._steps = math.ceil(self._span / self._stepsize + 1) 
             self.checkConsistency()
-            self._centerText = None
-            self._spanText = None
         except MagnitudeError:
             self._inconsistent = True
           
@@ -160,8 +96,6 @@ class ScanSegmentDefinition(object):
     def calculateStartStop(self):
         self._start = self._center - self._span/2
         self._stop = self._center + self._span/2
-        self._startText = None
-        self._stopText = None
         
     @property
     def steps(self):
@@ -173,7 +107,6 @@ class ScanSegmentDefinition(object):
             self._steps = max( steps, 2 )
             self._stepPreference = 'steps'
             self._stepsize = self._span / (self._steps-1)
-            self._stepsizeText = None
             self.checkConsistency()
         except MagnitudeError:
             self._inconsistent = True
@@ -188,7 +121,6 @@ class ScanSegmentDefinition(object):
             self._stepsize = stepsize
             self._stepPreference = 'stepsize'
             self._steps = math.ceil(self._span / self._stepsize+1) 
-            self._stepsText = None
             self.checkConsistency()
         except MagnitudeError:
             self._inconsistent = True
@@ -199,27 +131,4 @@ class ScanSegmentDefinition(object):
     
     def checkConsistency(self):
         self._inconsistent = not ( self._start.unit == self._stop.unit == self._center.unit == self._span.unit == self._stepsize.unit )
-        
-    def evaluate(self, globalDict ):
-        changed = False
-        if self._startText:
-            self.start = self.expression.evaluateAsMagnitude(self._startText, globalDict )
-            changed = True
-        if self._stopText:
-            self.stop = self.expression.evaluateAsMagnitude(self._stopText, globalDict )
-            changed = True
-        if self._centerText:
-            self.center = self.expression.evaluateAsMagnitude(self._centerText, globalDict )
-            changed = True
-        if self._spanText:
-            self.span = self.expression.evaluateAsMagnitude(self._spanText, globalDict )
-            changed = True
-        if self._stepsText:
-            self.steps = self.expression.evaluateAsMagnitude(self._stepsText, globalDict )
-            changed = True
-        if self._stepsizeText:
-            self.stepsize = self.expression.evaluateAsMagnitude(self._stepsizeText, globalDict )
-            changed = True
-        return changed
-           
         

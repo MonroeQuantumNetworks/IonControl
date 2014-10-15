@@ -30,7 +30,6 @@ import numpy
 from modules.concatenate_iter import concatenate_iter
 import random
 from modules.concatenate_iter import interleave_iter
-from operator import methodcaller
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -161,9 +160,6 @@ class Scan:
     def description(self):
         desc = dict( ((field,getattr(self,field)) for field in self.documentationList) )
         return desc
-    
-    def evaluate(self, globalDictionary ):
-        return any( (segment.evaluate(globalDictionary) for segment in self.scanSegmentList ) )            
 
 
 class ScanControlParameters:
@@ -175,13 +171,12 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     scanConfigurationListChanged = QtCore.pyqtSignal( object )
     logger = logging.getLogger(__name__)
-    def __init__(self,config,parentname, plotnames=None, parent=None, analysisNames=None, internalParam=True, externalParam=False, globalDict=None):
+    def __init__(self,config,parentname, plotnames=None, parent=None, analysisNames=None, internalParam=True, externalParam=False):
         logger = logging.getLogger(__name__)
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'ScanControl.'+parentname
-        self.globalDict = globalDict if globalDict is not None else dict()
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
@@ -284,10 +279,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
         
-    def evaluate(self, name):
-        if self.settings.evaluate( self.globalDict ):
-            self.tableModel.update()
-        
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
         if self.parameters.autoSave:
@@ -307,8 +298,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
-        if self.globalDict:
-            self.settings.evaluate(self.globalDict)
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
@@ -661,14 +650,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def editEvaluationTable(self, index):
         if index.column() in [0,1,2,4]:
             self.evalTableView.edit(index)
-            
-    def setGlobalVariables(self, variables):
-        self.globalDict = variables
-        self.settings.evaluate(self.globalDict)
-        self.tableModel.setGlobalVariables(variables)
-        self.magnitudeDelegate.setGlobalVariables(variables)
-        self.settings.evaluate(self.globalDict)
-
 
 if __name__=="__main__":
     import sys
