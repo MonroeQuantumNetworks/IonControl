@@ -16,10 +16,8 @@ import random
 import collections
 
 #fiducials = [ ['I'], ['x'], ['y'], ['x','x'], ['x','x','x'], ['y','y','y'] ]
-fiducials = [ ['I'], ['x'], ['y'], ['-x'], ['-y'], ['x','x'] ]
-germs1 = [ ['x'], ['y'] ,['-x'], ['-y'], ['I']]
-germs2 = [ ['x','y'] ,['x','-x'],['x','-y'],['y','-x'],['y','-y'], ['-x','-y']]
-germs3 = [ ['x','x','y'],['x','-x','y'],['x','y','-y'], ['y','-y','-y'],['y','-y','-x'] ]
+fiducials = [ ['I'], ['x'], ['y'], ['x','x','x'], ['y','y','y'], ['x','x'] ]
+germs = [ ['x'], ['y'] , ['I'], ['x','y'], ['x' ,'y','I'], ['x','I','y'], ['x','I','I'],['y','I','I'], ['x','x','I','y'], ['x','x','y','x','y','y'] ]
 
 
 spamTime = 0.002
@@ -27,7 +25,7 @@ gateTime = 0.000045
 
 #Maximum GST sequence length = 2^7 = 128
 nmax = 10
-filename = "TrainingSequenceT3b.xml"
+filename = "TrainingSequenceT3.xml"
 
 class BlochState:
     positions = ['d','u','i','-i','1','-1']  # the 6 points on the Bloch sphere
@@ -157,39 +155,43 @@ gateSequence(root,str(i),[],i)
 i += 1
 totalTime += spamTime
 
+germlist = [g for g in germs if len(g)==1]
 for length in range(1,4):
     root.append( ElementTree.Comment('Strings of length {0}'.format(length)))
-    for sequence in all_fiducial_strings(fiducials,germs1,length):
+    for sequence in all_fiducial_strings(fiducials,germlist,length):
         gateSequence(root,str(i),sequence,i)
         i += 1
         totalTime += spamTime + gateTime*len(list(flatten(sequence)))
 
 #GST sequences, of the form prep-G^n-analyze 
+germlist = [g for g in germs if len(g)==1]
 seqlengths = [2**n for n in range(1, nmax+1)]
 for length in seqlengths:    
     root.append( ElementTree.Comment('GST sequences G^n, n = {0}'.format(length)))
-    for sequence, condensed in zip( gst_strings(fiducials, germs1, length), gst_strings_condensed(fiducials, germs1, length)):
+    for sequence, condensed in zip( gst_strings(fiducials, germlist, length), gst_strings_condensed(fiducials, germlist, length)):
         gateSequence(root, str(i), sequence, i, condensed=''.join(list(condensed)))
         i += 1
         totalTime += spamTime + gateTime*len(list(flatten(sequence)))
 
+germlist = [g for g in germs if len(g) in [2,3]]
 seqlengths = [2**n for n in range(0, nmax)]
 for length in seqlengths:    
     root.append( ElementTree.Comment('GST sequences G^n, n = {0} for products of gates'.format(length)))
-    for sequence, condensed in zip( gst_strings(fiducials, germs2+germs3, length), gst_strings_condensed(fiducials, germs2+germs3, length)):
+    for sequence, condensed in zip( gst_strings(fiducials, germlist, length), gst_strings_condensed(fiducials, germlist, length)):
         gateSequence(root, str(i), sequence, i, condensed=''.join(list(condensed)))
         i += 1
         totalTime += spamTime + gateTime*len(list(flatten(sequence)))
-"""
+
+germlist = [g for g in germs if len(g) > 3]
 seqlengths = [2**n for n in range(0, nmax-1)]
 for length in seqlengths:    
     root.append( ElementTree.Comment('GST sequences G^n, n = {0} for products of three gates'.format(length)))
-    for sequence, condensed in zip( gst_strings(fiducials, germs6, length), gst_strings_condensed(fiducials, germs6, length)):
+    for sequence, condensed in zip( gst_strings(fiducials, germlist, length), gst_strings_condensed(fiducials, germlist, length)):
         gateSequence(root, str(i), sequence, i, condensed=''.join(list(condensed)))
         i += 1
         totalTime += spamTime + gateTime*len(list(flatten(sequence)))
         
-"""
+
 with open(filename,'w') as f:
     f.write(prettify(root))
 
