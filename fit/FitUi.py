@@ -114,6 +114,10 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )
         self.addPushVariable.clicked.connect( self.onAddPushVariable )
         self.removePushVariable.clicked.connect( self.onRemovePushVariable )
+        self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
+
+    def onUseSmartStartValues(self, state):
+        self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
 
     def onAddPushVariable(self):
         self.pushTableModel.addVariable( PushVariable() )
@@ -142,6 +146,7 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
         self.resultsTableView.resizeColumnsToContents()
         self.pushTableView.resizeColumnsToContents()
+        self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
         
     def onFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):

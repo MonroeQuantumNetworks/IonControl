@@ -73,10 +73,12 @@ class FitFunctionBase(object):
         self.pushVariables = SequenceDict()
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
+        self.useSmartStartValues = False
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'pushVariables', SequenceDict() )
+        self.__dict__.setdefault( 'useSmartStartValues', False )
 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -138,10 +140,17 @@ class FitFunctionBase(object):
             else:
                 self.parametersConfidence[index] = None        
 
+    def smartStartValues(self, x, y, parameters, enabled):
+        return None
+
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
         if parameters is None:
             parameters = [value(param) for param in self.startParameters]
+        if self.useSmartStartValues:
+            smartParameters = self.smartStartValues(x,y,parameters,self.parameterEnabled)
+            if smartParameters is not None:
+                parameters = [ smartparam if enabled else param for enabled, param, smartparam in zip(self.parameterEnabled, parameters, smartParameters)]
         
         enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
         self.setEnabledFitParameters(enabledOnlyParameters)

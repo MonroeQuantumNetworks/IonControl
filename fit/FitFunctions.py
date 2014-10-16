@@ -13,7 +13,7 @@ from fit.MotionalRabiFlopping import MotionalRabiFlopping     ,\
     TwoModeMotionalRabiFlopping
 from modules import MagnitudeParser
 from modules.XmlUtilit import stringToStringOrNone
-
+import logging
 
 class CosFit(FitFunctionBase):
     name = "Cos"
@@ -170,6 +170,22 @@ class SquareRabiFit(FitFunctionBase):
         R = numpy.pi/T
         u = numpy.square(2*numpy.pi*(x-C)/R)
         return ((A/(1+u))*numpy.square(numpy.sin(numpy.sqrt(1+u)*R*t/2.))) + O  
+    
+    def smartStartValues(self, x, y, parameters, enabled):
+        T, C, A, O, t = parameters   #@UnusedVariable
+        maxindex = numpy.argmax(y)
+        minimum = numpy.amin(y)
+        maximum = x[maxindex]
+        C = y[maxindex]
+        A = maximum-minimum
+        O = minimum
+#         if not enabled[4]:  # if t is fixed we can estimate the width
+#             threshold = (maximum+minimum)/2.
+#             indexplus = next(ind for (thisy,ind) in enumerate(y[maxindex:]) if thisy<threshold)
+#             indexminus = next(ind for (thisy,ind) in enumerate(y[:maxindex:-1]) if thisy<threshold)
+#             deltay = y[indexplus]-y[indexminus]         
+        logging.getLogger(__name__).info("smart start values T={0}, C={1}, A={2}, O={3}, t={4}".format(T, C, A, O, t))
+        return (T, C, A, O, t)
 
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
