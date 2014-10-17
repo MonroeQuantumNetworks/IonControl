@@ -15,10 +15,10 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
     is constructed.
     """    
     
-    def __init__(self):
+    def __init__(self, globalDict=None):
         """Construct the TraceComboDelegate object, and set the penicons array."""
         QtGui.QItemDelegate.__init__(self)
-        self.globalDict = dict()
+        self.globalDict = globalDict if globalDict is not None else dict()
         
     def createEditor(self, parent, option, index ):
         """Create the combo box editor used to select which pen icon to use.

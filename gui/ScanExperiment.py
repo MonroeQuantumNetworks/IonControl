@@ -335,7 +335,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampTraceui.setupUi(self.timestampTraceui)
         self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
         # new fit widget
-        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName)
+        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName, globalDict = self.globalVariablesUi.variables )
         self.fitWidget.setupUi(self.fitWidget)
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.timestampTraceuiDock)
         # TraceuiDock

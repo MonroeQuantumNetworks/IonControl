@@ -31,7 +31,6 @@ from modules.concatenate_iter import concatenate_iter
 import random
 from modules.concatenate_iter import interleave_iter
 from gateSequence.GateSequenceContainer import GateSequenceException
-from gui.GlobalVariables import GlobalVariables
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -236,8 +235,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.tableView.setModel( self.tableModel )
         self.addSegmentButton.clicked.connect( self.onAddScanSegment )
         self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
-        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
-        self.magnitudeDelegate.setGlobalVariables(self.globalVariablesUi.variables)
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalVariablesUi.variables)
         self.tableView.setItemDelegate( self.magnitudeDelegate )
         self.tableView.resizeRowsToContents()
         
