@@ -34,7 +34,7 @@ class AnalysisDefinition(object):
         fitfunction.parameterEnabled = list(self.parameterEnabled)
         fitfunction.pushVariables = SequenceDict( (v.key, copy.deepcopy(v)) for v in self.pushVariables) 
         fitfunction.useSmartStartValues = self.useSmartStartValues
-        fitfunction.startParameterExpressions = self.startParameterExpressions
+        fitfunction.startParameterExpressions = list(self.startParameterExpressions) if self.startParameterExpressions is not None else [None]*len(self.startParameters)
         return fitfunction
     
     @classmethod
@@ -42,7 +42,7 @@ class AnalysisDefinition(object):
         instance = cls( name=None, fitfunctionName=fitfunction.name )
         instance.startParameters = tuple(fitfunction.startParameters)
         instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
-        instance.startParameterExpressions = tuple(fitfunction.startParameterExpressions) if fitfunction.startParameterExpressions is not None else None
+        instance.startParameterExpressions = tuple(fitfunction.startParameterExpressions) if fitfunction.startParameterExpressions is not None else tuple([None]*len(fitfunction.startParameters))
         instance.useSmartStartValues = fitfunction.useSmartStartValues
         for result in fitfunction.results.values():
             instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
@@ -157,6 +157,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.resultsTableView.resizeColumnsToContents()
         self.pushTableView.resizeColumnsToContents()
         self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
+        self.evaluate()
         
     def onFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
@@ -258,3 +259,9 @@ class FitUi(fitForm, QtGui.QWidget):
     
     def analysisFitfunction(self, name):
         return self.analysisDefinitions[name].fitfunction()
+
+    def evaluate(self, name=None):
+        self.fitfunction.evaluate( self.globalDict )
+        self.fitfunctionTableModel.update()
+        self.parameterTableView.viewport().repaint()
+            

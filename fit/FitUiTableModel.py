@@ -20,6 +20,9 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
                             (QtCore.Qt.DisplayRole,5): self.relConfidenceValue  }
         self.fitfunction = None
         
+    def update(self):
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),5) )
+        
     def relConfidenceValue(self, row):
         if self.fitfunction.parametersConfidence and len(self.fitfunction.parametersConfidence)>row and self.fitfunction.parameters[row] and self.fitfunction.parametersConfidence[row]:
             return "{0}%".format(roundToNDigits(100*self.fitfunction.parametersConfidence[row]/abs(self.fitfunction.parameters[row]),2))
@@ -46,7 +49,8 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
     def setFitfunction(self, fitfunction):
         self.beginResetModel()
         self.fitfunction = fitfunction
-        self.fitfunction.startParameterExpressions = [None]*len(self.fitfunction.startParameters)
+        if self.fitfunction.startParameterExpressions is None:
+            self.fitfunction.startParameterExpressions = [None]*len(self.fitfunction.startParameters)
         self.endResetModel()
         
     def allDataChanged(self):

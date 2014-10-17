@@ -62,6 +62,7 @@ class PushVariable(object):
 
 
 class FitFunctionBase(object):
+    expression = Expression()
     name = 'None'
     def __init__(self):
         self.epsfcn=0.0
@@ -145,13 +146,14 @@ class FitFunctionBase(object):
     def smartStartValues(self, x, y, parameters, enabled):
         return None
 
+    def evaluate(self, globalDict ):
+        if self.startParameterExpressions is not None:
+            self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, globalDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]        
+
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
         if parameters is None:
-            if self.startParameterExpressions is not None:
-                parameters = [value(param) if expr is None else value(param) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
-            else:
-                parameters = [value(param) for param in self.startParameters]
+            parameters = [value(param) for param in self.startParameters]
         if self.useSmartStartValues:
             smartParameters = self.smartStartValues(x,y,parameters,self.parameterEnabled)
             if smartParameters is not None:

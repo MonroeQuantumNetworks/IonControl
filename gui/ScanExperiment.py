@@ -337,6 +337,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # new fit widget
         self.fitWidget = FitUi(self.traceui,self.config,self.experimentName, globalDict = self.globalVariablesUi.variables )
         self.fitWidget.setupUi(self.fitWidget)
+        self.globalVariablesUi.valueChanged.connect( self.fitWidget.evaluate )
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.timestampTraceuiDock)
         # TraceuiDock
         self.traceuiDock = self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.fitWidgetDock )
@@ -666,6 +667,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     sigma = plot.height
                 elif plot.hasTopColumn and plot.hasBottomColumn:
                     sigma = abs(plot.top + plot.bottom)
+                fitfunction.evaluate( self.globalVariablesUi.variables )
                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
                 plot.fitFunction = copy.deepcopy(fitfunction)
                 plot.plot(-2)
