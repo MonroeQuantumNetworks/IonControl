@@ -203,6 +203,18 @@ class GateSequenceScanGenerator:
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
         self.numVariablesPerUpdate = 1
         logger.debug( "GateSequenceScanCode {0} {1}".format(self.scan.list, self.scan.code) )
+        if self.scan.gateSequenceSettings.debug:
+            dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
+            with open( dumpFilename, 'wb') as f:
+                f.write( bytearray(numpy.array(data, dtype=numpy.int32).view(dtype=numpy.int8)) )
+            codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
+            with open( codeFilename, 'w') as f:
+                for a in self.scan.code[1::2]:
+                    f.write( "{0}\n".format(a) )
+            codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address_sorted.txt")
+            with open( codeFilename, 'w') as f:
+                for index, a in enumerate(sorted(self.scan.code[1::2])):
+                    f.write( "{0} {1}\n".format(index, a) )
         if len(self.scan.code)>self.maxWordsToWrite:
             self.nextIndexToWrite = self.maxWordsToWrite
             return ( self.scan.code[:self.maxWordsToWrite], data)
@@ -467,14 +479,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppWriteRamWordList(data,0, check=True)
             datacopy = [0]*len(data)
             datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
-            if self.scan.gateSequenceSettings.debug:
-                dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
-                with open( dumpFilename, 'wb') as f:
-                    f.write( self.pulserHardware.wordListToBytearray(datacopy))
-                codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
-                with open( codeFilename, 'w') as f:
-                    for a in mycode:
-                        f.write( "{0}\n".format(a) )
             if data!=datacopy:
                 logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
                 logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
