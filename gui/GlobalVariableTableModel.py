@@ -40,7 +40,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
                                (QtCore.Qt.EditRole, 1): self.setValue,
                                }
-        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(30, 's')))
+        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(10, 's')))
         self.persistence = DBPersist()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
