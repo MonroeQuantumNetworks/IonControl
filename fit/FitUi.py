@@ -25,12 +25,16 @@ class AnalysisDefinition(object):
         self.parameterEnabled = tuple()
         self.results = HashableDict()
         self.pushVariables = tuple()
+        self.startParameterExpressions = None
+        self.useSmartStartValues = False
 
     def fitfunction(self):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
         fitfunction.startParameters = list(self.startParameters)
         fitfunction.parameterEnabled = list(self.parameterEnabled)
         fitfunction.pushVariables = SequenceDict( (v.key, copy.deepcopy(v)) for v in self.pushVariables) 
+        fitfunction.useSmartStartValues = self.useSmartStartValues
+        fitfunction.startParameterExpressions = self.startParameterExpressions
         return fitfunction
     
     @classmethod
@@ -38,12 +42,14 @@ class AnalysisDefinition(object):
         instance = cls( name=None, fitfunctionName=fitfunction.name )
         instance.startParameters = tuple(fitfunction.startParameters)
         instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
+        instance.startParameterExpressions = tuple(fitfunction.startParameterExpressions) if fitfunction.startParameterExpressions is not None else None
+        instance.useSmartStartValues = fitfunction.useSmartStartValues
         for result in fitfunction.results.values():
             instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
         instance.pushVariables = tuple( (copy.deepcopy(v) for v in fitfunction.pushVariables.values()) )
         return instance
      
-    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'pushVariables'] 
+    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'pushVariables', 'useSmartStartValues', 'startParameterExpressions'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -57,6 +63,8 @@ class AnalysisDefinition(object):
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'pushVariables', tuple() )
+        self.__dict__.setdefault( 'startParameterExpressions', None )
+        self.__dict__.setdefault( 'useSmartStartValues', False )
             
 class FitUi(fitForm, QtGui.QWidget):
     analysisNamesChanged = QtCore.pyqtSignal(object)

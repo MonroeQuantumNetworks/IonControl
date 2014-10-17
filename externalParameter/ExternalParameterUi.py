@@ -91,7 +91,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
                 row = self.names.index(name)
                 self.parameterList[row].setSavedValue( value )     # set saved value to make this new value the default
                 self.setValue( self.createIndex( row,1), value )
-                logging.info("Pushed to external parameter {0} value {1}".format(name,value))                
+                logging.info("Pushed to external parameter {0} value {1}".format(name,value))         
 
 class ControlUi(UiForm,UiBase):
     
@@ -128,6 +128,7 @@ class ControlUi(UiForm,UiBase):
     
     def update(self, iterable):
         self.tableModel.update( iterable )
+        self.tableView.viewport().repaint()
         
 
     
