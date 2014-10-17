@@ -15,27 +15,25 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
-class GlobalVariables(object):
-    def __init__(self):
-        self.variabledict = SequenceDict()
+class GlobalVariables(SequenceDict):
+    def __init__(self, *args, **kwds):
+        SequenceDict.__init__(self, *args, **kwds)
 
-    def __setstate__(self, state):
-        self.__dict__ = state
 
 class GlobalVariableUi(Form, Base ):
     def __init__(self,config,parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
         self.config = config
-        self.configname = 'GlobalParameters'
+        self.configname = 'GlobalVariables'
         self._variables_ = self.config.get(self.configname,GlobalVariables())
 
     @property
     def variables(self):
-        return self._variables_.variabledict
+        return self._variables_
     
     def keys(self):
-        return self._variables_.variabledict.keys()
+        return self._variables_.keys()
         
         
     @property

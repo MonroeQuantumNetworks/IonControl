@@ -126,15 +126,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
-                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,"ExternalScan", toolBar=self.experimentToolBar), "External Scan"),
-                             (HybridScanExperiment.HybridScanExperiment(self.settings,self.pulser,"HybridScan", toolBar=self.experimentToolBar), "Hybrid Scan"),
-                             (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,"VoltageScan", toolBar=self.experimentToolBar), "Voltage Scan"),
-                             (testExperiment.test(),"test"),
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
+                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ExternalScan", toolBar=self.experimentToolBar), "External Scan"),
+                             (HybridScanExperiment.HybridScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"HybridScan", toolBar=self.experimentToolBar), "Hybrid Scan"),
+                             (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"VoltageScan", toolBar=self.experimentToolBar), "Voltage Scan"),
+                             (testExperiment.test(self.globalVariablesUi),"test"),
                              ]:
             widget.setupUi( widget, self.config )
-            if hasattr(widget, 'setGlobalVariablesUi'):
-                widget.setGlobalVariablesUi( self.globalVariablesUi )
             if hasattr(widget,'setPulseProgramUi'):
                 widget.setPulseProgramUi( self.pulseProgramDialog )
             if hasattr(widget, 'plotsChanged'):

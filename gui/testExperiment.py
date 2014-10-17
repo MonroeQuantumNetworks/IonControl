@@ -30,9 +30,10 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     ClearStatusMessage = QtCore.pyqtSignal()
     experimentName = 'Test Scan'
 
-    def __init__(self,parent=None):
+    def __init__(self,globalVariableUi, parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
         testForm.__init__(self)
+        self.globalVariableUi = globalVariableUi
 #        pyqtgraph.setConfigOption('background', 'w')
 #        pyqtgraph.setConfigOption('foreground', 'k')
 
@@ -60,7 +61,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         if 'testWidget.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
 #start added
-        self.scanControlWidget = ScanControl(config,self.experimentName)
+        self.scanControlWidget = ScanControl(config, self.globalVariableUi, self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
         self.dockWidgetList.append(self.scanControlUi)

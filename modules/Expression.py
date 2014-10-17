@@ -170,6 +170,7 @@ class Expression:
         return value
         
     def evaluateAsMagnitude(self, expression, variabledict=dict()):
+        variabledict = variabledict if variabledict is not None else dict()
         res = self.evaluate(expression, variabledict, useFloat=False)
         return res
 
