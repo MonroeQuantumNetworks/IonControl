@@ -293,6 +293,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):
             self.tableModel.update()
+            self.tableView.viewport().repaint()
         
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked

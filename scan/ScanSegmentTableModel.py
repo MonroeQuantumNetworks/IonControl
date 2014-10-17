@@ -90,4 +90,4 @@ class ScanSegmentTableModel( QtCore.QAbstractTableModel):
         self.endResetModel()
                 
     def update(self):
-        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(5,self.columnCount()-1) )
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(5,self.columnCount()) )
