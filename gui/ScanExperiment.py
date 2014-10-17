@@ -266,7 +266,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
-    def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
+    def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
@@ -288,6 +288,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.enableParameter = True
         self.enableExternalParameter = False
         self.histogramBuffer = defaultdict( list )
+        self.globalVariables = globalVariablesUi.variables
+        self.globalVariablesChanged = globalVariablesUi.valueChanged
+        self.globalVariablesUi = globalVariablesUi        
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -332,7 +335,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.timestampTraceui.setupUi(self.timestampTraceui)
         self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
         # new fit widget
-        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName)
+        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName, globalDict = self.globalVariablesUi.variables )
         self.fitWidget.setupUi(self.fitWidget)
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.timestampTraceuiDock)
         # TraceuiDock
@@ -347,7 +350,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
+        self.scanControlWidget = ScanControl.ScanControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
                                                          internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
@@ -383,6 +386,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
         
+        self.fitWidget.addPushDestination('Global', self.globalVariablesUi )
+
+        
     def printTargets(self):
         return self.plotDict.keys()
 
@@ -406,12 +412,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
         self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
-        
-    def setGlobalVariablesUi(self, globalVariablesUi ):
-        self.globalVariables = globalVariablesUi.variables
-        self.globalVariablesChanged = globalVariablesUi.valueChanged
-        self.globalVariablesUi = globalVariablesUi
-        self.fitWidget.addPushDestination('Global', globalVariablesUi )
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )

@@ -60,7 +60,7 @@ class AnalysisDefinition(object):
             
 class FitUi(fitForm, QtGui.QWidget):
     analysisNamesChanged = QtCore.pyqtSignal(object)
-    def __init__(self, traceui, config, parentname, parent=None):
+    def __init__(self, traceui, config, parentname, globalDict=None, parent=None):
         QtGui.QWidget.__init__(self,parent)
         fitForm.__init__(self)
         self.config = config
@@ -71,6 +71,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
         self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
         self.pushDestinations = dict()
+        self.globalDict = globalDict
             
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
@@ -86,7 +87,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
-        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
@@ -137,6 +138,7 @@ class FitUi(fitForm, QtGui.QWidget):
         
     def setFitfunction(self, fitfunction):
         self.fitfunction = fitfunction
+        self.fitfunction.updatePushVariables()
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
         self.pushTableModel.setFitfunction(self.fitfunction)
@@ -198,6 +200,7 @@ class FitUi(fitForm, QtGui.QWidget):
             plot = plots[0]
             self.setFitfunction( copy.deepcopy(plot.fitFunction))
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name))
+            self.fitfunction.updatePushVariables()
     
     def onCopy(self):
         self.fitfunction.startParameters = copy.deepcopy(self.fitfunction.parameters)

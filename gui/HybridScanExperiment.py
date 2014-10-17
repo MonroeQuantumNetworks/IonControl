@@ -29,8 +29,8 @@ class ScanNotAvailableException(Exception):
     pass
 
 class HybridScanExperiment( ExternalScanExperiment.ExternalScanExperiment ):
-    def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
-        super(HybridScanExperiment,self).__init__(settings,pulserHardware,experimentName,toolBar=toolBar,parent=parent)
+    def __init__(self,settings,pulserHardware,globalVariablesUi,experimentName,toolBar=None,parent=None):
+        super(HybridScanExperiment,self).__init__(settings,pulserHardware,globalVariablesUi,experimentName,toolBar=toolBar,parent=parent)
         self.enableParameter = True
         self.enableExternalParameter = True
         

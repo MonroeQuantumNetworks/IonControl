@@ -30,7 +30,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
     expression = Expression.Expression()
     
-    def __init__(self,parent=None):
+    def __init__(self,parent=None,globalDict=None):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         self.editingFinished.connect( self.onEditingFinished )
@@ -43,6 +43,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.blackTextPalette = QtGui.QPalette()
         self.blackTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.black )
         self._dimension = None   # if not None enforces the dimension
+        self.globalDict = globalDict if globalDict is not None else dict()
 
     @property
     def dimension(self):
@@ -109,7 +110,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         try:
             text = str( self.lineEdit().text() )
             if len(text)>0:
-                value = self.expression.evaluateAsMagnitude(text )
+                value = self.expression.evaluateAsMagnitude(text, self.globalDict )
                 if self._dimension is not None and value.unit != self._dimension.unit:
                     raise DimensionMismatch("Got unit {0} expected {1}".format(value.unit,self._dimension.unit))
             else:
@@ -120,6 +121,9 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             raise e
         self.lineEdit().setPalette( self.blackTextPalette )
         return value
+        
+    def text(self):
+        return str(self.lineEdit().text())
         
     def setText(self,string):
         self.lineEdit().setText( string )

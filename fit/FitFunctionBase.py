@@ -68,6 +68,7 @@ class FitFunctionBase(object):
         self.parameterNames = []
         self.parameters = []
         self.startParameters = []
+        self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
         self.parameterEnabled = []
         self.parametersConfidence = []
         self.pushVariables = SequenceDict()
@@ -79,7 +80,8 @@ class FitFunctionBase(object):
         self.__dict__ = state
         self.__dict__.setdefault( 'pushVariables', SequenceDict() )
         self.__dict__.setdefault( 'useSmartStartValues', False )
-
+        self.__dict__.setdefault( 'startParameterExpressions', None )
+ 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
         pindex = 0
@@ -146,7 +148,10 @@ class FitFunctionBase(object):
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
         if parameters is None:
-            parameters = [value(param) for param in self.startParameters]
+            if self.startParameterExpressions is not None:
+                parameters = [value(param) if expr is None else value(param) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
+            else:
+                parameters = [value(param) for param in self.startParameters]
         if self.useSmartStartValues:
             smartParameters = self.smartStartValues(x,y,parameters,self.parameterEnabled)
             if smartParameters is not None:
