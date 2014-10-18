@@ -60,7 +60,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.deviceSerial = config.get('Settings.deviceSerial')
         self.deviceDescription = config.get('Settings.deviceDescription')
         self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
-        self.consoleMaximumLines = config.get('Settings.consoleMaximumLines',0)
+        self.consoleMaximumLines = config.get('Settings.consoleMaximumLinesNew',100)
+        self.consoleEnable = config.get('Settings.consoleEnable',False)
         self.shutterNameDict = config.get('Settings.ShutterNameDict', ChannelNameMap())
         self.shutterNameSignal = DataChanged()
         self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameMap())
@@ -97,6 +98,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.levelComboBox.setCurrentIndex( self.levelValueList.index(self.loggingLevel) )
         self.consoleClearButton.clicked.connect( self.onClearConsole )
         self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
+        self.linesSpinBox.setValue( self.consoleMaximumLines )
+        self.checkBoxEnableConsole.stateChanged.connect( self.onEnableConsole )
+        self.checkBoxEnableConsole.setChecked( self.consoleEnable )
         
         self.parent = parent
         self.tabDict = SequenceDict()
@@ -264,6 +268,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr(widget, 'addPushDestination'):
                 widget.addPushDestination( 'External', self.ExternalParametersUi )
 
+    def onEnableConsole(self, state):
+        self.consoleEnable = state==QtCore.Qt.Checked
                 
     def startLoggingProcess(self):
         if self.instrumentLogger is None or not self.instrumentLogger.is_alive():
@@ -274,6 +280,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
     def onConsoleMaximumLinesChanged(self, maxlines):
         self.consoleMaximumLines = maxlines
+        self.textEditConsole.document().setMaximumBlockCount(maxlines)
         
     def setLoggingLevel(self, index):
         self.loggingLevel = self.levelValueList[index]
@@ -380,7 +387,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.parent.close()
         
     def onMessageWrite(self,message,level=logging.DEBUG):
-        if level>= self.loggingLevel:
+        if self.consoleEnable and level>= self.loggingLevel:
             cursor = self.textEditConsole.textCursor()
             cursor.movePosition(QtGui.QTextCursor.End)
             if level < logging.ERROR:
@@ -416,9 +423,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
         self.config['Settings.loggingLevel'] = self.loggingLevel
-        self.config['Settings.consoleMaximumLines'] = self.consoleMaximumLines
+        self.config['Settings.consoleMaximumLinesNew'] = self.consoleMaximumLines
         self.config['Settings.ShutterNameDict'] = self.shutterNameDict 
         self.config['SettingsTriggerNameDict'] = self.triggerNameDict 
+        self.config['Settings.consoleEnable'] = self.consoleEnable 
         self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
