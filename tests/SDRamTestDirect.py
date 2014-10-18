@@ -8,7 +8,6 @@ Created on Oct 13, 2014
 from pulser.PulserHardwareServer import PulserHardwareServer 
 from mylogging import LoggingSetup   #@UnusedImport
 import random
-import sys
 
 if __name__=='__main__':
     pulser = PulserHardwareServer()
