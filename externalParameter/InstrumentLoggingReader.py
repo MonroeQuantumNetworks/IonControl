@@ -7,6 +7,8 @@ from PyQt4 import QtCore
 import logging
 import Queue
 import time
+import sys
+
 
 def processReturn( returnvalue ):
     if isinstance( returnvalue, Exception ):
@@ -15,7 +17,8 @@ def processReturn( returnvalue ):
         return returnvalue
 
 class InstrumentLoggingReader(QtCore.QThread):  
-    newData = QtCore.pyqtSignal( object, object )    
+    newData = QtCore.pyqtSignal( object, object )
+    newException = QtCore.pyqtSignal( object )
     def __init__(self, name, reader, commandQueue, responseQueue, parent = None):
         QtCore.QThread.__init__(self, parent)
         self.exiting = False
@@ -26,6 +29,12 @@ class InstrumentLoggingReader(QtCore.QThread):
         self.name = name
    
     def run(self):
+        from mylogging.ExceptionLogButton import GlobalExceptionLogButtonSlot        
+        if GlobalExceptionLogButtonSlot is not None:
+            logging.getLogger(__name__).info("ExceptionLogButton connected for new thread")
+            self.newException.connect( GlobalExceptionLogButtonSlot )
+        else:
+            logging.getLogger(__name__).error("ExceptionLogButton not available")            
         while not self.exiting:
             try:
                 try:
@@ -40,6 +49,7 @@ class InstrumentLoggingReader(QtCore.QThread):
                     self.newData.emit( self.name, (time.time(), data) )
             except Exception:
                 logging.getLogger(__name__).exception("Exception in QueueReader")
+                self.newException.emit( sys.exc_info() )
         self.newData.emit( self.name, None )
         logging.getLogger(__name__).info( "InstrumentLoggingReader thread finished." )
         self.reader.close()
