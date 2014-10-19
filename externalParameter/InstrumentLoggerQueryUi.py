@@ -112,6 +112,12 @@ class InstrumentLoggerQueryUi(Form,Base):
        
     def onCreatePlot(self): 
         self.doCreatePlot(self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime, self.parameters.plotName, self.parameters.steps)
+        self.cacheGarbageCollect()
+        
+    def cacheGarbageCollect(self):
+        for key, (ref,_) in self.cache.items():
+            if ref() is None:
+                self.cache.pop(key)
         
     def doCreatePlot(self, space, parameter, fromTime, toTime, plotName, steps, forceUpdate=False ):
         ref, _ = self.cache.get( ( space, parameter ), (lambda: None, None)) 
@@ -158,4 +164,5 @@ class InstrumentLoggerQueryUi(Form,Base):
         for ref, context in self.cache.values():
             if ref() is not None:
                 self.doCreatePlot(*context, forceUpdate=True )
+        self.cacheGarbageCollect()
             
