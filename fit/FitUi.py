@@ -25,12 +25,16 @@ class AnalysisDefinition(object):
         self.parameterEnabled = tuple()
         self.results = HashableDict()
         self.pushVariables = tuple()
+        self.startParameterExpressions = None
+        self.useSmartStartValues = False
 
     def fitfunction(self):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
         fitfunction.startParameters = list(self.startParameters)
         fitfunction.parameterEnabled = list(self.parameterEnabled)
-        fitfunction.pushVariables = SequenceDict( (v.key, v) for v in self.pushVariables) 
+        fitfunction.pushVariables = SequenceDict( (v.key, copy.deepcopy(v)) for v in self.pushVariables) 
+        fitfunction.useSmartStartValues = self.useSmartStartValues
+        fitfunction.startParameterExpressions = list(self.startParameterExpressions) if self.startParameterExpressions is not None else [None]*len(self.startParameters)
         return fitfunction
     
     @classmethod
@@ -38,12 +42,14 @@ class AnalysisDefinition(object):
         instance = cls( name=None, fitfunctionName=fitfunction.name )
         instance.startParameters = tuple(fitfunction.startParameters)
         instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
+        instance.startParameterExpressions = tuple(fitfunction.startParameterExpressions) if fitfunction.startParameterExpressions is not None else tuple([None]*len(fitfunction.startParameters))
+        instance.useSmartStartValues = fitfunction.useSmartStartValues
         for result in fitfunction.results.values():
             instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
-        instance.pushVariables = tuple( fitfunction.pushVariables.values() )
+        instance.pushVariables = tuple( (copy.deepcopy(v) for v in fitfunction.pushVariables.values()) )
         return instance
      
-    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'pushVariables'] 
+    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'pushVariables', 'useSmartStartValues', 'startParameterExpressions'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -57,10 +63,12 @@ class AnalysisDefinition(object):
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'pushVariables', tuple() )
+        self.__dict__.setdefault( 'startParameterExpressions', None )
+        self.__dict__.setdefault( 'useSmartStartValues', False )
             
 class FitUi(fitForm, QtGui.QWidget):
     analysisNamesChanged = QtCore.pyqtSignal(object)
-    def __init__(self, traceui, config, parentname, parent=None):
+    def __init__(self, traceui, config, parentname, globalDict=None, parent=None):
         QtGui.QWidget.__init__(self,parent)
         fitForm.__init__(self)
         self.config = config
@@ -71,6 +79,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
         self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
         self.pushDestinations = dict()
+        self.globalDict = globalDict
             
     def setupUi(self,widget):
         fitForm.setupUi(self,widget)
@@ -86,7 +95,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
-        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
@@ -114,6 +123,10 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )
         self.addPushVariable.clicked.connect( self.onAddPushVariable )
         self.removePushVariable.clicked.connect( self.onRemovePushVariable )
+        self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
+
+    def onUseSmartStartValues(self, state):
+        self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
 
     def onAddPushVariable(self):
         self.pushTableModel.addVariable( PushVariable() )
@@ -133,6 +146,7 @@ class FitUi(fitForm, QtGui.QWidget):
         
     def setFitfunction(self, fitfunction):
         self.fitfunction = fitfunction
+        self.fitfunction.updatePushVariables()
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
         self.pushTableModel.setFitfunction(self.fitfunction)
@@ -142,6 +156,8 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
         self.resultsTableView.resizeColumnsToContents()
         self.pushTableView.resizeColumnsToContents()
+        self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
+        self.evaluate()
         
     def onFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
@@ -164,7 +180,12 @@ class FitUi(fitForm, QtGui.QWidget):
     def onPush(self):
         for destination, variable, value in self.fitfunction.pushVariableValues():
             if destination in self.pushDestinations:
-                self.pushDestinations[destination].update( [(variable,value)] )
+                self.pushDestinations[destination].update( [(destination,variable,value)] )
+                
+    def pushVariables(self, pushVariables):
+        for destination, variable, value in pushVariables:
+            if destination in self.pushDestinations:
+                self.pushDestinations[destination].update( [(destination,variable,value)] )
 
                 
     def onPlot(self):
@@ -188,6 +209,7 @@ class FitUi(fitForm, QtGui.QWidget):
             plot = plots[0]
             self.setFitfunction( copy.deepcopy(plot.fitFunction))
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name))
+            self.fitfunction.updatePushVariables()
     
     def onCopy(self):
         self.fitfunction.startParameters = copy.deepcopy(self.fitfunction.parameters)
@@ -237,3 +259,9 @@ class FitUi(fitForm, QtGui.QWidget):
     
     def analysisFitfunction(self, name):
         return self.analysisDefinitions[name].fitfunction()
+
+    def evaluate(self, name=None):
+        self.fitfunction.evaluate( self.globalDict )
+        self.fitfunctionTableModel.update()
+        self.parameterTableView.viewport().repaint()
+            

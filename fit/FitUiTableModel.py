@@ -2,6 +2,8 @@ from PyQt4 import QtCore
 
 from modules.round import roundToNDigits, roundToStdDev
 
+def noneAlternative( v, alt ):
+    return v if v is not None else alt
 
 class FitUiTableModel(QtCore.QAbstractTableModel):
     
@@ -11,12 +13,15 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.fitfunction.parameterEnabled[row] else QtCore.Qt.Unchecked,
                             (QtCore.Qt.DisplayRole,1): lambda row: self.fitfunction.parameterNames[row],
                             (QtCore.Qt.DisplayRole,2): lambda row: str(self.fitfunction.startParameters[row]),
-                            (QtCore.Qt.EditRole,2):    lambda row: str(self.fitfunction.startParameters[row]),
+                            (QtCore.Qt.EditRole,2):    lambda row: noneAlternative( self.fitfunction.startParameterExpressions[row], str(self.fitfunction.startParameters[row])),
                             (QtCore.Qt.UserRole,2):    lambda row: self.fitfunction.units[row] if self.fitfunction.units else None,
                             (QtCore.Qt.DisplayRole,3): self.fitValue,
                             (QtCore.Qt.DisplayRole,4): self.confidenceValue,
                             (QtCore.Qt.DisplayRole,5): self.relConfidenceValue  }
         self.fitfunction = None
+        
+    def update(self):
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),5) )
         
     def relConfidenceValue(self, row):
         if self.fitfunction.parametersConfidence and len(self.fitfunction.parametersConfidence)>row and self.fitfunction.parameters[row] and self.fitfunction.parametersConfidence[row]:
@@ -44,6 +49,8 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
     def setFitfunction(self, fitfunction):
         self.beginResetModel()
         self.fitfunction = fitfunction
+        if self.fitfunction.startParameterExpressions is None:
+            self.fitfunction.startParameterExpressions = [None]*len(self.fitfunction.startParameters)
         self.endResetModel()
         
     def allDataChanged(self):
@@ -66,6 +73,9 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
             return True
         if (role, index.column()) == (QtCore.Qt.EditRole,2):
             self.fitfunction.startParameters[index.row()] = value
+            return True
+        if (role, index.column()) == (QtCore.Qt.UserRole,2):
+            self.fitfunction.startParameterExpressions[index.row()] = value
         return False
     
     def setValue(self, index, value):

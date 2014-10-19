@@ -107,7 +107,8 @@ class TraceControl(Form, Base):
             self.trace.x = numpy.arange(len(errorSig))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))
             self.trace.y = numpy.array( errorSig )
             if self.errorSigCurve is None:
-                self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.traceSettings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.traceSettings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Error Signal", #@UndefinedVariable 
+                                                  windowName=self.traceSettings.errorSigPlot)  
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
                 self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockScope.txt" )
@@ -118,7 +119,7 @@ class TraceControl(Form, Base):
             self.trace.freq = numpy.array( frequency )
             if self.freqCurve is None:
                 self.freqCurve = PlottedTrace(self.trace, self.plotDict[self.traceSettings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.lines, name="Frequency",  #@UndefinedVariable
-                                              xColumn='x', yColumn='freq' ) 
+                                              xColumn='x', yColumn='freq', windowName=self.traceSettings.frequencyPlot ) 
                 self.freqCurve.plot()
                 self.traceui.addTrace( self.freqCurve, pen=-1 )
             else:

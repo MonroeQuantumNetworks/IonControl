@@ -88,7 +88,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
     def resourcesAvailable(self):
         return (self.settings.deviceSerial in self.deviceSerialMap and 
                 self.configSettings.lastBitfile is not None and os.path.exists(self.configSettings.lastBitfile) and 
-                self.deviceMap[self.configSettings.lastInstrument].serial == self.settings.deviceSerial )            
+                (self.configSettings.lastInstrument in self.deviceMap) and self.deviceMap[self.configSettings.lastInstrument].serial == self.settings.deviceSerial )            
             
     def initialize(self):
         if self.resourcesAvailable():

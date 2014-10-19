@@ -62,22 +62,27 @@ class PushVariable(object):
 
 
 class FitFunctionBase(object):
+    expression = Expression()
     name = 'None'
     def __init__(self):
         self.epsfcn=0.0
         self.parameterNames = []
         self.parameters = []
         self.startParameters = []
+        self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
         self.parameterEnabled = []
         self.parametersConfidence = []
         self.pushVariables = SequenceDict()
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
+        self.useSmartStartValues = False
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'pushVariables', SequenceDict() )
-
+        self.__dict__.setdefault( 'useSmartStartValues', False )
+        self.__dict__.setdefault( 'startParameterExpressions', None )
+ 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
         pindex = 0
@@ -138,10 +143,21 @@ class FitFunctionBase(object):
             else:
                 self.parametersConfidence[index] = None        
 
+    def smartStartValues(self, x, y, parameters, enabled):
+        return None
+
+    def evaluate(self, globalDict ):
+        if self.startParameterExpressions is not None:
+            self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, globalDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]        
+
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
         if parameters is None:
             parameters = [value(param) for param in self.startParameters]
+        if self.useSmartStartValues:
+            smartParameters = self.smartStartValues(x,y,parameters,self.parameterEnabled)
+            if smartParameters is not None:
+                parameters = [ smartparam if enabled else param for enabled, param, smartparam in zip(self.parameterEnabled, parameters, smartParameters)]
         
         enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
         self.setEnabledFitParameters(enabledOnlyParameters)
@@ -209,7 +225,7 @@ class FitFunctionBase(object):
             e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition)})
             e.text = str(result.value)
         for push in self.pushVariables.values():
-            e = ElementTree.SubElement( myroot, 'PushVariable', {'globalName':push.globalName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
+            e = ElementTree.SubElement( myroot, 'PushVariable', {'destination':push.destinationName, 'variable':push.variableName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
         return myroot
    
     def residuals(self,p, y, x, sigma):

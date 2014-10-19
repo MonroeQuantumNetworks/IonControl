@@ -12,11 +12,11 @@ class SceneToPrint:
         self.curveLinewidth = curveLinewidth
     
     def __enter__(self):
-        self.widget.graphicsView.hideAllButtons(True)
+        self.widget._graphicsView.hideAllButtons(True)
         self.pencache = dict()
         self.curveitemcache = dict()
         if self.gridLinewidth!=1 or self.curveLinewidth!=1:
-            for item in self.widget.graphicsView.scene().items():
+            for item in self.widget._graphicsView.scene().items():
                 if hasattr(item, 'pen') and isinstance(item, AxisItem) and self.gridLinewidth!=1:
                     pen = item.pen()
                     width = pen.width()
@@ -34,7 +34,7 @@ class SceneToPrint:
         return self.widget
 
     def __exit__(self, exittype, value, traceback):
-        self.widget.graphicsView.hideAllButtons(False)
+        self.widget._graphicsView.hideAllButtons(False)
         for item, width in self.pencache.iteritems():
             pen = item.pen()
             pen.setWidth( width )  

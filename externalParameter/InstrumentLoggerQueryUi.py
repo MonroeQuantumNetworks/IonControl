@@ -17,6 +17,7 @@ from collections import defaultdict
 import logging
 import pytz
 from modules import WeakMethod 
+import weakref
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -30,7 +31,11 @@ class Parameters:
         self.plotUnit = ""
         self.steps = False
         self.spaceParamCache = dict()
+        self.updatePrevious = True
         
+    def __setstate__(self, s):
+        self.__dict__ = s
+        self.__dict__.setdefault('updatePrevious', True)
 
 class InstrumentLoggerQueryUi(Form,Base):
     def __init__(self, config, traceui, plotDict, parent=None):
@@ -43,11 +48,12 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.connection = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
         self.connection.open_session()
         self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
+        self.cache = dict()
     
     def setupUi(self,MainWindow):
         Form.setupUi(self,MainWindow)
         self.comboBoxSpace.currentIndexChanged[QtCore.QString].connect( self.onSpaceChanged  )
-        self.comboBoxParam.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'parameter') )
+        self.comboBoxParam.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'parameter') )      
         self.comboBoxPlotName.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'plotName') )
         self.onRefresh()
         if self.parameters.space is not None:
@@ -65,13 +71,16 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.lineEditPlotUnit.setText( self.parameters.plotUnit )
         self.lineEditPlotUnit.textChanged.connect( partial(self.onValueChangedString, 'plotUnit') )
         self.pushButtonCreatePlot.clicked.connect( self.onCreatePlot )
+        self.pushButtonUpdateAll.clicked.connect( self.onUpdateAll )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.checkBoxSteps.setChecked( self.parameters.steps )
-        self.checkBoxSteps.stateChanged.connect( self.onStateChanged )
+        self.checkBoxSteps.stateChanged.connect( partial(self.onStateChanged, 'steps') )
+        self.checkBoxUpdatePrevious.setChecked( self.parameters.updatePrevious )
+        self.checkBoxUpdatePrevious.stateChanged.connect( partial( self.onStateChanged, 'updatePrevious') )
         self.onSpaceChanged(self.parameters.space)
         
-    def onStateChanged(self, state):
-        self.parameters.steps = state==QtCore.Qt.Checked
+    def onStateChanged(self, attr, state):
+        setattr( self.parameters, attr, state==QtCore.Qt.Checked )
         
     def onValueChangedString(self, param, value):
         setattr( self.parameters, param, str(value) )
@@ -100,9 +109,14 @@ class InstrumentLoggerQueryUi(Form,Base):
         if self.parameters.parameter is not None:
             self.comboBoxParam.setCurrentIndex( self.comboBoxParam.findText(self.parameters.parameter ))
         
+       
+    def onCreatePlot(self): 
+        self.doCreatePlot(self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime, self.parameters.plotName, self.parameters.steps)
         
-    def onCreatePlot(self):
-        result = self.connection.getHistory( self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime )
+    def doCreatePlot(self, space, parameter, fromTime, toTime, plotName, steps, forceUpdate=False ):
+        ref, _ = self.cache.get( ( space, parameter ), (lambda: None, None)) 
+        plottedTrace = ref() if (self.parameters.updatePrevious or forceUpdate) else None # get plottedtrace from the weakref if exists           
+        result = self.connection.getHistory( space, parameter, fromTime , toTime )
         if not result:
             logging.getLogger(__name__).error("Database query returned empty set")
         elif len(result)>0:
@@ -111,19 +125,37 @@ class InstrumentLoggerQueryUi(Form,Base):
             value = [e.value for e in result]
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]
-            trace = Trace(record_timestamps=False)
-            trace.name = self.parameters.parameter + " Query"
-            trace.y = numpy.array( value )
-            if self.parameters.plotName is None:
-                self.parameters.plotName = str(self.comboBoxPlotName.currentText()) 
-            if self.parameters.steps:
-                trace.x = numpy.array( time+[time[-1]] )
-                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False) #@UndefinedVariable
-            else:
-                trace.x = numpy.array( time )
-                trace.top = numpy.array( top )
-                trace.bottom = numpy.array( bottom )
-                plottedTrace = PlottedTrace( trace, self.plotDict[self.parameters.plotName]["view"], xAxisLabel = "local time") 
-                plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
-            self.traceui.addTrace( plottedTrace, pen=-1)
-            self.traceui.resizeColumnsToContents()
+            if plottedTrace is None:  # make a new plotted trace
+                trace = Trace(record_timestamps=False)
+                trace.name = parameter + " Query"
+                trace.y = numpy.array( value )
+                if plotName is None:
+                    plotName = str(self.comboBoxPlotName.currentText()) 
+                if steps:
+                    trace.x = numpy.array( time+[time[-1]] )
+                    plottedTrace = PlottedTrace( trace, self.plotDict[plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False, windowName=plotName) #@UndefinedVariable
+                else:
+                    trace.x = numpy.array( time )
+                    trace.top = numpy.array( top )
+                    trace.bottom = numpy.array( bottom )
+                    plottedTrace = PlottedTrace( trace, self.plotDict[plotName]["view"], xAxisLabel = "local time", windowName=plotName) 
+                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
+                self.traceui.addTrace( plottedTrace, pen=-1)
+                self.traceui.resizeColumnsToContents()
+                self.cache[(space, parameter)] = ( weakref.ref(plottedTrace), (space, parameter, fromTime, toTime, plotName, steps) )
+            else:  # update the existing plotted trace
+                trace = plottedTrace.trace
+                trace.y = numpy.array( value )
+                if steps:
+                    trace.x = numpy.array( time+[time[-1]] )
+                else:
+                    trace.x = numpy.array( time )
+                    trace.top = numpy.array( top )
+                    trace.bottom = numpy.array( bottom )
+                plottedTrace.replot()     
+                
+    def onUpdateAll(self):
+        for ref, context in self.cache.values():
+            if ref() is not None:
+                self.doCreatePlot(*context, forceUpdate=True )
+            

@@ -30,6 +30,7 @@ import numpy
 from modules.concatenate_iter import concatenate_iter
 import random
 from modules.concatenate_iter import interleave_iter
+from gateSequence.GateSequenceContainer import GateSequenceException
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -160,6 +161,9 @@ class Scan:
     def description(self):
         desc = dict( ((field,getattr(self,field)) for field in self.documentationList) )
         return desc
+    
+    def evaluate(self, globalDictionary ):
+        return any( (segment.evaluate(globalDictionary) for segment in self.scanSegmentList ) )            
 
 
 class ScanControlParameters:
@@ -171,12 +175,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     scanConfigurationListChanged = QtCore.pyqtSignal( object )
     logger = logging.getLogger(__name__)
-    def __init__(self,config,parentname, plotnames=None, parent=None, analysisNames=None, internalParam=True, externalParam=False):
+    def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None, internalParam=True, externalParam=False):
         logger = logging.getLogger(__name__)
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'ScanControl.'+parentname
+        self.globalDict = globalVariablesUi.variables
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
@@ -201,6 +206,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.parameters = self.config.get( self.configname+'.parameters', ScanControlParameters() )
         self.internalParam = internalParam
         self.externalParam = externalParam
+        self.globalVariablesUi = globalVariablesUi
         
     def setupUi(self, parent):
         logger = logging.getLogger(__name__)
@@ -225,11 +231,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.resizeColumnsToContents()
 
-        self.tableModel = ScanSegmentTableModel(self.updateSaveStatus)
+        self.tableModel = ScanSegmentTableModel(self.updateSaveStatus, self.globalVariablesUi.variables )
         self.tableView.setModel( self.tableModel )
         self.addSegmentButton.clicked.connect( self.onAddScanSegment )
         self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
-        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalVariablesUi.variables)
         self.tableView.setItemDelegate( self.magnitudeDelegate )
         self.tableView.resizeRowsToContents()
         
@@ -278,6 +284,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.autoSaveAction.setChecked(self.parameters.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
+        self.settings.evaluate(self.globalVariablesUi.variables)
+        self.globalVariablesUi.valueChanged.connect( self.evaluate )
+
+        
+    def evaluate(self, name):
+        if self.settings.evaluate( self.globalDict ):
+            self.tableModel.update()
+            self.tableView.viewport().repaint()
         
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
@@ -298,6 +312,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
+        if self.globalDict:
+            self.settings.evaluate(self.globalDict)
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
@@ -425,7 +441,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.toolBox.addItem(self.gateSequenceUi,"Gate Sequences")
         if pulseProgramUi.currentContext.parameters:
             self.gateSequenceUi.setVariables( pulseProgramUi.currentContext.parameters )
-        self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
+        try:
+            self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
+        except GateSequenceException as e:
+            logger.exception(e)
         if isStartup:
             self.onLoadPP(self.settings.loadPPName)
 
@@ -650,6 +669,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def editEvaluationTable(self, index):
         if index.column() in [0,1,2,4]:
             self.evalTableView.edit(index)
+            
+
 
 if __name__=="__main__":
     import sys

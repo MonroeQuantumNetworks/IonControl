@@ -205,6 +205,18 @@ class GateSequenceScanGenerator:
         self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
         self.numVariablesPerUpdate = 1
         logger.debug( "GateSequenceScanCode {0} {1}".format(self.scan.list, self.scan.code) )
+        if self.scan.gateSequenceSettings.debug:
+            dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
+            with open( dumpFilename, 'wb') as f:
+                f.write( bytearray(numpy.array(data, dtype=numpy.int32).view(dtype=numpy.int8)) )
+            codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
+            with open( codeFilename, 'w') as f:
+                for a in self.scan.code[1::2]:
+                    f.write( "{0}\n".format(a) )
+            codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address_sorted.txt")
+            with open( codeFilename, 'w') as f:
+                for index, a in enumerate(sorted(self.scan.code[1::2])):
+                    f.write( "{0} {1}\n".format(index, a) )
         if len(self.scan.code)>self.maxWordsToWrite:
             self.nextIndexToWrite = self.maxWordsToWrite
             return ( self.scan.code[:self.maxWordsToWrite], data)
@@ -268,7 +280,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
-    def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
+    def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
@@ -290,6 +302,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.enableParameter = True
         self.enableExternalParameter = False
         self.histogramBuffer = defaultdict( list )
+        self.globalVariables = globalVariablesUi.variables
+        self.globalVariablesChanged = globalVariablesUi.valueChanged
+        self.globalVariablesUi = globalVariablesUi        
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -312,7 +327,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self, name=name)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -327,15 +342,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict["Scan Data"]["view"])
+        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
         self.traceui.setupUi(self.traceui)
         # traceui for timestamps
-        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict["Timestamps"]["view"])
+        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict)
         self.timestampTraceui.setupUi(self.timestampTraceui)
         self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
         # new fit widget
-        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName)
+        self.fitWidget = FitUi(self.traceui,self.config,self.experimentName, globalDict = self.globalVariablesUi.variables )
         self.fitWidget.setupUi(self.fitWidget)
+        self.globalVariablesUi.valueChanged.connect( self.fitWidget.evaluate )
         self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.timestampTraceuiDock)
         # TraceuiDock
         self.traceuiDock = self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.fitWidgetDock )
@@ -349,7 +365,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl.ScanControl(config,self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
+        self.scanControlWidget = ScanControl.ScanControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
                                                          internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
@@ -385,6 +401,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
         
+        self.fitWidget.addPushDestination('Global', self.globalVariablesUi )
+
+        
     def printTargets(self):
         return self.plotDict.keys()
 
@@ -408,12 +427,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
         self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
-        
-    def setGlobalVariablesUi(self, globalVariablesUi ):
-        self.globalVariables = globalVariablesUi.variables
-        self.globalVariablesChanged = globalVariablesUi.valueChanged
-        self.globalVariablesUi = globalVariablesUi
-        self.fitWidget.addPushDestination('Global', globalVariablesUi )
         
     def updatePulseProgram(self):
         self.scanControlWidget.setVariables( self.pulseProgramUi.pulseProgram.variabledict )
@@ -450,7 +463,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 #             rawColumnName = 'raw{0}'.format(index)
             trace.addColumn( yColumnName )
             thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter)
+                                                    xAxisLabel = self.scan.scanParameter, windowName=evaluation.plotname)
             thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
             thisAveragePlottedTrace.trace.description["comment"] = "Average Trace"
             thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
@@ -465,19 +478,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         (mycode, data) = self.generator.prepare(self.pulseProgramUi)
         self.progressUi.setRunning( max(len(self.scan.list),1) ) 
         if data:
-            self.pulserHardware.ppWriteRamWordList(data,0, check=False)
+            self.pulserHardware.ppWriteRamWordList(data,0, check=True)
             datacopy = [0]*len(data)
             datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
-            if self.scan.gateSequenceSettings.debug:
-                dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
-                with open( dumpFilename, 'wb') as f:
-                    f.write( self.pulserHardware.wordListToBytearray(datacopy))
-                codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
-                with open( codeFilename, 'w') as f:
-                    for a in mycode:
-                        f.write( "{0}\n".format(a) )
             if data!=datacopy:
-                raise ScanException("Ram write unsuccessful")
+                logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
+                logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
+                raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
         self.pulserHardware.ppFlushData()
         self.pulserHardware.ppClearWriteFifo()
         self.pulserHardware.ppUpload(PulseProgramBinary)
@@ -603,11 +610,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
                                                     pens.penList, yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
                                                     rawColumn=rawColumnName, name=self.scan.evalList[index].name, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter) 
+                                                    xAxisLabel = self.scan.scanParameter, windowName=self.scan.evalList[index].plotname) 
                     else:                
                         plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
                                                     pens.penList, yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
-                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter)               
+                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter, windowName=self.scan.evalList[index].plotname)               
                     xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
                     if xRange:
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
@@ -666,11 +673,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     sigma = plot.height
                 elif plot.hasTopColumn and plot.hasBottomColumn:
                     sigma = abs(plot.top + plot.bottom)
+                fitfunction.evaluate( self.globalVariablesUi.variables )
                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
                 plot.fitFunction = copy.deepcopy(fitfunction)
                 plot.plot(-2)
-                if self.globalVariablesUi is not None:
-                    self.globalVariablesUi.update( fitfunction.pushVariableValues() )
+                self.fitWidget.pushVariables(fitfunction.pushVariableValues())
                 
             
     def showTimestamps(self,data):
@@ -699,7 +706,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.currentTimestampTrace.name = self.scan.settingsName
             self.currentTimestampTrace.description["comment"] = ""
             self.currentTimestampTrace.filenameCallback = functools.partial( self.traceFilename, "Timestamp_"+self.scan.filename )
-            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList)
+            self.plottedTimestampTrace = PlottedTrace(self.currentTimestampTrace,self.plotDict["Timestamps"]["view"],pens.penList, windowName="Timestamps")
             self.timestampTraceui.addTrace(self.plottedTimestampTrace,pen=-1)              
             pulseProgramHeader = stringutilit.commentarize( self.pulseProgramUi.documentationString() )
             scanHeader = stringutilit.commentarize( repr(self.scan) )
@@ -733,7 +740,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 yColumnName = 'y{0}'.format(index) 
                 self.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
-                                                     yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else "") )
+                                                     yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else ""), windowName="Histogram" )
                 self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]
@@ -767,7 +774,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             name = str(name)
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -877,7 +884,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # create an exporter instance, as an argument give it
         # the item you wish to export
         with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):
-            exporter = ImageExporter(widget.graphicsView.scene()) 
+            exporter = ImageExporter(widget._graphicsView.scene()) 
       
             # set export parameters if needed
             pageWidth = printer.pageRect().width()

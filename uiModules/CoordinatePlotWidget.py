@@ -191,16 +191,16 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         pg.setConfigOption('foreground', 'k')
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = LabelItem(justify='right')
-        self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2,axisItems=axisItems,name=name)
+        self._graphicsView = self.addCustomPlot(row=0,col=0,colspan=2,axisItems=axisItems,name=name)
         self.addItem(self.coordinateLabel,row=1,col=1)
-        self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
+        self._graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
         self.mousePointList = list()
-        self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        self._graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
         
     def setPrintView(self, printview=True):
-        self.graphicsView.hideAllButtons(printview)
+        self._graphicsView.hideAllButtons(printview)
         if printview:
             self.coordinateLabel.hide()
         else:
@@ -208,7 +208,7 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         
     def autoRange(self):
         """Set the display to autorange."""
-        self.graphicsView.vb.enableAutoRange(axis=None, enable=True)
+        self._graphicsView.vb.enableAutoRange(axis=None, enable=True)
         
     def addCustomPlot(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
         """This is a duplicate of addPlot from GraphicsLayout.py. The only change
@@ -220,13 +220,13 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     def onMouseMoved(self,pos):
         """Execute when mouse is moved. If mouse is over plot, show cursor
            coordinates on coordinateLabel."""
-        if self.graphicsView.sceneBoundingRect().contains(pos):
-            self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
-            logY = self.graphicsView.ctrl.logYCheck.isChecked()
-            logX = self.graphicsView.ctrl.logXCheck.isChecked()
+        if self._graphicsView.sceneBoundingRect().contains(pos):
+            self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+            logY = self._graphicsView.ctrl.logYCheck.isChecked()
+            logX = self._graphicsView.ctrl.logXCheck.isChecked()
             y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
             x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
-            vR = self.graphicsView.vb.viewRange()
+            vR = self._graphicsView.vb.viewRange()
             deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
             deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
             precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1

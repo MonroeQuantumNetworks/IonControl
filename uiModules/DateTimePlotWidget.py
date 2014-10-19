@@ -20,12 +20,12 @@ class DateTimePlotWidget(CoordinatePlotWidget):
     def onMouseMoved(self,pos):
         """Execute when mouse is moved. If mouse is over plot, show cursor
            coordinates on coordinateLabel."""
-        if self.graphicsView.sceneBoundingRect().contains(pos):
+        if self._graphicsView.sceneBoundingRect().contains(pos):
             try:
-                self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
-                logY = self.graphicsView.ctrl.logYCheck.isChecked()
+                self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+                logY = self._graphicsView.ctrl.logYCheck.isChecked()
                 y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
-                vR = self.graphicsView.vb.viewRange()
+                vR = self._graphicsView.vb.viewRange()
                 deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
                 precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
                 roundedy = roundToNDigits(y, precy )

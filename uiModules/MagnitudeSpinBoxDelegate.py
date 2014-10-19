@@ -15,14 +15,15 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
     is constructed.
     """    
     
-    def __init__(self):
+    def __init__(self, globalDict=None):
         """Construct the TraceComboDelegate object, and set the penicons array."""
         QtGui.QItemDelegate.__init__(self)
+        self.globalDict = globalDict if globalDict is not None else dict()
         
     def createEditor(self, parent, option, index ):
         """Create the combo box editor used to select which pen icon to use.
            The for loop adds each pen icon into the combo box."""
-        editor = MagnitudeSpinBox(parent)
+        editor = MagnitudeSpinBox(parent, globalDict = self.globalDict)
         editor.dimension = index.model().data(index,QtCore.Qt.UserRole)
         editor.valueChanged.connect( partial( index.model().setValue, index ))
         return editor
@@ -39,7 +40,11 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
          
     def setModelData(self, editor, model, index):
         value = editor.value()
-        model.setData(index, value, QtCore.Qt.EditRole)
+        model.setData(index, editor.text(), QtCore.Qt.UserRole )
+        model.setData(index, value, QtCore.Qt.EditRole )    # DisplayRole would be better, for backwards compatibility we leave it at EditRole and distinguish there by type
          
     def updateEditorGeometry(self, editor, option, index ):
         editor.setGeometry(option.rect)
+        
+    def setGlobalVariables(self, variables):
+        self.globalDict = variables

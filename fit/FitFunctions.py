@@ -13,7 +13,7 @@ from fit.MotionalRabiFlopping import MotionalRabiFlopping     ,\
     TwoModeMotionalRabiFlopping
 from modules import MagnitudeParser
 from modules.XmlUtilit import stringToStringOrNone
-
+import logging
 
 class CosFit(FitFunctionBase):
     name = "Cos"
@@ -52,6 +52,20 @@ class CosSqFit(FitFunctionBase):
        
     def functionEval(self, x, A, T, theta, O ):
         return A*numpy.square(numpy.cos(numpy.pi/2/T*x+theta))+O
+
+class CosSqPeakFit(FitFunctionBase):
+    name = "Cos2 Peak"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*cos^2(pi*(x-x0)/(2*T))+O'
+        self.parameterNames = [ 'A', 'T', 'x0', 'O' ]
+        self.parameters = [1,100,0,0]
+        self.startParameters = [1,1,0,0]
+        self.parameterEnabled = [True]*4
+        self.parametersConfidence = [None]*4
+       
+    def functionEval(self, x, A, T, x0, O ):
+        return A*numpy.square(numpy.cos(numpy.pi/2/T*(x-x0)))+O
 
 
 class SinSqFit(FitFunctionBase):
@@ -141,6 +155,21 @@ class GaussianFit(FitFunctionBase):
     def functionEval(self, x, A, x0, s, O ):
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
 
+    def smartStartValues(self, x, y, parameters, enabled):
+        A, x0, s, O = parameters   #@UnusedVariable
+        maxindex = numpy.argmax(y)
+        minimum = numpy.amin(y)
+        maximum = y[maxindex]
+        x0 = x[maxindex]
+        A = maximum-minimum
+        O = minimum
+        threshold = (maximum+minimum)/2.
+        indexplus = next(ind for (thisy,ind) in enumerate(y[maxindex:]) if thisy<threshold)
+        indexminus = next(ind for (thisy,ind) in enumerate(y[:maxindex:-1]) if thisy<threshold)
+        s = x[indexplus]-x[indexminus]         
+        logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
+        return (A, x0, s, O)
+
 class SquareRabiFit(FitFunctionBase):
     name = "Square Rabi"
     def __init__(self):
@@ -156,6 +185,22 @@ class SquareRabiFit(FitFunctionBase):
         R = numpy.pi/T
         u = numpy.square(2*numpy.pi*(x-C)/R)
         return ((A/(1+u))*numpy.square(numpy.sin(numpy.sqrt(1+u)*R*t/2.))) + O  
+    
+    def smartStartValues(self, x, y, parameters, enabled):
+        T, C, A, O, t = parameters   #@UnusedVariable
+        maxindex = numpy.argmax(y)
+        minimum = numpy.amin(y)
+        maximum = y[maxindex]
+        C = x[maxindex]
+        A = maximum-minimum
+        O = minimum
+#         if not enabled[4]:  # if t is fixed we can estimate the width
+#             threshold = (maximum+minimum)/2.
+#             indexplus = next(ind for (thisy,ind) in enumerate(y[maxindex:]) if thisy<threshold)
+#             indexminus = next(ind for (thisy,ind) in enumerate(y[:maxindex:-1]) if thisy<threshold)
+#             deltay = y[indexplus]-y[indexminus]         
+        logging.getLogger(__name__).info("smart start values T={0}, C={1}, A={2}, O={3}, t={4}".format(T, C, A, O, t))
+        return (T, C, A, O, t)
 
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
@@ -215,6 +260,7 @@ class LinearFit(FitFunctionBase):
 fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
                        CosFit.name: CosFit, 
                        CosSqFit.name: CosSqFit,
+                       CosSqPeakFit.name: CosSqPeakFit,
                        SinSqFit.name: SinSqFit,
                        SinSqExpFit.name: SinSqExpFit,
                        SinSqGaussFit.name: SinSqGaussFit,

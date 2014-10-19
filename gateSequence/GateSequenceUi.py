@@ -16,13 +16,15 @@ from GateDefinition import GateDefinition
 from GateSequenceCompiler import GateSequenceCompiler
 from GateSequenceContainer import GateSequenceContainer
 from modules.enum import enum
+from modules.PyqtUtility import updateComboBoxItems
+from modules.HashableDict import HashableDict
 
 
 Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
 
 
 class Settings:
-    stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' ]
+    stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' , 'gateSequenceCache', 'gateDefinitionCache' ]
     def __init__(self):
         self.enabled = False
         self.gate = []
@@ -31,8 +33,8 @@ class Settings:
         self.active = 0
         self.lastDir = ""
         self.startAddressParam = ""
-        self.gateSequenceCache = dict()
-        self.gateDefinitionCache = dict()
+        self.gateSequenceCache = HashableDict()
+        self.gateDefinitionCache = HashableDict()
         self.thisSequenceRepetition = 10
         self.debug = False
         
@@ -42,6 +44,10 @@ class Settings:
             for key, value in list(cache.iteritems()):
                 if not os.path.exists(value):
                     cache.pop(key)
+        if not isinstance(self.gateSequenceCache, HashableDict):
+            self.gateSequenceCache = HashableDict(self.gateSequenceCache)
+        if not isinstance(self.gateDefinitionCache, HashableDict):
+            self.gateDefinitionCache =  HashableDict( self.gateDefinitionCache )
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -124,7 +130,6 @@ class GateSequenceUi(Form,Base):
         self.settings = settings
         self.GateSequenceEnableCheckBox.setChecked( self.settings.enabled )
         self.GateSequenceFrame.setEnabled( self.settings.enabled )
-        self.GateSequenceFrame.setEnabled( self.settings.enabled )
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
         if self.settings.startAddressParam:
@@ -133,14 +138,8 @@ class GateSequenceUi(Form,Base):
             self.settings.startAddressParam = str(self.StartAddressBox.currentText())
         self.settings.startAddressParam = str(self.settings.startAddressParam)
         try:
-            oldState = self.GateDefinitionBox.blockSignals(True);
-            self.GateDefinitionBox.clear()
-            self.GateDefinitionBox.addItems( self.settings.gateDefinitionCache.keys() )
-            self.GateDefinitionBox.blockSignals(oldState);
-            oldState = self.GateSequenceBox.blockSignals(True);
-            self.GateSequenceBox.clear()
-            self.GateSequenceBox.addItems( self.settings.gateSequenceCache.keys() )
-            self.GateSequenceBox.blockSignals(oldState);
+            updateComboBoxItems(self.GateDefinitionBox, self.settings.gateDefinitionCache.keys())
+            updateComboBoxItems(self.GateSequenceBox, self.settings.gateSequenceCache.keys())
             if self.settings.gateDefinition and self.settings.gateDefinition in self.settings.gateDefinitionCache:
                 self.loadGateDefinition( self.settings.gateDefinitionCache[self.settings.gateDefinition] )
                 self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(self.settings.gateDefinition))

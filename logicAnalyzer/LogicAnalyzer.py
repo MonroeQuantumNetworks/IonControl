@@ -73,7 +73,7 @@ class LogicAnalyzer(Form, Base ):
         self.actionRun.triggered.connect( self.onRun )
         self.actionStop.triggered.connect( self.onStop )
         self.actionSingle.triggered.connect( self.onSingle )
-        self.graphicsView = self.graphicsLayout.graphicsView
+        self._graphicsView = self.graphicsLayout._graphicsView
         self.signalTableModel = LogicAnalyzerSignalTableModel(self.config, self.channelNameData)
         self.signalTableView.setModel(self.signalTableModel)
         self.signalTableView.resizeColumnsToContents()
@@ -177,30 +177,30 @@ class LogicAnalyzer(Form, Base ):
            
     def plotData(self):
         offset = 0
-        lastAutoRangeState = self.graphicsView.vb.getState()['autoRange']
-        self.graphicsView.disableAutoRange(ViewBox.XYAxes)
+        lastAutoRangeState = self._graphicsView.vb.getState()['autoRange']
+        self._graphicsView.disableAutoRange(ViewBox.XYAxes)
         if self.lastEnabledChannels and self.lastEnabledChannels!=self.signalTableModel.enabledList:
             for curve in concatenate_iter(self.curveBundle, self.curveAuxBundle, self.curveTriggerBundle, self.curveGateBundle):
                 if curve:
-                    self.graphicsView.removeItem(curve)
+                    self._graphicsView.removeItem(curve)
             self.curveBundle = None
             self.curveAuxBundle = None
             self.curveTriggerBundle = None
             self.curveGateBundle = None
             if self.textItems:
                 for item in self.textItems:
-                    self.graphicsView.removeItem(item)
+                    self._graphicsView.removeItem(item)
         if self.yDataBundle:
             if self.curveBundle is None:
                 self.curveBundle = list()
                 for i, yData in enumerate(self.yDataBundle):
                     if yData:
                         curve = PlotCurveItem(self.xData, yData, stepMode=True, fillLevel=offset, brush=penList[1][4], pen=penList[1][0]) 
-                        self.graphicsView.addItem( curve )
+                        self._graphicsView.addItem( curve )
                         self.curveBundle.append( curve )
                         textItem = TextItem( self.signalTableModel.primaryChannelName(i), anchor=(1,1), color=(0,0,0) )
                         textItem.setPos( 0, offset )
-                        self.graphicsView.addItem(textItem)
+                        self._graphicsView.addItem(textItem)
                         self.textItems.append(textItem)
                         offset += 1
                     else:
@@ -218,11 +218,11 @@ class LogicAnalyzer(Form, Base ):
                 for i, yAuxData in enumerate(self.yAuxDataBundle):
                     if yAuxData:
                         curve = PlotCurveItem(self.xAuxData, yAuxData, stepMode=True, fillLevel=offset, brush=penList[2][4], pen=penList[2][0])
-                        self.graphicsView.addItem( curve )
+                        self._graphicsView.addItem( curve )
                         self.curveAuxBundle.append( curve )
                         textItem = TextItem( self.signalTableModel.auxChannelName(i), anchor=(1,1), color=(0,0,0) )
                         textItem.setPos( 0, offset )
-                        self.graphicsView.addItem(textItem)
+                        self._graphicsView.addItem(textItem)
                         self.textItems.append(textItem)
                         offset += 1 
                     else:
@@ -240,11 +240,11 @@ class LogicAnalyzer(Form, Base ):
                 for i, yTrigger in enumerate(self.yTriggerBundle):
                     if yTrigger:
                         curve = PlotCurveItem(self.xTrigger, yTrigger, stepMode=True, fillLevel=offset, brush=penList[3][4], pen=penList[3][0]) 
-                        self.graphicsView.addItem( curve )
+                        self._graphicsView.addItem( curve )
                         self.curveTriggerBundle.append( curve )
                         textItem = TextItem( self.signalTableModel.triggerChannelName(i), anchor=(1,1), color=(0,0,0) )
                         textItem.setPos( 0, offset )
-                        self.graphicsView.addItem(textItem)
+                        self._graphicsView.addItem(textItem)
                         self.textItems.append(textItem)
                         offset += 1 
                     else:
@@ -262,11 +262,11 @@ class LogicAnalyzer(Form, Base ):
                 for i, yGateData in enumerate(self.yGateDataBundle):
                     if yGateData:
                         curve = PlotCurveItem(self.xGateData, yGateData, stepMode=True, fillLevel=offset, brush=penList[2][4], pen=penList[2][0])
-                        self.graphicsView.addItem( curve )
+                        self._graphicsView.addItem( curve )
                         self.curveGateBundle.append( curve )
                         textItem = TextItem( self.signalTableModel.gateChannelName(i), anchor=(1,1), color=(0,0,0) )
                         textItem.setPos( 0, offset )
-                        self.graphicsView.addItem(textItem)
+                        self._graphicsView.addItem(textItem)
                         self.textItems.append(textItem)
                         offset += 1 
                     else:
@@ -280,10 +280,10 @@ class LogicAnalyzer(Form, Base ):
         self.lastEnabledChannels = list( self.signalTableModel.enabledList )
         xautorange, yautorange = lastAutoRangeState
         if xautorange:
-            self.graphicsView.enableAutoRange(ViewBox.XAxis)
+            self._graphicsView.enableAutoRange(ViewBox.XAxis)
         if yautorange:
-            self.graphicsView.enableAutoRange(ViewBox.YAxis)
-        self.graphicsView.autoRange()
+            self._graphicsView.enableAutoRange(ViewBox.YAxis)
+        self._graphicsView.autoRange()
              
     def refresh(self):
         if self.logicData:

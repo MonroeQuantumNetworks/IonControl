@@ -114,7 +114,7 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         return None
         
     def setData(self,index, value, role):
-        return self.setDataLookup[(role,index.column())](index.row(),value)
+        return self.setDataLookup.get((role,index.column()), lambda row, value: None)(index.row(),value)
     
     def setValue(self, index, value):
         #self.fitfunction.startParameters[index.row()] = value

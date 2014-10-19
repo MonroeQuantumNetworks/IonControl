@@ -40,7 +40,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
                                (QtCore.Qt.EditRole, 1): self.setValue,
                                }
-        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(30, 's')))
+        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(10, 's')))
         self.persistence = DBPersist()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -151,9 +151,9 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return False
     
     def update(self, updlist):
-        for key, value in updlist:
+        for destination, key, value in updlist:
             value = MagnitudeUtilit.mg(value)
-            if key in self.variables:
+            if destination=='Global' and key in self.variables:
                 old = self.variables[key]
                 if value.dimension() != old.dimension() or value != old:
                     self.variables[key] = value

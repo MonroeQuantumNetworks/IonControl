@@ -105,7 +105,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.autoLoadDock)
         
         self.curves = [None]*8
-        self.graphicsView = self.graphicsLayout.graphicsView
+        self._graphicsView = self.graphicsLayout._graphicsView
         if 'DedicatedCounter.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['DedicatedCounter.MainWindow.State'])
         self.onSettingsChanged()
@@ -120,9 +120,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         for index in range(8): 
             show = self.settings.counterMask & (1<<index)
             if  show and self.curves[index] is None:
-                self.curves[index] = self.graphicsView.plot(pen=penList[index+1][0])
+                self.curves[index] = self._graphicsView.plot(pen=penList[index+1][0])
             elif (not show) and (self.curves[index] is not None):
-                self.graphicsView.removeItem( self.curves[index] )
+                self._graphicsView.removeItem( self.curves[index] )
                 self.curves[index] = None
                 
     def saveConfig(self):

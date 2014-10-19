@@ -17,6 +17,7 @@ from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
 from TraceDescriptionTableModel import TraceDescriptionTableModel
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
 
@@ -68,7 +69,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     onCLose(self): Execute when UI is closed
     """
 
-    def __init__(self, penicons, config, parentname, graphicsView, parent=None, lastDir=None):
+    def __init__(self, penicons, config, parentname, graphicsViewDict, parent=None, lastDir=None):
         """Construct the trace user interface, and set instance variables. Inherits from Qt Designer file."""
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
@@ -76,16 +77,18 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.config = config
         self.configname = "Traceui."+parentname
         self.settings = self.config.get(self.configname+".settings",Settings(lastDir=lastDir, plotstyle=0))
-        self.graphicsView = graphicsView
+        self.graphicsViewDict = graphicsViewDict
 
     def setupUi(self,MainWindow):
         """Setup the UI. Create the model and the view. Connect all the buttons."""
         TraceuiForm.setupUi(self,MainWindow)
-        self.model = TraceTreeModel([], self.penicons)
+        self.model = TraceTreeModel([], self.penicons, self.graphicsViewDict)
         self.tracePersistentIndexes = []
         self.traceTreeView.setModel(self.model)
         self.delegate = TraceComboDelegate(self.penicons)
+        self.graphicsViewDelegate = ComboBoxDelegate()
         self.traceTreeView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
+        self.traceTreeView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which pen to use in the plot
         self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
@@ -273,7 +276,8 @@ class Traceui(TraceuiForm, TraceuiBase):
             self.settings.lastDir, trace.name = os.path.split(str(fname))
             trace.loadTrace(str(fname))
             for plotting in trace.tracePlottingList:
-                self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1,tracePlotting=plotting),-1)
+                name = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
+                self.addTrace(PlottedTrace(trace,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name),-1)
 
     def saveConfig(self):
         """Execute when the UI is closed. Save the settings to the config file."""

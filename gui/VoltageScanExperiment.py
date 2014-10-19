@@ -25,8 +25,8 @@ from modules import enum
 
 class VoltageScanExperiment( ScanExperiment.ScanExperiment ):
     Status = enum.enum('Idle','Starting','Running','Stopping')
-    def __init__(self,settings,pulserHardware,experimentName,toolBar=None,parent=None):
-        super(VoltageScanExperiment,self).__init__(settings,pulserHardware,experimentName,toolBar=toolBar,parent=parent)
+    def __init__(self,settings,pulserHardware,globalVariablesUi,experimentName,toolBar=None,parent=None):
+        super(VoltageScanExperiment,self).__init__(settings,pulserHardware,globalVariablesUi,experimentName,toolBar=toolBar,parent=parent)
         self.status = self.Status.Idle        
         
     def setupUi(self,MainWindow,config):
