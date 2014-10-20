@@ -76,5 +76,9 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
         self.todolist.pop(row)
         self.endRemoveRows()
     
-    
+    def setTodolist(self, todolist):
+        self.beginResetModel()
+        self.todolist = todolist
+        self.endResetModel()
+        
             

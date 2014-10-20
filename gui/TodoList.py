@@ -11,6 +11,10 @@ from uiModules.KeyboardFilter import KeyListFilter
 from modules.Utility import unique
 from functools import partial
 from modules.ScanDefinition import ScanSegmentDefinition
+import logging
+from modules.HashableList import HashableList
+from copy import deepcopy
+from modules.PyqtUtility import updateComboBoxItems
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
@@ -23,6 +27,26 @@ class TodoListEntry:
         self.measurement = measurement
         self.scanParameter = None
         self.scanSegment = ScanSegmentDefinition()
+        
+    def __setstate__(self, s):
+        self.__dict__ = s
+        self.__dict__.setdefault('scanParameter', None )
+        self.__dict__.setdefault('measurement', None )
+        self.__dict__.setdefault('scan', None )
+
+    stateFields = ['scan', 'measurement', 'scanParameter' ] 
+
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        if not isinstance(self.todoList,HashableList):
+            logging.getLogger(__name__).info("Replacing list with hashable list")
+            self.todoList = HashableList(self.todoList)
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
 
 class Settings:
     def __init__(self):
@@ -35,12 +59,37 @@ class Settings:
         self.__dict__.setdefault( 'currentIndex', 0)
         self.__dict__.setdefault( 'repeat', False)
 
+    stateFields = ['currentIndex', 'repeat', 'todoList'] 
+        
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        if not isinstance(self.todoList,HashableList):
+            logging.getLogger(__name__).info("Replacing list with hashable list")
+            self.todoList = HashableList(self.todoList)
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+class MasterSettings:
+    def __init__(self):
+        self.currentSettingName = None
+        self.autoSave = False
+        
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__dict__.setdefault( 'autoSave', False )
+
 class TodoList(Form, Base):
     def __init__(self,scanModules,config,currentScan,setCurrentScan,parent=None):
         Base.__init__(self,parent)    
         Form.__init__(self)
         self.config = config
         self.settings = config.get('TodolistSettings', Settings())
+        self.settingsCache = config.get( 'TodolistSettings.Cache', dict())
+        self.masterSettings = config.get( 'Todolist.MasterSettings', MasterSettings())
         self.scanModules = scanModules
         self.scanModuleMeasurements = dict()
         self.currentMeasurementsDisplayedForScan = None
@@ -73,16 +122,80 @@ class TodoList(Form, Base):
         self.removeMeasurementButton.clicked.connect( self.onDropMeasurement )
         self.runButton.clicked.connect( partial( self.statemachine.processEvent, 'startCommand' ) )
         self.stopButton.clicked.connect( partial( self.statemachine.processEvent, 'stopCommand' ) )
+        self.repeatButton.setChecked( self.settings.repeat )
         self.repeatButton.clicked.connect( self.onRepeatChanged )
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
         self.tableModel.setActiveRow(self.settings.currentIndex, False)
         self.tableView.doubleClicked.connect( self.setCurrentIndex )
+        # naming and saving of todo lists
+        self.toolButtonDelete.clicked.connect( self.onDeleteSaveTodoList )
+        self.toolButtonSave.clicked.connect( self.onSaveTodoList )
+        self.toolButtonReload.clicked.connect( self.onLoadTodoList )
+        self.comboBoxListCache.addItems( sorted(self.settingsCache.keys()) )
+        if self.masterSettings.currentSettingName is not None and self.masterSettings.currentSettingName in self.settingsCache:
+            self.comboBoxListCache.setCurrentIndex( self.comboBoxListCache.findText(self.masterSettings.currentSettingName))
+        self.comboBoxListCache.currentIndexChanged[QtCore.QString].connect( self.onLoadTodoList )
+        self.checkSettingsSavable()
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.autoSaveAction = QtGui.QAction( "auto save", self )
+        self.autoSaveAction.setCheckable(True)
+        self.autoSaveAction.setChecked( self.masterSettings.autoSave )
+        self.autoSaveAction.triggered.connect( self.onAutoSaveChanged )
+        self.addAction( self.autoSaveAction )
+        
+    def onAutoSaveChanged(self, state):
+        self.masterSettings.autoSave = state
+        if state:
+            self.checkSettingsSavable()
+        
+    def checkSettingsSavable(self, savable=None):
+        if savable is None:
+            text = str(self.comboBoxListCache.currentText())
+            savable = False
+            if text is not None and text !=  "":
+                savable = text!=self.masterSettings.currentSettingName or text not in self.settingsCache or self.settings!=self.settingsCache[text]
+        if savable and self.masterSettings.autoSave:
+            self.onSaveTodoList()
+            savable = False
+        self.toolButtonSave.setEnabled( savable )
+        return savable
+        
+    def onSaveTodoList(self):
+        text = str(self.comboBoxListCache.currentText())
+        if text is not None and text !=  "":
+            new = text not in self.settingsCache
+            if new or self.settings!=self.settingsCache[text]:
+                self.settingsCache[text] = deepcopy( self.settings )
+                self.masterSettings.currentSettingName = text
+                if new:
+                    updateComboBoxItems(self.comboBoxListCache, sorted(self.settingsCache.keys()))
+        self.checkSettingsSavable(savable=False)
+            
+    def onDeleteSaveTodoList(self):
+        text = str(self.comboBoxListCache.currentText())
+        if text in self.settingsCache:
+            self.settingsCache.pop(text)
+            updateComboBoxItems(self.comboBoxListCache, sorted(self.settingsCache.keys()))
+            
+    def onLoadTodoList(self, text=None):
+        text = str(text) if text is not None else str(self.comboBoxListCache.currentText())
+        if text in self.settingsCache:
+            self.masterSettings.currentSettingName = text
+            self.setSettings( deepcopy( self.settingsCache[text] ) )
+        self.checkSettingsSavable()
+        
+    def setSettings(self, newSettings):
+        self.settings = newSettings
+        self.tableModel.setTodolist(self.settings.todoList)
+        self.tableModel.setActiveRow( self.settings.currentIndex )
+        self.repeatButton.setChecked( self.settings.repeat )
         
     def setCurrentIndex(self, index):
         self.settings.currentIndex = index.row()
-        self.tableModel.setActiveRow(self.settings.currentIndex, self.statemachine.currentState=='MeasurementRunning')        
+        self.tableModel.setActiveRow(self.settings.currentIndex, self.statemachine.currentState=='MeasurementRunning')      
+        self.checkSettingsSavable()  
         
     def updateMeasurementSelectionBox(self, newscan ):
         newscan = str(newscan)
@@ -115,10 +228,12 @@ class TodoList(Form, Base):
                 for index in indexes:
                     selectionModel.select( self.tableModel.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
 #            self.selectionChanged.emit( self.enabledParametersObjects )
+        self.checkSettingsSavable()
 
     def onAddMeasurement(self):
         if self.currentMeasurementsDisplayedForScan and self.measurementSelectionBox.currentText():
             self.tableModel.addMeasurement( TodoListEntry(self.currentMeasurementsDisplayedForScan, str(self.measurementSelectionBox.currentText())))
+        self.checkSettingsSavable()
     
     def onDropMeasurement(self):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
@@ -126,6 +241,7 @@ class TodoList(Form, Base):
         numEntries = self.tableModel.rowCount()
         if self.settings.currentIndex >= numEntries:
             self.settings.currentIndex = 0
+        self.checkSettingsSavable()
 
     def checkReadyToRun(self, state, _=True ):
         _, current = self.currentScan()
@@ -139,6 +255,7 @@ class TodoList(Form, Base):
     
     def onRepeatChanged(self, enabled):
         self.settings.repeat = enabled
+        self.checkSettingsSavable()
 
     def enterIdle(self):
         self.statusLabel.setText('Idle')
@@ -165,6 +282,8 @@ class TodoList(Form, Base):
         
     def saveConfig(self):
         self.config['TodolistSettings'] = self.settings
+        self.config['TodolistSettings.Cache'] = self.settingsCache
+        self.config['Todolist.MasterSettings'] = self.masterSettings
        
         
         

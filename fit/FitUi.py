@@ -145,7 +145,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.addPushVariable.clicked.connect( self.onAddPushVariable )
         self.removePushVariable.clicked.connect( self.onRemovePushVariable )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
-        self.pushDestinations['Database'] = DatabasePushDestination()
+        self.pushDestinations['Database'] = DatabasePushDestination('fit')
         
 
 
