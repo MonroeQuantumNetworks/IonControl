@@ -6,6 +6,7 @@ Created on May 16, 2014
 
 import visa   #@UnresolvedImport
 from modules.magnitude import mg
+from modules.AttributeRedirector import AttributeRedirector
 
 class Settings:
     pass
@@ -30,21 +31,8 @@ class SpectrumAnalyzerN9342Peak(object):
         self.conn = visa.instrument( self.instrument, timeout=self.timeout)
         self.conn.write(':CALCulate:MARKer1:CPEak ON')
        
-    @property
-    def measureSeparation(self):
-        return self.settings.measureSeparation
-    
-    @measureSeparation.setter
-    def measureSeparation(self, d):
-        self.settings.measureSeparation = d
-        
-    @property
-    def timeout(self):
-        return self.settings.timeout
-    
-    @timeout.setter
-    def timeout(self, p):
-        self.settings.timeout = p
+    measureSeparation = AttributeRedirector( "settings", "measureSeparation" )
+    timeout = AttributeRedirector( "settings", "timeout" )        
     
     def close(self):
         self.conn.close()
