@@ -168,7 +168,7 @@ class GaussianFit(FitFunctionBase):
             if val < threshold:
                 indexplus = ind + maxindex
                 break
-        s = 1.15*(x[indexplus]-x[maxindex])
+        s = 1.20112*(x[indexplus]-x[maxindex])
         logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
         return (A, x0, s, O)
 
@@ -202,7 +202,7 @@ class SquareRabiFit(FitFunctionBase):
                 if val < threshold:
                     indexplus = ind + maxindex
                     break
-            T = 1.15*(x[indexplus]-x[maxindex])
+            T = 0.399345/(x[indexplus]-x[maxindex])
         logging.getLogger(__name__).info("smart start values T={0}, C={1}, A={2}, O={3}, t={4}".format(T, C, A, O, t))
         return (T, C, A, O, t)
 
