@@ -29,5 +29,7 @@ class DBPersist:
     def paramDef(self):
         return []
 
+    def sourceDict(self):
+        return DBPersist.store.sourceDict
 
 persistenceDict = { DBPersist.name: DBPersist }

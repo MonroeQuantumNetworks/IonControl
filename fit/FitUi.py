@@ -14,8 +14,29 @@ from modules.SequenceDict import SequenceDict
 from PushVariableTableModel import PushVariableTableModel
 from modules.Utility import unique
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from externalParameter.persistence import DBPersist
+import time
+from modules.magnitude import is_magnitude
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
+
+class DatabasePushDestination:
+    def __init__(self, space):
+        self.persist = DBPersist()
+        self.space = space
+    
+    def update(self, pushlist, upd_time=None ):
+        upd_time = time.time() if upd_time is None else upd_time
+        for _, variable, value in pushlist:
+            if is_magnitude(value):
+                value, unit = value.toval(returnUnit=True)
+            else:
+                unit = None
+            self.persist.persist(self.space, variable, upd_time, value, unit)
+    
+    def keys(self):
+        return (source for (space,source) in self.persist.sourceDict().keys() if space == self.space) 
+    
 
 class AnalysisDefinition(object):
     def __init__(self, name=None, fitfunctionName=None ):
@@ -124,6 +145,9 @@ class FitUi(fitForm, QtGui.QWidget):
         self.addPushVariable.clicked.connect( self.onAddPushVariable )
         self.removePushVariable.clicked.connect( self.onRemovePushVariable )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
+        self.pushDestinations['Database'] = DatabasePushDestination()
+        
+
 
     def onUseSmartStartValues(self, state):
         self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
