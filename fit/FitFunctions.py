@@ -164,9 +164,11 @@ class GaussianFit(FitFunctionBase):
         A = maximum-minimum
         O = minimum
         threshold = (maximum+minimum)/2.
-        indexplus = next(ind for (thisy,ind) in enumerate(y[maxindex:]) if thisy<threshold)
-        indexminus = next(ind for (thisy,ind) in enumerate(y[:maxindex:-1]) if thisy<threshold)
-        s = x[indexplus]-x[indexminus]         
+        for ind, val in enumerate(y[maxindex:]):
+            if val < threshold:
+                indexplus = ind + maxindex
+                break
+        s = 1.15*(x[indexplus]-x[maxindex])
         logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
         return (A, x0, s, O)
 
@@ -194,11 +196,13 @@ class SquareRabiFit(FitFunctionBase):
         C = x[maxindex]
         A = maximum-minimum
         O = minimum
-#         if not enabled[4]:  # if t is fixed we can estimate the width
-#             threshold = (maximum+minimum)/2.
-#             indexplus = next(ind for (thisy,ind) in enumerate(y[maxindex:]) if thisy<threshold)
-#             indexminus = next(ind for (thisy,ind) in enumerate(y[:maxindex:-1]) if thisy<threshold)
-#             deltay = y[indexplus]-y[indexminus]         
+        threshold = (maximum+minimum)/2.
+        if not enabled[4]:  # if t is fixed we can estimate T
+            for ind, val in enumerate(y[maxindex:]):
+                if val < threshold:
+                    indexplus = ind + maxindex
+                    break
+            T = 1.15*(x[indexplus]-x[maxindex])
         logging.getLogger(__name__).info("smart start values T={0}, C={1}, A={2}, O={3}, t={4}".format(T, C, A, O, t))
         return (T, C, A, O, t)
 
