@@ -165,6 +165,7 @@ class GaussianFit(FitFunctionBase):
         O = minimum
         threshold = (maximum+minimum)/2.
         for ind, val in enumerate(y[maxindex:]):
+            indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
             if val < threshold:
                 indexplus = ind + maxindex
                 break
