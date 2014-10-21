@@ -113,7 +113,9 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         for row, value in enumerate(self.parameterDict.values()):
             expr = value.strValue
             if expr is not None:
-                self._setValue( row, self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict) )
+                value = self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict)
+                self._setValue( row, value )
+                self.parameterDict.at(row).setSavedValue( value )     # set saved value to make this new value the default
                 leftInd = self.createIndex(row, 1)
                 self.dataChanged.emit( leftInd, leftInd )
 
