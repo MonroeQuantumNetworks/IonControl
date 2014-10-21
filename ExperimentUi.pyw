@@ -188,8 +188,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
-        self.ExternalParametersUi = ExternalParameterUi.ControlUi()
+        self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.globalVariablesUi.variables )
         self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.ExternalParametersUi )
+        self.globalVariablesUi.valueChanged.connect( self.ExternalParametersUi.evaluate )
+
         self.ExternalParameterDock = QtGui.QDockWidget("Params Control")
         self.ExternalParameterDock.setWidget(self.ExternalParametersUi)
         self.ExternalParameterDock.setObjectName("_ExternalParameterDock")
