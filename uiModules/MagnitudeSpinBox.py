@@ -59,7 +59,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def validate(self, inputstring, pos):
         try:
-            value = self.expression.evaluateAsMagnitude(str(inputstring))
+            value = self.expression.evaluateAsMagnitude(str(inputstring), self.globalDict)
             if api2:
                 if self._dimension is not None and value.unit != self._dimension.unit:
                     self.lineEdit().setPalette( self.orangeTextPalette )
