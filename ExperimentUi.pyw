@@ -345,19 +345,21 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     
     def switchTab(self, name):
         self.tabWidget.setCurrentWidget( self.tabDict[name] )
+        self.onCurrentChanged(self.tabDict.index(name))  # this gets called later, but we need it to run now in order to switch scans from the todolist
     
     def onCurrentChanged(self, index):
-        self.currentTab.deactivate()
-        if hasattr( self.currentTab, 'stateChanged' ):
-            try:
-                self.currentTab.stateChanged.disconnect()
-            except TypeError:
-                pass
-        self.currentTab = self.tabDict.at(index)
-        self.currentTab.activate()
-        if hasattr( self.currentTab, 'stateChanged' ):
-            self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
-        self.initMenu()
+        if self.tabDict.at(index)!=self.currentTab:
+            self.currentTab.deactivate()
+            if hasattr( self.currentTab, 'stateChanged' ):
+                try:
+                    self.currentTab.stateChanged.disconnect()
+                except TypeError:
+                    pass
+            self.currentTab = self.tabDict.at(index)
+            self.currentTab.activate()
+            if hasattr( self.currentTab, 'stateChanged' ):
+                self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
+            self.initMenu()
         
     def initMenu(self):
         self.menuView.clear()

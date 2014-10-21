@@ -24,7 +24,6 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     def __init__(self, controlUi, parameterList=None, parent=None):
         super(ExternalParameterControlTableModel, self).__init__(parent)
         self.parameterDict = SequenceDict()
-        self.names = list()
         self.controlUi = controlUi
         self.headerLookup = ['Name', 'Control', 'External']
         self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.parameterDict.keyAt(row),
@@ -104,7 +103,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     def update(self, iterable):
         for destination, name, value in iterable:
             if destination=='External':
-                row = self.names.index(name)
+                row = self.parameterDict.index(name)
                 self.parameterDict.at(row).setSavedValue( value )     # set saved value to make this new value the default
                 self.setValue( self.createIndex( row,1), value )
                 self.parameterDict.at(row).strValue = None
@@ -151,7 +150,7 @@ class ControlUi(UiForm,UiBase):
         self.evaluate(None)     
         
     def keys(self):
-        return self.tableModel.names
+        return self.tableModel.parameterDict.keys()
     
     def update(self, iterable):
         self.tableModel.update( iterable )

@@ -164,8 +164,8 @@ class GaussianFit(FitFunctionBase):
         A = maximum-minimum
         O = minimum
         threshold = (maximum+minimum)/2.
+        indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
         for ind, val in enumerate(y[maxindex:]):
-            indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
             if val < threshold:
                 indexplus = ind + maxindex
                 break
@@ -199,6 +199,7 @@ class SquareRabiFit(FitFunctionBase):
         O = minimum
         threshold = (maximum+minimum)/2.
         if not enabled[4]:  # if t is fixed we can estimate T
+            indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
             for ind, val in enumerate(y[maxindex:]):
                 if val < threshold:
                     indexplus = ind + maxindex
