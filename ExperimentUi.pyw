@@ -202,7 +202,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         self.hybridScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         
-        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.setCurrentTab )
+        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab )
         self.todoList.setupUi()
         self.todoListDock = QtGui.QDockWidget("Todo List")
         self.todoListDock.setWidget(self.todoList)
@@ -342,6 +342,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         logger = logging.getLogger(__name__)
         logger.debug( "OnReload" )
         self.currentTab.onReload()
+    
+    def switchTab(self, name):
+        self.tabWidget.setCurrentWidget( self.tabDict[name] )
     
     def onCurrentChanged(self, index):
         self.currentTab.deactivate()

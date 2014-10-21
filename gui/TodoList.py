@@ -189,7 +189,7 @@ class TodoList(Form, Base):
     def setSettings(self, newSettings):
         self.settings = newSettings
         self.tableModel.setTodolist(self.settings.todoList)
-        self.tableModel.setActiveRow( self.settings.currentIndex )
+        self.tableModel.setActiveRow( self.settings.currentIndex, self.statemachine.currentState=='MeasurementRunning' )
         self.repeatButton.setChecked( self.settings.repeat )
         
     def setCurrentIndex(self, index):
