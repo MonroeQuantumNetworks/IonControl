@@ -3,11 +3,13 @@ import logging
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
+from mylogging.ExceptionLogButton import ExceptionLogButton
 from mylogging import LoggingSetup  #@UnusedImport
 from gui import ProjectSelection
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
+from pyqtgraph.exporters.ImageExporter import ImageExporter
 
 from trace import Traceui
 from trace import pens
@@ -21,13 +23,20 @@ from fit.FitUi import FitUi
 from externalParameter.InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
 from gui import ProjectSelectionUi
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
+from modules.SequenceDict import SequenceDict
+from mylogging.LoggerLevelsUi import LoggerLevelsUi
+from _functools import partial
+from gui.Preferences import PreferencesUi
+from modules.SceneToPrint import SceneToPrint
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingWindow.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingUi.ui')
 
 class FinishException(Exception):
     pass
 
 class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
+    levelNameList = ["debug", "info", "warning", "error", "critical"]
+    levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     plotConfigurationChanged = QtCore.pyqtSignal( object )
     def __init__(self,project,config):
         super(InstrumentLoggingUi, self).__init__()
@@ -36,6 +45,11 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.dockWidgetList = list()
         self.plotDict = dict()
         self.instrument = ""
+        self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
+        self.consoleMaximumLines = config.get('Settings.consoleMaximumLinesNew',100)
+        self.consoleEnable = config.get('Settings.consoleEnable',False)
+        self.printMenu = None
+        if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         
     def __enter__(self):
         return self
@@ -46,13 +60,41 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
     def setupUi(self, parent):
         super(InstrumentLoggingUi,self).setupUi(parent)
                 
+        self.dockWidgetConsole.hide()
+        self.loggerUi = LoggerLevelsUi(self.config)
+        self.loggerUi.setupUi(self.loggerUi)
+        self.loggerDock = QtGui.QDockWidget("Logging")
+        self.loggerDock.setWidget(self.loggerUi)
+        self.loggerDock.setObjectName("_LoggerDock")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.loggerDock)
+        self.loggerDock.hide()
+
         logger = logging.getLogger()        
+        self.toolBar.addWidget(ExceptionLogButton())
             
+        # Setup Console Dockwidget
+        self.levelComboBox.addItems(self.levelNameList)
+        self.levelComboBox.currentIndexChanged[int].connect( self.setLoggingLevel )            
+        self.levelComboBox.setCurrentIndex( self.levelValueList.index(self.loggingLevel) )
+        self.consoleClearButton.clicked.connect( self.onClearConsole )
+        self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
+        self.linesSpinBox.setValue( self.consoleMaximumLines )
+        self.checkBoxEnableConsole.stateChanged.connect( self.onEnableConsole )
+        self.checkBoxEnableConsole.setChecked( self.consoleEnable )
+
         self.parent = parent
-        self.tabList = list()
-        self.tabDict = dict()
+        self.tabDict = SequenceDict()
                
-        self.setupPlots()       
+        self.setupPlots()     
+        
+        self.preferencesUi = PreferencesUi(config, self)
+        self.preferencesUi.setupUi(self.preferencesUi)
+        self.preferencesUiDock = QtGui.QDockWidget("Preferences")
+        self.preferencesUiDock.setWidget(self.preferencesUi)
+        self.preferencesUiDock.setObjectName("_preferencesUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
+
+          
         # Traceui
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict)
@@ -111,7 +153,22 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
-                    
+        self.initMenu()
+        self.actionExit.triggered.connect(self.onClose)
+
+    def onEnableConsole(self, state):
+        self.consoleEnable = state==QtCore.Qt.Checked
+                
+    def onClearConsole(self):
+        self.textEditConsole.clear()
+        
+    def onConsoleMaximumLinesChanged(self, maxlines):
+        self.consoleMaximumLines = maxlines
+        self.textEditConsole.document().setMaximumBlockCount(maxlines)
+
+    def setLoggingLevel(self, index):
+        self.loggingLevel = self.levelValueList[index]
+                   
     def setupPlots(self):
         self.area = DockArea()
         self.setCentralWidget(self.area)
@@ -190,6 +247,18 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
     def onClose(self):
         self.parent.close()
         
+    def onMessageWrite(self,message,level=logging.DEBUG):
+        if self.consoleEnable and level>= self.loggingLevel:
+            cursor = self.textEditConsole.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.End)
+            if level < logging.ERROR:
+                self.textEditConsole.setTextColor(QtCore.Qt.black)
+            else:
+                self.textEditConsole.setTextColor(QtCore.Qt.red)
+            cursor.insertText(message)
+            self.textEditConsole.setTextCursor(cursor)
+            self.textEditConsole.ensureCursorVisible()
+
     def closeEvent(self,e):
         logger = logging.getLogger(__name__)
         logger.info( "Close Event" )
@@ -199,52 +268,71 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
-        for tab in self.tabList:
+        for tab in self.tabDict.values():
             tab.saveConfig()
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
         self.config['PlotNames'] = self.plotDict.keys()
         self.config['pyqtgraph-dockareastate'] = self.area.saveState()
+        self.config['Settings.loggingLevel'] = self.loggingLevel
+        self.config['Settings.consoleMaximumLinesNew'] = self.consoleMaximumLines
+        self.config['Settings.consoleEnable'] = self.consoleEnable 
         self.ExternalParametersSelectionUi.saveConfig()
         self.instrumentLoggingHandler.saveConfig()
         self.instrumentLoggingQueryUi.saveConfig()
+        self.preferencesUi.saveConfig()
 
+    def onPrint(self, target):
+        printer = QtGui.QPrinter(mode=QtGui.QPrinter.ScreenResolution)
+        if self.preferencesUi.preferences().printPreferences.doPrint:
+            dialog = QtGui.QPrintDialog(printer, self)
+            dialog.setWindowTitle("Print Document")
+            if dialog.exec_() != QtGui.QDialog.Accepted:
+                return;    
+        printer.setResolution(self.preferencesUi.preferences().printPreferences.printResolution)
 
+        pdfPrinter = QtGui.QPrinter()
+        pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat);
+        pdfPrinter.setOutputFileName(DataDirectory.DataDirectory().sequencefile(target+".pdf")[0])
+        self.doPrint(target, printer, pdfPrinter, self.preferencesUi.preferences().printPreferences)
+
+    def doPrint(self, target, printer, pdfPrinter, preferences):
+        widget = self.plotDict[target]['widget']
+        if preferences.savePdf:
+            with SceneToPrint(widget):
+                painter = QtGui.QPainter(pdfPrinter)
+                widget.render( painter )
+                del painter
         
-#     def run(self):
-#         ProjectSelection.setProject(self.project)
-#         ProjectSelection.setDefaultProject(self.project)
-#         configureServerLogging(self.loggingQueue)
-#         logger = logging.getLogger(__name__)
-#         
-# 
-#         #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
-#         import ctypes, sys
-#         myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
-#         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-#         
-#         app = QtGui.QApplication(["LoggingWindow"])    
-#         logger = logging.getLogger("")
-#         self.commandReader.quitProcess.connect( app.quit )
-#         self.commandReader.start()
-#                
-#                
-#         with configshelve.configshelve( ProjectSelection.guiConfigFile("LoggingWindow") ) as config:
-#             with InstrumentLoggingUi(self.project,config) as ui:
-#                 ui.setupUi(ui)
-#                 ui.show()
-#                 self.commandReader.saveConfig.connect( ui.saveConfig )
-#                 sys.exit(app.exec_())
-#         
-#         self.dataQueue.put(FinishException())
-#         logger.info( "Pulser Hardware Server Process finished." )
-#         self.dataQueue.close()
-#         self.loggingQueue.put(None)
-#         self.loggingQueue.close()
-#         self.commandReader.quit()
-        
-    
+        # create an exporter instance, as an argument give it
+        # the item you wish to export
+        with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):
+            exporter = ImageExporter(widget._graphicsView.scene()) 
+      
+            # set export parameters if needed
+            pageWidth = printer.pageRect().width()
+            pageHeight = printer.pageRect().height()
+            exporter.parameters()['width'] = pageWidth*preferences.printWidth   # (note this also affects height parameter)
+              
+            # save to file
+            png = exporter.export(toBytes=True)
+            if preferences.savePng:
+                png.save(DataDirectory.DataDirectory().sequencefile(target+".png")[0])
+            
+            if preferences.doPrint:
+                painter = QtGui.QPainter( printer )
+                painter.drawImage(QtCore.QPoint(pageWidth*preferences.printX,pageHeight*preferences.printY), png)
 
+    def initMenu(self):
+        # Print menu
+        if self.printMenu is not None:
+            self.printMenu.clear()
+        else:
+            self.printMenu = self.menuFile.addMenu("Print")
+        for plot in self.plotDict.keys():
+            action = self.printMenu.addAction( plot )
+            action.triggered.connect( partial(self.onPrint, plot ))
+       
 
 if __name__ == "__main__":
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
@@ -265,7 +353,7 @@ if __name__ == "__main__":
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
             with InstrumentLoggingUi(project, config) as ui:
                 ui.setupUi(ui)
-                #LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()
                 sys.exit(app.exec_())
     else:

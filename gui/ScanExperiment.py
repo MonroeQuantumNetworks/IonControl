@@ -526,12 +526,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppStop()
         self.progressUi.setInterrupted(reason)       
     
-    def onStop(self):
+    def onStop(self, setProgress=True):
         if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
+        if setProgress:
             self.progressUi.setIdle()
         if self.scan:
             self.finalizeData(reason='stopped')

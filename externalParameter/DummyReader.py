@@ -8,8 +8,8 @@ import random
 import logging
 
 class DummyReader:
-    def __init__(self, port=0, timeout=1):
-        self.readTimeout = timeout
+    def __init__(self, instrument=None, settings=None):
+        self.readTimeout = 1
         logging.getLogger(__name__).info("Created class dummy")
         
     def open(self):

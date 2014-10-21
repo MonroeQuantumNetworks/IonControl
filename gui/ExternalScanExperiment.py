@@ -90,7 +90,7 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def onStop(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
-            ScanExperiment.ScanExperiment.onStop(self)
+            ScanExperiment.ScanExperiment.onStop(self, setProgress=False)
             logger.info( "Status -> Stopping" )
             self.progressUi.setStopping()
             self.stopBottomHalf()

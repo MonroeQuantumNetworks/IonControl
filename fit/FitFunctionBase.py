@@ -198,7 +198,7 @@ class FitFunctionBase(object):
             for i in range(len(enabledOnlyParameters)):
                 messagelist.append( "%10s"%enabledParameterNames[i] )
                 for j in range(i+1):
-                    messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(self.cov_x[i,i]*self.cov_x[j,j]),) )
+                    messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(abs(self.cov_x[i,i]*self.cov_x[j,j])),) )
                 logger.info( " ".join(messagelist))
     
                 #-----------------------------------------------

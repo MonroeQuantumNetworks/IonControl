@@ -27,6 +27,9 @@ class ExceptionMessage( ExceptionMessageForm, ExceptionMessageBase):
         if self.message:
             self.messageLabel.setText(str(self.message))
 
+
+GlobalExceptionLogButtonSlot =  None
+
 class ExceptionLogButton( QtGui.QToolButton ):
     def __init__(self,parent=None):
         QtGui.QToolButton.__init__(self,parent)
@@ -38,6 +41,8 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.NoExceptionsIcon = QtGui.QIcon(":/petersIcons/icons/Success-01.png")
         self.ExceptionsIcon = QtGui.QIcon(":/petersIcons/icons/Error-01.png")
         self.setIcon( self.NoExceptionsIcon )
+        global GlobalExceptionLogButtonSlot
+        GlobalExceptionLogButtonSlot = self.excepthookSlot
         
     def removeAll(self):
         self.myMenu.clear()
@@ -71,6 +76,9 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.exceptionsListed -= 1
         if self.exceptionsListed==0:
             self.removeAll()
+            
+    def excepthookSlot(self, exceptinfo ):
+        self.myexcepthook( *exceptinfo )
         
     def myexcepthook(self, excepttype, value, tback):
         logger = logging.getLogger(inspect.getmodule(tback.tb_frame).__name__ if tback is not None else "unknown")
