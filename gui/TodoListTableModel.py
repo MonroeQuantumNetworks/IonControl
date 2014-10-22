@@ -7,19 +7,26 @@ from PyQt4 import QtCore, QtGui
 
 class TodoListTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal( object )
-    headerDataLookup = ['Scan', 'Measurement']
+    headerDataLookup = ['Enable', 'Scan type', 'Scan', 'Evaluation']
     def __init__(self, todolist, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.todolist = todolist
-        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.todolist[row].scan,
-                             (QtCore.Qt.DisplayRole,1): lambda row: self.todolist[row].measurement,
-                             (QtCore.Qt.BackgroundColorRole,0): lambda row: self.colorLookup[self.running] if self.activeRow==row else QtCore.Qt.white
+        self.dataLookup =  { (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.todolist[row].enabled else QtCore.Qt.Unchecked,
+                             (QtCore.Qt.DisplayRole,1): lambda row: self.todolist[row].scan,
+                             (QtCore.Qt.DisplayRole,2): lambda row: self.todolist[row].measurement,
+                             (QtCore.Qt.DisplayRole,3): lambda row: self.todolist[row].evaluation,
+                             (QtCore.Qt.BackgroundColorRole,1): lambda row: self.colorLookup[self.running] if self.activeRow==row else QtCore.Qt.white
                              }
+        self.setDataLookup ={ (QtCore.Qt.CheckStateRole,0): self.setEntryEnabled }
         self.colorLookup = { True: QtGui.QColor(0xd0, 0xff, 0xd0), False: QtGui.QColor(0xff, 0xd0, 0xd0) }
         self.activeRow = None
+
+    def setEntryEnabled(self,index,value):
+        self.todolist[index.row()].enabled = value == QtCore.Qt.Checked
+        return True      
 
     def setActiveRow(self, row, running=True):
         oldactive = self.activeRow
@@ -34,15 +41,20 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
         return len(self.todolist) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 2
+        return 4
  
     def data(self, index, role): 
         if index.isValid():
             return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
         return None
-        
+    
+    def setData(self, index, value, role):
+        if index.isValid():
+            return self.setDataLookup.get((role,index.column()),lambda index, value: None)(index, value)
+        return False
+       
     def flags(self, index ):
-        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
+        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column()==0 else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):

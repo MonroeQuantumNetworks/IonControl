@@ -101,7 +101,7 @@ class EvaluationControlParameters:
         self.autoSave = False
 
 class EvaluationControl(ControlForm, ControlBase ):
-    evaluationConfigurationListChanged = QtCore.pyqtSignal( object )
+    evaluationConfigurationChanged = QtCore.pyqtSignal( object )
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
     def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None):
@@ -117,7 +117,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         except TypeError:
             logger.info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.settingsDict = dict()
-        self.evaluationConfigurationListChanged.emit( self.settingsDict )
+        self.evaluationConfigurationChanged.emit( self.settingsDict )
         try:
             self.settings = self.config.get(self.configname,Evaluation())
         except TypeError:
@@ -288,7 +288,7 @@ class EvaluationControl(ControlForm, ControlBase ):
                 if self.comboBox.findText(self.settingsName)==-1:
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
-            self.evaluationConfigurationListChanged.emit( self.settingsDict )
+            self.evaluationConfigurationChanged.emit( self.settingsDict )
         self.checkSettingsSavable(False)
         
     def onRemove(self):
@@ -299,7 +299,7 @@ class EvaluationControl(ControlForm, ControlBase ):
             idx = self.comboBox.findText(name)
             if idx>=0:
                 self.comboBox.removeItem(idx)
-            self.evaluationConfigurationListChanged.emit( self.settingsDict )
+            self.evaluationConfigurationChanged.emit( self.settingsDict )
        
     def onLoad(self,name):
         self.settingsName = str(name)

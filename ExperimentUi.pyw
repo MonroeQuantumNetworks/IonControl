@@ -211,6 +211,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for name, widget in self.tabDict.iteritems():
             if hasattr( widget, 'scanConfigurationListChanged' ) and widget.scanConfigurationListChanged is not None:
                 widget.scanConfigurationListChanged.connect( partial( self.todoList.populateMeasurementsItem, name)  )
+            if hasattr( widget, 'evaluationConfigurationChanged' ) and widget.evaluationConfigurationChanged is not None:
+                widget.evaluationConfigurationChanged.connect( partial( self.todoList.populateEvaluationItem, name)  )
        
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)

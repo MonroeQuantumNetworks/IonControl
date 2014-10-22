@@ -20,12 +20,14 @@ Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
 
 class TodoListEntry:
-    def __init__(self, scan=None, measurement=None):
+    def __init__(self, scan=None, measurement=None, evaluation=None):
         self.parent = None
         self.children = list()
         self.scan = scan
+        self.evaluation = evaluation
         self.measurement = measurement
         self.scanParameter = None
+        self.enabled = True
         self.scanSegment = ScanSegmentDefinition()
         
     def __setstate__(self, s):
@@ -33,8 +35,10 @@ class TodoListEntry:
         self.__dict__.setdefault('scanParameter', None )
         self.__dict__.setdefault('measurement', None )
         self.__dict__.setdefault('scan', None )
+        self.__dict__.setdefault('evaluation', None )
+        self.__dict__.setdefault('enabled', True )
 
-    stateFields = ['scan', 'measurement', 'scanParameter' ] 
+    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation' ] 
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -92,6 +96,7 @@ class TodoList(Form, Base):
         self.masterSettings = config.get( 'Todolist.MasterSettings', MasterSettings())
         self.scanModules = scanModules
         self.scanModuleMeasurements = dict()
+        self.scanModuleEvaluations = dict()
         self.currentMeasurementsDisplayedForScan = None
         self.currentScan = currentScan
         self.setCurrentScan = setCurrentScan
@@ -201,20 +206,31 @@ class TodoList(Form, Base):
         newscan = str(newscan)
         if self.currentMeasurementsDisplayedForScan != newscan:
             self.currentMeasurementsDisplayedForScan = newscan
-            self.measurementSelectionBox.clear()
-            self.measurementSelectionBox.addItems( self.scanModuleMeasurements[newscan] )
+            updateComboBoxItems(self.measurementSelectionBox, self.scanModuleMeasurements[newscan] )
+            updateComboBoxItems(self.evaluationSelectionBox, self.scanModuleEvaluations[newscan] )
         
     def populateMeasurements(self):
         self.scanModuleMeasurements = dict()
         for name, widget in self.scanModules.iteritems():
             if hasattr(widget, 'scanControlWidget' ):
                 self.populateMeasurementsItem( name, widget.scanControlWidget.settingsDict )
+            else:
+                self.populateMeasurementsItem( name, {} )                
+            if hasattr(widget, 'evaluationControlWidget' ):
+                self.populateEvaluationItem( name, widget.evaluationControlWidget.settingsDict )
+            else:
+                self.populateEvaluationItem( name, {} )
+                
                 
     def populateMeasurementsItem(self, name, settingsDict ):
         self.scanModuleMeasurements[name] = sorted(settingsDict.keys())
         if name == self.currentMeasurementsDisplayedForScan:
-            self.measurementSelectionBox.clear()
-            self.measurementSelectionBox.addItems( self.scanModuleMeasurements[name] )            
+            updateComboBoxItems( self.measurementSelectionBox, self.scanModuleMeasurements[name] )            
+
+    def populateEvaluationItem(self, name, settingsDict ):
+        self.scanModuleEvaluations[name] = sorted(settingsDict.keys())
+        if name == self.currentMeasurementsDisplayedForScan:
+            updateComboBoxItems( self.evaluationSelectionBox, self.scanModuleEvaluations[name] )            
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
@@ -232,7 +248,7 @@ class TodoList(Form, Base):
 
     def onAddMeasurement(self):
         if self.currentMeasurementsDisplayedForScan and self.measurementSelectionBox.currentText():
-            self.tableModel.addMeasurement( TodoListEntry(self.currentMeasurementsDisplayedForScan, str(self.measurementSelectionBox.currentText())))
+            self.tableModel.addMeasurement( TodoListEntry(self.currentMeasurementsDisplayedForScan, str(self.measurementSelectionBox.currentText()), str(self.evaluationSelectionBox.currentText())))
         self.checkSettingsSavable()
     
     def onDropMeasurement(self):
@@ -263,12 +279,15 @@ class TodoList(Form, Base):
     def enterMeasurementRunning(self):
         self.statusLabel.setText('Measurement Running')
         currentname, currentwidget = self.currentScan()
+#         while not self.settings.todoList[ self.settings.currentIndex ].enabled:
+#             self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
         entry = self.settings.todoList[ self.settings.currentIndex ]
         # switch to the scan for the first line
         if entry.scan!=currentname:
             self.setCurrentScan(entry.scan)
         # load the correct measurement
-        currentwidget.scanControlWidget.loadSetting( entry.measurement )        
+        currentwidget.scanControlWidget.loadSetting( entry.measurement )   
+        currentwidget.evaluationControlWidget.loadSetting( entry.evaluation )     
         # start
         currentwidget.onStart()
         self.tableModel.setActiveRow(self.settings.currentIndex, True)

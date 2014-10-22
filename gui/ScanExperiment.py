@@ -374,7 +374,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.evaluationControlWidget.setupUi(self.evaluationControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.evaluationControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea)
-        self.evaluationConfigurationListChanged = self.evaluationControlWidget.evaluationConfigurationListChanged
+        self.evaluationConfigurationChanged = self.evaluationControlWidget.evaluationConfigurationChanged
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
