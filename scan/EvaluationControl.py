@@ -20,6 +20,7 @@ from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
 from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from modules.enum import enum
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
@@ -101,6 +102,7 @@ class EvaluationControlParameters:
 
 class EvaluationControl(ControlForm, ControlBase ):
     evaluationConfigurationListChanged = QtCore.pyqtSignal( object )
+    integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
     def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None):
         logger = logging.getLogger(__name__)
@@ -256,64 +258,18 @@ class EvaluationControl(ControlForm, ControlBase ):
                 pass
         self.saveButton.setEnabled( savable )
             
-    def onEditingFinished(self,edit,attribute):
-        self.beginChange()
-        setattr( self.settings, attribute, str(edit.text())  )
-        self.commitChange()
-        self.checkSettingsSavable()
-                
     def onStateChanged(self, attribute, state):
-        self.beginChange()
         setattr( self.settings, attribute, (state == QtCore.Qt.Checked)  )
-        self.commitChange()
-        self.checkSettingsSavable()
-        
-    def onCurrentIndexChanged(self, attribute, index):
-        self.beginChange()
-        setattr( self.settings, attribute, index )
-        self.commitChange()
         self.checkSettingsSavable()
         
     def onValueChanged(self, attribute, value):
-        self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
-        self.commitChange()
         self.checkSettingsSavable()
 
     def onBareValueChanged(self, attribute, value):
-        self.beginChange()
         setattr( self.settings, attribute, value )
-        self.commitChange()
         self.checkSettingsSavable()
               
-    def onIntValueChanged(self, attribute, value):
-        self.beginChange()
-        setattr( self.settings, attribute, value )
-        self.commitChange()
-        self.checkSettingsSavable()
-        
-    def setVariables(self, variabledict):
-        self.variabledict = variabledict
-#         oldParameterName = self.settings.scanParameter
-        with BlockSignals(self.comboBoxParameter):
-            self.comboBoxParameter.clear()
-            for _, var in iter(sorted(variabledict.iteritems())):
-                if var.type == "parameter":
-                    self.comboBoxParameter.addItem(var.name)
-        if self.settings.scanParameter:
-            self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
-        elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
-            self.settings.scanParameter = self.comboBoxParameter.currentText()
-        if self.gateSequenceUi:
-            self.gateSequenceUi.setVariables(variabledict)
-        self.checkSettingsSavable()
-            
-    def setScanNames(self, scannames):
-        updateComboBoxItems( self.comboBoxExternalParameter, scannames ) 
-        if self.settings.externalScanParameter:
-            self.comboBoxExternalParameter.setCurrentIndex( self.comboBoxExternalParameter.findText(self.settings.externalScanParameter))
-        self.checkSettingsSavable()
-                
     def getEvaluation(self):
         evaluation = copy.deepcopy(self.settings)
         evaluation.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )

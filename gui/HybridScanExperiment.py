@@ -142,15 +142,15 @@ class HybridScanExperiment( ExternalScanExperiment.ExternalScanExperiment ):
         logger = logging.getLogger(__name__)
         evaluated = list()
         expected = self.generator.expected( self.currentIndex )
-        for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+        for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
             evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )
-            self.showHistogram(data, self.scan.evalList, self.scan.evalAlgorithmList )
+            self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
         self.currentIndex += 1
         self.externalParameterIndex += 1
-        if self.scan.enableTimestamps: 
+        if self.evaluation.enableTimestamps: 
             self.showTimestamps(data)
         if self.progressUi.state == self.OpStates.running:
             if data.final and data.exitcode not in [0,0xffff]:

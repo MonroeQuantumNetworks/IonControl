@@ -161,7 +161,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
 
-        self.tableModel = ScanSegmentTableModel(self.updateSaveStatus, self.globalVariablesUi.variables )
+        self.tableModel = ScanSegmentTableModel(self.checkSettingsSavable, self.globalVariablesUi.variables )
         self.tableView.setModel( self.tableModel )
         self.addSegmentButton.clicked.connect( self.onAddScanSegment )
         self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
@@ -180,8 +180,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
-        #self.comboBox.editTextChanged.connect( lambda x: self.updateSaveStatus() )
-        self.comboBox.lineEdit().editingFinished.connect( self.updateSaveStatus ) 
+        #self.comboBox.editTextChanged.connect( lambda x: self.checkSettingsSavable() )
+        self.comboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable ) 
         # update connections
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )
         self.comboBoxExternalParameter.currentIndexChanged['QString'].connect( self.onCurrentExternalTextChanged )
@@ -255,24 +255,25 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.onModeChanged(self.settings.scanMode)
         if self.gateSequenceUi:
             self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         self.tableModel.setScanList(self.settings.scanSegmentList)
 
-    def updateSaveStatus(self):
-        currentText = str(self.comboBox.currentText())
-        try:
-            if not currentText:
-                self.saveStatus = True
-            elif self.settingsName and self.settingsName in self.settingsDict:
-                self.saveStatus = self.settingsDict[self.settingsName]==self.settings and currentText==self.settingsName
-            else:
-                self.saveStatus = False
-            if self.parameters.autoSave and not self.saveStatus:
-                self.onSave( updateSaveStatus=False )
-                self.saveStatus = True
-            self.saveButton.setEnabled( not self.saveStatus )
-        except MagnitudeError:
-            pass
+    def checkSettingsSavable(self, savable=None):
+        if not isinstance(savable, bool):
+            currentText = str(self.comboBox.currentText())
+            try:
+                if currentText is None or currentText=="":
+                    savable = False
+                elif self.settingsName and self.settingsName in self.settingsDict:
+                    savable = self.settingsDict[self.settingsName]!=self.settings or currentText!=self.settingsName
+                else:
+                    savable = True
+                if self.parameters.autoSave and savable:
+                    self.onSave()
+                    savable = False
+            except MagnitudeError:
+                pass
+        self.saveButton.setEnabled( savable )
             
     def onLoadPP(self, ppname):
         logger = logging.getLogger(__name__)
@@ -280,11 +281,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         logger.debug( "ScanControl.onLoadPP {0} {1} {2}".format( self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName ) )
         if self.settings.loadPP and self.settings.loadPPName and hasattr(self,"pulseProgramUi"):
             self.pulseProgramUi.loadContextByName( self.settings.loadPPName )
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
             
     def onRecentPPFilesChanged(self, namelist):
         updateComboBoxItems( self.loadPPComboBox, sorted( namelist ) )
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def setPulseProgramUi(self, pulseProgramUi ):
         logger = logging.getLogger(__name__)
@@ -300,7 +301,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()
-            self.gateSequenceUi.valueChanged.connect( self.updateSaveStatus )
+            self.gateSequenceUi.valueChanged.connect( self.checkSettingsSavable )
             self.gateSequenceUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
             self.gateSequenceUi.setupUi(self.gateSequenceUi)
             self.toolBox.addItem(self.gateSequenceUi,"Gate Sequences")
@@ -315,23 +316,23 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
     def onEditingFinished(self,edit,attribute):        
         setattr( self.settings, attribute, str(edit.text())  )        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
                 
     def onStateChanged(self, attribute, state):        
         setattr( self.settings, attribute, (state == QtCore.Qt.Checked)  )        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def onCurrentTextChanged(self, text):        
         self.settings.scanParameter = str(text)        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
     
     def onCurrentExternalTextChanged(self, text):        
         self.settings.externalScanParameter = str(text)        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
     
     def onCurrentIndexChanged(self, attribute, index):        
         setattr( self.settings, attribute, index )        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def onModeChanged(self, index):       
         self.settings.scanMode = index
@@ -341,19 +342,19 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xExprEdit.setEnabled( index==0)
         self.comboBoxParameter.setEnabled( index==0 )
         self.comboBoxExternalParameter.setEnabled( index==0 )               
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
     
     def onValueChanged(self, attribute, value):        
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def onBareValueChanged(self, attribute, value):        
         setattr( self.settings, attribute, value )        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
               
     def onIntValueChanged(self, attribute, value):       
         setattr( self.settings, attribute, value )        
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -369,13 +370,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings.scanParameter = self.comboBoxParameter.currentText()
         if self.gateSequenceUi:
             self.gateSequenceUi.setVariables(variabledict)
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
             
     def setScanNames(self, scannames):
         updateComboBoxItems( self.comboBoxExternalParameter, scannames ) 
         if self.settings.externalScanParameter:
             self.comboBoxExternalParameter.setCurrentIndex( self.comboBoxExternalParameter.findText(self.settings.externalScanParameter))
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)
@@ -411,7 +412,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.config[self.configname+'.settingsName'] = self.settingsName
         self.config[self.configname+'.parameters'] = self.parameters
 
-    def onSave(self, updateSaveStatus=True):
+    def onSave(self):
         self.settingsName = str(self.comboBox.currentText())
         if self.settingsName != '':
             if self.settingsName not in self.settingsDict:
@@ -419,8 +420,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.scanConfigurationListChanged.emit( self.settingsDict )
-        if updateSaveStatus:
-            self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def onRemove(self):
         name = str(self.comboBox.currentText())
@@ -436,7 +436,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settingsName = str(name)
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def loadSetting(self, name):
         if name and self.comboBox.findText(name)>=0:
