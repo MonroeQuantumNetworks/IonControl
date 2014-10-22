@@ -82,8 +82,11 @@ class SinSqFit(FitFunctionBase):
     def functionEval(self, x, T, x0, max_, min_ ):
         return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/T*(x-x0)))+min_
 
-    def smartStartValues(self, x, y, parameters, enabled): #Assumes data is sorted from smallest x to largest x!
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
         T, x0, maximum, minimum = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
         maximum = numpy.amax(y)
         minimum = numpy.amin(y)
         minindex = numpy.argmin(y)
@@ -176,8 +179,11 @@ class GaussianFit(FitFunctionBase):
     def functionEval(self, x, A, x0, s, O ):
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
 
-    def smartStartValues(self, x, y, parameters, enabled): #Assumes data is sorted from smallest x to largest x!
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
         A, x0, s, O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
         maxindex = numpy.argmax(y)
         minimum = numpy.amin(y)
         maximum = y[maxindex]
@@ -215,8 +221,11 @@ class SquareRabiFit(FitFunctionBase):
         u = numpy.square(2*numpy.pi*(x-C)/R)
         return ((A/(1+u))*numpy.square(numpy.sin(numpy.sqrt(1+u)*R*t/2.))) + O  
     
-    def smartStartValues(self, x, y, parameters, enabled): #Assumes data is sorted from smallest x to largest x!
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
         T, C, A, O, t = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
         maxindex = numpy.argmax(y)
         minimum = numpy.amin(y)
         maximum = y[maxindex]
