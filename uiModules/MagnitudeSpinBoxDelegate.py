@@ -4,6 +4,7 @@ import re
 from PyQt4 import QtGui, QtCore
 
 from MagnitudeSpinBox import MagnitudeSpinBox
+from modules.MagnitudeParser import parse, isValueExpression
 
 
 class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
@@ -40,7 +41,8 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
          
     def setModelData(self, editor, model, index):
         value = editor.value()
-        model.setData(index, editor.text(), QtCore.Qt.UserRole )
+        text = str(editor.text())
+        model.setData(index, text if not isValueExpression(text) else None , QtCore.Qt.UserRole )  # is parsable thus must be a magnitude without math
         model.setData(index, value, QtCore.Qt.EditRole )    # DisplayRole would be better, for backwards compatibility we leave it at EditRole and distinguish there by type
          
     def updateEditorGeometry(self, editor, option, index ):

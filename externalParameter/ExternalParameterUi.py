@@ -8,7 +8,7 @@ Created on Fri Apr 12 23:45:54 2013
 import functools
 import logging
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
@@ -21,6 +21,7 @@ UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     valueChanged = QtCore.pyqtSignal(str, object)
     expression = Expression()
+    foregroundLookup = { True: QtGui.QBrush( QtCore.Qt.blue), False: QtGui.QBrush( QtCore.Qt.black)}  
     def __init__(self, controlUi, parameterList=None, parent=None):
         super(ExternalParameterControlTableModel, self).__init__(parent)
         self.parameterDict = SequenceDict()
@@ -32,6 +33,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
                              (QtCore.Qt.UserRole,1): lambda row: self.parameterDict.at(row).dimension,
                              (QtCore.Qt.DisplayRole,2): lambda row: str(self.externalValues[row]),
                              (QtCore.Qt.ToolTipRole,2): lambda row: str(self.toolTips[row]),
+                             (QtCore.Qt.ForegroundRole,1): lambda row: self.foregroundLookup[self.parameterDict.at(row).strValue is not None]
                      }
         self.setDataLookup = {
                              (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
