@@ -135,8 +135,8 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.saveButton.clicked.connect( self.onSave )
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
-        self.evalTableModel = EvaluationTableModel( self.updateSaveStatus, plotnames=self.plotnames, analysisNames=self.analysisNames )
-        self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
+        self.evalTableModel = EvaluationTableModel( self.checkSettingsSavable, plotnames=self.plotnames, analysisNames=self.analysisNames )
+        self.evalTableModel.dataChanged.connect( self.checkSettingsSavable )
         self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.setModel( self.evalTableModel )
         self.evalTableView.clicked.connect( self.editEvaluationTable )
@@ -157,7 +157,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
-        self.comboBox.lineEdit().editingFinished.connect( self.updateSaveStatus ) 
+        self.comboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable ) 
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramCheckBox.stateChanged.connect( self.onIntegrateHistogramClicked )
@@ -198,7 +198,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.roiWidthSpinBox.setValue(self.settings.roiWidth)
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         self.evalAlgorithmList = []
         for evaluation in self.settings.evalList:
             self.addEvaluation(evaluation)
@@ -208,7 +208,7 @@ class EvaluationControl(ControlForm, ControlBase ):
 
     def addEvaluation(self, evaluation):
         algo =  EvaluationAlgorithms[evaluation.evaluation]()
-        algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
+        algo.subscribe( self.checkSettingsSavable )   # track changes of the algorithms settings so the save status is displayed correctly
         algo.setSettings( evaluation.settings, evaluation.name )
         self.evalAlgorithmList.append(algo)      
 
@@ -223,6 +223,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
         self.evalTableView.resizeColumnsToContents()
         self.evalTableView.horizontalHeader().setStretchLastSection(True)
+        self.checkSettingsSavable()
  
     def removeEvaluation(self, index):
         del self.evalAlgorithmList[index]
@@ -233,12 +234,13 @@ class EvaluationControl(ControlForm, ControlBase ):
             self.removeEvaluation(index)
         assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
         self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
+        self.checkSettingsSavable()
         
     def onActiveEvalChanged(self, modelIndex, modelIndex2 ):
         self.evalParamTreeWidget.setParameters( self.evalAlgorithmList[modelIndex.row()].parameter)
 
     def checkSettingsSavable(self, savable=None):
-        if savable is None:
+        if not isinstance(savable, bool):
             currentText = str(self.comboBox.currentText())
             try:
                 if currentText is None or currentText=="":
@@ -358,33 +360,22 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.onLoad( self.comboBox.currentText() )
    
     def onIntegrationChanged(self, value):
-        self.beginChange()
         self.settings.integrateTimestamps = value
-        self.commitChange()
         self.checkSettingsSavable()
         
     def onAlgorithmValueChanged(self, algo, name, value):
-        self.beginChange()
-#        self.algorithms[algo].setParameter(name, value)
-        self.commitChange()
         self.checkSettingsSavable()
 
     def onIntegrateHistogramClicked(self, state):
-        self.beginChange()
         self.settings.integrateHistogram = self.integrateHistogramCheckBox.isChecked()
-        self.commitChange()
         self.checkSettingsSavable()
  
     def onHistogramBinsChanged(self, bins):
-        self.beginChange()
         self.settings.histogramBins = bins
-        self.commitChange()
         self.checkSettingsSavable()
         
     def onAlgorithmNameChanged(self, name):
-        self.beginChange()
-        self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def editEvaluationTable(self, index):
         if index.column() in [0,1,2,4]:
@@ -395,7 +386,7 @@ if __name__=="__main__":
     config = dict()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
-    ui = ScanControl(config,"parent")
+    ui = EvaluationControl(config,"parent")
     ui.setupUi(ui)
     MainWindow.setCentralWidget(ui)
     MainWindow.show()
