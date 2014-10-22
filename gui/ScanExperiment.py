@@ -32,7 +32,8 @@ from pyqtgraph.exporters.ImageExporter import ImageExporter
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
 from trace import RawData
-from scan import ScanControl
+from scan.ScanControl import ScanControl
+from scan.EvaluationControl import EvaluationControl
 from ScanProgress import ScanProgress
 from fit.FitUi import FitUi
 from modules import DataDirectory
@@ -278,6 +279,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
+    evaluationConfigurationChanged = None
     def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -363,12 +365,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl.ScanControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
-                                                         internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
+        self.scanControlWidget = ScanControl(config, self.globalVariablesUi, self.experimentName, internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
         self.scanControlWidget.setupUi(self.scanControlWidget)
-        self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
+        # EvaluationControl
+        self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
+        self.evaluationControlWidget.setupUi(self.evaluationControlWidget)
+        self.fitWidget.analysisNamesChanged.connect( self.evaluationControlWidget.setAnalysisNames )
+        self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea)
+        self.evaluationConfigurationListChanged = self.evaluationControlWidget.evaluationConfigurationListChanged
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
@@ -862,6 +868,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
         self.config[self.experimentName+'.plotNames'] = self.plotDict.keys()
         self.scanControlWidget.saveConfig()
+        self.evaluationControlWidget.saveConfig()
         self.traceui.saveConfig()
         self.displayUi.saveConfig()
         self.fitWidget.saveConfig()

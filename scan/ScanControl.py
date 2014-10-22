@@ -172,10 +172,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBoxParameter.setVisible( self.internalParam )
         self.comboBoxExternalParameter.setVisible( self.externalParam )
        
-        try:
-            self.setSettings( self.settings )
-        except AttributeError:
-            logger.error( "Ignoring exception" )
+#        try:
+        self.setSettings( self.settings )
+#         except AttributeError:
+#             logger.error( "Ignoring exception" )
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
@@ -256,12 +256,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.gateSequenceUi:
             self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
         self.updateSaveStatus()
-        self.evalAlgorithmList = []
-        for evaluation in self.settings.evalList:
-            self.addEvaluation(evaluation)
-        assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
-        self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
-        self.evalTableView.resizeColumnsToContents()
         self.tableModel.setScanList(self.settings.scanSegmentList)
 
     def updateSaveStatus(self):

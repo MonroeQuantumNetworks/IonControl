@@ -13,27 +13,15 @@ import PyQt4.uic
 
 from scan.EvaluationAlgorithms import EvaluationAlgorithms
 from EvaluationTableModel import EvaluationTableModel
-import ScanList
-from gateSequence import GateSequenceUi
 from modules import MagnitudeUtilit
 from modules.HashableDict import HashableDict
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
-from modules.enum import enum
 from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
-from modules.ScanDefinition import ScanSegmentDefinition
-from ScanSegmentTableModel import ScanSegmentTableModel
-from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate 
-import numpy
-from modules.concatenate_iter import concatenate_iter
-import random
-from modules.concatenate_iter import interleave_iter
-from gateSequence.GateSequenceContainer import GateSequenceException
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
-
 
 class EvaluationDefinition:
     def __init__(self):
@@ -104,7 +92,7 @@ class Evaluation:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     stateFields = [ 'histogramBins', 'integrateHistogram', 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 
-                    'saveRawData', 'evalList' ]
+                    'saveRawData', 'evalList' , 'counterChannel']
    
 
 class EvaluationControlParameters:
@@ -142,7 +130,6 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.globalVariablesUi = globalVariablesUi
         
     def setupUi(self, parent):
-        logger = logging.getLogger(__name__)
         ControlForm.setupUi(self,parent)
         # History and Dictionary
         self.saveButton.clicked.connect( self.onSave )
@@ -162,18 +149,15 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.resizeColumnsToContents()
        
-        try:
-            self.setSettings( self.settings )
-        except AttributeError:
-            logger.error( "Ignoring exception" )
+#        try:
+        self.setSettings( self.settings )
+#         except AttributeError:
+#             logger.error( "Ignoring exception" )
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
         self.comboBox.lineEdit().editingFinished.connect( self.updateSaveStatus ) 
-        # update connections
-        self.histogramSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'histogramSave') )
-        self.histogramFilenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.histogramFilenameEdit, 'histogramFilename') )
         # Evaluation
         self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
         self.integrateHistogramCheckBox.stateChanged.connect( self.onIntegrateHistogramClicked )
@@ -186,22 +170,12 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.saveRawDataCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData' ) )
         self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
         self.channelSpinBox.valueChanged.connect( functools.partial(self.onBareValueChanged, 'timestampsChannel') )
-        self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
-        self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.autoSaveAction = QtGui.QAction( "auto save" , self)
         self.autoSaveAction.setCheckable(True)
         self.autoSaveAction.setChecked(self.parameters.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
-        self.settings.evaluate(self.globalVariablesUi.variables)
-        self.globalVariablesUi.valueChanged.connect( self.evaluate )
-
-        
-    def evaluate(self, name):
-        if self.settings.evaluate( self.globalDict ):
-            self.tableModel.update()
-            self.tableView.viewport().repaint()
         
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
@@ -224,7 +198,6 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.roiWidthSpinBox.setValue(self.settings.roiWidth)
         self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
         self.channelSpinBox.setValue( self.settings.timestampsChannel )
-        self.onModeChanged(self.settings.scanMode)
         self.updateSaveStatus()
         self.evalAlgorithmList = []
         for evaluation in self.settings.evalList:
@@ -264,57 +237,58 @@ class EvaluationControl(ControlForm, ControlBase ):
     def onActiveEvalChanged(self, modelIndex, modelIndex2 ):
         self.evalParamTreeWidget.setParameters( self.evalAlgorithmList[modelIndex.row()].parameter)
 
-    def updateSaveStatus(self):
-        currentText = str(self.comboBox.currentText())
-        try:
-            if not currentText:
-                self.saveStatus = True
-            elif self.settingsName and self.settingsName in self.settingsDict:
-                self.saveStatus = self.settingsDict[self.settingsName]==self.settings and currentText==self.settingsName
-            else:
-                self.saveStatus = False
-            if self.parameters.autoSave and not self.saveStatus:
-                self.onSave( updateSaveStatus=False )
-                self.saveStatus = True
-            self.saveButton.setEnabled( not self.saveStatus )
-        except MagnitudeError:
-            pass
+    def checkSettingsSavable(self, savable=None):
+        if savable is None:
+            currentText = str(self.comboBox.currentText())
+            try:
+                if currentText is None or currentText=="":
+                    savable = False
+                elif self.settingsName and self.settingsName in self.settingsDict:
+                    savable = self.settingsDict[self.settingsName]!=self.settings or currentText!=self.settingsName
+                else:
+                    savable = True
+                if self.parameters.autoSave and savable:
+                    self.onSave()
+                    savable = False
+            except MagnitudeError:
+                pass
+        self.saveButton.setEnabled( savable )
             
     def onEditingFinished(self,edit,attribute):
         self.beginChange()
         setattr( self.settings, attribute, str(edit.text())  )
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
                 
     def onStateChanged(self, attribute, state):
         self.beginChange()
         setattr( self.settings, attribute, (state == QtCore.Qt.Checked)  )
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def onCurrentIndexChanged(self, attribute, index):
         self.beginChange()
         setattr( self.settings, attribute, index )
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def onValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def onBareValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, value )
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
               
     def onIntValueChanged(self, attribute, value):
         self.beginChange()
         setattr( self.settings, attribute, value )
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -330,13 +304,13 @@ class EvaluationControl(ControlForm, ControlBase ):
             self.settings.scanParameter = self.comboBoxParameter.currentText()
         if self.gateSequenceUi:
             self.gateSequenceUi.setVariables(variabledict)
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
             
     def setScanNames(self, scannames):
         updateComboBoxItems( self.comboBoxExternalParameter, scannames ) 
         if self.settings.externalScanParameter:
             self.comboBoxExternalParameter.setCurrentIndex( self.comboBoxExternalParameter.findText(self.settings.externalScanParameter))
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
                 
     def getEvaluation(self):
         evaluation = copy.deepcopy(self.settings)
@@ -348,19 +322,17 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.config[self.configname+'.dict'] = self.settingsDict
         self.config[self.configname+'.settingsName'] = self.settingsName
         self.config[self.configname+'.parameters'] = self.parameters
-    # History stuff
     
-    def onSave(self, updateSaveStatus=True):
+    def onSave(self):
         self.settingsName = str(self.comboBox.currentText())
         if self.settingsName != '':
             if self.settingsName not in self.settingsDict:
                 if self.comboBox.findText(self.settingsName)==-1:
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
-            self.scanConfigurationListChanged.emit( self.settingsDict )
-        if updateSaveStatus:
-            self.updateSaveStatus()
-
+            self.evaluationConfigurationListChanged.emit( self.settingsDict )
+        self.checkSettingsSavable(False)
+        
     def onRemove(self):
         name = str(self.comboBox.currentText())
         if name != '':
@@ -375,7 +347,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.settingsName = str(name)
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def loadSetting(self, name):
         if name and self.comboBox.findText(name)>=0:
@@ -389,25 +361,25 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.beginChange()
         self.settings.integrateTimestamps = value
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def onAlgorithmValueChanged(self, algo, name, value):
         self.beginChange()
 #        self.algorithms[algo].setParameter(name, value)
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def onIntegrateHistogramClicked(self, state):
         self.beginChange()
         self.settings.integrateHistogram = self.integrateHistogramCheckBox.isChecked()
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
  
     def onHistogramBinsChanged(self, bins):
         self.beginChange()
         self.settings.histogramBins = bins
         self.commitChange()
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def onAlgorithmNameChanged(self, name):
         self.beginChange()
