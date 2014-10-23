@@ -401,7 +401,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             center = len(scan.list)/2
             scan.list = list( interleave_iter(scan.list[center:],reversed(scan.list[:center])) )
             
-        scan.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
         scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName
         return scan
