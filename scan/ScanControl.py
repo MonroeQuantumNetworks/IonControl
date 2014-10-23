@@ -94,8 +94,7 @@ class Scan:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     stateFields = ['scanParameter', 'externalScanParameter', 'scantype', 'scanMode', 'scanRepeat', 
-                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
-                'saveRawData', 'gateSequenceSettings',
+                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
                 'scanSegmentList' ]
 
     documentationList = [ 'scanParameter', 'externalScanParameter', 'scantype', 'scanMode', 'scanRepeat', 
