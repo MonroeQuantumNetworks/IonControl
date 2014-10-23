@@ -133,7 +133,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
-        except TypeError:
+        except (TypeError, AttributeError):
             logger.info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.settingsDict = dict()
         self.scanConfigurationListChanged.emit( self.settingsDict )
@@ -142,7 +142,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.historyFinalState = None
         try:
             self.settings = self.config.get(self.configname,Scan())
-        except TypeError:
+        except (TypeError, AttributeError):
             logger.info( "Unable to read scan control settings. Setting to new scan." )
             self.settings = Scan()
         self.gateSequenceUi = None
