@@ -9,10 +9,10 @@ import functools
 import inspect
 import logging
 import sys
+import weakref
 
 from PyQt4 import QtGui
 import PyQt4.uic
-
 
 ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
 
@@ -21,11 +21,16 @@ class ExceptionMessage( ExceptionMessageForm, ExceptionMessageBase):
         ExceptionMessageForm.__init__(self,parent)
         ExceptionMessageBase.__init__(self)
         self.message = message
+        self.count = 1
         
     def setupUi(self, parent):
         ExceptionMessageForm.setupUi(self,parent)
         if self.message:
             self.messageLabel.setText(str(self.message))
+
+    def increaseCount(self):
+        self.count += 1
+        self.messageLabel.setText( "({0}) {1}".format(self.count, str(self.message)))
 
 
 GlobalExceptionLogButtonSlot =  None
@@ -43,11 +48,13 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.setIcon( self.NoExceptionsIcon )
         global GlobalExceptionLogButtonSlot
         GlobalExceptionLogButtonSlot = self.excepthookSlot
+        self.menuItemDict = dict()
         
     def removeAll(self):
         self.myMenu.clear()
         self.setIcon(self.NoExceptionsIcon)
         self.exceptionsListed =0
+        self.menuItemDict.clear()
          
     def addClearAllAction(self):
         myMenuItem = ExceptionMessage("Clear All exceptions",self.myMenu)
@@ -58,21 +65,25 @@ class ExceptionLogButton( QtGui.QToolButton ):
         myMenuItem.deleteButton.clicked.connect( self.removeAll )
                 
     def addMessage(self, message):
-        myMenuItem = ExceptionMessage(message,self.myMenu)
-        myMenuItem.setupUi(myMenuItem)
-        action = QtGui.QWidgetAction(self.myMenu)
-        action.setDefaultWidget(myMenuItem )
-        if self.exceptionsListed==0:
-            self.setIcon(self.ExceptionsIcon)
-            self.addClearAllAction()
-        elif self.exceptionsListed>100:
-            self.removeAction( self.myMenu.actions()[1] )
-        self.myMenu.addAction(action)
-        myMenuItem.deleteButton.clicked.connect( functools.partial(self.removeMessage, action) )
-        self.exceptionsListed += 1
+        oldMenuItem  = self.menuItemDict.get( str(message) )
+        if oldMenuItem is not None:
+            oldMenuItem.increaseCount()
+        else:
+            myMenuItem = ExceptionMessage(message,self.myMenu)
+            myMenuItem.setupUi(myMenuItem)
+            action = QtGui.QWidgetAction(self.myMenu)
+            action.setDefaultWidget(myMenuItem)
+            myMenuItem.deleteButton.clicked.connect( functools.partial(self.removeMessage, weakref.ref(action) ) )
+            self.menuItemDict[str(message)] = myMenuItem
+            if self.exceptionsListed==0:
+                self.setIcon(self.ExceptionsIcon)
+                self.addClearAllAction()          
+            self.exceptionsListed += 1
+            self.myMenu.addAction(action)
         
     def removeMessage(self, action):
-        self.myMenu.removeAction(action)
+        self.menuItemDict.pop(str(action().defaultWidget().message))
+        self.myMenu.removeAction(action())
         self.exceptionsListed -= 1
         if self.exceptionsListed==0:
             self.removeAll()
