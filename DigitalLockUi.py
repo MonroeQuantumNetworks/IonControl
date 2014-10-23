@@ -244,6 +244,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         logger.debug( "Saving Configuration" )
         self.saveConfig()
         self.settingsDialog.done(0)
+        self.lockControl.closeEvent(e)
 
     def initMenu(self):
         self.menuView.clear()

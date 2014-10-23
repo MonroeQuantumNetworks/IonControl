@@ -5,7 +5,11 @@ import logging
 from modules.magnitude import mg
 from modules.enum import enum
 
+# server.py
+from multiprocessing.connection import Listener
+
 from controller.ControllerClient import freqToBin, voltageToBin, voltageToBinExternal
+from modules.PyqtUtility import BlockSignals
 
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockControl.ui')
 
@@ -17,6 +21,42 @@ def setBit( var, index, val ):
     if val:
         var |= mask
     return var    
+
+
+class ClientHandler( QtCore.QThread ):
+    setOutputFrequencySignal = QtCore.pyqtSignal( object )
+    def __init__(self, client_c):
+        QtCore.QThread.__init__(self)
+        self.client_c = client_c
+        
+    def run(self):
+        while True:
+            command, arguments = self.client_c.recv()
+            function = getattr( self, command )
+            try:
+                retval = function( *arguments )
+                self.client_c.send( retval )
+            except Exception as e:
+                self.client_c.send(e) 
+                
+    def setOutputFrequency(self, frequency ):
+        self.setOutputFrequencySignal.emit( frequency )
+        return True       
+
+class LockServer( QtCore.QThread ):
+    def __init__(self, address, authkey, locksettingsInstance):
+        QtCore.QThread.__init__(self)
+        self.address = address
+        self.authkey = authkey
+        self.lockSettingsInstance = locksettingsInstance
+        
+    def run(self):
+        server_c = Listener(self.address, authkey=self.authkey)
+        while True:
+            client_c = server_c.accept()
+            handler = ClientHandler(client_c)
+            handler.setOutputFrequencySignal.connect( self.lockSettingsInstance.setOutputFrequency )
+            handler.start()        
 
 class LockSettings(object):
     def __init__(self):
@@ -66,6 +106,9 @@ class LockControl(Form, Base):
         self.lockSettings = self.config.get("LockSettings",LockSettings())
         self.autoState = self.AutoStates.idle
     
+    def closeEvent(self, e):
+        self.lockServer.quit()
+        
     def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
         box = getattr(self, localname)
         value = getattr(self.lockSettings, settingsname)
@@ -102,6 +145,8 @@ class LockControl(Form, Base):
         self.dcThresholdBox.setChecked( self.lockSettings.enableDCThreshold )
         self.dcThresholdBox.stateChanged.connect( self.onDCThresholdEnable )
         self._setHarmonics()
+        self.lockServer = LockServer(("",16888), "yb171", self)
+        self.lockServer.start()
                 
     def setharmonicReferenceFrequency(self, value):
         self.lockSettings.harmonicReferenceFrequency = value
@@ -172,6 +217,8 @@ class LockControl(Form, Base):
         self.lockSettings.outputFrequency = value
         self.dataChanged.emit( self.lockSettings )
         self.calculateOffset()
+        with BlockSignals(self.magOutputFreq):
+            self.magOutputFreq.setValue(value)
 
     def setOutputAmplitude(self, value):
         binvalue = int(value.toval(''))
