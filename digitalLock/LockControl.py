@@ -9,7 +9,6 @@ from modules.enum import enum
 from multiprocessing.connection import Listener
 
 from controller.ControllerClient import freqToBin, voltageToBin, voltageToBinExternal
-from modules.PyqtUtility import BlockSignals
 
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockControl.ui')
 
@@ -25,23 +24,37 @@ def setBit( var, index, val ):
 
 class ClientHandler( QtCore.QThread ):
     setOutputFrequencySignal = QtCore.pyqtSignal( object )
-    def __init__(self, client_c):
+    def __init__(self, client_c, lockSettingsInstance, clientaddress):
         QtCore.QThread.__init__(self)
         self.client_c = client_c
+        self.lockSettingsInstance = lockSettingsInstance
+        self.clientAddress = clientaddress
         
     def run(self):
-        while True:
-            command, arguments = self.client_c.recv()
-            function = getattr( self, command )
-            try:
-                retval = function( *arguments )
-                self.client_c.send( retval )
-            except Exception as e:
-                self.client_c.send(e) 
+        try:
+            logging.getLogger(__name__).info("New connection to client '{0}'".format(self.clientAddress))  
+            while True:
+                command, arguments = self.client_c.recv()
+                function = getattr( self, command )
+                try:
+                    retval = function( *arguments )
+                    self.client_c.send( retval )
+                except Exception as e:
+                    self.client_c.send(e) 
+        except EOFError:
+            logging.getLogger(__name__).info("Client '{0}' disconnect".format(self.clientAddress))  
+        except Exception as e:
+            logging.getLogger(__name__).exception(e)  
+            
                 
     def setOutputFrequency(self, frequency ):
         self.setOutputFrequencySignal.emit( frequency )
-        return True       
+        return True   
+    
+    def getOutputFrequency(self):
+        with QtCore.QMutexLocker(self.lockSettingsInstance.mutex):
+            currentFreq = self.lockSettingsInstance.lockSettings.outputFrequency
+        return currentFreq
 
 class LockServer( QtCore.QThread ):
     def __init__(self, address, authkey, locksettingsInstance):
@@ -51,12 +64,16 @@ class LockServer( QtCore.QThread ):
         self.lockSettingsInstance = locksettingsInstance
         
     def run(self):
-        server_c = Listener(self.address, authkey=self.authkey)
-        while True:
-            client_c = server_c.accept()
-            handler = ClientHandler(client_c)
-            handler.setOutputFrequencySignal.connect( self.lockSettingsInstance.setOutputFrequency )
-            handler.start()        
+        try:
+            server_c = Listener(self.address, authkey=self.authkey)
+            while True:
+                client_c = server_c.accept()
+                clientaddress = server_c.last_accepted
+                handler = ClientHandler(client_c, self.lockSettingsInstance, clientaddress)
+                handler.setOutputFrequencySignal.connect( self.lockSettingsInstance.setOutputFrequencyGui )
+                handler.start()
+        except Exception as e:
+            logging.getLogger(__name__).exception(e)  
 
 class LockSettings(object):
     def __init__(self):
@@ -105,6 +122,7 @@ class LockControl(Form, Base):
         self.config = config
         self.lockSettings = self.config.get("LockSettings",LockSettings())
         self.autoState = self.AutoStates.idle
+        self.mutex = QtCore.QMutex()
     
     def closeEvent(self, e):
         self.lockServer.quit()
@@ -211,14 +229,15 @@ class LockControl(Form, Base):
         self.lockSettings.referenceAmplitude = value
         self.dataChanged.emit( self.lockSettings )
         
+    def setOutputFrequencyGui(self, value):
+        self.magOutputFreq.setValue(value)
+        
     def setOutputFrequency(self, value):
         binvalue = freqToBin(value)
         self.controller.setOutputFrequency(binvalue)
         self.lockSettings.outputFrequency = value
         self.dataChanged.emit( self.lockSettings )
         self.calculateOffset()
-        with BlockSignals(self.magOutputFreq):
-            self.magOutputFreq.setValue(value)
 
     def setOutputAmplitude(self, value):
         binvalue = int(value.toval(''))
