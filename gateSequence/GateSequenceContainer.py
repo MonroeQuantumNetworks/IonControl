@@ -26,18 +26,19 @@ class GateSequenceContainer(object):
         return self.GateSequenceDict.__repr__()
     
     def loadXml(self, filename):
-        tree = etree.parse(filename)
-        root = tree.getroot()
-        
-        # load pulse definition
         self.GateSequenceDict = GateSequenceOrderedDict()
-        for gateset in root:
-            if gateset.text:
-                self.GateSequenceDict.update( { gateset.attrib['name']: map(operator.methodcaller('strip'),gateset.text.split(','))} )
-            else:  # we have the length 0 gate string
-                self.GateSequenceDict.update( { gateset.attrib['name']: [] } )
-            self.GateSequenceAttributes.update( { gateset.attrib['name']: gateset.attrib })
-        self.validate()
+        if filename is not None:
+            tree = etree.parse(filename)
+            root = tree.getroot()
+            
+            # load pulse definition
+            for gateset in root:
+                if gateset.text:
+                    self.GateSequenceDict.update( { gateset.attrib['name']: map(operator.methodcaller('strip'),gateset.text.split(','))} )
+                else:  # we have the length 0 gate string
+                    self.GateSequenceDict.update( { gateset.attrib['name']: [] } )
+                self.GateSequenceAttributes.update( { gateset.attrib['name']: gateset.attrib })
+            self.validate()
     
     """Validate the gates used in the gate sets against the defined gates"""            
     def validate(self):
