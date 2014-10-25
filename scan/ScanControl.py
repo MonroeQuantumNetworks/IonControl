@@ -153,7 +153,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.globalVariablesUi = globalVariablesUi
         
     def setupUi(self, parent):
-        logger = logging.getLogger(__name__)
         ScanControlForm.setupUi(self,parent)
         # History and Dictionary
         self.saveButton.clicked.connect( self.onSave )

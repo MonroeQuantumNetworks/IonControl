@@ -11,7 +11,8 @@
 import sys
 sys.path.append(r'C:\Program Files\Newport\MotionControl\CONEX-CC\Python')
 sys.path.append(r'C:\Program Files (x86)\Newport\MotionControl\CONEX-CC\Python')
-from ConexCC_Functions import *
+from ConexCC_Functions import CONEXCC_Open, CONEXCC_GetControllerVersion, CONEXCC_GetControllerStatus, CONEXCC_GetPosition
+from ConexCC_Functions import CONEXCC_Cycle, CONEXCC_Close
 #=========================================================================
 
 #*************************************************

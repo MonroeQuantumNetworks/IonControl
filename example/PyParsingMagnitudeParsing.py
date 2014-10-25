@@ -5,8 +5,8 @@ Created on Sun Feb 24 16:41:05 2013
 @author: pmaunz
 """
 
-from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
-    ZeroOrMore,Forward,nums,alphas,restOfLine, printables, Suppress, OneOrMore, Keyword, StringEnd, ParseException,\
+from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
+    nums,alphas, Suppress, ParseException,\
     SkipTo
 
 import modules.magnitude as magnitude
