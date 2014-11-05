@@ -76,6 +76,7 @@ OPS = {'NOP'    : 0x00,
        'CMPLE' : 0x48, 
        'CMPGREATER' : 0x4a,
        'ORW' : 0x4b,
+       'MULTW' : 0x4c,
        'UPDATEINDF' : 0x4d,
        'WAITDDSWRITEDONE' : 0x4e,
        'CMPLESS' : 0x4f,
@@ -83,6 +84,7 @@ OPS = {'NOP'    : 0x00,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
        'WAITFORTRIGGER': 0x53,
+       'DIVW': 0x54,
        'END'    : 0xFF }
 
 class Dimensions:

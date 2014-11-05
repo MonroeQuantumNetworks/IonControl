@@ -210,7 +210,8 @@ class pppCompiler:
                     self.symbols.getVar(arg.lval)
                     code.append( "  MULTW {0}".format(arg.lval))
                 else:
-                    raise CompileException(text,loc,"/= is not implemented",self)   
+                    self.symbols.getVar(arg.lval)
+                    code.append( "  DIVW {0}".format(arg.lval))
             code.append("  STWR {0}".format(arg.lval))
             arg['code'] = code
         except Exception as e:
