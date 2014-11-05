@@ -32,7 +32,8 @@ from pyqtgraph.exporters.ImageExporter import ImageExporter
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
 from trace import RawData
-from scan import ScanControl
+from scan.ScanControl import ScanControl
+from scan.EvaluationControl import EvaluationControl
 from ScanProgress import ScanProgress
 from fit.FitUi import FitUi
 from modules import DataDirectory
@@ -280,6 +281,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
+    evaluationConfigurationChanged = None
     def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -365,12 +367,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl.ScanControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames(), 
-                                                         internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
+        self.scanControlWidget = ScanControl(config, self.globalVariablesUi, self.experimentName, internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
         self.scanControlWidget.setupUi(self.scanControlWidget)
-        self.fitWidget.analysisNamesChanged.connect( self.scanControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
+        # EvaluationControl
+        self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
+        self.evaluationControlWidget.setupUi(self.evaluationControlWidget)
+        self.fitWidget.analysisNamesChanged.connect( self.evaluationControlWidget.setAnalysisNames )
+        self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea)
+        self.evaluationConfigurationChanged = self.evaluationControlWidget.evaluationConfigurationChanged
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
@@ -447,9 +453,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
  
     def onStart(self):
         self.scan = self.scanControlWidget.getScan()
-        self.displayUi.setNames( [evaluation.name for evaluation in self.scan.evalList ])
+        self.evaluation = self.evaluationControlWidget.getEvaluation()
+        self.displayUi.setNames( [evaluation.name for evaluation in self.evaluation.evalList ])
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
-            self.createAverageTrace(self.scan.evalList)
+            self.createAverageTrace(self.evaluation.evalList)
             self.progressUi.setAveraged(0)
         else:
             self.progressUi.setAveraged(None)
@@ -567,16 +574,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             expected = self.generator.expected( self.currentIndex )
             x = self.generator.xValue(self.currentIndex)
             evaluated = list()
-            for evaluation, algo in zip(self.scan.evalList,self.scan.evalAlgorithmList):
+            for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
                 evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
             if data.other:
                 logger.info( "Other: {0}".format( data.other ) )
             if len(evaluated)>0:
                 self.displayUi.add( [ e[0] for e in evaluated ] )
                 self.updateMainGraph(x, evaluated, 0 if data.final else queuesize )
-                self.showHistogram(data, self.scan.evalList, self.scan.evalAlgorithmList )
+                self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
             self.currentIndex += 1
-            if self.scan.enableTimestamps: 
+            if self.evaluation.enableTimestamps: 
                 self.showTimestamps(data)
             if data.final:
                 self.finalizeData(reason='end of scan')
@@ -608,14 +615,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                         bottomColumnName = 'bottom{0}'.format(index)
                         trace.addColumn( topColumnName )
                         trace.addColumn( bottomColumnName )                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None, 
                                                     pens.penList, yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
-                                                    rawColumn=rawColumnName, name=self.scan.evalList[index].name, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter, windowName=self.scan.evalList[index].plotname) 
+                                                    rawColumn=rawColumnName, name=self.evaluation.evalList[index].name, xAxisUnit = self.scan.xUnit,
+                                                    xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname) 
                     else:                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.scan.evalList[index].plotname]["view"] if self.scan.evalList[index].plotname != 'None' else None, 
-                                                    pens.penList, yColumn=yColumnName, rawColumn=rawColumnName, name=self.scan.evalList[index].name,
-                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter, windowName=self.scan.evalList[index].plotname)               
+                        plottedTrace = PlottedTrace(trace, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None, 
+                                                    pens.penList, yColumn=yColumnName, rawColumn=rawColumnName, name=self.evaluation.evalList[index].name,
+                                                    xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname)               
                     xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
                     if xRange:
                         self.plotDict["Scan Data"]["view"].setXRange( *xRange )
@@ -666,7 +673,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
         
     def dataAnalysis(self):
-        for evaluation, plot in zip(self.scan.evalList, self.plottedTraceList):
+        for evaluation, plot in zip(self.evaluation.evalList, self.plottedTraceList):
             if evaluation.analysis is not None:
                 fitfunction = self.fitWidget.analysisFitfunction(evaluation.analysis)
                 sigma = None
@@ -682,26 +689,26 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 
             
     def showTimestamps(self,data):
-        bins = int( (self.scan.roiWidth/self.scan.binwidth).toval() )
+        bins = int( (self.evaluation.roiWidth/self.evaluation.binwidth).toval() )
         multiplier = self.pulserHardware.timestep.toval('ms')
-        myrange = (self.scan.roiStart.toval('ms')/multiplier,(self.scan.roiStart+self.scan.roiWidth).toval('ms')/multiplier)
-        y, x = numpy.histogram( data.timestamp[self.scan.timestampsChannel], 
+        myrange = (self.evaluation.roiStart.toval('ms')/multiplier,(self.evaluation.roiStart+self.evaluation.roiWidth).toval('ms')/multiplier)
+        y, x = numpy.histogram( data.timestamp[self.evaluation.timestampsChannel], 
                                 range=myrange,
                                 bins=bins)
         x = x[0:-1] * multiplier
                                 
         if self.currentTimestampTrace and numpy.array_equal(self.currentTimestampTrace.x,x) and (
-            self.scan.integrateTimestamps == self.scanControlWidget.integrationMode.IntegrateAll or 
-                (self.scan.integrateTimestamps == self.scanControlWidget.integrationMode.IntegrateRun and not self.timestampsNewRun) ) :
+            self.evaluation.integrateTimestamps == self.evaluationControlWidget.integrationMode.IntegrateAll or 
+                (self.evaluation.integrateTimestamps == self.evaluationControlWidget.integrationMode.IntegrateRun and not self.timestampsNewRun) ) :
             self.currentTimestampTrace.y += y
             self.plottedTimestampTrace.replot()
             if self.currentTimestampTrace.rawdata:
-                self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.scan.timestampsChannel])
+                self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
         else:    
             self.currentTimestampTrace = Trace()
-            if self.scan.saveRawData:
+            if self.evaluation.saveRawData:
                 self.currentTimestampTrace.rawdata = RawData()
-                self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.scan.timestampsChannel])
+                self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
             self.currentTimestampTrace.x = x
             self.currentTimestampTrace.y = y
             self.currentTimestampTrace.name = self.scan.settingsName
@@ -718,8 +725,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         index = 0
         for evaluation, algo in zip(evalList, evalAlgoList):
             if evaluation.showHistogram:
-                y, x, function = algo.histogram( data, evaluation.counter, self.scan.histogramBins) 
-                if self.scan.integrateHistogram and len(self.histogramList)>index:
+                y, x, function = algo.histogram( data, evaluation.counter, self.evaluation.histogramBins) 
+                if self.evaluation.integrateHistogram and len(self.histogramList)>index:
                     self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name, None )
                 elif len(self.histogramList)>index:
                     self.histogramList[index] = (y,x,evaluation.name, function )
@@ -779,7 +786,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
-            self.scanControlWidget.plotnames.append(name)
+            self.evaluationControlWidget.plotnames.append(name)
             self.saveConfig() #In case the program suddenly shuts down
             self.plotsChanged.emit()
             
@@ -794,9 +801,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if ok:
                 name = str(name)
                 self.plotDict[name]["dock"].close()
-                self.scanControlWidget.plotnames.remove(name)
+                self.evaluationControlWidget.plotnames.remove(name)
                 del self.plotDict[name]
-                for evaluation in self.scanControlWidget.settings.evalList: #Change any instance of the removed plot in the current scan evaluation to the default scan ("Scan Data")
+                for evaluation in self.evaluationControlWidget.settings.evalList: #Change any instance of the removed plot in the current scan evaluation to the default scan ("Scan Data")
                     if evaluation.plotname == name:
                         evaluation.plotname = "Scan Data"
                 self.saveConfig() #In case the program suddenly shuts down
@@ -822,13 +829,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.plotDict[name]["dock"].label.setText(QtCore.QString(newName))
                     self.plotDict[newName] = self.plotDict[name]
                     del self.plotDict[name]
-                    self.scanControlWidget.plotnames.append(newName)
-                    self.scanControlWidget.plotnames.remove(name)
-                    for evaluation in self.scanControlWidget.settings.evalList: #Update the current evaluation plot names, whether or not it has been saved
+                    self.evaluationControlWidget.plotnames.append(newName)
+                    self.evaluationControlWidget.plotnames.remove(name)
+                    for evaluation in self.evaluationControlWidget.settings.evalList: #Update the current evaluation plot names, whether or not it has been saved
                         if evaluation.plotname == name:
                             evaluation.plotname = newName
-                    for settingsName in self.scanControlWidget.settingsDict.keys(): #Update all the saved evaluation plot names
-                        for evaluation in self.scanControlWidget.settingsDict[settingsName].evalList:
+                    for settingsName in self.evaluationControlWidget.settingsDict.keys(): #Update all the saved evaluation plot names
+                        for evaluation in self.evaluationControlWidget.settingsDict[settingsName].evalList:
                             if evaluation.plotname == name:
                                 evaluation.plotname = newName
                     self.saveConfig() #In case the program suddenly shuts down
@@ -864,6 +871,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
         self.config[self.experimentName+'.plotNames'] = self.plotDict.keys()
         self.scanControlWidget.saveConfig()
+        self.evaluationControlWidget.saveConfig()
         self.traceui.saveConfig()
         self.displayUi.saveConfig()
         self.fitWidget.saveConfig()

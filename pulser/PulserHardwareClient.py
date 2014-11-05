@@ -222,13 +222,12 @@ class PulserHardware(QtCore.QObject):
         return True
             
     def ppReadRamWordList(self, wordlist, address):
-        readlist = list()
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
             self.clientPipe.send( ('ppReadRamWordListShared', (length, address+4*start) ) )
             processReturn( self.clientPipe.recv() )
-            readlist.extend( self.sharedMemoryArray[0:length] )
-        return readlist
+            wordlist[start:start+length] =  self.sharedMemoryArray[0:length] 
+        return wordlist
 
 def processReturn( returnvalue ):
     if isinstance( returnvalue, Exception ):

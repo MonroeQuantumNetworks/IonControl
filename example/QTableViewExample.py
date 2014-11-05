@@ -1,7 +1,6 @@
 import sys
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtCore, QtGui
 
 
 ##my_array = [['00','01','02'],
@@ -10,26 +9,26 @@ from PyQt4.QtGui import *
 my_array = [('param1','1.1'),('param2','0.3')]
 
 def main():
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     w = MyWindow()
     w.show()
     sys.exit(app.exec_())
 
-class MyWindow(QWidget):
+class MyWindow(QtGui.QWidget):
     def __init__(self, *args):
-        QWidget.__init__(self, *args)
+        QtGui.QWidget.__init__(self, *args)
 
         tablemodel = MyTableModel(my_array, self)
-        tableview = QTableView()
+        tableview = QtGui.QTableView()
         tableview.setModel(tablemodel)
 
-        layout = QVBoxLayout(self)
+        layout = QtGui.QVBoxLayout(self)
         layout.addWidget(tableview)
         self.setLayout(layout)
 
-class MyTableModel(QAbstractTableModel):
+class MyTableModel(QtCore.QAbstractTableModel):
     def __init__(self, datain, parent=None, *args):
-        QAbstractTableModel.__init__(self, parent, *args)
+        QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.arraydata = datain
 
     def rowCount(self, parent):
@@ -40,10 +39,10 @@ class MyTableModel(QAbstractTableModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QVariant()
-        elif role != Qt.DisplayRole:
-            return QVariant()
-        return QVariant(self.arraydata[index.row()][index.column()])
+            return QtCore.QVariant()
+        elif role != QtCore.Qt.DisplayRole:
+            return QtCore.QVariant()
+        return QtCore.QVariant(self.arraydata[index.row()][index.column()])
 
 if __name__ == "__main__":
     main()

@@ -9,6 +9,7 @@ Created on Tue Mar 12 15:22:09 2013
 import logging
 
 import StandardExternalParameter  
+from externalParameter import InterProcessParameters
         
 ExternalParameter = { StandardExternalParameter.LaserWavemeterLockScan.className: StandardExternalParameter.LaserWavemeterLockScan, 
                               StandardExternalParameter.HP8672A.className: StandardExternalParameter.HP8672A,
@@ -16,7 +17,8 @@ ExternalParameter = { StandardExternalParameter.LaserWavemeterLockScan.className
                               StandardExternalParameter.LaserWavemeterScan.className : StandardExternalParameter.LaserWavemeterScan,
                               StandardExternalParameter.DummyParameter.className: StandardExternalParameter.DummyParameter,
                               StandardExternalParameter.N6700BPowerSupply.className: StandardExternalParameter.N6700BPowerSupply,
-                              StandardExternalParameter.MicrowaveSynthesizerScan.className : StandardExternalParameter.MicrowaveSynthesizerScan }
+                              StandardExternalParameter.MicrowaveSynthesizerScan.className : StandardExternalParameter.MicrowaveSynthesizerScan,
+                              InterProcessParameters.LockOutputFrequency.className:  InterProcessParameters.LockOutputFrequency}
 
 try:
     import MotionParameter

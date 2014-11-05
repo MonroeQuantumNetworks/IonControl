@@ -327,6 +327,8 @@ class AutoLoad(UiForm,UiBase):
         logging.getLogger(__name__).error( "Error {0} accessing wavemeter at '{1}'".format(error, self.settings.wavemeterAddress) )
         reply.finished.disconnect()  # necessary to make reply garbage collectable
         reply.error.disconnect()
+        reply.deleteLater()
+        del reply
 
     def getWavemeterData(self, channel):
         """Get the data from the wavemeter at the specified channel."""
@@ -359,6 +361,8 @@ class AutoLoad(UiForm,UiBase):
         self.checkFreqsInRange()
         reply.finished.disconnect()  # necessary to make reply garbage collectable
         reply.error.disconnect()
+        reply.deleteLater()
+        del reply
         
     def checkFreqsInRange(self):
         """Check whether all laser frequencies being used by the interlock are in range.

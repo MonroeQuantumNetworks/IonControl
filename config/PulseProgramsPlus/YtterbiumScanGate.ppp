@@ -15,13 +15,17 @@ const DDSMicrowave = 2
 
 # frequencies and amplitudes
 parameter dummypos = 5mm
+parameter dummy2 = 0mm
 parameter <AD9912_FRQ> MicrowaveFreq = 42 MHz
 parameter MicrowaveAmp = 1023
 parameter<AD9912_FRQ> DetectFreq = 100 MHz
 parameter DetectAmp = 1023
 parameter<AD9912_FRQ> RamanFreq2_1 = 240 MHz
+parameter<AD9912_FRQFINE> RamanFreq2_1fine = 240 MHz
 parameter<AD9912_FRQ> RamanFreq2_2 = 240 MHz
+parameter<AD9912_FRQFINE> RamanFreq2_2fine = 240 MHz
 parameter<AD9912_FRQ> RamanFreq2_carrier = 240 MHz
+parameter<AD9912_FRQFINE> RamanFreq2_carrierfine = 240 MHz
 parameter<AD9912_FRQ> RamanFreq2_single = 240 MHz
 parameter <AD9912_FRQ> RedSidebandFreq_1 = 247 MHz
 parameter <AD9912_FRQ> RedSidebandFreq_2 = 247 MHz
@@ -83,6 +87,7 @@ counter CheckIonCounters = 0
 counter DetectCounters = 0
 trigger ddsApplyTrigger =  3
 trigger ddsRamanApply = 3
+trigger ddsApplyAll = 3
 parameter PresenceThresholdSingle = 6
 parameter PresenceThresholdMulti = 6
 
@@ -128,7 +133,8 @@ def microwaveInit():
 def ramanInit():
     set_dds( channel=DDSRaman2_single, freq=RamanFreq2_single)
 #    set_dds( channel=DDSRaman2_2, freq=RamanFreq2_single, phase=RamanInitPhase )
-    set_trigger( ddsRamanApply )
+#    set_trigger( ddsRamanApply )
+    set_trigger( ddsApplyAll)
     set_shutter( RamanSingleOn )
     update( RamanInitTime )
     set_shutter( RamanOff )
@@ -162,7 +168,8 @@ def detect():
     set_dds( channel=DDSDetect, freq=DetectFreq )
     set_shutter( DetectOn )
     set_counter( DetectCounters )
-    set_trigger( ddsApplyTrigger )
+#    set_trigger( ddsApplyTrigger )
+    set_trigger( ddsApplyAll )
     update( DetectTime )
     set_inv_shutter( DetectOn )
     set_shutter( CoolingOn )
@@ -171,7 +178,8 @@ def detect():
 
 def sidebandCoolPulse_1():
     set_dds( channel=DDSRaman2_single, freq=RedSidebandFreq_1 )
-    set_trigger( ddsRamanApply )
+#    set_trigger( ddsRamanApply )
+    set_trigger( ddsApplyAll )
     set_shutter( RamanSingleOn )
     update( RedSidebandPiTime_1 )
     set_shutter( RamanOff )
@@ -181,7 +189,8 @@ def sidebandCoolPulse_1():
 
 def sidebandCoolPulse_2():
     set_dds( channel=DDSRaman2_single, freq=RedSidebandFreq_2 )
-    set_trigger( ddsRamanApply )
+#    set_trigger( ddsRamanApply )
+    set_trigger( ddsApplyAll )
     set_shutter( RamanSingleOn )
     update( RedSidebandPiTime_2 )
     set_shutter( RamanOff )
@@ -193,20 +202,22 @@ def sidebandCoolPulse_2():
 set_shutter( InitializationShutter )
 update()
 set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
-set_trigger( ddsApplyTrigger )
+#set_trigger( ddsApplyTrigger )
+set_trigger( ddsApplyAll )
 
 while not pipe_empty():
     update()
     apply_next_scan_point()
 
-    set_dds( channel=DDSRaman2_1, freq=RamanFreq2_1)
-    set_dds( channel=DDSRaman2_2, freq=RamanFreq2_2)
+    set_dds( channel=DDSRaman2_1, freq=RamanFreq2_1, freqfine=RamanFreq2_1fine )
+    set_dds( channel=DDSRaman2_2, freq=RamanFreq2_2 , freqfine=RamanFreq2_2fine)
     set_dds( channel=DDSRaman2_single, freq=RamanFreq2_single )
-    set_dds( channel=DDSRaman2_carrier, freq=RamanFreq2_carrier, phase=RamanAnalyzePhase )
+    set_dds( channel=DDSRaman2_carrier, freq=RamanFreq2_carrier, freqfine=RamanFreq2_carrierfine, phase=RamanAnalyzePhase )
     set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
     set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, amp=MicrowaveAmp)
 
-    set_trigger( ddsRamanApply )
+#    set_trigger( ddsRamanApply )
+    set_trigger( ddsApplyAll )
     
     currentexperiment = 0
     while currentexperiment < experiments:

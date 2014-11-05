@@ -25,9 +25,9 @@ masked_shutter DetectOn
 parameter CoolingTime = 1 ms
 parameter PumpTime = 0 ms
 parameter PreWaitTime = 0 ms
-parameter QubitInitTime = 0 ms
+parameter MicrowaveInitTime = 0 ms
 parameter QubitWaitTime = 0 ms
-parameter QubitAnalyzeTime = 0 ms
+parameter MicrowaveAnalyzeTime = 0 ms
 parameter PostWaitTime = 0ms
 parameter DetectTime = 1 ms
 parameter piTime = 40 us
@@ -45,9 +45,8 @@ parameter UseGateSequence = 0
 parameter offset = 40ns
 
 # exitcodes
-exitcode IonLostExitcode = 0xfffe000000000001
-exitcode endLabel = 0xfffe000000000000
-exitcode specialLabel = 0xfffe000000000002
+exitcode IonLostExitcode = 0xfffe0001
+exitcode endLabel = 0xfffe0000
 
 # internal variables
 var experimentsleft = 100
@@ -78,14 +77,14 @@ def qubitInit():
     set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
     set_trigger( ddsMicrowaveApply )
     set_shutter( MicrowaveOn )
-    update( QubitInitTime )
+    update( MicrowaveInitTime )
     set_inv_shutter( MicrowaveOn )
 
 def qubitAnalyze():
     set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveAnalyzePhase )
     set_trigger( ddsMicrowaveApply )
     set_shutter( MicrowaveOn )
-    update( QubitAnalyzeTime )
+    update( MicrowaveAnalyzeTime )
     set_inv_shutter( MicrowaveOn )
     
 def detect():
@@ -127,7 +126,6 @@ while not pipe_empty():
     apply_next_scan_point()
     
     currentexperiment = 0
-    currentexperiment *= 4
     while currentexperiment < experiments:
         set_ram_address( RamStartAddress )
         cool()
@@ -142,13 +140,13 @@ while not pipe_empty():
             pump()
         if PreWaitTime>0:
             update( PreWaitTime )
-        if QubitInitTime>0: 
+        if MicrowaveInitTime>0: 
             qubitInit()
         if UseGateSequence>0:
             gateSequence()
         if QubitWaitTime>0:
             update( QubitWaitTime )
-        if QubitAnalyzeTime>0:
+        if MicrowaveAnalyzeTime>0:
             qubitAnalyze()
         if PostWaitTime>0:
             update( PostWaitTime )

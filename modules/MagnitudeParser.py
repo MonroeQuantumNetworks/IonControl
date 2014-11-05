@@ -8,7 +8,7 @@ Parser for magnitude expressions. Can parse arithmetic expressions with values i
 """
 
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
-    nums,alphas,ParseException
+    nums,alphas
 
 import modules.magnitude as magnitude
 from modules.lru_cache import lru_cache
@@ -52,6 +52,15 @@ def parseDelta( string, deltapos=0, parseAll=True ):
     delta = decimalpos-mydeltapos
     return retval, magnitude.mg(pow(10,delta),unit), deltapos, decimalpos
     
+@lru_cache(maxsize=100)
+def isValueExpression( text ):
+    try:
+        valueexpr.parseString( text , parseAll=True )
+        return True
+    except Exception:
+        pass
+    return False
+    
 def positionawareTrim( string, position ):
     oldlen = len(string)
     string = string.lstrip()
@@ -60,13 +69,14 @@ def positionawareTrim( string, position ):
 
 
 if __name__=="__main__":
-    print positionawareTrim('   1234',10)
-    for line in ['12MHz', '12.123456789 MHz','-200.234e3 us','   12.000 MHz','40']:
-        try:
-            print line, "->"
-            for elem in parseDelta(line, 4):
-                print elem
-            print
-        except ParseException as e:
-            print "not a full match", e
-     
+    print isValueExpression('2kHz')
+#     print positionawareTrim('   1234',10)
+#     for line in ['12MHz', '12.123456789 MHz','-200.234e3 us','   12.000 MHz','40']:
+#         try:
+#             print line, "->"
+#             for elem in parseDelta(line, 4):
+#                 print elem
+#             print
+#         except ParseException as e:
+#             print "not a full match", e
+#      

@@ -88,6 +88,11 @@ class LoggerLevelsTableModel(QtCore.QAbstractTableModel):
                 return ["Logger","Level"][section]
         return None #QtCore.QVariant()
 
+    def sort(self, column, order):
+        if column == 0 and self.levelDict:
+            self.levelDict.sort(reverse=order == QtCore.Qt.DescendingOrder)
+            self.dataChanged.emit(self.index(0, 0), self.index(self.rowCount() - 1, 1))
+            
         
 
 class LoggerLevelsUi(Form, Base):
@@ -106,6 +111,7 @@ class LoggerLevelsUi(Form, Base):
         self.tableView.resizeRowsToContents()
         self.tableView.setItemDelegateForColumn(1, ComboBoxDelegate() )
         self.tableView.clicked.connect(self.edit )
+        self.tableView.setSortingEnabled(True)
         self.updateButton.clicked.connect( self.tableModel.update )
         
     def saveConfig(self):

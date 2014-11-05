@@ -92,15 +92,8 @@ class GateSequenceUi(Form,Base):
         self.config = config
         self.configname = "GateSequenceUi."+name
         self.settings = self.config.get(self.configname,Settings())
-
         self.gatedef = GateDefinition()
-#        if self.settings.gateDefinition:
-#            self.loadGateDefinition( self.settings.gateDefinition )
-    
         self.gateSequenceContainer = GateSequenceContainer(self.gatedef)
-#        if self.settings.gateSequence:
-#            self.loadGateSequenceList(self.settings.gateSequence)
-            
         self.gateSequenceCompiler = GateSequenceCompiler(pulseProgram)
 
     
@@ -140,14 +133,21 @@ class GateSequenceUi(Form,Base):
         try:
             updateComboBoxItems(self.GateDefinitionBox, self.settings.gateDefinitionCache.keys())
             updateComboBoxItems(self.GateSequenceBox, self.settings.gateSequenceCache.keys())
+            self.updateDatastructures()
+        except IOError as err:
+            logger.error( "{0} during loading of GateSequence Files, ignored.".format(err) )
+
+    def updateDatastructures(self):
+        if self.settings.enabled:
             if self.settings.gateDefinition and self.settings.gateDefinition in self.settings.gateDefinitionCache:
                 self.loadGateDefinition( self.settings.gateDefinitionCache[self.settings.gateDefinition] )
                 self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(self.settings.gateDefinition))
             if self.settings.gateSequence and self.settings.gateSequence in self.settings.gateSequenceCache:
                 self.loadGateSequenceList( self.settings.gateSequenceCache[self.settings.gateSequence] )
                 self.GateSequenceBox.setCurrentIndex(self.GateSequenceBox.findText(self.settings.gateSequence))
-        except IOError as err:
-            logger.error( "{0} during loading of GateSequence Files, ignored.".format(err) )
+        else:
+            self.clearGateDefinition()
+            self.clearGateSequenceList()
 
     def documentationString(self):
         return repr(self.settings)   
@@ -178,6 +178,7 @@ class GateSequenceUi(Form,Base):
     def onEnableChanged(self, state):
         self.settings.enabled = state == QtCore.Qt.Checked
         self.GateSequenceFrame.setEnabled( self.settings.enabled )
+        self.updateDatastructures()
         self.valueChanged.emit()          
         
     def onDebugChanged(self, state):
@@ -205,7 +206,12 @@ class GateSequenceUi(Form,Base):
         self.settings.gateDefinition = filename
         self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(filename))
         self.gatedef.printGates()
-        self.valueChanged.emit()          
+        self.valueChanged.emit()      
+        
+    def clearGateDefinition(self):    
+        self.gatedef.loadGateDefinition(None)    
+        self.GateDefinitionBox.setCurrentIndex(-1)
+        self.valueChanged.emit()      
     
     def onLoadGateSequenceList(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, "Open Gate Set file:", self.settings.lastDir))
@@ -226,6 +232,10 @@ class GateSequenceUi(Form,Base):
         _, filename = os.path.split(path)
         self.settings.gateSequence = filename
         self.GateSequenceBox.setCurrentIndex(self.GateSequenceBox.findText(filename))
+        
+    def clearGateSequenceList(self):
+        self.gateSequenceContainer.loadXml(None)
+        self.GateSequenceBox.setCurrentIndex(-1)
     
     def onGateEditChanged(self):
         self.settings.gate = map(operator.methodcaller('strip'),str(self.GateEdit.text()).split(','))

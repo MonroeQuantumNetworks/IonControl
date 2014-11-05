@@ -9,20 +9,31 @@ import sys
 #
 # The API reference documentation is in the following directory:
 # C:\Program Files (x86)\IVI Foundation\VISA\WinNT\niSync
+#
+# Also distinguish between 32 bit python and 64 bit python
+#
+
+def is_python_64():
+    return sys.maxsize > 2**32
+
 if sys.platform.startswith('win'):
     lib_directory = r'C:\Program Files\IVI Foundation\VISA\WinNT\Bin'
     lib_directory += "//"
 
     if platform.release() == '7':
-	if sys.platform.endswith('32'):
-		lib_directory = r'C:\Program Files\IVI Foundation\VISA\WinNT\Bin'
-		lib_directory += "\\"
-	else:
-        	lib_directory = r'C:\Program Files (x86)\IVI Foundation\VISA\WinNT\Bin'
-        	lib_directory += "\\"
-    if os.path.exists(r'C:\Program Files (x86)'):
-        lib_directory = r'C:\Program Files (x86)\IVI Foundation\VISA\WinNT\Bin'
-        lib_directory += "\\"
+        if is_python_64():
+                lib_directory = r'C:\Program Files\IVI Foundation\VISA\Win64\Bin'
+                lib_directory += "\\"
+        else:
+            if sys.platform.endswith('32'):
+                lib_directory = r'C:\Program Files\IVI Foundation\VISA\WinNT\Bin'
+                lib_directory += "\\"
+            else:
+                lib_directory = r'C:\Program Files (x86)\IVI Foundation\VISA\WinNT\Bin'
+                lib_directory += "\\"
+            if os.path.exists(r'C:\Program Files (x86)'):
+                lib_directory = r'C:\Program Files (x86)\IVI Foundation\VISA\WinNT\Bin'
+                lib_directory += "\\"
         
     lib_name = "niSync"
 

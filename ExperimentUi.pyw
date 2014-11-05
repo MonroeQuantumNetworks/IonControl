@@ -196,8 +196,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
-        self.ExternalParametersUi = ExternalParameterUi.ControlUi()
+        self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.globalVariablesUi.variables )
         self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.ExternalParametersUi )
+        self.globalVariablesUi.valueChanged.connect( self.ExternalParametersUi.evaluate )
+
         self.ExternalParameterDock = QtGui.QDockWidget("Params Control")
         self.ExternalParameterDock.setWidget(self.ExternalParametersUi)
         self.ExternalParameterDock.setObjectName("_ExternalParameterDock")
@@ -208,7 +210,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         self.hybridScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
         
-        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.setCurrentTab )
+        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab )
         self.todoList.setupUi()
         self.todoListDock = QtGui.QDockWidget("Todo List")
         self.todoListDock.setWidget(self.todoList)
@@ -217,6 +219,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for name, widget in self.tabDict.iteritems():
             if hasattr( widget, 'scanConfigurationListChanged' ) and widget.scanConfigurationListChanged is not None:
                 widget.scanConfigurationListChanged.connect( partial( self.todoList.populateMeasurementsItem, name)  )
+            if hasattr( widget, 'evaluationConfigurationChanged' ) and widget.evaluationConfigurationChanged is not None:
+                widget.evaluationConfigurationChanged.connect( partial( self.todoList.populateEvaluationItem, name)  )
        
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
@@ -349,18 +353,23 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         logger.debug( "OnReload" )
         self.currentTab.onReload()
     
+    def switchTab(self, name):
+        self.tabWidget.setCurrentWidget( self.tabDict[name] )
+        self.onCurrentChanged(self.tabDict.index(name))  # this gets called later, but we need it to run now in order to switch scans from the todolist
+    
     def onCurrentChanged(self, index):
-        self.currentTab.deactivate()
-        if hasattr( self.currentTab, 'stateChanged' ):
-            try:
-                self.currentTab.stateChanged.disconnect()
-            except TypeError:
-                pass
-        self.currentTab = self.tabDict.at(index)
-        self.currentTab.activate()
-        if hasattr( self.currentTab, 'stateChanged' ):
-            self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
-        self.initMenu()
+        if self.tabDict.at(index)!=self.currentTab:
+            self.currentTab.deactivate()
+            if hasattr( self.currentTab, 'stateChanged' ):
+                try:
+                    self.currentTab.stateChanged.disconnect()
+                except TypeError:
+                    pass
+            self.currentTab = self.tabDict.at(index)
+            self.currentTab.activate()
+            if hasattr( self.currentTab, 'stateChanged' ):
+                self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
+            self.initMenu()
         
     def initMenu(self):
         self.menuView.clear()

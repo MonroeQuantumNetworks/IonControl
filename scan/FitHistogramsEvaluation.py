@@ -14,7 +14,7 @@ from trace.Trace import Trace
 import xml.etree.ElementTree as ElementTree
 from itertools import izip_longest
 from copy import deepcopy
-
+from os import path
 
 class HistogramFitFunction:
     name = "HistogramApproximation"
@@ -50,7 +50,6 @@ class HistogramFitFunction:
             e.text = str(value)
         return myroot
  
-
 class FitHistogramEvaluation(EvaluationBase):
     name = "FitHistogram"
     tooltip = "Fit measured histograms to data"
@@ -67,7 +66,7 @@ class FitHistogramEvaluation(EvaluationBase):
         
     def loadReferenceData(self):
         for name in ['ZeroBright','OneBright', 'TwoBright']:
-            filename = self.settings[name]
+            filename = path.join(self.settings['Path'],self.settings[name])
             if filename:
                 t = Trace()
                 t.loadTrace(filename)
@@ -75,9 +74,10 @@ class FitHistogramEvaluation(EvaluationBase):
                 setattr(self.fitFunction, name, self.normalizeHistogram( getattr(t, yColumnName )) )
         
     def setDefault(self):
-        self.settings.setdefault('ZeroBright','')
-        self.settings.setdefault('OneBright','')
-        self.settings.setdefault('TwoBright','')
+        self.settings.setdefault('Path',r'C:\Users\Public\Documents\experiments\QGA\2014\2014_10\2014_10_21')
+        self.settings.setdefault('ZeroBright','ZeroIonHistogram')
+        self.settings.setdefault('OneBright','OneIonHistogram')
+        self.settings.setdefault('TwoBright','TwoIonHistogram')
         self.settings.setdefault('HistogramBins',50)
         self.settings.setdefault('NumberBright',0)
         self.settings.setdefault('OnlyOneIon',True)
@@ -110,7 +110,8 @@ class FitHistogramEvaluation(EvaluationBase):
 
         
     def children(self):
-        return [{'name':'ZeroBright','type':'str','value':self.settings['ZeroBright'], 'tip': 'filename for ZeroBright data' },
+        return [{'name':'Path','type':'str','value':self.settings['Path'], 'tip': 'Path for histogram files' },
+                {'name':'ZeroBright','type':'str','value':self.settings['ZeroBright'], 'tip': 'filename for ZeroBright data' },
                 {'name':'OneBright','type':'str','value':self.settings['OneBright'], 'tip': 'filename for OneBright data' },
                 {'name':'TwoBright','type':'str','value':self.settings['TwoBright'], 'tip': 'filename for TwoBright data' },
                 {'name':'NumberBright','type':'int','value':self.settings['NumberBright'], 'range': (0,2),  'tip': 'Number of bright ions' },

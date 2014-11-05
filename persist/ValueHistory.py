@@ -8,7 +8,7 @@ from sqlalchemy import Column, String, Float, DateTime, Integer, ForeignKey, Ind
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
-from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.exc import InvalidRequestError, IntegrityError
 from modules.magnitude import is_magnitude
 from sqlalchemy.exc import OperationalError
 import logging
@@ -121,7 +121,7 @@ class ValueHistoryStore:
                     if top is not None:
                         elem.top = top
                     self.commit()
-            except InvalidRequestError as e:
+            except (InvalidRequestError, IntegrityError) as e:
                 self.session.rollback()
                 self.session = self.Session()
                 self.refreshSourceDict()

@@ -82,6 +82,30 @@ class SinSqFit(FitFunctionBase):
     def functionEval(self, x, T, x0, max_, min_ ):
         return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/T*(x-x0)))+min_
 
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        T, x0, maximum, minimum = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        maximum = numpy.amax(y)
+        minimum = numpy.amin(y)
+        minindex = numpy.argmin(y)
+        x0 = x[minindex]
+        threshold = (maximum+minimum)/2.0
+        NewZeroCrossing = x[0]
+        PreviousZeroCrossing = x[0]
+        maxZeroCrossingDelta = 0
+        for ind in range(len(y)-1):
+            if (y[ind] <= threshold <= y[ind+1]) or (y[ind+1] <= threshold <= y[ind]):
+                NewZeroCrossing = x[ind]
+                NewZeroCrossingDelta = NewZeroCrossing-PreviousZeroCrossing
+                if NewZeroCrossingDelta > maxZeroCrossingDelta:
+                    maxZeroCrossingDelta = NewZeroCrossingDelta 
+                PreviousZeroCrossing = NewZeroCrossing
+        T = maxZeroCrossingDelta
+        x0 = numpy.remainder(x0,2*T)
+        logging.getLogger(__name__).info("smart start values T={0}, x0={1}, maximum={2}, minimum={3}".format(T,x0,maximum,minimum))
+        return (T, x0, maximum, minimum)
 
 class ChripedSinSqFit(FitFunctionBase):
     name = "ChirpedSin2"
@@ -155,8 +179,11 @@ class GaussianFit(FitFunctionBase):
     def functionEval(self, x, A, x0, s, O ):
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
 
-    def smartStartValues(self, x, y, parameters, enabled):
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
         A, x0, s, O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
         maxindex = numpy.argmax(y)
         minimum = numpy.amin(y)
         maximum = y[maxindex]
@@ -164,12 +191,17 @@ class GaussianFit(FitFunctionBase):
         A = maximum-minimum
         O = minimum
         threshold = (maximum+minimum)/2.
+        indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
         for ind, val in enumerate(y[maxindex:]):
-            indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
             if val < threshold:
                 indexplus = ind + maxindex
                 break
-        s = 1.20112*(x[indexplus]-x[maxindex])
+        indexminus = 0 #If the threshold point is never found, indexplus is set to the index of the first element
+        for ind, val in enumerate(y[maxindex::-1]):
+            if val < threshold:
+                indexminus = maxindex-ind
+                break
+        s = 0.60056*(x[indexplus]-x[indexminus])
         logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
         return (A, x0, s, O)
 
@@ -189,8 +221,11 @@ class SquareRabiFit(FitFunctionBase):
         u = numpy.square(2*numpy.pi*(x-C)/R)
         return ((A/(1+u))*numpy.square(numpy.sin(numpy.sqrt(1+u)*R*t/2.))) + O  
     
-    def smartStartValues(self, x, y, parameters, enabled):
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
         T, C, A, O, t = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
         maxindex = numpy.argmax(y)
         minimum = numpy.amin(y)
         maximum = y[maxindex]
@@ -199,11 +234,18 @@ class SquareRabiFit(FitFunctionBase):
         O = minimum
         threshold = (maximum+minimum)/2.
         if not enabled[4]:  # if t is fixed we can estimate T
+            indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
             for ind, val in enumerate(y[maxindex:]):
                 if val < threshold:
                     indexplus = ind + maxindex
                     break
-            T = 0.399345/(x[indexplus]-x[maxindex])
+            indexminus = 0 #If the threshold point is never found, indexplus is set to the index of the first element
+            for ind, val in enumerate(y[maxindex::-1]):
+                if val < threshold:
+                    indexminus = maxindex-ind
+                    break
+            if x[indexplus]-x[indexminus] != 0:
+                T = 0.79869/(x[indexplus]-x[indexminus])
         logging.getLogger(__name__).info("smart start values T={0}, C={1}, A={2}, O={3}, t={4}".format(T, C, A, O, t))
         return (T, C, A, O, t)
 

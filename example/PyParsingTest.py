@@ -7,10 +7,7 @@
 #
 # Copyright 2003-2006 by Paul McGuire
 #
-import math
-import operator
-
-from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
+from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
     ZeroOrMore,Forward,nums,alphas
 
 
@@ -70,4 +67,3 @@ if __name__ == "__main__":
     
     ExprEval = Expression()
     
- 

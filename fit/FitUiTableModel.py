@@ -1,23 +1,23 @@
 from PyQt4 import QtCore
 
 from modules.round import roundToNDigits, roundToStdDev
-
-def noneAlternative( v, alt ):
-    return v if v is not None else alt
+from modules.firstNotNone import firstNotNone
+from PyQt4 import QtGui
 
 class FitUiTableModel(QtCore.QAbstractTableModel):
-    
+    foregroundLookup = { True: QtGui.QBrush( QtCore.Qt.blue), False: QtGui.QBrush( QtCore.Qt.black)}  
     def __init__(self, config, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.fitfunction.parameterEnabled[row] else QtCore.Qt.Unchecked,
                             (QtCore.Qt.DisplayRole,1): lambda row: self.fitfunction.parameterNames[row],
                             (QtCore.Qt.DisplayRole,2): lambda row: str(self.fitfunction.startParameters[row]),
-                            (QtCore.Qt.EditRole,2):    lambda row: noneAlternative( self.fitfunction.startParameterExpressions[row], str(self.fitfunction.startParameters[row])),
+                            (QtCore.Qt.EditRole,2):    lambda row: firstNotNone( self.fitfunction.startParameterExpressions[row], str(self.fitfunction.startParameters[row])),
                             (QtCore.Qt.UserRole,2):    lambda row: self.fitfunction.units[row] if self.fitfunction.units else None,
                             (QtCore.Qt.DisplayRole,3): self.fitValue,
                             (QtCore.Qt.DisplayRole,4): self.confidenceValue,
-                            (QtCore.Qt.DisplayRole,5): self.relConfidenceValue  }
+                            (QtCore.Qt.DisplayRole,5): self.relConfidenceValue,
+                            (QtCore.Qt.ForegroundRole,2): lambda row: self.foregroundLookup[self.fitfunction.startParameterExpressions[row] is not None]  }
         self.fitfunction = None
         
     def update(self):

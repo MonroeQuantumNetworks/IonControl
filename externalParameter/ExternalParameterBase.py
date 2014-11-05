@@ -12,6 +12,7 @@ from persistence import DBPersist
 import time
 from functools import partial
 from modules.magnitude import is_magnitude
+from modules.AttributeRedirector import AttributeRedirector
 
 def nextValue( current, target, stepsize, jump ):
     if current is None:
@@ -22,6 +23,7 @@ def nextValue( current, target, stepsize, jump ):
 class ExternalParameterBase(object):
     dimension = None
     persistSpace = 'externalOutput'
+    strValue = AttributeRedirector('settings', 'strValue', None)
     def __init__(self,name,settings):
         self.name = name
         self.settings = settings
@@ -45,6 +47,7 @@ class ExternalParameterBase(object):
         self.settings.__dict__.setdefault('jump' , False)       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('value', None )      # the current value       
         self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60,'s' ) )     # delay for persistency  
+        self.settings.__dict__.setdefault('strValue', None )
     
     def saveValue(self, overwrite=True):
         """

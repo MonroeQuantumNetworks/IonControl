@@ -11,18 +11,14 @@ import logging
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
-from scan.EvaluationAlgorithms import EvaluationAlgorithms
-from EvaluationTableModel import EvaluationTableModel
 import ScanList
 from gateSequence import GateSequenceUi
 from modules import MagnitudeUtilit
-from modules.HashableDict import HashableDict
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
 from modules.enum import enum
-from modules.magnitude import mg, MagnitudeError
-from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from modules.magnitude import MagnitudeError
 from modules.ScanDefinition import ScanSegmentDefinition
 from ScanSegmentTableModel import ScanSegmentTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate 
@@ -34,38 +30,6 @@ from gateSequence.GateSequenceContainer import GateSequenceException
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
-
-class EvaluationDefinition:
-    def __init__(self):
-        self.counter = None
-        self.evaluation = None
-        self.settings = HashableDict()
-        self.name = None
-        self.plotname = None
-        self.settingsCache = HashableDict()
-        self.showHistogram = False
-        self.analysis = None
-        
-    def __setstate__(self, state):
-        self.__dict__ = state
-        if 'errorBars' in self.settings:   # remove errorBars property in old unpickled instances
-            self.settings.pop('errorBars')
-        self.__dict__.setdefault( 'analysis', None )
-        
-    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis'] 
-        
-    def __eq__(self,other):
-        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __hash__(self):
-        if not isinstance(self.settings,HashableDict):
-            logging.getLogger(__name__).info("Replacing dict with hashable dict")
-            self.settings = HashableDict(self.settings)
-        return hash(tuple(getattr(self,field) for field in self.stateFields))
- 
 
 class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan')
@@ -93,19 +57,6 @@ class Scan:
         self.xExpression = ""
         self.loadPP = False
         self.loadPPName = ""
-        # Evaluation
-        self.histogramBins = 50
-        self.integrateHistogram = False
-        self.counterChannel = 0
-        self.evalList = list()
-        # Timestamps
-        self.enableTimestamps = False
-        self.binwidth =  mg(1,'us')
-        self.roiStart =  mg(0,'us')
-        self.roiWidth =  mg(1,'ms')
-        self.integrateTimestamps = 0
-        self.timestampsChannel = 0
-        self.saveRawData = False
         # GateSequence Settings
         self.gateSequenceSettings = GateSequenceUi.Settings()
         self.scanSegmentList = [ScanSegmentDefinition()]
@@ -124,13 +75,10 @@ class Scan:
         self.__dict__.setdefault('center',0)
         self.__dict__.setdefault('span',0)
         self.__dict__.setdefault('gateSequenceSettings',GateSequenceUi.Settings())
-        self.__dict__.setdefault('evalList',list())
         self.__dict__.setdefault('scanSegmentList',[ScanSegmentDefinition()])
         self.__dict__.setdefault('externalScanParameter', None)
         self.__dict__.setdefault('histogramFilename', "")
         self.__dict__.setdefault('histogramSave', False)
-#         if self.histogramFilename is None:
-#             self.histogramFilename = ""
 
     def __eq__(self,other):
         try:
@@ -146,9 +94,8 @@ class Scan:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
     stateFields = ['scanParameter', 'externalScanParameter', 'scantype', 'scanMode', 'scanRepeat', 
-                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'histogramBins', 'integrateHistogram', 
-                'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 'saveRawData', 'gateSequenceSettings',
-                'evalList', 'scanSegmentList' ]
+                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
+                'scanSegmentList' ]
 
     documentationList = [ 'scanParameter', 'externalScanParameter', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
@@ -185,7 +132,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
-        except TypeError:
+        except (TypeError, AttributeError):
             logger.info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.settingsDict = dict()
         self.scanConfigurationListChanged.emit( self.settingsDict )
@@ -194,14 +141,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.historyFinalState = None
         try:
             self.settings = self.config.get(self.configname,Scan())
-        except TypeError:
+        except (TypeError, AttributeError):
             logger.info( "Unable to read scan control settings. Setting to new scan." )
             self.settings = Scan()
         self.gateSequenceUi = None
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
-        self.evalAlgorithmList = list()
-        self.plotnames = plotnames
-        self.analysisNames = analysisNames
         self.pulseProgramUi = None
         self.parameters = self.config.get( self.configname+'.parameters', ScanControlParameters() )
         self.internalParam = internalParam
@@ -209,29 +153,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.globalVariablesUi = globalVariablesUi
         
     def setupUi(self, parent):
-        logger = logging.getLogger(__name__)
         ScanControlForm.setupUi(self,parent)
         # History and Dictionary
         self.saveButton.clicked.connect( self.onSave )
-        self.undoButton.clicked.connect( self.onUndo )
-        self.redoButton.clicked.connect( self.onRedo )
         self.removeButton.clicked.connect( self.onRemove )
         self.reloadButton.clicked.connect( self.onReload )
-        self.evalTableModel = EvaluationTableModel( self.updateSaveStatus, plotnames=self.plotnames, analysisNames=self.analysisNames )
-        self.evalTableModel.dataChanged.connect( self.updateSaveStatus )
-        self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
-        self.evalTableView.setModel( self.evalTableModel )
-        self.evalTableView.clicked.connect( self.editEvaluationTable )
-        self.delegate = ComboBoxDelegate()
-        self.evalTableView.setItemDelegateForColumn(1, self.delegate )
-        self.evalTableView.setItemDelegateForColumn(4, self.delegate )
-        self.evalTableView.setItemDelegateForColumn(5, self.delegate )        
-        self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
-        self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
-        self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
-        self.evalTableView.resizeColumnsToContents()
 
-        self.tableModel = ScanSegmentTableModel(self.updateSaveStatus, self.globalVariablesUi.variables )
+        self.tableModel = ScanSegmentTableModel(self.checkSettingsSavable, self.globalVariablesUi.variables )
         self.tableView.setModel( self.tableModel )
         self.addSegmentButton.clicked.connect( self.onAddScanSegment )
         self.removeSegmentButton.clicked.connect( self.onRemoveScanSegment )
@@ -242,16 +170,16 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBoxParameter.setVisible( self.internalParam )
         self.comboBoxExternalParameter.setVisible( self.externalParam )
        
-        try:
-            self.setSettings( self.settings )
-        except AttributeError:
-            logger.error( "Ignoring exception" )
+#        try:
+        self.setSettings( self.settings )
+#         except AttributeError:
+#             logger.error( "Ignoring exception" )
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
         self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
-        #self.comboBox.editTextChanged.connect( lambda x: self.updateSaveStatus() )
-        self.comboBox.lineEdit().editingFinished.connect( self.updateSaveStatus ) 
+        #self.comboBox.editTextChanged.connect( lambda x: self.checkSettingsSavable() )
+        self.comboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable ) 
         # update connections
         self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )
         self.comboBoxExternalParameter.currentIndexChanged['QString'].connect( self.onCurrentExternalTextChanged )
@@ -264,18 +192,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
         self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
-        # Evaluation
-        self.histogramBinsBox.valueChanged.connect(self.onHistogramBinsChanged)
-        self.integrateHistogramCheckBox.stateChanged.connect( self.onIntegrateHistogramClicked )
-                
-        # Timestamps
-        self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
-        self.roiStartSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiStart') )
-        self.roiWidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiWidth') )
-        self.enableCheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'enableTimestamps' ) )
-        self.saveRawDataCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData' ) )
-        self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
-        self.channelSpinBox.valueChanged.connect( functools.partial(self.onBareValueChanged, 'timestampsChannel') )
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
         self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -286,8 +202,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.addAction( self.autoSaveAction )
         self.settings.evaluate(self.globalVariablesUi.variables)
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
-
-        
+       
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):
             self.tableModel.update()
@@ -306,9 +221,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         for index in sorted(unique([ i.column() for i in self.tableView.selectedIndexes() ]),reverse=True):
             del self.settings.scanSegmentList[index]
             self.tableModel.setScanList(self.settings.scanSegmentList)
-        
-    def setAnalysisNames(self, names):
-        self.evalTableModel.setAnalysisNames(names)
         
     def setSettings(self, settings):
         self.settings = copy.deepcopy(settings)
@@ -338,76 +250,28 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             if index>=0:
                 self.loadPPComboBox.setCurrentIndex( index )
                 self.onLoadPP(self.settings.loadPPName)
-        # Evaluation
-        self.histogramBinsBox.setValue(self.settings.histogramBins)
-        self.integrateHistogramCheckBox.setChecked( self.settings.integrateHistogram )
-        # Timestamps
-        self.enableCheckBox.setChecked(self.settings.enableTimestamps )
-        self.saveRawDataCheckBox.setChecked(self.settings.saveRawData)
-        self.binwidthSpinBox.setValue(self.settings.binwidth)
-        self.roiStartSpinBox.setValue(self.settings.roiStart)
-        self.roiWidthSpinBox.setValue(self.settings.roiWidth)
-        self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
-        self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.onModeChanged(self.settings.scanMode)
         if self.gateSequenceUi:
             self.gateSequenceUi.setSettings( self.settings.gateSequenceSettings )
-        self.updateSaveStatus()
-        self.evalAlgorithmList = []
-        for evaluation in self.settings.evalList:
-            self.addEvaluation(evaluation)
-        assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
-        self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
-        self.evalTableView.resizeColumnsToContents()
-        #self.evalTableView.horizontalHeader().setStretchLastSection(True)
+        self.checkSettingsSavable()
         self.tableModel.setScanList(self.settings.scanSegmentList)
 
-    def addEvaluation(self, evaluation):
-        algo =  EvaluationAlgorithms[evaluation.evaluation]()
-        algo.subscribe( self.updateSaveStatus )   # track changes of the algorithms settings so the save status is displayed correctly
-        algo.setSettings( evaluation.settings, evaluation.name )
-        self.evalAlgorithmList.append(algo)      
-
-    def onAddEvaluation(self):
-        evaluation = EvaluationDefinition()
-        evaluation.counter = 0
-        evaluation.plotname = "Scan Data" #Default to "Scan Data" plot
-        evaluation.evaluation = EvaluationAlgorithms.keys()[0]
-        self.settings.evalList.append( evaluation )
-        self.addEvaluation( evaluation )
-        assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
-        self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
-        self.evalTableView.resizeColumnsToContents()
-        self.evalTableView.horizontalHeader().setStretchLastSection(True)
- 
-    def removeEvaluation(self, index):
-        del self.evalAlgorithmList[index]
-
-    def onRemoveEvaluation(self):
-        for index in sorted(unique([ i.row() for i in self.evalTableView.selectedIndexes() ]),reverse=True):
-            del self.settings.evalList[index]
-            self.removeEvaluation(index)
-        assert len(self.settings.evalList)==len(self.evalAlgorithmList), "EvalList and EvalAlgoithmList length mismatch"
-        self.evalTableModel.setEvalList( self.settings.evalList, self.evalAlgorithmList )
-        
-    def onActiveEvalChanged(self, modelIndex, modelIndex2 ):
-        self.evalParamTreeWidget.setParameters( self.evalAlgorithmList[modelIndex.row()].parameter)
-
-    def updateSaveStatus(self):
-        currentText = str(self.comboBox.currentText())
-        try:
-            if not currentText:
-                self.saveStatus = True
-            elif self.settingsName and self.settingsName in self.settingsDict:
-                self.saveStatus = self.settingsDict[self.settingsName]==self.settings and currentText==self.settingsName
-            else:
-                self.saveStatus = False
-            if self.parameters.autoSave and not self.saveStatus:
-                self.onSave( updateSaveStatus=False )
-                self.saveStatus = True
-            self.saveButton.setEnabled( not self.saveStatus )
-        except MagnitudeError:
-            pass
+    def checkSettingsSavable(self, savable=None):
+        if not isinstance(savable, bool):
+            currentText = str(self.comboBox.currentText())
+            try:
+                if currentText is None or currentText=="":
+                    savable = False
+                elif self.settingsName and self.settingsName in self.settingsDict:
+                    savable = self.settingsDict[self.settingsName]!=self.settings or currentText!=self.settingsName
+                else:
+                    savable = True
+                if self.parameters.autoSave and savable:
+                    self.onSave()
+                    savable = False
+            except MagnitudeError:
+                pass
+        self.saveButton.setEnabled( savable )
             
     def onLoadPP(self, ppname):
         logger = logging.getLogger(__name__)
@@ -415,11 +279,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         logger.debug( "ScanControl.onLoadPP {0} {1} {2}".format( self.settings.loadPP, bool(self.settings.loadPPName), self.settings.loadPPName ) )
         if self.settings.loadPP and self.settings.loadPPName and hasattr(self,"pulseProgramUi"):
             self.pulseProgramUi.loadContextByName( self.settings.loadPPName )
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
             
     def onRecentPPFilesChanged(self, namelist):
         updateComboBoxItems( self.loadPPComboBox, sorted( namelist ) )
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
         
     def setPulseProgramUi(self, pulseProgramUi ):
         logger = logging.getLogger(__name__)
@@ -435,7 +299,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()
-            self.gateSequenceUi.valueChanged.connect( self.updateSaveStatus )
+            self.gateSequenceUi.valueChanged.connect( self.checkSettingsSavable )
             self.gateSequenceUi.postInit('test',self.config,self.pulseProgramUi.pulseProgram )
             self.gateSequenceUi.setupUi(self.gateSequenceUi)
             self.toolBox.addItem(self.gateSequenceUi,"Gate Sequences")
@@ -448,73 +312,47 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if isStartup:
             self.onLoadPP(self.settings.loadPPName)
 
-    def onEditingFinished(self,edit,attribute):
-        self.beginChange()
-        setattr( self.settings, attribute, str(edit.text())  )
-        self.commitChange()
-        self.updateSaveStatus()
+    def onEditingFinished(self,edit,attribute):        
+        setattr( self.settings, attribute, str(edit.text())  )        
+        self.checkSettingsSavable()
                 
-    def beginChange(self):
-        self.tempSettings = copy.deepcopy( self.settings )
-
-    def commitChange(self): 
-        pass
-        #if self.tempSettings!=self.settings:
-        #    self.comboBox.setEditText('')
+    def onStateChanged(self, attribute, state):        
+        setattr( self.settings, attribute, (state == QtCore.Qt.Checked)  )        
+        self.checkSettingsSavable()
         
-    def onStateChanged(self, attribute, state):
-        self.beginChange()
-        setattr( self.settings, attribute, (state == QtCore.Qt.Checked)  )
-        self.commitChange()
-        self.updateSaveStatus()
-        
-    def onCurrentTextChanged(self, text):
-        self.beginChange()
-        self.settings.scanParameter = str(text)
-        self.commitChange()
-        self.updateSaveStatus()
+    def onCurrentTextChanged(self, text):        
+        self.settings.scanParameter = str(text)        
+        self.checkSettingsSavable()
     
-    def onCurrentExternalTextChanged(self, text):
-        self.beginChange()
-        self.settings.externalScanParameter = str(text)
-        self.commitChange()
-        self.updateSaveStatus()
+    def onCurrentExternalTextChanged(self, text):        
+        self.settings.externalScanParameter = str(text)        
+        self.checkSettingsSavable()
     
-    def onCurrentIndexChanged(self, attribute, index):
-        self.beginChange()
-        setattr( self.settings, attribute, index )
-        self.commitChange()
-        self.updateSaveStatus()
+    def onCurrentIndexChanged(self, attribute, index):        
+        setattr( self.settings, attribute, index )        
+        self.checkSettingsSavable()
         
-    def onModeChanged(self, index):
-        self.beginChange()
+    def onModeChanged(self, index):       
         self.settings.scanMode = index
         self.scanTypeCombo.setEnabled(index in [0,2])
         self.scanRepeatComboBox.setEnabled( index in [0,2] )
         self.xUnitEdit.setEnabled( index==0)
         self.xExprEdit.setEnabled( index==0)
         self.comboBoxParameter.setEnabled( index==0 )
-        self.comboBoxExternalParameter.setEnabled( index==0 )
-        self.commitChange()       
-        self.updateSaveStatus()
+        self.comboBoxExternalParameter.setEnabled( index==0 )               
+        self.checkSettingsSavable()
     
-    def onValueChanged(self, attribute, value):
-        self.beginChange()
-        setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )
-        self.commitChange()
-        self.updateSaveStatus()
+    def onValueChanged(self, attribute, value):        
+        setattr( self.settings, attribute, MagnitudeUtilit.mg(value) )        
+        self.checkSettingsSavable()
 
-    def onBareValueChanged(self, attribute, value):
-        self.beginChange()
-        setattr( self.settings, attribute, value )
-        self.commitChange()
-        self.updateSaveStatus()
+    def onBareValueChanged(self, attribute, value):        
+        setattr( self.settings, attribute, value )        
+        self.checkSettingsSavable()
               
-    def onIntValueChanged(self, attribute, value):
-        self.beginChange()
-        setattr( self.settings, attribute, value )
-        self.commitChange()
-        self.updateSaveStatus()
+    def onIntValueChanged(self, attribute, value):       
+        setattr( self.settings, attribute, value )        
+        self.checkSettingsSavable()
         
     def setVariables(self, variabledict):
         self.variabledict = variabledict
@@ -530,13 +368,13 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings.scanParameter = self.comboBoxParameter.currentText()
         if self.gateSequenceUi:
             self.gateSequenceUi.setVariables(variabledict)
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
             
     def setScanNames(self, scannames):
         updateComboBoxItems( self.comboBoxExternalParameter, scannames ) 
         if self.settings.externalScanParameter:
             self.comboBoxExternalParameter.setCurrentIndex( self.comboBoxExternalParameter.findText(self.settings.externalScanParameter))
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)
@@ -561,14 +399,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             center = len(scan.list)/2
             scan.list = list( interleave_iter(scan.list[center:],reversed(scan.list[:center])) )
             
-        scan.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
         scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName
-#         try:
-#             scan.xUnit = ensureCorrectUnit(scan.xUnit, scan.start)
-#         except AttributeError:
-#             pass  # scan.start is not a magnitude, don't change xunit
-        self.onCommit()
         return scan
         
     def saveConfig(self):
@@ -576,25 +408,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.config[self.configname+'.dict'] = self.settingsDict
         self.config[self.configname+'.settingsName'] = self.settingsName
         self.config[self.configname+'.parameters'] = self.parameters
-    # History stuff
-    
-    def onRedo(self):
-        if self.settingsHistoryPointer<len(self.settingsHistory):
-            self.settingsHistoryPointer += 1
-            if self.settingsHistoryPointer<len(self.settingsHistory):
-                self.setSettings( self.settingsHistory[self.settingsHistoryPointer])
-            elif self.historyFinalState:
-                self.setSettings( self.historyFinalState )
-                self.historyFinalState = None
-     
-    def onUndo(self):
-        if self.settingsHistoryPointer>0:
-            if self.settingsHistoryPointer==len(self.settingsHistory):
-                self.historyFinalState = copy.deepcopy( self.settings )
-            self.settingsHistoryPointer -= 1
-            self.setSettings( self.settingsHistory[self.settingsHistoryPointer] )
-    
-    def onSave(self, updateSaveStatus=True):
+
+    def onSave(self):
         self.settingsName = str(self.comboBox.currentText())
         if self.settingsName != '':
             if self.settingsName not in self.settingsDict:
@@ -602,8 +417,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.scanConfigurationListChanged.emit( self.settingsDict )
-        if updateSaveStatus:
-            self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def onRemove(self):
         name = str(self.comboBox.currentText())
@@ -619,7 +433,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settingsName = str(name)
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
-        self.updateSaveStatus()
+        self.checkSettingsSavable()
 
     def loadSetting(self, name):
         if name and self.comboBox.findText(name)>=0:
@@ -629,40 +443,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onReload(self):
         self.onLoad( self.comboBox.currentText() )
    
-    def onCommit(self):
-        if len(self.settingsHistory)==0 or self.settings!=self.settingsHistory[-1]:
-            self.settingsHistory.append(copy.deepcopy(self.settings))
-            self.settingsHistoryPointer = len(self.settingsHistory)
-                
-    def onIntegrationChanged(self, value):
-        self.beginChange()
-        self.settings.integrateTimestamps = value
-        self.commitChange()
-        self.updateSaveStatus()
-        
-    def onAlgorithmValueChanged(self, algo, name, value):
-        self.beginChange()
-#        self.algorithms[algo].setParameter(name, value)
-        self.commitChange()
-        self.updateSaveStatus()
-
-    def onIntegrateHistogramClicked(self, state):
-        self.beginChange()
-        self.settings.integrateHistogram = self.integrateHistogramCheckBox.isChecked()
-        self.commitChange()
-        self.updateSaveStatus()
- 
-    def onHistogramBinsChanged(self, bins):
-        self.beginChange()
-        self.settings.histogramBins = bins
-        self.commitChange()
-        self.updateSaveStatus()
-        
-    def onAlgorithmNameChanged(self, name):
-        self.beginChange()
-        self.commitChange()
-        self.updateSaveStatus()
-        
     def documentationString(self):
         return self.settings.documentationString()
     

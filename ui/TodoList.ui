@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>336</width>
+    <width>489</width>
     <height>637</height>
    </rect>
   </property>
@@ -181,6 +181,13 @@
      </item>
      <item>
       <widget class="QComboBox" name="measurementSelectionBox">
+       <property name="maxVisibleItems">
+        <number>100</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="evaluationSelectionBox">
        <property name="maxVisibleItems">
         <number>100</number>
        </property>
