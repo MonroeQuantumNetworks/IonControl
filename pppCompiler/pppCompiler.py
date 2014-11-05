@@ -8,6 +8,7 @@ from pyparsing import lineno, line, LineEnd, Literal, alphanums, alphas, dblQuot
 from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, oneOf, ParseResults
 import logging
 import sys
+import math
 from CompileException import CompileException
 """
 BNF of grammar
@@ -87,6 +88,11 @@ def find_and_get( parse_result, key ):
             return result[key]
     return None
 
+
+def is_power2(num):
+    return ((num & (num - 1)) == 0) and num > 0
+
+
 class pppCompiler:
     def __init__(self):
         self.initBNF()
@@ -117,6 +123,7 @@ class pppCompiler:
         
         assignment = ((identifier | pointer)("lval") + assign + rExp("rval")).setParseAction(self.assignment_action)
         addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") )("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
+        multiplyassignment = (( identifier | pointer )("lval") + ( Literal("*=") | Literal("/=") )("op") + Group(rExp)("rval")).setParseAction(self.multiplyassignement_action)
         
         statement = Forward()
         statementBlock = indentedBlock(statement, indentStack).setParseAction(self.statementBlock_action)
@@ -125,7 +132,7 @@ class pppCompiler:
         while_statement = Group((Keyword("while").suppress() + (condition | rExpCondition)("condition")  + colon.suppress() + statementBlock("statementBlock") ).setParseAction(self.while_action))
         if_statement = (Keyword("if") + condition + colon + statementBlock("ifblock") + 
                         Optional(Keyword("else:").suppress()+ statementBlock("elseblock")) ).setParseAction(self.if_action)
-        statement << (procedure_statement | while_statement | if_statement | procedurecall | assignment | addassignment)
+        statement << (procedure_statement | while_statement | if_statement | procedurecall | assignment | addassignment | multiplyassignment)
         
         decl = constdecl | vardecl | insertdecl  | Group(statement) 
         
@@ -182,6 +189,35 @@ class pppCompiler:
             raise CompileException(text,loc,str(e),self)            
         return arg
 
+    def multiplyassignement_action(self, text, loc, arg):
+        logger.debug( "multiplyassignement_action {0} {1}".format( lineno(loc, text), arg ))
+        try:
+            code = [ "# line {0}: multiply_assignment: {1}".format(lineno(loc, text),line(loc,text)) ]
+            if is_power2(int(arg.rval[0])):
+                shift =  int(math.log(int(arg.rval[0]),2))
+                self.symbols.getVar(arg.lval)
+                if arg.op=="*=":
+                    code.append("  SHL {0}, {1}".format(shift,arg.lval))
+                else:
+                    code.append("  SHR {0}, {1}".format(shift,arg.lval))
+            else:
+                if 'code'in arg.rval:
+                    code += arg.rval.code
+                elif 'identifier' in  arg.rval:
+                    self.symbols.getVar(arg.rval.identifier)
+                    code.append("  LDWR {0}".format(arg.rval.identifier))
+                if arg.op=="*=":
+                    self.symbols.getVar(arg.lval)
+                    code.append( "  MULTW {0}".format(arg.lval))
+                else:
+                    raise CompileException(text,loc,"/= is not implemented",self)   
+            code.append("  STWR {0}".format(arg.lval))
+            arg['code'] = code
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)            
+        return arg
+
+            
             
     
     def condition_action(self, text, loc, arg):

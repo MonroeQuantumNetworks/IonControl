@@ -127,6 +127,7 @@ while not pipe_empty():
     apply_next_scan_point()
     
     currentexperiment = 0
+    currentexperiment *= 4
     while currentexperiment < experiments:
         set_ram_address( RamStartAddress )
         cool()

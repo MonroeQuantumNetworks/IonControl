@@ -13,7 +13,7 @@ import logging
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
-from pulser import DDSUi, DDSUi9910
+from pulser import DDSUi#, DDSUi9910
 from mylogging.ExceptionLogButton import ExceptionLogButton
 from gui import ExternalScanExperiment
 from gui import GlobalVariables
