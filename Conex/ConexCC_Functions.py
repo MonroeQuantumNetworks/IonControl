@@ -14,7 +14,7 @@
 import sys
 sys.path.append(r'C:\Program Files\Newport\MotionControl\CONEX-CC\Python')
 sys.path.append(r'C:\Program Files (x86)\Newport\MotionControl\CONEX-CC\Python')
-from ConexCC_Header import *
+#from ConexCC_Header import *
 #=========================================================================
 
 def controllerId(CC, address):
@@ -98,13 +98,13 @@ def CONEXCC_WaitEndOfHomeSearch (CC, address):
 	print "WaitEndOfHomeSearch ..."
 	
 	# Get controller status
-	result, errorCode, ControllerState, errString = CC.TS(address, None, None, None) 
+	result, errorCode, ControllerState, errString = CC.TS(address, None, None, None) #@UnusedVariable
 	if result != 0 :
 		print 'TS Error=>',errString
 	else:		
 		while ControllerState == "1E":
 			# Get controller status
-			result, errorCode, ControllerState, errString = CC.TS(address) 
+			result, errorCode, ControllerState, errString = CC.TS(address) #@UnusedVariable
 			if result != 0 :
 				print 'TS Error=>',errString
 				
@@ -115,13 +115,13 @@ def WaitEndOfMotion (CC, address):
 	print "WaitEndOfMotion ..."
 
 	# Get controller status
-	result, errorCode, ControllerState, errString = CC.TS(address, None, None, None ) 
+	result, errorCode, ControllerState, errString = CC.TS(address, None, None, None ) #@UnusedVariable
 	if result != 0 :
 		print 'TS Error=>',errString
 		
 	while ControllerState == "28":
 		# Get controller status
-		result, errorCode, ControllerState, errString = CC.TS(address, None, None, None ) 
+		result, errorCode, ControllerState, errString = CC.TS(address, None, None, None ) #@UnusedVariable
 		if result != 0 :
 			print 'TS Error=>',errString
 			
@@ -136,7 +136,7 @@ def CONEXCC_Cycle (CC, address, nbLoops):
 	CONEXCC_WaitEndOfHomeSearch(CC, address)
 
 	# Get controller state Using TS Command
-	result, errorCode, controllerState, errString = CC.TS(address, None, None, None) 
+	result, errorCode, controllerState, errString = CC.TS(address, None, None, None) #@UnusedVariable
 	if result == 0 :
 		print 'Current Controller State=>', controllerState
 		
@@ -155,10 +155,10 @@ def CONEXCC_Cycle (CC, address, nbLoops):
 				
 				# Motion cycle
 				for i in range(nbLoops): 
-					 
+					
 					# First displacement
 					print 'Moving from position ', responsePosition	,' to position ' , position2
-					resultPosition, errStringMove = CC.PA_Set(address, position2, None)	
+					resultPosition, errStringMove = CC.PA_Set(address, position2, None)	 #@UnusedVariable
 					
 					# Wait the end of motion
 					WaitEndOfMotion(CC, address)
@@ -169,7 +169,7 @@ def CONEXCC_Cycle (CC, address, nbLoops):
 									
 					# Second displacement
 					print 'Moving from position ', responsePosition ,' to position ' , position1
-					resultPosition, errStringMove = CC.PA_Set(address, position1, None)
+					resultPosition, errStringMove = CC.PA_Set(address, position1, None)  #@UnusedVariable
 					
 					# Wait the end of motion
 					WaitEndOfMotion(CC, address)

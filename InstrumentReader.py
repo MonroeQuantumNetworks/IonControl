@@ -11,7 +11,6 @@ from gui import ProjectSelectionUi
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
-from readInstrument import ReadInstrumentControl
 from fit.FitUi import FitUi
 
 from trace import Traceui

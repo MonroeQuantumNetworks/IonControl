@@ -15,8 +15,6 @@ from scan.EvaluationAlgorithms import EvaluationAlgorithms
 from EvaluationTableModel import EvaluationTableModel
 from modules import MagnitudeUtilit
 from modules.HashableDict import HashableDict
-from modules.PyqtUtility import BlockSignals
-from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
 from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate

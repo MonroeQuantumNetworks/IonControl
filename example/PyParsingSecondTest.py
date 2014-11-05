@@ -7,8 +7,8 @@
 #
 # Copyright 2003-2006 by Paul McGuire
 #
-from pyparsing import Literal,CaselessLiteral,Word,Combine,Group,Optional,\
-    ZeroOrMore,Forward,nums,alphas
+from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
+    nums,alphas
 
 
 point = Literal( "." )
@@ -49,4 +49,3 @@ tests = ("Hello, World!",
 for t in tests:
         print t, "->", greeting.parseString(t)
 
- 
