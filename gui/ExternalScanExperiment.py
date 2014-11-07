@@ -43,9 +43,9 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
 #         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
 #         self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
         
-    def updateEnabledParameters(self, enabledParameters ):
-        self.enabledParameters = enabledParameters
-        self.scanControlWidget.updateScanTarget('External', self.enabledParameters.keys() )
+#     def updateEnabledParameters(self, enabledParameters ):
+#         self.enabledParameters = enabledParameters
+#         self.scanControlWidget.updateScanTarget('External', self.enabledParameters.keys() )
         
     def startScan(self):
         logger = logging.getLogger(__name__)

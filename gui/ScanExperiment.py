@@ -45,230 +45,17 @@ from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 import copy
-from modules.Expression import Expression
 from modules.SceneToPrint import SceneToPrint
 from collections import defaultdict
+from gui.ScanMethods import ScanMethodsDict, ScanException
+from gui.ScanGenerators import GeneratorList
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
 ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
 
-class ScanException(Exception):
-    pass
 
-class ParameterScanGenerator:
-    expression = Expression()
-    def __init__(self, scan):
-        self.scan = scan
-        self.nextIndexToWrite = 0
-        self.numUpdatedVariables = 1
-        
-    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
-        if self.scan.gateSequenceUi.settings.enabled:
-            _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
-        else:
-            data = []
-        self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
-        self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
-        maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
-        self.maxUpdatesToWrite = maxUpdatesToWrite
-        if len(self.scan.code)>maxWordsToWrite:
-            self.nextIndexToWrite = maxWordsToWrite
-            return ( self.scan.code[:maxWordsToWrite], data)
-        self.nextIndexToWrite = len(self.scan.code)
-        return ( self.scan.code, data)
-        
-    def restartCode(self,currentIndex ):
-        maxWordsToWrite = 2040 if self.maxUpdatesToWrite is None else 2*self.numUpdatedVariables*self.maxUpdatesToWrite
-        currentWordCount = 2*self.numUpdatedVariables*currentIndex
-        if len(self.scan.code)-currentWordCount>maxWordsToWrite:
-            self.nextIndexToWrite = maxWordsToWrite+currentWordCount
-            return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
-        self.nextIndexToWrite = len(self.scan.code)
-        return self.scan.code[currentWordCount:]
-        
-    def xValue(self, index):
-        value = self.scan.list[index]
-        if self.scan.xExpression:
-            value = self.expression.evaluate( self.scan.xExpression, {"x": value} )
-        if (not self.scan.xUnit and not value.dimensionless()) or not value.has_dimension(self.scan.xUnit):
-            self.scan.xUnit = value.suggestedUnit() 
-        return value.ounit(self.scan.xUnit).toval()
-        
-    def dataNextCode(self, experiment ):
-        if self.nextIndexToWrite<len(self.scan.code):
-            start = self.nextIndexToWrite
-            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
-            return self.scan.code[start:self.nextIndexToWrite]
-        return []
-        
-    def dataOnFinal(self, experiment, currentState):
-        if self.scan.scanRepeat == 1 and currentState == ScanExperiment.OpStates.running:
-            experiment.startScan()
-        else:
-            experiment.onStop()                   
-    
-    def xRange(self):
-        return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
-                                     
-    def appendData(self,traceList,x,evaluated):
-        if evaluated and traceList:
-            traceList[0].x = numpy.append(traceList[0].x, x)
-        for trace, (y, error, raw) in zip(traceList, evaluated):                                  
-            trace.y = numpy.append(trace.y, y)
-            trace.raw = numpy.append(trace.raw, raw)
-            if error is not None:
-                trace.bottom = numpy.append(trace.bottom, error[0])
-                trace.top = numpy.append(trace.top, error[1])
-                
-    def expected(self, index):
-        return None
-                
-class StepInPlaceGenerator:
-    def __init__(self, scan):
-        self.scan = scan
-        
-    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
-        if self.scan.gateSequenceUi.settings.enabled:
-            _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
-        else:
-            data = []
-        #self.stepInPlaceValue = pulseProgramUi.getVariableValue(self.scan.scanParameter)
-        self.stepInPlaceValue = 0
-        self.scan.code = [4095, 0] # writing the last memory location
-        #self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(self.scan.scanParameter, [self.stepInPlaceValue])
-        return (self.scan.code*5, data) # write 5 points to the fifo queue at start,
-                        # this prevents the Step in Place from stopping in case the computer lags behind evaluating by up to 5 points
 
-    def restartCode(self,currentIndex):
-        return self.scan.code * 5
-        
-    def dataNextCode(self, experiment):
-        return self.scan.code
-        
-    def xValue(self,index):
-        return index
-
-    def xRange(self):
-        return []
-
-    def appendData(self,traceList,x,evaluated):
-        if evaluated and traceList:
-            if len(traceList[0].x)<self.scan.steps or self.scan.steps==0:
-                traceList[0].x = numpy.append(traceList[0].x, x)
-                for trace, (y, error, raw) in zip(traceList, evaluated):                                  
-                    trace.y = numpy.append(trace.y, y)
-                    trace.raw = numpy.append(trace.raw, raw)
-                    if error is not None:
-                        trace.bottom = numpy.append(trace.bottom, error[0])
-                        trace.top = numpy.append(trace.top, error[1])
-            else:
-                steps = int(self.scan.steps)
-                traceList[0].x = numpy.append(traceList[0].x[-steps+1:], x)
-                for trace, (y, error, raw) in zip(traceList, evaluated):                                  
-                    trace.y = numpy.append(trace.y[-steps+1:], y)
-                    trace.raw = numpy.append(trace.raw[-steps+1:], raw)
-                    if error is not None:
-                        trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0])
-                        trace.top = numpy.append(trace.top[-steps+1:], error[1])
-
-    def dataOnFinal(self, experiment, currentState):
-        experiment.onStop()                   
-
-    def expected(self, index):
-        return None
-
-class GateSequenceScanGenerator:
-    def __init__(self, scan):
-        self.scan = scan
-        self.nextIndexToWrite = 0
-        self.numUpdatedVariables = 1
-        self.maxWordsToWrite = 2040
-        
-    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None):
-        logger = logging.getLogger(__name__)
-        self.maxUpdatesToWrite = maxUpdatesToWrite
-        address, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()
-        self.gateSequenceAttributes = self.scan.gateSequenceUi.gateSequenceAttributes()
-        parameter = self.gateSequenceSettings.startAddressParam
-        logger.debug( "GateSequenceScan {0} {1}".format( address, parameter ) )
-        self.scan.list = address
-        self.scan.index = range(len(self.scan.list))
-        if self.scan.scantype == 1:
-            self.scan.list.reverse()
-            self.scan.index.reverse()
-        elif self.scan.scantype == 2:
-            zipped = zip(self.scan.index,self.scan.list)
-            random.shuffle(zipped)
-            self.scan.index, self.scan.list = zip( *zipped )
-        self.scan.code = pulseProgramUi.pulseProgram.variableScanCode(parameter, self.scan.list)
-        self.numVariablesPerUpdate = 1
-        logger.debug( "GateSequenceScanCode {0} {1}".format(self.scan.list, self.scan.code) )
-        if self.scan.gateSequenceSettings.debug:
-            dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("fpga_sdram.bin")
-            with open( dumpFilename, 'wb') as f:
-                f.write( bytearray(numpy.array(data, dtype=numpy.int32).view(dtype=numpy.int8)) )
-            codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address.txt")
-            with open( codeFilename, 'w') as f:
-                for a in self.scan.code[1::2]:
-                    f.write( "{0}\n".format(a) )
-            codeFilename, _ = DataDirectory.DataDirectory().sequencefile("start_address_sorted.txt")
-            with open( codeFilename, 'w') as f:
-                for index, a in enumerate(sorted(self.scan.code[1::2])):
-                    f.write( "{0} {1}\n".format(index, a) )
-        if len(self.scan.code)>self.maxWordsToWrite:
-            self.nextIndexToWrite = self.maxWordsToWrite
-            return ( self.scan.code[:self.maxWordsToWrite], data)
-        self.nextIndexToWrite = len(self.scan.code)
-        return ( self.scan.code, data)
-
-    def restartCode(self,currentIndex):
-        currentWordCount = 2*self.numUpdatedVariables*currentIndex
-        if len(self.scan.code)-currentWordCount>self.maxWordsToWrite:
-            self.nextIndexToWrite = self.maxWordsToWrite+currentWordCount
-            return ( self.scan.code[currentWordCount:self.nextIndexToWrite])
-        self.nextIndexToWrite = len(self.scan.code)
-        return self.scan.code[currentWordCount:]
-
-    def xValue(self,index):
-        return self.scan.index[index]
-
-    def dataNextCode(self, experiment):
-        if self.nextIndexToWrite<len(self.scan.code):
-            start = self.nextIndexToWrite
-            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
-            return self.scan.code[start:self.nextIndexToWrite]
-        return []
-        
-    def xRange(self):
-        return [0, len(self.scan.list)]
-
-    def appendData(self,traceList,x,evaluated):
-        if evaluated and traceList:
-            traceList[0].x = numpy.append(traceList[0].x, x)
-        for trace, (y, error, raw) in zip(traceList, evaluated):                                  
-            trace.y = numpy.append(trace.y, y)
-            trace.raw = numpy.append(trace.raw, raw)
-            if error is not None:
-                trace.bottom = numpy.append(trace.bottom, error[0])
-                trace.top = numpy.append(trace.top, error[1])
-
-    def dataOnFinal(self, experiment, currentState):
-        if self.scan.scanRepeat == 1 and currentState==ScanExperiment.OpStates.running:
-            experiment.startScan()
-        else:
-            experiment.onStop()                   
-
-    def expected(self, index):
-        if self.gateSequenceAttributes is not None:
-            try:
-                expected = ExpectedLoopkup[ self.gateSequenceAttributes[self.scan.index[index]]['expected'] ]
-            except (IndexError, KeyError):
-                expected = None
-            return expected
-        return None 
-        
-GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSequenceScanGenerator]   
 
 class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
@@ -459,6 +246,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.progressUi.setAveraged(0)
         else:
             self.progressUi.setAveraged(None)
+        self.scanMethod = ScanMethodsDict[self.scan.scanTarget](self)
         self.startScan()
 
     def createAverageTrace(self,evalList):
@@ -477,37 +265,35 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
         
     def startScan(self):
+        self.scanMethod.startScan()
         logger = logging.getLogger(__name__)
-        self.startTime = time.time()
-        PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
-        self.generator = GeneratorList[self.scan.scanMode](self.scan)
-        (mycode, data) = self.generator.prepare(self.pulseProgramUi)
-        self.progressUi.setRunning( max(len(self.scan.list),1) ) 
-        if data:
-            self.pulserHardware.ppWriteRamWordList(data,0, check=True)
-            datacopy = [0]*len(data)
-            datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
-            if data!=datacopy:
-                logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
-                logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
-                raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
-        self.pulserHardware.ppFlushData()
-        self.pulserHardware.ppClearWriteFifo()
-        self.pulserHardware.ppUpload(PulseProgramBinary)
-        self.pulserHardware.ppWriteData(mycode)
-        logger.info( "Starting" )
-        self.pulserHardware.ppStart()
-        self.currentIndex = 0
-        self.timestampsNewRun = True
-        self.displayUi.onClear()
-        logger.info( "elapsed time {0}".format( time.time()-self.startTime ) )
-        if self.plottedTraceList and self.traceui.unplotLastTrace():
-            for plottedTrace in self.plottedTraceList:
-                plottedTrace.plot(0) #unplot previous trace
-        self.plottedTraceList = list() #reset plotted trace
-        self.otherDataFile = None
-        self.histogramBuffer = defaultdict( list )
-    
+        if self.progressUi.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
+            self.startTime = time.time()
+            PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
+            self.generator = GeneratorList[self.scan.scanMode](self.scan)
+            (mycode, data) = self.generator.prepare(self.pulseProgramUi)
+            if data:
+                self.pulserHardware.ppWriteRamWordList(data,0, check=True)
+                datacopy = [0]*len(data)
+                datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
+                if data!=datacopy:
+                    logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
+                    logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
+                    raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
+            self.pulserHardware.ppFlushData()
+            self.pulserHardware.ppClearWriteFifo()
+            self.pulserHardware.ppUpload(PulseProgramBinary)
+            self.pulserHardware.ppWriteData(mycode)
+            self.displayUi.onClear()
+            self.timestampsNewRun = True
+            if self.plottedTraceList and self.traceui.unplotLastTrace():
+                for plottedTrace in self.plottedTraceList:
+                    plottedTrace.plot(0) #unplot previous trace
+            self.plottedTraceList = list() #reset plotted trace
+            self.otherDataFile = None
+            self.histogramBuffer = defaultdict( list )
+            self.scanMethod.startScan()
+
     def onContinue(self):
         if self.progressUi.state == self.OpStates.interrupted:
             logging.getLogger(__name__).info("Received ion reappeared signal, will continue.")
@@ -532,14 +318,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppStop()
         self.progressUi.setInterrupted(reason)       
     
-    def onStop(self, setProgress=True):
+    def onStop(self):
         if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
-        if setProgress:
-            self.progressUi.setIdle()
+        self.scanMethod.onStop()
         if self.scan:
             self.finalizeData(reason='stopped')
 
@@ -565,10 +350,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.overrun:
             logger.error( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
-        elif data.final and data.exitcode!=0:
+        elif data.final and data.exitcode not in [0,0xffff]:
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
             logger.info( "onData {0} {1} {2}".format( self.currentIndex, [len(data.count[i]) for i in range(16)], data.scanvalue ) )
+            x = self.generator.xValue(self.currentIndex)
+            self.scanMethod.onData( data, queuesize, x )
+        
+    def dataMiddlePart(self, data, queuesize, x):
+#####################
             # Evaluate as given in evalList
             expected = self.generator.expected( self.currentIndex )
             x = self.generator.xValue(self.currentIndex)
@@ -596,7 +386,31 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 if mycode:
                     self.pulserHardware.ppWriteData(mycode)
                 self.progressUi.onData( self.currentIndex )  
-
+##############################
+        if isinstance(x, Magnitude):
+            x = x.ounit(self.scan.xUnit).toval()
+        logger = logging.getLogger(__name__)
+        evaluated = list()
+        expected = self.generator.expected( self.currentIndex )
+        for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
+            evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
+        if len(evaluated)>0:
+            self.displayUi.add(  [ e[0] for e in evaluated ] )
+            self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )
+            self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
+        self.currentIndex += 1
+        self.externalParameterIndex += 1
+        if self.evaluation.enableTimestamps: 
+            self.showTimestamps(data)
+        if self.progressUi.state == self.OpStates.running:
+            if data.final and data.exitcode not in [0,0xffff]:
+                self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
+            el
+            else:
+                self.finalizeData(reason='end of scan')
+                self.generator.dataOnFinal(self, self.progressUi.state )
+                logger.info("Scan Completed")               
+        
     def updateMainGraph(self, x, evaluated, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
             trace = Trace(record_timestamps=True)
