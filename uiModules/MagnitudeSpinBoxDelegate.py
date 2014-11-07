@@ -4,7 +4,7 @@ import re
 from PyQt4 import QtGui, QtCore
 
 from MagnitudeSpinBox import MagnitudeSpinBox
-from modules.MagnitudeParser import parse, isValueExpression
+from modules.MagnitudeParser import isValueExpression
 
 
 class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):

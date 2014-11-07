@@ -3,7 +3,7 @@ import ctypes
 import numpy
 
 import DAQmxUtility as dutil
-from PyDAQmx import Task, DAQmxConnectTerms, DAQmxDisconnectTerms
+from PyDAQmx import Task, DAQmxConnectTerms, DAQmxDisconnectTerms #@UnresolvedImport
 from PyDAQmx.DAQmxConstants import *
 from PyDAQmx.DAQmxTypes import *
 

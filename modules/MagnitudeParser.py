@@ -8,7 +8,7 @@ Parser for magnitude expressions. Can parse arithmetic expressions with values i
 """
 
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
-    nums,alphas,ParseException
+    nums,alphas
 
 import modules.magnitude as magnitude
 from modules.lru_cache import lru_cache

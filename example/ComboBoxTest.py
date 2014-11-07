@@ -6,7 +6,7 @@ Created on Sat Feb 16 16:56:57 2013
 """
 import copy
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 import PyQt4.uic
 
 
