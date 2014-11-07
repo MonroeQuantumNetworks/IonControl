@@ -187,18 +187,18 @@
         </widget>
        </item>
        <item>
+        <widget class="RedBlackComboBox" name="comboBoxScanTarget">
+         <property name="maxVisibleItems">
+          <number>100</number>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <widget class="RedBlackComboBox" name="comboBoxParameter">
-             <property name="maxVisibleItems">
-              <number>100</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="RedBlackComboBox" name="comboBoxExternalParameter">
              <property name="maxVisibleItems">
               <number>100</number>
              </property>

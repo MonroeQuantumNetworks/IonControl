@@ -45,7 +45,7 @@ class HybridScanExperiment( ExternalScanExperiment.ExternalScanExperiment ):
         
     def updateEnabledParameters(self, enabledParameters ):
         self.enabledParameters = enabledParameters
-        self.scanControlWidget.setScanNames( self.enabledParameters.keys() )
+        self.scanControlWidget.updateScanTarget( 'External', self.enabledParameters.keys() )
         
     def startScan(self):
         logger = logging.getLogger(__name__)

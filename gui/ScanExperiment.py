@@ -304,7 +304,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.histogramBuffer = defaultdict( list )
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
-        self.globalVariablesUi = globalVariablesUi        
+        self.globalVariablesUi = globalVariablesUi  
+        self.scanTargetDict = dict()      
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -365,7 +366,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.displayUi.setupUi()
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
-        self.scanControlWidget = ScanControl(config, self.globalVariablesUi, self.experimentName, internalParam=self.enableParameter, externalParam=self.enableExternalParameter )
+        self.scanControlWidget = ScanControl(config, self.globalVariablesUi, self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
@@ -907,5 +908,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 painter = QtGui.QPainter( printer )
                 painter.drawImage(QtCore.QPoint(pageWidth*preferences.printX,pageHeight*preferences.printY), png)
 
-                
+    def updateScanTarget(self, target, parameterdict ):
+        self.scanTargetDict[target] = parameterdict
+        self.scanControlWidget.updateScanTarget(target, parameterdict.keys() )
+
+               
                 
