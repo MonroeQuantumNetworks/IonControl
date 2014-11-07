@@ -21,7 +21,7 @@ UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     valueChanged = QtCore.pyqtSignal(str, object)
     expression = Expression()
-    foregroundLookup = { True: QtGui.QBrush( QtCore.Qt.blue), False: QtGui.QBrush( QtCore.Qt.black)}  
+    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
     def __init__(self, controlUi, parameterList=None, parent=None):
         super(ExternalParameterControlTableModel, self).__init__(parent)
         self.parameterDict = SequenceDict()
@@ -32,8 +32,9 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
                              (QtCore.Qt.EditRole,1): lambda row: firstNotNone( self.parameterDict.at(row).strValue, str(self.targetValues[row]) ),
                              (QtCore.Qt.UserRole,1): lambda row: self.parameterDict.at(row).dimension,
                              (QtCore.Qt.DisplayRole,2): lambda row: str(self.externalValues[row]),
-                             (QtCore.Qt.ToolTipRole,2): lambda row: str(self.toolTips[row]),
-                             (QtCore.Qt.ForegroundRole,1): lambda row: self.foregroundLookup[self.parameterDict.at(row).strValue is not None]
+                             #(QtCore.Qt.ToolTipRole,2): lambda row: str(self.toolTips[row]),
+                             (QtCore.Qt.BackgroundRole,1): lambda row: self.backgroundLookup[self.parameterDict.at(row).strValue is not None],
+                             (QtCore.Qt.ToolTipRole,1): lambda row: self.parameterDict.at(row).strValue if self.parameterDict.at(row).strValue is not None else None
                      }
         self.setDataLookup = {
                              (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),

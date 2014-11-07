@@ -5,7 +5,7 @@ from modules.firstNotNone import firstNotNone
 from PyQt4 import QtGui
 
 class FitUiTableModel(QtCore.QAbstractTableModel):
-    foregroundLookup = { True: QtGui.QBrush( QtCore.Qt.blue), False: QtGui.QBrush( QtCore.Qt.black)}  
+    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}  
     def __init__(self, config, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
@@ -17,7 +17,8 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
                             (QtCore.Qt.DisplayRole,3): self.fitValue,
                             (QtCore.Qt.DisplayRole,4): self.confidenceValue,
                             (QtCore.Qt.DisplayRole,5): self.relConfidenceValue,
-                            (QtCore.Qt.ForegroundRole,2): lambda row: self.foregroundLookup[self.fitfunction.startParameterExpressions[row] is not None]  }
+                            (QtCore.Qt.ToolTipRole,2): lambda row: self.fitfunction.startParameterExpressions[row] if self.fitfunction.startParameterExpressions[row] is not None else None,
+                            (QtCore.Qt.BackgroundRole,2): lambda row: self.backgroundLookup[self.fitfunction.startParameterExpressions[row] is not None]  }
         self.fitfunction = None
         
     def update(self):
