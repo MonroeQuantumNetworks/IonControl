@@ -169,9 +169,9 @@ class Expression:
             return value, dependencies
         return value
         
-    def evaluateAsMagnitude(self, expression, variabledict=dict()):
+    def evaluateAsMagnitude(self, expression, variabledict=dict(), listDependencies=False):
         variabledict = variabledict if variabledict is not None else dict()
-        res = self.evaluate(expression, variabledict, useFloat=False)
+        res = self.evaluate(expression, variabledict, listDependencies=listDependencies, useFloat=False)
         return res
 
 if __name__ == "__main__":

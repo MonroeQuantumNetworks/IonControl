@@ -11,6 +11,7 @@ from modules.SequenceDict import SequenceDict
 from modules.Utility import unique 
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from _collections import defaultdict
 
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
@@ -18,7 +19,31 @@ Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 class GlobalVariables(SequenceDict):
     def __init__(self, *args, **kwds):
         SequenceDict.__init__(self, *args, **kwds)
+        self.dependentDict = defaultdict( dict )  # dict of dicts outer key is globalVariable, inner key is (target, name) 
 
+    def connect(self, globalName, target, name, weakMethodCallback ):
+        self.dependentDict[globalName][(target,name)] = weakMethodCallback
+        
+    def disconnect(self, globalName, target, name):
+        self.dependentDict[globalName].pop((target,name))
+        
+    def propagateChange(self, globalName):
+        value = self[globalName]
+        for key, callback in list(self.dependentDict[globalName].items()):
+            if callback.bound:
+                callback( globalName, value )
+            else:
+                self.dependentDict[globalName].pop(key)
+                
+    def __setitem__(self, key, value):
+        SequenceDict.__setitem__(key, value)
+        self.propagateChange(key)
+    
+    def setAt(self, index, value):
+        SequenceDict.setAt(index, value)
+        self.propagateChange(self.keyAt(index))
+
+            
 
 class GlobalVariableUi(Form, Base ):
     def __init__(self,config,parent=None):
@@ -84,6 +109,7 @@ class GlobalVariableUi(Form, Base ):
                     
     def update(self, updlist):
         self.model.update(updlist)
+        
             
 
 if __name__=="__main__":
