@@ -22,6 +22,7 @@ class InternalScanMethod(object):
     name = 'Internal'
     def __init__(self, experiment):
         self.experiment = experiment
+        self.maxUpdatesToWrite = None
     
     def startScan(self):
         logger = logging.getLogger(__name__)
@@ -36,14 +37,29 @@ class InternalScanMethod(object):
 
     def onData(self, data, queuesize, x ):
         self.experiment.dataMiddlePart( data, queuesize, x )
+        
+    def prepareNextPoint(self, data):
+        if data.final:
+            self.finalizeData(reason='end of scan')
+            logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.currentIndex, len(self.scan.list) ) )
+            if self.experiment.currentIndex >= len(self.experiment.scan.list):    # if all points were taken
+                self.experiment.generator.dataOnFinal(self, self.experiment.progressUi.state )
+            else:
+                self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
+        else:
+            mycode = self.experiment.generator.dataNextCode(self )
+            if mycode:
+                self.experiment.pulserHardware.ppWriteData(mycode)
+            self.experiment.progressUi.onData( self.currentIndex )  
    
 class ExternalScanMethod(InternalScanMethod):
     name = 'External'
     def __init__(self, experiment):
         super( ExternalScanMethod, self).__init__(experiment)
+        self.maxUpdatesToWrite = 1
     
     def startScan(self):
-        if self.experiment.scan.scanParameter not in self.experiment.scanTargetDict:
+        if self.experiment.scan.scanParameter not in self.experiment.scanTargetDict[self.experiment.scan.scanTarget]:
             message = "External Scan Parameter '{0}' is not enabled.".format(self.experiment.scan.scanParameter)
             logging.getLogger(__name__).error(message)
             raise ScanNotAvailableException(message) 
@@ -88,7 +104,15 @@ class ExternalScanMethod(InternalScanMethod):
         else:
             self.parameter.asyncCurrentExternalValue( partial( self.experiment.dataMiddlePart, data, queuesize) )
             
-    def prepareNextPoint(self):
+    def prepareNextPoint(self, data):
+        self.index += 1
+        if self.experiment.progressUi.state == self.experiment.OpStates.running:
+            if data.final and data.exitcode not in [0,0xffff]:
+                self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
+            else:
+                self.experiment.finalizeData(reason='end of scan')
+                self.experiment.generator.dataOnFinal(self, self.experiment.progressUi.state )
+                logging.getLogger(__name__).info("Scan Completed")               
         if self.index < len(self.experiment.scan.list):
             self.dataBottomHalf()
         
@@ -103,10 +127,10 @@ class ExternalScanMethod(InternalScanMethod):
                 QtCore.QTimer.singleShot(100,self.dataBottomHalf)
 
    
-class GlobalScanMethod(object):
+class GlobalScanMethod(ExternalScanMethod):
     name = 'Global'
-    def __init__(self):
-        pass
+    def __init__(self, experiment):
+        super( GlobalScanMethod, self).__init__(experiment)
     
 class VoltageScanMethod(object):
     name = 'Voltage'

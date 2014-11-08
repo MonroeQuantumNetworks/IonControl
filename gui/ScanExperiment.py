@@ -49,7 +49,7 @@ from modules.SceneToPrint import SceneToPrint
 from collections import defaultdict
 from gui.ScanMethods import ScanMethodsDict, ScanException
 from gui.ScanGenerators import GeneratorList
-
+from modules.magnitude import is_magnitude
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
 ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
@@ -265,13 +265,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
         
     def startScan(self):
-        self.scanMethod.startScan()
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
             PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
             self.generator = GeneratorList[self.scan.scanMode](self.scan)
-            (mycode, data) = self.generator.prepare(self.pulseProgramUi)
+            (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
             if data:
                 self.pulserHardware.ppWriteRamWordList(data,0, check=True)
                 datacopy = [0]*len(data)
@@ -358,36 +357,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.scanMethod.onData( data, queuesize, x )
         
     def dataMiddlePart(self, data, queuesize, x):
-#####################
-            # Evaluate as given in evalList
-            expected = self.generator.expected( self.currentIndex )
-            x = self.generator.xValue(self.currentIndex)
-            evaluated = list()
-            for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
-                evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
-            if data.other:
-                logger.info( "Other: {0}".format( data.other ) )
-            if len(evaluated)>0:
-                self.displayUi.add( [ e[0] for e in evaluated ] )
-                self.updateMainGraph(x, evaluated, 0 if data.final else queuesize )
-                self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
-            self.currentIndex += 1
-            if self.evaluation.enableTimestamps: 
-                self.showTimestamps(data)
-            if data.final:
-                self.finalizeData(reason='end of scan')
-                logger.info( "current index {0} expected {1}".format(self.currentIndex, len(self.scan.list) ) )
-                if self.currentIndex >= len(self.scan.list):    # if all points were taken
-                    self.generator.dataOnFinal(self, self.progressUi.state )
-                else:
-                    self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
-            else:
-                mycode = self.generator.dataNextCode(self )
-                if mycode:
-                    self.pulserHardware.ppWriteData(mycode)
-                self.progressUi.onData( self.currentIndex )  
-##############################
-        if isinstance(x, Magnitude):
+        if is_magnitude(x):
             x = x.ounit(self.scan.xUnit).toval()
         logger = logging.getLogger(__name__)
         evaluated = list()
@@ -398,18 +368,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )
             self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
+        if data.other:
+            logger.info( "Other: {0}".format( data.other ) )
         self.currentIndex += 1
-        self.externalParameterIndex += 1
         if self.evaluation.enableTimestamps: 
             self.showTimestamps(data)
-        if self.progressUi.state == self.OpStates.running:
-            if data.final and data.exitcode not in [0,0xffff]:
-                self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
-            el
-            else:
-                self.finalizeData(reason='end of scan')
-                self.generator.dataOnFinal(self, self.progressUi.state )
-                logger.info("Scan Completed")               
+        self.scanMethod.prepareNextPoint(data)
         
     def updateMainGraph(self, x, evaluated, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
