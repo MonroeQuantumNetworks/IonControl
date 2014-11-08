@@ -110,14 +110,14 @@ class FitHistogramEvaluation(EvaluationBase):
 
         
     def children(self):
-        return [{'name':'Path','type':'str','value':self.settings['Path'], 'tip': 'Path for histogram files' },
-                {'name':'ZeroBright','type':'str','value':self.settings['ZeroBright'], 'tip': 'filename for ZeroBright data' },
-                {'name':'OneBright','type':'str','value':self.settings['OneBright'], 'tip': 'filename for OneBright data' },
-                {'name':'TwoBright','type':'str','value':self.settings['TwoBright'], 'tip': 'filename for TwoBright data' },
-                {'name':'NumberBright','type':'int','value':self.settings['NumberBright'], 'range': (0,2),  'tip': 'Number of bright ions' },
-                {'name':'HistogramBins','type':'int','value':self.settings['HistogramBins'], 'tip': 'Number of histogram bins in data' },
-                {'name':'OnlyOneIon','type':'bool','value':self.settings['OnlyOneIon'], 'tip': 'One ion vs Two ions' },
-                {'name':'Parity','type':'bool','value':self.settings['Parity'], 'tip': 'Return parity' }]     
+        return [{'name':'Path','type':'str','value':str(self.settings['Path']), 'tip': 'Path for histogram files' },
+                {'name':'ZeroBright','type':'str','value':str(self.settings['ZeroBright']), 'tip': 'filename for ZeroBright data' },
+                {'name':'OneBright','type':'str','value':str(self.settings['OneBright']), 'tip': 'filename for OneBright data' },
+                {'name':'TwoBright','type':'str','value':str(self.settings['TwoBright']), 'tip': 'filename for TwoBright data' },
+                {'name':'NumberBright','type':'int','value':int(self.settings['NumberBright']), 'range': (0,2),  'tip': 'Number of bright ions' },
+                {'name':'HistogramBins','type':'int','value':int(self.settings['HistogramBins']), 'tip': 'Number of histogram bins in data' },
+                {'name':'OnlyOneIon','type':'bool','value':bool(self.settings['OnlyOneIon']), 'tip': 'One ion vs Two ions' },
+                {'name':'Parity','type':'bool','value':bool(self.settings['Parity']), 'tip': 'Return parity' }]     
 
 
     def leastsq(self, x, y, parameters=None, sigma=None):
