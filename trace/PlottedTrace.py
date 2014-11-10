@@ -223,6 +223,7 @@ class PlottedTrace(object):
             if self.fitcurve is not None:
                 self.fitcurve.setData( self.fitx, self.fity )
             else:
+                self.__dict__.setdefault( 'fitFunctionPenIndex', self.curvePen )
                 self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[self.fitFunctionPenIndex][0])
  
     def plotStepsFitfunction(self,penindex):
@@ -239,6 +240,7 @@ class PlottedTrace(object):
             if self.fitcurve is not None:
                 self.fitcurve.setData( self.fitx, self.fity )
             else:
+                self.__dict__.setdefault( 'fitFunctionPenIndex', self.curvePen )
                 self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[self.fitFunctionPenIndex][0])
                 
  
@@ -303,6 +305,7 @@ class PlottedTrace(object):
                 else:
                     self._graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
             self._graphicsView.addItem( self.curve )
+            self.curvePen = penindex
     
     def plot(self,penindex=-1,style=None):
         if self._graphicsView is not None:
