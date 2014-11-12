@@ -34,21 +34,29 @@ class ScanSegmentTableModel( QtCore.QAbstractTableModel):
                              (QtCore.Qt.EditRole,3):    lambda self, column: firstNotNone( self.scanSegmentList[column].spanText,  str(self.scanSegmentList[column].span)),
                              (QtCore.Qt.EditRole,4):    lambda self, column: firstNotNone( self.scanSegmentList[column].stepsText, str(self.scanSegmentList[column].steps)),
                              (QtCore.Qt.EditRole,5):    lambda self, column: firstNotNone( self.scanSegmentList[column].stepsizeText, str(self.scanSegmentList[column].stepsize)),
-                             (QtCore.Qt.BackgroundColorRole,0): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.BackgroundColorRole,1): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.BackgroundColorRole,2): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.BackgroundColorRole,3): lambda self, column: QtGui.QColor(QtCore.Qt.white) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.BackgroundColorRole,4): lambda self, column: (QtGui.QColor(0xff,0xff,0x99) if self.scanSegmentList[column]._stepPreference=='steps' else  QtGui.QColor(QtCore.Qt.white)) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.BackgroundColorRole,5): lambda self, column: (QtGui.QColor(0xff,0xff,0x99) if self.scanSegmentList[column]._stepPreference=='stepsize' else  QtGui.QColor(QtCore.Qt.white)) if not self.scanSegmentList[column].inconsistent else QtGui.QColor(0xff,0xa6,0xa6,0xff),
-                             (QtCore.Qt.ForegroundRole,0): lambda self, column: self.foregroundLookup[self.scanSegmentList[column]._startText is not None],
-                             (QtCore.Qt.ForegroundRole,1): lambda self, column: self.foregroundLookup[self.scanSegmentList[column]._stopText is not None],
-                             (QtCore.Qt.ForegroundRole,2): lambda self, column: self.foregroundLookup[self.scanSegmentList[column]._centerText is not None],
-                             (QtCore.Qt.ForegroundRole,3): lambda self, column: self.foregroundLookup[self.scanSegmentList[column]._spanText is not None],
-                             (QtCore.Qt.ForegroundRole,4): lambda self, column: self.foregroundLookup[self.scanSegmentList[column]._stepsText is not None],
-                             (QtCore.Qt.ForegroundRole,5): lambda self, column: self.foregroundLookup[self.scanSegmentList[column]._stepsizeText is not None]                            
+                             (QtCore.Qt.BackgroundColorRole,0): lambda self, column: self.backgroundLookup[(self.scanSegmentList[column].inconsistent, self.scanSegmentList[column]._startText is not None)],
+                             (QtCore.Qt.BackgroundColorRole,1): lambda self, column: self.backgroundLookup[(self.scanSegmentList[column].inconsistent, self.scanSegmentList[column]._stopText is not None)],
+                             (QtCore.Qt.BackgroundColorRole,2): lambda self, column: self.backgroundLookup[(self.scanSegmentList[column].inconsistent, self.scanSegmentList[column]._centerText is not None)],
+                             (QtCore.Qt.BackgroundColorRole,3): lambda self, column: self.backgroundLookup[(self.scanSegmentList[column].inconsistent, self.scanSegmentList[column]._spanText is not None)],
+                             (QtCore.Qt.BackgroundColorRole,4): lambda self, column: self.backgroundLookup[(self.scanSegmentList[column].inconsistent, self.scanSegmentList[column]._stepsText is not None)],
+                             (QtCore.Qt.BackgroundColorRole,5): lambda self, column: self.backgroundLookup[(self.scanSegmentList[column].inconsistent, self.scanSegmentList[column]._stepsizeText is not None)],
+                             (QtCore.Qt.ToolTipRole,0): lambda self, column: self.scanSegmentList[column]._startText if self.scanSegmentList[column]._startText is not None else None,
+                             (QtCore.Qt.ToolTipRole,1): lambda self, column: self.scanSegmentList[column]._stopText if self.scanSegmentList[column]._stopText is not None else None,
+                             (QtCore.Qt.ToolTipRole,2): lambda self, column: self.scanSegmentList[column]._centerText if self.scanSegmentList[column]._centerText is not None else None,
+                             (QtCore.Qt.ToolTipRole,3): lambda self, column: self.scanSegmentList[column]._spanText if self.scanSegmentList[column]._spanText is not None else None,
+                             (QtCore.Qt.ToolTipRole,4): lambda self, column: self.scanSegmentList[column]._stepsText if self.scanSegmentList[column]._stepsText is not None else None,
+                             (QtCore.Qt.ToolTipRole,5): lambda self, column: self.scanSegmentList[column]._stepsizeText if self.scanSegmentList[column]._stepsizeText is not None else None,
+                             (QtCore.Qt.FontRole,4): lambda self, column: self.fontLookup[self.scanSegmentList[column]._stepPreference=='steps'],
+                             (QtCore.Qt.FontRole,5): lambda self, column: self.fontLookup[self.scanSegmentList[column]._stepPreference=='stepsize']
                              }
         self.globalDict = globalVariables
-        self.foregroundLookup = { True: QtGui.QBrush( QtCore.Qt.blue), False: QtGui.QBrush( QtCore.Qt.black)}
+        defaultBG = QtGui.QColor(QtCore.Qt.white)
+        inconsistentBG = QtGui.QColor(0xff,0xa6,0xa6,0xff)
+        textBG = QtGui.QColor(QtCore.Qt.green).lighter(175)
+        preferenceFont = QtGui.QFont("MS Shell Dlg 2", -1, QtGui.QFont.DemiBold, False)
+        regularFont = QtGui.QFont("MS Shell Dlg 2", -1, QtGui.QFont.Normal, False)
+        self.fontLookup = { True: preferenceFont, False: regularFont}
+        self.backgroundLookup = { (True, True):inconsistentBG, (True, False):inconsistentBG, (False,True):textBG, (False,False):defaultBG}
 
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.row()), lambda index, value: False )(index, value)
