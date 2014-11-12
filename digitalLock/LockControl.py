@@ -231,6 +231,7 @@ class LockControl(Form, Base):
         
     def setOutputFrequencyGui(self, value):
         self.magOutputFreq.setValue(value)
+        self.setOutputFrequency(value)
         
     def setOutputFrequency(self, value):
         binvalue = freqToBin(value)
