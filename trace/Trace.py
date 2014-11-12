@@ -195,6 +195,24 @@ class Trace(object):
         if self.dataChangedCallback:
             self.dataChangedCallback()                            
         
+    @property
+    def xUnit(self):
+        return self.description.get('xUnit')
+    
+    @xUnit.setter
+    def xUnit(self, magnitude):
+        self.description['xUnit'] = magnitude
+        
+    @property
+    def yUnit(self):
+        return self.description.get('yUnit')
+    
+    @yUnit.setter
+    def yUnit(self, magnitude):
+        self.description['yUnit'] = magnitude
+        
+        
+        
     def resave(self, saveIfUnsaved=True):
         """ save the data to the filename set previously by writing to filename
         """
