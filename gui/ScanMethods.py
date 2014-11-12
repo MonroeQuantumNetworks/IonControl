@@ -40,8 +40,8 @@ class InternalScanMethod(object):
         
     def prepareNextPoint(self, data):
         if data.final:
-            self.finalizeData(reason='end of scan')
-            logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.currentIndex, len(self.scan.list) ) )
+            self.experiment.finalizeData(reason='end of scan')
+            logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.experiment.currentIndex, len(self.experiment.scan.list) ) )
             if self.experiment.currentIndex >= len(self.experiment.scan.list):    # if all points were taken
                 self.experiment.generator.dataOnFinal(self, self.experiment.progressUi.state )
             else:
@@ -50,7 +50,7 @@ class InternalScanMethod(object):
             mycode = self.experiment.generator.dataNextCode(self )
             if mycode:
                 self.experiment.pulserHardware.ppWriteData(mycode)
-            self.experiment.progressUi.onData( self.currentIndex )  
+            self.experiment.progressUi.onData( self.experiment.currentIndex )  
    
 class ExternalScanMethod(InternalScanMethod):
     name = 'External'
@@ -64,7 +64,7 @@ class ExternalScanMethod(InternalScanMethod):
             logging.getLogger(__name__).error(message)
             raise ScanNotAvailableException(message) 
         if self.experiment.scan.scanMode==0:
-            self.parameter = self.experiment.scanTargetDict[self.experiment.scan.scanParameter]
+            self.parameter = self.experiment.scanTargetDict['External'][self.experiment.scan.scanParameter]
             self.parameter.saveValue(overwrite=False)
             self.index = 0                 
         self.experiment.progressUi.setStarting()
@@ -97,10 +97,10 @@ class ExternalScanMethod(InternalScanMethod):
                 self.experiment.progressUi.setIdle()
                 logger.info( "Status -> Idle" )
              
-    def onData(self, data, queuesize ):
+    def onData(self, data, queuesize, x ):
         if not self.parameter.useExternalValue():
             x = self.experiment.generator.xValue(self.index)
-            self.dataMiddlePart(data, queuesize, x)
+            self.experiment.dataMiddlePart(data, queuesize, x)
         else:
             self.parameter.asyncCurrentExternalValue( partial( self.experiment.dataMiddlePart, data, queuesize) )
             
@@ -109,20 +109,24 @@ class ExternalScanMethod(InternalScanMethod):
         if self.experiment.progressUi.state == self.experiment.OpStates.running:
             if data.final and data.exitcode not in [0,0xffff]:
                 self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
+            elif self.index < len(self.experiment.scan.list):
+                mycode = self.experiment.generator.dataNextCode(self )
+                if mycode:
+                    self.experiment.pulserHardware.ppWriteData(mycode)
+                self.dataBottomHalf()
             else:
                 self.experiment.finalizeData(reason='end of scan')
                 self.experiment.generator.dataOnFinal(self, self.experiment.progressUi.state )
                 logging.getLogger(__name__).info("Scan Completed")               
-        if self.index < len(self.experiment.scan.list):
-            self.dataBottomHalf()
+
         
     def dataBottomHalf(self):
         logger = logging.getLogger(__name__)
-        if self.experiment.progressUi.state == self.OpStates.running:
-            if self.experiment.scan.scanMode!=0 or self.parameter.setValue( self.scan.list[self.index]):
+        if self.experiment.progressUi.state == self.experiment.OpStates.running:
+            if self.experiment.scan.scanMode!=0 or self.parameter.setValue( self.experiment.scan.list[self.index]):
                 """We are done adjusting"""
-                self.pulserHardware.ppStart()
-                logger.info( "External Value: {0}".format(self.scan.list[self.externalParameterIndex]) )
+                self.experiment.pulserHardware.ppStart()
+                logger.info( "External Value: {0}".format(self.experiment.scan.list[self.index]) )
             else:
                 QtCore.QTimer.singleShot(100,self.dataBottomHalf)
 

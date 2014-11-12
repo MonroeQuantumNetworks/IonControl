@@ -26,14 +26,18 @@ class ParameterScanGenerator:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
             data = []
-        self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
-        self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
-        maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
-        self.maxUpdatesToWrite = maxUpdatesToWrite
-        if len(self.scan.code)>maxWordsToWrite:
-            self.nextIndexToWrite = maxWordsToWrite
-            return ( self.scan.code[:maxWordsToWrite], data)
-        self.nextIndexToWrite = len(self.scan.code)
+        if self.scan.scanTarget == 'Internal':
+            self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
+            self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
+            maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
+            self.maxUpdatesToWrite = maxUpdatesToWrite
+            if len(self.scan.code)>maxWordsToWrite:
+                self.nextIndexToWrite = maxWordsToWrite
+                return ( self.scan.code[:maxWordsToWrite], data)
+            self.nextIndexToWrite = len(self.scan.code)
+        else:
+            self.stepInPlaceValue = 0
+            self.scan.code = list([4095, 0]) # writing the last memory location
         return ( self.scan.code, data)
         
     def restartCode(self,currentIndex ):
@@ -54,10 +58,13 @@ class ParameterScanGenerator:
         return value.ounit(self.scan.xUnit).toval()
         
     def dataNextCode(self, experiment ):
-        if self.nextIndexToWrite<len(self.scan.code):
-            start = self.nextIndexToWrite
-            self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
-            return self.scan.code[start:self.nextIndexToWrite]
+        if self.scan.scanTarget == 'Internal':
+            if self.nextIndexToWrite<len(self.scan.code):
+                start = self.nextIndexToWrite
+                self.nextIndexToWrite = min( len(self.scan.code)+1, self.nextIndexToWrite + 2*self.numUpdatedVariables )
+                return self.scan.code[start:self.nextIndexToWrite]
+        else:
+            return list(self.scan.code)
         return []
         
     def dataOnFinal(self, experiment, currentState):

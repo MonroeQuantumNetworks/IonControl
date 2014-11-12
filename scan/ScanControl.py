@@ -237,14 +237,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
         self.histogramSaveCheckBox.setChecked(self.settings.histogramSave)
         if self.settings.scanTarget:
-            self.onChangeScanTarget(self.settings.ScanTarget)
+            self.onChangeScanTarget(self.settings.scanTarget)
         elif self.comboBoxScanTarget.count()>0:
             self.settings.scanTarget = self.comboBoxScanTarget.currentText()
             self.onChangeScanTarget(self.settings.scanTarget)
         if self.settings.scanParameter: 
             self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
-            self.settings.scanParameter = self.comboBoxParameter.currentText()
+            self.settings.scanParameter = str(self.comboBoxParameter.currentText())
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
         self.histogramFilenameEdit.setText( getattr(self.settings,'histogramFilename','') )
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
@@ -364,7 +364,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.settings.scanParameter:
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
-            self.settings.scanParameter = self.comboBoxParameter.currentText()
+            self.settings.scanParameter = str(self.comboBoxParameter.currentText())
         if self.gateSequenceUi:
             self.gateSequenceUi.setVariables(variabledict)
         self.checkSettingsSavable()
@@ -374,14 +374,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         updateComboBoxItems( self.comboBoxScanTarget, self.scanTargetDict.keys(), self.parameters.currentScanTarget )
         self.parameters.currentScanTarget = firstNotNone(self.parameters.currentScanTarget, target)
         if target==self.parameters.currentScanTarget:
-            self.settings.scanParameter = updateComboBoxItems( self.comboBoxParameter, scannames, self.settings.scanParameter )
+            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, scannames, self.settings.scanParameter ))
 
     def onChangeScanTarget(self, name):
         name = str(name)
         if name!=self.parameters.currentScanTarget:
             self.parameters.scanTargetCache[self.parameters.currentScanTarget] = self.settings.scanParameter
             self.settings.scanParameter = self.parameters.scanTargetCache.get(name)
-            self.settings.scanParameter = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], self.settings.scanParameter )
+            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], self.settings.scanParameter ))
+            self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
         self.checkSettingsSavable()
                 

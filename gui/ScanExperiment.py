@@ -366,7 +366,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
-            self.updateMainGraph(x, evaluated, queuesize if self.externalParameterIndex < len(self.scan.list) else 0 )
+            self.updateMainGraph(x, evaluated, queuesize  )
             self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
         if data.other:
             logger.info( "Other: {0}".format( data.other ) )
