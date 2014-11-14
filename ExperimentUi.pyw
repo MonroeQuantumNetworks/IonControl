@@ -252,6 +252,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )
         traceFilename, _ = DataDirectory.DataDirectory().sequencefile("Trace.log")
         LoggingSetup.setTraceFilename( traceFilename )
+        errorFilename, _ = DataDirectory.DataDirectory().sequencefile("Error.log")
+        LoggingSetup.setErrorFilename( errorFilename )
         
         # connect signals and slots for todolist and auto resume
         for name, widget in self.tabDict.iteritems():
