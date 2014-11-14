@@ -42,8 +42,11 @@ class EvaluationBase(Observable):
             for name, value in self.settings.iteritems():
                 settings.setdefault(name, value)
             self.settings = settings
-            for name, value in settings.iteritems():
-                self._parameter[name] = value
+            for name, value in settings.items():
+                try:
+                    self._parameter[name] = value
+                except Exception:
+                    settings.pop(name)
             self.settingsName = settingsName if settingsName else "unnamed"
         except Exception as ex:
             logging.getLogger(__name__).exception(ex)
