@@ -32,6 +32,7 @@ class LevelFilter(logging.Filter):
         return record.levelno == self.passlevel
 
 traceHandler = None
+errorHandler = None
 def setTraceFilename(filename):
     global traceHandler
     if traceHandler is not None:
@@ -40,6 +41,15 @@ def setTraceFilename(filename):
     traceHandler.setFormatter(fileformatter)
     traceHandler.addFilter( LevelFilter(logging.TRACE))  # @UndefinedVariable
     logger.addHandler( traceHandler )
+
+def setErrorFilename(filename):
+    global errorHandler
+    if errorHandler is not None:
+        logger.removeHandler(errorHandler)
+    errorHandler = logging.FileHandler(filename)
+    errorHandler.setFormatter(fileformatter)
+    errorHandler.addFilter( LevelThresholdFilter(logging.ERROR,True) )  # @UndefinedVariable
+    logger.addHandler( errorHandler )
 
 
 TRACE_LEVEL_NUM = 25 
@@ -66,9 +76,9 @@ stderrHandler.addFilter(LevelThresholdFilter(logging.ERROR,True))
 
 fileformatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
-fileHandler = logging.FileHandler("messages")
-fileHandler.setFormatter(fileformatter)
-fileHandler.setLevel(logging.INFO) 
+# fileHandler = logging.FileHandler("messages")
+# fileHandler.setFormatter(fileformatter)
+# fileHandler.setLevel(logging.INFO) 
 
 qtHandler = QtLoggingHandler()
 qtHandler.setFormatter(formatter)
@@ -76,7 +86,7 @@ qtHandler.setFormatter(formatter)
 logger.addHandler(stdoutHandler)
 logger.addHandler(stderrHandler)
 logger.addHandler(qtHandler)
-logger.addHandler(fileHandler)
+# logger.addHandler(fileHandler)
 
 pyqtlogger = logging.getLogger("PyQt4")
 pyqtlogger.setLevel(logging.ERROR)
