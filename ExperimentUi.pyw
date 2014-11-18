@@ -30,7 +30,7 @@ from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from externalParameter import ExternalParameterSelection
 from externalParameter import ExternalParameterUi 
 from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
-from modules import DataDirectory
+from modules import DataDirectory, MyException
 from modules.DataChanged import DataChanged
 from modules.bidict import ChannelNameMap
 from persist import configshelve
@@ -252,8 +252,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser, self.channelNameData )
         self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
-        self.voltageControlWindow = VoltageControl(self.config)
-        self.voltageControlWindow.setupUi(self.voltageControlWindow)
+        try:
+            self.voltageControlWindow = VoltageControl(self.config)
+            self.voltageControlWindow.setupUi(self.voltageControlWindow)
+        except MyException.MissingFile as e:
+            self.voltageControlWindow = None
+            self.actionVoltageControl.setEnabled( False )
+            logger.error("Voltage subsystem disabled: {0}".format(str(e)))
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
         self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
@@ -445,7 +450,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerUi.saveConfig()
         self.dedicatedCountersWindow.saveConfig()
         self.logicAnalyzerWindow.saveConfig()
-        self.voltageControlWindow.saveConfig()
+        if self.voltageControlWindow:
+            self.voltageControlWindow.saveConfig()
         self.ExternalParametersSelectionUi.saveConfig()
         self.globalVariablesUi.saveConfig()
         self.loggerUi.saveConfig()
