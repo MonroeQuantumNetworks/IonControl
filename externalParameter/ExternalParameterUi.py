@@ -87,7 +87,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     def _setValue(self, row, value):
         logger = logging.getLogger(__name__)
         logger.debug( "setValue {0}".format( value ) )
-        if value != self.targetValues[row]:
+        if self.targetValues[row] is None or value != self.targetValues[row]:
             self.targetValues[row] = value
             self.setValueFollowup(row)
         return True

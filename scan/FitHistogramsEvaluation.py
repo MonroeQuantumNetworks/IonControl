@@ -79,9 +79,7 @@ class FitHistogramEvaluation(EvaluationBase):
         self.settings.setdefault('OneBright','OneIonHistogram')
         self.settings.setdefault('TwoBright','TwoIonHistogram')
         self.settings.setdefault('HistogramBins',50)
-        self.settings.setdefault('NumberBright',0)
-        self.settings.setdefault('OnlyOneIon',True)
-        self.settings.setdefault('Parity',True)
+        self.settings.setdefault('Mode','Zero')
         
     def update(self, param, changes):
         super( FitHistogramEvaluation, self ).update(param, changes)
@@ -103,10 +101,16 @@ class FitHistogramEvaluation(EvaluationBase):
             confidence = list(confidence)
             confidence.append( 0 )  # don't know what to do :(
             data.evaluated['FitHistogramsResult'] = (params, confidence)
-        if self.settings['Parity']:
+        if self.settings['Mode']=='Parity':
             return params[0]+params[2]-params[1], (None,None), params[0]+params[2]-params[1]
-        else:
-            return params[self.settings['NumberBright']], (confidence[self.settings['NumberBright']],  confidence[self.settings['NumberBright']]) , params[self.settings['NumberBright']]
+        elif self.settings['Mode']=='Zero':
+            return params[0], (confidence[0],  confidence[0]) , params[0]
+        elif self.settings['Mode']=='One':
+            return params[1], (confidence[1],  confidence[1]) , params[1]
+        elif self.settings['Mode']=='Two':
+            return params[2], (confidence[2],  confidence[2]) , params[2]
+        elif self.settings['Mode']=='Residuals':
+            return self.chisq/self.dof, (None,None), self.chisq/self.dof
 
         
     def children(self):
@@ -114,10 +118,8 @@ class FitHistogramEvaluation(EvaluationBase):
                 {'name':'ZeroBright','type':'str','value':str(self.settings['ZeroBright']), 'tip': 'filename for ZeroBright data' },
                 {'name':'OneBright','type':'str','value':str(self.settings['OneBright']), 'tip': 'filename for OneBright data' },
                 {'name':'TwoBright','type':'str','value':str(self.settings['TwoBright']), 'tip': 'filename for TwoBright data' },
-                {'name':'NumberBright','type':'int','value':int(self.settings['NumberBright']), 'range': (0,2),  'tip': 'Number of bright ions' },
                 {'name':'HistogramBins','type':'int','value':int(self.settings['HistogramBins']), 'tip': 'Number of histogram bins in data' },
-                {'name':'OnlyOneIon','type':'bool','value':bool(self.settings['OnlyOneIon']), 'tip': 'One ion vs Two ions' },
-                {'name':'Parity','type':'bool','value':bool(self.settings['Parity']), 'tip': 'Return parity' }]     
+                {'name':'Mode','type':'list', 'values': ['Zero','One','Two','Parity','Residuals'], 'value': str(self.settings['Mode']), 'tip': 'Evaluation mode' }]     
 
 
     def leastsq(self, x, y, parameters=None, sigma=None):
