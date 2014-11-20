@@ -245,7 +245,7 @@ class LaserWavemeterScan(AgilentPowerSupply):
         self.wavemeter = None
     
     def setDefaults(self):
-        ExternalParameterBase.setDefaults(self)
+        AgilentPowerSupply.setDefaults(self)
         self.settings.__dict__.setdefault('wavemeter_address' , 'http://132.175.165.36:8082')       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('wavemeter_channel' , 6 )       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('use_external' , True )       # if True go to the target value in one jump
