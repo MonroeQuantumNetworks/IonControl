@@ -1,8 +1,9 @@
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
+from modules.firstNotNone import firstNotNone
 
 
 class PushVariableTableModel(QtCore.QAbstractTableModel):
-    
+    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}     
     def __init__(self, config, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
@@ -16,14 +17,19 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
                             (QtCore.Qt.EditRole,1): lambda row: self.fitfunction.pushVariables.at(row).destinationName,
                             (QtCore.Qt.EditRole,2): lambda row: self.fitfunction.pushVariables.at(row).variableName,
                             (QtCore.Qt.EditRole,3): lambda row: self.fitfunction.pushVariables.at(row).definition,
-                            (QtCore.Qt.EditRole,5): lambda row: self.fitfunction.pushVariables.at(row).minimum,
-                            (QtCore.Qt.EditRole,6): lambda row: self.fitfunction.pushVariables.at(row).maximum,
+                            (QtCore.Qt.EditRole,5): lambda row: firstNotNone( self.fitfunction.pushVariables.at(row).strMinimum, str(self.fitfunction.pushVariables.at(row).minimum)),
+                            (QtCore.Qt.EditRole,6): lambda row: firstNotNone( self.fitfunction.pushVariables.at(row).strMaximum, str(self.fitfunction.pushVariables.at(row).maximum)),
+                            (QtCore.Qt.BackgroundRole,5): lambda row: self.backgroundLookup[self.fitfunction.pushVariables.at(row).strMinimum is not None],  
+                            (QtCore.Qt.BackgroundRole,6): lambda row: self.backgroundLookup[self.fitfunction.pushVariables.at(row).strMaximum is not None]  
+
                             }                           
         self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setDataDestinationName,
                                  (QtCore.Qt.EditRole,2): self.setDataVariableName,
                                  (QtCore.Qt.EditRole,3): self.setDataDefinition,
                                  (QtCore.Qt.EditRole,5): self.setDataMinimum,
                                  (QtCore.Qt.EditRole,6): self.setDataMaximum,
+                                 (QtCore.Qt.UserRole,5): self.setDataStrMinimum,
+                                 (QtCore.Qt.UserRole,6): self.setDataStrMaximum,
                                  (QtCore.Qt.CheckStateRole,0): self.setDataPush }
         self.fitfunction = None
         self.pushDestinations = []
@@ -75,6 +81,14 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         self.fitfunction.pushVariables.at(row).maximum = value
         return True
                          
+    def setDataStrMinimum(self, row, value):
+        self.fitfunction.pushVariables.at(row).strMinimum = value
+        return True
+        
+    def setDataStrMaximum(self, row, value):
+        self.fitfunction.pushVariables.at(row).strMaximum = value
+        return True
+                         
     def addVariable(self, pushVariable ):
         if pushVariable.key not in self.fitfunction.pushVariables:
             self.beginInsertRows(QtCore.QModelIndex(), len(self.fitfunction.pushVariables), len(self.fitfunction.pushVariables))
@@ -92,6 +106,9 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 7
+
+    def update(self):
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),7) )
  
     def setFitfunction(self, fitfunction):
         self.beginResetModel()
@@ -136,3 +153,4 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
     
     def saveConfig(self):
         pass
+    

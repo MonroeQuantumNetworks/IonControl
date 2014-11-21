@@ -123,7 +123,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.resultsTableView.setModel(self.fitResultsTableModel)
         self.pushTableModel = PushVariableTableModel(self.config)
         self.pushTableView.setModel( self.pushTableModel )
-        self.pushItemDelegate = MagnitudeSpinBoxDelegate()
+        self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.pushComboDelegate = ComboBoxDelegate()
         self.pushTableView.setItemDelegateForColumn(1,self.pushComboDelegate)
         self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
@@ -171,7 +171,7 @@ class FitUi(fitForm, QtGui.QWidget):
         
     def setFitfunction(self, fitfunction):
         self.fitfunction = fitfunction
-        self.fitfunction.updatePushVariables()
+        self.fitfunction.updatePushVariables( self.globalDict )
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
         self.pushTableModel.setFitfunction(self.fitfunction)
@@ -289,4 +289,6 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction.evaluate( self.globalDict )
         self.fitfunctionTableModel.update()
         self.parameterTableView.viewport().repaint()
+        self.pushTableModel.update()
+        self.pushTableView.viewport().repaint()
             
