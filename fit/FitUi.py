@@ -112,6 +112,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.copyButton.clicked.connect( self.onCopy )
         self.removeAnalysisButton.clicked.connect( self.onRemoveAnalysis )
         self.saveButton.clicked.connect( self.onSaveAnalysis )
+        self.reloadButton.clicked.connect( self.onLoadAnalysis )
         self.fitSelectionComboBox.addItems( sorted(fitFunctionMap.keys()) )
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
@@ -272,8 +273,8 @@ class FitUi(fitForm, QtGui.QWidget):
         if isNew:
             self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
         
-    def onLoadAnalysis(self, name):
-        name = str(name)
+    def onLoadAnalysis(self, name=None):
+        name = str(name) if name is not None else str(self.analysisNameComboBox.currentText())
         if name in self.analysisDefinitions:
             if AnalysisDefinition.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
                 self.setFitfunction( self.analysisDefinitions[name].fitfunction() )

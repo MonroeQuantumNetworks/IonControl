@@ -676,6 +676,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             pageWidth = printer.pageRect().width()
             pageHeight = printer.pageRect().height()
             exporter.parameters()['width'] = pageWidth*preferences.printWidth   # (note this also affects height parameter)
+            exporter.widthChanged()
               
             # save to file
             png = exporter.export(toBytes=True)
