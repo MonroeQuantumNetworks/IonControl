@@ -380,8 +380,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         name = str(name)
         if name!=self.parameters.currentScanTarget:
             self.parameters.scanTargetCache[self.parameters.currentScanTarget] = self.settings.scanParameter
-            self.settings.scanParameter = self.parameters.scanTargetCache.get(name)
-            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], self.settings.scanParameter ))
+            cachedParam = self.parameters.scanTargetCache.get(name)
+            with BlockSignals(self.comboBoxScanTarget):
+                self.comboBoxScanTarget.setCurrentIndex( self.comboBoxScanTarget.findText(name) )
+            cachedParam = str(updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], cachedParam ))
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
         self.checkSettingsSavable()
