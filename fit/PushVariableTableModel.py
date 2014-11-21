@@ -68,7 +68,8 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         value =  str(value.toString())
         if value:
             self.fitfunction.pushVariables.at(row).definition = value
-            self.fitfunction.pushVariables.at(row).evaluate(self.fitfunction.replacementDict())
+            replacementDict = self.fitfunction.replacementDict()
+            self.fitfunction.pushVariables.at(row).evaluate(replacementDict)
             self.dataChanged.emit( self.createIndex(row,3), self.createIndex(row,3))
             return True
         return False

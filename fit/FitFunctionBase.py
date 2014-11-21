@@ -162,7 +162,10 @@ class FitFunctionBase(object):
         if self.startParameterExpressions is not None:
             self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
         for pushVar in self.pushVariables.values():
-            pushVar.evaluate(myReplacementDict)        
+            try:
+                pushVar.evaluate(myReplacementDict)
+            except Exception as e:
+                logging.getLogger(__name__).error( str(e))        
 
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
@@ -268,11 +271,14 @@ class FitFunctionBase(object):
         return replacement
     
     def updatePushVariables(self, extraDict=None ):
+        myReplacementDict = self.replacementDict()
+        if extraDict is not None:
+            myReplacementDict.update( extraDict )
         for pushvar in self.pushVariables.values():
-            myReplacementDict = self.replacementDict()
-            if extraDict is not None:
-                myReplacementDict.update( extraDict )
-            pushvar.evaluate(myReplacementDict)
+            try:          
+                pushvar.evaluate(myReplacementDict)
+            except Exception as e:
+                logging.getLogger(__name__).error( str(e) )
 
         
         

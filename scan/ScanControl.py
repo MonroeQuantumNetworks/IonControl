@@ -390,6 +390,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan = copy.deepcopy(self.settings)
         if scan.scanMode!=0:
             scan.scanTarget = 'Internal'
+        scan.scanTarget = str(scan.scanTarget)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized, ScanList.ScanType.CenterOut][self.settings.scantype]
         
         scan.list = list( concatenate_iter( *( numpy.linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ) ) )
