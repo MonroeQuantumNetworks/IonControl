@@ -57,6 +57,7 @@ class ExternalScanMethod(InternalScanMethod):
     def __init__(self, experiment):
         super( ExternalScanMethod, self).__init__(experiment)
         self.maxUpdatesToWrite = 1
+        self.parameter = None
     
     def startScan(self):
         if self.experiment.scan.scanParameter not in self.experiment.scanTargetDict[self.experiment.scan.scanTarget]:
@@ -91,7 +92,7 @@ class ExternalScanMethod(InternalScanMethod):
     def stopBottomHalf(self):
         logger = logging.getLogger(__name__)
         if self.experiment.progressUi.state==self.experiment.OpStates.stopping:
-            if self.experiment.scan.scanMode==0 and not self.parameter.restoreValue():
+            if self.experiment.scan.scanMode==0 and self.parameter and not self.parameter.restoreValue():
                 QtCore.QTimer.singleShot(100,self.stopBottomHalf)
             else:
                 self.experiment.progressUi.setIdle()
@@ -114,9 +115,10 @@ class ExternalScanMethod(InternalScanMethod):
                 if mycode:
                     self.experiment.pulserHardware.ppWriteData(mycode)
                 self.dataBottomHalf()
+                self.experiment.progressUi.onData( self.index )  
             else:
                 self.experiment.finalizeData(reason='end of scan')
-                self.experiment.generator.dataOnFinal(self, self.experiment.progressUi.state )
+                self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
                 logging.getLogger(__name__).info("Scan Completed")               
 
         

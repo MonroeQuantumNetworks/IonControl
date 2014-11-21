@@ -47,7 +47,7 @@ from modules import WeakMethod
 import copy
 from modules.SceneToPrint import SceneToPrint
 from collections import defaultdict
-from gui.ScanMethods import ScanMethodsDict, ScanException
+from gui.ScanMethods import ScanMethodsDict, ScanException 
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
@@ -323,9 +323,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
-        self.scanMethod.onStop()
-        if self.scan:
-            self.finalizeData(reason='stopped')
+            self.scanMethod.onStop()
+            if self.scan:
+                self.finalizeData(reason='stopped')
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
