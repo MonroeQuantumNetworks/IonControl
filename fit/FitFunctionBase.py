@@ -61,6 +61,8 @@ class PushVariable(object):
             (not self.minimum or self.value >= self.minimum) and 
             (not self.maximum or self.value <= self.maximum)):
             return [(self.destinationName, self.variableName, self.value)]
+        else:
+            logging.getLogger(__name__).info("Not pushing {0} to {1}: {2} <= {3} <= {4}".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
         return []
     
     @property
@@ -251,10 +253,13 @@ class FitFunctionBase(object):
         p = self.parameters if p is None else p
         return self.functionEval(x, *p )
 
-    def pushVariableValues(self):
+    def pushVariableValues(self, globalDict=None ):
         pushVarValues = list()
+        replacements = self.replacementDict()
+        if globalDict is not None:
+            replacements.update( globalDict )
         for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord(self.replacementDict()) )
+            pushVarValues.extend( pushvar.pushRecord(replacements) )
         return pushVarValues
             
     def replacementDict(self):

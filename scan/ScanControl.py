@@ -17,7 +17,7 @@ from modules import MagnitudeUtilit
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
-from modules.enum import enum
+from modules.enum import enum 
 from modules.magnitude import MagnitudeError
 from modules.ScanDefinition import ScanSegmentDefinition
 from ScanSegmentTableModel import ScanSegmentTableModel
@@ -388,6 +388,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)
+        if scan.scanMode!=0:
+            scan.scanTarget = 'Internal'
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized, ScanList.ScanType.CenterOut][self.settings.scantype]
         
         scan.list = list( concatenate_iter( *( numpy.linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ) ) )
@@ -427,7 +429,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.scanConfigurationListChanged.emit( self.settingsDict )
-        self.checkSettingsSavable()
+        self.checkSettingsSavable(savable=False)
 
     def onRemove(self):
         name = str(self.comboBox.currentText())

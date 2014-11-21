@@ -462,7 +462,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
                 plot.fitFunction = copy.deepcopy(fitfunction)
                 plot.plot(-2)
-                self.fitWidget.pushVariables(fitfunction.pushVariableValues())
+                self.fitWidget.pushVariables(fitfunction.pushVariableValues(self.globalVariablesUi.variables))
                 
             
     def showTimestamps(self,data):

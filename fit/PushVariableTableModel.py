@@ -118,8 +118,8 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
     def allDataChanged(self):
         pass
     
-    def fitDataChanged(self):
-        self.fitfunction.updatePushVariables()
+    def fitDataChanged(self, extraDict=None ):
+        self.fitfunction.updatePushVariables(extraDict)
         self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),3))
  
     def startDataChanged(self):

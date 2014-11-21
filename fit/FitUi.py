@@ -196,7 +196,7 @@ class FitUi(fitForm, QtGui.QWidget):
             plot.plot(-2)
             self.fitfunctionTableModel.fitDataChanged()
             self.fitResultsTableModel.fitDataChanged()
-            self.pushTableModel.fitDataChanged()
+            self.pushTableModel.fitDataChanged( self.globalDict )
             
     def addPushDestination(self, name, destination ):
         self.pushDestinations[name] = destination
