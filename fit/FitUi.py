@@ -112,6 +112,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.copyButton.clicked.connect( self.onCopy )
         self.removeAnalysisButton.clicked.connect( self.onRemoveAnalysis )
         self.saveButton.clicked.connect( self.onSaveAnalysis )
+        self.reloadButton.clicked.connect( self.onLoadAnalysis )
         self.fitSelectionComboBox.addItems( sorted(fitFunctionMap.keys()) )
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
@@ -122,7 +123,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.resultsTableView.setModel(self.fitResultsTableModel)
         self.pushTableModel = PushVariableTableModel(self.config)
         self.pushTableView.setModel( self.pushTableModel )
-        self.pushItemDelegate = MagnitudeSpinBoxDelegate()
+        self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.pushComboDelegate = ComboBoxDelegate()
         self.pushTableView.setItemDelegateForColumn(1,self.pushComboDelegate)
         self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
@@ -170,7 +171,7 @@ class FitUi(fitForm, QtGui.QWidget):
         
     def setFitfunction(self, fitfunction):
         self.fitfunction = fitfunction
-        self.fitfunction.updatePushVariables()
+        self.fitfunction.updatePushVariables( self.globalDict )
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
         self.pushTableModel.setFitfunction(self.fitfunction)
@@ -195,7 +196,7 @@ class FitUi(fitForm, QtGui.QWidget):
             plot.plot(-2)
             self.fitfunctionTableModel.fitDataChanged()
             self.fitResultsTableModel.fitDataChanged()
-            self.pushTableModel.fitDataChanged()
+            self.pushTableModel.fitDataChanged( self.globalDict )
             
     def addPushDestination(self, name, destination ):
         self.pushDestinations[name] = destination
@@ -272,8 +273,8 @@ class FitUi(fitForm, QtGui.QWidget):
         if isNew:
             self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
         
-    def onLoadAnalysis(self, name):
-        name = str(name)
+    def onLoadAnalysis(self, name=None):
+        name = str(name) if name is not None else str(self.analysisNameComboBox.currentText())
         if name in self.analysisDefinitions:
             if AnalysisDefinition.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
                 self.setFitfunction( self.analysisDefinitions[name].fitfunction() )
@@ -288,4 +289,6 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction.evaluate( self.globalDict )
         self.fitfunctionTableModel.update()
         self.parameterTableView.viewport().repaint()
+        self.pushTableModel.update()
+        self.pushTableView.viewport().repaint()
             

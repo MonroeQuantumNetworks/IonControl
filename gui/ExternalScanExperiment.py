@@ -35,17 +35,17 @@ class ExternalScanExperiment( ScanExperiment.ScanExperiment ):
     def setupUi(self,MainWindow,config):
         super(ExternalScanExperiment,self).setupUi(MainWindow,config)
         
-    def updatePulseProgram(self):
-        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
-
-    def setPulseProgramUi(self,pulseProgramUi):
-        self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
-        self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
-        self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+#     def updatePulseProgram(self):
+#         self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
+# 
+#     def setPulseProgramUi(self,pulseProgramUi):
+#         self.pulseProgramUi = pulseProgramUi.addExperiment(self.experimentName, self.globalVariables, self.globalVariablesChanged )
+#         self.pulseProgramUi.pulseProgramChanged.connect( self.updatePulseProgram )
+#         self.scanControlWidget.setPulseProgramUi( self.pulseProgramUi )
         
-    def updateEnabledParameters(self, enabledParameters ):
-        self.enabledParameters = enabledParameters
-        self.scanControlWidget.setScanNames( self.enabledParameters.keys() )
+#     def updateEnabledParameters(self, enabledParameters ):
+#         self.enabledParameters = enabledParameters
+#         self.scanControlWidget.updateScanTarget('External', self.enabledParameters.keys() )
         
     def startScan(self):
         logger = logging.getLogger(__name__)

@@ -17,7 +17,7 @@ from modules import MagnitudeUtilit
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
-from modules.enum import enum
+from modules.enum import enum 
 from modules.magnitude import MagnitudeError
 from modules.ScanDefinition import ScanSegmentDefinition
 from ScanSegmentTableModel import ScanSegmentTableModel
@@ -27,6 +27,7 @@ from modules.concatenate_iter import concatenate_iter
 import random
 from modules.concatenate_iter import interleave_iter
 from gateSequence.GateSequenceContainer import GateSequenceException
+from modules.firstNotNone import firstNotNone
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -38,7 +39,7 @@ class Scan:
     def __init__(self):
         # Scan
         self.scanParameter = None
-        self.externalScanParameter = None
+        self.scanTarget = None
         self.start = 0
         self.stop = 0
         self.center = 0
@@ -79,6 +80,7 @@ class Scan:
         self.__dict__.setdefault('externalScanParameter', None)
         self.__dict__.setdefault('histogramFilename', "")
         self.__dict__.setdefault('histogramSave', False)
+        self.__dict__.setdefault('scanTarget', None)
 
     def __eq__(self,other):
         try:
@@ -93,11 +95,11 @@ class Scan:
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
-    stateFields = ['scanParameter', 'externalScanParameter', 'scantype', 'scanMode', 'scanRepeat', 
+    stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
                 'scanSegmentList' ]
 
-    documentationList = [ 'scanParameter', 'externalScanParameter', 'scantype', 'scanMode', 'scanRepeat', 
+    documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
     def documentationString(self):
@@ -116,13 +118,22 @@ class Scan:
 class ScanControlParameters:
     def __init__(self):
         self.autoSave = False
+        self.currentScanTarget = None
+        self.scanTargetCache = dict()
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'currentScanTarget', None )
+        self.__dict__.setdefault( 'scanTargetCache', dict() )
+        if self.scanTargetCache is None:
+            self.scanTargetCache = dict()
 
 class ScanControl(ScanControlForm, ScanControlBase ):
     ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSequenceScan')
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     scanConfigurationListChanged = QtCore.pyqtSignal( object )
     logger = logging.getLogger(__name__)
-    def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None, internalParam=True, externalParam=False):
+    def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None):
         logger = logging.getLogger(__name__)
         ScanControlForm.__init__(self)
         ScanControlBase.__init__(self,parent)
@@ -148,9 +159,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settingsName = self.config.get(self.configname+'.settingsName',None)
         self.pulseProgramUi = None
         self.parameters = self.config.get( self.configname+'.parameters', ScanControlParameters() )
-        self.internalParam = internalParam
-        self.externalParam = externalParam
         self.globalVariablesUi = globalVariablesUi
+        self.scanTargetDict = dict()
         
     def setupUi(self, parent):
         ScanControlForm.setupUi(self,parent)
@@ -166,10 +176,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalVariablesUi.variables)
         self.tableView.setItemDelegate( self.magnitudeDelegate )
         self.tableView.resizeRowsToContents()
-        
-        self.comboBoxParameter.setVisible( self.internalParam )
-        self.comboBoxExternalParameter.setVisible( self.externalParam )
-       
+               
 #        try:
         self.setSettings( self.settings )
 #         except AttributeError:
@@ -177,12 +184,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBox.addItems( sorted(self.settingsDict.keys()))
         if self.settingsName and self.comboBox.findText(self.settingsName):
             self.comboBox.setCurrentIndex( self.comboBox.findText(self.settingsName) )
-        self.comboBox.currentIndexChanged['QString'].connect( self.onLoad )
-        #self.comboBox.editTextChanged.connect( lambda x: self.checkSettingsSavable() )
+        self.comboBox.currentIndexChanged[QtCore.QString].connect( self.onLoad )
         self.comboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable ) 
         # update connections
-        self.comboBoxParameter.currentIndexChanged['QString'].connect( self.onCurrentTextChanged )
-        self.comboBoxExternalParameter.currentIndexChanged['QString'].connect( self.onCurrentExternalTextChanged )
+        self.comboBoxParameter.currentIndexChanged[QtCore.QString].connect( self.onCurrentTextChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
         self.histogramSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'histogramSave') )
@@ -193,7 +198,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
         self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
-        self.loadPPComboBox.currentIndexChanged['QString'].connect( self.onLoadPP )
+        self.loadPPComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadPP )
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.autoSaveAction = QtGui.QAction( "auto save" , self)
         self.autoSaveAction.setCheckable(True)
@@ -202,6 +207,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.addAction( self.autoSaveAction )
         self.settings.evaluate(self.globalVariablesUi.variables)
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
+        self.comboBoxScanTarget.currentIndexChanged[QtCore.QString].connect( self.onChangeScanTarget )
        
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):
@@ -230,14 +236,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
         self.histogramSaveCheckBox.setChecked(self.settings.histogramSave)
+        if self.settings.scanTarget:
+            self.onChangeScanTarget(self.settings.scanTarget)
+        elif self.comboBoxScanTarget.count()>0:
+            self.settings.scanTarget = self.comboBoxScanTarget.currentText()
+            self.onChangeScanTarget(self.settings.scanTarget)
         if self.settings.scanParameter: 
             self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
-            self.settings.scanParameter = self.comboBoxParameter.currentText()
-        if self.settings.externalScanParameter: 
-            self.comboBoxExternalParameter.setCurrentIndex( self.comboBoxExternalParameter.findText(self.settings.externalScanParameter))
-        elif self.comboBoxExternalParameter.count()>0:  # if scanParameter is None set it to the current selection
-            self.settings.externalScanParameter = self.comboBoxExternalParameter.currentText()
+            self.settings.scanParameter = str(self.comboBoxParameter.currentText())
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
         self.histogramFilenameEdit.setText( getattr(self.settings,'histogramFilename','') )
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
@@ -324,10 +331,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.scanParameter = str(text)        
         self.checkSettingsSavable()
     
-    def onCurrentExternalTextChanged(self, text):        
-        self.settings.externalScanParameter = str(text)        
-        self.checkSettingsSavable()
-    
     def onCurrentIndexChanged(self, attribute, index):        
         setattr( self.settings, attribute, index )        
         self.checkSettingsSavable()
@@ -339,7 +342,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xUnitEdit.setEnabled( index==0)
         self.xExprEdit.setEnabled( index==0)
         self.comboBoxParameter.setEnabled( index==0 )
-        self.comboBoxExternalParameter.setEnabled( index==0 )               
+        self.comboBoxScanTarget.setEnabled( index==0 )    
+        self.tableView.setEnabled( index==0 )           
         self.checkSettingsSavable()
     
     def onValueChanged(self, attribute, value):        
@@ -355,29 +359,40 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.checkSettingsSavable()
         
     def setVariables(self, variabledict):
+        self.updateScanTarget('Internal', [var.name for var in sorted(variabledict.values()) if var.type=='parameter'])
         self.variabledict = variabledict
-#         oldParameterName = self.settings.scanParameter
-        with BlockSignals(self.comboBoxParameter):
-            self.comboBoxParameter.clear()
-            for _, var in iter(sorted(variabledict.iteritems())):
-                if var.type == "parameter":
-                    self.comboBoxParameter.addItem(var.name)
         if self.settings.scanParameter:
             self.comboBoxParameter.setCurrentIndex(self.comboBoxParameter.findText(self.settings.scanParameter) )
         elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
-            self.settings.scanParameter = self.comboBoxParameter.currentText()
+            self.settings.scanParameter = str(self.comboBoxParameter.currentText())
         if self.gateSequenceUi:
             self.gateSequenceUi.setVariables(variabledict)
         self.checkSettingsSavable()
             
-    def setScanNames(self, scannames):
-        updateComboBoxItems( self.comboBoxExternalParameter, scannames ) 
-        if self.settings.externalScanParameter:
-            self.comboBoxExternalParameter.setCurrentIndex( self.comboBoxExternalParameter.findText(self.settings.externalScanParameter))
+    def updateScanTarget(self, target, scannames):
+        self.scanTargetDict[target] = scannames
+        updateComboBoxItems( self.comboBoxScanTarget, self.scanTargetDict.keys(), self.parameters.currentScanTarget )
+        self.parameters.currentScanTarget = firstNotNone(self.parameters.currentScanTarget, target)
+        if target==self.parameters.currentScanTarget:
+            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, scannames, self.settings.scanParameter ))
+
+    def onChangeScanTarget(self, name):
+        name = str(name)
+        if name!=self.parameters.currentScanTarget:
+            self.parameters.scanTargetCache[self.parameters.currentScanTarget] = self.settings.scanParameter
+            cachedParam = self.parameters.scanTargetCache.get(name)
+            with BlockSignals(self.comboBoxScanTarget):
+                self.comboBoxScanTarget.setCurrentIndex( self.comboBoxScanTarget.findText(name) )
+            cachedParam = str(updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], cachedParam ))
+            self.settings.scanTarget = name
+            self.parameters.currentScanTarget = name
         self.checkSettingsSavable()
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)
+        if scan.scanMode!=0:
+            scan.scanTarget = 'Internal'
+        scan.scanTarget = str(scan.scanTarget)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized, ScanList.ScanType.CenterOut][self.settings.scantype]
         
         scan.list = list( concatenate_iter( *( numpy.linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ) ) )
@@ -417,7 +432,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                     self.comboBox.addItem(self.settingsName)
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.scanConfigurationListChanged.emit( self.settingsDict )
-        self.checkSettingsSavable()
+        self.checkSettingsSavable(savable=False)
 
     def onRemove(self):
         name = str(self.comboBox.currentText())
@@ -450,7 +465,6 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if index.column() in [0,1,2,4]:
             self.evalTableView.edit(index)
             
-
 
 if __name__=="__main__":
     import sys

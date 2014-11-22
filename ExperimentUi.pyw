@@ -15,7 +15,6 @@ import PyQt4.uic
 
 from pulser import DDSUi#, DDSUi9910
 from mylogging.ExceptionLogButton import ExceptionLogButton
-from gui import ExternalScanExperiment
 from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
@@ -23,9 +22,7 @@ from gui import ProjectSelection
 from gui import ProjectSelectionUi
 from pulser.PulserHardwareClient import PulserHardware 
 from gui import ScanExperiment
-from gui import HybridScanExperiment
 from gui import SettingsDialog
-from gui import VoltageScanExperiment
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from externalParameter import ExternalParameterSelection
 from externalParameter import ExternalParameterUi 
@@ -132,9 +129,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
-                             (ExternalScanExperiment.ExternalScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ExternalScan", toolBar=self.experimentToolBar), "External Scan"),
-                             (HybridScanExperiment.HybridScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"HybridScan", toolBar=self.experimentToolBar), "Hybrid Scan"),
-                             (VoltageScanExperiment.VoltageScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"VoltageScan", toolBar=self.experimentToolBar), "Voltage Scan"),
                              (testExperiment.test(self.globalVariablesUi),"test"),
                              ]:
             widget.setupUi( widget, self.config )
@@ -146,11 +140,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.tabDict[name] = widget
             widget.ClearStatusMessage.connect( self.statusbar.clearMessage)
             widget.StatusMessage.connect( self.statusbar.showMessage)
-            
-        self.ExternalScanExperiment = self.tabDict["External Scan"]
-        self.voltageScanExperiment = self.tabDict["Voltage Scan"]
-        self.hybridScanExperiment = self.tabDict["Hybrid Scan"]
-        
+                    
+        self.scanExperiment = self.tabDict["Scan"]
+                    
         self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal) )
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
@@ -206,9 +198,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterDock)
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
                
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalScanExperiment.updateEnabledParameters )               
-        self.ExternalScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
-        self.hybridScanExperiment.updateEnabledParameters( self.ExternalParametersSelectionUi.enabledParametersObjects )
+        self.ExternalParametersSelectionUi.selectionChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
+        self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.enabledParametersObjects )
         
         self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab )
         self.todoList.setupUi()

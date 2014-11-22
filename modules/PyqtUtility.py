@@ -1,15 +1,15 @@
 
 
-def updateComboBoxItems( combo, items):
+def updateComboBoxItems( combo, items, selected=None):
     """Update the items in a combo Box,
     if the selected item is still there select it 
     do NOT emit signals during the process"""
-    oldState = str( combo.currentText() )
+    selected = str( combo.currentText() ) if selected is None else selected
     with BlockSignals(combo):
         combo.clear()
         combo.addItems( items )
-        if oldState in items:
-            combo.setCurrentIndex( combo.findText(oldState))
+        if selected in items:
+            combo.setCurrentIndex( combo.findText(selected))
     return combo.currentText()
 
 

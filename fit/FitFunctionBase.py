@@ -35,16 +35,23 @@ class PushVariable(object):
         self.value = None
         self.minimum = ""
         self.maximum = ""
-        
+        self.strMinimum = None
+        self.strMaximum = None
         
     def __setstate__(self, s):
         self.__dict__ = s
         self.__dict__.setdefault( 'destinationName', None )
         self.__dict__.setdefault( 'variableName', None )
+        self.__dict__.setdefault( 'strMinimum', None )
+        self.__dict__.setdefault( 'strMaximum', None )
         
     def evaluate(self, variables=dict(), useFloat=False):
         if self.definition:
             self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
+        if self.strMinimum:
+            self.minimum = self.expression.evaluate( self.strMinimum, variables, useFloat=useFloat )
+        if self.strMaximum:
+            self.maximum = self.expression.evaluate( self.strMaximum, variables, useFloat=useFloat )
         
     def pushRecord(self, variables=None):
         if variables is not None:
@@ -54,6 +61,8 @@ class PushVariable(object):
             (not self.minimum or self.value >= self.minimum) and 
             (not self.maximum or self.value <= self.maximum)):
             return [(self.destinationName, self.variableName, self.value)]
+        else:
+            logging.getLogger(__name__).info("Not pushing {0} to {1}: {2} <= {3} <= {4}".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
         return []
     
     @property
@@ -147,8 +156,16 @@ class FitFunctionBase(object):
         return None
 
     def evaluate(self, globalDict ):
+        myReplacementDict = self.replacementDict()
+        if globalDict is not None:
+            myReplacementDict.update( globalDict )
         if self.startParameterExpressions is not None:
-            self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, globalDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]        
+            self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
+        for pushVar in self.pushVariables.values():
+            try:
+                pushVar.evaluate(myReplacementDict)
+            except Exception as e:
+                logging.getLogger(__name__).error( str(e))        
 
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
@@ -239,10 +256,13 @@ class FitFunctionBase(object):
         p = self.parameters if p is None else p
         return self.functionEval(x, *p )
 
-    def pushVariableValues(self):
+    def pushVariableValues(self, globalDict=None ):
         pushVarValues = list()
+        replacements = self.replacementDict()
+        if globalDict is not None:
+            replacements.update( globalDict )
         for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord(self.replacementDict()) )
+            pushVarValues.extend( pushvar.pushRecord(replacements) )
         return pushVarValues
             
     def replacementDict(self):
@@ -250,9 +270,15 @@ class FitFunctionBase(object):
         replacement.update( dict( ( (v.name, v.value) for v in self.results.values() ) ) )
         return replacement
     
-    def updatePushVariables(self):
+    def updatePushVariables(self, extraDict=None ):
+        myReplacementDict = self.replacementDict()
+        if extraDict is not None:
+            myReplacementDict.update( extraDict )
         for pushvar in self.pushVariables.values():
-            pushvar.evaluate(self.replacementDict())
+            try:          
+                pushvar.evaluate(myReplacementDict)
+            except Exception as e:
+                logging.getLogger(__name__).error( str(e) )
 
         
         
