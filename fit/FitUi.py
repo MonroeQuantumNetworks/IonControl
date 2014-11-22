@@ -17,6 +17,7 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from externalParameter.persistence import DBPersist
 import time
 from modules.magnitude import is_magnitude
+from modules.PyqtUtility import BlockSignals
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -212,6 +213,11 @@ class FitUi(fitForm, QtGui.QWidget):
             if destination in self.pushDestinations:
                 self.pushDestinations[destination].update( [(destination,variable,value)] )
 
+    def showAnalysis(self, analysis, fitfunction):
+        if analysis in self.analysisDefinitions:
+            with BlockSignals(self.analysisNameComboBox):
+                self.analysisNameComboBox.setCurrentIndex( self.analysisNameComboBox.findText(analysis) )
+            self.setFitfunction( fitfunction )
                 
     def onPlot(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
