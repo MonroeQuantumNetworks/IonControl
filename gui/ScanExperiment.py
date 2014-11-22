@@ -16,7 +16,6 @@ It is expected to send an endlabel (0xffffffff) when finished.
 from datetime import datetime, timedelta
 import functools
 import logging
-import random
 import time
 from trace import Traceui
 from trace import pens
