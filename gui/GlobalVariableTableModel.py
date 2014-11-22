@@ -18,6 +18,7 @@ import time
 from modules.magnitude import is_magnitude
 from functools import partial
 from collections import defaultdict
+from copy import deepcopy
 
 api2 = sip.getapi("QVariant") == 2
 
@@ -135,18 +136,24 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             self.variables.sort(reverse=order == QtCore.Qt.DescendingOrder)
             self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             
+    def restoreCustomOrder(self):
+        self.variables.sortToMatch( self.variables.customOrder )
+        self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
+            
     def moveRow(self, rows, up=True):
         if up:
             if len(rows) > 0 and rows[0] > 0:
                 for row in rows:
                     self.variables.swap(row, row - 1)
                     self.dataChanged.emit(self.createIndex(row - 1, 0), self.createIndex(row, 3))
+                    self.variables.customOrder = list( self.variables._keys )
                 return True
         else:
             if len(rows) > 0 and rows[0] < len(self.variables) - 1:
                 for row in rows:
                     self.variables.swap(row, row + 1)
                     self.dataChanged.emit(self.createIndex(row, 0), self.createIndex(row + 1, 3))
+                    self.variables.customOrder = list( self.variables._keys )
                 return True
         return False
     

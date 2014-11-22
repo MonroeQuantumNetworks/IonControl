@@ -19,6 +19,7 @@ Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 class GlobalVariables(SequenceDict):
     def __init__(self, *args, **kwds):
         SequenceDict.__init__(self, *args, **kwds)
+        self.customOrder = list()
 #         self.dependentDict = defaultdict( dict )  # dict of dicts outer key is globalVariable, inner key is (target, name) 
 # 
 #     def connect(self, globalName, target, name, weakMethodCallback ):
@@ -75,11 +76,16 @@ class GlobalVariableUi(Form, Base ):
         self.delegate = MagnitudeSpinBoxDelegate()
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
         self.tableView.setSortingEnabled(True)
-        self.tableView.clicked.connect(self.onViewClicked)
+#         self.tableView.clicked.connect(self.onViewClicked)
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
         self.newNameEdit.returnPressed.connect( self.onAddVariable )
+        # Context Menu
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.restoreCustomOrderAction = QtGui.QAction( "restore custom order" , self)
+        self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
+        self.addAction( self.restoreCustomOrderAction )
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))
@@ -91,9 +97,9 @@ class GlobalVariableUi(Form, Base ):
     def saveConfig(self):
         self.config[self.configname] = self._variables_
 
-    def onViewClicked(self,index):
-        """If one of the editable columns is clicked, begin to edit it."""
-        self.tableView.edit(index)
+#     def onViewClicked(self,index):
+#         """If one of the editable columns is clicked, begin to edit it."""
+#         self.tableView.edit(index)
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
