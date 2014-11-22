@@ -11,7 +11,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Study', 'Scan', 'Name', 'Evaluation', 'Started', 'Title', 'Filename' ]
     def __init__(self, measurements, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        # results are given as a list
+        # measurements are given as a list
         self.measurements = measurements
         self.dataLookup = {  (QtCore.Qt.DisplayRole, 0): lambda row: self.measurements[row].study,
                              (QtCore.Qt.DisplayRole, 1): lambda row: self.measurements[row].scanType,
@@ -41,11 +41,11 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             if (orientation == QtCore.Qt.Horizontal): 
                 return self.headerDataLookup[section]
             elif (orientation == QtCore.Qt.Vertical):
-                return self.results[section].id
+                return self.measurements[section].id
         return None  # QtCore.QVariant()
                 
     def sort(self, column, order):
         if column == 0 and self.variables:
-            self.results.sort(reverse=order == QtCore.Qt.DescendingOrder)
+            self.measurements.sort(reverse=order == QtCore.Qt.DescendingOrder)
             self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             

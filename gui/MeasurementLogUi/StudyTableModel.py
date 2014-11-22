@@ -10,14 +10,14 @@ class StudyTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Name', 'Start date' ]
     def __init__(self, studies, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
-        # results are given as a list
+        # studies are given as a list
         self.studies = studies
         self.dataLookup = {  (QtCore.Qt.DisplayRole, 0): lambda row: self.studies[row].name,
-                             (QtCore.Qt.DisplayRole, 1): lambda row: str(self.results[row].startDate)
+                             (QtCore.Qt.DisplayRole, 1): lambda row: str(self.studies[row].startDate)
                               }
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.results) 
+        return len(self.studies) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 2
@@ -40,6 +40,6 @@ class StudyTableModel(QtCore.QAbstractTableModel):
                 
     def sort(self, column, order):
         if column == 0 and self.variables:
-            self.results.sort(reverse=order == QtCore.Qt.DescendingOrder)
+            self.studies.sort(reverse=order == QtCore.Qt.DescendingOrder)
             self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             

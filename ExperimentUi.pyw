@@ -43,6 +43,7 @@ from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
 from pulser.OKBase import OKBase
+from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -207,6 +208,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
        
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
+        
+        self.measurementLog = MeasurementLogUi(self.config)
+        self.measurementLog.setupUi(self.measurementLog)
+        self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
+        self.measurementLogDock.setWidget( self.measurementLog )
+        self.measurementLogDock.setObjectName('_MeasurementLog')
+        self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
         
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
@@ -448,6 +456,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.loggerUi.saveConfig()
         self.todoList.saveConfig()
         self.preferencesUi.saveConfig()
+        self.measurementLog.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
