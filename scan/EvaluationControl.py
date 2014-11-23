@@ -271,6 +271,7 @@ class EvaluationControl(ControlForm, ControlBase ):
     def getEvaluation(self):
         evaluation = copy.deepcopy(self.settings)
         evaluation.evalAlgorithmList = copy.deepcopy( self.evalAlgorithmList )
+        evaluation.settingsName = self.settingsName
         return evaluation
         
     def saveConfig(self):

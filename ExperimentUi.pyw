@@ -128,8 +128,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
-                             (testExperiment.test(self.globalVariablesUi),"test"),
+        self.measurementLog = MeasurementLogUi(self.config)
+        self.measurementLog.setupUi(self.measurementLog)
+        self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
+        self.measurementLogDock.setWidget( self.measurementLog )
+        self.measurementLogDock.setObjectName('_MeasurementLog')
+        self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
+        
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, measurementLog=self.measurementLog), "Scan"),
+                             (testExperiment.test(self.globalVariablesUi, measurementLog=self.measurementLog),"test"),
                              ]:
             widget.setupUi( widget, self.config )
             if hasattr(widget,'setPulseProgramUi'):
@@ -208,13 +215,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
        
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
-        
-        self.measurementLog = MeasurementLogUi(self.config)
-        self.measurementLog.setupUi(self.measurementLog)
-        self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
-        self.measurementLogDock.setWidget( self.measurementLog )
-        self.measurementLogDock.setObjectName('_MeasurementLog')
-        self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
         
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)

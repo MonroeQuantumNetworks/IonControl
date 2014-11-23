@@ -4,10 +4,10 @@ Created on Nov 21, 2014
 @author: pmaunz
 '''
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, Interval, Float
+from sqlalchemy import Column, Integer, String, DateTime, Interval, Float, Boolean
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
-from modules.magnitude import mg
+from modules.magnitude import mg, is_magnitude
 from sqlalchemy.exc import OperationalError, InvalidRequestError, IntegrityError
 import logging
 from sqlalchemy.sql.schema import ForeignKey
@@ -17,7 +17,7 @@ Base = declarative_base()
 class Study(Base):
     __tablename__ = "studies"
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     startDate = Column(DateTime(timezone=True))
     endDate = Column(DateTime(timezone=True))
 
@@ -26,6 +26,7 @@ class Measurement(Base):
     id = Column(Integer, primary_key=True)
     scanType = Column(String, nullable=False)
     scanName = Column(String, nullable=False)
+    scanParameter = Column(String)
     evaluation = Column(String, nullable=False)
     startDate = Column(DateTime(timezone=True))
     duration = Column(Interval)
@@ -41,7 +42,7 @@ class Measurement(Base):
 class Space(Base):
     __tablename__ = 'space'
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)    
+    name = Column(String, unique=True, nullable=False)    
 
 class Result(Base):
     __tablename__ = 'results'
@@ -51,39 +52,55 @@ class Result(Base):
     _bottom = Column(Float)
     _top = Column(Float) 
     unit = Column(String)
+    manual = Column(Boolean, default=False)
     measurement_id = Column(Integer, ForeignKey('measurements.id'))
     measurement = relationship( "Measurement", backref=backref('results', order_by=id))
     
+    def __init__(self, *args, **kwargs):
+        updates = [(param, kwargs.pop(param)) for param in ['value', 'bottom', 'top'] if param in kwargs] 
+        super( Result, self ).__init__(*args, **kwargs)
+        for name, value in updates:
+            setattr( self, name, value)
+
     @property
     def value(self):
-        return mg( self._value, self._unit )
+        return mg( self._value, self.unit )
     
     @value.setter
     def value(self, magValue ):
         if self.unit is None:
-            self._value, self._unit = magValue.toval( returnUnit=True )
+            if is_magnitude(magValue):
+                self._value, self.unit = magValue.toval( returnUnit=True )
+            else:
+                self._value = magValue
         else:
             self._value = magValue.toval(self.unit)
         
     @property
     def bottom(self):
-        return mg( self._bottom, self._unit )
+        return mg( self._bottom, self.unit )
     
     @bottom.setter
     def bottom(self, magValue ):
         if self.unit is None:
-            self._bottom, self._unit = magValue.toval( returnUnit=True )
+            if is_magnitude(magValue):
+                self._bottom, self.unit = magValue.toval( returnUnit=True )
+            else:
+                self._bottom = magValue
         else:
             self._bottom = magValue.toval(self.unit)
         
     @property
     def top(self):
-        return mg( self._top, self._unit )
+        return mg( self._top, self.unit )
     
     @top.setter
     def top(self, magValue ):
         if self.unit is None:
-            self._top, self._unit = magValue.toval( returnUnit=True )
+            if is_magnitude(magValue):
+                self._top, self.unit = magValue.toval( returnUnit=True )
+            else:
+                self._top = magValue
         else:
             self._top = magValue.toval(self.unit)
         
@@ -97,22 +114,36 @@ class Parameter(Base):
     measurement_id = Column(Integer, ForeignKey('measurements.id'))
     measurement = relationship( "Measurement", backref=backref('parameters', order_by=id))
     space_id = Column(Integer, ForeignKey('space.id'))
-    measurement = relationship( "Space", backref=backref('parameters', order_by=id))
+    space = relationship( "Space", backref=backref('parameters', order_by=id))
+    
+    def __init__(self, *args, **kwargs):
+        if 'value' in kwargs:
+            myvalue = kwargs['value']
+            kwargs.pop('value')
+            super( Parameter, self ).__init__(*args, **kwargs)
+            self.value = myvalue
+        else:
+            super( Parameter, self ).__init__(*args, **kwargs)
+            
     
     @property
     def value(self):
-        return mg( self._value, self._unit )
+        return mg( self._value, self.unit )
     
     @value.setter
     def value(self, magValue ):
-        self._value, self._unit = magValue.toval( returnUnit=True )
+        if is_magnitude(magValue):
+            self._value, self.unit = magValue.toval( returnUnit=True )
+        else:
+            self._value = magValue
         
 class MeasurementContainer(object):
     def __init__(self,database_conn_str):
         self.database_conn_str = database_conn_str
-        self.engine = create_engine(self.database_conn_str, echo=False)
+        self.engine = create_engine(self.database_conn_str, echo=True)
         self.studies = list()
         self.measurements = list()
+        self.spaces = list()
         self.isOpen = False
         
     def open(self):
@@ -145,6 +176,18 @@ class MeasurementContainer(object):
         
     def query(self, fromTime, toTime):
         pass
+    
+    def refreshLookups(self):
+        """Load the basic short tables into memory
+        those are: Space"""
+        self.spaces = dict(( (s.name,s) for s in self.session.query(Space).all() ))
+        
+    def getSpace(self, name):
+        if name not in self.spaces:
+            self.refreshLookups()
+        if name in self.spaces:
+            return self.spaces[name]
+        return Space(name=name)
         
 if __name__=='__main__':
     with MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol") as d:

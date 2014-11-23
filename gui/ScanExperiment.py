@@ -49,6 +49,8 @@ from collections import defaultdict
 from gui.ScanMethods import ScanMethodsDict, ScanException 
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
+from persist.MeasurementLog import MeasurementContainer, Measurement, Parameter, Result
+
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
 ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
@@ -66,7 +68,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
     evaluationConfigurationChanged = None
-    def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None):
+    def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
@@ -91,7 +93,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi  
-        self.scanTargetDict = dict()      
+        self.scanTargetDict = dict()     
+        self.measurementLog = measurementLog 
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -431,6 +434,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.otherDataFile = None
         if reason == 'end of scan':
             self.dataAnalysis()
+            self.registerMeasurement()
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
                 trace.description["traceFinalized"] = datetime.now()
@@ -460,6 +464,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 fitfunction.evaluate( self.globalVariablesUi.variables )
                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
                 plot.fitFunction = copy.deepcopy(fitfunction)
+                evaluation.fitfunction = copy.deepcopy(fitfunction)
                 plot.plot(-2)
                 self.fitWidget.pushVariables(fitfunction.pushVariableValues(self.globalVariablesUi.variables))
                 self.fitWidget.showAnalysis(evaluation.analysis, fitfunction)
@@ -691,5 +696,31 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanTargetDict[target] = parameterdict
         self.scanControlWidget.updateScanTarget(target, parameterdict.keys() )
 
-               
+    def registerMeasurement(self):
+        measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, 
+                                  evaluation=self.evaluation.settingsName, startDate=self.plottedTraceList[0].trace.description['traceCreation'], 
+                                  duration=None, filename=None, title=None, comment=None)
+        # add parameters
+        space = self.measurementLog.container.getSpace('PulseProgram')
+        for var in  self.pulseProgramUi.variableTableModel.variabledict.values():
+            measurement.parameters.append( Parameter(name=var.name, value=var.value, definition=var.strvalue, space=space) )
+        space = self.measurementLog.container.getSpace('GlobalVariables')
+        for name, value in self.globalVariables.iteritems():
+            measurement.parameters.append( Parameter(name=name, value=value, space=space) )
+        for targetname, target in self.scanTargetDict.iteritems():
+            space = self.measurementLog.container.getSpace(targetname)
+            for obj in target.values():
+                measurement.parameters.append( Parameter(name=obj.name, value=obj.value, definition=obj.strValue if hasattr(obj,'strValue') else None, space=space) )
+        # add results
+        for evaluation in self.evaluation.evalList:
+            if hasattr(evaluation,'fitfunction'):
+                fit = evaluation.fitfunction
+                for name, value, confidence in zip( fit.parameterNames, fit.parameters, fit.parametersConfidence ):
+                    measurement.results.append( Result(name=name, value=value, bottom=confidence, top=confidence))
+                for result in fit.results.itervalues():
+                    measurement.results.append( Result(name=result.name, value=result.value))
+                for pushvar in fit.pushVariables.itervalues():
+                    measurement.results.append( Result(name=pushvar.variableName, value=pushvar.value))                 
+        self.measurementLog.container.addMeasurement( measurement )
+            
                 

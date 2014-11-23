@@ -32,7 +32,7 @@ class MeasurementLogUi(Form, Base ):
         self.configname = 'MeasurementLog'
         self.settings = self.config.get(self.configname,Settings())
         self.container = MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol")
-        
+        self.container.open()
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)

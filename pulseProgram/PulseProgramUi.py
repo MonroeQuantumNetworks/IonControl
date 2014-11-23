@@ -94,7 +94,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
     contextDictChanged = QtCore.pyqtSignal(object)
     SourceMode = enum('pp','ppp') 
-    def __init__(self,config,parameterdict, channelNameData):
+    def __init__(self, config, parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
