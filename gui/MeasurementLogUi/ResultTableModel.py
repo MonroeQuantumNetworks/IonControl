@@ -24,6 +24,11 @@ class ResultTableModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 4
  
+    def setResults(self, results):
+        self.beginResetModel()
+        self.results = results
+        self.endResetModel()
+        
     def data(self, index, role): 
         if index.isValid():
             return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())

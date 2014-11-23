@@ -12,7 +12,7 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         # parameters are given as a list
         self.parameters = parameters
-        self.dataLookup = {  (QtCore.Qt.DisplayRole, 0): lambda row: self.parameters[row].space,
+        self.dataLookup = {  (QtCore.Qt.DisplayRole, 0): lambda row: self.parameters[row].space.name,
                              (QtCore.Qt.DisplayRole, 1): lambda row: self.parameters[row].name,
                              (QtCore.Qt.DisplayRole, 2): lambda row: str(self.parameters[row].value),
                              (QtCore.Qt.DisplayRole, 3): lambda row: self.parameters[row].definition
@@ -24,6 +24,11 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return 4
  
+    def setParameters(self, parameters):
+        self.beginResetModel()
+        self.parameters = parameters
+        self.endResetModel()
+        
     def data(self, index, role): 
         if index.isValid():
             return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())

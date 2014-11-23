@@ -66,6 +66,9 @@ class MeasurementLogUi(Form, Base ):
         self.timespanComboBox.addItems( self.timespans )
         self.timespanComboBox.setCurrentIndex( self.settings.timespan )
         self.timespanComboBox.currentIndexChanged[int].connect( self.onChangeTimespan )
+        self.container.beginInsertMeasurement.subscribe( self.measurementModel.beginInsertRows )
+        self.container.endInsertMeasurement.subscribe( self.measurementModel.endInsertRows )        
+        self.measurementTableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
 
     def onChangeTimespan(self, index):
         isCustom = self.timespans[index] == 'Custom'
@@ -76,4 +79,9 @@ class MeasurementLogUi(Form, Base ):
         for splitter in self.mySplitters:
             self.config[self.configname+"."+splitter] = getattr(self, splitter).saveState()
         self.config[self.configname] = self.settings
+        
+    def onActiveInstrumentChanged(self, modelIndex, modelIndex2 ):
+        measurement = self.container.measurements[modelIndex.row()]
+        self.parameterModel.setParameters( measurement.parameters )
+        self.resultModel.setResults( measurement.results )
         

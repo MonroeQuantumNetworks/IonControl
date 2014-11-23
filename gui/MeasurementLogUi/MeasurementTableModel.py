@@ -21,7 +21,10 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole, 5): lambda row: self.measurements[row].title,
                              (QtCore.Qt.DisplayRole, 6): lambda row: self.measurements[row].filename
                              }
-
+        
+    def beginInsertRows(self, event):
+        return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
+        
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.measurements) 
         

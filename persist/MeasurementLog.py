@@ -11,6 +11,7 @@ from modules.magnitude import mg, is_magnitude
 from sqlalchemy.exc import OperationalError, InvalidRequestError, IntegrityError
 import logging
 from sqlalchemy.sql.schema import ForeignKey
+from modules.Observable import Observable
 
 Base = declarative_base()
 
@@ -64,7 +65,7 @@ class Result(Base):
 
     @property
     def value(self):
-        return mg( self._value, self.unit )
+        return mg( self._value, self.unit ) if self._value is not None else None
     
     @value.setter
     def value(self, magValue ):
@@ -78,7 +79,7 @@ class Result(Base):
         
     @property
     def bottom(self):
-        return mg( self._bottom, self.unit )
+        return mg( self._bottom, self.unit ) if self._bottom is not None else None
     
     @bottom.setter
     def bottom(self, magValue ):
@@ -92,7 +93,7 @@ class Result(Base):
         
     @property
     def top(self):
-        return mg( self._top, self.unit )
+        return mg( self._top, self.unit ) if self._top is not None else None
     
     @top.setter
     def top(self, magValue ):
@@ -138,6 +139,9 @@ class Parameter(Base):
             self._value = magValue
         
 class MeasurementContainer(object):
+    beginInsertMeasurement = Observable()
+    endInsertMeasurement = Observable()
+    studiesObservable = Observable()
     def __init__(self,database_conn_str):
         self.database_conn_str = database_conn_str
         self.engine = create_engine(self.database_conn_str, echo=True)
@@ -166,9 +170,11 @@ class MeasurementContainer(object):
 
     def addMeasurement(self, measurement):
         try:
-            self.measurements.append( measurement )
             self.session.add( measurement )
             self.session.commit()
+            self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
+            self.measurements.append( measurement )
+            self.endInsertMeasurement.firebare()
         except (InvalidRequestError, IntegrityError) as e:
             logging.getLogger(__name__).error( str(e) )
             self.session.rollback()
