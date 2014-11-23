@@ -37,7 +37,12 @@ class Measurement(Base):
     
     def addResult(self, result):
         self.results.append( result )
-    
+
+class Space(Base):
+    __tablename__ = 'space'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)    
+
 class Result(Base):
     __tablename__ = 'results'
     id = Column(Integer, primary_key=True)
@@ -82,7 +87,26 @@ class Result(Base):
         else:
             self._top = magValue.toval(self.unit)
         
-
+class Parameter(Base):
+    __tablename__ = 'parameters'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    _value = Column(Float, nullable=False)
+    unit = Column(String)
+    definition = Column(String)
+    measurement_id = Column(Integer, ForeignKey('measurements.id'))
+    measurement = relationship( "Measurement", backref=backref('parameters', order_by=id))
+    space_id = Column(Integer, ForeignKey('space.id'))
+    measurement = relationship( "Space", backref=backref('parameters', order_by=id))
+    
+    @property
+    def value(self):
+        return mg( self._value, self._unit )
+    
+    @value.setter
+    def value(self, magValue ):
+        self._value, self._unit = magValue.toval( returnUnit=True )
+        
 class MeasurementContainer(object):
     def __init__(self,database_conn_str):
         self.database_conn_str = database_conn_str
@@ -119,7 +143,8 @@ class MeasurementContainer(object):
             self.session.rollback()
             self.session = self.Session()
         
-        
+    def query(self, fromTime, toTime):
+        pass
         
 if __name__=='__main__':
     with MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol") as d:
