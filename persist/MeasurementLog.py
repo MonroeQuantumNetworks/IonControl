@@ -57,6 +57,17 @@ class Measurement(Base):
     def plottedTraceList(self, plottedTraceList):
         self._plottedTraceList = [weakref.ref(item) for item in plottedTraceList]
         
+    def parameterByName(self, space, name):
+        if not hasattr(self, '_parameterIndex') or len(self._parameterIndex) != len(self.parameters):
+            self._parameterIndex = dict( ((param.space.name, param.name), index) for index, param in enumerate(self.parameters)  )
+        return self.parameters[ self._parameterIndex[(space,name)] ] if (space,name) in self._parameterIndex else None
+            
+    def resultByName(self, name):
+        if not hasattr(self, '_resultIndex') or len(self._resultIndex) != len(self.results):
+            self._resultIndex = dict( (result.name, index) for index, result in enumerate(self.results)  )
+        return self.results[ self._resultIndex[name] ] if name in self._resultIndex else None
+            
+        
 
 class Space(Base):
     __tablename__ = 'space'

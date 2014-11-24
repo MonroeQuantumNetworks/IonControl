@@ -15,6 +15,7 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from datetime import datetime, time, timedelta
 from _functools import partial
 from modules.firstNotNone import firstNotNone
+from modules.Utility import unique
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 
@@ -25,12 +26,14 @@ class Settings:
         self.timespan = 0
         self.fromDateTimeEdit = datetime.combine(datetime.now().date(), time())
         self.toDateTimeEdit = datetime.combine((datetime.now()+timedelta(days=1)).date(), time())
+        self.extraColumns = list()
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'timespan', 0)
         self.__dict__.setdefault( 'fromDateTimeEdit', datetime.combine(datetime.now().date(), time()))
         self.__dict__.setdefault( 'toDateTimeEdit', datetime.combine((datetime.now()+timedelta(days=1)).date(), time()))
+        self.__dict__.setdefault( 'extraColumns', list())
 
 class MeasurementLogUi(Form, Base ):
     timespans = ['Today','Three days','One week','One month', 'Three month', 'One year', 'All', 'Custom']
@@ -57,7 +60,7 @@ class MeasurementLogUi(Form, Base ):
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         # measurement Table
-        self.measurementModel = MeasurementTableModel(self.container.measurements, self.container)
+        self.measurementModel = MeasurementTableModel(self.container.measurements, self.settings.extraColumns, self.container)
         self.measurementTableView.setModel( self.measurementModel )
         # result Table
         self.resultModel = ResultTableModel( list(), self.container )
@@ -72,19 +75,22 @@ class MeasurementLogUi(Form, Base ):
         self.parameterTableView.setItemDelegateForColumn( 2, magnitudeDelegate )
         # Context Menu for ResultsTable
         self.resultTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-        self.addToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
-        #self.addToMeasurementAction.triggered.connect( self.model.restoreCustomOrder  )
-        self.resultTableView.addAction( self.addToMeasurementAction )
+        self.addResultToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
+        self.addResultToMeasurementAction.triggered.connect( self.onAddResultToMeasurement  )
+        self.resultTableView.addAction( self.addResultToMeasurementAction )
         # Context Menu for Measurements Table
         self.measurementTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.removeColumnAction = QtGui.QAction( "remove selected column" , self)
-        #self.removeColumnAction.triggered.connect( self.model.restoreCustomOrder  )
+        self.removeColumnAction.triggered.connect( self.onRemoveMeasurementColumn  )
         self.measurementTableView.addAction( self.removeColumnAction )
         # Context Menu for Parameters Table
         self.parameterTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addManualParameterAction = QtGui.QAction( "add manual parameter" , self)
         self.addManualParameterAction.triggered.connect( self.parameterModel.addManualParameter  )
         self.parameterTableView.addAction( self.addManualParameterAction )
+        self.addParameterToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
+        self.addParameterToMeasurementAction.triggered.connect( self.onAddParameterToMeasurement )
+        self.parameterTableView.addAction( self.addParameterToMeasurementAction )
         # restore splitter positions
         for splitter in self.mySplitters:
             name = self.configname+"."+splitter
@@ -105,6 +111,22 @@ class MeasurementLogUi(Form, Base ):
         self.toDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'toDateTimeEdit') )
         self.plainTextEdit.editingFinished.connect( self.onCommentFinished )
         self.onFilterRefresh()
+        
+    def onAddParameterToMeasurement(self):
+        if self.currentMeasurement is not None:
+            for index in sorted(unique([ i.row() for i in self.parameterTableView.selectedIndexes() ])):
+                param = self.currentMeasurement.parameters[index]
+                self.measurementModel.addColumn( ('parameter',param.space.name,param.name) )
+        
+    def onAddResultToMeasurement(self):
+        if self.currentMeasurement is not None:
+            for index in sorted(unique([ i.row() for i in self.resultTableView.selectedIndexes() ])):
+                result = self.currentMeasurement.results[index]
+                self.measurementModel.addColumn( ('result',None,result.name) )
+        
+    def onRemoveMeasurementColumn(self):
+        for index in sorted(unique([ i.column() for i in self.measurementTableView.selectedIndexes() if i.column()>=self.measurementModel.coreColumnCount])):
+            self.measurementModel.removeColumn(index)
         
     def onCommentFinished(self, document):
         if self.currentMeasurement is not None:

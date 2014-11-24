@@ -10,9 +10,11 @@ from os.path import exists
 class MeasurementTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
     headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Started', 'Title', 'Filename' ]
-    def __init__(self, measurements, container=None, parent=None, *args): 
+    coreColumnCount = 8
+    def __init__(self, measurements, extraColumns, container=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.container = container 
+        self.extraColumns = extraColumns  # list of tuples (source, space, name)
         # measurements are given as a list
         self.measurements = measurements
         self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
@@ -31,6 +33,16 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setPlotted,
                                (QtCore.Qt.EditRole, 6): self.setTitle
                               }
+    
+    def addColumn(self, extraColumn ):
+        self.beginInsertColumns( QtCore.QModelIndex(), self.coreColumnCount+len(self.extraColumns), self.coreColumnCount+len(self.extraColumns))
+        self.extraColumns.append( extraColumn )
+        self.endInsertColumns()
+        
+    def removeColumn(self, columnIndex):
+        self.beginRemoveColumns( QtCore.QModelIndex(), columnIndex, columnIndex )
+        self.extraColumns.pop( columnIndex-self.coreColumnCount )
+        self.endRemoveColumns()
         
     def isPlotted(self, measurement):
         count = 0
@@ -79,11 +91,24 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         return len(self.measurements) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 7
+        return self.coreColumnCount + len(self.extraColumns)
  
     def data(self, index, role): 
         if index.isValid():
-            return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())
+            if index.column()<self.coreColumnCount:
+                return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())
+            else:
+                source, space, name = self.extraColumns[index.column()-self.coreColumnCount]
+                if source=='parameter':
+                    param = self.measurements[index.row()].parameterByName(space,name)
+                    value = param.value if param is not None else None
+                elif source=='result':
+                    result = self.measurements[index.row()].resultByName(name)
+                    value = result.value if result is not None else None
+                if role==QtCore.Qt.DisplayRole:
+                    return str(value) if value is not None else None
+                elif role==QtCore.Qt.EditRole:
+                    return value                    
         return None
         
     def setData(self, index, value, role):
@@ -95,7 +120,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return self.headerDataLookup[section]
+                return self.headerDataLookup[section] if section<self.coreColumnCount else self.extraColumns[section-self.coreColumnCount][2]
             elif (orientation == QtCore.Qt.Vertical):
                 return self.measurements[section].id
         return None  # QtCore.QVariant()
@@ -109,3 +134,4 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         self.beginResetModel()
         self.measurements = event.measurements 
         self.endResetModel()
+        
