@@ -8,8 +8,9 @@ from PyQt4 import QtCore
 class StudyTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
     headerDataLookup = ['Name', 'Start date' ]
-    def __init__(self, studies, parent=None, *args): 
-        QtCore.QAbstractTableModel.__init__(self, parent, *args) 
+    def __init__(self, studies, container=None, parent=None, *args): 
+        QtCore.QAbstractTableModel.__init__(self, parent, *args)
+        self.container = container  
         # studies are given as a list
         self.studies = studies
         self.dataLookup = {  (QtCore.Qt.DisplayRole, 0): lambda row: self.studies[row].name,

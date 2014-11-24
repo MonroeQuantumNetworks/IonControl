@@ -8,7 +8,8 @@ from sqlalchemy import Column, Integer, String, DateTime, Interval, Float, Boole
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
 from modules.magnitude import mg, is_magnitude
-from sqlalchemy.exc import OperationalError, InvalidRequestError, IntegrityError
+from sqlalchemy.exc import OperationalError, InvalidRequestError, IntegrityError,\
+    ProgrammingError
 import logging
 from sqlalchemy.sql.schema import ForeignKey
 from modules.Observable import Observable
@@ -112,6 +113,7 @@ class Parameter(Base):
     _value = Column(Float, nullable=False)
     unit = Column(String)
     definition = Column(String)
+    manual = Column(Boolean, default=False)
     measurement_id = Column(Integer, ForeignKey('measurements.id'))
     measurement = relationship( "Measurement", backref=backref('parameters', order_by=id))
     space_id = Column(Integer, ForeignKey('space.id'))
@@ -139,9 +141,6 @@ class Parameter(Base):
             self._value = magValue
         
 class MeasurementContainer(object):
-    beginInsertMeasurement = Observable()
-    endInsertMeasurement = Observable()
-    studiesObservable = Observable()
     def __init__(self,database_conn_str):
         self.database_conn_str = database_conn_str
         self.engine = create_engine(self.database_conn_str, echo=True)
@@ -149,6 +148,10 @@ class MeasurementContainer(object):
         self.measurements = list()
         self.spaces = list()
         self.isOpen = False
+        self.beginInsertMeasurement = Observable()
+        self.endInsertMeasurement = Observable()
+        self.studiesObservable = Observable()
+        self.measurementsUpdated = Observable()
         
     def open(self):
         Base.metadata.create_all(self.engine)
@@ -175,25 +178,41 @@ class MeasurementContainer(object):
             self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
             self.measurements.append( measurement )
             self.endInsertMeasurement.firebare()
-        except (InvalidRequestError, IntegrityError) as e:
+        except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
+            logging.getLogger(__name__).error( str(e) )
+            self.session.rollback()
+            self.session = self.Session()
+        
+    def commit(self):
+        try:
+            self.session.commit()
+        except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
             logging.getLogger(__name__).error( str(e) )
             self.session.rollback()
             self.session = self.Session()
         
     def query(self, fromTime, toTime):
-        pass
+        self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).all()
+        self.measurementsUpdated.fire(measurements=self.measurements)
     
     def refreshLookups(self):
         """Load the basic short tables into memory
         those are: Space"""
-        self.spaces = dict(( (s.name,s) for s in self.session.query(Space).all() ))
+        try:
+            self.spaces = dict(( (s.name,s) for s in self.session.query(Space).all() ))
+        except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
+            logging.getLogger(__name__).error( str(e) )
+            self.session.rollback()
+            self.session = self.Session()
         
     def getSpace(self, name):
         if name not in self.spaces:
             self.refreshLookups()
         if name in self.spaces:
             return self.spaces[name]
-        return Space(name=name)
+        s = Space(name=name)
+        self.spaces[name] = s
+        return s
         
 if __name__=='__main__':
     with MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol") as d:
