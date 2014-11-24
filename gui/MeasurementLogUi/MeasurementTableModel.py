@@ -15,7 +15,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
     headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Started', 'Comment', 'Filename' ]
     coreColumnCount = 8
-    def __init__(self, measurements, extraColumns, container=None, parent=None, *args): 
+    def __init__(self, measurements, extraColumns, traceuiLookup, container=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.container = container 
         self.extraColumns = extraColumns  # list of tuples (source, space, name)
@@ -37,6 +37,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setPlotted,
                                (QtCore.Qt.EditRole, 6): self.setComment
                               }
+        self.traceuiLookup = traceuiLookup
         self.subscribeToTrace()
         
         
@@ -52,9 +53,9 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         for row, measurement in enumerate(self.measurements[first:last]):
             plottedTraceList = measurement.plottedTraceList
             if len(plottedTraceList)>0:
-                plottedTraceList[0].trace.commentChanged.subscribe( partial( self.commentChanged, row ) )
-                plottedTraceList[0].trace.filenameChanged.subscribe( partial( self.filenameChanged, row) )
-                
+                plottedTraceList[0].trace.commentChanged.subscribe( partial( self.commentChanged, row+first ) )
+                plottedTraceList[0].trace.filenameChanged.subscribe( partial( self.filenameChanged, row+first) )
+                 
     
     def commentChanged(self, row, event ):
         self.setComment( row, event.comment )
@@ -101,11 +102,11 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                     pt.plot(-1)
             else:
                 if exists(self.measurements[row].filename):
-                    self.loadTrace(self.measurements[row].filename)
+                    self.loadTrace(self.measurements[row])
         return True
     
-    def loadTrace(self, filename):
-        pass
+    def loadTrace(self, measurement):
+        measurement.plottedTraceList = self.traceuiLookup[measurement.ScanType].openFile(measurement.filename)
     
     def setComment(self, row, value):
         if isinstance(value, QtCore.QVariant):
