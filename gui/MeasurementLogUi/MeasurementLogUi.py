@@ -14,6 +14,7 @@ from gui.MeasurementLogUi.ParameterTableModel import ParameterTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from datetime import datetime, time, timedelta
 from _functools import partial
+from modules.firstNotNone import firstNotNone
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 
@@ -51,6 +52,7 @@ class MeasurementLogUi(Form, Base ):
                            lambda now: (datetime(2014,11,1,0,0),  datetime.combine(now + timedelta(days=1), time())),  # all
                            lambda now: (self.settings.fromDateTimeEdit, self.settings.toDateTimeEdit)
                            ]
+        self.currentMeasurement = None
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
@@ -101,7 +103,14 @@ class MeasurementLogUi(Form, Base ):
         self.toDateTimeEdit.setDateTime( self.settings.toDateTimeEdit )
         self.fromDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'fromDateTimeEdit') )
         self.toDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'toDateTimeEdit') )
+        self.plainTextEdit.editingFinished.connect( self.onCommentFinished )
         self.onFilterRefresh()
+        
+    def onCommentFinished(self, document):
+        if self.currentMeasurement is not None:
+            self.currentMeasurement.comment = str(document.toPlainText())
+            self.plainTextEdit.setModified(False)
+            self.currentMeasurement._sa_instance_state.session.commit()
 
     def setDateTimeEdit(self, attr, value):
         setattr( self.settings, attr, datetime(value) )
@@ -122,6 +131,8 @@ class MeasurementLogUi(Form, Base ):
         measurement = self.container.measurements[modelIndex.row()]
         self.parameterModel.setParameters( measurement.parameters )
         self.resultModel.setResults( measurement.results )
+        self.plainTextEdit.setPlainText( firstNotNone( measurement.comment, "" ) )
+        self.currentMeasurement = measurement
         
     def onFilterRefresh(self):
         self.container.query( *self.fromToTimeLookup[self.settings.timespan](datetime.now()) )

@@ -35,6 +35,10 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         return True
     
     def setTitle(self, row, value):
+        if isinstance(value, QtCore.QVariant):
+            value = value.toString()
+        self.measurements[row].title = str(value) 
+        self.measurements[row]._sa_instance_state.session.commit()
         return True
         
     def beginInsertRows(self, event):
@@ -51,8 +55,11 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())
         return None
         
+    def setData(self, index, value, role):
+        return self.setDataLookup.get((role, index.column()), lambda row, value: False)(index.row(), value)       
+    
     def flags(self, index):
-        return self.flagsLookup.get( index.row(), QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
+        return self.flagsLookup.get( index.column(), QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
 
     def headerData(self, section, orientation, role):
         if (role == QtCore.Qt.DisplayRole):

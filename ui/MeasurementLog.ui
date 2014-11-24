@@ -220,7 +220,7 @@
        <enum>Qt::Vertical</enum>
       </property>
       <widget class="QTableView" name="measurementTableView"/>
-      <widget class="QPlainTextEdit" name="plainTextEdit"/>
+      <widget class="PlainTextEdit" name="plainTextEdit"/>
       <widget class="QSplitter" name="splitterHorizontalParam">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -233,6 +233,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlainTextEdit</class>
+   <extends>QPlainTextEdit</extends>
+   <header>gui.MeasurementLogUi.PlainTextEdit</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>
