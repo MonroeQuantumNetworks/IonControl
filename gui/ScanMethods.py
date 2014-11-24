@@ -7,7 +7,7 @@ import logging
 import time
 from PyQt4 import QtCore
 
-from _functools import partial
+from functools import partial
 
 class ScanException(Exception):
     pass

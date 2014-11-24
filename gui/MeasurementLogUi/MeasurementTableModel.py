@@ -5,6 +5,7 @@ Created on Nov 21, 2014
 '''
 
 from PyQt4 import QtCore
+from os.path import exists
 
 class MeasurementTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
@@ -17,7 +18,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
                              6: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                             }
-        self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Unchecked,
+        self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda row: self.isPlotted(self.measurements[row]),
                              (QtCore.Qt.DisplayRole, 1): lambda row: self.measurements[row].study,
                              (QtCore.Qt.DisplayRole, 2): lambda row: self.measurements[row].scanType,
                              (QtCore.Qt.DisplayRole, 3): lambda row: self.measurements[row].scanName,
@@ -31,8 +32,38 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                                (QtCore.Qt.EditRole, 6): self.setTitle
                               }
         
+    def isPlotted(self, measurement):
+        count = 0
+        plottedTraceList = measurement.plottedTraceList
+        total = len(plottedTraceList)
+        for pt in plottedTraceList:
+            if pt.isPlotted:
+                count += 1
+        if total==0 or count==0:
+            return QtCore.Qt.Unchecked
+        if count < total:
+            return QtCore.Qt.PartiallyChecked
+        return QtCore.Qt.Checked
+        
+        
     def setPlotted(self, row, value):
+        plotted = value == QtCore.Qt.Checked
+        self
+        if not plotted:
+            for pt in self.measurements[row].plottedTraceList:
+                pt.plot(0)
+        else:
+            plottedTraceList = self.measurements[row].plottedTraceList
+            if len(plottedTraceList)>0:
+                for pt in plottedTraceList:
+                    pt.plot(-1)
+            else:
+                if exists(self.measurements[row].filename):
+                    self.loadTrace(self.measurements[row].filename)
         return True
+    
+    def loadTrace(self, filename):
+        pass
     
     def setTitle(self, row, value):
         if isinstance(value, QtCore.QVariant):

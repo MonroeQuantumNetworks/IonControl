@@ -50,6 +50,7 @@ from gui.ScanMethods import ScanMethodsDict, ScanException
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import MeasurementContainer, Measurement, Parameter, Result
+import weakref
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -720,7 +721,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 for result in fit.results.itervalues():
                     measurement.results.append( Result(name=result.name, value=result.value))
                 for pushvar in fit.pushVariables.itervalues():
-                    measurement.results.append( Result(name=pushvar.variableName, value=pushvar.value))                 
+                    measurement.results.append( Result(name=pushvar.variableName, value=pushvar.value))   
+        # add Plots
+        measurement.plottedTraceList = self.plottedTraceList              
         self.measurementLog.container.addMeasurement( measurement )
             
                 

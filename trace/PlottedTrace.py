@@ -166,7 +166,16 @@ class PlottedTrace(object):
     @raw.setter
     def raw(self, column):
         setattr(self.trace, self._rawColumn, column)
-
+        
+    @property
+    def isPlotted(self):
+        return self.curvePen>0
+    
+    @isPlotted.setter
+    def isPlotted(self, plotted):
+        if plotted != (self.curvePen>0):
+            self.plot( -1 if plotted else 0 )
+        
     def child(self, number):
         """Return the child at the specified number, from the trace's list of children."""
         return self.childTraces[number]
@@ -382,8 +391,6 @@ class PlottedTrace(object):
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
         
-    def isPlotted(self):
-        return self.curvePen!=0
     
 #     def __del__(self):
 #         super(PlottedTrace, self)__del__()

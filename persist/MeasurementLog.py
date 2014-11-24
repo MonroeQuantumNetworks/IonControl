@@ -13,6 +13,8 @@ from sqlalchemy.exc import OperationalError, InvalidRequestError, IntegrityError
 import logging
 from sqlalchemy.sql.schema import ForeignKey
 from modules.Observable import Observable
+from sqlalchemy.orm.collections import attribute_mapped_collection
+import weakref
 
 Base = declarative_base()
 
@@ -38,8 +40,23 @@ class Measurement(Base):
     study_id = Column(Integer, ForeignKey('studies.id'))
     study = relationship( "Study", backref=backref('measurements', order_by=id))
     
+    def __init__(self, *args, **kwargs):
+        super(Measurement, self).__init__(*args, **kwargs)
+        self._plottedTraceList = list()
+        self.isPlotted = None
+        
     def addResult(self, result):
         self.results.append( result )
+        
+    @property
+    def plottedTraceList(self):
+        self._plottedTraceList = [item for item in self._plottedTraceList if item() is not None] if hasattr(self,'_plottedTraceList') else list()
+        return [item() for item in self._plottedTraceList]
+    
+    @plottedTraceList.setter
+    def plottedTraceList(self, plottedTraceList):
+        self._plottedTraceList = [weakref.ref(item) for item in plottedTraceList]
+        
 
 class Space(Base):
     __tablename__ = 'space'
@@ -115,7 +132,7 @@ class Parameter(Base):
     definition = Column(String)
     manual = Column(Boolean, default=False)
     measurement_id = Column(Integer, ForeignKey('measurements.id'))
-    measurement = relationship( "Measurement", backref=backref('parameters', order_by=id))
+    measurement = relationship( "Measurement", backref=backref('parameters', order_by=id)) # , collection_class=attribute_mapped_collection('name')
     space_id = Column(Integer, ForeignKey('space.id'))
     space = relationship( "Space", backref=backref('parameters', order_by=id))
     
@@ -192,7 +209,7 @@ class MeasurementContainer(object):
             self.session = self.Session()
         
     def query(self, fromTime, toTime):
-        self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).all()
+        self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
         self.measurementsUpdated.fire(measurements=self.measurements)
     
     def refreshLookups(self):
