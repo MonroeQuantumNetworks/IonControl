@@ -21,6 +21,7 @@ from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
 import time
 from modules.SequenceDictSignal import SequenceDictSignal as SequenceDict
+from modules.Observable import Observable
 
 try:
     from fit import FitFunctions
@@ -127,11 +128,12 @@ class Trace(object):
         self.headerDict = dict()
         self._filename = None
         self.filenameCallback = None   # function to result in filename for save
-        self.dataChangedCallback = None # used to update the gui table
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
         self.description["tracePlottingList"] = TracePlottingList()
         self.record_timestamps = record_timestamps
+        self.commentChanged = Observable()
+        self.filenameChanged = Observable()
         if record_timestamps:
             self.addColumn('timestamp')
         
@@ -178,6 +180,15 @@ class Trace(object):
         return self._filename
           
     @property
+    def comment(self):
+        return self.description['comment']
+    
+    @comment.setter
+    def comment(self, comment):
+        self.description['comment'] = comment
+        self.commentChanged.fire(comment=comment)       
+          
+    @property
     def filename(self):
         """Get the full pathname of the file."""
         return self._filename
@@ -192,8 +203,7 @@ class Trace(object):
             self.filepath, self.fileleaf = os.path.split(filename)
         else:
             self.filepath, self.fileleaf = None, None
-        if self.dataChangedCallback:
-            self.dataChangedCallback()                            
+        self.filenameChanged.fire(filename=filename,path=self.filepath,leaf=self.fileleaf)
         
     @property
     def xUnit(self):

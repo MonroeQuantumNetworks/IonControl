@@ -9,3 +9,4 @@ def firstNotNone( *values ):
         if value is not None:
             return value
     return None
+

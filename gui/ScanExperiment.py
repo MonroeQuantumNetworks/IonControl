@@ -700,7 +700,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def registerMeasurement(self):
         measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, 
                                   evaluation=self.evaluation.settingsName, startDate=self.plottedTraceList[0].trace.description['traceCreation'], 
-                                  duration=None, filename=None, title=None, comment=None)
+                                  duration=None, filename=None, comment=None, longComment=None)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
         for var in  self.pulseProgramUi.variableTableModel.variabledict.values():

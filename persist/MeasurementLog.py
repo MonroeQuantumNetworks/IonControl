@@ -35,8 +35,8 @@ class Measurement(Base):
     startDate = Column(DateTime(timezone=True))
     duration = Column(Interval)
     filename = Column(String)
-    title = Column(String)
     comment = Column(String)
+    longComment = Column(String)
     study_id = Column(Integer, ForeignKey('studies.id'))
     study = relationship( "Study", backref=backref('measurements', order_by=id))
     

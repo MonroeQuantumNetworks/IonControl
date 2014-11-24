@@ -15,8 +15,8 @@ class ResultTableModel(QtCore.QAbstractTableModel):
         self.results = results
         self.dataLookup = {  (QtCore.Qt.DisplayRole, 0): lambda row: self.results[row].name,
                              (QtCore.Qt.DisplayRole, 1): lambda row: str(self.results[row].value),
-                             (QtCore.Qt.DisplayRole, 2): lambda row: str(self.results[row].bottom),
-                             (QtCore.Qt.DisplayRole, 3): lambda row: str(self.results[row].top)
+                             (QtCore.Qt.DisplayRole, 2): lambda row: str(self.results[row].bottom) if self.results[row].bottom is not None else None,
+                             (QtCore.Qt.DisplayRole, 3): lambda row: str(self.results[row].top) if self.results[row].top is not None else None
                              }
 
     def rowCount(self, parent=QtCore.QModelIndex()): 

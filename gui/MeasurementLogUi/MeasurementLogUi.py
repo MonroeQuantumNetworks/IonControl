@@ -130,7 +130,7 @@ class MeasurementLogUi(Form, Base ):
         
     def onCommentFinished(self, document):
         if self.currentMeasurement is not None:
-            self.currentMeasurement.comment = str(document.toPlainText())
+            self.currentMeasurement.longComment = str(document.toPlainText())
             self.plainTextEdit.setModified(False)
             self.currentMeasurement._sa_instance_state.session.commit()
 
@@ -153,7 +153,7 @@ class MeasurementLogUi(Form, Base ):
         measurement = self.container.measurements[modelIndex.row()]
         self.parameterModel.setParameters( measurement.parameters )
         self.resultModel.setResults( measurement.results )
-        self.plainTextEdit.setPlainText( firstNotNone( measurement.comment, "" ) )
+        self.plainTextEdit.setPlainText( firstNotNone( measurement.longComment, "" ) )
         self.currentMeasurement = measurement
         
     def onFilterRefresh(self):

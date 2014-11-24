@@ -6,10 +6,14 @@ Created on Nov 21, 2014
 
 from PyQt4 import QtCore
 from os.path import exists
+from _functools import partial
+from Tkconstants import FIRST
+from modules.firstNotNone import firstNotNone
+import os.path
 
 class MeasurementTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
-    headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Started', 'Title', 'Filename' ]
+    headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Started', 'Comment', 'Filename' ]
     coreColumnCount = 8
     def __init__(self, measurements, extraColumns, container=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
@@ -26,13 +30,39 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole, 3): lambda row: self.measurements[row].scanName,
                              (QtCore.Qt.DisplayRole, 4): lambda row: self.measurements[row].evaluation,
                              (QtCore.Qt.DisplayRole, 5): lambda row: str(self.measurements[row].startDate),
-                             (QtCore.Qt.DisplayRole, 6): lambda row: self.measurements[row].title,
-                             (QtCore.Qt.DisplayRole, 7): lambda row: self.measurements[row].filename,
-                             (QtCore.Qt.EditRole, 6): lambda row: self.measurements[row].title
+                             (QtCore.Qt.DisplayRole, 6): lambda row: self.measurements[row].comment,
+                             (QtCore.Qt.DisplayRole, 7): self.getFilename, 
+                             (QtCore.Qt.EditRole, 6): lambda row: self.measurements[row].comment
                              }
         self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setPlotted,
-                               (QtCore.Qt.EditRole, 6): self.setTitle
+                               (QtCore.Qt.EditRole, 6): self.setComment
                               }
+        self.subscribeToTrace()
+        
+        
+    def getFilename(self, row):
+        filename = self.measurements[row].filename
+        if filename is None:
+            return None
+        return os.path.split(filename)[1]
+        
+    def subscribeToTrace(self, first=0, last=None):
+        # register listeners
+        last = firstNotNone( last, len(self.measurements) )
+        for row, measurement in enumerate(self.measurements[first:last]):
+            plottedTraceList = measurement.plottedTraceList
+            if len(plottedTraceList)>0:
+                plottedTraceList[0].trace.commentChanged.subscribe( partial( self.commentChanged, row ) )
+                plottedTraceList[0].trace.filenameChanged.subscribe( partial( self.filenameChanged, row) )
+                
+    
+    def commentChanged(self, row, event ):
+        self.setComment( row, event.comment )
+        self.dataChanged.emit( self.index(row,6), self.index(row,6) )
+
+    def filenameChanged(self, row, event ):
+        self.setFilename( row, event.filename )
+        self.dataChanged.emit( self.index(row,7), self.index(row,7) )
     
     def addColumn(self, extraColumn ):
         self.beginInsertColumns( QtCore.QModelIndex(), self.coreColumnCount+len(self.extraColumns), self.coreColumnCount+len(self.extraColumns))
@@ -77,15 +107,28 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def loadTrace(self, filename):
         pass
     
-    def setTitle(self, row, value):
+    def setComment(self, row, value):
         if isinstance(value, QtCore.QVariant):
             value = value.toString()
-        self.measurements[row].title = str(value) 
+        self.measurements[row].comment = str(value) 
+        self.measurements[row]._sa_instance_state.session.commit()
+        return True
+
+    def setFilename(self, row, value):
+        if isinstance(value, QtCore.QVariant):
+            value = value.toString()
+        self.measurements[row].filename = str(value) 
         self.measurements[row]._sa_instance_state.session.commit()
         return True
         
     def beginInsertRows(self, event):
+        self.firstAdded = event.first
+        self.lastAdded = event.last
         return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
+    
+    def endInsertRows(self):
+        self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
+        return QtCore.QAbstractTableModel.endInsertRows(self)
         
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.measurements) 
@@ -133,5 +176,6 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def setMeasurements(self, event):
         self.beginResetModel()
         self.measurements = event.measurements 
+        self.subscribeToTrace()
         self.endResetModel()
         
