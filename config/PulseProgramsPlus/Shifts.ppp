@@ -1,8 +1,11 @@
 const co = 2
+const channel = 3
 
 parameter a
 parameter b
 parameter c
 
 c = a << b
+
+write_result( channel, c )
 

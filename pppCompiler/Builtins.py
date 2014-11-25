@@ -92,6 +92,14 @@ def read_pipe( symboltable, arg=list(), kwarg=dict()):
 def write_pipe( symboltable, arg=list(), kwarg=dict()):
     return ["  WRITEPIPE"]
 
+def write_result( symboltable, arg=list(), kwarg=dict()):  # channel, variable
+    if len(arg)!=3:
+        raise CompileException( "expected exactly one argument in write_result" )
+    channel = symboltable.getConst( arg[1] )
+    value = symboltable.getVar( arg[2] )
+    return [ "  WRITERESULTTOPIPEHIGH {0}, {1}".format(channel.name, value.name),
+             "  WRITERESULTTOPIPELOW {0}, {1}".format(channel.name, value.name)]
+
 def pipe_empty( symboltable, arg=list(), kwarg=dict()):
     #return ["  READPIPEEMPTY"]
     return {True: '  JMPPIPEEMPTY', False:'  JMPPIPEAVAIL'}
