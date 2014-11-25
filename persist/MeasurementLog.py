@@ -91,7 +91,7 @@ class Result(Base):
         super( Result, self ).__init__(*args, **kwargs)
         for name, value in updates:
             setattr( self, name, value)
-
+    
     @property
     def value(self):
         return mg( self._value, self.unit ) if self._value is not None else None
@@ -133,6 +133,7 @@ class Result(Base):
                 self._top = magValue
         else:
             self._top = magValue.toval(self.unit)
+            
         
 class Parameter(Base):
     __tablename__ = 'parameters'
@@ -180,6 +181,8 @@ class MeasurementContainer(object):
         self.endInsertMeasurement = Observable()
         self.studiesObservable = Observable()
         self.measurementsUpdated = Observable()
+        self.scanNamesChanged = Observable()
+        self.scanNames = set()
         
     def open(self):
         Base.metadata.create_all(self.engine)
@@ -203,9 +206,11 @@ class MeasurementContainer(object):
         try:
             self.session.add( measurement )
             self.session.commit()
-            self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
+            self.beginInsertMeasurement.fireEvent(first=len(self.measurements),last=len(self.measurements))
             self.measurements.append( measurement )
-            self.endInsertMeasurement.firebare()
+            self.endInsertMeasurement.fireBare()
+            self.scanNames.add( measurement.scanName )
+            self.scanNamesChanged.fireEvent( self.scanNames )
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
             logging.getLogger(__name__).error( str(e) )
             self.session.rollback()
@@ -221,7 +226,9 @@ class MeasurementContainer(object):
         
     def query(self, fromTime, toTime):
         self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
-        self.measurementsUpdated.fire(measurements=self.measurements)
+        self.scanNames = set((m.scanName for m in self.measurements))
+        self.scanNamesChanged.fireEvent( self.scanNames )
+        self.measurementsUpdated.fireEvent(measurements=self.measurements)
     
     def refreshLookups(self):
         """Load the basic short tables into memory
@@ -241,6 +248,11 @@ class MeasurementContainer(object):
         s = Space(name=name)
         self.spaces[name] = s
         return s
+    
+    @property
+    def scanNames(self):
+        return self._scanNames
+        
         
 if __name__=='__main__':
     with MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol") as d:
