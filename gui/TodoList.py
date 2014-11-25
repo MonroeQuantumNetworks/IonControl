@@ -47,7 +47,7 @@ class TodoListEntry:
         self.__dict__.setdefault('settings', SequenceDict())
         self.__dict__.setdefault('revertSettings', False)
 
-    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation' ] 
+    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'settings' ] 
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -72,7 +72,7 @@ class Settings:
         self.__dict__.setdefault( 'currentIndex', 0)
         self.__dict__.setdefault( 'repeat', False)
 
-    stateFields = ['currentIndex', 'repeat', 'todoList', 'settings'] 
+    stateFields = ['currentIndex', 'repeat', 'todoList'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
