@@ -78,7 +78,7 @@ class Result(Base):
     __tablename__ = 'results'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    _value = Column(Float, nullable=False)
+    _value = Column(Float)
     _bottom = Column(Float)
     _top = Column(Float) 
     unit = Column(String)
@@ -138,7 +138,7 @@ class Parameter(Base):
     __tablename__ = 'parameters'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    _value = Column(Float, nullable=False)
+    _value = Column(Float)
     unit = Column(String)
     definition = Column(String)
     manual = Column(Boolean, default=False)

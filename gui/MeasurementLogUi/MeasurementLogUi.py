@@ -56,11 +56,12 @@ class MeasurementLogUi(Form, Base ):
                            lambda now: (self.settings.fromDateTimeEdit, self.settings.toDateTimeEdit)
                            ]
         self.currentMeasurement = None
+        self.traceuiLookup = dict()        # the measurements should insert their traceui into this dictionary
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         # measurement Table
-        self.measurementModel = MeasurementTableModel(self.container.measurements, self.settings.extraColumns, self.container)
+        self.measurementModel = MeasurementTableModel(self.container.measurements, self.settings.extraColumns, self.traceuiLookup, self.container)
         self.measurementTableView.setModel( self.measurementModel )
         # result Table
         self.resultModel = ResultTableModel( list(), self.container )
