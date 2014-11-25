@@ -135,7 +135,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLogDock.setObjectName('_MeasurementLog')
         self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
         
-        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, measurementLog=self.measurementLog), "Scan"),
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, 
+                                                            measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan"),
                              (testExperiment.test(self.globalVariablesUi, measurementLog=self.measurementLog),"test"),
                              ]:
             widget.setupUi( widget, self.config )
@@ -201,7 +202,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.selectionChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
         self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.enabledParametersObjects )
         
-        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab, self.globalVariablesUi.variables )
+        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab, self.globalVariablesUi )
         self.todoList.setupUi()
         self.todoListDock = QtGui.QDockWidget("Todo List")
         self.todoListDock.setWidget(self.todoList)
@@ -277,6 +278,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for widget in self.tabDict.values():
             if hasattr(widget, 'addPushDestination'):
                 widget.addPushDestination( 'External', self.ExternalParametersUi )
+
+    def callWhenDoneAdjusting(self, callback):
+        self.ExternalParametersUi.callWhenDoneAdjusting(callback)
 
     def onEnableConsole(self, state):
         self.consoleEnable = state==QtCore.Qt.Checked

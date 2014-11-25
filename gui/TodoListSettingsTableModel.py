@@ -23,7 +23,6 @@ from copy import deepcopy
 api2 = sip.getapi("QVariant") == 2
 
 class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
-    valueChanged = QtCore.pyqtSignal(object)
     headerDataLookup = ['Name', 'Value']
     expression = Expression.Expression()
     persistSpace = 'globalVar'
@@ -63,23 +62,15 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
             result = self.expression.evaluate(strvalue, self.variabledict)
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
-            self.valueChanged.emit(name)
             self.decimation[name].decimate(time.time(), result, partial(self.persistCallback, name))
             return True    
         except Exception:
             logger.exception("No match for {0}".format(str(value.toString())))
             return False
  
-    def persistCallback(self, source, data):
-        time, value, minval, maxval = data
-        unit = None
-        if is_magnitude(value):
-            value, unit = value.toval(returnUnit=True)
-        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
-
     def setDataName(self, index, value):
         try:
-            strvalue = str(value if api2 else str(value.toString())).strip()
+            strvalue = str(value).strip()
             
             self.variables.renameAt(index.row(), strvalue)
             return True    
@@ -101,12 +92,13 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
         return None  # QtCore.QVariant()
             
     def setValue(self, index, value):
-        name = self.variables.keyAt(index.row())
-        old = self.variables[name]
-        if not old.isIdenticalTo(value):
-            self.variables[name] = value
-            self.valueChanged.emit(name)
-            self.decimation[name].decimate(time.time(), value, partial(self.persistCallback, name))
+        if index.column()==1:
+            name = self.variables.keyAt(index.row())
+            old = self.variables[name]
+            if not old.isIdenticalTo(value):
+                self.variables[name] = value
+        elif index.column()==0:
+            self.setDataName( index, value )
 
     def getVariables(self):
         return self.variables
@@ -114,51 +106,26 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
     def getVariableValue(self, name):
         return self.variables[name]
     
-    def addVariable(self, name):
-        if name not in self.variables:
+    def addSetting(self):
+        if None not in self.variables:
             self.beginInsertRows(QtCore.QModelIndex(), len(self.variables), len(self.variables))
-            self.variables[name] = magnitude.mg(0, '')
+            self.variables[None] = magnitude.mg(0, '')
             self.endInsertRows()
         return len(self.variables) - 1
         
-    def dropVariableByName(self, name):
-        if name in self.variables:
-            self.dropVariableByIndex(self.variables.index(name))        
-        
-    def dropVariableByIndex(self, row):
+    def dropSetting(self, row):
         self.beginRemoveRows(QtCore.QModelIndex(), row, row)
         name = self.variables.keyAt(row)
         self.variables.pop(name)
         self.endRemoveRows()
         return name
     
-    def sort(self, column, order):
-        if column == 0 and self.variables:
-            self.variables.sort(reverse=order == QtCore.Qt.DescendingOrder)
-            self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
-            
-    def restoreCustomOrder(self):
-        self.variables.sortToMatch( self.variables.customOrder )
-        self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
-            
-    def moveRow(self, rows, up=True):
-        if up:
-            if len(rows) > 0 and rows[0] > 0:
-                for row in rows:
-                    self.variables.swap(row, row - 1)
-                    self.dataChanged.emit(self.createIndex(row - 1, 0), self.createIndex(row, 3))
-                    self.variables.customOrder = list( self.variables._keys )
-                return True
-        else:
-            if len(rows) > 0 and rows[0] < len(self.variables) - 1:
-                for row in rows:
-                    self.variables.swap(row, row + 1)
-                    self.dataChanged.emit(self.createIndex(row, 0), self.createIndex(row + 1, 3))
-                    self.variables.customOrder = list( self.variables._keys )
-                return True
-        return False
-    
     def choice(self, index):
         if index.column()==0:
             return self.globalDict.keys()
         return None
+    
+    def setSettings(self, settings):
+        self.beginResetModel()
+        self.variables = settings
+        self.endResetModel()

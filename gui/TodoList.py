@@ -90,13 +90,15 @@ class MasterSettings:
     def __init__(self):
         self.currentSettingName = None
         self.autoSave = False
+        self.revertGlobals = True
         
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault( 'autoSave', False )
+        self.__dict__.setdefault( 'revertGlobals', True )
 
 class TodoList(Form, Base):
-    def __init__(self,scanModules,config,currentScan,setCurrentScan,globalDict,parent=None):
+    def __init__(self,scanModules,config,currentScan,setCurrentScan,globalVariablesUi,parent=None):
         Base.__init__(self,parent)    
         Form.__init__(self)
         self.config = config
@@ -109,7 +111,8 @@ class TodoList(Form, Base):
         self.currentMeasurementsDisplayedForScan = None
         self.currentScan = currentScan
         self.setCurrentScan = setCurrentScan
-        self.globalDict = globalDict
+        self.globalVariablesUi = globalVariablesUi
+        self.revertGlobalsList = list()
 
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
@@ -160,13 +163,31 @@ class TodoList(Form, Base):
         self.autoSaveAction.triggered.connect( self.onAutoSaveChanged )
         self.addAction( self.autoSaveAction )
         # Settings
-        self.settingTableModel = TodoListSettingsTableModel( dict(), self.globalDict )
+        self.settingTableModel = TodoListSettingsTableModel( SequenceDict(), self.globalVariablesUi.variables )
         self.settingTableView.setModel( self.settingTableModel )
         self.comboBoxDelegate = ComboBoxDelegate()
         self.magnitudeSpinBoxDelegate = MagnitudeSpinBoxDelegate()
         self.settingTableView.setItemDelegateForColumn( 0, self.comboBoxDelegate )
         self.settingTableView.setItemDelegateForColumn( 1, self.magnitudeSpinBoxDelegate )
+        self.addSettingButton.clicked.connect( self.onAddSetting )
+        self.removeSettingButton.clicked.connect( self.onRemoveSetting )
+        self.tableView.selectionModel().currentChanged.connect( self.onActiveItemChanged )
+        # Revert
+        self.revertCheckBox.setChecked( self.masterSettings.revertGlobals  )
+        self.revertCheckBox.stateChanged.connect( self.onRevertChanged )
         
+    def onRevertChanged(self, state):
+        self.masterSettings.revertGlobals = state==QtCore.Qt.Checked
+        
+    def onActiveItemChanged(self, modelIndex, modelIndex2 ):
+        self.settingTableModel.setSettings( self.settings.todoList[modelIndex.row()].settings )
+        
+    def onAddSetting(self):
+        self.settingTableModel.addSetting()
+        
+    def onRemoveSetting(self):
+        for index in sorted(unique([ i.row() for i in self.settingTableView.selectedIndexes() ]),reverse=True):
+            self.settingTableModel.dropSetting(index)
         
     def onAutoSaveChanged(self, state):
         self.masterSettings.autoSave = state
@@ -305,7 +326,10 @@ class TodoList(Form, Base):
             self.setCurrentScan(entry.scan)
         # load the correct measurement
         currentwidget.scanControlWidget.loadSetting( entry.measurement )   
-        currentwidget.evaluationControlWidget.loadSetting( entry.evaluation )     
+        currentwidget.evaluationControlWidget.loadSetting( entry.evaluation )  
+        # set the global variables
+        self.revertGlobalsList = [('Global', key, self.globalVariablesUi.variables[key]) for key in entry.settings.iterkeys()]
+        self.globalVariablesUi.update( ( ('Global', k, v) for k,v in entry.settings.iteritems() ))   
         # start
         currentwidget.onStart()
         self.tableModel.setActiveRow(self.settings.currentIndex, True)
@@ -313,6 +337,9 @@ class TodoList(Form, Base):
     def exitMeasurementRunning(self):
         self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
         self.tableModel.setActiveRow(self.settings.currentIndex, False)
+        if self.masterSettings.revertGlobals:
+            self.globalVariablesUi.update(self.revertGlobalsList)
+            
         
     def enterPaused(self):
         self.statusLabel.setText('Paused')

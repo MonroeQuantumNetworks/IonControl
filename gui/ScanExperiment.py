@@ -69,7 +69,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
     evaluationConfigurationChanged = None
-    def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None):
+    def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
         self.deviceSettings = settings
@@ -96,6 +96,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.globalVariablesUi = globalVariablesUi  
         self.scanTargetDict = dict()     
         self.measurementLog = measurementLog 
+        self.callWhenDoneAdjusting = callWhenDoneAdjusting
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -251,7 +252,11 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         else:
             self.progressUi.setAveraged(None)
         self.scanMethod = ScanMethodsDict[self.scan.scanTarget](self)
-        self.startScan()
+        self.progressUi.setStarting()
+        if self.callWhenDoneAdjusting is None:
+            self.startScan()
+        else:
+            self.callWhenDoneAdjusting(self.startScan)
 
     def createAverageTrace(self,evalList):
         trace = Trace()
@@ -270,7 +275,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
     def startScan(self):
         logger = logging.getLogger(__name__)
-        if self.progressUi.state in [self.OpStates.idle, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
+        if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
             PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
             self.generator = GeneratorList[self.scan.scanMode](self.scan)
