@@ -100,7 +100,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                 for pt in plottedTraceList:
                     pt.plot(-1)
             else:
-                if exists(self.measurements[row].filename):
+                if self.measurements[row].filename is not None and exists(self.measurements[row].filename):
                     self.loadTrace(self.measurements[row].filename)
         return True
     
