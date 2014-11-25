@@ -246,7 +246,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
             
-        self.dedicatedCountersWindow = DedicatedCounters(self.config, self.pulser)
+        self.dedicatedCountersWindow = DedicatedCounters(self.config, self.pulser, self.globalVariablesUi)
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
         self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser, self.channelNameData )
