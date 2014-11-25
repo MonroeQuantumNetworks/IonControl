@@ -278,9 +278,13 @@ class Traceui(TraceuiForm, TraceuiBase):
         trace.filename = str(fname)
         self.settings.lastDir, trace.name = os.path.split(str(fname))
         trace.loadTrace(str(fname))
+        plottedTraceList = list()
         for plotting in trace.tracePlottingList:
             name = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
-            self.addTrace(PlottedTrace(trace,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name),-1)
+            plottedTrace = PlottedTrace(trace,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name)
+            plottedTraceList.append(plottedTrace)
+            self.addTrace(plottedTrace,-1)
+        return plottedTraceList
 
     def saveConfig(self):
         """Execute when the UI is closed. Save the settings to the config file."""
