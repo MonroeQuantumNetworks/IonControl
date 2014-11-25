@@ -16,6 +16,7 @@ from gateSequence.GateDefinition import GateDefinition
 from gateSequence.GateSequenceContainer import GateSequenceContainer
 from modules.MagnitudeParser import parse
 from collections import defaultdict
+from modules.magnitude import mg
 
 resultsTable = None
 headerList = list()
@@ -24,6 +25,7 @@ gateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets
 compositeGateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-B2-2.xml"
 
 trainingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\TrainingSequenceT3-2014-10-16.xml"
+RBSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\Randomized-Clifford-2014-10-10.xml"
 
 goodGateSetTraining = [ (datetime.date(2014,11,21), [3, 4] ),
                         (datetime.date(2014,11,22), [1,2] ),
@@ -35,6 +37,12 @@ goodCompositeGateSetTraining = [  (datetime.date(2014,11,21), [1,2,3] ),
                         (datetime.date(2014,11,23), [1] ),
                         (datetime.date(2014,11,24), [1] )      ]
 
+goodRB = [  (datetime.date(2014,11,21), [1,2] ),
+                        (datetime.date(2014,11,22), [1,2,3] ),
+                        (datetime.date(2014,11,23), [1] ) ]
+
+goodCompositeRB = [  (datetime.date(2014,11,21), [1] ),
+                        (datetime.date(2014,11,22), [1,2] )    ]
 
 datadirectory = DataDirectory('QGA')
 outputpath = datadirectory.path( datetime.date(2014,11,24))
@@ -51,6 +59,12 @@ compositeGatedef.loadGateDefinition(compositeGateDefinitionFile)
 compositeTrainingSequence = GateSequenceContainer(compositeGatedef)
 compositeTrainingSequence.loadXml(trainingSequenceFile)
 
+RBSequence = GateSequenceContainer(gatedef)
+RBSequence.loadXml(RBSequenceFile)
+
+compositeRBSequence = GateSequenceContainer(compositeGatedef)
+compositeRBSequence.loadXml(RBSequenceFile)
+
 from itertools import groupby
 
 def runLengthEncode (plainText):
@@ -59,10 +73,10 @@ def runLengthEncode (plainText):
     for k,i in groupby(plainText):
         run = list(i)
         if(len(run) > 4):
-            res.append("(G{1})^{0}".format(len(run), k))
+            res.append("(G{1})^{0}".format(len(run), k.lower()))
         else:
             res.append('G')
-            res.append('G'.join(run))
+            res.append('G'.join(map(lambda s: s.lower(),run)))
 
     return "".join(res)
 
@@ -70,9 +84,9 @@ def addGs(raw):
     result = list()
     for char in raw:
         if char not in '()^0123456789':
-            result.append('G'+char)
+            result.append('G'+char.lower())
         else:
-            result.append(char)
+            result.append(char.lower())
     return ''.join(result)
 
 def saveResultsWithLookup(resultsTable, sequence, filename):
@@ -109,11 +123,13 @@ def saveResultsRaw(resultsTable, filename):
             print >> f, " ".join( map(str, r))
 
 def saveLookupTable(sequence, filename):
+    lookup = { 'u':1, 'd':0 }
     with open(filename, 'w') as f:
         for k, v in sequence.GateSequenceDict.iteritems():
-            print >> f, k, "".join(v) if v else "0"
+            print >> f, k, lookup[sequence.GateSequenceAttributes[str(k)]['expected']], "".join(v) if v else "{}"
    
 def expectedDuration( trace, numPi, index, sequence ):
+    return mg(0,'s')
     Attributes = sequence.GateSequenceAttributes[str(int(index))]
     Pulses = parse(Attributes['length'])
     SingleExperiment = ( Pulses*numPi*parse(trace.description['PulseProgram']['piTime'])+parse(trace.description['PulseProgram']['PreWaitTime']) )
@@ -172,4 +188,7 @@ def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accu
 assembleData( "GST", goodGateSetTraining, trainingSequence, 3679, 0.5)
 saveLookupTable(trainingSequence, os.path.join(outputpath,"GateSequenceTraining_lookup.txt"))
 assembleData( "GSTCompensated", goodCompositeGateSetTraining, trainingSequence, 3679, 4.5)
-
+  
+assembleData( "RB", goodRB, RBSequence, 5167, 0.5)
+saveLookupTable(RBSequence, os.path.join(outputpath,"RB_lookup.txt"))
+assembleData( "RBCompensated", goodCompositeRB, RBSequence, 5167, 4.5)
