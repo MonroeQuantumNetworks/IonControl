@@ -16,7 +16,7 @@ from modules.HashableList import HashableList
 from copy import deepcopy
 from modules.PyqtUtility import updateComboBoxItems
 from modules.SequenceDict import SequenceDict
-from gui.TodoListSettingsTableModel import TodoListSettingsTableModel
+from gui.TodoListSettingsTableModel import TodoListSettingsTableModel 
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
@@ -47,7 +47,7 @@ class TodoListEntry:
         self.__dict__.setdefault('settings', SequenceDict())
         self.__dict__.setdefault('revertSettings', False)
 
-    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation' ] 
+    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'settings' ] 
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -72,7 +72,7 @@ class Settings:
         self.__dict__.setdefault( 'currentIndex', 0)
         self.__dict__.setdefault( 'repeat', False)
 
-    stateFields = ['currentIndex', 'repeat', 'todoList', 'settings'] 
+    stateFields = ['currentIndex', 'repeat', 'todoList'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -113,10 +113,11 @@ class TodoList(Form, Base):
         self.setCurrentScan = setCurrentScan
         self.globalVariablesUi = globalVariablesUi
         self.revertGlobalsList = list()
+        self.idleConfiguration = None
 
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
-        self.statemachine.addState( 'Idle', self.enterIdle  )
+        self.statemachine.addState( 'Idle', self.enterIdle, self.exitIdle  )
         self.statemachine.addState( 'MeasurementRunning', self.enterMeasurementRunning, self.exitMeasurementRunning )
         self.statemachine.addState( 'Check' )
         self.statemachine.addState( 'Paused', self.enterPaused )
@@ -181,6 +182,7 @@ class TodoList(Form, Base):
         
     def onActiveItemChanged(self, modelIndex, modelIndex2 ):
         self.settingTableModel.setSettings( self.settings.todoList[modelIndex.row()].settings )
+        self.currentlySelectedLabel.setText( "{0} - {1}".format( self.settings.todoList[modelIndex.row()].measurement, self.settings.todoList[modelIndex.row()].evaluation) )
         
     def onAddSetting(self):
         self.settingTableModel.addSetting()
@@ -314,6 +316,19 @@ class TodoList(Form, Base):
 
     def enterIdle(self):
         self.statusLabel.setText('Idle')
+        if self.idleConfiguration is not None:
+            (previousName, previousScan, previousEvaluation) = self.idleConfiguration
+            currentname, currentwidget = self.currentScan()
+            if previousName!=currentname:
+                self.setCurrentScan(previousName)
+            currentwidget.scanControlWidget.loadSetting( previousScan )   
+            currentwidget.evaluationControlWidget.loadSetting( previousEvaluation )  
+        
+    def exitIdle(self):
+        currentname, currentwidget = self.currentScan()
+        currentScan = currentwidget.scanControlWidget.settingsName  
+        currentEvaluation = currentwidget.evaluationControlWidget.settingsName
+        self.idleConfiguration = (currentname, currentScan, currentEvaluation)
         
     def enterMeasurementRunning(self):
         self.statusLabel.setText('Measurement Running')

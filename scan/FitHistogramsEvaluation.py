@@ -92,7 +92,7 @@ class FitHistogramEvaluation(EvaluationBase):
         return (hist / histsum, histsum) if longOutput else hist/histsum
         
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
-        params, confidence = data.evaluated.get('FitHistogramsResult',(None,None))
+        params, confidence, reducedchisq = data.evaluated.get('FitHistogramsResult',(None,None,None))
         if params is None:
             y, x = numpy.histogram( data.count[counter] , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
             y, self.fitFunction.totalCounts = self.normalizeHistogram(y, longOutput=True)
@@ -100,7 +100,7 @@ class FitHistogramEvaluation(EvaluationBase):
             params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter
             confidence = list(confidence)
             confidence.append( 0 )  # don't know what to do :(
-            data.evaluated['FitHistogramsResult'] = (params, confidence)
+            data.evaluated['FitHistogramsResult'] = (params, confidence, self.chisq/self.dof)
         if self.settings['Mode']=='Parity':
             return params[0]+params[2]-params[1], (None,None), params[0]+params[2]-params[1]
         elif self.settings['Mode']=='Zero':
@@ -110,7 +110,7 @@ class FitHistogramEvaluation(EvaluationBase):
         elif self.settings['Mode']=='Two':
             return params[2], (confidence[2],  confidence[2]) , params[2]
         elif self.settings['Mode']=='Residuals':
-            return self.chisq/self.dof, (None,None), self.chisq/self.dof
+            return reducedchisq, (None,None), reducedchisq
 
         
     def children(self):
