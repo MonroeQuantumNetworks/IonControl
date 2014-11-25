@@ -1,0 +1,8 @@
+const co = 2
+
+parameter a
+parameter b
+parameter c
+
+c = a << b
+

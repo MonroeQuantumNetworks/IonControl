@@ -63,6 +63,8 @@ comparisonCommands = { "==": "CMPEQUAL",
                        "<=": "CMPLE",
                        ">=": "CMPGE" }
 
+shiftLookup = { "<<": "SHL", ">>": "SHR" }
+
 jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
                     "!=" : { True: "JMPNZ", False: "JMPZ"},
                     ">" : {True: "JMPNZ", False: "JMPZ" } }
@@ -107,11 +109,12 @@ class pppCompiler:
         rExp = Forward()
         #numexpression = Forward()
         
-        rExp << ( procedurecall | identifier("identifier") | value.setParseAction(self.value_action) |
+        shiftexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") )("op") + identifier("argument")).setParseAction(self.shiftexpression_action)
+        rExp << ( procedurecall | shiftexpression | identifier("identifier") | value.setParseAction(self.value_action) | 
                   #Group( Suppress("(") + rExp + Suppress(")") ) |
                   #Group( "+" + rExp) |
                   #Group( "-" + rExp) |
-                  Group( Literal("not") + rExp))
+                  Group( Literal("not") + rExp) )
         rExpCondition =  Group((Optional(not_)("not_")+rExp("rExp"))).setParseAction(self.rExp_condition_action)("condition")
         rExp.setParseAction(self.rExp_action)
         
@@ -149,7 +152,7 @@ class pppCompiler:
             elif arg.lval!="W":
                 symbol = self.symbols.getVar(arg.lval)
                 code.append( "  STWR {0}".format(symbol.name))
-            arg['code'] = code
+            arg['code'].extend( code )
         except Exception as e:
             raise CompileException(text,loc,str(e),self)            
         return arg
@@ -231,6 +234,17 @@ class pppCompiler:
         else:
             value = int(arg[0])
         arg["identifier"] = self.symbols.getInlineParameter("inlinevar", value)
+        return arg
+        
+    def shiftexpression_action(self, text, loc, arg):
+        try:
+            logger.debug( "shiftexpression_action {0} {1}".format( lineno(loc, text), arg ))
+            code = [  "# line {0}: shiftexpression {1}".format(lineno(loc, text), line(loc,text)),
+                      "  LDWR {0}".format(arg.operand), "  {0} {1}".format(shiftLookup[arg.op], arg.argument)]
+            arg['code'] = code
+            logger.debug( "shiftexpression generated code {0}".format(code))
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)
         return arg
         
     def procedurecall_action(self, text, loc, arg):
