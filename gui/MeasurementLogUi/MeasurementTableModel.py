@@ -106,7 +106,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         return True
     
     def loadTrace(self, measurement):
-        measurement.plottedTraceList = self.traceuiLookup[measurement.ScanType].openFile(measurement.filename)
+        measurement.plottedTraceList = self.traceuiLookup[measurement.scanType].openFile(measurement.filename)
     
     def setComment(self, row, value):
         if isinstance(value, QtCore.QVariant):
