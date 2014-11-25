@@ -15,8 +15,13 @@ import logging
 from modules.HashableList import HashableList
 from copy import deepcopy
 from modules.PyqtUtility import updateComboBoxItems
+from modules.SequenceDict import SequenceDict
+from gui.TodoListSettingsTableModel import TodoListSettingsTableModel
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
+
 
 
 class TodoListEntry:
@@ -29,6 +34,8 @@ class TodoListEntry:
         self.scanParameter = None
         self.enabled = True
         self.scanSegment = ScanSegmentDefinition()
+        self.settings = SequenceDict()
+        self.revertSettings = False
         
     def __setstate__(self, s):
         self.__dict__ = s
@@ -37,6 +44,8 @@ class TodoListEntry:
         self.__dict__.setdefault('scan', None )
         self.__dict__.setdefault('evaluation', None )
         self.__dict__.setdefault('enabled', True )
+        self.__dict__.setdefault('settings', SequenceDict())
+        self.__dict__.setdefault('revertSettings', False)
 
     stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation' ] 
 
@@ -63,7 +72,7 @@ class Settings:
         self.__dict__.setdefault( 'currentIndex', 0)
         self.__dict__.setdefault( 'repeat', False)
 
-    stateFields = ['currentIndex', 'repeat', 'todoList'] 
+    stateFields = ['currentIndex', 'repeat', 'todoList', 'settings'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -87,7 +96,7 @@ class MasterSettings:
         self.__dict__.setdefault( 'autoSave', False )
 
 class TodoList(Form, Base):
-    def __init__(self,scanModules,config,currentScan,setCurrentScan,parent=None):
+    def __init__(self,scanModules,config,currentScan,setCurrentScan,globalDict,parent=None):
         Base.__init__(self,parent)    
         Form.__init__(self)
         self.config = config
@@ -100,6 +109,7 @@ class TodoList(Form, Base):
         self.currentMeasurementsDisplayedForScan = None
         self.currentScan = currentScan
         self.setCurrentScan = setCurrentScan
+        self.globalDict = globalDict
 
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
@@ -149,6 +159,14 @@ class TodoList(Form, Base):
         self.autoSaveAction.setChecked( self.masterSettings.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSaveChanged )
         self.addAction( self.autoSaveAction )
+        # Settings
+        self.settingTableModel = TodoListSettingsTableModel( dict(), self.globalDict )
+        self.settingTableView.setModel( self.settingTableModel )
+        self.comboBoxDelegate = ComboBoxDelegate()
+        self.magnitudeSpinBoxDelegate = MagnitudeSpinBoxDelegate()
+        self.settingTableView.setItemDelegateForColumn( 0, self.comboBoxDelegate )
+        self.settingTableView.setItemDelegateForColumn( 1, self.magnitudeSpinBoxDelegate )
+        
         
     def onAutoSaveChanged(self, state):
         self.masterSettings.autoSave = state
