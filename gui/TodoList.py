@@ -137,6 +137,11 @@ class TodoList(Form, Base):
         self.updateMeasurementSelectionBox( self.scanSelectionBox.currentText() )
         self.tableModel = TodoListTableModel( self.settings.todoList )
         self.tableView.setModel( self.tableModel )
+        self.comboBoxDelegate = ComboBoxDelegate()
+        for column in range(1,4):
+            self.tableView.setItemDelegateForColumn(column, self.comboBoxDelegate)
+        self.tableModel.measurementSelection = self.scanModuleMeasurements
+        self.tableModel.evaluationSelection = self.scanModuleMeasurements     
         self.addMeasurementButton.clicked.connect( self.onAddMeasurement )
         self.removeMeasurementButton.clicked.connect( self.onDropMeasurement )
         self.runButton.clicked.connect( partial( self.statemachine.processEvent, 'startCommand' ) )
@@ -176,7 +181,17 @@ class TodoList(Form, Base):
         # Revert
         self.revertCheckBox.setChecked( self.masterSettings.revertGlobals  )
         self.revertCheckBox.stateChanged.connect( self.onRevertChanged )
-        
+        # Context Menu for Table
+        self.tableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.loadLineAction = QtGui.QAction( "load line settings" , self)
+        self.loadLineAction.triggered.connect( self.onLoadLine  )
+        self.tableView.addAction( self.loadLineAction )
+        # 
+        for column, width in zip( range(0, self.tableModel.columnCount()), self.config.get('Todolist.ColumnWidth',list()) ):
+            self.tableView.setColumnWidth(column, width)
+        for column, width in zip( range(0, self.settingTableModel.columnCount()), self.config.get('Todolist.SettingsColumnWidth',list()) ):
+            self.settingTableView.setColumnWidth(column, width)
+       
     def onRevertChanged(self, state):
         self.masterSettings.revertGlobals = state==QtCore.Qt.Checked
         
@@ -261,7 +276,9 @@ class TodoList(Form, Base):
                 self.populateEvaluationItem( name, widget.evaluationControlWidget.settingsDict )
             else:
                 self.populateEvaluationItem( name, {} )
-                
+        if hasattr(self, 'tableModel'):
+            self.tableModel.measurementSelection = self.scanModuleMeasurements
+            self.tableModel.evaluationSelection = self.scanModuleMeasurements     
                 
     def populateMeasurementsItem(self, name, settingsDict ):
         self.scanModuleMeasurements[name] = sorted(settingsDict.keys())
@@ -330,18 +347,25 @@ class TodoList(Form, Base):
         currentEvaluation = currentwidget.evaluationControlWidget.settingsName
         self.idleConfiguration = (currentname, currentScan, currentEvaluation)
         
-    def enterMeasurementRunning(self):
-        self.statusLabel.setText('Measurement Running')
+    def onLoadLine(self):
+        allrows = sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]))
+        if len(allrows)==1: 
+            self.loadLine(self.settings.todoList[ self.settings.currentIndex ])
+            
+    def loadLine(self, entry ):
         currentname, currentwidget = self.currentScan()
-#         while not self.settings.todoList[ self.settings.currentIndex ].enabled:
-#             self.settings.currentIndex = (self.settings.currentIndex+1) % len(self.settings.todoList)
-        entry = self.settings.todoList[ self.settings.currentIndex ]
         # switch to the scan for the first line
         if entry.scan!=currentname:
             self.setCurrentScan(entry.scan)
         # load the correct measurement
         currentwidget.scanControlWidget.loadSetting( entry.measurement )   
         currentwidget.evaluationControlWidget.loadSetting( entry.evaluation )  
+        
+    def enterMeasurementRunning(self):
+        self.statusLabel.setText('Measurement Running')
+        _, currentwidget = self.currentScan()
+        entry = self.settings.todoList[ self.settings.currentIndex ] 
+        self.loadLine( entry )
         # set the global variables
         self.revertGlobalsList = [('Global', key, self.globalVariablesUi.variables[key]) for key in entry.settings.iterkeys()]
         self.globalVariablesUi.update( ( ('Global', k, v) for k,v in entry.settings.iteritems() ))   
@@ -363,6 +387,8 @@ class TodoList(Form, Base):
         self.config['TodolistSettings'] = self.settings
         self.config['TodolistSettings.Cache'] = self.settingsCache
         self.config['Todolist.MasterSettings'] = self.masterSettings
+        self.config['Todolist.ColumnWidth'] = [self.tableView.columnWidth(i) for i in range(0, self.tableModel.columnCount())]
+        self.config['Todolist.SettingsColumnWidth'] = [self.settingTableView.columnWidth(i) for i in range(0, self.settingTableModel.columnCount())]
        
         
         
