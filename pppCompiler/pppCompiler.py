@@ -152,7 +152,10 @@ class pppCompiler:
             elif arg.lval!="W":
                 symbol = self.symbols.getVar(arg.lval)
                 code.append( "  STWR {0}".format(symbol.name))
-            arg['code'].extend( code )
+            if 'code' in arg:
+                arg['code'].extend( code )
+            else:
+                arg['code'] = code
         except Exception as e:
             raise CompileException(text,loc,str(e),self)            
         return arg
