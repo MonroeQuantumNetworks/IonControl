@@ -121,7 +121,7 @@ class pppCompiler:
         rExp.setParseAction(self.rExp_action)
         
         assignment = ((identifier | pointer)("lval") + assign + rExp("rval")).setParseAction(self.assignment_action)
-        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") )("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
+        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") )("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
         
         statement = Forward()
         statementBlock = indentedBlock(statement, indentStack).setParseAction(self.statementBlock_action)
@@ -283,7 +283,7 @@ class pppCompiler:
             if 'elseblock' in arg:
                 code.append("  {1} {0}".format(elseLabel, JMPCMD))
                 code.append( "# IF block")
-                code += arg.ifblock.code
+                code += arg.ifblock.ifblock.code
                 code += ["  JMP {0}".format(endifLabel),
                          "{0}: NOP".format(elseLabel) ]
                 code.append( "# ELSE block")

@@ -141,7 +141,7 @@ class TodoList(Form, Base):
         for column in range(1,4):
             self.tableView.setItemDelegateForColumn(column, self.comboBoxDelegate)
         self.tableModel.measurementSelection = self.scanModuleMeasurements
-        self.tableModel.evaluationSelection = self.scanModuleMeasurements     
+        self.tableModel.evaluationSelection = self.scanModuleEvaluations     
         self.addMeasurementButton.clicked.connect( self.onAddMeasurement )
         self.removeMeasurementButton.clicked.connect( self.onDropMeasurement )
         self.runButton.clicked.connect( partial( self.statemachine.processEvent, 'startCommand' ) )
@@ -278,7 +278,7 @@ class TodoList(Form, Base):
                 self.populateEvaluationItem( name, {} )
         if hasattr(self, 'tableModel'):
             self.tableModel.measurementSelection = self.scanModuleMeasurements
-            self.tableModel.evaluationSelection = self.scanModuleMeasurements     
+            self.tableModel.evaluationSelection = self.scanModuleEvaluations     
                 
     def populateMeasurementsItem(self, name, settingsDict ):
         self.scanModuleMeasurements[name] = sorted(settingsDict.keys())

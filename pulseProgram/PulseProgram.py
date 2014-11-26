@@ -459,7 +459,7 @@ class PulseProgram:
                     channel, data = line[2]
                     if isinstance(data,basestring):
                         data = self.variabledict[data].address
-                    bytedata = ((int(channel) & 0xf) << 16) | (int(data) & 0x0fff)
+                    bytedata = ((int(channel) & 0xff) << 16) | (int(data) & 0x0fff)
             except KeyError:
                 logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
@@ -484,7 +484,7 @@ class PulseProgram:
                 step, unit, _, mask = encodings[encoding]
                 result = int(math.floor(mag/step)) & mask
             else:
-                result = mag
+                result = int(mag)
         return result
 
     def compileCode(self):
