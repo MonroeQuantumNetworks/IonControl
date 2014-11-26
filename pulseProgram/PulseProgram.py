@@ -59,7 +59,8 @@ OPS = {'NOP'    : 0x00,
        'JMPZ1'  : 0x25,
        'JMPNZ1'	: 0x26,
        'CLRW1'	: 0x27,
-       'SHUTRVAR':0x28,
+       'SHL': 0x28,
+       'SHR': 0x29,
        'SHUTTERMASK' : 0x30,
        'ASYNCSHUTTER' : 0x31,
        'COUNTERMASK' : 0x32,
@@ -94,6 +95,8 @@ OPS = {'NOP'    : 0x00,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
        'WAITFORTRIGGER': 0x53,
+       'WRITERESULTTOPIPELOW': 0x54,
+       'WRITERESULTTOPIPEHIGH': 0x55,
        'END'    : 0xFF }
 
 class Dimensions:

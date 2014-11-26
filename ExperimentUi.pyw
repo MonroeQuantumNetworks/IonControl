@@ -233,7 +233,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
         self.actionLogging.triggered.connect(self.startLoggingProcess)
-        self.currentTab = self.tabDict.at(self.config.get('MainWindow.currentIndex',0))
+        self.currentTab = self.tabDict.at( min(len(self.tabDict)-1, self.config.get('MainWindow.currentIndex',0) ) )
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
         if hasattr( self.currentTab, 'stateChanged' ):

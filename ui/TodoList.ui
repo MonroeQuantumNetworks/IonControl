@@ -149,6 +149,16 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="revertCheckBox">
+       <property name="toolTip">
+        <string>Revert globals after each measurement</string>
+       </property>
+       <property name="text">
+        <string>Revert globals</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -229,14 +239,21 @@
       <enum>Qt::Vertical</enum>
      </property>
      <widget class="QTableView" name="tableView"/>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <widget class="QCheckBox" name="revertCheckBox">
+          <widget class="QLabel" name="label">
            <property name="text">
-            <string>Revert when complete</string>
+            <string>Current:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="currentlySelectedLabel">
+           <property name="text">
+            <string>None</string>
            </property>
           </widget>
          </item>
