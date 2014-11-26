@@ -69,6 +69,8 @@ jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
                     "!=" : { True: "JMPNZ", False: "JMPZ"},
                     ">" : {True: "JMPNZ", False: "JMPZ" } }
 
+opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW' }
+
 from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 
 
@@ -164,7 +166,7 @@ class pppCompiler:
         logger.debug( "addassignement_action {0} {1}".format( lineno(loc, text), arg ))
         try:
             code = [ "# line {0}: add_assignment: {1}".format(lineno(loc, text),line(loc,text)) ]
-            if arg.rval=='1' or arg.rval[0]=='1':
+            if (arg.rval=='1' or arg.rval[0]=='1') and arg.op in ['+=','-=']:
                 self.symbols.getVar(arg.lval)
                 if arg.op=="+=":
                     code.append("  INC {0}".format(arg.lval))
@@ -176,12 +178,8 @@ class pppCompiler:
                 elif 'identifier' in  arg.rval:
                     self.symbols.getVar(arg.rval.identifier)
                     code.append("  LDWR {0}".format(arg.rval.identifier))
-                if arg.op=="+=":
-                    self.symbols.getVar(arg.lval)
-                    code.append( "  ADDW {0}".format(arg.lval))
-                else:
-                    self.symbols.getVar(arg.lval)
-                    code.append( "  SUBW {0}".format(arg.lval))
+                self.symbols.getVar(arg.lval)
+                code.append( "  {0} {1}".format(opassignmentLookup[arg.op], arg.lval))
             code.append("  STWR {0}".format(arg.lval))
             arg['code'] = code
         except Exception as e:
