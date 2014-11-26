@@ -100,7 +100,12 @@ class MeanEvaluation(EvaluationBase):
         return mean, (stderr/2.,stderr/2.), numpy.sum( countarray )
     
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None):
-        countarray = data.count[counter] if self.settings['source']==self.sourceType.Counter else data.result[counter]
+        if self.settings['source']==self.sourceType.Counter:
+            countarray = data.count[counter]  
+        elif data.result is not None:
+            countarray = data.result[counter]
+        else:
+            countarray = []
         if not countarray:
             return 0, (0,0), 0
         mean, (minus, plus), raw =  self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
@@ -132,7 +137,12 @@ class NumberEvaluation(EvaluationBase):
         self.settings.setdefault('source',0)
     
     def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None):
-        countarray = data.count[counter] if self.settings['source']==self.sourceType.Counter else data.result[counter]
+        if self.settings['source']==self.sourceType.Counter:
+            countarray = data.count[counter]  
+        elif data.result is not None:
+            countarray = data.result[counter]
+        else:
+            countarray = []
         if not countarray:
             return 0, None, 0
         return len(countarray), None, len(countarray)
