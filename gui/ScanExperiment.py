@@ -50,7 +50,6 @@ from gui.ScanMethods import ScanMethodsDict, ScanException
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import MeasurementContainer, Measurement, Parameter, Result
-import weakref
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 

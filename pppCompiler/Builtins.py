@@ -98,7 +98,9 @@ def write_result( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     channel = symboltable.getConst( arg[1] )
     value = symboltable.getVar( arg[2] )
     return [ "  WRITERESULTTOPIPEHIGH {0}, {1}".format(channel.name, value.name),
-             "  WRITERESULTTOPIPELOW {0}, {1}".format(channel.name, value.name)]
+             "  NOP",
+             "  WRITERESULTTOPIPELOW {0}, {1}".format(channel.name, value.name),
+             "  NOP"]
 
 def pipe_empty( symboltable, arg=list(), kwarg=dict()):
     #return ["  READPIPEEMPTY"]

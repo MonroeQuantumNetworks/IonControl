@@ -137,7 +137,8 @@ class PulserHardwareServer(Process, OKBase):
             0x2nxxxxxx timestamp result channel n
             0x3nxxxxxx timestamp gate start channel n
             0x4xxxxxxx other return
-            0x5nxxxxxx result n return
+            0x50nnxxxx result n return Hi word
+            0x51nnxxxx result n return Low word
         """
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
@@ -226,14 +227,14 @@ class PulserHardwareServer(Process, OKBase):
                     elif key==4: # other return value
                         self.data.other.append(value)
                     elif key==5:
-                        resultkey = value >> 16
+                        resultkey = (value >> 16)
                         if self.data.result is None:
                             self.data.result = defaultdict(list)
                         if channel==1:  # High word comes first
                             self.data.result[resultkey].append( (value & 0xffff) << 16 )
                         else:
                             self.data.result[resultkey][-1] |= ( value & 0xffff )                           
-                        self.data.result[channel].append(value)
+#                  logger.debug("result key: {0} hi-low: {1} value: {2} length: {3} value: {4}".format(resultkey,channel,value&0xffff,len(self.data.result[resultkey]),self.data.result[resultkey][-1]))
                     else:
                         self.data.other.append(token)
             if self.data.overrun:

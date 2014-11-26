@@ -16,6 +16,7 @@ from pyqtgraph.parametertree import Parameter
 from modules.Observable import Observable
 from modules.enum import enum 
 import logging
+from modules.Expression import Expression
 
 class EvaluationException(Exception):
     pass
@@ -75,12 +76,16 @@ class MeanEvaluation(EvaluationBase):
     name = 'Mean'
     tooltip = "Mean of observed counts" 
     errorBarType = enum('shotnoise','statistical')
+    sourceType = enum('Counter','Result')
+    expression = Expression()
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
         self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical ]
         
     def setDefault(self):
         self.settings.setdefault('errorBarType',0)
+        self.settings.setdefault('source',0)
+        self.settings.setdefault('transformation', "")
          
     def evaluateShotnoise(self, countarray ):
         summe = numpy.sum( countarray )
@@ -94,14 +99,24 @@ class MeanEvaluation(EvaluationBase):
         stderr = numpy.std( countarray, ddof=1 ) / math.sqrt( max( len(countarray)-1, 1) )
         return mean, (stderr/2.,stderr/2.), numpy.sum( countarray )
     
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
-        countarray = data.count[counter]
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None):
+        countarray = data.count[counter] if self.settings['source']==self.sourceType.Counter else data.result[counter]
         if not countarray:
             return 0, (0,0), 0
-        return self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
+        mean, (minus, plus), raw =  self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
+        if self.settings['transformation']!="":
+            meandict = { 'y': mean }
+            plusdict = { 'y': mean+plus }
+            minusdict = { 'y': mean-minus }
+            mean = self.expression.evaluate(self.settings['transformation'], meandict)
+            plus = self.expression.evaluate(self.settings['transformation'], plusdict)
+            minus = self.expression.evaluate(self.settings['transformation'], minusdict)
+        return mean, (minus, plus), raw
 
     def children(self):
-        return [{'name':'errorBarType', 'type': 'list', 'values':self.errorBarType.mapping, 'value': self.settings['errorBarType'] } ]     
+        return [{'name':'errorBarType', 'type': 'list', 'values':self.errorBarType.mapping, 'value': self.settings['errorBarType'] } ,
+                {'name':'source', 'type': 'list', 'values':self.sourceType.mapping, 'value': self.settings['source'] },
+                {'name':'transformation', 'type': 'str', 'value': self.settings['transformation'], 'tip': "use y for the result in a mathematical expression" } ]     
 
 class NumberEvaluation(EvaluationBase):
     """
@@ -109,20 +124,21 @@ class NumberEvaluation(EvaluationBase):
     """
     name = 'Number'
     tooltip = "Number of results" 
+    sourceType = enum('Counter','Result')
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
         
     def setDefault(self):
-        pass
+        self.settings.setdefault('source',0)
     
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
-        countarray = data.count[counter]
+    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None):
+        countarray = data.count[counter] if self.settings['source']==self.sourceType.Counter else data.result[counter]
         if not countarray:
             return 0, None, 0
         return len(countarray), None, len(countarray)
 
     def children(self):
-        return []     
+        return [{'name':'source', 'type': 'list', 'values':self.sourceType.mapping, 'value': self.settings['source'] } ]     
 
 
 class ThresholdEvaluation(EvaluationBase):

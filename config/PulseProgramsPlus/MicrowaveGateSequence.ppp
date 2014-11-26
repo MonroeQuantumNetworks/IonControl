@@ -6,6 +6,8 @@
 const DDSDetect = 1
 const DDSMicrowave = 2
 const PMTChannel = 8
+const ResultChannel = 1
+const ShiftResultChannel = 2
 
 # DDS frequencies and amplitudes
 parameter<AD9912_FRQ> DetectFreq = 100 MHz
@@ -43,6 +45,8 @@ trigger ddsMicrowaveApply = 0
 parameter PresenceThreshold = 6
 parameter UseGateSequence = 0
 parameter offset = 40ns
+parameter ShiftParam
+parameter ShiftNum
 
 # exitcodes
 exitcode IonLostExitcode = 0xfffe0001
@@ -58,6 +62,7 @@ var PulsesRemaining = 0
 address RamStartAddress = 0
 var currentexperiment = 0
 var coolPhotons = 0
+var shiftedvar
 
 def cool():
     set_shutter( CoolingOn )
@@ -151,7 +156,11 @@ while not pipe_empty():
         if PostWaitTime>0:
             update( PostWaitTime )
         if DetectTime>0:
-            detect()    
+            detect()     
+        shiftedvar = ShiftParam # << ShiftNum
+        write_result( ResultChannel, shiftedvar )
+        shiftedvar = ShiftParam  << ShiftNum
+        write_result( ShiftResultChannel, shiftedvar )
         currentexperiment += 1
 
 exit( endLabel )
