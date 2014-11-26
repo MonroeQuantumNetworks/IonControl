@@ -127,7 +127,7 @@ class pppCompiler:
                                 + statementBlock).setParseAction(self.def_action) )
         while_statement = Group((Keyword("while").suppress() + (condition | rExpCondition)("condition")  + colon.suppress() + statementBlock("statementBlock") ).setParseAction(self.while_action))
         if_statement = (Keyword("if") + condition + colon + statementBlock("ifblock") + 
-                        Optional(Keyword("else:").suppress()+ statementBlock("elseblock")) ).setParseAction(self.if_action)
+                        Optional(Keyword("else").suppress()+ colon +statementBlock("elseblock")) ).setParseAction(self.if_action)
         statement << (procedure_statement | while_statement | if_statement | procedurecall | assignment | addassignment)
         
         decl = constdecl | vardecl | insertdecl  | Group(statement) 
@@ -289,8 +289,8 @@ class pppCompiler:
                 code += ["  JMP {0}".format(endifLabel),
                          "{0}: NOP".format(elseLabel) ]
                 code.append( "# ELSE block")
-                code += arg.elseblock['code']
-                code += "{0}: NOP".format(endifLabel)
+                code += arg.elseblock.elseblock['code'] if 'elseblock' in arg.elseblock else arg.elseblock['code']
+                code += ["{0}: NOP".format(endifLabel)]
             else: 
                 code.append("  {1} {0}".format(endifLabel, JMPCMD))
                 code.append( "# IF block")
