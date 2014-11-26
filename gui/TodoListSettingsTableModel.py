@@ -11,11 +11,14 @@ import sip
 
 from modules import Expression
 import modules.magnitude as magnitude
+from modules import MagnitudeUtilit
 from externalParameter.persistence import DBPersist
 from externalParameter.decimation import StaticDecimation
 import time
+from modules.magnitude import is_magnitude
 from functools import partial
 from collections import defaultdict
+from copy import deepcopy
 
 api2 = sip.getapi("QVariant") == 2
 
