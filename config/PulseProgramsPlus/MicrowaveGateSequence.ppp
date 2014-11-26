@@ -6,6 +6,7 @@
 const DDSDetect = 1
 const DDSMicrowave = 2
 const PMTChannel = 8
+const CalibrationCounterNo = 16
 const ResultChannel = 1
 const ShiftResultChannel = 2
 
@@ -45,8 +46,6 @@ trigger ddsMicrowaveApply = 0
 parameter PresenceThreshold = 6
 parameter UseGateSequence = 0
 parameter offset = 40ns
-parameter ShiftParam
-parameter ShiftNum
 
 # exitcodes
 exitcode IonLostExitcode = 0xfffe0001
@@ -62,7 +61,17 @@ var PulsesRemaining = 0
 address RamStartAddress = 0
 var currentexperiment = 0
 var coolPhotons = 0
-var shiftedvar
+
+#PiTimeCalibration
+parameter NumberIgnoredBits
+parameter CalibrateEvery
+parameter DetectThreshold = 1
+var PiTimeIntegrator
+var CalibrationSkipCounter = 0
+var MicrowaveCalibrationTime
+counter CalibrationCounters
+var CalibrationDetectPhotons
+var one = 1
 
 def cool():
     set_shutter( CoolingOn )
@@ -72,6 +81,14 @@ def cool():
     update( )
     coolPhotons = load_count( PMTChannel )
     set_inv_shutter( CoolingOn )
+
+def adaptiveCool():
+    initRemaining = MaxInitRepeat
+    while coolPhotons<PresenceThreshold:
+        if initRemaining==0:
+            exit( IonLostExitcode )
+        initRemaining -= 1
+        cool()
 
 def pump():
     set_shutter( PumpingOn )
@@ -83,6 +100,13 @@ def qubitInit():
     set_trigger( ddsMicrowaveApply )
     set_shutter( MicrowaveOn )
     update( MicrowaveInitTime )
+    set_inv_shutter( MicrowaveOn )
+
+def calibrationPulse():
+    set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
+    set_trigger( ddsMicrowaveApply )
+    set_shutter( MicrowaveOn )
+    update( MicrowaveCalibrationTime )
     set_inv_shutter( MicrowaveOn )
 
 def qubitAnalyze():
@@ -102,6 +126,16 @@ def detect():
     clear_counter()
     update()
 
+def calibrationDetect():
+    set_dds( channel=DDSDetect, freq=DetectFreq )
+    set_shutter( DetectOn )
+    set_counter( CalibrationCounters )
+    set_trigger( ddsApplyTrigger )
+    update( DetectTime )
+    set_inv_shutter( DetectOn )
+    clear_counter()
+    update()
+
 def gateSequence():
     PulsesRemaining = read_ram() 
     while PulsesRemaining>0:
@@ -112,12 +146,34 @@ def gateSequence():
             set_dds( channel=DDSMicrowave, phase=trainPhase )
             set_trigger( ddsMicrowaveApply )
             update( gapTime )
-        pulseTime = read_ram()
+        pulseTime = read_ram()     # has to be given in units of pi/2 time
+        pulseTime = piTime << pulseTime
+        pulseTime += offset
         if pulseTime>0:
             set_shutter( MicrowaveOn )
             update( pulseTime )
             set_inv_shutter( MicrowaveOn )
             update( PostPulseWaitTime )
+
+def calibrate():
+    cool()
+    if MaxInitRepeat>0:
+        adaptiveCool()
+    if PumpTime>0:
+        pump()
+    MicrowaveCalibrationTime = piTime >>  one
+    MicrowaveCalibrationTime += piTime
+    calibrationPulse()
+    if DetectTime>0:
+        calibrationDetect()
+        CalibrationDetectPhotons = load_count(CalibrationCounterNo)
+        if CalibrationDetectPhotons > DetectThreshold:
+            PiTimeIntegrator -= 1
+        else:
+            PiTimeIntegrator += 1
+        piTime = PiTimeIntegrator >> NumberIgnoredBits
+
+
 
 # startup switching on cooling quickly
 set_shutter( InitializationShutter )
@@ -125,6 +181,7 @@ set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
 set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )
 set_trigger( ddsApplyTrigger )
 set_trigger( ddsMicrowaveApply )
+PiTimeIntegrator = piTime << NumberIgnoredBits
 
 while not pipe_empty():
     update()
@@ -134,13 +191,8 @@ while not pipe_empty():
     while currentexperiment < experiments:
         set_ram_address( RamStartAddress )
         cool()
-        if MaxInitRepeat>0: 
-            initRemaining = MaxInitRepeat
-            while coolPhotons<PresenceThreshold:
-                if initRemaining==0:
-                    exit( IonLostExitcode )
-                initRemaining -= 1
-                cool()
+        if MaxInitRepeat>0:
+            adaptiveCool()
         if PumpTime>0:
             pump()
         if PreWaitTime>0:
@@ -156,16 +208,14 @@ while not pipe_empty():
         if PostWaitTime>0:
             update( PostWaitTime )
         if DetectTime>0:
-            detect()     
-        shiftedvar = ShiftParam # << ShiftNum
-        write_result( ResultChannel, shiftedvar )
-        shiftedvar = ShiftParam  << ShiftNum
-        write_result( ShiftResultChannel, shiftedvar )
+            detect()
+        if CalibrateEvery>0:
+            if CalibrationSkipCounter > CalibrateEvery:
+                calibrate()
+                CalibrationSkipCounter = 0
+            else:
+                CalibrationSkipCounter += 1
         currentexperiment += 1
 
 exit( endLabel )
-
-
-    
-        
 
