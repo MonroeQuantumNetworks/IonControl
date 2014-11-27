@@ -9,6 +9,7 @@ from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, on
 import logging
 import sys
 from CompileException import CompileException
+import pppCompiler
 """
 BNF of grammar
 
@@ -435,33 +436,30 @@ class pppCompiler:
         header.append( "" )        
         return header
 
-class compilertest:
-    def __init__(self):
-        with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
-            self.sourcecode = f.read()
-           
-    def test(self):
+def pppcompile( sourcefile, targetfile, referencefile ):
+    import difflib
+    import os.path
+    try:
+        with open(sourcefile,"r") as f: 
+            sourcecode = f.read()
         compiler = pppCompiler()
-        assemblercode = compiler.compileString(self.sourcecode )
-        return assemblercode
+        assemblercode = compiler.compileString(sourcecode )
+        with open(targetfile,"w") as f:
+            f.write(assemblercode)
+    except CompileException as e:
+        print str(e)
+        print e.line()
+    # compare result to reference
+    if os.path.exists( referencefile ):
+        with open(referencefile, "r") as f:
+            referencecode = f.read()
+        for line in difflib.unified_diff(referencecode.splitlines(), assemblercode.splitlines()):
+            print line
         
 
 
 if __name__=="__main__":
-#     import timeit
-#     number = 30
-#     t = timeit.timeit(stmt='c.test()', setup='from __main__ import compilertest; c = compilertest()', number=number)
-#     print t/number
-    with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
-        sourcecode = f.read()
-     
-    compiler = pppCompiler()
-    try:
-        assemblercode = compiler.compileString(sourcecode )
- 
-        with open("YtterbiumScan.auto.pp","w") as f:
-            f.write(assemblercode)
-         
+    def ppCompile( assemblerfile ):
         from pulseProgram.PulseProgram import PulseProgram    
         pp = PulseProgram()
         pp.debug = True
@@ -475,7 +473,5 @@ if __name__=="__main__":
              
         pp.toBinary()
         
-    except CompileException as e:
-        print str(e)
-        print e.line()
-
+    pppcompile( r"test\if_then_else.ppp", r"test\if_then_else.ppc", r"test\if_then_else.ppc.reference" )
+    pppcompile( r"test\RealWorld.ppp", r"test\RealWorld.ppc", r"test\RealWorld.ppc.reference" )

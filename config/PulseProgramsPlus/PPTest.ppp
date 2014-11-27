@@ -1,0 +1,34 @@
+const ResultChannel = 1
+const DebugChannel = 2
+const CounterChannel = 0
+const CounterChannel2 = 16
+
+counter TestCounter
+parameter countTime
+
+parameter a
+parameter b
+parameter c
+parameter waitTime
+parameter experiments = 100
+exitcode endLabel = 0xffffffff
+var currentexperiment
+var temp
+
+while not pipe_empty():
+    update()
+    apply_next_scan_point()
+
+    currentexperiment = 0
+    while currentexperiment < experiments:
+        set_counter( TestCounter )
+        update( countTime )
+        clear_counter()
+        b = load_count( CounterChannel2 )
+        write_result( DebugChannel,b )
+        write_result( ResultChannel,a )
+        currentexperiment += 1
+        update(waitTime)
+        update()
+
+exit( endLabel )
