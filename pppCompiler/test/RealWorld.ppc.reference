@@ -267,8 +267,8 @@ end_if_label_15: NOP
   LDWR GateTime
   STWR temp
 # line 107: add_assignment:     temp *= GateInit
-  LDWR GateInit
-  MULTW temp
+  LDWR temp
+  MULTW GateInit
   STWR temp
 # line 108: procedurecall     update( temp )
   WAITDDSWRITEDONE
@@ -325,8 +325,8 @@ end_if_label_1: NOP
   RAMREAD
   STWR pulseTime
 # line 156: add_assignment:         pulseTime *= GateTime
-  LDWR GateTime
-  MULTW pulseTime
+  LDWR pulseTime
+  MULTW GateTime
   STWR pulseTime
 # line 157 if statement         if pulseTime>0:
 # line 157 condition         if pulseTime>0:
@@ -334,8 +334,8 @@ end_if_label_1: NOP
   JMPZ end_if_label_2
 # IF block
 # line 158: add_assignment:             pulseTime += offset     # we don't want an exdended I
-  LDWR offset
-  ADDW pulseTime
+  LDWR pulseTime
+  ADDW offset
   STWR pulseTime
 # line 159: procedurecall             set_shutter( MicrowaveOn )
   SHUTTERMASK MicrowaveOn_mask
@@ -538,8 +538,8 @@ end_if_label_7: NOP
   LDWR GateTime
   STWR MicrowaveCalibrationTime
 # line 175: add_assignment:     MicrowaveCalibrationTime *= CalibrationGates
-  LDWR CalibrationGates
-  MULTW MicrowaveCalibrationTime
+  LDWR MicrowaveCalibrationTime
+  MULTW CalibrationGates
   STWR MicrowaveCalibrationTime
 # line 176: procedurecall     calibrationPulse()
 # line 112: procedurecall     set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, phase=MicrowaveInitPhase )

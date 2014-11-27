@@ -44,7 +44,7 @@ hexvalue = Regex("0x[0-9a-f]+").setWhitespaceChars(" \t")
 value = hexvalue | decvalue
 assign = Literal("=").suppress()
 type_ = Keyword("parameter") | Keyword("shutter") | Keyword("masked_shutter") | Keyword("trigger") | Keyword("var") | Keyword("counter") | Keyword("exitcode") | Keyword("address")
-comparison = ( Literal("==") | Literal("!=") | Literal("<") | Literal(">") | Literal("<=") | Literal(">=") )
+comparison = ( Literal("==") | Literal("!=") | Literal("<=") | Literal(">=") | Literal("<") | Literal(">")  )
 addOperator = oneOf("+ -")
 not_ = Keyword("not")
 
@@ -112,7 +112,7 @@ class pppCompiler:
         rExp = Forward()
         #numexpression = Forward()
         
-        shiftexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") )("op") + identifier("argument")).setParseAction(self.shiftexpression_action)
+        shiftexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") )("op") + Group(rExp)("argument")).setParseAction(self.shiftexpression_action)
         rExp << ( procedurecall | shiftexpression | identifier("identifier") | value.setParseAction(self.value_action) | 
                   #Group( Suppress("(") + rExp + Suppress(")") ) |
                   #Group( "+" + rExp) |
@@ -167,7 +167,7 @@ class pppCompiler:
         logger.debug( "addassignement_action {0} {1}".format( lineno(loc, text), arg ))
         try:
             code = [ "# line {0}: add_assignment: {1}".format(lineno(loc, text),line(loc,text)) ]
-            if (arg.rval=='1' or arg.rval[0]=='1') and arg.op in ['+=','-=']:
+            if arg.rval[0]=='1' and arg.op in ['+=','-=']:
                 self.symbols.getVar(arg.lval)
                 if arg.op=="+=":
                     code.append("  INC {0}".format(arg.lval))
@@ -176,11 +176,15 @@ class pppCompiler:
             else:
                 if 'code'in arg.rval:
                     code += arg.rval.code
+                    self.symbols.getVar(arg.lval)
+                    if arg.op=="-=":
+                        raise CompileException("-= with expression needs to be fixed in the compiler")
+                    code.append( "  {0} {1}".format(opassignmentLookup[arg.op], arg.lval))
                 elif 'identifier' in  arg.rval:
                     self.symbols.getVar(arg.rval.identifier)
-                    code.append("  LDWR {0}".format(arg.rval.identifier))
-                self.symbols.getVar(arg.lval)
-                code.append( "  {0} {1}".format(opassignmentLookup[arg.op], arg.lval))
+                    code.append("  LDWR {0}".format(arg.lval))
+                    self.symbols.getVar(arg.lval)
+                    code.append( "  {0} {1}".format(opassignmentLookup[arg.op], arg.rval.identifier))
             code.append("  STWR {0}".format(arg.lval))
             arg['code'] = code
         except Exception as e:
@@ -242,7 +246,7 @@ class pppCompiler:
         try:
             logger.debug( "shiftexpression_action {0} {1}".format( lineno(loc, text), arg ))
             code = [  "# line {0}: shiftexpression {1}".format(lineno(loc, text), line(loc,text)),
-                      "  LDWR {0}".format(arg.operand), "  {0} {1}".format(shiftLookup[arg.op], arg.argument)]
+                      "  LDWR {0}".format(arg.operand), "  {0} {1}".format(shiftLookup[arg.op], arg.argument.identifier)]
             arg['code'] = code
             logger.debug( "shiftexpression generated code {0}".format(code))
         except Exception as e:
@@ -450,11 +454,15 @@ def pppcompile( sourcefile, targetfile, referencefile ):
         print str(e)
         print e.line()
     # compare result to reference
+    comppass = None
     if os.path.exists( referencefile ):
         with open(referencefile, "r") as f:
             referencecode = f.read()
+        comppass = True
         for line in difflib.unified_diff(referencecode.splitlines(), assemblercode.splitlines()):
             print line
+            comppass = False
+    return comppass
         
 
 
@@ -472,6 +480,15 @@ if __name__=="__main__":
             print hex(op), hex(val)
              
         pp.toBinary()
+    
+    import os.path
+    resultMessage = { None: 'no comparison', False: 'failed', True: 'passed' }
+    folder = "test"
+    testfiles = [ "Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld" ]
+    result = list()
+    for name in testfiles:    
+        result.append( pppcompile( os.path.join(folder,name+".ppp"), os.path.join(folder,name+".ppc"), os.path.join(folder,name+".ppc.reference") ) )
         
-    pppcompile( r"test\if_then_else.ppp", r"test\if_then_else.ppc", r"test\if_then_else.ppc.reference" )
-    pppcompile( r"test\RealWorld.ppp", r"test\RealWorld.ppc", r"test\RealWorld.ppc.reference" )
+    print "Summary:"
+    for name , result in zip(testfiles,result):
+        print name, resultMessage[result]

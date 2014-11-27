@@ -14,15 +14,15 @@ var b 2
   JMPNCMP else_label_1
 # IF block
 # line 5: add_assignment:     a += b
-  LDWR b
-  ADDW a
+  LDWR a
+  ADDW b
   STWR a
   JMP end_if_label_1
 else_label_1: NOP
 # ELSE block
 # line 7: add_assignment:     a -= b
-  LDWR b
-  SUBW a
+  LDWR a
+  SUBW b
   STWR a
 end_if_label_1: NOP
 # end if

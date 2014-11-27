@@ -1,0 +1,9 @@
+var a = 1
+var b = 2
+var c = 3
+
+a += 1
+a += b
+b -= 1
+b -= 2
+b -= c
