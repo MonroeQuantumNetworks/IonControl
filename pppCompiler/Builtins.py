@@ -98,9 +98,7 @@ def write_result( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     channel = symboltable.getConst( arg[1] )
     value = symboltable.getVar( arg[2] )
     return [ "  WRITERESULTTOPIPEHIGH {0}, {1}".format(channel.name, value.name),
-             "  NOP",
-             "  WRITERESULTTOPIPELOW {0}, {1}".format(channel.name, value.name),
-             "  NOP"]
+             "  WRITERESULTTOPIPELOW {0}, {1}".format(channel.name, value.name) ]
 
 def pipe_empty( symboltable, arg=list(), kwarg=dict()):
     #return ["  READPIPEEMPTY"]
@@ -138,13 +136,13 @@ def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
     if len(arg)!=1:
         raise CompileException( "apply_next_scan_point does not take arguments" )
     return [  "apply_next_scan_point:  READPIPEINDF",
-              "  NOP",
+#              "  NOP",
               "  WRITEPIPEINDF",
-              "  NOP",
+#              "  NOP",
               "  READPIPE",
-              "  NOP",
+#              "  NOP",
               "  WRITEPIPE",
-              "  NOP",
+#              "  NOP",
               "  STWI",
               "  JMPCMP apply_next_scan_point"  ]
     
