@@ -19,7 +19,7 @@ plus  = Literal( "+" )
 minus = Literal( "-" )
 dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
                    Optional( e + Word( "+-"+nums, nums ) ) )
-numfnumber = Combine( Word( "+-"+nums, nums ) + 
+numfnumber = Combine( Optional(plus | minus) + Word( nums ) + 
                    Optional( point + Optional( Word( nums ) ) ) +
                    Optional( e + Word( "+-"+nums, nums ) ) )
 fnumber = numfnumber | dotNumber

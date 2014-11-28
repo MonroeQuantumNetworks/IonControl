@@ -6,11 +6,8 @@ Created on Nov 6, 2014
 import logging
 import time
 from PyQt4 import QtCore
-from collections import defaultdict
-from modules import DataDirectory
 
-from gui.ScanGenerators import GeneratorList
-from _functools import partial
+from functools import partial
 
 class ScanException(Exception):
     pass

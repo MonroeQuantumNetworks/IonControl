@@ -17,6 +17,7 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from externalParameter.persistence import DBPersist
 import time
 from modules.magnitude import is_magnitude
+from modules.PyqtUtility import BlockSignals
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -99,6 +100,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.configname = "FitUi.{0}.".format(parentname)
         self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
         self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
+        self.showAnalysisEnabled = self.config.get(self.configname+"ShowAnalysisEnabled", True)
         self.pushDestinations = dict()
         self.globalDict = globalDict
             
@@ -147,9 +149,22 @@ class FitUi(fitForm, QtGui.QWidget):
         self.removePushVariable.clicked.connect( self.onRemovePushVariable )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
         self.pushDestinations['Database'] = DatabasePushDestination('fit')
+        # Context Menu
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+#         self.autoSaveAction = QtGui.QAction( "auto save" , self)
+#         self.autoSaveAction.setCheckable(True)
+#         self.autoSaveAction.setChecked(self.parameters.autoSave )
+#         self.autoSaveAction.triggered.connect( self.onAutoSave )
+#         self.addAction( self.autoSaveAction )
+        self.showAnalysisAction = QtGui.QAction( "show analysis" , self)
+        self.showAnalysisAction.setCheckable(True)
+        self.showAnalysisAction.setChecked(self.showAnalysisEnabled )
+        self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
+        self.addAction( self.showAnalysisAction )
         
-
-
+    def onShowAnalysisEnabled(self, status):
+        self.showAnalysisEnabled = status==QtCore.Qt.Checked
+        
     def onUseSmartStartValues(self, state):
         self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
 
@@ -212,6 +227,11 @@ class FitUi(fitForm, QtGui.QWidget):
             if destination in self.pushDestinations:
                 self.pushDestinations[destination].update( [(destination,variable,value)] )
 
+    def showAnalysis(self, analysis, fitfunction):
+        if self.showAnalysisEnabled and analysis in self.analysisDefinitions:
+            with BlockSignals(self.analysisNameComboBox):
+                self.analysisNameComboBox.setCurrentIndex( self.analysisNameComboBox.findText(analysis) )
+            self.setFitfunction( fitfunction )
                 
     def onPlot(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
@@ -248,6 +268,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.config[self.configname+"AnalysisDefinitions"] = self.analysisDefinitions
         self.config[self.configname+"LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
         self.config[self.configname+"LastFitfunction"] = self.fitfunction
+        self.config[self.configname+"ShowAnalysisEnabled"] = self.showAnalysisEnabled
             
     def saveState(self):
         pass

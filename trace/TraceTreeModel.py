@@ -119,7 +119,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
                  5: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
                  }
         self.dataLookup =  { (QtCore.Qt.DisplayRole,2): lambda trace: ", ".join([str(trace.trace.name), str(trace.name)]),
-                 (QtCore.Qt.DisplayRole,3): lambda trace: trace.trace.description["comment"],
+                 (QtCore.Qt.DisplayRole,3): lambda trace: trace.trace.comment,
                  (QtCore.Qt.DisplayRole,4): lambda trace: getattr( trace.trace, 'fileleaf', None ),
                  (QtCore.Qt.DisplayRole,5): lambda trace: trace.windowName,
                  (QtCore.Qt.EditRole,5): lambda trace: trace.windowName,
@@ -127,8 +127,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
                  (QtCore.Qt.DecorationRole,1): lambda trace: QtGui.QIcon(self.penicons[trace.curvePen]) if hasattr(trace, 'curve') and trace.curve is not None else None,
                  (QtCore.Qt.BackgroundColorRole,1): lambda trace: QtGui.QColor(QtCore.Qt.white) if not (hasattr(trace, 'curve') and trace.curve is not None) else None,
                  (QtCore.Qt.EditRole,1): lambda trace: trace.curvePen,
-                 (QtCore.Qt.EditRole,2): lambda trace: trace.trace.description["comment"],
-                 (QtCore.Qt.EditRole,3): lambda trace: trace.trace.description["comment"]
+                 (QtCore.Qt.EditRole,3): lambda trace: trace.trace.comment
                  }
                 
     def choice(self, index):
@@ -223,8 +222,8 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         elif (role == QtCore.Qt.EditRole) and (col == 3):
             #If the comment changes, change it and resave the file.
             comment = value if api2 else str(value.toString())
-            if not comment == trace.trace.description["comment"]:
-                trace.trace.description["comment"] = comment
+            if not comment == trace.trace.comment:
+                trace.trace.comment = comment
                 trace.trace.resave()
             return True
         
@@ -250,7 +249,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         #For the callback, we use a persistent index, so that when the trace "calls"
         #that its data is changed, the index it calls remains valid.
         persistentIndex = QtCore.QPersistentModelIndex(self.createIndex(position, 0, trace))
-        trace.trace.dataChangedCallback = partial(self.updateTrace, persistentIndex)
+        trace.trace.filenameChanged.subscribe( partial(self.updateTrace, persistentIndex) )
         self.endInsertRows()
         return persistentIndex
 
@@ -261,7 +260,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         del parentTrace.childTraces[row]
         self.endRemoveRows()
 
-    def updateTrace(self, persistentIndex):
+    def updateTrace(self, persistentIndex, event=None):
         """Emit the signal to update the trace."""
         #the index passed in is of type QPersistentModelIndex, it has to be recast as a QModelIndex
         traceIndex = QtCore.QModelIndex(persistentIndex)
@@ -270,3 +269,4 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         leftInd = self.createIndex(row, 0, trace)
         rightInd = self.createIndex(row, 4, trace)
         self.dataChanged.emit(leftInd, rightInd) #Update all 5 columns
+        

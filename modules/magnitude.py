@@ -612,6 +612,8 @@ class Magnitude():
         return _outputDimensions[tuple(self.unit)]
     
     def toStringTuple(self, strFormat=None ):
+        if self.val is None:
+            return ""
         unitTuple = tuple(self.unit)
         if math.isinf(self.val) or math.isnan(self.val):
             return (str(self.val),"")

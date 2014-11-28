@@ -47,8 +47,18 @@ OPS = {'NOP'    : 0x00,
        'JMP'    : 0x13,
        'JMPZ'   : 0x14,
        'JMPNZ'  : 0x15,
-       'SHL'    : 0x16,
-       'SHR'  : 0x17,
+       'DAC'    : 0x17,
+       'DACUP'  : 0x18,
+       'COUNT1'	: 0x20,
+       'COUNTBOTH' : 0x21,
+       'LDWR1'	: 0x22,
+       'STWR1'  : 0x23,
+       'CMP1'   : 0x24,
+       'JMPZ1'  : 0x25,
+       'JMPNZ1'	: 0x26,
+       'CLRW1'	: 0x27,
+       'SHL': 0x28,
+       'SHR': 0x29,
        'SHUTTERMASK' : 0x30,
        'ASYNCSHUTTER' : 0x31,
        'COUNTERMASK' : 0x32,
@@ -76,7 +86,7 @@ OPS = {'NOP'    : 0x00,
        'CMPLE' : 0x48, 
        'CMPGREATER' : 0x4a,
        'ORW' : 0x4b,
-       'MULTW' : 0x4c,
+       'MULTW': 0x4c,
        'UPDATEINDF' : 0x4d,
        'WAITDDSWRITEDONE' : 0x4e,
        'CMPLESS' : 0x4f,
@@ -84,7 +94,9 @@ OPS = {'NOP'    : 0x00,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
        'WAITFORTRIGGER': 0x53,
-       'DIVW': 0x54,
+       'WRITERESULTTOPIPELOW': 0x54,
+       'WRITERESULTTOPIPEHIGH': 0x55,
+       'DIVW': 0x56,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -479,7 +491,7 @@ class PulseProgram:
                     channel, data = line[2]
                     if isinstance(data,basestring):
                         data = self.variabledict[data].address
-                    bytedata = ((int(channel) & 0xf) << (32-16)) | (int(data) & 0x0fff)
+                    bytedata = ((int(channel) & 0xff) << (32-16)) | (int(data) & 0x0fff)
             except KeyError:
                 logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
@@ -533,7 +545,7 @@ class PulseProgram:
                 step, unit, _, mask = encodings[encoding]
                 result = int(math.floor(mag/step)) & mask
             else:
-                result = mag
+                result = int(mag)
         return result
 
     def compileCode(self):

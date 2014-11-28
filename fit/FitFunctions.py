@@ -303,7 +303,48 @@ class LinearFit(FitFunctionBase):
         m, b = parameters if parameters is not None else self.parameters
         self.results['halfpoint'].value = (0.5-b)/m
 
+class RabiFieldProfileFit(FitFunctionBase):
+    name = "RabiFieldProfileFit"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  'A*sin(c*exp(-(x-x0)**2/w**2)**2+O'
+        self.parameterNames = [ 'A', 'c', 'x0', 'w', 'O' ]
+        self.parameters = [0]*5
+        self.startParameters = [1,1,0,1,0]
+        self.parameterEnabled = [True]*5
+        self.parametersConfidence = [None]*5
         
+    def functionEval(self, x, A, c, x0, w, O ):
+        return A*numpy.square(numpy.sin(c*numpy.exp(-numpy.square((x-x0)/w)))) + O
+
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        A, c, x0, w, O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        maxindex = numpy.argmax(y)
+        minimum = numpy.amin(y)
+        maximum = y[maxindex]
+        x0 = x[maxindex]
+        A = 1
+        O = minimum
+        c = numpy.arcsin(numpy.sqrt(maximum))
+        threshold = (maximum+minimum)/2.
+        indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
+        for ind, val in enumerate(y[maxindex:]):
+            if val < threshold:
+                indexplus = ind + maxindex
+                break
+        indexminus = 0 #If the threshold point is never found, indexplus is set to the index of the first element
+        for ind, val in enumerate(y[maxindex::-1]):
+            if val < threshold:
+                indexminus = maxindex-ind
+                break
+        w = 0.60056*(x[indexplus]-x[indexminus])
+        logging.getLogger(__name__).info("smart start values A={0}, c={1}, x0={2}, w={3}, O={4}".format(A, c, x0, w, O))
+        return (A, c, x0, w, O)
+
+       
 fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
                        CosFit.name: CosFit, 
                        CosSqFit.name: CosSqFit,
@@ -320,7 +361,8 @@ fitFunctionMap.update({ GaussianFit.name: GaussianFit,
                        ChripedSinSqFit.name: ChripedSinSqFit,
                        SaturationFit.name: SaturationFit,
                        MotionalRabiFlopping.name: MotionalRabiFlopping,
-                       TwoModeMotionalRabiFlopping.name: TwoModeMotionalRabiFlopping
+                       TwoModeMotionalRabiFlopping.name: TwoModeMotionalRabiFlopping,
+                       RabiFieldProfileFit.name: RabiFieldProfileFit
                  } )       
         
 def fitFunctionFactory(text):

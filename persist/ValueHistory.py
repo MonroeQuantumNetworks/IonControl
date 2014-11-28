@@ -89,7 +89,7 @@ class ValueHistoryStore:
     def __enter__(self):
         try:
             Base.metadata.create_all(self.engine)
-            self.Session = sessionmaker(bind=self.engine)
+            self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
             self.session = self.Session()
             self.refreshSourceDict()
             self.databaseAvailable = True

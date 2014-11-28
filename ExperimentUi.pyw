@@ -43,6 +43,7 @@ from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
 from pulser.OKBase import OKBase
+from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -128,8 +129,16 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar), "Scan"),
-                             (testExperiment.test(self.globalVariablesUi),"test"),
+        self.measurementLog = MeasurementLogUi(self.config)
+        self.measurementLog.setupUi(self.measurementLog)
+        self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
+        self.measurementLogDock.setWidget( self.measurementLog )
+        self.measurementLogDock.setObjectName('_MeasurementLog')
+        self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
+        
+        for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, 
+                                                            measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan"),
+                             (testExperiment.test(self.globalVariablesUi, measurementLog=self.measurementLog),"test"),
                              ]:
             widget.setupUi( widget, self.config )
             if hasattr(widget,'setPulseProgramUi'):
@@ -201,7 +210,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.selectionChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
         self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.enabledParametersObjects )
         
-        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab )
+        self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab, self.globalVariablesUi )
         self.todoList.setupUi()
         self.todoListDock = QtGui.QDockWidget("Todo List")
         self.todoListDock.setWidget(self.todoList)
@@ -232,7 +241,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
         self.actionLogging.triggered.connect(self.startLoggingProcess)
-        self.currentTab = self.tabDict.at(self.config.get('MainWindow.currentIndex',0))
+        self.currentTab = self.tabDict.at( min(len(self.tabDict)-1, self.config.get('MainWindow.currentIndex',0) ) )
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
         if hasattr( self.currentTab, 'stateChanged' ):
@@ -277,6 +286,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for widget in self.tabDict.values():
             if hasattr(widget, 'addPushDestination'):
                 widget.addPushDestination( 'External', self.ExternalParametersUi )
+
+    def callWhenDoneAdjusting(self, callback):
+        self.ExternalParametersUi.callWhenDoneAdjusting(callback)
 
     def onEnableConsole(self, state):
         self.consoleEnable = state==QtCore.Qt.Checked
@@ -458,6 +470,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.loggerUi.saveConfig()
         self.todoList.saveConfig()
         self.preferencesUi.saveConfig()
+        self.measurementLog.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()

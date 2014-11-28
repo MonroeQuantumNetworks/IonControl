@@ -30,10 +30,11 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     ClearStatusMessage = QtCore.pyqtSignal()
     experimentName = 'Test Scan'
 
-    def __init__(self,globalVariablesUi, parent=None):
+    def __init__(self,globalVariablesUi, parent=None, measurementLog=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
         testForm.__init__(self)
         self.globalVariablesUi = globalVariablesUi
+        self.measurementLog = measurementLog 
 #        pyqtgraph.setConfigOption('background', 'w')
 #        pyqtgraph.setConfigOption('foreground', 'k')
 

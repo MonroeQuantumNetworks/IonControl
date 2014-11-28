@@ -15,6 +15,7 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.SequenceDict import SequenceDict
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
+from modules.Observable import Observable
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
@@ -40,7 +41,8 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
                              (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
                              (QtCore.Qt.UserRole,1): lambda index, value: self.setStrValue( index, value ),
                               }
-
+        self.adjustingDevices = 0
+        self.doneAdjusting = Observable()
 
     def setParameterList(self, parameterList):
         self.beginResetModel()
@@ -89,6 +91,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         logger.debug( "setValue {0}".format( value ) )
         if self.targetValues[row] is None or value != self.targetValues[row]:
             self.targetValues[row] = value
+            self.adjustingDevices += 1
             self.setValueFollowup(row)
         return True
  
@@ -102,6 +105,11 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         delay = int( self.parameterDict.at(row).settings.delay.toval('ms') )
         if not self.parameterDict.at(row).setValue( self.targetValues[row] ):
             QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,row) )
+        else:
+            self.adjustingDevices -= 1
+            if self.adjustingDevices==0:
+                self.doneAdjusting.firebare()
+                self.doneAdjusting.callbacks = list()
 
     def update(self, iterable):
         for destination, name, value in iterable:
@@ -163,5 +171,15 @@ class ControlUi(UiForm,UiBase):
         
     def evaluate(self, name):
         self.tableModel.evaluate(name)
+        
+    def isAdjusting(self):
+        return self.tableModel.adjustingDevices>0
+    
+    def callWhenDoneAdjusting(self, callback):
+        if self.isAdjusting():
+            self.tableModel.doneAdjusting.subscribe(callback)
+        else:
+            callback()
+            
 
     

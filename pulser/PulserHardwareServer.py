@@ -14,22 +14,24 @@ from modules import enum
 import modules.magnitude as magnitude
 
 from pulser.OKBase import OKBase, check
+from _collections import defaultdict
 
 class PulserHardwareException(Exception):
     pass
 
 class Data:
     def __init__(self):
-        self.count = [list() for _ in range(16)]
-        self.timestamp = [list() for _ in range(8)]
+        self.count = [list() for _ in range(16)]        # list of counts in the counter channel
+        self.timestamp = [list() for _ in range(8)]     
         self.timestampZero = [0]*8
-        self.scanvalue = None
+        self.scanvalue = None                           # scanvalue
         self.final = False
         self.other = list()
         self.overrun = False
         self.exitcode = 0
-        self.dependentValues = list()
+        self.dependentValues = list()                   # additional scan values
         self.evaluated = dict()
+        self.result = None                              # data received in the result channels dict with channel number as key
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -137,6 +139,8 @@ class PulserHardwareServer(Process, OKBase):
             0x03nnxxxxxxxxxxxx timestamp gate start channel n
             0x04nnxxxxxxxxxxxx other return
             0xeennxxxxxxxxxxxx dedicated result
+            0x50nnxxxx result n return Hi word
+            0x51nnxxxx result n return Low word
         """
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
@@ -243,6 +247,15 @@ class PulserHardwareServer(Process, OKBase):
                         self.data.timestampZero[channel] = self.timestampOffset + value
                     elif key==4: # other return value
                         self.data.other.append(value)
+                    elif key==5:
+                        resultkey = (value >> 40)
+                        if self.data.result is None:
+                            self.data.result = defaultdict(list)
+                        if channel==1:  # High word comes first
+                            self.data.result[resultkey].append( (value & 0xffffffff) << 32 )
+                        else:
+                            self.data.result[resultkey][-1] |= ( value & 0xffffffff )                           
+#                  logger.debug("result key: {0} hi-low: {1} value: {2} length: {3} value: {4}".format(resultkey,channel,value&0xffff,len(self.data.result[resultkey]),self.data.result[resultkey][-1]))
                     else:
                         self.data.other.append(token)
             if self.data.overrun:

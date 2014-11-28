@@ -94,7 +94,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
     contextDictChanged = QtCore.pyqtSignal(object)
     SourceMode = enum('pp','ppp') 
-    def __init__(self,config,parameterdict, channelNameData):
+    def __init__(self, config, parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
@@ -179,6 +179,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.autoSaveAction.setChecked( self.configParams.autoSaveContext )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
+        if self.configname+".splitterHorizontal" in self.config:
+            self.splitterHorizontal.restoreState( self.config[self.configname+".splitterHorizontal"] )
+        if self.configname+".splitterVertical" in self.config:
+            self.splitterVertical.restoreState( self.config[self.configname+".splitterVertical"] )
+        self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
+
 
     def onAutoSave(self, checked):
         self.configParams.autoSaveContext = checked

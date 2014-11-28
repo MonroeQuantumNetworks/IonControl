@@ -4,6 +4,7 @@ Created on Apr 6, 2014
 @author: pmaunz
 '''
 from PyQt4 import QtCore, QtGui
+from _functools import partial
 
 class TodoListTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal( object )
@@ -18,11 +19,28 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole,1): lambda row: self.todolist[row].scan,
                              (QtCore.Qt.DisplayRole,2): lambda row: self.todolist[row].measurement,
                              (QtCore.Qt.DisplayRole,3): lambda row: self.todolist[row].evaluation,
+                             (QtCore.Qt.EditRole,1): lambda row: self.todolist[row].scan,
+                             (QtCore.Qt.EditRole,2): lambda row: self.todolist[row].measurement,
+                             (QtCore.Qt.EditRole,3): lambda row: self.todolist[row].evaluation,
                              (QtCore.Qt.BackgroundColorRole,1): lambda row: self.colorLookup[self.running] if self.activeRow==row else QtCore.Qt.white
                              }
-        self.setDataLookup ={ (QtCore.Qt.CheckStateRole,0): self.setEntryEnabled }
+        self.setDataLookup ={ (QtCore.Qt.CheckStateRole,0): self.setEntryEnabled,
+                             (QtCore.Qt.EditRole,1): partial( self.setString, 'scan' ),
+                             (QtCore.Qt.EditRole,2): partial( self.setString, 'measurement' ),
+                             (QtCore.Qt.EditRole,3): partial( self.setString, 'evaluation' )
+                             }
         self.colorLookup = { True: QtGui.QColor(0xd0, 0xff, 0xd0), False: QtGui.QColor(0xff, 0xd0, 0xd0) }
         self.activeRow = None
+        self.tabSelection = []
+        self.measurementSelection = {}
+        self.evaluationSelection = {}
+        self.choiceLookup = { 1: lambda row: self.measurementSelection.keys(),
+                              2: lambda row: self.measurementSelection[self.todolist[row].scan],
+                              3: lambda row: self.evaluationSelection[self.todolist[row].scan] }
+
+    def setString(self, attr, index, value):
+        setattr( self.todolist[index.row()], attr, value )
+        return True
 
     def setEntryEnabled(self,index,value):
         self.todolist[index.row()].enabled = value == QtCore.Qt.Checked
@@ -54,7 +72,8 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
         return False
        
     def flags(self, index ):
-        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column()==0 else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
+        return (QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column()==0 else 
+                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable )
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
@@ -93,4 +112,9 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
         self.todolist = todolist
         self.endResetModel()
         
-            
+    def choice(self, index):
+        return self.choiceLookup.get(index.column(), lambda row: [])(index.row())
+    
+    def setValue(self, index, value):
+        self.setData( index, value, QtCore.Qt.EditRole)
+

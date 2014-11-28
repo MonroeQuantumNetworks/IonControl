@@ -1,0 +1,30 @@
+# const values
+# variables 
+var NULL 0
+var FFFFFFFF 4294967295
+var a 1
+var b 2
+var c 3
+var inlinevar_2 1
+var inlinevar_3 2
+# inline variables
+# end header
+
+# line 5: add_assignment: a += 1
+  INC a
+  STWR a
+# line 6: add_assignment: a += b
+  LDWR a
+  ADDW b
+  STWR a
+# line 7: add_assignment: b -= 1
+  DEC b
+  STWR b
+# line 8: add_assignment: b -= 2
+  LDWR b
+  SUBW inlinevar_3
+  STWR b
+# line 9: add_assignment: b -= c
+  LDWR b
+  SUBW c
+  STWR b

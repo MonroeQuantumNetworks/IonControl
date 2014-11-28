@@ -133,7 +133,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         selectedIndexes = self.traceTreeView.selectedIndexes()
         if (len(selectedIndexes) != 0):
             for traceIndex in selectedIndexes:
-                if traceIndex.column() == 0 and (allowUnplotted or self.model.getTrace(traceIndex).isPlotted()):
+                if traceIndex.column() == 0 and (allowUnplotted or self.model.getTrace(traceIndex).isPlotted):
                     uniqueIndexes.append(traceIndex)
         if (len(uniqueIndexes) == 0) and useLastIfNoSelection:
             if len(self.tracePersistentIndexes) != 0:
@@ -271,13 +271,20 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
         fnames = QtGui.QFileDialog.getOpenFileNames(self, 'Open files', self.settings.lastDir)
         for fname in fnames:
-            trace = Trace.Trace()
-            trace.filename = str(fname)
-            self.settings.lastDir, trace.name = os.path.split(str(fname))
-            trace.loadTrace(str(fname))
-            for plotting in trace.tracePlottingList:
-                name = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
-                self.addTrace(PlottedTrace(trace,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name),-1)
+            self.openFile(fname)
+
+    def openFile(self, fname):
+        trace = Trace.Trace()
+        trace.filename = str(fname)
+        self.settings.lastDir, trace.name = os.path.split(str(fname))
+        trace.loadTrace(str(fname))
+        plottedTraceList = list()
+        for plotting in trace.tracePlottingList:
+            name = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
+            plottedTrace = PlottedTrace(trace,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name)
+            plottedTraceList.append(plottedTrace)
+            self.addTrace(plottedTrace,-1)
+        return plottedTraceList
 
     def saveConfig(self):
         """Execute when the UI is closed. Save the settings to the config file."""
