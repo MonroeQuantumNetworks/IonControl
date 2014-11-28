@@ -8,12 +8,12 @@ from sqlalchemy import Column, Integer, String, DateTime, Interval, Float, Boole
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
 from modules.magnitude import mg, is_magnitude
-from sqlalchemy.exc import OperationalError, InvalidRequestError, IntegrityError,\
-    ProgrammingError
+from sqlalchemy.exc import ProgrammingError, InvalidRequestError, IntegrityError
+#from sqlalchemy.exc import OperationalError
 import logging
 from sqlalchemy.sql.schema import ForeignKey
 from modules.Observable import Observable
-from sqlalchemy.orm.collections import attribute_mapped_collection
+#from sqlalchemy.orm.collections import attribute_mapped_collection
 import weakref
 
 Base = declarative_base()

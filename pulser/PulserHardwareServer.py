@@ -13,7 +13,6 @@ from mylogging.ServerLogging import configureServerLogging
 from modules import enum
 import modules.magnitude as magnitude
 from pulser.OKBase import OKBase, check
-from collections import OrderedDict
 from _collections import defaultdict
 
 class PulserHardwareException(Exception):
