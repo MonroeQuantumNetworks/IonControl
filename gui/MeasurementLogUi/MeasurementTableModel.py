@@ -7,7 +7,6 @@ Created on Nov 21, 2014
 from PyQt4 import QtCore
 from os.path import exists
 from _functools import partial
-from Tkconstants import FIRST
 from modules.firstNotNone import firstNotNone
 import os.path
 

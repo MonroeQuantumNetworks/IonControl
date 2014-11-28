@@ -18,7 +18,6 @@ import time
 from modules.magnitude import is_magnitude
 from functools import partial
 from collections import defaultdict
-from copy import deepcopy
 
 api2 = sip.getapi("QVariant") == 2
 
