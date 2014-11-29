@@ -8,9 +8,8 @@ from pyparsing import lineno, line, LineEnd, Literal, alphanums, alphas, dblQuot
 from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, oneOf, ParseResults
 import logging
 import sys
-import math
 from CompileException import CompileException
-import pppCompiler
+
 """
 BNF of grammar
 
@@ -73,8 +72,8 @@ jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
 
 opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW' }
 
+#from pppCompiler.Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
-
 
 def list_rtrim( l, trimvalue=None ):
     """in place list right trim"""
@@ -472,7 +471,7 @@ def pppcompile( sourcefile, targetfile, referencefile ):
 
 if __name__=="__main__":
     def ppCompile( assemblerfile ):
-        from pulseProgram.PulseProgram import PulseProgram     
+        from pulseProgram.PulseProgram import PulseProgram
         pp = PulseProgram()
         pp.debug = True
         pp.loadSource(r"YtterbiumScan.auto.pp")

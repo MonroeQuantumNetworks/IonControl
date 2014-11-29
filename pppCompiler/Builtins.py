@@ -3,7 +3,7 @@ Created on Feb 15, 2014
 
 @author: pmaunz
 '''
-from pppCompiler import CompileException
+from CompileException import CompileException
 
 def set_shutter( symboltable, arg=list(), kwarg=dict() ):
     if len(arg)!=2:
