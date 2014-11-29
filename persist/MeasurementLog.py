@@ -182,7 +182,7 @@ class MeasurementContainer(object):
         self.studiesObservable = Observable()
         self.measurementsUpdated = Observable()
         self.scanNamesChanged = Observable()
-        self.scanNames = set()
+        self._scanNames = set()
         
     def open(self):
         Base.metadata.create_all(self.engine)
@@ -206,11 +206,11 @@ class MeasurementContainer(object):
         try:
             self.session.add( measurement )
             self.session.commit()
-            self.beginInsertMeasurement.fireEvent(first=len(self.measurements),last=len(self.measurements))
+            self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
             self.measurements.append( measurement )
-            self.endInsertMeasurement.fireBare()
-            self.scanNames.add( measurement.scanName )
-            self.scanNamesChanged.fireEvent( self.scanNames )
+            self.endInsertMeasurement.firebare()
+            self._scanNames.add( measurement.scanName )
+            self.scanNamesChanged.fire( scanNames=self._scanNames )
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
             logging.getLogger(__name__).error( str(e) )
             self.session.rollback()
@@ -226,9 +226,9 @@ class MeasurementContainer(object):
         
     def query(self, fromTime, toTime):
         self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
-        self.scanNames = set((m.scanName for m in self.measurements))
-        self.scanNamesChanged.fireEvent( self.scanNames )
-        self.measurementsUpdated.fireEvent(measurements=self.measurements)
+        self._scanNames = set((m.scanName for m in self.measurements))
+        self.scanNamesChanged.fire( scanNames=self.scanNames )
+        self.measurementsUpdated.fire(measurements=self.measurements)
     
     def refreshLookups(self):
         """Load the basic short tables into memory

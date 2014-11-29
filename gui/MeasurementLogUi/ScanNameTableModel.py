@@ -13,7 +13,7 @@ class ScanNameTableModel(QtCore.QAbstractTableModel):
         self.container = container  
         # scanNames are given as a SortedDict
         self.scanNames = scanNames
-        self.dataLookup = {  (QtCore.Qt.CheckStateRole, 0): lambda row: self.scanNames[row].name,
+        self.dataLookup = {  (QtCore.Qt.CheckStateRole, 0): lambda row: self.scanNames[row].show,
                              (QtCore.Qt.DisplayRole, 1): lambda row: str(self.scanNames[row].startDate)
                               }
 
