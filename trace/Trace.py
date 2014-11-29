@@ -186,7 +186,7 @@ class Trace(object):
     @comment.setter
     def comment(self, comment):
         self.description['comment'] = comment
-        self.commentChanged.fireEvent(comment=comment)       
+        self.commentChanged.fire(comment=comment)       
           
     @property
     def filename(self):
@@ -203,7 +203,7 @@ class Trace(object):
             self.filepath, self.fileleaf = os.path.split(filename)
         else:
             self.filepath, self.fileleaf = None, None
-        self.filenameChanged.fireEvent(filename=filename,path=self.filepath,leaf=self.fileleaf)
+        self.filenameChanged.fire(filename=filename,path=self.filepath,leaf=self.fileleaf)
         
     @property
     def xUnit(self):

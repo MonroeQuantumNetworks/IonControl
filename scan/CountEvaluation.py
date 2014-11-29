@@ -33,7 +33,7 @@ class EvaluationBase(Observable):
     def update(self, param, changes):
         for param, _, data in changes:
             self.settings[param.name()] = data
-        self.fireBare()
+        self.firebare()
             
     def children(self):
         return []    
