@@ -6,7 +6,7 @@ Created on Nov 21, 2014
 from PyQt4 import QtCore
 
 class ScanNameTableModel(QtCore.QAbstractTableModel):
-    valueChanged = QtCore.pyqtSignal(object)
+    scanNameFilterChanged = QtCore.pyqtSignal(object)
     headerDataLookup = ['Show', 'Name' ]
     def __init__(self, scanNames, container=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
@@ -37,7 +37,7 @@ class ScanNameTableModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role):
         if role==QtCore.Qt.CheckStateRole and index.column()==0:
             self.scanNames.setAt(index.row(), value == QtCore.Qt.Checked)
-            self.valueChanged.emit( self.scanNames)
+            self.scanNameFilterChanged.emit( self.scanNames)
             return True
         return False
         

@@ -82,6 +82,7 @@ class MeasurementLogUi(Form, Base ):
         # scanNames table
         self.scanNameTableModel = ScanNameTableModel( self.container.scanNames, self.container)
         self.scanNameTableView.setModel( self.scanNameTableModel )
+        self.scanNameTableModel.scanNameFilterChanged.connect( self.onFilterSelection )
         # Context Menu for ResultsTable
         self.resultTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addResultToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
@@ -124,15 +125,14 @@ class MeasurementLogUi(Form, Base ):
         for tableView in self.myTableViews:
             restoreColumnWidth( getattr(self,tableView), self.config.get( self.configname+"."+tableView, list() ) )
         self.scanNameFilterButton.clicked.connect( self.onFilterButton )
-        self.scanNameTableModel.dataChanged.connect( self.onFilterSelection )
         
     def onFilterSelection(self, scanNames ):
         if self.settings.filterByScanName:
-            self.measurementModel.setFilter( self.settings.filterByScanName, scanNames )            
+            self.container.setScanNameFilter( [name for name, enabled in scanNames.iteritems() if enabled] if self.settings.filterByScanName else None  )            
         
     def onFilterButton(self, value):
         self.settings.filterByScanName = value
-        self.measurementModel.setFilter( self.settings.filterByScanName, self.container.scanNames )
+        self.container.setScanNameFilter( [name for name, enabled in self.scanNameTableModel.scanNames.iteritems() if enabled] if self.settings.filterByScanName else None )
         
     def onAddParameterToMeasurement(self):
         if self.currentMeasurement is not None:

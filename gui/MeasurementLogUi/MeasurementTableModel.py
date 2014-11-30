@@ -37,26 +37,9 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                                (QtCore.Qt.EditRole, 6): self.setComment
                               }
         self.traceuiLookup = traceuiLookup
-        self.subscribeToTrace()
-        self.filterEnabled = False
         self.subscriptions = list()
-        self.scanNames = dict()
-        
-    def setFilter(self, doFilter, scanNames ):
-        self.scanNames = scanNames
-        if doFilter:
-            self.beginResetModel()
-            self.measurements = [value for value in self.container.measurements if value.scanName in scanNames and scanNames[value.scanName]]
-            self.filterEnabled = True
-            self.endResetModel()
-        else:
-            self.beginResetModel()
-            self.measurements = self.container.measurements
-            self.filterEnabled = False
-            self.endResetModel()
-        self.clearSubscriptions()
         self.subscribeToTrace()
-       
+             
     def getFilename(self, row):
         filename = self.measurements[row].filename
         if filename is None:
@@ -112,7 +95,6 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.PartiallyChecked
         return QtCore.Qt.Checked
         
-        
     def setPlotted(self, row, value):
         plotted = value == QtCore.Qt.Checked
         self
@@ -149,20 +131,10 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def beginInsertRows(self, event):
         self.firstAdded = event.first
         self.lastAdded = event.last
-        if not self.filterEnabled:
-            return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
-        return None
+        return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
 
     def endInsertRows(self):
-        if self.filterEnabled:
-            QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), len(self.measurements), len(self.measurements)+self.lastAdded-self.firstAdded )
-            for index in range(self.firstAdded, self.lastAdded+1):
-                key, value = self.container.measurements.keyAt(index), self.container.measurements.at(index)
-                if value.scanName in self.scanNames and self.scanNames[value.scanName]:
-                    self.measurements[key] = value
-                    self.subscribeToTrace(len(self.measurements), len(self.measurements)+1)
-        else:
-            self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
+        self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
         return QtCore.QAbstractTableModel.endInsertRows(self)
         
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -209,12 +181,9 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             
     def setMeasurements(self, event):
-        if self.filterEnabled:
-            self.setFilter(True, self.scanNames)
-        else:
-            self.beginResetModel()
-            self.measurements = event.measurements
-            self.clearSubscriptions()
-            self.subscribeToTrace()
-            self.endResetModel()
+        self.beginResetModel()
+        self.measurements = event.measurements
+        self.clearSubscriptions()
+        self.subscribeToTrace()
+        self.endResetModel()
         
