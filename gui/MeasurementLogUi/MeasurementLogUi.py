@@ -41,6 +41,8 @@ class Settings:
         self.plotXAxis = None
         self.plotYAxis = None
         self.plotWindow = None
+        self.xUnit = None
+        self.yUnit = None
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -79,12 +81,13 @@ class MeasurementLogUi(Form, Base ):
                               'result': self.getResult  }        
         self.currentMeasurement = None
         self.traceuiLookup = dict()        # the measurements should insert their traceui into this dictionary
+        self.cache = dict()
 
     def addTraceui(self, scan, traceui ):
         self.traceuiLookup[scan] = traceui 
-        self.plotWindowIndex = dict( (("{0}.{1}".format(key, item), (ui, item, view["view"])) for key,ui in self.traceuiLookup.iteritems() for item, view in ui.graphicsViewDict.keys()) )
-        updateComboBoxItems( self.windowComboBox, sorted(self.plotWindowIndex.keys()) )
-        
+        self.plotWindowIndex = dict( (("{0}.{1}".format(key, item), (ui, item, d["view"])) for key,ui in self.traceuiLookup.iteritems() for item, d in ui.graphicsViewDict.iteritems()) )
+        updateComboBoxItems( self.windowComboBox, sorted(self.plotWindowIndex.keys()), self.settings.plotWindow )
+        self.settings.plotWindow = firstNotNone( self.settings.plotWindow, str(self.windowComboBox.currentText()) )
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
@@ -150,11 +153,11 @@ class MeasurementLogUi(Form, Base ):
         self.scanNameFilterButton.clicked.connect( self.onFilterButton )
         self.updateComboBoxes()
         self.plotButton.clicked.connect( self.onCreatePlot )
-        self.updatePlotButton.clicked.connect( self.onCreatePlot )
+        self.updatePlotButton.clicked.connect( self.onUpdatePlot )
         self.updateAllPlotsButton.clicked.connect( self.onUpdateAll )
-        self.xComboBox.currentItemChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotXAxis') )
-        self.yComboBox.currentItemChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotYAxis') )
-        self.windowComboBox.currentItemChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotWindow') )
+        self.xComboBox.currentIndexChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotXAxis') )
+        self.yComboBox.currentIndexChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotYAxis') )
+        self.windowComboBox.currentIndexChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotWindow') )
         
     def onComboBoxChanged(self, attr, value):
         setattr( self.settings, attr, str(value) )
@@ -226,8 +229,12 @@ class MeasurementLogUi(Form, Base ):
         self.container.query( *self.fromToTimeLookup[self.settings.timespan](datetime.now()) )
         
     def onCreatePlot(self): 
-        self.doCreatePlot( self.axisDict[self.settings.plotXAxis], self.axisDict[self.settings.plotYAxis], self.settinf.plotWindow )
+        self.doCreatePlot( self.axisDict[self.settings.plotXAxis], self.axisDict[self.settings.plotYAxis], self.settings.plotWindow )
         self.cacheGarbageCollect()
+        
+    def onUpdatePlot(self):
+        self.doCreatePlot( self.axisDict[self.settings.plotXAxis], self.axisDict[self.settings.plotYAxis], self.settings.plotWindow, update=True )
+        self.cacheGarbageCollect()        
         
     def cacheGarbageCollect(self):
         for key, (ref,_) in self.cache.items():
@@ -236,11 +243,11 @@ class MeasurementLogUi(Form, Base ):
         
     def getParameter(self, measurement, space, name):
         param = measurement.parameterByName(space,name)
-        return (param.value, None, None) if param is not None else None
+        return (param.value, None, None) if param is not None and not param.value.isinf() else None
         
     def getResult(self, measurement, space, name):
         result = measurement.resultByName(name)
-        return (result.value, result.bottom, result.top) if result is not None else None
+        return (result.value, result.bottom, result.top) if result is not None and not result.value.isinf() else (None, None, None)
 
     def getData(self, xDataDef, yDataDef):
         xDataList = list()
@@ -249,7 +256,7 @@ class MeasurementLogUi(Form, Base ):
         topList = list()
         xsource, xspace, xname = xDataDef
         ysource, yspace, yname = yDataDef
-        for measurement in self.measurementModel:
+        for measurement in self.measurementModel.measurements:
             xData, _, _ = self.sourceLookup[xsource](measurement, xspace, xname)
             yData, bottom, top  = self.sourceLookup[ysource](measurement, yspace, yname)
             if xData is not None and yData is not None:
@@ -260,27 +267,29 @@ class MeasurementLogUi(Form, Base ):
                 if top is not None:
                     topList.append( top )
         if len(bottomList)==len(topList)==len(xDataList):
-            return numpy.array(xDataList), numpy.array(yDataList), numpy.array(bottomList), numpy.array(topList)
-        return numpy.array(xDataList), numpy.array(yDataList), None, None
+            return xDataList, yDataList, bottomList, topList
+        return xDataList,yDataList, None, None
             
-    def doCreatePlot(self, xDataDef, yDataDef, plotName, forceUpdate=False ):
+    def doCreatePlot(self, xDataDef, yDataDef, plotName, update=False ):
         ref, _ = self.cache.get( ( xDataDef, yDataDef ), (lambda: None, None)) 
-        plottedTrace = ref() if (self.parameters.updatePrevious or forceUpdate) else None # get plottedtrace from the weakref if exists       
+        plottedTrace = ref() if update else None # get plottedtrace from the weakref if exists       
         # Assemble data
         xData, yData, bottomData, topData = self.getData(xDataDef, yDataDef)
         if len(xData)==0:
             logging.getLogger(__name__).error("Nothing to plot")
         else:
             if xDataDef==('measurement',None,'startDate'):
-                epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if xData.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
-                time = numpy.array((value - epoch).total_seconds() for value in xData)
+                epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if xData[0].tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
+                time = numpy.array([(value - epoch).total_seconds() for value in xData])
                 if plottedTrace is None:  # make a new plotted trace
                     trace = Trace(record_timestamps=False)
-                    #trace.name = parameter + " Query"
-                    trace.y = yData
+                    trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
+                    _, yUnit = yData[0].toval( returnUnit=True )
+                    trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
                     trace.x = time
-                    trace.top = topData
-                    trace.bottom = bottomData
+                    if topData is not None and bottomData is not None:
+                        trace.top = topData
+                        trace.bottom = bottomData
                     traceui, item, view = self.plotWindowIndex[plotName]
                     plottedTrace = PlottedTrace( trace, view, xAxisLabel = "local time", windowName=item) 
                     plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
@@ -297,7 +306,7 @@ class MeasurementLogUi(Form, Base ):
             else:
                 if plottedTrace is None:  # make a new plotted trace
                     trace = Trace(record_timestamps=False)
-                    #trace.name = parameter + " Query"
+                    trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
                     trace.y = yData
                     trace.x = xData
                     trace.top = topData
@@ -319,7 +328,7 @@ class MeasurementLogUi(Form, Base ):
     def onUpdateAll(self):
         for ref, context in self.cache.values():
             if ref() is not None:
-                self.doCreatePlot(*context, forceUpdate=True )
+                self.doCreatePlot(*context, update=True )
         self.cacheGarbageCollect()
             
         
