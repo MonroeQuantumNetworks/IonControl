@@ -38,8 +38,25 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                               }
         self.traceuiLookup = traceuiLookup
         self.subscribeToTrace()
+        self.filterEnabled = False
+        self.subscriptions = list()
+        self.scanNames = dict()
         
-        
+    def setFilter(self, doFilter, scanNames ):
+        self.scanNames = scanNames
+        if doFilter:
+            self.beginResetModel()
+            self.measurements = [value for value in self.container.measurements if value.scanName in scanNames and scanNames[value.scanName]]
+            self.filterEnabled = True
+            self.endResetModel()
+        else:
+            self.beginResetModel()
+            self.measurements = self.container.measurements
+            self.filterEnabled = False
+            self.endResetModel()
+        self.clearSubscriptions()
+        self.subscribeToTrace()
+       
     def getFilename(self, row):
         filename = self.measurements[row].filename
         if filename is None:
@@ -52,8 +69,16 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         for row, measurement in enumerate(self.measurements[first:last]):
             plottedTraceList = measurement.plottedTraceList
             if len(plottedTraceList)>0:
-                plottedTraceList[0].trace.commentChanged.subscribe( partial( self.commentChanged, row+first ) )
-                plottedTraceList[0].trace.filenameChanged.subscribe( partial( self.filenameChanged, row+first) )
+                callback = partial( self.commentChanged, row+first )
+                plottedTraceList[0].trace.commentChanged.subscribe( callback )
+                self.subscriptions.append( (plottedTraceList[0].trace.commentChanged, callback ))
+                callback = partial( self.filenameChanged, row+first)
+                plottedTraceList[0].trace.filenameChanged.subscribe( callback )
+                self.subscriptions.append( (plottedTraceList[0].trace.filenameChanged, callback ))
+                
+    def clearSubscriptions(self):
+        for observable, callback in self.subscriptions:
+            observable.unsubscribe( callback )
                  
     
     def commentChanged(self, row, event ):
@@ -124,10 +149,20 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def beginInsertRows(self, event):
         self.firstAdded = event.first
         self.lastAdded = event.last
-        return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
-    
+        if not self.filterEnabled:
+            return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
+        return None
+
     def endInsertRows(self):
-        self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
+        if self.filterEnabled:
+            QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), len(self.measurements), len(self.measurements)+self.lastAdded-self.firstAdded )
+            for index in range(self.firstAdded, self.lastAdded+1):
+                key, value = self.container.measurements.keyAt(index), self.container.measurements.at(index)
+                if value.scanName in self.scanNames and self.scanNames[value.scanName]:
+                    self.measurements[key] = value
+                    self.subscribeToTrace(len(self.measurements), len(self.measurements)+1)
+        else:
+            self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
         return QtCore.QAbstractTableModel.endInsertRows(self)
         
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -174,8 +209,12 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             
     def setMeasurements(self, event):
-        self.beginResetModel()
-        self.measurements = event.measurements 
-        self.subscribeToTrace()
-        self.endResetModel()
+        if self.filterEnabled:
+            self.setFilter(True, self.scanNames)
+        else:
+            self.beginResetModel()
+            self.measurements = event.measurements
+            self.clearSubscriptions()
+            self.subscribeToTrace()
+            self.endResetModel()
         

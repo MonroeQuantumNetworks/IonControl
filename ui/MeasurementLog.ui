@@ -104,7 +104,7 @@
      <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QSplitter" name="splitter">
+        <widget class="QSplitter" name="splitterLeftVertical">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -121,6 +121,9 @@
                <property name="icon">
                 <iconset resource="Experiment.qrc">
                  <normaloff>:/kde/icons/view-filter.png</normaloff>:/kde/icons/view-filter.png</iconset>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>

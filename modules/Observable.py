@@ -4,8 +4,13 @@ class Event(object):
 class Observable(object):
     def __init__(self):
         self.callbacks = []
+        
     def subscribe(self, callback):
         self.callbacks.append(callback)
+        
+    def unsubscribe(self, callback):
+        self.callbacks.pop( self.callbacks.index(callback) )
+        
     def fire(self, **attrs):
         e = Event()
         e.source = self
@@ -13,6 +18,7 @@ class Observable(object):
             setattr(e, k, v)
         for fn in self.callbacks:
             fn(e)
+            
     def firebare(self):
         for fn in self.callbacks:
             fn()

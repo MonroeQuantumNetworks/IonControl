@@ -13,9 +13,15 @@ class ScanNameTableModel(QtCore.QAbstractTableModel):
         self.container = container  
         # scanNames are given as a SortedDict
         self.scanNames = scanNames
-        self.dataLookup = {  (QtCore.Qt.CheckStateRole, 0): lambda row: self.scanNames[row].show,
-                             (QtCore.Qt.DisplayRole, 1): lambda row: str(self.scanNames[row].startDate)
+        self.container.scanNamesChanged.subscribe( self.setScanNames )
+        self.dataLookup = {  (QtCore.Qt.CheckStateRole, 0): lambda row: QtCore.Qt.Checked if self.scanNames.at(row) else QtCore.Qt.Unchecked,
+                             (QtCore.Qt.DisplayRole, 1): lambda row: str(self.scanNames.keyAt(row))
                               }
+
+    def setScanNames(self, event):
+        self.beginResetModel()
+        self.scanNames = event.scanNames
+        self.endResetModel()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.scanNames) 
@@ -30,7 +36,10 @@ class ScanNameTableModel(QtCore.QAbstractTableModel):
     
     def setData(self, index, value, role):
         if role==QtCore.Qt.CheckStateRole and index.column()==0:
-            
+            self.scanNames.setAt(index.row(), value == QtCore.Qt.Checked)
+            self.valueChanged.emit( self.scanNames)
+            return True
+        return False
         
     def flags(self, index):
         return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column()==0 else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled

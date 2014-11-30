@@ -15,6 +15,7 @@ from sqlalchemy.sql.schema import ForeignKey
 from modules.Observable import Observable
 #from sqlalchemy.orm.collections import attribute_mapped_collection
 import weakref
+from modules.SequenceDict import SequenceDict 
 
 Base = declarative_base()
 
@@ -182,7 +183,7 @@ class MeasurementContainer(object):
         self.studiesObservable = Observable()
         self.measurementsUpdated = Observable()
         self.scanNamesChanged = Observable()
-        self._scanNames = set()
+        self._scanNames = SequenceDict()
         
     def open(self):
         Base.metadata.create_all(self.engine)
@@ -209,7 +210,7 @@ class MeasurementContainer(object):
             self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
             self.measurements.append( measurement )
             self.endInsertMeasurement.firebare()
-            self._scanNames.add( measurement.scanName )
+            self._scanNames[ measurement.scanName ] = True
             self.scanNamesChanged.fire( scanNames=self._scanNames )
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
             logging.getLogger(__name__).error( str(e) )
@@ -226,7 +227,7 @@ class MeasurementContainer(object):
         
     def query(self, fromTime, toTime):
         self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
-        self._scanNames = set((m.scanName for m in self.measurements))
+        self._scanNames = SequenceDict(((m.scanName,True) for m in self.measurements))
         self.scanNamesChanged.fire( scanNames=self.scanNames )
         self.measurementsUpdated.fire(measurements=self.measurements)
     

@@ -24,3 +24,12 @@ class BlockSignals:
 
     def __exit__(self, exittype, value, traceback):
         self.widget.blockSignals(self.oldstate)
+
+def saveColumnWidth( tableView ):
+    return [tableView.columnWidth(i) for i in range(0, tableView.model().columnCount())]
+
+def restoreColumnWidth( tableView, widthData ):
+    for column, width in zip( range(0, tableView.model().columnCount()), widthData ):
+        tableView.setColumnWidth(column, width)
+     
+    

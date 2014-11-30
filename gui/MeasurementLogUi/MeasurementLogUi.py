@@ -16,6 +16,8 @@ from datetime import datetime, time, timedelta
 from _functools import partial
 from modules.firstNotNone import firstNotNone
 from modules.Utility import unique
+from gui.MeasurementLogUi.ScanNameTableModel import ScanNameTableModel
+from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 
@@ -27,6 +29,7 @@ class Settings:
         self.fromDateTimeEdit = datetime.combine(datetime.now().date(), time())
         self.toDateTimeEdit = datetime.combine((datetime.now()+timedelta(days=1)).date(), time())
         self.extraColumns = list()
+        self.filterByScanName = False
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -34,10 +37,12 @@ class Settings:
         self.__dict__.setdefault( 'fromDateTimeEdit', datetime.combine(datetime.now().date(), time()))
         self.__dict__.setdefault( 'toDateTimeEdit', datetime.combine((datetime.now()+timedelta(days=1)).date(), time()))
         self.__dict__.setdefault( 'extraColumns', list())
+        self.__dict__.setdefault( 'filterByScanName', False)
 
 class MeasurementLogUi(Form, Base ):
     timespans = ['Today','Three days','One week','One month', 'Three month', 'One year', 'All', 'Custom']
-    mySplitters = ['splitterHorizontal', "splitterVertical", "splitterHorizontalParam" ]
+    mySplitters = ['splitterHorizontal', "splitterVertical", "splitterHorizontalParam", "splitterLeftVertical" ]
+    myTableViews = ["measurementTableView", "resultTableView", "studyTableView", "parameterTableView", "scanNameTableView"]
     def __init__(self,config,parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
@@ -74,6 +79,9 @@ class MeasurementLogUi(Form, Base ):
         self.parameterTableView.setModel( self.parameterModel )
         magnitudeDelegate = MagnitudeSpinBoxDelegate()
         self.parameterTableView.setItemDelegateForColumn( 2, magnitudeDelegate )
+        # scanNames table
+        self.scanNameTableModel = ScanNameTableModel( self.container.scanNames, self.container)
+        self.scanNameTableView.setModel( self.scanNameTableModel )
         # Context Menu for ResultsTable
         self.resultTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addResultToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
@@ -112,6 +120,19 @@ class MeasurementLogUi(Form, Base ):
         self.toDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'toDateTimeEdit') )
         self.plainTextEdit.editingFinished.connect( self.onCommentFinished )
         self.onFilterRefresh()
+        # restore ColumnWidth
+        for tableView in self.myTableViews:
+            restoreColumnWidth( getattr(self,tableView), self.config.get( self.configname+"."+tableView, list() ) )
+        self.scanNameFilterButton.clicked.connect( self.onFilterButton )
+        self.scanNameTableModel.dataChanged.connect( self.onFilterSelection )
+        
+    def onFilterSelection(self, scanNames ):
+        if self.settings.filterByScanName:
+            self.measurementModel.setFilter( self.settings.filterByScanName, scanNames )            
+        
+    def onFilterButton(self, value):
+        self.settings.filterByScanName = value
+        self.measurementModel.setFilter( self.settings.filterByScanName, self.container.scanNames )
         
     def onAddParameterToMeasurement(self):
         if self.currentMeasurement is not None:
@@ -149,6 +170,8 @@ class MeasurementLogUi(Form, Base ):
         for splitter in self.mySplitters:
             self.config[self.configname+"."+splitter] = getattr(self, splitter).saveState()
         self.config[self.configname] = self.settings
+        for tableView in self.myTableViews:
+            self.config[self.configname+"."+tableView] = saveColumnWidth(getattr(self,tableView))
         
     def onActiveInstrumentChanged(self, modelIndex, modelIndex2 ):
         measurement = self.container.measurements[modelIndex.row()]
