@@ -19,6 +19,13 @@ from modules.Utility import unique
 from gui.MeasurementLogUi.ScanNameTableModel import ScanNameTableModel
 from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth,\
     updateComboBoxItems
+import weakref
+import logging
+import pytz
+import numpy
+from trace.Trace import Trace
+from trace.PlottedTrace import PlottedTrace
+from modules import WeakMethod
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 
@@ -31,6 +38,9 @@ class Settings:
         self.toDateTimeEdit = datetime.combine((datetime.now()+timedelta(days=1)).date(), time())
         self.extraColumns = list()
         self.filterByScanName = False
+        self.plotXAxis = None
+        self.plotYAxis = None
+        self.plotWindow = None
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -39,6 +49,9 @@ class Settings:
         self.__dict__.setdefault( 'toDateTimeEdit', datetime.combine((datetime.now()+timedelta(days=1)).date(), time()))
         self.__dict__.setdefault( 'extraColumns', list())
         self.__dict__.setdefault( 'filterByScanName', False)
+        self.__dict__.setdefault( 'plotXAxis', None)
+        self.__dict__.setdefault( 'plotYAxis', None)
+        self.__dict__.setdefault( 'plotWindow', None)
 
 class MeasurementLogUi(Form, Base ):
     timespans = ['Today','Three days','One week','One month', 'Three month', 'One year', 'All', 'Custom']
@@ -61,12 +74,17 @@ class MeasurementLogUi(Form, Base ):
                            lambda now: (datetime(2014,11,1,0,0),  datetime.combine(now + timedelta(days=1), time())),  # all
                            lambda now: (self.settings.fromDateTimeEdit, self.settings.toDateTimeEdit)
                            ]
+        self.sourceLookup = { 'measurement': lambda measurement, space, name: (getattr( measurement, name ),None,None),
+                              'parameter': self.getParameter,
+                              'result': self.getResult  }        
         self.currentMeasurement = None
         self.traceuiLookup = dict()        # the measurements should insert their traceui into this dictionary
 
     def addTraceui(self, scan, traceui ):
         self.traceuiLookup[scan] = traceui 
-        updateComboBoxItems( self.windowComboBox, ["{0}.{1}".format(key, item) for key,ui in self.traceuiLookup.iteritems() for item in ui.graphicsViewDict.keys()] )
+        self.plotWindowIndex = dict( (("{0}.{1}".format(key, item), (ui, item, view["view"])) for key,ui in self.traceuiLookup.iteritems() for item, view in ui.graphicsViewDict.keys()) )
+        updateComboBoxItems( self.windowComboBox, sorted(self.plotWindowIndex.keys()) )
+        
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
@@ -131,6 +149,15 @@ class MeasurementLogUi(Form, Base ):
             restoreColumnWidth( getattr(self,tableView), self.config.get( self.configname+"."+tableView, list() ) )
         self.scanNameFilterButton.clicked.connect( self.onFilterButton )
         self.updateComboBoxes()
+        self.plotButton.clicked.connect( self.onCreatePlot )
+        self.updatePlotButton.clicked.connect( self.onCreatePlot )
+        self.updateAllPlotsButton.clicked.connect( self.onUpdateAll )
+        self.xComboBox.currentItemChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotXAxis') )
+        self.yComboBox.currentItemChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotYAxis') )
+        self.windowComboBox.currentItemChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotWindow') )
+        
+    def onComboBoxChanged(self, attr, value):
+        setattr( self.settings, attr, str(value) )
         
     def onFilterSelection(self, scanNames ):
         if self.settings.filterByScanName:
@@ -148,8 +175,10 @@ class MeasurementLogUi(Form, Base ):
             self.updateComboBoxes()
                 
     def updateComboBoxes(self):
-        updateComboBoxItems(self.xComboBox, ["Time"]+[col[2] for col in self.measurementModel.extraColumns])
-        updateComboBoxItems(self.yComboBox, [col[2] for col in self.measurementModel.extraColumns])
+        self.axisDict = dict( {"Started": ('measurement',None,'startDate') } )
+        self.axisDict.update( dict( ((col[2], col) for col in self.measurementModel.extraColumns) ) )
+        updateComboBoxItems(self.xComboBox, sorted(self.axisDict.keys()), self.settings.plotXAxis)
+        updateComboBoxItems(self.yComboBox, sorted(self.axisDict.keys()), self.settings.plotYAxis)
         
     def onAddResultToMeasurement(self):
         if self.currentMeasurement is not None:
@@ -195,4 +224,102 @@ class MeasurementLogUi(Form, Base ):
         
     def onFilterRefresh(self):
         self.container.query( *self.fromToTimeLookup[self.settings.timespan](datetime.now()) )
+        
+    def onCreatePlot(self): 
+        self.doCreatePlot( self.axisDict[self.settings.plotXAxis], self.axisDict[self.settings.plotYAxis], self.settinf.plotWindow )
+        self.cacheGarbageCollect()
+        
+    def cacheGarbageCollect(self):
+        for key, (ref,_) in self.cache.items():
+            if ref() is None:
+                self.cache.pop(key)
+        
+    def getParameter(self, measurement, space, name):
+        param = measurement.parameterByName(space,name)
+        return (param.value, None, None) if param is not None else None
+        
+    def getResult(self, measurement, space, name):
+        result = measurement.resultByName(name)
+        return (result.value, result.bottom, result.top) if result is not None else None
+
+    def getData(self, xDataDef, yDataDef):
+        xDataList = list()
+        yDataList = list()
+        bottomList = list()
+        topList = list()
+        xsource, xspace, xname = xDataDef
+        ysource, yspace, yname = yDataDef
+        for measurement in self.measurementModel:
+            xData, _, _ = self.sourceLookup[xsource](measurement, xspace, xname)
+            yData, bottom, top  = self.sourceLookup[ysource](measurement, yspace, yname)
+            if xData is not None and yData is not None:
+                xDataList.append( xData )
+                yDataList.append( yData )
+                if bottom is not None:
+                    bottomList.append( bottom )
+                if top is not None:
+                    topList.append( top )
+        if len(bottomList)==len(topList)==len(xDataList):
+            return numpy.array(xDataList), numpy.array(yDataList), numpy.array(bottomList), numpy.array(topList)
+        return numpy.array(xDataList), numpy.array(yDataList), None, None
+            
+    def doCreatePlot(self, xDataDef, yDataDef, plotName, forceUpdate=False ):
+        ref, _ = self.cache.get( ( xDataDef, yDataDef ), (lambda: None, None)) 
+        plottedTrace = ref() if (self.parameters.updatePrevious or forceUpdate) else None # get plottedtrace from the weakref if exists       
+        # Assemble data
+        xData, yData, bottomData, topData = self.getData(xDataDef, yDataDef)
+        if len(xData)==0:
+            logging.getLogger(__name__).error("Nothing to plot")
+        else:
+            if xDataDef==('measurement',None,'startDate'):
+                epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if xData.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
+                time = numpy.array((value - epoch).total_seconds() for value in xData)
+                if plottedTrace is None:  # make a new plotted trace
+                    trace = Trace(record_timestamps=False)
+                    #trace.name = parameter + " Query"
+                    trace.y = yData
+                    trace.x = time
+                    trace.top = topData
+                    trace.bottom = bottomData
+                    traceui, item, view = self.plotWindowIndex[plotName]
+                    plottedTrace = PlottedTrace( trace, view, xAxisLabel = "local time", windowName=item) 
+                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
+                    traceui.addTrace( plottedTrace, pen=-1)
+                    traceui.resizeColumnsToContents()
+                    self.cache[(xDataDef, yDataDef)] = ( weakref.ref(plottedTrace), (xDataDef, yDataDef, plotName) )
+                else:  # update the existing plotted trace
+                    trace = plottedTrace.trace
+                    trace.y = yData
+                    trace.x = time
+                    trace.top = topData
+                    trace.bottom = bottomData
+                    plottedTrace.replot()     
+            else:
+                if plottedTrace is None:  # make a new plotted trace
+                    trace = Trace(record_timestamps=False)
+                    #trace.name = parameter + " Query"
+                    trace.y = yData
+                    trace.x = xData
+                    trace.top = topData
+                    trace.bottom = bottomData
+                    traceui, item, view = self.plotWindowIndex[plotName]
+                    plottedTrace = PlottedTrace( trace, view, xAxisLabel = xDataDef[2], windowName=item) 
+                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
+                    traceui.addTrace( plottedTrace, pen=-1)
+                    traceui.resizeColumnsToContents()
+                    self.cache[(xDataDef, yDataDef)] = ( weakref.ref(plottedTrace), (xDataDef, yDataDef, plotName) )
+                else:  # update the existing plotted trace
+                    trace = plottedTrace.trace
+                    trace.y = yData
+                    trace.x = xData
+                    trace.top = topData
+                    trace.bottom = bottomData
+                    plottedTrace.replot()     
+                
+    def onUpdateAll(self):
+        for ref, context in self.cache.values():
+            if ref() is not None:
+                self.doCreatePlot(*context, forceUpdate=True )
+        self.cacheGarbageCollect()
+            
         
