@@ -17,7 +17,8 @@ from _functools import partial
 from modules.firstNotNone import firstNotNone
 from modules.Utility import unique
 from gui.MeasurementLogUi.ScanNameTableModel import ScanNameTableModel
-from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth
+from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth,\
+    updateComboBoxItems
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 
@@ -62,6 +63,10 @@ class MeasurementLogUi(Form, Base ):
                            ]
         self.currentMeasurement = None
         self.traceuiLookup = dict()        # the measurements should insert their traceui into this dictionary
+
+    def addTraceui(self, scan, traceui ):
+        self.traceuiLookup[scan] = traceui 
+        updateComboBoxItems( self.windowComboBox, ["{0}.{1}".format(key, item) for key,ui in self.traceuiLookup.iteritems() for item in ui.graphicsViewDict.keys()] )
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
@@ -125,6 +130,7 @@ class MeasurementLogUi(Form, Base ):
         for tableView in self.myTableViews:
             restoreColumnWidth( getattr(self,tableView), self.config.get( self.configname+"."+tableView, list() ) )
         self.scanNameFilterButton.clicked.connect( self.onFilterButton )
+        self.updateComboBoxes()
         
     def onFilterSelection(self, scanNames ):
         if self.settings.filterByScanName:
@@ -139,17 +145,24 @@ class MeasurementLogUi(Form, Base ):
             for index in sorted(unique([ i.row() for i in self.parameterTableView.selectedIndexes() ])):
                 param = self.currentMeasurement.parameters[index]
                 self.measurementModel.addColumn( ('parameter',param.space.name,param.name) )
+            self.updateComboBoxes()
+                
+    def updateComboBoxes(self):
+        updateComboBoxItems(self.xComboBox, ["Time"]+[col[2] for col in self.measurementModel.extraColumns])
+        updateComboBoxItems(self.yComboBox, [col[2] for col in self.measurementModel.extraColumns])
         
     def onAddResultToMeasurement(self):
         if self.currentMeasurement is not None:
             for index in sorted(unique([ i.row() for i in self.resultTableView.selectedIndexes() ])):
                 result = self.currentMeasurement.results[index]
                 self.measurementModel.addColumn( ('result',None,result.name) )
-        
+            self.updateComboBoxes()
+                        
     def onRemoveMeasurementColumn(self):
         for index in sorted(unique([ i.column() for i in self.measurementTableView.selectedIndexes() if i.column()>=self.measurementModel.coreColumnCount])):
             self.measurementModel.removeColumn(index)
-        
+            self.updateComboBoxes()
+                        
     def onCommentFinished(self, document):
         if self.currentMeasurement is not None:
             self.currentMeasurement.longComment = str(document.toPlainText())
