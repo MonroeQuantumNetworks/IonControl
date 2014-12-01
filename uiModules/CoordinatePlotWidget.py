@@ -21,6 +21,8 @@ from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
 import logging
+from pyqtgraphAddons.DateAxisItem import DateAxisItem
+from datetime import datetime
 
 grid_opacity = 0.3
 icons_dir = '.\\ui\\icons\\'
@@ -198,6 +200,25 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         self.mousePoint = None
         self.mousePointList = list()
         self._graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        action = QtGui.QAction("toggle time axis", self._graphicsView.ctrlMenu)
+        action.triggered.connect( self.onToggleTimeAxis )
+        self._graphicsView.ctrlMenu.addAction(action)
+        self.timeAxis = None
+        
+    def onToggleTimeAxis(self):
+        if self.timeAxis is None:
+            self.dateAxisItem = DateAxisItem('bottom')
+            self.originalAxis = self._graphicsView.getAxis('bottom')
+            self._graphicsView.axes['bottom']['item'] = self.dateAxisItem
+            self.timeAxis = True
+        elif self.timeAxis:
+            self._graphicsView.axes['bottom']['item'] = self.originalAxis
+            self._graphicsView._checkScaleKey('bottom')
+            self.timeAxis = False
+        else:
+            self._graphicsView.axes['bottom']['item'] = self.dateAxisItem
+            self._graphicsView._checkScaleKey('bottom')
+            self.timeAxis = True
         
     def setPrintView(self, printview=True):
         self._graphicsView.hideAllButtons(printview)
@@ -221,18 +242,32 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         """Execute when mouse is moved. If mouse is over plot, show cursor
            coordinates on coordinateLabel."""
         if self._graphicsView.sceneBoundingRect().contains(pos):
-            self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
-            logY = self._graphicsView.ctrl.logYCheck.isChecked()
-            logX = self._graphicsView.ctrl.logXCheck.isChecked()
-            y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
-            x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
-            vR = self._graphicsView.vb.viewRange()
-            deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
-            deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
-            precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1
-            precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
-            roundedx, roundedy = roundToNDigits( x,precx), roundToNDigits(y, precy )
-            self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
+            if self.timeAxis:
+                try:
+                    self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+                    logY = self._graphicsView.ctrl.logYCheck.isChecked()
+                    y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
+                    vR = self._graphicsView.vb.viewRange()
+                    deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+                    precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+                    roundedy = roundToNDigits(y, precy )
+                    currentDateTime = datetime.fromtimestamp(self.mousePoint.x()) 
+                    self.coordinateLabel.setText( self.template.format( str(currentDateTime), repr(roundedy) ))
+                except ValueError:
+                    pass
+            else:
+                self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+                logY = self._graphicsView.ctrl.logYCheck.isChecked()
+                logX = self._graphicsView.ctrl.logXCheck.isChecked()
+                y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
+                x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
+                vR = self._graphicsView.vb.viewRange()
+                deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+                deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
+                precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1
+                precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+                roundedx, roundedy = roundToNDigits( x,precx), roundToNDigits(y, precy )
+                self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
             
     def onCopyLocation(self,which):
         text = {'x': ("{0}".format(self.mousePoint.x())),
