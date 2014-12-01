@@ -158,14 +158,30 @@
           <string>Plot</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="3" column="0">
+          <item row="4" column="0">
            <widget class="QLabel" name="label_2">
             <property name="text">
              <string>y-axis</string>
             </property>
            </widget>
           </item>
-          <item row="8" column="0" colspan="3">
+          <item row="1" column="1" colspan="2">
+           <widget class="QComboBox" name="xComboBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>1</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1" colspan="2">
+           <widget class="QComboBox" name="windowComboBox"/>
+          </item>
+          <item row="4" column="1" colspan="2">
+           <widget class="QComboBox" name="yComboBox"/>
+          </item>
+          <item row="12" column="0" colspan="3">
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
              <widget class="QPushButton" name="plotButton">
@@ -223,17 +239,10 @@
             </item>
            </layout>
           </item>
-          <item row="5" column="0">
+          <item row="9" column="0">
            <widget class="QLabel" name="label_3">
             <property name="text">
              <string>window</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QLineEdit" name="xUnitEdit">
-            <property name="toolTip">
-             <string>xUnit</string>
             </property>
            </widget>
           </item>
@@ -244,56 +253,25 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="2">
-           <widget class="QLineEdit" name="yUnitEdit">
-            <property name="toolTip">
-             <string>y Unit</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
+          <item row="3" column="0">
            <widget class="QLabel" name="label_4">
             <property name="text">
              <string>x-unit</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="3" column="1" colspan="2">
+           <widget class="QLineEdit" name="xUnitEdit"/>
+          </item>
+          <item row="6" column="0">
            <widget class="QLabel" name="label_5">
             <property name="text">
              <string>y-unit</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QLineEdit" name="xExpressionEdit">
-            <property name="toolTip">
-             <string>Expression for x value, use x for x-value</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QLineEdit" name="yExpressionEdit">
-            <property name="toolTip">
-             <string>Expression use y for value</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1" colspan="2">
-           <widget class="QComboBox" name="xComboBox">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>1</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1" colspan="2">
-           <widget class="QComboBox" name="yComboBox"/>
-          </item>
-          <item row="5" column="1" colspan="2">
-           <widget class="QComboBox" name="windowComboBox"/>
+          <item row="6" column="1" colspan="2">
+           <widget class="QLineEdit" name="yUnitEdit"/>
           </item>
          </layout>
         </widget>

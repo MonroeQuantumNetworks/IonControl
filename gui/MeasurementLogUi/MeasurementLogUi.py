@@ -54,6 +54,8 @@ class Settings:
         self.__dict__.setdefault( 'plotXAxis', None)
         self.__dict__.setdefault( 'plotYAxis', None)
         self.__dict__.setdefault( 'plotWindow', None)
+        self.__dict__.setdefault( 'xUnit', "")
+        self.__dict__.setdefault( 'yUnit', "")
 
 class MeasurementLogUi(Form, Base ):
     timespans = ['Today','Three days','One week','One month', 'Three month', 'One year', 'All', 'Custom']
@@ -158,6 +160,13 @@ class MeasurementLogUi(Form, Base ):
         self.xComboBox.currentIndexChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotXAxis') )
         self.yComboBox.currentIndexChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotYAxis') )
         self.windowComboBox.currentIndexChanged[QtCore.QString].connect( partial(self.onComboBoxChanged, 'plotWindow') )
+        self.xUnitEdit.setText( self.settings.xUnit )
+        self.yUnitEdit.setText( self.settings.yUnit )
+        self.xUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'xUnit'))
+        self.yUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'yUnit'))
+        
+    def onEditingFinished(self, attr, value):
+        setattr( self.settings, str(value) )
         
     def onComboBoxChanged(self, attr, value):
         setattr( self.settings, attr, str(value) )
@@ -284,7 +293,7 @@ class MeasurementLogUi(Form, Base ):
                 if plottedTrace is None:  # make a new plotted trace
                     trace = Trace(record_timestamps=False)
                     trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
-                    _, yUnit = yData[0].toval( returnUnit=True )
+                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
                     trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
                     trace.x = time
                     if topData is not None and bottomData is not None:
@@ -298,19 +307,24 @@ class MeasurementLogUi(Form, Base ):
                     self.cache[(xDataDef, yDataDef)] = ( weakref.ref(plottedTrace), (xDataDef, yDataDef, plotName) )
                 else:  # update the existing plotted trace
                     trace = plottedTrace.trace
-                    trace.y = yData
+                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
+                    trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
                     trace.x = time
-                    trace.top = topData
-                    trace.bottom = bottomData
+                    if topData is not None and bottomData is not None:
+                        trace.top = topData
+                        trace.bottom = bottomData
                     plottedTrace.replot()     
             else:
                 if plottedTrace is None:  # make a new plotted trace
                     trace = Trace(record_timestamps=False)
                     trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
-                    trace.y = yData
-                    trace.x = xData
-                    trace.top = topData
-                    trace.bottom = bottomData
+                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
+                    _, xUnit = self.settings.xUnit if self.settings.xUnit else xData[0].toval( returnUnit=True )
+                    trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
+                    trace.x = numpy.array( [ d.toval(xUnit) for d in xData ] )
+                    if topData is not None and bottomData is not None:
+                        trace.top = topData
+                        trace.bottom = bottomData
                     traceui, item, view = self.plotWindowIndex[plotName]
                     plottedTrace = PlottedTrace( trace, view, xAxisLabel = xDataDef[2], windowName=item) 
                     plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
@@ -319,10 +333,13 @@ class MeasurementLogUi(Form, Base ):
                     self.cache[(xDataDef, yDataDef)] = ( weakref.ref(plottedTrace), (xDataDef, yDataDef, plotName) )
                 else:  # update the existing plotted trace
                     trace = plottedTrace.trace
-                    trace.y = yData
-                    trace.x = xData
-                    trace.top = topData
-                    trace.bottom = bottomData
+                    _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
+                    _, xUnit = self.settings.xUnit if self.settings.xUnit else xData[0].toval( returnUnit=True )
+                    trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
+                    trace.x = numpy.array( [ d.toval(xUnit) for d in xData ] )
+                    if topData is not None and bottomData is not None:
+                        trace.top = topData
+                        trace.bottom = bottomData
                     plottedTrace.replot()     
                 
     def onUpdateAll(self):
