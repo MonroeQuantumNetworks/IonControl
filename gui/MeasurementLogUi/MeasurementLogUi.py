@@ -41,8 +41,8 @@ class Settings:
         self.plotXAxis = None
         self.plotYAxis = None
         self.plotWindow = None
-        self.xUnit = None
-        self.yUnit = None
+        self.xUnit = ""
+        self.yUnit = ""
         
     def __setstate__(self, state):
         self.__dict__ = state

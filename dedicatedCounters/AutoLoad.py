@@ -26,6 +26,8 @@ from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.mymath import max_iterable
 from modules.statemachine import Statemachine, timedeltaToMagnitude
+from gui.TodoListSettingsTableModel import TodoListSettingsTableModel
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -54,6 +56,8 @@ class AutoLoadSettings:
         self.shuttleLoadTime = mg( 500, 'ms')
         self.shuttleCheckTime = mg( 1, 's')
         self.ovenCoolingTime = mg( 80, 's' )
+        self.thresholdRunning = mg(5, 'kHz')
+        self.globalsAdjustList = SequenceDict()
 
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -71,6 +75,8 @@ class AutoLoadSettings:
         self.__dict__.setdefault( 'shuttleLoadTime', mg( 500, 'ms') )
         self.__dict__.setdefault( 'shuttleCheckTime', mg( 1, 's') )
         self.__dict__.setdefault( 'ovenCoolingTime', mg( 80, 's') )
+        self.__dict__.setdefault( 'thresholdRunning', mg(5, 'kHz'))
+        self.__dict__.setdefault( 'globalsAdjustList', SequenceDict() )
 
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
@@ -84,7 +90,7 @@ class LoadingEvent:
 
 class AutoLoad(UiForm,UiBase):
     ionReappeared = QtCore.pyqtSignal()
-    def __init__(self, config, pulser, dataAvailableSignal, parent=None):
+    def __init__(self, config, pulser, dataAvailableSignal, globalVariablesUi, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
         self.config = config
@@ -101,12 +107,14 @@ class AutoLoad(UiForm,UiBase):
         self.trappingTime = None
         self.voltageControl = None
         self.preheatStartTime = datetime.now()
+        self.globalVariablesUi = globalVariablesUi
+        self.globalAdjustRevertList = list()
         
     def constructStatemachine(self):
         self.statemachine = Statemachine('AutoLoad')
         self.statemachine.addState( 'Idle' , self.setIdle, self.exitIdle )
         self.statemachine.addState( 'Preheat', self.setPreheat )
-        self.statemachine.addState( 'Load', self.setLoad )
+        self.statemachine.addState( 'Load', self.setLoad, self.exitLoad )
         self.statemachine.addState( 'Check', self.setCheck )
         self.statemachine.addState( 'Trapped', self.setTrapped, self.exitTrapped )
         self.statemachine.addState( 'Disappeared', self.setDisappeared )
@@ -179,22 +187,22 @@ class AutoLoad(UiForm,UiBase):
                                          description="waitForComebackTime" )
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Trapped', 
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
-                                                             data.data[self.settings.counterChannel]/data.integrationTime >= self.settings.thresholdBare,
+                                                             data.data[self.settings.counterChannel]/data.integrationTime >= self.settings.thresholdRunning,
                                          description="postSequenceWaitTime" )
         self.statemachine.addTransition( 'data', 'PostSequenceWait', 'Disappeared', 
                                          lambda state, data: state.timeInState() > self.settings.postSequenceWaitTime and
-                                                             data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
+                                                             data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
                                          description="postSequenceWaitTime" )
         self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdOven"  )
-        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
-                                         description="thresholdBare"  )
-        self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdBare,
-                                         description="thresholdBare" )
-        self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare,
-                                         description="thresholdBare" )
-        self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdBare,
-                                         description="thresholdBare" )
+        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
+                                         description="thresholdRunning"  )
+        self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
+                                         description="thresholdRunning" )
+        self.statemachine.addTransition( 'data', 'Disappeared', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdRunning,
+                                         description="thresholdRunning" )
+        self.statemachine.addTransition( 'data', 'WaitingForComeback', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdRunning,
+                                         description="thresholdRunning" )
         self.statemachine.addTransition( 'data', 'ShuttleCheck', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          self.loadingToTrapped,
                                          description="thresholdOven" )
@@ -243,6 +251,7 @@ class AutoLoad(UiForm,UiBase):
         self.initMagnitude( self.maxTimeBox, 'maxTime', Magnitude(1,s=1) )
         self.initMagnitude( self.thresholdBareBox, 'thresholdBare', Magnitude(1,s=-1) )
         self.initMagnitude( self.thresholdOvenBox, 'thresholdOven', Magnitude(1,s=-1) )
+        self.initMagnitude( self.thresholdRunningBox, 'thresholdRunning', Magnitude(1,s=-1) )
         self.initMagnitude( self.checkTimeBox, 'checkTime', Magnitude(1,s=1) )
         self.initCheckBox( self.autoReloadBox, 'autoReload') 
         self.initMagnitude( self.minLaserScatterBox, 'minLaserScatter', Magnitude(1,s=-1) )
@@ -293,7 +302,21 @@ class AutoLoad(UiForm,UiBase):
         self.createAction("Last ion is still trapped", self.onIonIsStillTrapped )
         self.createAction("Trapped an ion now", self.onTrappedIonNow )
         self.autoLoadTab.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+
+        # Settings
+        self.globalsAdjustTableModel = TodoListSettingsTableModel( self.settings.globalsAdjustList, self.globalVariablesUi.variables )
+        self.globalsAdjustTableView.setModel( self.globalsAdjustTableModel )
+        self.comboBoxDelegate = ComboBoxDelegate()
+        self.magnitudeSpinBoxDelegate = MagnitudeSpinBoxDelegate()
+        self.globalsAdjustTableView.setItemDelegateForColumn( 0, self.comboBoxDelegate )
+        self.globalsAdjustTableView.setItemDelegateForColumn( 1, self.magnitudeSpinBoxDelegate )
+        self.addAdjustButton.clicked.connect( self.globalsAdjustTableModel.addSetting )
+        self.removeAdjustButton.clicked.connect( self.onRemoveSetting )
         
+    def onRemoveSetting(self):
+        for index in sorted(unique([ i.row() for i in self.globalsAdjustTableView.selectedIndexes() ]),reverse=True):
+            self.globalsAdjustTableModel.dropSetting(index)
+
     def setVoltageControl(self, voltageControl ):
         self.voltageControl = voltageControl
         
@@ -457,6 +480,11 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Loading")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
+        self.globalAdjustRevertList = [('Global', key, self.globalVariablesUi.variables[key]) for key in self.settings.globalsAdjustList]
+        self.globalVariablesUi.update( ( ('Global', k, v) for k,v in self.settings.globalsAdjustList.iteritems() ))   
+   
+    def exitLoad(self):
+        self.globalVariablesUi.update( self.globalAdjustRevertList )
     
     def setCheck(self):
         """Execute when count rate goes over threshold."""

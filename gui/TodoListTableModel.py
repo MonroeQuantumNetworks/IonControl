@@ -39,7 +39,7 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
                               3: lambda row: self.evaluationSelection[self.todolist[row].scan] }
 
     def setString(self, attr, index, value):
-        setattr( self.todolist[index.row()], attr, value )
+        setattr( self.todolist[index.row()], attr, str(value) )
         return True
 
     def setEntryEnabled(self,index,value):
