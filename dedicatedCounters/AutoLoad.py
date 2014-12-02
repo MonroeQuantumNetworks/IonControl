@@ -251,7 +251,7 @@ class AutoLoad(UiForm,UiBase):
         self.initMagnitude( self.maxTimeBox, 'maxTime', Magnitude(1,s=1) )
         self.initMagnitude( self.thresholdBareBox, 'thresholdBare', Magnitude(1,s=-1) )
         self.initMagnitude( self.thresholdOvenBox, 'thresholdOven', Magnitude(1,s=-1) )
-        self.initMagnitude( self.thresholdRunningBox, 'thresholdOven', Magnitude(1,s=-1) )
+        self.initMagnitude( self.thresholdRunningBox, 'thresholdRunning', Magnitude(1,s=-1) )
         self.initMagnitude( self.checkTimeBox, 'checkTime', Magnitude(1,s=1) )
         self.initCheckBox( self.autoReloadBox, 'autoReload') 
         self.initMagnitude( self.minLaserScatterBox, 'minLaserScatter', Magnitude(1,s=-1) )

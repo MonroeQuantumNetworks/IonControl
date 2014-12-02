@@ -24,7 +24,7 @@ Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
 
 
-class TodoListEntry:
+class TodoListEntry(object):
     def __init__(self, scan=None, measurement=None, evaluation=None):
         self.parent = None
         self.children = list()
@@ -60,7 +60,7 @@ class TodoListEntry:
             logging.getLogger(__name__).info("Replacing list with hashable list")
             self.todoList = HashableList(self.todoList)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
-
+    
 class Settings:
     def __init__(self):
         self.todoList = list()
