@@ -379,7 +379,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
-                     self.loggerDock, self.todoListDock ]:
+                     self.loggerDock, self.todoListDock, self.measurementLogDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         # Print menu
         if self.printMenu is not None:
