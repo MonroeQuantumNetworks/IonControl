@@ -8,9 +8,12 @@ def updateComboBoxItems( combo, items, selected=None):
     with BlockSignals(combo):
         combo.clear()
         combo.addItems( items )
-        if selected in items:
-            combo.setCurrentIndex( combo.findText(selected))
-    return combo.currentText()
+        index = combo.findText(selected)
+        if index >= 0:
+            combo.setCurrentIndex( index )
+        else:
+            combo.setCurrentIndex(0)
+    return str(combo.currentText())
 
 
 class BlockSignals:
