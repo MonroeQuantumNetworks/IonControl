@@ -179,7 +179,7 @@ class ControlUi(UiForm,UiBase):
         if self.isAdjusting():
             self.tableModel.doneAdjusting.subscribe(callback)
         else:
-            callback()
+            QtCore.QTimer.singleShot(0, callback)
             
 
     

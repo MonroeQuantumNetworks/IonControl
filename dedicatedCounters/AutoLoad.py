@@ -128,7 +128,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addState( 'PostSequenceWait', self.setPostSequenceWait )
         self.statemachine.addState( 'ShuttleLoad', self.setShuttleLoad, self.exitShuttleLoad )
         self.statemachine.addState( 'ShuttleCheck' , self.setShuttleCheck )
-        self.statemachine.addStateGroup('LoadingConfiguration', ['Preheat','Load','Check'], self.adjustToLoading, self.adjustFromLoading)
+        self.statemachine.addStateGroup('LoadingConfiguration', ['AdjustToLoading','Preheat','Load','Check'], self.adjustToLoading, self.adjustFromLoading)
 
         self.statemachine.addTransition( 'timer', 'Preheat', 'Load', 
                                          lambda state: state.timeInState() > self.settings.laserDelay and
@@ -156,7 +156,7 @@ class AutoLoad(UiForm,UiBase):
                                          lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and
                                                        not self.settings.autoReload,
                                          description="maxTime"  )                                         
-        self.statemachine.addTransition( 'timer', 'Check', 'Trapped',
+        self.statemachine.addTransition( 'timer', 'Check', 'AdjustFromLoading',
                                          lambda state: state.timeInState() > self.settings.checkTime,
                                          self.loadingToTrapped,
                                          description="checkTime" )
@@ -488,11 +488,11 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
    
     def adjustFromLoading(self):
-        self.externalInstrumentObservable.subscribe( lambda: self.statemachine.processEvent('doneAdjusting') )
+        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
         self.globalVariablesUi.update( self.globalAdjustRevertList )
         
     def adjustToLoading(self):
-        self.externalInstrumentObservable.subscribe( lambda: self.statemachine.processEvent('doneAdjusting') )
+        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
         self.globalAdjustRevertList = [('Global', key, self.globalVariablesUi.variables[key]) for key in self.settings.globalsAdjustList]
         self.globalVariablesUi.update( ( ('Global', k, v) for k,v in self.settings.globalsAdjustList.iteritems() ))   
     
