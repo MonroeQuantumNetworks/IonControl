@@ -85,12 +85,6 @@ class MeasurementLogUi(Form, Base ):
         self.traceuiLookup = dict()        # the measurements should insert their traceui into this dictionary
         self.cache = dict()
 
-    def addTraceui(self, scan, traceui ):
-        self.traceuiLookup[scan] = traceui 
-        self.plotWindowIndex = dict( (("{0}.{1}".format(key, item), (ui, item, d["view"])) for key,ui in self.traceuiLookup.iteritems() for item, d in ui.graphicsViewDict.iteritems()) )
-        updateComboBoxItems( self.windowComboBox, sorted(self.plotWindowIndex.keys()), self.settings.plotWindow )
-        self.settings.plotWindow = firstNotNone( self.settings.plotWindow, str(self.windowComboBox.currentText()) )
-
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         # measurement Table
@@ -165,6 +159,12 @@ class MeasurementLogUi(Form, Base ):
         self.xUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'xUnit'))
         self.yUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'yUnit'))
         
+    def addTraceui(self, scan, traceui ):
+        self.traceuiLookup[scan] = traceui 
+        self.plotWindowIndex = dict( (("{0}.{1}".format(key, item), (ui, item, d["view"])) for key,ui in self.traceuiLookup.iteritems() for item, d in ui.graphicsViewDict.iteritems()) )
+        updateComboBoxItems( self.windowComboBox, sorted(self.plotWindowIndex.keys()), self.settings.plotWindow )
+        self.settings.plotWindow = firstNotNone( self.settings.plotWindow, str(self.windowComboBox.currentText()) )
+
     def onEditingFinished(self, attr, value):
         setattr( self.settings, str(value) )
         
@@ -191,6 +191,8 @@ class MeasurementLogUi(Form, Base ):
         self.axisDict.update( dict( ((col[2], col) for col in self.measurementModel.extraColumns) ) )
         updateComboBoxItems(self.xComboBox, sorted(self.axisDict.keys()), self.settings.plotXAxis)
         updateComboBoxItems(self.yComboBox, sorted(self.axisDict.keys()), self.settings.plotYAxis)
+        self.settings.plotXAxis = firstNotNone( self.settings.plotXAxis, str(self.xComboBox.currentText()) )
+        self.settings.plotYAxis = firstNotNone( self.settings.plotYAxis, str(self.yComboBox.currentText()) )
         
     def onAddResultToMeasurement(self):
         if self.currentMeasurement is not None:
