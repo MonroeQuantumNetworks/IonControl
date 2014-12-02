@@ -170,11 +170,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
-        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser )
+        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.variables )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
+        self.globalVariablesUi.valueChanged.connect( self.DDSUi.evaluate )
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
+        
         
         # tabify the dock widgets
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )

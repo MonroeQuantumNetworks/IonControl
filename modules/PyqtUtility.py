@@ -31,8 +31,11 @@ class BlockSignals:
 def saveColumnWidth( tableView ):
     return [tableView.columnWidth(i) for i in range(0, tableView.model().columnCount())]
 
-def restoreColumnWidth( tableView, widthData ):
-    for column, width in zip( range(0, tableView.model().columnCount()), widthData ):
-        tableView.setColumnWidth(column, width)
+def restoreColumnWidth( tableView, widthData, autoscaleOnNone=True ):
+    if widthData:
+        for column, width in zip( range(0, tableView.model().columnCount()), widthData ):
+            tableView.setColumnWidth(column, width)
+    else:
+        tableView.resizeColumnsToContents()
      
     
