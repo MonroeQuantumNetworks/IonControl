@@ -135,6 +135,7 @@ class DDSUi(DDSForm, DDSBase):
     def evaluate(self, name):
         for channel in self.ddsChannels:
             channel.evaluate( self.globalDict )
+        self.tableView.viewport().repaint() 
              
 if __name__ == "__main__":
     import sys
