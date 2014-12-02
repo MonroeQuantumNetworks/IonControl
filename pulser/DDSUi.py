@@ -38,13 +38,26 @@ class DDSChannelSettings(object):
         self.__dict__ = state
         self.__dict__.setdefault('name','')
         
-    def evaluate(self, globalDict ):
+    def evaluateFrequency(self, globalDict ):
         if self.frequencyText:
+            oldfreq = self.frequency
             self.frequency = self.expression.evaluateAsMagnitude(self.frequencyText, globalDict)
+            return self.frequency!=oldfreq
+        return False
+            
+    def evaluateAmplitude(self, globalDict ):
         if self.amplitudeText:
+            oldamp = self.amplitude
             self.amplitude = self.expression.evaluateAsMagnitude(self.amplitudeText, globalDict)
+            return oldamp!=self.amplitude
+        return False
+    
+    def evaluatePhase(self, globalDict ):
         if self.phaseText:
+            oldphase= self.phase
             self.phase = self.expression.evaluateAsMagnitude(self.phaseText, globalDict)
+            return oldphase!=self.phase
+        return False
 
 class DDSUi(DDSForm, DDSBase):
     persistSpace = 'DDS'
@@ -133,8 +146,13 @@ class DDSUi(DDSForm, DDSBase):
         self.ad9912.reset(0xff)
         
     def evaluate(self, name):
-        for channel in self.ddsChannels:
-            channel.evaluate( self.globalDict )
+        for channel, setting in enumerate(self.ddsChannels):
+            if setting.evaluateFrequency( self.globalDict ):
+                self.ad9912.setFrequency(channel, setting.frequency)
+            if setting.evaluatePhase( self.globalDict ):
+                self.ad9912.setPhase(channel, setting.phase)
+            if setting.evaluateAmplitude( self.globalDict ):
+                self.ad9912.setAmplitude(channel, setting.amplitude)
         self.tableView.viewport().repaint() 
              
 if __name__ == "__main__":

@@ -134,6 +134,17 @@ class SaturationFit(FitFunctionBase):
         
     def functionEval(self, x, A, s, O ):
         return A*(x/s)/(1+(x/s))+O
+    
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        A, s, O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        A = 2*y[-1]
+        s = A*(x[-1]-x[0])/(y[-1]-y[0])
+        O = y[0]-(A*x[0]/s)
+        logging.getLogger(__name__).info("smart start values A={0}, s={1}, O={2}".format(A, s, O))
+        return (A, s, O)
   
 class SinSqExpFit(FitFunctionBase):
     name = "Sin2 Exponential Decay"
