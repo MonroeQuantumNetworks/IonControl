@@ -94,8 +94,7 @@ OPS = {'NOP'    : 0x00,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
        'WAITFORTRIGGER': 0x53,
-       'WRITERESULTTOPIPELOW': 0x54,
-       'WRITERESULTTOPIPEHIGH': 0x55,
+       'WRITERESULTTOPIPE': 0x54,
        'DIVW': 0x56,
        'END'    : 0xFF }
 

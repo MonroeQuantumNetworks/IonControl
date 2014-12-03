@@ -139,8 +139,8 @@ class PulserHardwareServer(Process, OKBase):
             0x03nnxxxxxxxxxxxx timestamp gate start channel n
             0x04nnxxxxxxxxxxxx other return
             0xeennxxxxxxxxxxxx dedicated result
-            0x50nnxxxx result n return Hi word
-            0x51nnxxxx result n return Low word
+            0x50nn00000000xxxx result n return Hi 16 bits, only being sent if xxxx is not identical to zero
+            0x51nnxxxxxxxxxxxx result n return Low 48 bits, guaranteed to come first
         """
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
@@ -247,14 +247,12 @@ class PulserHardwareServer(Process, OKBase):
                         self.data.timestampZero[channel] = self.timestampOffset + value
                     elif key==4: # other return value
                         self.data.other.append(value)
-                    elif key==5:
-                        resultkey = (value >> 40)
+                    elif key==0x51:
                         if self.data.result is None:
                             self.data.result = defaultdict(list)
-                        if channel==1:  # High word comes first
-                            self.data.result[resultkey].append( (value & 0xffffffff) << 32 )
-                        else:
-                            self.data.result[resultkey][-1] |= ( value & 0xffffffff )                           
+                        self.data.result[channel].append( value  )
+                    elif key==0x50:
+                            self.data.result[channel][-1] |= ( (value & 0xffff) << 48 )                           
 #                  logger.debug("result key: {0} hi-low: {1} value: {2} length: {3} value: {4}".format(resultkey,channel,value&0xffff,len(self.data.result[resultkey]),self.data.result[resultkey][-1]))
                     else:
                         self.data.other.append(token)
