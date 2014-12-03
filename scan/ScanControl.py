@@ -394,6 +394,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             scanParameter = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], scanParameter )
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
+        else:
+            self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(scanParameter) )
         self.checkSettingsSavable()
         return scanParameter
                 
