@@ -4,7 +4,7 @@ from modules.firstNotNone import firstNotNone
 
 class PushVariableTableModel(QtCore.QAbstractTableModel):
     backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}     
-    def __init__(self, config, parent=None, *args): 
+    def __init__(self, config, globalDict, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row:  QtCore.Qt.Checked if self.fitfunction.pushVariables.at(row).push else QtCore.Qt.Unchecked,
@@ -25,7 +25,7 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
                             }                           
         self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setDataDestinationName,
                                  (QtCore.Qt.EditRole,2): self.setDataVariableName,
-                                 (QtCore.Qt.EditRole,3): self.setDataDefinition,
+                                 (QtCore.Qt.UserRole,3): self.setDataDefinition,
                                  (QtCore.Qt.EditRole,5): self.setDataMinimum,
                                  (QtCore.Qt.EditRole,6): self.setDataMaximum,
                                  (QtCore.Qt.UserRole,5): self.setDataStrMinimum,
@@ -33,6 +33,10 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
                                  (QtCore.Qt.CheckStateRole,0): self.setDataPush }
         self.fitfunction = None
         self.pushDestinations = []
+        self.globalDict = globalDict
+                         
+    def localReplacementDict(self):
+        return self.fitfunction.replacementDict()
                          
     def updateDestinations(self, destinations):
         self.pushDestinations = destinations
@@ -65,10 +69,11 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         return False
 
     def setDataDefinition(self, row, value):
-        value =  str(value.toString())
+        value =  str(value)
         if value:
             self.fitfunction.pushVariables.at(row).definition = value
             replacementDict = self.fitfunction.replacementDict()
+            replacementDict.update( self.globalDict )
             self.fitfunction.pushVariables.at(row).evaluate(replacementDict)
             self.dataChanged.emit( self.createIndex(row,3), self.createIndex(row,3))
             return True

@@ -24,7 +24,12 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
     def createEditor(self, parent, option, index ):
         """Create the combo box editor used to select which pen icon to use.
            The for loop adds each pen icon into the combo box."""
-        editor = MagnitudeSpinBox(parent, globalDict = self.globalDict, valueChangedOnEditingFinished=False)
+        if hasattr( index.model(), 'localReplacementDict' ):
+            localDict = dict( self.globalDict )
+            localDict.update( index.model().localReplacementDict() )
+        else:
+            localDict = self.globalDict
+        editor = MagnitudeSpinBox(parent, globalDict = localDict, valueChangedOnEditingFinished=False)
         editor.dimension = index.model().data(index,QtCore.Qt.UserRole)
         editor.valueChanged.connect( partial( index.model().setValue, index ))
         return editor
