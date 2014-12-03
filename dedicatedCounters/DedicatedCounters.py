@@ -31,7 +31,7 @@ class Settings:
 class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     dataAvailable = QtCore.pyqtSignal( object )
     OpStates = enum.enum('idle','running','paused')
-    def __init__(self,config,pulserHardware,parent=None):
+    def __init__(self,config,pulserHardware,globalVariablesUi,externalInstrumentObservable, parent=None):
         DedicatedCountersForm.__init__(self)
         DedicatedCountersBase.__init__(self,parent)
         self.dataSlotConnected = False
@@ -45,6 +45,8 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.integrationTimeLookup = dict()
         self.tick = 0
         self.analogCalbrations = None
+        self.globalVariablesUi = globalVariablesUi
+        self.externalInstrumentObservable = externalInstrumentObservable
 #        [
 #            AnalogInputCalibration.PowerDetectorCalibration(),
 #            AnalogInputCalibration.PowerDetectorCalibrationTwo(),
@@ -97,7 +99,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.tabifyDockWidget( self.calibrationDock, self.settingsDock )
         self.calibrationDock.hide()        
         # AutoLoad
-        self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware, self.dataAvailable)
+        self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware, self.dataAvailable, self.globalVariablesUi, self.externalInstrumentObservable)
         self.autoLoad.setupUi(self.autoLoad)
         self.autoLoadDock = QtGui.QDockWidget("Auto Loader")
         self.autoLoadDock.setObjectName("Auto Loader")

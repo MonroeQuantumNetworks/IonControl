@@ -26,12 +26,9 @@ class Ad9912:
     def rawToMagnitude(self, raw):
         return mg(1000,' MHz') * (raw / float(2**48))
 
-    def setFrequency(self, channel, frequency, even=False):
-        intFrequency = int(round(2**48 * frequency.ounit('GHz').toval())) & 0xffffffffffff
-        #intFrequency = intFrequency &0xfffffffffffe if even else intFrequency
+    def setFrequency(self, channel, frequency):
+        intFrequency = int(round(2**48 * frequency.toval('GHz'))) & 0xffffffffffff
         self.sendCommand(channel, 0, intFrequency)
-        #self.sendCommand(channel, 0, intFrequency >> 16 )
-        #self.sendCommand(channel, 4, intFrequency & 0xffff ) # Frequency fine
         return intFrequency
     
     def setFrequencyRaw(self, channel, intFrequency):
@@ -41,7 +38,7 @@ class Ad9912:
         return intFrequency        
     
     def setPhase(self, channel, phase):
-        intPhase = int(round(2**14 * phase.ounit('rad').toval()/(2*math.pi)))
+        intPhase = int(round(2**14 * phase.toval()/(2*math.pi)))
         self.sendCommand(channel, 1, intPhase & 0x3fff )
     
     def setAmplitude(self, channel, amplitude):

@@ -30,12 +30,11 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
     expression = Expression.Expression()
     
-    def __init__(self,parent=None,globalDict=None):
+    def __init__(self, parent=None, globalDict=None, valueChangedOnEditingFinished=True):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
-        self.editingFinished.connect( self.onEditingFinished )
-        self.lineEdit().setDragEnabled(True)
-        self.lineEdit().setAcceptDrops(True)
+        if valueChangedOnEditingFinished:
+            self.editingFinished.connect( self.onEditingFinished )
         self.redTextPalette = QtGui.QPalette()
         self.redTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.red )
         self.orangeTextPalette = QtGui.QPalette()

@@ -15,6 +15,8 @@ from sqlalchemy.sql.schema import ForeignKey
 from modules.Observable import Observable
 #from sqlalchemy.orm.collections import attribute_mapped_collection
 import weakref
+from modules.SequenceDict import SequenceDict 
+from datetime import datetime, timedelta, time
 
 Base = declarative_base()
 
@@ -91,7 +93,7 @@ class Result(Base):
         super( Result, self ).__init__(*args, **kwargs)
         for name, value in updates:
             setattr( self, name, value)
-
+    
     @property
     def value(self):
         return mg( self._value, self.unit ) if self._value is not None else None
@@ -133,6 +135,7 @@ class Result(Base):
                 self._top = magValue
         else:
             self._top = magValue.toval(self.unit)
+            
         
 class Parameter(Base):
     __tablename__ = 'parameters'
@@ -180,6 +183,16 @@ class MeasurementContainer(object):
         self.endInsertMeasurement = Observable()
         self.studiesObservable = Observable()
         self.measurementsUpdated = Observable()
+        self.scanNamesChanged = Observable()
+        self._scanNames = SequenceDict()
+        self._scanNameFilter = None
+        self.fromTime = datetime(2014,11,1,0,0)
+        self.toTime = datetime.combine((datetime.now()+timedelta(days=1)).date(), time())
+        
+    def setScanNameFilter(self, scanNameFilter):
+        if self._scanNameFilter!=scanNameFilter:
+            self._scanNameFilter = scanNameFilter
+            self.query(self.fromTime, self.toTime, self._scanNameFilter)
         
     def open(self):
         Base.metadata.create_all(self.engine)
@@ -203,9 +216,13 @@ class MeasurementContainer(object):
         try:
             self.session.add( measurement )
             self.session.commit()
-            self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
-            self.measurements.append( measurement )
-            self.endInsertMeasurement.firebare()
+            if self._scanNameFilter is None or measurement.scanName in self._scanNameFilter:
+                self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
+                self.measurements.append( measurement )
+                self.endInsertMeasurement.firebare()
+            if measurement.scanName not in self._scanNames:
+                self._scanNames.setdefault( measurement.scanName, True )
+                self.scanNamesChanged.fire( scanNames=self._scanNames )
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
             logging.getLogger(__name__).error( str(e) )
             self.session.rollback()
@@ -219,8 +236,15 @@ class MeasurementContainer(object):
             self.session.rollback()
             self.session = self.Session()
         
-    def query(self, fromTime, toTime):
-        self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
+    def query(self, fromTime, toTime, scanNameFilter=None):
+        if scanNameFilter is None:
+            self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
+            self._scanNames = SequenceDict(((m.scanName,self._scanNames.get(m.scanName,True)) for m in self.measurements))
+        else:
+            self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).filter(Measurement.scanName.in_(scanNameFilter)).order_by(Measurement.id).all()
+            scanNames = self.session.query(Measurement.scanName).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).group_by(Measurement.scanName).all()
+            self._scanNames = SequenceDict(((name,name in scanNameFilter) for name, in scanNames))
+        self.scanNamesChanged.fire( scanNames=self.scanNames )
         self.measurementsUpdated.fire(measurements=self.measurements)
     
     def refreshLookups(self):
@@ -241,6 +265,11 @@ class MeasurementContainer(object):
         s = Space(name=name)
         self.spaces[name] = s
         return s
+    
+    @property
+    def scanNames(self):
+        return self._scanNames
+        
         
 if __name__=='__main__':
     with MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol") as d:

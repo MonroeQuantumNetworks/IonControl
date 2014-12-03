@@ -237,14 +237,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
         self.histogramSaveCheckBox.setChecked(self.settings.histogramSave)
         if self.settings.scanTarget:
-            self.onChangeScanTarget(self.settings.scanTarget)
+            self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, self.settings.scanParameter)
         elif self.comboBoxScanTarget.count()>0:
             self.settings.scanTarget = self.comboBoxScanTarget.currentText()
-            self.onChangeScanTarget(self.settings.scanTarget)
-        if self.settings.scanParameter: 
-            self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(self.settings.scanParameter))
-        elif self.comboBoxParameter.count()>0:  # if scanParameter is None set it to the current selection
-            self.settings.scanParameter = str(self.comboBoxParameter.currentText())
+            self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, None)
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
         self.histogramFilenameEdit.setText( getattr(self.settings,'histogramFilename','') )
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
@@ -377,16 +373,31 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, scannames, self.settings.scanParameter ))
 
     def onChangeScanTarget(self, name):
+        """ called on currentIndexChanged[QString] signal of ComboBox"""
         name = str(name)
         if name!=self.parameters.currentScanTarget:
             self.parameters.scanTargetCache[self.parameters.currentScanTarget] = self.settings.scanParameter
             cachedParam = self.parameters.scanTargetCache.get(name)
-            with BlockSignals(self.comboBoxScanTarget):
-                self.comboBoxScanTarget.setCurrentIndex( self.comboBoxScanTarget.findText(name) )
-            cachedParam = str(updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], cachedParam ))
+            cachedParam = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], cachedParam )
+            self.settings.scanParameter = cachedParam
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
         self.checkSettingsSavable()
+
+    def doChangeScanTarget(self, name, scanParameter):
+        """ Change the scan target as part of loading a parameter set,
+        we know the ScanParameter to select and want it either selected or added as red item """
+        name = str(name)
+        if name!=self.parameters.currentScanTarget:
+            with BlockSignals(self.comboBoxScanTarget):
+                self.comboBoxScanTarget.setCurrentIndex( self.comboBoxScanTarget.findText(name) )
+            scanParameter = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], scanParameter )
+            self.settings.scanTarget = name
+            self.parameters.currentScanTarget = name
+        else:
+            self.comboBoxParameter.setCurrentIndex( self.comboBoxParameter.findText(scanParameter) )
+        self.checkSettingsSavable()
+        return scanParameter
                 
     def getScan(self):
         scan = copy.deepcopy(self.settings)

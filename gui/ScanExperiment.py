@@ -134,7 +134,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
         self.traceui.setupUi(self.traceui)
-        self.measurementLog.traceuiLookup['Scan'] = self.traceui
+        self.measurementLog.addTraceui( 'Scan', self.traceui )
         # traceui for timestamps
         self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict)
         self.timestampTraceui.setupUi(self.timestampTraceui)

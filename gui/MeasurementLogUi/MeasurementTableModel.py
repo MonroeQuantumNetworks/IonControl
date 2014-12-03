@@ -37,9 +37,9 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                                (QtCore.Qt.EditRole, 6): self.setComment
                               }
         self.traceuiLookup = traceuiLookup
+        self.subscriptions = list()
         self.subscribeToTrace()
-        
-        
+             
     def getFilename(self, row):
         filename = self.measurements[row].filename
         if filename is None:
@@ -52,8 +52,16 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         for row, measurement in enumerate(self.measurements[first:last]):
             plottedTraceList = measurement.plottedTraceList
             if len(plottedTraceList)>0:
-                plottedTraceList[0].trace.commentChanged.subscribe( partial( self.commentChanged, row+first ) )
-                plottedTraceList[0].trace.filenameChanged.subscribe( partial( self.filenameChanged, row+first) )
+                callback = partial( self.commentChanged, row+first )
+                plottedTraceList[0].trace.commentChanged.subscribe( callback )
+                self.subscriptions.append( (plottedTraceList[0].trace.commentChanged, callback ))
+                callback = partial( self.filenameChanged, row+first)
+                plottedTraceList[0].trace.filenameChanged.subscribe( callback )
+                self.subscriptions.append( (plottedTraceList[0].trace.filenameChanged, callback ))
+                
+    def clearSubscriptions(self):
+        for observable, callback in self.subscriptions:
+            observable.unsubscribe( callback )
                  
     
     def commentChanged(self, row, event ):
@@ -86,7 +94,6 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         if count < total:
             return QtCore.Qt.PartiallyChecked
         return QtCore.Qt.Checked
-        
         
     def setPlotted(self, row, value):
         plotted = value == QtCore.Qt.Checked
@@ -125,7 +132,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         self.firstAdded = event.first
         self.lastAdded = event.last
         return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
-    
+
     def endInsertRows(self):
         self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
         return QtCore.QAbstractTableModel.endInsertRows(self)
@@ -175,7 +182,8 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             
     def setMeasurements(self, event):
         self.beginResetModel()
-        self.measurements = event.measurements 
+        self.measurements = event.measurements
+        self.clearSubscriptions()
         self.subscribeToTrace()
         self.endResetModel()
         

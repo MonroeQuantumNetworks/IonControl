@@ -1063,6 +1063,12 @@ class Magnitude():
         r = self.copy()
         r.val = abs(r.val)
         return r
+    
+    def isnan(self):
+        return math.isnan(self.val)
+    
+    def isinf(self):
+        return math.isinf(self.val)
 
 #     def __cmp__(self, m):
 #         """Compare two Magnitude instances with the same dimensions.

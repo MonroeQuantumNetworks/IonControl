@@ -8,9 +8,12 @@ def updateComboBoxItems( combo, items, selected=None):
     with BlockSignals(combo):
         combo.clear()
         combo.addItems( items )
-        if selected in items:
-            combo.setCurrentIndex( combo.findText(selected))
-    return combo.currentText()
+        index = combo.findText(selected)
+        if index >= 0:
+            combo.setCurrentIndex( index )
+        else:
+            combo.setCurrentIndex(0)
+    return str(combo.currentText())
 
 
 class BlockSignals:
@@ -24,3 +27,15 @@ class BlockSignals:
 
     def __exit__(self, exittype, value, traceback):
         self.widget.blockSignals(self.oldstate)
+
+def saveColumnWidth( tableView ):
+    return [tableView.columnWidth(i) for i in range(0, tableView.model().columnCount())]
+
+def restoreColumnWidth( tableView, widthData, autoscaleOnNone=True ):
+    if widthData:
+        for column, width in zip( range(0, tableView.model().columnCount()), widthData ):
+            tableView.setColumnWidth(column, width)
+    else:
+        tableView.resizeColumnsToContents()
+     
+    

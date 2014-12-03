@@ -64,13 +64,13 @@ comparisonCommands = { "==": "CMPEQUAL",
                        "<=": "CMPLE",
                        ">=": "CMPGE" }
 
-shiftLookup = { "<<": "SHL", ">>": "SHR" }
+shiftLookup = { "<<": "SHL", ">>": "SHR", "+": "ADDW", "-": "SUBW", "*": "MULTW" }
 
 jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
                     "!=" : { True: "JMPNZ", False: "JMPZ"},
                     ">" : {True: "JMPNZ", False: "JMPZ" } }
 
-opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW' }
+opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW', '>>=': "SHR", "<<=": "SHL" }
 
 #from pppCompiler.Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
@@ -117,8 +117,8 @@ class pppCompiler:
         rExp = Forward()
         #numexpression = Forward()
         
-        shiftexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") )("op") + Group(rExp)("argument")).setParseAction(self.shiftexpression_action)
-        rExp << ( procedurecall | shiftexpression | identifier("identifier") | value.setParseAction(self.value_action) | 
+        opexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") | Literal("+") | Literal("*") | Literal("-"))("op") + Group(rExp)("argument")).setParseAction(self.opexpression_action)
+        rExp << ( procedurecall | opexpression | identifier("identifier") | value.setParseAction(self.value_action) | 
                   #Group( Suppress("(") + rExp + Suppress(")") ) |
                   #Group( "+" + rExp) |
                   #Group( "-" + rExp) |
@@ -127,7 +127,7 @@ class pppCompiler:
         rExp.setParseAction(self.rExp_action)
         
         assignment = ((identifier | pointer)("lval") + assign + rExp("rval")).setParseAction(self.assignment_action)
-        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") )("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
+        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") | Literal(">>=") | Literal("<<="))("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
         
         statement = Forward()
         statementBlock = indentedBlock(statement, indentStack).setParseAction(self.statementBlock_action)
@@ -245,9 +245,9 @@ class pppCompiler:
         arg["identifier"] = self.symbols.getInlineParameter("inlinevar", value)
         return arg
         
-    def shiftexpression_action(self, text, loc, arg):
+    def opexpression_action(self, text, loc, arg):
         try:
-            logger.debug( "shiftexpression_action {0} {1}".format( lineno(loc, text), arg ))
+            logger.debug( "opexpression_action {0} {1}".format( lineno(loc, text), arg ))
             code = [  "# line {0}: shiftexpression {1}".format(lineno(loc, text), line(loc,text)),
                       "  LDWR {0}".format(arg.operand), "  {0} {1}".format(shiftLookup[arg.op], arg.argument.identifier)]
             arg['code'] = code
