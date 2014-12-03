@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Sep 11 12:09:09 2013
 
@@ -21,31 +20,38 @@ from modules.magnitude import mg
 resultsTable = None
 headerList = list()
 
-gateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave.xml"
-compositeGateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-B2-2.xml"
+gateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-DriftControl.xml"
+compositeGateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-B2-2-DriftControl.xml"
 
-trainingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\TrainingSequenceT3-2014-10-16.xml"
-RBSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\Randomized-Clifford-2014-10-10.xml"
+trainingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GSTSequenceT4_2.xml"
+RBSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\Randomized-Clifford-2014-11-27.xml"
 
 goodGateSetTraining = [ (datetime.date(2014,11,28), [3, 4] ),
-                        (datetime.date(2014,11,29), [1,2] ),
-                        (datetime.date(2014,11,30), [1,2] ),
-                        (datetime.date(2014,12,1), [1,2] )     ]
+                        (datetime.date(2014,11,29), range(1,8)),
+                        (datetime.date(2014,11,30), range(1,11) ),
+                        (datetime.date(2014,12,1), range(1,10) ),
+                        (datetime.date(2014,12,2), [1,2,3] )      ]
 
-goodCompositeGateSetTraining = [  (datetime.date(2014,11,21), [1,2,3] ),
-                        (datetime.date(2014,11,22), [1,2] ),
-                        (datetime.date(2014,11,23), [1] ),
-                        (datetime.date(2014,11,24), [1] )      ]
+goodCompositeGateSetTraining = [ (datetime.date(2014,11,28), [3, 4] ),
+                        (datetime.date(2014,11,29), range(1,7)),
+                        (datetime.date(2014,11,30), range(1,11) ),
+                        (datetime.date(2014,12,1), [1,2,3,4,5,7,8] ),
+                        (datetime.date(2014,12,2), range(1,5) )      ]
 
-goodRB = [  (datetime.date(2014,11,21), [1,2] ),
-                        (datetime.date(2014,11,22), [1,2,3] ),
-                        (datetime.date(2014,11,23), [1] ) ]
+goodRB =[ (datetime.date(2014,11,28), [12, 13] ),
+                        (datetime.date(2014,11,29), range(1,7)),
+                        (datetime.date(2014,11,30), range(1,11) ),
+                        (datetime.date(2014,12,1), range(1,7) ),
+                        (datetime.date(2014,12,2), range(1,5) )         ]
 
-goodCompositeRB = [  (datetime.date(2014,11,21), [1] ),
-                        (datetime.date(2014,11,22), [1,2] )    ]
+goodCompositeRB = [ (datetime.date(2014,11,28), [16, 17] ),
+                        (datetime.date(2014,11,29), range(2,8)),
+                        (datetime.date(2014,11,30), range(1,10) ),
+                        (datetime.date(2014,12,1), [1,2,3,6,7] ),
+                        (datetime.date(2014,12,2), range(1,5) )         ]
 
 datadirectory = DataDirectory('QGA')
-outputpath = datadirectory.path( datetime.date(2014,11,24))
+outputpath = datadirectory.path( datetime.date(2014,12,2))
 
 gatedef = GateDefinition()
 gatedef.loadGateDefinition(gateDefinitionFile)    
@@ -101,7 +107,7 @@ def saveCondensedResults(resultsTable, sequence, filename):
     total = defaultdict( lambda:0 )
     for x, b, _, _ in resultsTable:
         bright[x] += b
-        total[x] += 10
+        total[x] += 20
         
     with open(filename, 'w') as f:
         for (x1, b), (x2, t) in zip( sorted(bright.iteritems()), sorted(total.iteritems()) ): #@UnusedVariable
@@ -123,10 +129,9 @@ def saveResultsRaw(resultsTable, filename):
             print >> f, " ".join( map(str, r))
 
 def saveLookupTable(sequence, filename):
-    lookup = { 'u':1, 'd':0 }
     with open(filename, 'w') as f:
         for k, v in sequence.GateSequenceDict.iteritems():
-            print >> f, k, lookup[sequence.GateSequenceAttributes[str(k)]['expected']], "".join(v) if v else "{}"
+            print >> f, k, sequence.GateSequenceAttributes[str(k)]['expected'], "".join(v) if v else "{}"
    
 def expectedDuration( trace, numPi, index, sequence ):
     return mg(0,'s')
@@ -146,7 +151,7 @@ def add_expected_time( results, trace, sequence, accumPulseLength ):
         resultslist.append( newrecord )
     return resultslist
         
-def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accumPulseLength ):
+def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accumPulseLength, qualifier="" ):
     filenameBody, filenameExt = os.path.splitext(filenameTemplate)
     RawResultsTable = list()
     totalexperiments = 0
@@ -162,7 +167,7 @@ def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accu
             if len(t.x)==expectedLength:
                 #print filename, " has expected length."
                 headerList.append(filename)
-                totalexperiments += 10
+                totalexperiments += 20
                 RawResultsTable.extend( add_expected_time( zip(t.x, t.raw0, t.timestamp), t, sequence, accumPulseLength ) )
                 t.x, t.raw0 = zip(*sorted(zip(t.x,t.raw0)))
                 #print t.description["experiments"], t.x, t.raw
@@ -179,16 +184,70 @@ def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accu
     a = numpy.array( resultsTable )
     numpy.savetxt(os.path.join(outputpath,filenameBody+"_table.txt"),numpy.transpose(a),delimiter='\t',fmt='%.0f') #,header="\t".join(headerList)
     
-    saveResultsWithLookup(RawResultsTable, sequence, os.path.join(outputpath,filenameBody+"_assemble.txt") )
-    saveResultsRaw(RawResultsTable, os.path.join(outputpath,filenameBody+"_assemble_raw.txt") )
-    saveCondensedResults(RawResultsTable, sequence, os.path.join(outputpath,filenameBody+"_condensed.txt"))
+    saveResultsWithLookup(RawResultsTable, sequence, os.path.join(outputpath,"{0}_{1}assemble.txt".format(filenameBody,qualifier) ) )
+    saveResultsRaw(RawResultsTable, os.path.join(outputpath,"{0}_{1}assemble_raw.txt".format(filenameBody,qualifier) ) )
+    saveCondensedResults(RawResultsTable, sequence, os.path.join(outputpath,"{0}_{1}condensed.txt".format(filenameBody,qualifier) ) )
     print "Total experiments {0}".format(totalexperiments)
     
+def createSeparateLists( filenameTemplate, filenameKeys ):
+    filenameBody, filenameExt = os.path.splitext(filenameTemplate)
+    linearList = list()
+    randomizedList = list()
+    for date, filenolist in filenameKeys:
+        path = datadirectory.path( date )
+        linearList.append((date,list()))
+        randomizedList.append((date,list()))
+        for fileno in filenolist:
+            filename = filenameBody+"_{0:03d}".format(fileno)+filenameExt
+            fullfilename =  os.path.join(path,filename)
+            t = Trace()
+            t.loadTrace(fullfilename)
+            #print t.description["experiments"], t.x, t.raw
+            if all(t.x[i] <= t.x[i+1] for i in xrange(len(t.x)-1)):
+                linearList[-1][1].append( fileno )
+            else:
+                randomizedList[-1][1].append( fileno )
+    return linearList, randomizedList
+                
+   
+linearGST, randomizedGST = createSeparateLists( "GSTDrift", goodGateSetTraining )
+linearCompensatedGST, randomizedCompensatedGST = createSeparateLists( "GSTCompensatedDrift", goodCompositeGateSetTraining )
+linearRb, randomizedRb = createSeparateLists( "RBDrift", goodRB)
+linearCompensatedRb, randomizedCompensatedRb = createSeparateLists( "RBCompensatedDrift", goodCompositeRB)
 
-assembleData( "GST", goodGateSetTraining, trainingSequence, 3679, 0.5)
+print "GST"
+print  linearGST
+print  randomizedGST
+print "GSTCompensated"   
+print linearCompensatedGST
+print randomizedCompensatedGST
+print "RB"
+print linearRb
+print randomizedRb
+print "RBCompensated"
+print linearCompensatedRb
+print randomizedCompensatedRb
+
+assembleData( "GSTDrift", goodGateSetTraining, trainingSequence, 2922, 0.5)
 saveLookupTable(trainingSequence, os.path.join(outputpath,"GateSequenceTraining_lookup.txt"))
-assembleData( "GSTCompensated", goodCompositeGateSetTraining, trainingSequence, 3679, 4.5)
+assembleData( "GSTCompensatedDrift", goodCompositeGateSetTraining, trainingSequence, 2922, 4.5)
   
-assembleData( "RB", goodRB, RBSequence, 5167, 0.5)
+assembleData( "RBDrift", goodRB, RBSequence, 834, 0.5)
 saveLookupTable(RBSequence, os.path.join(outputpath,"RB_lookup.txt"))
-assembleData( "RBCompensated", goodCompositeRB, RBSequence, 5167, 4.5)
+assembleData( "RBCompensatedDrift", goodCompositeRB, RBSequence, 834, 4.5)
+
+# linear
+
+assembleData( "GSTDrift", linearGST, trainingSequence, 2922, 0.5, "linear_")
+assembleData( "GSTCompensatedDrift", linearCompensatedGST, trainingSequence, 2922, 4.5, "linear_")
+  
+assembleData( "RBDrift", linearRb, RBSequence, 834, 0.5, "linear_")
+assembleData( "RBCompensatedDrift", linearCompensatedRb, RBSequence, 834, 4.5, "linear_")
+
+# randomized
+
+assembleData( "GSTDrift", randomizedGST, trainingSequence, 2922, 0.5, "randomized_")
+assembleData( "GSTCompensatedDrift", randomizedCompensatedGST, trainingSequence, 2922, 4.5, "randomized_")
+  
+assembleData( "RBDrift", randomizedRb, RBSequence, 834, 0.5, "randomized_")
+assembleData( "RBCompensatedDrift", randomizedCompensatedRb, RBSequence, 834, 4.5, "randomized_")
