@@ -218,7 +218,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.pushTableModel.updateDestinations(self.pushDestinations )
 
     def onPush(self):
-        for destination, variable, value in self.fitfunction.pushVariableValues():
+        for destination, variable, value in self.fitfunction.pushVariableValues(self.globalDict):
             if destination in self.pushDestinations:
                 self.pushDestinations[destination].update( [(destination,variable,value)] )
                 
