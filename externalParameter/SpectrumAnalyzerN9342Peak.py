@@ -7,6 +7,7 @@ Created on May 16, 2014
 import visa   #@UnresolvedImport
 from modules.magnitude import mg
 from modules.AttributeRedirector import AttributeRedirector
+import logging
 
 class Settings:
     pass
@@ -38,7 +39,14 @@ class SpectrumAnalyzerN9342Peak(object):
         self.conn.close()
         
     def value(self):
-        return float(self.conn.ask(":CALCulate:MARKer1:Y?"))
+        try:
+            reply = self.conn.ask(":CALCulate:MARKer1:Y?")
+            result = float(reply)
+        except Exception as e:
+            logging.getLogger(__name__).error("Error reading from Spectrum Analyzer: reply: '{0}', exception: {1}".format(reply,str(e)))
+            print "Error reading from Spectrum Analyzer: reply: '{0}', exception: {1}".format(reply,str(e))
+            raise
+        return result
     
     @property
     def waitTime(self):
