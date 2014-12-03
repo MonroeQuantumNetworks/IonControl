@@ -15,6 +15,7 @@ from persist.configshelve import configshelve
 ProjectsBaseDir = os.path.expanduser("~public\\Documents\\experiments")
 Project = None
 DefaultProject = None
+DatabaseConnectionLookup = dict()
 DefaultProjectCached = False
 SpecificConfigFile = None    # if nont none will be used instaed of the default
 
@@ -38,26 +39,30 @@ def projects():
     return [name for name in os.listdir(ProjectsBaseDir)
             if os.path.isdir(os.path.join(ProjectsBaseDir, name))]
     
-def defaultProject():
+def defaultProject(returnDatabaseLookup=False):
     global DefaultProject
+    global DatabaseConnectionLookup
     global DefaultProjectCached
     if not DefaultProjectCached:
         if hasattr(__main__,'__file__'):
             with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
                 DefaultProject = config.get('DefaultProject')
+                DatabaseConnectionLookup = config.get('DatabaseConnectionLookup', dict())
             DefaultProjectCached = True
-    return DefaultProject
+    return DefaultProject, DatabaseConnectionLookup if returnDatabaseLookup else DefaultProject
     
 def createProject(name):
     os.mkdir(os.path.join(ProjectsBaseDir, name))
     
-def setDefaultProject(name):
+def setDefaultProject(name, databaseConnectionLookup=None):
     global DefaultProjectCached
     global DefaultProject
     DefaultProject = name
     if hasattr(__main__,'__file__'):
         with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
             config['DefaultProject'] = name
+            if databaseConnectionLookup:
+                config['DatabaseConnectionLookup'] = databaseConnectionLookup
     DefaultProjectCached = True
 
 def setProject(project):
