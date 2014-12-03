@@ -354,7 +354,6 @@ class RabiFieldProfileFit(FitFunctionBase):
         w = 0.60056*(x[indexplus]-x[indexminus])
         logging.getLogger(__name__).info("smart start values A={0}, c={1}, x0={2}, w={3}, O={4}".format(A, c, x0, w, O))
         return (A, c, x0, w, O)
-
        
 fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
                        CosFit.name: CosFit, 

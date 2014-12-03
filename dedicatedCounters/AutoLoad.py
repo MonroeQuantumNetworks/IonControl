@@ -199,7 +199,7 @@ class AutoLoad(UiForm,UiBase):
                                          description="postSequenceWaitTime" )
         self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdOven"  )
-        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
+        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdRunning"  )
         self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
                                          description="thresholdRunning" )
@@ -218,7 +218,7 @@ class AutoLoad(UiForm,UiBase):
                                          description="ppStarted"  )
         self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' ,
                                          description="ppStopped" )
-        self.statemachine.addTransition( 'doneAdjusting', 'AdjustToLoading', 'Load')
+        self.statemachine.addTransition( 'doneAdjusting', 'AdjustToLoading', 'Preheat')
         self.statemachine.addTransition( 'doneAdjusting', 'AdjustFromLoading', 'Trapped')
         self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load', 'ShuttleLoad', 'ShuttleCheck'], 'Idle',
                                          description="outOfLock"  )
@@ -488,13 +488,13 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
    
     def adjustFromLoading(self):
-        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
         self.globalVariablesUi.update( self.globalAdjustRevertList )
+        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
         
     def adjustToLoading(self):
-        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
         self.globalAdjustRevertList = [('Global', key, self.globalVariablesUi.variables[key]) for key in self.settings.globalsAdjustList]
         self.globalVariablesUi.update( ( ('Global', k, v) for k,v in self.settings.globalsAdjustList.iteritems() ))   
+        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
     
     def setCheck(self):
         """Execute when count rate goes over threshold."""
