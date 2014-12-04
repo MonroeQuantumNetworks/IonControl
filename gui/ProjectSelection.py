@@ -27,6 +27,7 @@ if hasattr(__main__,'__file__'):
         DefaultProject = config.get('DefaultProject')
         ProjectsBaseDir = config.get('ProjectBaseDir',ProjectsBaseDir)
         DataDirectory.DataDirectoryBase = ProjectsBaseDir
+        DatabaseConnectionLookup = config.get('DatabaseConnectionLookup', dict())
     DefaultProjectCached = True
 
 

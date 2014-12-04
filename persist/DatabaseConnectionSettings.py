@@ -13,4 +13,9 @@ class DatabaseConectionSettings(object):
         self.database = ""
         self.host = ""
         self.port = 5432
+        self.echo = False
+        
+    @property
+    def connectionString(self):
+        return "postgresql://{user}:{password}@{host}:{port}/{database}".format(**self.__dict__)
         

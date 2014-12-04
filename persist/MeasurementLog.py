@@ -8,7 +8,8 @@ from sqlalchemy import Column, Integer, String, DateTime, Interval, Float, Boole
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
 from modules.magnitude import mg, is_magnitude
-from sqlalchemy.exc import ProgrammingError, InvalidRequestError, IntegrityError
+from sqlalchemy.exc import ProgrammingError, InvalidRequestError, IntegrityError,\
+    OperationalError
 #from sqlalchemy.exc import OperationalError
 import logging
 from sqlalchemy.sql.schema import ForeignKey
@@ -17,6 +18,7 @@ from modules.Observable import Observable
 import weakref
 from modules.SequenceDict import SequenceDict 
 from datetime import datetime, timedelta, time
+from persist.DatabaseConnectionSettings import DatabaseConectionSettings
 
 Base = declarative_base()
 
@@ -172,9 +174,9 @@ class Parameter(Base):
             self._value = magValue
         
 class MeasurementContainer(object):
-    def __init__(self,database_conn_str):
-        self.database_conn_str = database_conn_str
-        self.engine = create_engine(self.database_conn_str, echo=True)
+    def __init__(self,dbConnection):
+        self.database_conn_str = dbConnection.connectionString
+        self.engine = create_engine(self.database_conn_str, echo=dbConnection.echo)
         self.studies = list()
         self.measurements = list()
         self.spaces = list()
@@ -195,10 +197,14 @@ class MeasurementContainer(object):
             self.query(self.fromTime, self.toTime, self._scanNameFilter)
         
     def open(self):
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
-        self.session = self.Session()
-        self.isOpen = True
+        try:
+            Base.metadata.create_all(self.engine)
+            self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
+            self.session = self.Session()
+            self.isOpen = True
+        except OperationalError as e:
+            logging.getLogger(__name__).error("Cannot open database: {0}".format(str(e)))
+            self.isOpen = False
         
     def close(self):
         self.session.commit()
@@ -272,7 +278,13 @@ class MeasurementContainer(object):
         
         
 if __name__=='__main__':
-    with MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol") as d:
+    dbConnection = DatabaseConectionSettings()
+    dbConnection.user = "python"
+    dbConnection.password = "yb171"
+    dbConnection.host = "localhost"
+    dbConnection.database = "ioncontrol"
+    dbConnection.echo = True
+    with MeasurementContainer(dbConnection) as d:
         d.addMeasurement( Measurement(scanName='test'))
 
         

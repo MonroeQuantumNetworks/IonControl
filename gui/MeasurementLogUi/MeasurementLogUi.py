@@ -61,13 +61,14 @@ class MeasurementLogUi(Form, Base ):
     timespans = ['Today','Three days','One week','One month', 'Three month', 'One year', 'All', 'Custom']
     mySplitters = ['splitterHorizontal', "splitterVertical", "splitterHorizontalParam", "splitterLeftVertical" ]
     myTableViews = ["measurementTableView", "resultTableView", "studyTableView", "parameterTableView", "scanNameTableView"]
-    def __init__(self,config,parent=None):
+    def __init__(self, config, dbConnection, parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
         self.config = config
         self.configname = 'MeasurementLog'
         self.settings = self.config.get(self.configname,Settings())
-        self.container = MeasurementContainer("postgresql://python:yb171@localhost/ioncontrol")
+        self.dbConnection = dbConnection
+        self.container = MeasurementContainer(dbConnection)
         self.container.open()
         self.fromToTimeLookup = [ lambda now: (datetime.combine(now.date(), time()), datetime.combine(now + timedelta(days=1), time())),              # today
                            lambda now: (datetime.combine(now - timedelta(days=3), time()),  datetime.combine(now + timedelta(days=1), time())),  # three days ago

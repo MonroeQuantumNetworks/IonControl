@@ -49,8 +49,12 @@ class ProjectSelectionUi(Form, Base):
         self.hostEdit.editingFinished.connect( partial( self.onStringValue, 'host', lambda: self.hostEdit.text()))
         self.databaseEdit.editingFinished.connect( partial( self.onStringValue, 'database', lambda: self.databaseEdit.text()))
         self.passwordEdit.editingFinished.connect( partial( self.onStringValue, 'password', lambda: self.passwordEdit.text()))
+        self.echoCheck.stateChanged.connect( self.onStateChanged )
         self.portEdit.valueChanged.connect( self.onValueChanged )
         self.setDatabaseFields(self.currentDatabaseConnection)
+           
+    def onStateChanged(self, value):
+        self.currentDatabaseConnection.echo = value==QtCore.Qt.Checked
            
     def onValueChanged(self, value):
         self.currentDatabaseConnection.port = value
