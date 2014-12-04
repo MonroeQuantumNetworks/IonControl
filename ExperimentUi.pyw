@@ -55,7 +55,7 @@ WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
-    def __init__(self,config):
+    def __init__(self, config, dbConnection):
         self.config = config
         super(ExperimentUi, self).__init__()
         self.settings = SettingsDialog.Settings()
@@ -71,6 +71,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.printMenu = None
         self.instrumentLogger = None
+        self.dbConnection = dbConnection
         
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -132,7 +133,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        self.measurementLog = MeasurementLogUi(self.config)
+        self.measurementLog = MeasurementLogUi(self.config, self.dbConnection)
         self.measurementLog.setupUi(self.measurementLog)
         self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
         self.measurementLogDock.setWidget( self.measurementLog )
@@ -533,7 +534,7 @@ if __name__ == "__main__":
         DataDirectory.DefaultProject = project
         
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with ExperimentUi(config) as ui:
+            with ExperimentUi(config, dbConnection) as ui:
                 ui.setupUi(ui)
                 LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()
