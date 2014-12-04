@@ -18,6 +18,7 @@ import logging
 import pytz
 from modules import WeakMethod 
 import weakref
+from gui.ProjectSelection import getDatabaseConnection
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -45,7 +46,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.parameters = self.config.get("InstrumentLoggerQueryUi",Parameters())
         self.traceui = traceui
         self.plotDict = plotDict
-        self.connection = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
+        self.connection = ValueHistoryStore(getDatabaseConnection().connectionString)
         self.connection.open_session()
         self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
         self.cache = dict()
