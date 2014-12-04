@@ -159,7 +159,20 @@ class SinSqExpFit(FitFunctionBase):
         
     def functionEval(self, x, A, T, theta, O, tau ):
         return A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
-  
+
+class CosExpFit(FitFunctionBase):
+    name = "Cos Exponential Decay"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  '(A/2) * (1 - exp(-x/tau)Cos(pi*t/(2*T)+theta)) + O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
+        self.parameters = [1,100,0,0,1000]
+        self.startParameters = [1,100,0,0,1000]
+        self.parameterEnabled = [True]*5
+        self.parametersConfidence = [None]*5
+        
+    def functionEval(self, x, A, T, theta, O, tau ):
+        return (A/2.0)*(1-numpy.exp(-x/tau)*numpy.cos(numpy.pi*x/(T)+theta))+O  
 
 class SinSqGaussFit(FitFunctionBase):
     name = "Sin2 Gaussian Decay"
@@ -372,7 +385,8 @@ fitFunctionMap.update({ GaussianFit.name: GaussianFit,
                        SaturationFit.name: SaturationFit,
                        MotionalRabiFlopping.name: MotionalRabiFlopping,
                        TwoModeMotionalRabiFlopping.name: TwoModeMotionalRabiFlopping,
-                       RabiFieldProfileFit.name: RabiFieldProfileFit
+                       RabiFieldProfileFit.name: RabiFieldProfileFit,
+                       CosExpFit.name: CosExpFit
                  } )       
         
 def fitFunctionFactory(text):
