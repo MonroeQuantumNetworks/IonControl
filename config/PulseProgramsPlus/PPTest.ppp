@@ -5,13 +5,14 @@ const CounterChannel2 = 16
 
 counter TestCounter
 parameter countTime
+masked_shutter DuringCounting
 
 parameter a
 parameter b
 parameter c
 parameter waitTime
 parameter experiments = 100
-exitcode endLabel = 0xffffffff
+exitcode endLabel = 0xffffffffffffffff
 var currentexperiment
 var temp
 
@@ -22,8 +23,10 @@ while not pipe_empty():
     currentexperiment = 0
     while currentexperiment < experiments:
         set_counter( TestCounter )
+        set_shutter( DuringCounting )
         update( countTime )
         clear_counter()
+        set_inv_shutter( DuringCounting )
         b = load_count( CounterChannel2 )
         write_result( DebugChannel,b )
         write_result( ResultChannel,a )

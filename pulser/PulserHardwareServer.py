@@ -21,9 +21,9 @@ class PulserHardwareException(Exception):
 
 class Data:
     def __init__(self):
-        self.count = [list() for _ in range(16)]        # list of counts in the counter channel
-        self.timestamp = [list() for _ in range(8)]     
-        self.timestampZero = [0]*8
+        self.count = defaultdict(list)       # list of counts in the counter channel
+        self.timestamp = None   
+        self.timestampZero = dict()
         self.scanvalue = None                           # scanvalue
         self.final = False
         self.other = list()
@@ -35,6 +35,9 @@ class Data:
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
+    
+    def defaultTimestampZero(self):
+        return 0
 
 class DedicatedData:
     def __init__(self):
@@ -242,6 +245,8 @@ class PulserHardwareServer(Process, OKBase):
                     if key==1:   # count
                         (self.data.count[channel]).append(value)
                     elif key==2:  # timestamp
+                        if self.data.timestamp is None:
+                            self.data.timestamp = defaultdict(list)
                         self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
                     elif key==3:  # timestamp gate start
                         self.data.timestampZero[channel] = self.timestampOffset + value
