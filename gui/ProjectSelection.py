@@ -16,6 +16,7 @@ ProjectsBaseDir = os.path.expanduser("~public\\Documents\\experiments")
 Project = None
 DefaultProject = None
 DatabaseConnectionLookup = dict()
+DatabaseConnection = None
 DefaultProjectCached = False
 SpecificConfigFile = None    # if nont none will be used instaed of the default
 
@@ -65,9 +66,15 @@ def setDefaultProject(name, databaseConnectionLookup=None):
                 config['DatabaseConnectionLookup'] = databaseConnectionLookup
     DefaultProjectCached = True
 
+def getDatabaseConnection():
+    global DatabaseConnection
+    return DatabaseConnection
+
 def setProject(project):
     global Project
+    global DatabaseConnection
     Project = project
+    DatabaseConnection = DatabaseConnectionLookup[project]
     
 def projectDir():
     return os.path.join(ProjectsBaseDir, Project) if Project else None
