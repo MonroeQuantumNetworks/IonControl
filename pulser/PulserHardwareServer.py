@@ -137,9 +137,9 @@ class PulserHardwareServer(Process, OKBase):
             0xfffexxxxxxxxxxxx exitcode marker
             0xfffd000000000000 timestamping overflow marker
             0xfffcxxxxxxxxxxxx scan parameter, followed by scanparameter value
-            0x01nnxxxxxxxxxxxx count result from channel n
-            0x02nnxxxxxxxxxxxx timestamp result channel n
-            0x03nnxxxxxxxxxxxx timestamp gate start channel n
+            0x01ddnnxxxxxxxxxx count result from channel n id dd
+            0x02ddnnxxxxxxxxxx timestamp result channel n id dd
+            0x03ddnnxxxxxxxxxx timestamp gate start channel n id dd
             0x04nnxxxxxxxxxxxx other return
             0xeennxxxxxxxxxxxx dedicated result
             0x50nn00000000xxxx result n return Hi 16 bits, only being sent if xxxx is not identical to zero
@@ -239,25 +239,35 @@ class PulserHardwareServer(Process, OKBase):
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
                     key = token >> 56 
-                    channel = (token >>48) & 0xff 
-                    value = token & 0x0000ffffffffffff
                     #print hex(token)
                     if key==1:   # count
-                        (self.data.count[channel]).append(value)
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
+                        (self.data.count[ channel ]).append(value)
                     elif key==2:  # timestamp
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
                         if self.data.timestamp is None:
                             self.data.timestamp = defaultdict(list)
                         self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
                     elif key==3:  # timestamp gate start
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
                         self.data.timestampZero[channel] = self.timestampOffset + value
                     elif key==4: # other return value
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
                         self.data.other.append(value)
                     elif key==0x51:
+                        channel = (token >>48) & 0xff 
+                        value = token & 0x0000ffffffffffff
                         if self.data.result is None:
                             self.data.result = defaultdict(list)
                         self.data.result[channel].append( value  )
                     elif key==0x50:
-                            self.data.result[channel][-1] |= ( (value & 0xffff) << 48 )                           
+                        channel = (token >>48) & 0xff 
+                        value = token & 0x000000000000ffff
+                        self.data.result[channel][-1] |= ( value << 48 )                           
 #                  logger.debug("result key: {0} hi-low: {1} value: {2} length: {3} value: {4}".format(resultkey,channel,value&0xffff,len(self.data.result[resultkey]),self.data.result[resultkey][-1]))
                     else:
                         self.data.other.append(token)
