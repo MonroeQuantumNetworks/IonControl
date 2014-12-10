@@ -169,6 +169,10 @@ class FitFunctionBase(object):
 
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
+        # Ensure all values of sigma or non zero by replacing with the minimum nonzero value
+        if sigma is not None:
+            nonzerosigma = sigma[sigma>0]
+            sigma[sigma==0] = numpy.min(nonzerosigma) if len(nonzerosigma)>0 else 1.0 
         if parameters is None:
             parameters = [value(param) for param in self.startParameters]
         if self.useSmartStartValues:
