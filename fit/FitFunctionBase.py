@@ -85,12 +85,14 @@ class FitFunctionBase(object):
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         self.useSmartStartValues = False
+        self.hasSmartStart = False
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'pushVariables', SequenceDict() )
         self.__dict__.setdefault( 'useSmartStartValues', False )
         self.__dict__.setdefault( 'startParameterExpressions', None )
+        self.__dict__.setdefault( 'hasSmartStart', False)
  
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""

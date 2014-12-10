@@ -78,6 +78,11 @@ class SinSqFit(FitFunctionBase):
         self.startParameters = [100,0,1,0]
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, T, x0, max_, min_ ):
         return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/T*(x-x0)))+min_
@@ -131,6 +136,11 @@ class SaturationFit(FitFunctionBase):
         self.startParameters = [10,10,0]
         self.parameterEnabled = [True]*3
         self.parametersConfidence = [None]*3
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, A, s, O ):
         return A*(x/s)/(1+(x/s))+O
@@ -199,6 +209,11 @@ class GaussianFit(FitFunctionBase):
         self.startParameters = [1,0,1,0]
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, A, x0, s, O ):
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
@@ -239,7 +254,12 @@ class SquareRabiFit(FitFunctionBase):
         self.startParameters = [1.0,42.0,1.0,0.0,100.0]
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
+        self.hasSmartStart = True
           
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
+        
     def functionEval(self, x, T, C, A, O, t ):
         R = numpy.pi/T
         u = numpy.square(2*numpy.pi*(x-C)/R)
@@ -337,6 +357,11 @@ class RabiFieldProfileFit(FitFunctionBase):
         self.startParameters = [1,1,0,1,0]
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, A, c, x0, w, O ):
         return A*numpy.square(numpy.sin(c*numpy.exp(-numpy.square((x-x0)/w)))) + O
