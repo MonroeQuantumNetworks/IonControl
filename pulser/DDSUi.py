@@ -132,7 +132,8 @@ class DDSUi(DDSForm, DDSBase):
             self.ad9912.setFrequency(channel, settings.frequency)
             self.ad9912.setPhase(channel, settings.phase)
             self.ad9912.setAmplitude(channel, settings.amplitude)
-        if self.autoApply: self.onApply
+        if self.autoApply: 
+            self.onApply()
         
     def saveConfig(self):
         self.config['DDSUi.ddsChannels'] = self.ddsChannels
