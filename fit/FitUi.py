@@ -197,7 +197,9 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
         self.resultsTableView.resizeColumnsToContents()
         self.pushTableView.resizeColumnsToContents()
+        self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
         self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
+        self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
         self.evaluate()
         
     def onFit(self):
