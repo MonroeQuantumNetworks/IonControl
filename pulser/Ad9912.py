@@ -48,7 +48,7 @@ class Ad9912:
     def sendCommand(self, channel, cmd, data):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" ) 
+            check( self.pulser.SetWireInValue(0x03, (channel & 0xff)<<4 | (cmd & 0xf) ), "Ad9912" ) 
             check( self.pulser.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
             self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x12, data)) )
             self.pulser.UpdateWireIns()

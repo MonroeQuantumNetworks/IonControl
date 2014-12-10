@@ -2,6 +2,7 @@ const ResultChannel = 1
 const DebugChannel = 2
 const CounterChannel = 0
 const CounterChannel2 = 16
+const DDSDetect = 5
 
 counter TestCounter
 parameter countTime
@@ -15,6 +16,7 @@ parameter experiments = 100
 exitcode endLabel = 0xffffffffffffffff
 var currentexperiment
 var temp
+parameter<AD9912_FRQ> DetectFreq = 100 MHz
 
 while not pipe_empty():
     update()
@@ -22,6 +24,7 @@ while not pipe_empty():
 
     currentexperiment = 0
     while currentexperiment < experiments:
+        set_dds( channel=DDSDetect, freq=DetectFreq )
         set_counter( TestCounter )
         set_shutter( DuringCounting )
         update( countTime )
