@@ -12,8 +12,8 @@ from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth
-#from _collections import defaultdict
-
+from modules.Observable import Observable
+from _collections import defaultdict
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
@@ -21,6 +21,13 @@ class GlobalVariables(SequenceDict):
     def __init__(self, *args, **kwds):
         SequenceDict.__init__(self, *args, **kwds)
         self.customOrder = list()
+        self.observables = defaultdict( Observable )
+            
+    def __reduce__(self):
+        data = SequenceDict.__reduce__(self)
+        data[2].pop('observables')
+        return data
+     
 #         self.dependentDict = defaultdict( dict )  # dict of dicts outer key is globalVariable, inner key is (target, name) 
 # 
 #     def connect(self, globalName, target, name, weakMethodCallback ):

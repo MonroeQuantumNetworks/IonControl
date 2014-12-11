@@ -160,7 +160,10 @@ class ControlUi(UiForm,UiBase):
         self.tableModel.setParameterList( self.enabledParameters )
         self.tableView.resizeColumnsToContents()
         self.tableView.horizontalHeader().setStretchLastSection(True)   
-        self.evaluate(None)     
+        try:
+            self.evaluate(None)
+        except KeyError as e:
+            logger.error(str(e))
         
     def keys(self):
         return self.tableModel.parameterDict.keys()

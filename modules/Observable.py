@@ -5,8 +5,12 @@ class Observable(object):
     def __init__(self):
         self.callbacks = []
         
-    def subscribe(self, callback):
-        self.callbacks.append(callback)
+    def subscribe(self, callback, unique=False):
+        if unique:
+            if callback not in self.callbacks:
+                self.callbacks.append(callback)
+        else:
+            self.callbacks.append(callback)
         
     def unsubscribe(self, callback):
         self.callbacks.pop( self.callbacks.index(callback) )
