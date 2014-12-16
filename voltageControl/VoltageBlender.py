@@ -19,6 +19,7 @@ from modules import MyException
 from modules.SequenceDict import SequenceDict
 from voltageControl.AdjustValue import AdjustValue
 
+from pulser.DACController import DACControllerException
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -31,13 +32,15 @@ except ImportError as e:
     logger.error( "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e) )
     HardwareDriverLoaded = False
 
+class HardwareException(Exception):
+    pass
 
 class NoneHardware(object):
     name = "No DAC Hardware"
     def __init__(self):
         pass
     
-    def applyLine(self, line, doline):
+    def applyLine(self, line):
         logging.getLogger(__name__).error( "Hardware Driver not loaded, cannot write voltages" )
 
     def shuttle(self, outputmatrix, lineno):
@@ -49,27 +52,36 @@ class NoneHardware(object):
 class NIHardware(object):
     name = "NI DAC"
     def __init__(self):
-        self.chassis = WaveformChassis()
-        self.chassis.mode = Mode.Static
-        self.hostname = socket.gethostname()
-        ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
-        if not os.path.exists( ConfigFilename):
-            raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
-        self.chassis.initFromFile( ConfigFilename )
-        self.DoLine = self.chassis.createFalseDoBuffer()
-        self.DoLine[0] = 1
-        logging.getLogger(__name__).debug( str(self.DoLine) )
+        try:
+            self.chassis = WaveformChassis()
+            self.chassis.mode = Mode.Static
+            self.hostname = socket.gethostname()
+            ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
+            if not os.path.exists( ConfigFilename):
+                raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
+            self.chassis.initFromFile( ConfigFilename )
+            self.DoLine = self.chassis.createFalseDoBuffer()
+            self.DoLine[0] = 1
+            logging.getLogger(__name__).debug( str(self.DoLine) )
+        except PyDAQmx.DAQmxFunctions.DAQError as e:
+            raise HardwareException(str(e))
 
-    def applyLine(self, line, DoLine):
-        self.chassis.writeAoBuffer(line)
-        logging.getLogger(__name__).debug( "Wrote voltages {0}".format(line))
-        self.chassis.writeDoBuffer(DoLine)
+    def applyLine(self, line):
+        try:
+            self.chassis.writeAoBuffer(line)
+            logging.getLogger(__name__).debug( "Wrote voltages {0}".format(line))
+            self.chassis.writeDoBuffer(self.DoLine)
+        except PyDAQmx.DAQmxFunctions.DAQError as e:
+            raise HardwareException(str(e))
 
     def shuttle(self, outputmatrix):
-        self.chassis.mode = DAQmxUtility.Mode.Finite
-        self.chassis.writeAoBuffer( (numpy.array(outputmatrix)).flatten('F') )
-        self.chassis.setOnDoneCallback( self.onChassisDone )
-        self.chassis.start()
+        try:
+            self.chassis.mode = DAQmxUtility.Mode.Finite
+            self.chassis.writeAoBuffer( (numpy.array(outputmatrix)).flatten('F') )
+            self.chassis.setOnDoneCallback( self.onChassisDone )
+            self.chassis.start()
+        except PyDAQmx.DAQmxFunctions.DAQError as e:
+            raise HardwareException(str(e))
         
     def close(self):
         self.chassis.close()
@@ -85,10 +97,10 @@ class NIHardware(object):
 
 class FPGAHardware(object):
     name = "FPGA Hardware"
-    def __init(self, dacController):
+    def __init__(self, dacController):
         self.dacController = dacController
         
-    def applyLine(self, line, doLine):
+    def applyLine(self, line):
         self.dacController.writeVoltage( 0, line )
         self.dacController.shuttle( 0, 0, 0, 0 )
         self.dacController.triggerShuttling()
@@ -182,10 +194,10 @@ class VoltageBlender(QtCore.QObject):
         line = self.adjustLine( line )
         line *= self.globalGain
         try:
-            self.hardware.applyLine(line, self.DoLine)
+            self.hardware.applyLine(line)
             self.outputVoltage = line
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
-        except PyDAQmx.DAQmxFunctions.DAQError as e:
+        except (HardwareException, DACControllerException) as e:
             logging.getLogger(__name__).exception("Exception")
             outOfRange = line>10
             outOfRange |= line<-10
@@ -212,7 +224,7 @@ class VoltageBlender(QtCore.QObject):
             try:
                 self.hardware.shuttle( outputmatrix )
                 self.shuttleTo = lineno
-            except PyDAQmx.DAQmxFunctions.DAQError as e:
+            except (HardwareException, DACControllerException) as e:
                 logger.exception("")
                         
     def adjustLine(self, line):
