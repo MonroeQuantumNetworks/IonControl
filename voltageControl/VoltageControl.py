@@ -23,13 +23,14 @@ class Settings:
     pass
 
 class VoltageControl(VoltageControlForm, VoltageControlBase ):    
-    def __init__(self, config, globalDict=None, parent=None):
+    def __init__(self, config, globalDict=None, dacController=None, parent=None):
         VoltageControlForm.__init__(self)
         VoltageControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageControl.Settings'
         self.settings = self.config.get(self.configname,Settings())
-        self.voltageBlender = VoltageBlender.VoltageBlender(globalDict)
+        self.dacController = dacController
+        self.voltageBlender = VoltageBlender.VoltageBlender(globalDict, dacController)
         self.globalDict = globalDict
 
     def setupUi(self, parent):

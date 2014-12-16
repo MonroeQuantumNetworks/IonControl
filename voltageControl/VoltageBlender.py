@@ -32,25 +32,86 @@ except ImportError as e:
     HardwareDriverLoaded = False
 
 
+class NoneHardware(object):
+    name = "No DAC Hardware"
+    def __init__(self):
+        pass
+    
+    def applyLine(self, line, doline):
+        logging.getLogger(__name__).error( "Hardware Driver not loaded, cannot write voltages" )
+
+    def shuttle(self, outputmatrix, lineno):
+        logging.getLogger(__name__).error( "Hardware Driver not loaded, cannot write voltages" )
+
+    def close(self):
+        pass
+
+class NIHardware(object):
+    name = "NI DAC"
+    def __init__(self):
+        self.chassis = WaveformChassis()
+        self.chassis.mode = Mode.Static
+        self.hostname = socket.gethostname()
+        ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
+        if not os.path.exists( ConfigFilename):
+            raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
+        self.chassis.initFromFile( ConfigFilename )
+        self.DoLine = self.chassis.createFalseDoBuffer()
+        self.DoLine[0] = 1
+        logging.getLogger(__name__).debug( str(self.DoLine) )
+
+    def applyLine(self, line, DoLine):
+        self.chassis.writeAoBuffer(line)
+        logging.getLogger(__name__).debug( "Wrote voltages {0}".format(line))
+        self.chassis.writeDoBuffer(DoLine)
+
+    def shuttle(self, outputmatrix):
+        self.chassis.mode = DAQmxUtility.Mode.Finite
+        self.chassis.writeAoBuffer( (numpy.array(outputmatrix)).flatten('F') )
+        self.chassis.setOnDoneCallback( self.onChassisDone )
+        self.chassis.start()
+        
+    def close(self):
+        self.chassis.close()
+
+    def onChassisDone( self, generator, value ):
+        logger = logging.getLogger(__name__)
+        logger.info( "onChassisDone {0} {1}".format(generator, value) )
+        self.chassis.mode = DAQmxUtility.Mode.Static
+        self.chassis.setOnDoneCallback( None )
+#         self.outputVoltage = self.shuttleTo
+#         self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
+
+
+class FPGAHardware(object):
+    name = "FPGA Hardware"
+    def __init(self, dacController):
+        self.dacController = dacController
+        
+    def applyLine(self, line, doLine):
+        self.dacController.writeVoltage( 0, line )
+        self.dacController.shuttle( 0, 0, 0, 0 )
+        self.dacController.triggerShuttling()
+        
+    def shuttle(self, outputmatrix):
+        logging.getLogger(__name__).error( "FPGAHardware: Shuttling not implemented" )
+        self.dacController.writeVoltage( 0, (numpy.array(outputmatrix)).flatten('F') )
+        self.dacController.shuttle( 0, 0, 0, 0 )  # needs startline beyondendline gapcount direction
+        self.dacController.triggerShuttling()
+        
+    def close(self):
+        pass
+
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
     dataError = QtCore.pyqtSignal(object)
     shuttlingOnLine = QtCore.pyqtSignal(float)
     
-    def __init__(self, globalDict):
+    def __init__(self, globalDict, dacController):
         logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
-        if HardwareDriverLoaded:
-            self.chassis = WaveformChassis()
-            self.chassis.mode = Mode.Static
-            self.hostname = socket.gethostname()
-            ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
-            if not os.path.exists( ConfigFilename):
-                raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
-            self.chassis.initFromFile( ConfigFilename )
-            self.DoLine = self.chassis.createFalseDoBuffer()
-            self.DoLine[0] = 1
-            logger.debug( str(self.DoLine) )
+        self.dacController = dacController
+        self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = SequenceDict()  # names of the lines presented as possible adjusts
@@ -114,7 +175,6 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
-        logger = logging.getLogger(__name__)
         line = self.blendLines(lineno,lineGain)
         self.lineGain = lineGain
         self.globalGain = globalGain
@@ -122,16 +182,11 @@ class VoltageBlender(QtCore.QObject):
         line = self.adjustLine( line )
         line *= self.globalGain
         try:
-            if HardwareDriverLoaded:
-                self.chassis.writeAoBuffer(line)
-                logger.debug( "Wrote voltages {0}".format(line))
-                self.chassis.writeDoBuffer(self.DoLine)
-            else:
-                logger.error( "Hardware Driver not loaded, cannot write voltages" )
+            self.hardware.applyLine(line, self.DoLine)
             self.outputVoltage = line
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         except PyDAQmx.DAQmxFunctions.DAQError as e:
-            logger.exception("Exception")
+            logging.getLogger(__name__).exception("Exception")
             outOfRange = line>10
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
@@ -155,25 +210,11 @@ class VoltageBlender(QtCore.QObject):
                                            edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
                     outputmatrix.append( (self.blendLines(lineno,edge.lineGain)+globaladjust)*self.globalGain )
             try:
-                if HardwareDriverLoaded:
-                    self.chassis.mode = DAQmxUtility.Mode.Finite
-                    self.chassis.writeAoBuffer( (numpy.array(outputmatrix)).flatten('F') )
-                    self.chassis.setOnDoneCallback( self.onChassisDone )
-                    self.chassis.start()
-                    self.shuttleTo = lineno
-                else:
-                    logger.error( "Hardware Driver not loaded, cannot write voltages" )
+                self.hardware.shuttle( outputmatrix )
+                self.shuttleTo = lineno
             except PyDAQmx.DAQmxFunctions.DAQError as e:
                 logger.exception("")
-            
-    def onChassisDone( self, generator, value ):
-        logger = logging.getLogger(__name__)
-        logger.info( "onChassisDone {0} {1}".format(generator, value) )
-        self.chassis.mode = DAQmxUtility.Mode.Static
-        self.chassis.setOnDoneCallback( None )
-        self.outputVoltage = self.shuttleTo
-        self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
-            
+                        
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
         for name, adjust in self.adjustDict.iteritems():
@@ -190,7 +231,6 @@ class VoltageBlender(QtCore.QObject):
         return None
             
     def close(self):
-        if HardwareDriverLoaded:
-            self.chassis.close()
+        self.hardware.close()
 
     
