@@ -353,22 +353,18 @@ class DummyParameter(ExternalParameterBase):
     DummyParameter, used to debug this part of the software.
     """
     className = "Dummy"
-    dimension = magnitude.mg(1,'kHz')
     _outputChannels = { 'O1':"Hz",'O7': "Hz"}
     def __init__(self,name,settings,instrument=''):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,settings)
         logger.info( "Opening DummyInstrument {0}".format(instrument) )
-        self.setDefaults()
-        self.settings.value = magnitude.mg( 12, 'kHz')
-        self.savedValue = self.settings.value
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('AOMFreq', magnitude.mg(123,'MHz') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-        self.settings.value.setdefault('O1', 1)
-        self.settings.value.setdefault('O7', 7)
+        self.settings.value.setdefault('O1', magnitude.mg(1,'kHz'))
+        self.settings.value.setdefault('O7', magnitude.mg(7,'kHz'))
         
    
     def _setValue(self, channel, value):

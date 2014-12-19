@@ -41,7 +41,7 @@ class OutputChannel(object):
     
     @property
     def strValue(self):
-        return self.device.settings.strValue[self.channelName]
+        return self.device.settings.strValue.get(self.channelName)
     
     @strValue.setter
     def strValue(self, sval):
@@ -54,3 +54,8 @@ class OutputChannel(object):
     @property
     def delay(self):
         return self.device.settings.delay
+    
+    @property
+    def observable(self):
+        return self.device.displayValueObservable[self.channelName]
+    

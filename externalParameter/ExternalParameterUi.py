@@ -52,7 +52,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.externalValues = self.targetValues[:]
         self.toolTips = [None]*len(self.externalValues )
         for index,inst in enumerate(self.parameterDict.values()):
-            inst.displayValueCallback = functools.partial( self.showValue, index )
+            inst.observable.subscribe( functools.partial( self.showValue, index ) )
         self.endResetModel()
         
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -78,7 +78,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         return None #QtCore.QVariant()
  
     def showValue(self, index, value, tooltip=None):
-        self.externalValues[index] = value
+        self.externalValues[index] = value.value
         self.toolTips[index] = tooltip
         leftInd = self.createIndex(index, 2)
         rightInd = self.createIndex(index, 2)

@@ -14,6 +14,7 @@ from functools import partial
 from modules.magnitude import is_magnitude
 from modules.AttributeRedirector import AttributeRedirector
 from externalParameter.OutputChannel import OutputChannel
+from modules.Observable import Observable
 
 def nextValue( current, target, stepsize, jump ):
     if current is None:
@@ -29,7 +30,7 @@ class ExternalParameterBase(object):
     def __init__(self,name,settings):
         self.name = name
         self.settings = settings
-        self.displayValueCallback = None
+        self.displayValueObservable = dict([(name,Observable()) for name in self._outputChannels])
         self.setDefaults()
         self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
@@ -81,10 +82,9 @@ class ExternalParameterBase(object):
         """
         newvalue, arrived = nextValue(self.settings.value[channel], value, self.settings.stepsize, self.settings.jump)
         self._setValue( channel, newvalue )
-        if self.displayValueCallback:
-            self.displayValueCallback( self.settings.value[channel] )
+        self.displayValueObservable[channel].fire(value=self.settings.value[channel])
         if arrived:
-            self.persist(channel, self.settings.value)
+            self.persist(channel, self.settings.value[channel])
         return arrived
     
     def persist(self, channel, value):
@@ -138,14 +138,14 @@ class ExternalParameterBase(object):
         pass
     
     def fullName(self, channel):
-        return "{0}_{1}".format(self.channelName,channel)
+        return "{0}_{1}".format(self.name,channel)
     
     def useExternalValue(self, channel=None):
         return False
             
     def outputChannels(self):
-        return [(self.fullName(channel), OutputChannel(self,channel)) for channel in self._outputChannels.iterkeys()]
+        return [(self.fullName(channel), OutputChannel(self,self.name,channel)) for channel in self._outputChannels.iterkeys()]
     
     def inputChannels(self):
-        return [(self.fullName(channel), OutputChannel(self,channel)) for channel in self._inputChannels.iterkeys()]
+        return [(self.fullName(channel), OutputChannel(self,self.name,channel)) for channel in self._inputChannels.iterkeys()]
         
