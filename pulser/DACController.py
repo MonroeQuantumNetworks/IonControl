@@ -18,7 +18,8 @@ class DACController( OKBase ):
         for value in iterable:
             if not -10 <= value < 10:
                 raise DACControllerException("voltage {0} out of range -10V <= V < 10V")
-            result.append( int( value / 10.0 * 0x7fff ), 16 ) 
+            result.append( int( value / 10.0 * 0x7fff ) ) 
+        return result
     
     def writeVoltage(self, address, line ):
         if len(line)<self.channelCount:
