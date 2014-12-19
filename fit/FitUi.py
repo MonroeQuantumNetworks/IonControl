@@ -17,7 +17,8 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from externalParameter.persistence import DBPersist
 import time
 from modules.magnitude import is_magnitude
-from modules.PyqtUtility import BlockSignals
+from modules.PyqtUtility import BlockSignals, restoreColumnWidth,\
+    saveColumnWidth
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -119,10 +120,12 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
+        restoreColumnWidth( self.parameterTableView, self.config.get(self.configname+"ParameterColumnWidth") ) 
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
+        restoreColumnWidth( self.resultsTableView, self.config.get(self.configname+"ResultsColumnWidth") ) 
         self.pushTableModel = PushVariableTableModel(self.config, self.globalDict)
         self.pushTableView.setModel( self.pushTableModel )
         self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
@@ -191,7 +194,6 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
         self.pushTableModel.setFitfunction(self.fitfunction)
-        self.parameterTableView.resizeColumnsToContents()
         self.descriptionLabel.setText( self.fitfunction.functionString )
         if str(self.fitSelectionComboBox.currentText())!= self.fitfunction.name:
             self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
@@ -272,6 +274,8 @@ class FitUi(fitForm, QtGui.QWidget):
         self.config[self.configname+"LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
         self.config[self.configname+"LastFitfunction"] = self.fitfunction
         self.config[self.configname+"ShowAnalysisEnabled"] = self.showAnalysisEnabled
+        self.config[self.configname+"ParameterColumnWidth"] = saveColumnWidth(self.parameterTableView)
+        self.config[self.configname+"ResultsColumnWidth"] = saveColumnWidth(self.resultsTableView)
             
     def saveState(self):
         pass
