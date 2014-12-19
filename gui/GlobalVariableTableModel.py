@@ -18,6 +18,7 @@ import time
 from modules.magnitude import is_magnitude
 from functools import partial
 from collections import defaultdict
+from modules.MagnitudeParser import isIdentifier
 
 api2 = sip.getapi("QVariant") == 2
 
@@ -62,6 +63,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
             self.valueChanged.emit(name)
+            self.variables.observables[name].fire(name=name, value=result)
             self.decimation[name].decimate(time.time(), result, partial(self.persistCallback, name))
             return True    
         except Exception:
@@ -78,9 +80,12 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     def setDataName(self, index, value):
         try:
             strvalue = str(value if api2 else str(value.toString())).strip()
-            
-            self.variables.renameAt(index.row(), strvalue)
-            return True    
+            if isIdentifier(strvalue):
+                self.variables.renameAt(index.row(), strvalue)
+                return True
+            else:
+                logging.getLogger(__name__).error("'{0}' is not a valid identifier".format(strvalue))    
+                return False
         except Exception:
             logger = logging.getLogger(__name__)
             logger.exception("No match for {0}".format(str(value.toString())))
@@ -104,6 +109,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         if not old.isIdenticalTo(value):
             self.variables[name] = value
             self.valueChanged.emit(name)
+            self.variables.observables[name].fire(name=name, value=value)
             self.decimation[name].decimate(time.time(), value, partial(self.persistCallback, name))
 
     def getVariables(self):
@@ -113,7 +119,9 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return self.variables[name]
     
     def addVariable(self, name):
-        if name not in self.variables:
+        if name=="":
+            name = 'NewGlobalVariable'
+        if name not in self.variables and isIdentifier(name):
             self.beginInsertRows(QtCore.QModelIndex(), len(self.variables), len(self.variables))
             self.variables[name] = magnitude.mg(0, '')
             self.endInsertRows()
@@ -163,6 +171,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 old = self.variables[key]
                 if value.dimension() != old.dimension() or value != old:
                     self.variables[key] = value
+                    self.variables.observables[key].fire(name=key, value=value)
                     self.valueChanged.emit(key)
                     index = self.variables.index(key)
                     self.dataChanged.emit(self.createIndex(index, 1), self.createIndex(index, 1))

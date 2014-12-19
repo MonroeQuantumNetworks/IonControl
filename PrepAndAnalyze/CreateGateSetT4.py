@@ -141,9 +141,9 @@ def gst_strings(fiducials, alphabet, length):
             repetition += 1
         if len(germString)>length:
             repetition -= 1
-            condensedGermString = [ "(", a, ")^", str(repetition),germString[length:]]
+            condensedGermString = [ "(", a, ")^", str(repetition),germString[len(a)*repetition:length]] if repetition>0 else [germString[len(a)*repetition:length]]
         else:
-            condensedGermString = [ "(", a, ")^", str(repetition),germString[length:]]            
+            condensedGermString = [ "(", a, ")^", str(repetition),germString[len(a)*repetition:length]]            
         germString = germString[0:length]
         gstStrings.extend( [[x] + germString + [y] for x in fiducials for y in fiducials] )
         condensedGstStrings.extend( [[x] + condensedGermString + [y] for x in fiducials for y in fiducials] )
@@ -185,6 +185,9 @@ for length in seqlengths:
             gateSequence(root, str(i), sequence, i, condensed=''.join(flattenAll(condensed)))
             i += 1
             totalTime += spamTime + gateTime*len(list(flatten(sequence)))
+        else:
+            print "Skipping {0} ".format(''.join(flattenAll(condensed)), sequence)
+
 
 
 with open(filename,'w') as f:

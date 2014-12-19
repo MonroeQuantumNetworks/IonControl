@@ -90,7 +90,7 @@ class LoadingEvent:
 
 class AutoLoad(UiForm,UiBase):
     ionReappeared = QtCore.pyqtSignal()
-    def __init__(self, config, pulser, dataAvailableSignal, globalVariablesUi, parent=None):
+    def __init__(self, config, pulser, dataAvailableSignal, globalVariablesUi, externalInstrumentObservable, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
         self.config = config
@@ -109,13 +109,16 @@ class AutoLoad(UiForm,UiBase):
         self.preheatStartTime = datetime.now()
         self.globalVariablesUi = globalVariablesUi
         self.globalAdjustRevertList = list()
+        self.externalInstrumentObservable = externalInstrumentObservable
         
     def constructStatemachine(self):
         self.statemachine = Statemachine('AutoLoad')
         self.statemachine.addState( 'Idle' , self.setIdle, self.exitIdle )
+        self.statemachine.addState( 'AdjustToLoading')
         self.statemachine.addState( 'Preheat', self.setPreheat )
-        self.statemachine.addState( 'Load', self.setLoad, self.exitLoad )
+        self.statemachine.addState( 'Load', self.setLoad )
         self.statemachine.addState( 'Check', self.setCheck )
+        self.statemachine.addState( 'AdjustFromLoading' )
         self.statemachine.addState( 'Trapped', self.setTrapped, self.exitTrapped )
         self.statemachine.addState( 'Disappeared', self.setDisappeared )
         self.statemachine.addState( 'Frozen', self.setFrozen )
@@ -125,6 +128,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addState( 'PostSequenceWait', self.setPostSequenceWait )
         self.statemachine.addState( 'ShuttleLoad', self.setShuttleLoad, self.exitShuttleLoad )
         self.statemachine.addState( 'ShuttleCheck' , self.setShuttleCheck )
+        self.statemachine.addStateGroup('LoadingConfiguration', ['AdjustToLoading','Preheat','Load','Check'], self.adjustToLoading, self.adjustFromLoading)
 
         self.statemachine.addTransition( 'timer', 'Preheat', 'Load', 
                                          lambda state: state.timeInState() > self.settings.laserDelay and
@@ -152,7 +156,7 @@ class AutoLoad(UiForm,UiBase):
                                          lambda state: self.statemachine.states['Preheat'].timeInState() > self.settings.maxTime and
                                                        not self.settings.autoReload,
                                          description="maxTime"  )                                         
-        self.statemachine.addTransition( 'timer', 'Check', 'Trapped',
+        self.statemachine.addTransition( 'timer', 'Check', 'AdjustFromLoading',
                                          lambda state: state.timeInState() > self.settings.checkTime,
                                          self.loadingToTrapped,
                                          description="checkTime" )
@@ -195,7 +199,7 @@ class AutoLoad(UiForm,UiBase):
                                          description="postSequenceWaitTime" )
         self.statemachine.addTransition( 'data', 'Load', 'Check', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdOven"  )
-        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
+        self.statemachine.addTransition( 'data', 'Check', 'Load', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdOven+self.settings.thresholdBare,
                                          description="thresholdRunning"  )
         self.statemachine.addTransition( 'data', 'Trapped', 'Disappeared', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime < self.settings.thresholdRunning,
                                          description="thresholdRunning" )
@@ -206,14 +210,16 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.addTransition( 'data', 'ShuttleCheck', 'Trapped', lambda state, data: data.data[self.settings.counterChannel]/data.integrationTime > self.settings.thresholdOven+self.settings.thresholdBare,
                                          self.loadingToTrapped,
                                          description="thresholdOven" )
-        self.statemachine.addTransitionList( 'stopButton', ['Preheat','Load','Check','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven', 'ShuttleCheck', 'ShuttleLoad'], 'Idle',
+        self.statemachine.addTransitionList( 'stopButton', ['Preheat','AdjustToLoading','Load','Check','AdjustFromLoading','Trapped','Disappeared', 'Frozen', 'WaitingForComeback', 'AutoReloadFailed', 'CoolingOven', 'ShuttleCheck', 'ShuttleLoad'], 'Idle',
                                          description="stopButton" )
-        self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'Preheat',
+        self.statemachine.addTransitionList( 'startButton', ['Idle', 'AutoReloadFailed'], 'AdjustToLoading',
                                          description="startButton" )
         self.statemachine.addTransitionList( 'ppStarted', ['Trapped','PostSequenceWait','WaitingForComeback','Disappeared','Check'], 'Frozen',
                                          description="ppStarted"  )
         self.statemachine.addTransition( 'ppStopped', 'Frozen', 'PostSequenceWait' ,
                                          description="ppStopped" )
+        self.statemachine.addTransition( 'doneAdjusting', 'AdjustToLoading', 'Preheat')
+        self.statemachine.addTransition( 'doneAdjusting', 'AdjustFromLoading', 'Trapped')
         self.statemachine.addTransitionList( 'outOfLock', ['Preheat', 'Load', 'ShuttleLoad', 'ShuttleCheck'], 'Idle',
                                          description="outOfLock"  )
         self.statemachine.addTransition( 'ionStillTrapped', 'Idle', 'Trapped', lambda state: len(self.historyTableModel.history)>0 and not self.pulser.ppActive ,
@@ -480,11 +486,15 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Loading")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
+   
+    def adjustFromLoading(self):
+        self.globalVariablesUi.update( self.globalAdjustRevertList )
+        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
+        
+    def adjustToLoading(self):
         self.globalAdjustRevertList = [('Global', key, self.globalVariablesUi.variables[key]) for key in self.settings.globalsAdjustList]
         self.globalVariablesUi.update( ( ('Global', k, v) for k,v in self.settings.globalsAdjustList.iteritems() ))   
-   
-    def exitLoad(self):
-        self.globalVariablesUi.update( self.globalAdjustRevertList )
+        self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
     
     def setCheck(self):
         """Execute when count rate goes over threshold."""

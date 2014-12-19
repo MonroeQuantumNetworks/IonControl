@@ -44,6 +44,7 @@ from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
 from pulser.OKBase import OKBase
 from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
+from pulser.DACController import DACController
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -114,7 +115,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
         self.okBase = OKBase()
         self.settingsDialog.addEntry( "32 Channel PMT", self.okBase )
-        self.dac = OKBase()
+        self.dac = DACController()
         self.settingsDialog.addEntry( "DAC system", self.dac)
         self.settingsDialog.initialize()
 
@@ -170,11 +171,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
-        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser )
+        self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.variables )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
+        self.globalVariablesUi.valueChanged.connect( self.DDSUi.evaluate )
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
+        
         
         # tabify the dock widgets
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
@@ -246,14 +249,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
             
-        self.dedicatedCountersWindow = DedicatedCounters(self.config, self.pulser, self.globalVariablesUi)
+        self.dedicatedCountersWindow = DedicatedCounters(self.config, self.pulser, self.globalVariablesUi, self.ExternalParametersUi.callWhenDoneAdjusting )
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
         self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser, self.channelNameData )
         self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
         try:
-            self.voltageControlWindow = VoltageControl(self.config)
+            self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
             self.voltageControlWindow.setupUi(self.voltageControlWindow)
         except MyException.MissingFile as e:
             self.voltageControlWindow = None
@@ -379,7 +382,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
-                     self.loggerDock, self.todoListDock ]:
+                     self.loggerDock, self.todoListDock, self.measurementLogDock ]:
             self.menuView.addAction(dock.toggleViewAction())
         # Print menu
         if self.printMenu is not None:

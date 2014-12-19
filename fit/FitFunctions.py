@@ -78,6 +78,11 @@ class SinSqFit(FitFunctionBase):
         self.startParameters = [100,0,1,0]
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, T, x0, max_, min_ ):
         return (max_-min_)*numpy.square(numpy.sin(numpy.pi/2/T*(x-x0)))+min_
@@ -131,9 +136,25 @@ class SaturationFit(FitFunctionBase):
         self.startParameters = [10,10,0]
         self.parameterEnabled = [True]*3
         self.parametersConfidence = [None]*3
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, A, s, O ):
         return A*(x/s)/(1+(x/s))+O
+    
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        A, s, O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        A = 2*y[-1]
+        s = A*(x[-1]-x[0])/(y[-1]-y[0])
+        O = y[0]-(A*x[0]/s)
+        logging.getLogger(__name__).info("smart start values A={0}, s={1}, O={2}".format(A, s, O))
+        return (A, s, O)
   
 class SinSqExpFit(FitFunctionBase):
     name = "Sin2 Exponential Decay"
@@ -148,7 +169,20 @@ class SinSqExpFit(FitFunctionBase):
         
     def functionEval(self, x, A, T, theta, O, tau ):
         return A*numpy.exp(-x/tau)*numpy.square(numpy.sin(numpy.pi/2/T*x+theta))+O
-  
+
+class CosExpFit(FitFunctionBase):
+    name = "Cos Exponential Decay"
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.functionString =  '(A/2) * (1 - exp(-x/tau)Cos(pi*t/(2*T)+theta)) + O'
+        self.parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
+        self.parameters = [1,100,0,0,1000]
+        self.startParameters = [1,100,0,0,1000]
+        self.parameterEnabled = [True]*5
+        self.parametersConfidence = [None]*5
+        
+    def functionEval(self, x, A, T, theta, O, tau ):
+        return (A/2.0)*(1-numpy.exp(-x/tau)*numpy.cos(numpy.pi*x/(T)+theta))+O  
 
 class SinSqGaussFit(FitFunctionBase):
     name = "Sin2 Gaussian Decay"
@@ -175,6 +209,11 @@ class GaussianFit(FitFunctionBase):
         self.startParameters = [1,0,1,0]
         self.parameterEnabled = [True]*4
         self.parametersConfidence = [None]*4
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, A, x0, s, O ):
         return A*numpy.exp(-numpy.square((x-x0)/s))+O
@@ -215,7 +254,12 @@ class SquareRabiFit(FitFunctionBase):
         self.startParameters = [1.0,42.0,1.0,0.0,100.0]
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
+        self.hasSmartStart = True
           
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
+        
     def functionEval(self, x, T, C, A, O, t ):
         R = numpy.pi/T
         u = numpy.square(2*numpy.pi*(x-C)/R)
@@ -313,6 +357,11 @@ class RabiFieldProfileFit(FitFunctionBase):
         self.startParameters = [1,1,0,1,0]
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
+        self.hasSmartStart = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.hasSmartStart = True
         
     def functionEval(self, x, A, c, x0, w, O ):
         return A*numpy.square(numpy.sin(c*numpy.exp(-numpy.square((x-x0)/w)))) + O
@@ -343,7 +392,6 @@ class RabiFieldProfileFit(FitFunctionBase):
         w = 0.60056*(x[indexplus]-x[indexminus])
         logging.getLogger(__name__).info("smart start values A={0}, c={1}, x0={2}, w={3}, O={4}".format(A, c, x0, w, O))
         return (A, c, x0, w, O)
-
        
 fitFunctionMap.update({ GaussianFit.name: GaussianFit, 
                        CosFit.name: CosFit, 
@@ -362,7 +410,8 @@ fitFunctionMap.update({ GaussianFit.name: GaussianFit,
                        SaturationFit.name: SaturationFit,
                        MotionalRabiFlopping.name: MotionalRabiFlopping,
                        TwoModeMotionalRabiFlopping.name: TwoModeMotionalRabiFlopping,
-                       RabiFieldProfileFit.name: RabiFieldProfileFit
+                       RabiFieldProfileFit.name: RabiFieldProfileFit,
+                       CosExpFit.name: CosExpFit
                  } )       
         
 def fitFunctionFactory(text):

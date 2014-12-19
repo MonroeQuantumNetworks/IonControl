@@ -17,7 +17,8 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from externalParameter.persistence import DBPersist
 import time
 from modules.magnitude import is_magnitude
-from modules.PyqtUtility import BlockSignals
+from modules.PyqtUtility import BlockSignals, restoreColumnWidth,\
+    saveColumnWidth
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -119,16 +120,19 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
+        restoreColumnWidth( self.parameterTableView, self.config.get(self.configname+"ParameterColumnWidth") ) 
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
-        self.pushTableModel = PushVariableTableModel(self.config)
+        restoreColumnWidth( self.resultsTableView, self.config.get(self.configname+"ResultsColumnWidth") ) 
+        self.pushTableModel = PushVariableTableModel(self.config, self.globalDict)
         self.pushTableView.setModel( self.pushTableModel )
         self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.pushComboDelegate = ComboBoxDelegate()
         self.pushTableView.setItemDelegateForColumn(1,self.pushComboDelegate)
         self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
+        self.pushTableView.setItemDelegateForColumn(3,self.pushItemDelegate)
         self.pushTableView.setItemDelegateForColumn(4,self.pushItemDelegate)
         self.pushTableView.setItemDelegateForColumn(5,self.pushItemDelegate)
         self.pushTableView.setItemDelegateForColumn(6,self.pushItemDelegate)
@@ -190,13 +194,14 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
         self.pushTableModel.setFitfunction(self.fitfunction)
-        self.parameterTableView.resizeColumnsToContents()
         self.descriptionLabel.setText( self.fitfunction.functionString )
         if str(self.fitSelectionComboBox.currentText())!= self.fitfunction.name:
             self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
         self.resultsTableView.resizeColumnsToContents()
         self.pushTableView.resizeColumnsToContents()
+        self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
         self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
+        self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
         self.evaluate()
         
     def onFit(self):
@@ -218,7 +223,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.pushTableModel.updateDestinations(self.pushDestinations )
 
     def onPush(self):
-        for destination, variable, value in self.fitfunction.pushVariableValues():
+        for destination, variable, value in self.fitfunction.pushVariableValues(self.globalDict):
             if destination in self.pushDestinations:
                 self.pushDestinations[destination].update( [(destination,variable,value)] )
                 
@@ -269,6 +274,8 @@ class FitUi(fitForm, QtGui.QWidget):
         self.config[self.configname+"LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
         self.config[self.configname+"LastFitfunction"] = self.fitfunction
         self.config[self.configname+"ShowAnalysisEnabled"] = self.showAnalysisEnabled
+        self.config[self.configname+"ParameterColumnWidth"] = saveColumnWidth(self.parameterTableView)
+        self.config[self.configname+"ResultsColumnWidth"] = saveColumnWidth(self.resultsTableView)
             
     def saveState(self):
         pass

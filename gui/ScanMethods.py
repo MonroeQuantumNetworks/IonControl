@@ -40,7 +40,7 @@ class InternalScanMethod(object):
             self.experiment.finalizeData(reason='end of scan')
             logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.experiment.currentIndex, len(self.experiment.scan.list) ) )
             if self.experiment.currentIndex >= len(self.experiment.scan.list):    # if all points were taken
-                self.experiment.generator.dataOnFinal(self, self.experiment.progressUi.state )
+                self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
             else:
                 self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
         else:

@@ -26,6 +26,10 @@ class N6700BPowerSupply(ExternalParameterBase):
     """
     className = "N6700 Powersupply"
     dimension = magnitude.mg(1,'A')
+    _outputChannels = {"Curr1": "A", "Curr2": "A", "Curr3": "A", "Curr4": "A", "Volt1": "V" , "Volt2": "V", "Volt3": "V", "Volt4": "V"}
+    _outputLookup = { "Curr1": ("Curr",1,"A"), "Curr2": ("Curr",2,"A"), "Curr3": ("Curr",3,"A"), "Curr4": ("Curr",4,"A"),
+                      "Volt1": ("Volt",1,"V"), "Volt2": ("Volt",2,"V"), "Volt3": ("Volt",3,"V"), "Volt4": ("Volt",4,"V")}
+    _inputChannels = set(["Curr1", "Curr2", "Curr3", "Curr4", "Volt1", "Volt2", "Volt3", "Volt4"])
     def __init__(self,name,config,instrument="QGABField"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -33,34 +37,36 @@ class N6700BPowerSupply(ExternalParameterBase):
         self.instrument = visa.instrument(instrument) #open visa session
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.value = self._getValue()
+        for channel in self._outputChannels:
+            self.value[channel] = self._getValue(channel)
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('channel' , 1)       # if True go to the target value in one jump        
             
-    def _setValue(self, v):
-        command = "Curr {0},(@{1})".format(v.ounit('A').toval(),self.settings.channel)
+    def _setValue(self, channel, v):
+        function, index, unit = self._outputLookup[channel]
+        command = "{0} {1},(@{2})".format(function, v.toval(unit), index)
         self.instrument.write(command)#set voltage
         self.value = v
         
-    def _getValue(self):
-        command = "Curr? (@{0})".format(self.settings.channel)
-        self.value = magnitude.mg(float(self.instrument.ask(command)), 'A') #set voltage
-        return self.value
+    def _getValue(self, channel):
+        function, index, unit = self._outputLookup[channel]
+        command = "{0}? (@{1})".format(function, index)
+        self.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit) #set voltage
+        return self.value[channel]
         
     def currentValue(self):
         return self.value
     
-    def currentExternalValue(self):
-        command = "MEAS:CURR? (@{0})".format(self.settings.channel)
-        value = magnitude.mg( float( self.instrument.ask(command)), 'A' )
+    def currentExternalValue(self, channel):
+        function, index, unit = self._outputLookup[channel]
+        command = "MEAS:{0}? (@{1})".format(function, index)
+        value = magnitude.mg( float( self.instrument.ask(command)), unit )
         return value 
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'channel', 'type': 'int', 'value': self.settings.channel})
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         return superior
     
@@ -92,7 +98,7 @@ class HP8672A(ExternalParameterBase):
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('amplitude_dBm', magnitude.mg(-13) )
    
-    def setValue(self,value):
+    def setValue(self, channel, value):
         """
         Move one steps towards the target, return current value
         """
@@ -106,7 +112,7 @@ class HP8672A(ExternalParameterBase):
             self.persist(self.value)
         return arrived
             
-    def _setValue(self, value ):
+    def _setValue(self, channel, value ):
         """Send the command string to the HP8672A to set the frequency to 'value'."""
         value = value.round('kHz')
         command = "P{0:0>8.0f}".format(value.toval('kHz')) + 'Z0' + self.createAmplitudeString()
@@ -348,6 +354,7 @@ class DummyParameter(ExternalParameterBase):
     """
     className = "Dummy"
     dimension = magnitude.mg(1,'kHz')
+    _outputChannels = { 'O1':"Hz",'O7': "Hz"}
     def __init__(self,name,settings,instrument=''):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,settings)
@@ -355,17 +362,19 @@ class DummyParameter(ExternalParameterBase):
         self.setDefaults()
         self.settings.value = magnitude.mg( 12, 'kHz')
         self.savedValue = self.settings.value
-        self.value = self.settings.value
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('AOMFreq', magnitude.mg(123,'MHz') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+        self.settings.value.setdefault('O1', 1)
+        self.settings.value.setdefault('O7', 7)
+        
    
-    def _setValue(self,value):
+    def _setValue(self, channel, value):
         logger = logging.getLogger(__name__)
-        logger.debug( "Dummy output set to: {0}".format( value ) )
-        self.value = value
+        logger.debug( "Dummy output channel {0} set to: {1}".format( channel, value ) )
+        self.settings.value[channel] = value
          
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)

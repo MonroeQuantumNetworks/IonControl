@@ -85,12 +85,14 @@ class FitFunctionBase(object):
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         self.useSmartStartValues = False
+        self.hasSmartStart = False
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'pushVariables', SequenceDict() )
         self.__dict__.setdefault( 'useSmartStartValues', False )
         self.__dict__.setdefault( 'startParameterExpressions', None )
+        self.__dict__.setdefault( 'hasSmartStart', False)
  
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -169,6 +171,10 @@ class FitFunctionBase(object):
 
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
+        # Ensure all values of sigma or non zero by replacing with the minimum nonzero value
+        if sigma is not None:
+            nonzerosigma = sigma[sigma>0]
+            sigma[sigma==0] = numpy.min(nonzerosigma) if len(nonzerosigma)>0 else 1.0 
         if parameters is None:
             parameters = [value(param) for param in self.startParameters]
         if self.useSmartStartValues:

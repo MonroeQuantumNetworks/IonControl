@@ -46,6 +46,7 @@ class TodoListEntry(object):
         self.__dict__.setdefault('enabled', True )
         self.__dict__.setdefault('settings', SequenceDict())
         self.__dict__.setdefault('revertSettings', False)
+        self.scan = str(self.scan) if self.scan is not None else None
 
     stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'settings' ] 
 
@@ -118,15 +119,19 @@ class TodoList(Form, Base):
     def setupStatemachine(self):
         self.statemachine = Statemachine()        
         self.statemachine.addState( 'Idle', self.enterIdle, self.exitIdle  )
-        self.statemachine.addState( 'MeasurementRunning', self.enterMeasurementRunning, self.exitMeasurementRunning )
+        self.statemachine.addState( 'MeasurementRunning')
+        self.statemachine.addState( 'Waiting for Completion', lambda:self.statusLabel.setText('Waiting for completion of measurement') )
+        self.statemachine.addStateGroup('InMeasurement', ['MeasurementRunning','Waiting for Completion'], self.enterMeasurementRunning, self.exitMeasurementRunning )
         self.statemachine.addState( 'Check' )
         self.statemachine.addState( 'Paused', self.enterPaused )
         self.statemachine.initialize( 'Idle' )
         self.statemachine.addTransition('startCommand', 'Idle', 'MeasurementRunning', self.checkReadyToRun )
-        self.statemachine.addTransitionList('stopCommand', ['Idle','MeasurementRunning', 'Paused'], 'Idle')
+        self.statemachine.addTransitionList('stopCommand', ['Idle', 'Paused'], 'Idle')
+        self.statemachine.addTransition( 'stopCommand', 'MeasurementRunning', 'Waiting for Completion')
         self.statemachine.addTransition('measurementFinished','MeasurementRunning','Check', self.checkReadyToRun )
-        self.statemachine.addTransition('docheck', 'Check', 'MeasurementRunning', lambda state: self.settings.currentIndex>0 or self.settings.repeat)
-        self.statemachine.addTransition('docheck', 'Check', 'Idle', lambda state: self.settings.currentIndex==0 and not self.settings.repeat)
+        self.statemachine.addTransition('measurementFinished','Waiting for Completion','Idle' )
+        self.statemachine.addTransition('docheck', 'Check', 'MeasurementRunning', lambda state: (self.settings.currentIndex>0 or self.settings.repeat) and self.isSomethingTodo())
+        self.statemachine.addTransition('docheck', 'Check', 'Idle', lambda state: (self.settings.currentIndex==0 and not self.settings.repeat) or not self.isSomethingTodo())
                 
     def setupUi(self):
         super(TodoList,self).setupUi(self)
@@ -319,7 +324,7 @@ class TodoList(Form, Base):
 
     def checkReadyToRun(self, state, _=True ):
         _, current = self.currentScan()
-        return current.state()==0
+        return current.state()==0 and self.isSomethingTodo()
     
     
     def onStateChanged(self, newstate ):
@@ -350,7 +355,7 @@ class TodoList(Form, Base):
     def onLoadLine(self):
         allrows = sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]))
         if len(allrows)==1: 
-            self.loadLine(self.settings.todoList[ self.settings.currentIndex ])
+            self.loadLine(self.settings.todoList[ allrows[0] ])
             
     def loadLine(self, entry ):
         currentname, currentwidget = self.currentScan()
@@ -361,10 +366,17 @@ class TodoList(Form, Base):
         currentwidget.scanControlWidget.loadSetting( entry.measurement )   
         currentwidget.evaluationControlWidget.loadSetting( entry.evaluation )  
         
+    def isSomethingTodo(self):
+        for index in range( self.settings.currentIndex, len(self.settings.todoList) ) + (range(0, self.settings.currentIndex) if self.settings.repeat else []):
+            if self.settings.todoList[ index ].enabled:
+                self.settings.currentIndex = index
+                return True
+        return False
+                
     def enterMeasurementRunning(self):
+        entry = self.settings.todoList[ self.settings.currentIndex ]            
         self.statusLabel.setText('Measurement Running')
         _, currentwidget = self.currentScan()
-        entry = self.settings.todoList[ self.settings.currentIndex ] 
         self.loadLine( entry )
         # set the global variables
         self.revertGlobalsList = [('Global', key, self.globalVariablesUi.variables[key]) for key in entry.settings.iterkeys()]

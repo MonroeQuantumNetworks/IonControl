@@ -60,6 +60,15 @@ def isValueExpression( text ):
     except Exception:
         pass
     return False
+
+@lru_cache(maxsize=100)
+def isIdentifier( text ):
+    try:
+        ident.parseString( text , parseAll=True )
+        return True
+    except Exception:
+        pass
+    return False
     
 def positionawareTrim( string, position ):
     oldlen = len(string)

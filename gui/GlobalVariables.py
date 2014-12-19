@@ -11,8 +11,9 @@ from modules.SequenceDict import SequenceDict
 from modules.Utility import unique 
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-#from _collections import defaultdict
-
+from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth
+from modules.Observable import Observable
+from _collections import defaultdict
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
@@ -20,6 +21,13 @@ class GlobalVariables(SequenceDict):
     def __init__(self, *args, **kwds):
         SequenceDict.__init__(self, *args, **kwds)
         self.customOrder = list()
+        self.observables = defaultdict( Observable )
+            
+    def __reduce__(self):
+        data = SequenceDict.__reduce__(self)
+        data[2].pop('observables')
+        return data
+     
 #         self.dependentDict = defaultdict( dict )  # dict of dicts outer key is globalVariable, inner key is (target, name) 
 # 
 #     def connect(self, globalName, target, name, weakMethodCallback ):
@@ -75,8 +83,8 @@ class GlobalVariableUi(Form, Base ):
         self.tableView.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate()
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
-        self.tableView.setSortingEnabled(True)
-#         self.tableView.clicked.connect(self.onViewClicked)
+        self.tableView.setSortingEnabled(True)   # triggers sorting
+        self.model.restoreCustomOrder()          # to restore the last custom order
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )
         self.tableView.installEventFilter(self.filter)
@@ -86,9 +94,11 @@ class GlobalVariableUi(Form, Base ):
         self.restoreCustomOrderAction = QtGui.QAction( "restore custom order" , self)
         self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
         self.addAction( self.restoreCustomOrderAction )
+        restoreColumnWidth(self.tableView, self.config.get(self.configname+".ColumnWidth"), autoscaleOnNone=True)
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))
+        self.newNameEdit.setText("")
     
     def onDropVariable(self):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):
@@ -96,10 +106,7 @@ class GlobalVariableUi(Form, Base ):
         
     def saveConfig(self):
         self.config[self.configname] = self._variables_
-
-#     def onViewClicked(self,index):
-#         """If one of the editable columns is clicked, begin to edit it."""
-#         self.tableView.edit(index)
+        self.config[self.configname+".ColumnWidth"] = saveColumnWidth( self.tableView )
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:

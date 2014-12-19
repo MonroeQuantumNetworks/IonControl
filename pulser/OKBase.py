@@ -72,7 +72,7 @@ def check(number, command):
 
 
 
-class OKBase:
+class OKBase(object):
     def __init__(self):
         self.xem = None
         self.openModule = None
@@ -143,3 +143,6 @@ class OKBase:
             logger.debug("Serial {0} is already open".format(serial) )         
         return None
 
+    @property
+    def isOpen(self):
+        return self.xem is not None

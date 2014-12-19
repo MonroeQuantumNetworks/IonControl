@@ -22,16 +22,29 @@ class ILX5900Reader(object):
         self.settings = settings if settings is not None else Settings()
         self.timeout = mg(timeout,'s')
         self.setDefaults()
+        if self.settings.Write:
+            self.setPID()
+            self.ILimHigh = self.settings.ILimHigh
+            self.ILimLow = self.settings.ILimLow
+            self.Setpoint = self.settings.Setpoint
+        else:
+            self.readPID()
+            self.readLimits()
+            self.readSetpoint()
                
     def setDefaults(self):
         self.settings.__dict__.setdefault('waitTime', mg(0.1, 's') )
         self.settings.__dict__.setdefault('timeout', mg(0.1, 's') )
-        self.settings.__dict__.setdefault('C1', 9.7142e-4 )
-        self.settings.__dict__.setdefault('C2', 2.3268e-4 )
-        self.settings.__dict__.setdefault('C3', 8.0591e-8 )
+        self.settings.__dict__.setdefault('C1', 0.97142 )
+        self.settings.__dict__.setdefault('C2', 2.3268 )
+        self.settings.__dict__.setdefault('C3', 0.80591 )
         self.settings.__dict__.setdefault('P', 0.1 )
         self.settings.__dict__.setdefault('I', 0.1 )
         self.settings.__dict__.setdefault('D', 0.1 )
+        self.settings.__dict__.setdefault('ILimHigh', 0 )
+        self.settings.__dict__.setdefault('ILimLow', -0.5 )
+        self.settings.__dict__.setdefault('Write', False )
+        self.settings.__dict__.setdefault('Setpoint', 31.65)
 
     @property
     def waitTime(self):
@@ -106,6 +119,33 @@ class ILX5900Reader(object):
         print "D:", self.settings.D
         self.setPID()
         
+    @property
+    def ILimHigh(self):
+        return self.settings.ILimHigh
+    
+    @ILimHigh.setter
+    def ILimHigh(self, value):
+        self.settings.ILimHigh = value.toval('A')
+        self.conn.write( ":LIMIT:ITE:HIGH {0}".format(self.settings.ILimHigh))
+ 
+    @property
+    def ILimLow(self):
+        return self.settings.ILimLow
+    
+    @ILimLow.setter
+    def ILimLow(self, value):
+        self.settings.ILimLow = value.toval('A')
+        self.conn.write( ":LIMIT:ITE:LOW {0}".format(self.settings.ILimLow))
+       
+    @property
+    def Setpoint(self):
+        return self.settings.Setpoint
+
+    @Setpoint.setter
+    def Setpoint(self, value):
+        self.settings.Setpoint = toValue(value)
+        self.conn.write(':SET:TEMP {0}'.format(self.settings.Setpoint))
+       
     def setPID(self):
         print "PID {0},{1},{2}".format(self.settings.P, self.settings.I, self.settings.D)
         self.conn.write( "PID {0},{1},{2}".format(self.settings.P, self.settings.I, self.settings.D))
@@ -113,6 +153,13 @@ class ILX5900Reader(object):
     def readPID(self):
         answer = self.conn.ask("PID?")
         self.settings.P, self.settings.I, self.settings.D = map( float, answer.split(",") )
+
+    def readLimits(self):
+        self.settings.ILimHigh = mg( float(self.conn.ask(':LIMIT:ITE:HIGH?')), 'A')
+        self.settings.ILimLow = mg( float(self.conn.ask(':LIMIT:ITE:LOW?')), 'A')
+
+    def readSetpoint(self):
+        self.settings.Setpoint = float(self.conn.ask(":SET:TEMP?"))
 
     def open(self):
         self.conn = visa.instrument( self.instrument, timeout=self.settings.timeout.toval('s'))
@@ -133,7 +180,11 @@ class ILX5900Reader(object):
                 {'name': 'C3', 'type': 'float', 'value': self.settings.C3, 'tip': "Steinhart Hart Thermistor calibration C3*1e7", 'field': 'C3'},
                 {'name': 'P', 'type': 'magnitude', 'value': self.settings.P, 'field': 'P'},
                 {'name': 'I', 'type': 'magnitude', 'value': self.settings.I, 'field': 'I'},
-                {'name': 'D', 'type': 'magnitude', 'value': self.settings.D, 'field': 'D'}]
+                {'name': 'D', 'type': 'magnitude', 'value': self.settings.D, 'field': 'D'},
+                {'name': 'I limit pos', 'type': 'magnitude', 'value': self.settings.ILimHigh, 'field': 'ILimHigh'},
+                {'name': 'I limit neg', 'type': 'magnitude', 'value': self.settings.ILimLow, 'field': 'ILimLow'},
+                {'name': 'Write on startup', 'type': 'bool', 'value': self.settings.Write, 'field': 'Write'},
+                {'name': 'Setpoint', 'type': 'bool', 'value': self.settings.Setpoint, 'field': 'Setpoint'}]
 
     
 

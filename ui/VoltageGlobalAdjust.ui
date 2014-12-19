@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>165</width>
+    <width>279</width>
     <height>300</height>
    </rect>
   </property>
@@ -29,10 +29,16 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="toolTip">
+      <string>AdjustVoltage = Gain * Sum( amplitude_i * solution_i )</string>
+     </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
      </property>
     </widget>
+   </item>
+   <item row="1" column="1" colspan="2">
+    <widget class="QTableView" name="tableView"/>
    </item>
   </layout>
  </widget>
