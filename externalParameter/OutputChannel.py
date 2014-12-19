@@ -28,7 +28,7 @@ class OutputChannel(object):
         self.device.restoreValue(self.channelName)
         
     @property 
-    def savedValue(self):
+    def savedValue(self, overwrite=True):
         return self.device.savedValue[self.channelName]
     
     @savedValue.setter

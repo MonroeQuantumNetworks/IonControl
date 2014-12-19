@@ -152,20 +152,16 @@ class ControlUi(UiForm,UiBase):
         self.tableView.setModel( self.tableModel )
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
-        self.setupParameters(EnabledParameters)
+        self.setupParameters(  list(itertools.chain(*[p.outputChannels() for p in EnabledParameters.itervalues()]) ))
         
-    def setupParameters(self,EnabledParameters):
-        logger = logging.getLogger(__name__)
-        logger.debug( "ControlUi.setupParameters {0}".format( EnabledParameters ) ) 
-        self.enabledParameters = EnabledParameters
-        self.outputChannels = list(itertools.chain(*[p.outputChannels() for p in self.enabledParameters.itervalues()]))
-        self.tableModel.setParameterList( self.outputChannels )
+    def setupParameters(self, outputChannels):
+        self.tableModel.setParameterList( outputChannels )
         self.tableView.resizeColumnsToContents()
         self.tableView.horizontalHeader().setStretchLastSection(True)   
         try:
             self.evaluate(None)
         except KeyError as e:
-            logger.error(str(e))
+            logging.getLogger(__name__).error(str(e))
         
     def keys(self):
         return self.tableModel.parameterDict.keys()
