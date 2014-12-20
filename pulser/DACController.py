@@ -3,7 +3,7 @@ Created on Dec 15, 2014
 
 @author: pmaunz
 '''
-from pulser.OKBase import OKBase
+from pulser.OKBase import OKBase, check
 # import logging
 import struct
 import numpy
@@ -37,5 +37,5 @@ class DACController( OKBase ):
         self.xem.ActivateTriggerIn( 0x40, 1 ) # set output address
     
     def triggerShuttling(self):
-        self.xem.ActivateTriggerIn( 0x40, 0 ) # initiate shuttling
+        check( self.xem.ActivateTriggerIn( 0x40, 0), 'ActivateTrigger' )
 
