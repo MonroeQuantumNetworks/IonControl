@@ -72,7 +72,7 @@ class ExternalParameterBase(object):
         if the stored value is reached returns True, otherwise False. Needs to be called repeatedly
         until it returns True in order to restore the saved value.
         """
-        return self.setValue(self.savedValue[channel])
+        return self.setValue(channel, self.savedValue[channel])
     
     def setValue(self, channel, value):
         """

@@ -203,7 +203,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
                
         self.ExternalParametersSelectionUi.selectionChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
-        self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.enabledParametersObjects )
+        self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.outputChannels() )
         
         self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab, self.globalVariablesUi )
         self.todoList.setupUi()

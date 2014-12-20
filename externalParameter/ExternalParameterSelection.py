@@ -72,9 +72,13 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.emitSelectionChanged()
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
 
+    def outputChannels(self):
+        self._outputChannels =  dict(itertools.chain(*[p.outputChannels() for p in self.enabledParametersObjects.itervalues()]))        
+        return self._outputChannels
+        
     def emitSelectionChanged(self):
-        self.outputChannels =  dict(itertools.chain(*[p.outputChannels() for p in self.enabledParametersObjects.itervalues()]))
-        self.selectionChanged.emit( self.outputChannels )
+        self._outputChannels =  dict(itertools.chain(*[p.outputChannels() for p in self.enabledParametersObjects.itervalues()]))
+        self.selectionChanged.emit( self._outputChannels )
 
     def getInstrumentSuggestions(self, className):
         className = str(className)

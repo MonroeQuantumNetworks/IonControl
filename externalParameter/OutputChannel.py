@@ -11,6 +11,10 @@ class OutputChannel(object):
         self.channelName = channelName
         
     @property
+    def name(self):
+        return "{0}_{1}".format(self.deviceName, self.channelName)
+        
+    @property
     def value(self):
         return self.device.currentValue(self.channelName)
     
@@ -21,14 +25,14 @@ class OutputChannel(object):
     def setValue(self, newval):
         return self.device.setValue(self.channelName, newval)
         
-    def saveValue(self):
+    def saveValue(self, overwrite=True):
         self.device.saveValue(self.channelName)
         
     def restoreValue(self):
         self.device.restoreValue(self.channelName)
         
     @property 
-    def savedValue(self, overwrite=True):
+    def savedValue(self):
         return self.device.savedValue[self.channelName]
     
     @savedValue.setter
@@ -58,4 +62,8 @@ class OutputChannel(object):
     @property
     def observable(self):
         return self.device.displayValueObservable[self.channelName]
+    
+    @property
+    def useExternalValue(self):
+        return self.device.useExternalValue(self.channelName)
     
