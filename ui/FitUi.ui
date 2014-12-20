@@ -157,7 +157,7 @@
      <item>
       <widget class="QPushButton" name="getSmartStartButton">
        <property name="text">
-        <string>Get Smart Start</string>
+        <string>Smart to Start</string>
        </property>
       </widget>
      </item>

@@ -73,7 +73,10 @@ class FitUi(fitForm, QtGui.QWidget):
         self.traceui = traceui
         self.configname = "FitUi.{0}.".format(parentname)
         self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
-        self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
+        try:
+            self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
+        except Exception:
+            self.analysisDefinitions = dict()
         self.showAnalysisEnabled = self.config.get(self.configname+"ShowAnalysisEnabled", True)
         self.globalDict = globalDict
             
@@ -111,8 +114,6 @@ class FitUi(fitForm, QtGui.QWidget):
         if fitfunction:
             self.setFitfunction( fitfunction )
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )
-        self.addPushVariable.clicked.connect( self.onAddPushVariable )
-        self.removePushVariable.clicked.connect( self.onRemovePushVariable )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -156,8 +157,8 @@ class FitUi(fitForm, QtGui.QWidget):
         
     def onGetSmartStart(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
-            smartParameters = self.smartStartValues(plot.x,plot.y,self.fitfunction.parameters,self.fitfunction.parameterEnabled)
-            self.fitfunction.startParameters = smartParameters
+            smartParameters = self.fitfunction.smartStartValues(plot.x,plot.y,self.fitfunction.parameters,self.fitfunction.parameterEnabled)
+            self.fitfunction.startParameters = list(smartParameters)
             self.fitfunctionTableModel.startDataChanged()     
         
     def onFit(self):

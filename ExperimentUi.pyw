@@ -278,9 +278,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 self.dedicatedCountersWindow.autoLoad.ionReappeared.connect( widget.onContinue )
                 
         # add PushDestinations
-        for widget in self.tabDict.values():
-            if hasattr(widget, 'addPushDestination'):
-                widget.addPushDestination( 'External', self.ExternalParametersUi )
+#         for widget in self.tabDict.values():
+#             if hasattr(widget, 'addPushDestination'):
+#                 widget.addPushDestination( 'External', self.ExternalParametersUi )
 
     def callWhenDoneAdjusting(self, callback):
         self.ExternalParametersUi.callWhenDoneAdjusting(callback)

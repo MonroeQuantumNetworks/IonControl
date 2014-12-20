@@ -197,14 +197,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
         
-        self.fitWidget.addPushDestination('Global', self.globalVariablesUi )
+#        self.fitWidget.addPushDestination('Global', self.globalVariablesUi )
 
         
     def printTargets(self):
         return self.plotDict.keys()
 
     def addPushDestination(self, name, destination):
-        self.fitWidget.addPushDestination(name, destination)
+        pass
+#        self.fitWidget.addPushDestination(name, destination)
         
     def setupAsDockWidget(self, widget, name, area=QtCore.Qt.RightDockWidgetArea, stackAbove=None, stackBelow=None ):
         dock = QtGui.QDockWidget(name)
