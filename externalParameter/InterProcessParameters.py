@@ -11,6 +11,7 @@ class LockOutputFrequency(ExternalParameterBase):
     """
     className = "Digital Lock Output Frequency"
     dimension = magnitude.mg(200,'MHz')
+    _outputChannels = { "OutputFrequency": "MHz" }    # a single channel with key None designates a device only supporting a single channel
     def __init__(self,name,config,instrument="localhost:16888"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -19,31 +20,35 @@ class LockOutputFrequency(ExternalParameterBase):
         self.instrument = Client((host,int(port)), authkey="yb171")
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.value = self._getValue()
+        self.getAllValues()
+        
+    def getAllValues(self):
+        for channel in self._outputChannels.iterkeys():
+            self.settings.value[channel] = self._getValue(channel)
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
         self.settings.__dict__.setdefault('stepsize' , magnitude.mg(100,'MHz'))       # if True go to the target value in one jump
             
-    def _setValue(self, v):
-        self.instrument.send( ('setOutputFrequency', (v, ) ) )
+    def _setValue(self, channel, v):
+        self.instrument.send( ('set{0}'.format(channel), (v, ) ) )
         result = self.instrument.recv()
         if isinstance(result, Exception):
             raise result
-        self.value = v
+        self.settings.value[channel] = v
         return result
         
-    def _getValue(self):
-        self.instrument.send( ('getOutputFrequency', tuple() ) )
+    def _getValue(self, channel):
+        self.instrument.send( ('get{0}'.format(channel), tuple() ) )
         result = self.instrument.recv()
         if isinstance(result, Exception):
             raise result
         return result
         
-    def currentValue(self):
-        return self.value
+    def currentValue(self, channel):
+        return self.settings.value[channel]
     
-    def currentExternalValue(self):
+    def currentExternalValue(self, channel):
         return self._getValue() 
 
     def paramDef(self):
