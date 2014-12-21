@@ -10,12 +10,13 @@ from scan.AnalysisTableModel import AnalysisTableModel
 from modules.GuiAppearance import saveGuiState, restoreGuiState
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
-from fit.FitFunctionBase import PushVariable
+from scan.PushVariable import PushVariable
 from modules.Utility import unique
 import copy
 from PyQt4 import QtCore
 from scan.PushVariableTableModel import PushVariableTableModel
 from scan.DatabasePushDestination import DatabasePushDestination
+from modules.firstNotNone import firstNotNone
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -25,11 +26,12 @@ class AnalysisDefinitionElement(object):
         self.evaluation = None
         self.analysis = None
         self.pushVariables = SequenceDict()
+        self.fitfunction = None
         
     def __setstate__(self, state):
         self.__dict__ = state
         
-    stateFields = ['enabled', 'evaluation', 'analysis', 'pushVariables'] 
+    stateFields = ['enabled', 'evaluation', 'analysis', 'pushVariables', 'fitfunction'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -57,11 +59,12 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.analysisDefinitionDict = dict()
         try:
             self.analysisDefinition = self.config.get(self.configname,list())
-        except TypeError:
+        except Exception:
             logging.getLogger(__name__).info( "Unable to read scan control settings. Setting to new scan." )
             self.analysisDefinition = list()
         self.pushDestinations = dict()
         self.currentAnalysisName =  self.config.get(self.configname+'.settingsName',None)
+        self.currentEvaluation = None
         
     def setupUi(self, parent):
         ControlForm.setupUi(self,parent)
@@ -99,7 +102,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         restoreGuiState( self, self.config.get(self.configname+'.guiState') )
         self.config[self.configname+'.guiState'] = saveGuiState(self)
             
-    def onActiveAnalysisChanged(self, selected, deselected):
+    def onActiveAnalysisChanged(self, selected):
         self.currentEvaluation = self.analysisDefinition[selected.row()]
         self.currentEvaluationLabel.setText( "{0} - {1}".format(self.currentEvaluation.evaluation, self.currentEvaluation.analysis) )
         self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables)
@@ -165,6 +168,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         if name and name in self.analysisDefinitionDict:
             self.currentAnalysisName = name
             self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
+            self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0))
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)
@@ -173,6 +177,41 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onReload(self):
         self.onLoadAnalysisConfiguration( self.analysisConfigurationComboBox.currentText() )
    
+    def pushVariableValues(self, globalDict=None ):
+        pushVarValues = list()
+        replacements = self.replacementDict()
+        if globalDict is not None:
+            replacements.update( globalDict )
+        for pushvar in self.pushVariables.values():
+            pushVarValues.extend( pushvar.pushRecord(replacements) )
+        return pushVarValues
+            
+    def updatePushVariables(self, extraDict=None ):
+        myReplacementDict = self.replacementDict()
+        if extraDict is not None:
+            myReplacementDict.update( extraDict )
+        for pushvar in self.pushVariables.values():
+            try:          
+                pushvar.evaluate(myReplacementDict)
+            except Exception as e:
+                logging.getLogger(__name__).error( str(e) )
+
+    def onFit(self, evaluation=None):
+        evaluation = firstNotNone( evaluation, self.currentEvaluation )
+        if evaluation:
+            # update the fitfunction from the fitfunction dictionary
+            # fit
+            # update the gui to reflect the fited values
+            pass
+    
+    def onFitAll(self):
+        for evaluation in self.analysisDefinition:
+            self.onFit(evaluation)
+    
+    def onShowFitFunction(self):
+        if self.currentEvaluation is not None:
+            # call on the fitui to display the fitfunction
+            pass
              
 if __name__=="__main__":
     import sys

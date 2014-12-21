@@ -32,6 +32,7 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
                                  (QtCore.Qt.UserRole,6): self.setDataStrMaximum,
                                  (QtCore.Qt.CheckStateRole,0): self.setDataPush }
         self.pushVariables = None
+        self.fitfunction = None
         self.pushDestinations = dict()
         self.globalDict = globalDict
                          

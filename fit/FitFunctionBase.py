@@ -17,6 +17,7 @@ from modules.MagnitudeUtilit import value
 from modules.SequenceDict import SequenceDict
 import xml.etree.ElementTree as ElementTree
 from modules.Expression import Expression
+from modules.Observable import Observable
 
 
 class ResultRecord(object):
@@ -24,51 +25,6 @@ class ResultRecord(object):
         self.name = name
         self.definition = definition
         self.value = value
-
-class PushVariable(object):
-    expression = Expression()
-    def __init__(self):
-        self.push = False
-        self.destinationName = None
-        self.variableName = None
-        self.definition = ""
-        self.value = None
-        self.minimum = ""
-        self.maximum = ""
-        self.strMinimum = None
-        self.strMaximum = None
-        
-    def __setstate__(self, s):
-        self.__dict__ = s
-        self.__dict__.setdefault( 'destinationName', None )
-        self.__dict__.setdefault( 'variableName', None )
-        self.__dict__.setdefault( 'strMinimum', None )
-        self.__dict__.setdefault( 'strMaximum', None )
-        
-    def evaluate(self, variables=dict(), useFloat=False):
-        if self.definition:
-            self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
-        if self.strMinimum:
-            self.minimum = self.expression.evaluate( self.strMinimum, variables, useFloat=useFloat )
-        if self.strMaximum:
-            self.maximum = self.expression.evaluate( self.strMaximum, variables, useFloat=useFloat )
-        
-    def pushRecord(self, variables=None):
-        if variables is not None:
-            self.evaluate(variables)
-        if (self.push and self.destinationName is not None and self.destinationName != 'None' and 
-            self.variableName is not None and self.variableName != 'None' and self.value is not None and 
-            (not self.minimum or self.value >= self.minimum) and 
-            (not self.maximum or self.value <= self.maximum)):
-            return [(self.destinationName, self.variableName, self.value)]
-        else:
-            logging.getLogger(__name__).info("Not pushing {0} to {1}: {2} <= {3} <= {4}".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
-        return []
-    
-    @property
-    def key(self):
-        return (self.destinationName, self.variableName)
-
 
 class FitFunctionBase(object):
     expression = Expression()
@@ -81,15 +37,14 @@ class FitFunctionBase(object):
         self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
         self.parameterEnabled = []
         self.parametersConfidence = []
-        self.pushVariables = SequenceDict()
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         self.useSmartStartValues = False
         self.hasSmartStart = False
+        self.parametersUpdated = Observable()
         
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault( 'pushVariables', SequenceDict() )
         self.__dict__.setdefault( 'useSmartStartValues', False )
         self.__dict__.setdefault( 'startParameterExpressions', None )
         self.__dict__.setdefault( 'hasSmartStart', False)
@@ -163,11 +118,6 @@ class FitFunctionBase(object):
             myReplacementDict.update( globalDict )
         if self.startParameterExpressions is not None:
             self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
-        for pushVar in self.pushVariables.values():
-            try:
-                pushVar.evaluate(myReplacementDict)
-            except Exception as e:
-                logging.getLogger(__name__).error( str(e))        
 
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
@@ -237,7 +187,7 @@ class FitFunctionBase(object):
         setattr(self,name,value)
         
     def update(self,parameters=None):
-        pass
+        self.parametersUpdated.fire( values=self.replacementDict() )
     
     def toXmlElement(self, parent):
         myroot  = ElementTree.SubElement(parent, 'FitFunction', {'name': self.name, 'functionString': self.functionString})
@@ -247,8 +197,6 @@ class FitFunctionBase(object):
         for result in self.results.values():
             e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition)})
             e.text = str(result.value)
-        for push in self.pushVariables.values():
-            e = ElementTree.SubElement( myroot, 'PushVariable', {'destination':push.destinationName, 'variable':push.variableName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
         return myroot
    
     def residuals(self,p, y, x, sigma):
@@ -262,30 +210,11 @@ class FitFunctionBase(object):
         p = self.parameters if p is None else p
         return self.functionEval(x, *p )
 
-    def pushVariableValues(self, globalDict=None ):
-        pushVarValues = list()
-        replacements = self.replacementDict()
-        if globalDict is not None:
-            replacements.update( globalDict )
-        for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord(replacements) )
-        return pushVarValues
-            
     def replacementDict(self):
         replacement = dict(zip(self.parameterNames,self.parameters))
         replacement.update( dict( ( (v.name, v.value) for v in self.results.values() ) ) )
         return replacement
     
-    def updatePushVariables(self, extraDict=None ):
-        myReplacementDict = self.replacementDict()
-        if extraDict is not None:
-            myReplacementDict.update( extraDict )
-        for pushvar in self.pushVariables.values():
-            try:          
-                pushvar.evaluate(myReplacementDict)
-            except Exception as e:
-                logging.getLogger(__name__).error( str(e) )
-
         
         
 fitFunctionMap = dict()    

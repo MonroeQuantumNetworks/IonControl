@@ -72,7 +72,10 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction = None
         self.traceui = traceui
         self.configname = "FitUi.{0}.".format(parentname)
-        self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
+        try:
+            self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
+        except Exception:
+            self.fitfunctionCache = dict()
         try:
             self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
         except Exception:
