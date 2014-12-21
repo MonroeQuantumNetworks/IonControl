@@ -42,9 +42,9 @@ def saveGuiState( obj ):
             
 def restoreGuiState( obj, data ):
     if data:
-        for name, value in data.itertitems():
+        for name, value in data.iteritems():
             if hasattr( obj, name):
                 attr = getattr( obj, name)
                 if hasattr(attr,'__class__') and attr.__class__ in appearanceHelpers:
-                    appearanceHelpers[attr.__class__][1](obj, value)
+                    appearanceHelpers[attr.__class__][1](attr, value)
     

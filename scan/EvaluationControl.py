@@ -336,6 +336,9 @@ class EvaluationControl(ControlForm, ControlBase ):
         if index.column() in [0,1,2,4]:
             self.evalTableView.edit(index)
             
+    def evaluationNames(self):
+        return [e.name for e in self.settings.evalList]
+            
 if __name__=="__main__":
     import sys
     config = dict()

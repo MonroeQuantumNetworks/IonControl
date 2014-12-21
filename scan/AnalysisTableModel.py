@@ -5,51 +5,51 @@ from _functools import partial
 
 class AnalysisTableModel(QtCore.QAbstractTableModel):
     backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}     
-    def __init__(self, config, globalDict, parent=None, *args): 
+    def __init__(self, analysisDefinition, config, globalDict, fitNames, evaluationNames, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
-        self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row:  QtCore.Qt.Checked if self.analysisDefinition.at(row).enabled else QtCore.Qt.Unchecked,
-                            (QtCore.Qt.DisplayRole,1): lambda row: self.analysisDefinition.at(row).evaluation,
-                            (QtCore.Qt.DisplayRole,2): lambda row: self.analysisDefinition.at(row).analysis,
-                            (QtCore.Qt.EditRole,1): lambda row: self.analysisDefinition.at(row).evaluation,
-                            (QtCore.Qt.EditRole,2): lambda row: self.analysisDefinition.at(row).analysis,
+        self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row:  QtCore.Qt.Checked if self.analysisDefinition[row].enabled else QtCore.Qt.Unchecked,
+                            (QtCore.Qt.DisplayRole,1): lambda row: self.analysisDefinition[row].evaluation,
+                            (QtCore.Qt.DisplayRole,2): lambda row: self.analysisDefinition[row].analysis,
+                            (QtCore.Qt.EditRole,1): lambda row: self.analysisDefinition[row].evaluation,
+                            (QtCore.Qt.EditRole,2): lambda row: self.analysisDefinition[row].analysis,
                             }                           
         self.setDataLookup =   { (QtCore.Qt.EditRole,1): partial( self.setString, 'evaluation' ),
                                  (QtCore.Qt.EditRole,2): partial( self.setString, 'analysis'),
                                  (QtCore.Qt.CheckStateRole,0): self.setEnabled }
-        self.analysisDefinition = None
+        self.analysisDefinition = analysisDefinition
         self.pushDestinations = []
         self.globalDict = globalDict
-                         
+        self.fitNames = fitNames
+        self.evaluationNames = evaluationNames
+                  
     def choice(self, index):
         if index.column()==1:
-            return []
+            return sorted(self.evaluationNames())
         elif index.column()==2:
-            return []
+            return sorted(self.fitNames())
         return None
                          
     def setEnabled(self, row, value):
-        self.analysisDefinition.at(row).enabled = value==QtCore.Qt.Checked
+        self.analysisDefinition[row].enabled = value==QtCore.Qt.Checked
         return True
         
     def setString(self, attr, row, value):
         value =  str(value)
         if value:
-            setattr( self.analysisDefinition.at(row), attr, value)
+            setattr( self.analysisDefinition[row], attr, value)
             return True
         return False
 
-    def addAnalysis(self, pushVariable ):
-        if pushVariable.key not in self.fitfunction.pushVariables:
-            self.beginInsertRows(QtCore.QModelIndex(), len(self.fitfunction.pushVariables), len(self.fitfunction.pushVariables))
-            self.fitfunction.pushVariables[pushVariable.key] = pushVariable
-            self.endInsertRows()
+    def addAnalysis(self, analysis):
+        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
+        self.analysisDefinition.append( analysis )
+        self.endInsertRows()
              
     def removeAnalysis(self, index):
         self.beginRemoveRows(QtCore.QModelIndex(), index, index)
-        self.fitfunction.pushVariables.popAt(index)
-        self.endRemoveRows()
-        
+        self.analysisDefinition.pop(index)
+        self.endRemoveRows()       
                          
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.analysisDefinition) if self.analysisDefinition else 0

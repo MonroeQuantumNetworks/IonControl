@@ -24,7 +24,7 @@ class AnalysisDefinitionElement(object):
         self.enabled = True
         self.evaluation = None
         self.analysis = None
-        self.pushVariables = tuple()
+        self.pushVariables = SequenceDict()
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -41,12 +41,14 @@ class AnalysisDefinitionElement(object):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
 
 class AnalysisControl(ControlForm, ControlBase ):
-    def __init__(self, config, globalDict, parentname, parent=None):
+    def __init__(self, config, globalDict, parentname, fitNames, evaluationNames, parent=None):
         ControlForm.__init__(self)
         ControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'AnalysisControl.'+parentname
         self.globalDict = globalDict
+        self.fitNames = fitNames
+        self.evaluationNames = evaluationNames
         # History and Dictionary
         try:
             self.analysisDefinitionDict = self.config.get(self.configname+'.dict',dict())
@@ -54,10 +56,10 @@ class AnalysisControl(ControlForm, ControlBase ):
             logging.getLogger(__name__).info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.analysisDefinitionDict = dict()
         try:
-            self.analysisDefinition = self.config.get(self.configname,SequenceDict())
+            self.analysisDefinition = self.config.get(self.configname,list())
         except TypeError:
             logging.getLogger(__name__).info( "Unable to read scan control settings. Setting to new scan." )
-            self.analysisDefinition = SequenceDict()
+            self.analysisDefinition = list()
         self.pushDestinations = dict()
         self.currentAnalysisName =  self.config.get(self.configname+'.settingsName',None)
         
@@ -72,9 +74,12 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.addPushButton.clicked.connect( self.onAddPushVariable )
         self.removePushButton.clicked.connect( self.onRemovePushVariable )
         self.pushButton.clicked.connect( self.onPush )
-        self.analysisTableModel = AnalysisTableModel(self.config, self.globalDict)
+        self.analysisComboDelegate = ComboBoxDelegate()
+        self.analysisTableModel = AnalysisTableModel(self.analysisDefinition, self.config, self.globalDict, self.fitNames, self.evaluationNames )
         self.analysisTableView.setModel( self.analysisTableModel )
         self.analysisTableView.selectionModel().currentChanged.connect( self.onActiveAnalysisChanged )
+        self.analysisTableView.setItemDelegateForColumn(1,self.analysisComboDelegate)
+        self.analysisTableView.setItemDelegateForColumn(2,self.analysisComboDelegate)
         self.pushTableModel = PushVariableTableModel(self.config, self.globalDict)
         self.pushTableView.setModel( self.pushTableModel )
         self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
@@ -94,14 +99,17 @@ class AnalysisControl(ControlForm, ControlBase ):
         restoreGuiState( self, self.config.get(self.configname+'.guiState') )
         self.config[self.configname+'.guiState'] = saveGuiState(self)
             
-    def onActiveAnalysisChanged(self):
-        pass
+    def onActiveAnalysisChanged(self, selected, deselected):
+        self.currentEvaluation = self.analysisDefinition[selected.row()]
+        self.currentEvaluationLabel.setText( "{0} - {1}".format(self.currentEvaluation.evaluation, self.currentEvaluation.analysis) )
+        self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables)
             
     def onRemoveAnalysis(self):
-        pass
+        for index in sorted(unique([ i.row() for i in self.analysisTableView.selectedIndexes() ]),reverse=True):
+            self.analysisTableModel.removeAnalysis(index)
     
     def onAddAnalysis(self):
-        pass
+        self.analysisTableModel.addAnalysis( AnalysisDefinitionElement() )
         
     def onAddPushVariable(self):
         self.pushTableModel.addVariable( PushVariable() )
@@ -109,8 +117,6 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onRemovePushVariable(self):
         for index in sorted(unique([ i.row() for i in self.pushTableView.selectedIndexes() ]),reverse=True):
             self.pushTableModel.removeVariable(index)
-        self.fitfunction.updatePushVariables( self.globalDict )
-        self.pushTableModel.setFitfunction(self.fitfunction)
 
     def addPushDestination(self, name, destination ):
         self.pushDestinations[name] = destination
@@ -158,10 +164,11 @@ class AnalysisControl(ControlForm, ControlBase ):
         name = str(name)
         if name and name in self.analysisDefinitionDict:
             self.currentAnalysisName = name
-            self.setAnalysisDefinition( self.analysisDefinitionDict )
+            self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)
+        self.analysisTableModel.setAnalysisDefinition( self.analysisDefinition)
 
     def onReload(self):
         self.onLoadAnalysisConfiguration( self.analysisConfigurationComboBox.currentText() )

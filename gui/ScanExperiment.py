@@ -162,16 +162,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
-        # Analysis Control
-        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName)
-        self.analysisControlWidget.setupUi(self.analysisControlWidget)
-        self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
         # EvaluationControl
         self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
         self.evaluationControlWidget.setupUi(self.evaluationControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.evaluationControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea)
         self.evaluationConfigurationChanged = self.evaluationControlWidget.evaluationConfigurationChanged
+        # Analysis Control
+        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName, self.fitWidget.analysisNames, self.evaluationControlWidget.evaluationNames )
+        self.analysisControlWidget.setupUi(self.analysisControlWidget)
+        self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
@@ -669,6 +669,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.traceui.saveConfig()
         self.displayUi.saveConfig()
         self.fitWidget.saveConfig()
+        self.analysisControlWidget.saveConfig()
         
     def onClose(self):
         pass

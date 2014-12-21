@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
@@ -154,7 +154,20 @@
       <enum>Qt::Vertical</enum>
      </property>
      <widget class="TableViewExtended" name="analysisTableView"/>
-     <widget class="TableViewExtended" name="pushTableView"/>
+     <widget class="QWidget" name="">
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="currentEvaluationLabel">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="TableViewExtended" name="pushTableView"/>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
