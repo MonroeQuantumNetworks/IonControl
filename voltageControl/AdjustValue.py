@@ -61,4 +61,3 @@ class AdjustValue(object):
         if newValue!=self._value:
             self._value = newValue
             self.observable.fire( name=self.name, value=self._value, string=self._string, origin='recalculate' )
-        

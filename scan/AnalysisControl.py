@@ -79,12 +79,10 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.pushTableView.setModel( self.pushTableModel )
         self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.pushComboDelegate = ComboBoxDelegate()
-        self.pushTableView.setItemDelegateForColumn(1,self.pushComboDelegate)
-        self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
-        self.pushTableView.setItemDelegateForColumn(3,self.pushItemDelegate)
-        self.pushTableView.setItemDelegateForColumn(4,self.pushItemDelegate)
-        self.pushTableView.setItemDelegateForColumn(5,self.pushItemDelegate)
-        self.pushTableView.setItemDelegateForColumn(6,self.pushItemDelegate)
+        for column in range(1,3):
+            self.pushTableView.setItemDelegateForColumn(column,self.pushComboDelegate)
+        for column in range(3,7):
+            self.pushTableView.setItemDelegateForColumn(column,self.pushItemDelegate)
         self.pushDestinations['Database'] = DatabasePushDestination('fit')
 
         self.analysisConfigurationComboBox.addItems( self.analysisDefinitionDict.keys() )

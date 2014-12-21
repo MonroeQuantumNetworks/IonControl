@@ -38,4 +38,3 @@ class DACController( OKBase ):
     
     def triggerShuttling(self):
         self.xem.ActivateTriggerIn( 0x40, 0 ) # initiate shuttling
-
