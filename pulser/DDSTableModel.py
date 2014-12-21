@@ -104,5 +104,3 @@ class DDSTableModel(QtCore.QAbstractTableModel):
             elif (orientation == QtCore.Qt.Vertical):
                 return str(section)
         return None  # QtCore.QVariant()
-                
-            

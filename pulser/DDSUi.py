@@ -13,7 +13,7 @@ from collections import defaultdict
 from modules.Expression import Expression
 from pulser.DDSTableModel import DDSTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.PyqtUtility import restoreColumnWidth, saveColumnWidth
+from modules.GuiAppearance import restoreGuiState, saveGuiState
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
@@ -82,7 +82,6 @@ class DDSUi(DDSForm, DDSBase):
         self.tableView.setItemDelegateForColumn(2,self.delegate)
         self.tableView.setItemDelegateForColumn(3,self.delegate)
         self.tableView.setItemDelegateForColumn(4,self.delegate)
-        restoreColumnWidth( self.tableView, self.config.get('DDSUi.ColumnWidth',[]) )
         self.applyButton.clicked.connect( self.onApply )
         self.resetButton.clicked.connect( self.onReset )
         self.writeAllButton.clicked.connect( self.onWriteAll )
@@ -95,6 +94,7 @@ class DDSUi(DDSForm, DDSBase):
         self.ddsTableModel.amplitudeChanged.connect( self.onAmplitude )
         self.ddsTableModel.enableChanged.connect( self.onEnableChanged )
         self.pulser.shutterChanged.connect( self.ddsTableModel.onShutterChanged )
+        restoreGuiState( self, self.config.get('DDSUi.guiState') )
             
     def onEnableChanged(self, index, value):
         self.pulser.setShutterBit( 24+index, value )
@@ -138,7 +138,7 @@ class DDSUi(DDSForm, DDSBase):
     def saveConfig(self):
         self.config['DDSUi.ddsChannels'] = self.ddsChannels
         self.config['DDSUi.autoApply'] = self.autoApply
-        self.config['DDSUi.ColumnWidth'] = saveColumnWidth(self.tableView)
+        self.config['DDSUi.guiState'] = saveGuiState( self )
         
     def onApply(self):
         self.ad9912.update(0xff)

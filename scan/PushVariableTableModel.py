@@ -159,4 +159,3 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
     
     def saveConfig(self):
         pass
-    
