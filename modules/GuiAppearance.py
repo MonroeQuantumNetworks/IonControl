@@ -22,13 +22,22 @@ def restoreColumnWidth( tableView, widthData, autoscaleOnNone=True ):
 appearanceHelpers = { QtGui.QSplitter: (QtGui.QSplitter.saveState, QtGui.QSplitter.restoreState),
                       TableViewExtended: (saveColumnWidth, restoreColumnWidth),
                       QtGui.QTableView: (saveColumnWidth, restoreColumnWidth)}
-      
+
+ClassAttributeCache = dict()
      
 def saveGuiState( obj ):
     data = dict()
-    for name, attr in obj.__dict__.iteritems():
-        if hasattr(attr,'__class__') and attr.__class__ in appearanceHelpers:
-            data[name] = appearanceHelpers[attr.__class__][0](attr)
+    if obj.__class__ in ClassAttributeCache:
+        for name in ClassAttributeCache[obj.__class__]:
+            attr = getattr(obj,name)
+            data[name] = appearanceHelpers[attr.__class__][0](attr)            
+    else:
+        attrlist = list()
+        for name, attr in obj.__dict__.iteritems():
+            if hasattr(attr,'__class__') and attr.__class__ in appearanceHelpers:
+                data[name] = appearanceHelpers[attr.__class__][0](attr)
+                attrlist.append(name)
+        ClassAttributeCache[obj.__class__] = attrlist
     return data
             
 def restoreGuiState( obj, data ):
