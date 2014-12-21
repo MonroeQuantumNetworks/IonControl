@@ -17,7 +17,7 @@ from PyQt4 import QtCore
 from scan.PushVariableTableModel import PushVariableTableModel
 from scan.DatabasePushDestination import DatabasePushDestination
 
-ControlForm, ControlBase = PyQt4.uic.loadUiType(r'..\ui\AnalysisControl.ui')
+ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
 class AnalysisDefinitionElement(object):
     def __init__(self):

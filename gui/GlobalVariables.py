@@ -11,9 +11,9 @@ from modules.SequenceDict import SequenceDict
 from modules.Utility import unique 
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth
 from modules.Observable import Observable
 from _collections import defaultdict
+from modules.GuiAppearance import restoreGuiState, saveGuiState
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
@@ -94,7 +94,7 @@ class GlobalVariableUi(Form, Base ):
         self.restoreCustomOrderAction = QtGui.QAction( "restore custom order" , self)
         self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
         self.addAction( self.restoreCustomOrderAction )
-        restoreColumnWidth(self.tableView, self.config.get(self.configname+".ColumnWidth"), autoscaleOnNone=True)
+        restoreGuiState( self, self.config.get(self.configname+".guiState") )
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))
@@ -106,7 +106,7 @@ class GlobalVariableUi(Form, Base ):
         
     def saveConfig(self):
         self.config[self.configname] = self._variables_
-        self.config[self.configname+".ColumnWidth"] = saveColumnWidth( self.tableView )
+        self.config[self.configname+".guiState"] = saveGuiState( self )
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:

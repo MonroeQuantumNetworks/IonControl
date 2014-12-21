@@ -50,6 +50,7 @@ from gui.ScanMethods import ScanMethodsDict, ScanException
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import  Measurement, Parameter, Result
+from scan.AnalysisControl import AnalysisControl
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -161,6 +162,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
+        # Analysis Control
+        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName)
+        self.analysisControlWidget.setupUi(self.analysisControlWidget)
+        self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
         # EvaluationControl
         self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
         self.evaluationControlWidget.setupUi(self.evaluationControlWidget)

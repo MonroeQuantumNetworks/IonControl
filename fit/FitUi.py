@@ -10,8 +10,8 @@ from fit.FitUiTableModel import FitUiTableModel
 from modules.HashableDict import HashableDict
 from modules.MagnitudeUtilit import value
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.PyqtUtility import BlockSignals, restoreColumnWidth,\
-    saveColumnWidth
+from modules.PyqtUtility import BlockSignals
+from modules.GuiAppearance import restoreGuiState, saveGuiState
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
 
@@ -95,15 +95,11 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
-        restoreColumnWidth( self.parameterTableView, self.config.get(self.configname+"ParameterColumnWidth") ) 
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
-        restoreColumnWidth( self.resultsTableView, self.config.get(self.configname+"ResultsColumnWidth") ) 
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
-        if self.configname+'splitter' in self.config:
-            self.splitter.restoreState( self.config[self.configname+'splitter'])
         # Analysis stuff
         lastAnalysisName = self.config.get(self.configname+"LastAnalysis", None)
         self.analysisNameComboBox.addItems( self.analysisDefinitions.keys() )
@@ -127,6 +123,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.showAnalysisAction.setChecked(self.showAnalysisEnabled )
         self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
         self.addAction( self.showAnalysisAction )
+        restoreGuiState( self, self.config.get(self.configname+".guiState") )
         
     def onShowAnalysisEnabled(self, status):
         self.showAnalysisEnabled = status==QtCore.Qt.Checked
@@ -210,13 +207,11 @@ class FitUi(fitForm, QtGui.QWidget):
         if self.fitfunction is not None:
             self.fitfunctionCache[self.fitfunction.name] = self.fitfunction
         self.config[self.configname+"FitfunctionCache"] = self.fitfunctionCache
-        self.config[self.configname+'Splitter'] = self.splitter.saveState()
         self.config[self.configname+"AnalysisDefinitions"] = self.analysisDefinitions
         self.config[self.configname+"LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
         self.config[self.configname+"LastFitfunction"] = self.fitfunction
         self.config[self.configname+"ShowAnalysisEnabled"] = self.showAnalysisEnabled
-        self.config[self.configname+"ParameterColumnWidth"] = saveColumnWidth(self.parameterTableView)
-        self.config[self.configname+"ResultsColumnWidth"] = saveColumnWidth(self.resultsTableView)
+        self.config[self.configname+".guiState"] = saveGuiState( self )
             
     def saveState(self):
         pass
