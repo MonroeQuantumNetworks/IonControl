@@ -17,6 +17,7 @@ from PyQt4 import QtCore
 from scan.PushVariableTableModel import PushVariableTableModel
 from scan.DatabasePushDestination import DatabasePushDestination
 from modules.firstNotNone import firstNotNone
+from fit.FitUi import FitUi
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -101,6 +102,9 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.analysisConfigurationComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysisConfiguration )
         restoreGuiState( self, self.config.get(self.configname+'.guiState') )
         self.config[self.configname+'.guiState'] = saveGuiState(self)
+        
+        self.fitWidget = FitUi(None, self.config, self.configname, self.globalDict.variables)
+        self.fitWidget.setupUi( self.fitWidgetWidget, showCombos=False )
             
     def onActiveAnalysisChanged(self, selected):
         self.currentEvaluation = self.analysisDefinition[selected.row()]

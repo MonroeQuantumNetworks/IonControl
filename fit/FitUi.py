@@ -83,7 +83,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.showAnalysisEnabled = self.config.get(self.configname+"ShowAnalysisEnabled", True)
         self.globalDict = globalDict
             
-    def setupUi(self,widget):
+    def setupUi(self,widget, showCombos=True ):
         fitForm.setupUi(self,widget)
         self.fitButton.clicked.connect( self.onFit )
         self.plotButton.clicked.connect( self.onPlot )
@@ -127,7 +127,10 @@ class FitUi(fitForm, QtGui.QWidget):
         self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
         self.addAction( self.showAnalysisAction )
         restoreGuiState( self, self.config.get(self.configname+".guiState") )
-        
+        if not showCombos:
+            self.fitSelectionComboBox.setVisible( False )
+            self.widget.setVisible( False )
+            
     def onShowAnalysisEnabled(self, status):
         self.showAnalysisEnabled = status==QtCore.Qt.Checked
         

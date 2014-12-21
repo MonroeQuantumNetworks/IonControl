@@ -185,27 +185,14 @@
            </property>
           </spacer>
          </item>
-         <item>
-          <widget class="QPushButton" name="fitButton">
-           <property name="text">
-            <string>Fit</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="showFitfunctionButton">
-           <property name="text">
-            <string>Show Fitfunction</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
-        <widget class="TableViewExtended" name="pushTableView"/>
+        <widget class="QWidget" name="fitWidgetWidget" native="true"/>
        </item>
       </layout>
      </widget>
+     <widget class="TableViewExtended" name="pushTableView"/>
     </widget>
    </item>
    <item>
