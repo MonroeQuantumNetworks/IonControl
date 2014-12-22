@@ -4,63 +4,16 @@ import logging
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-from fit.FitFunctionBase import fitFunctionMap, ResultRecord
+from fit.FitFunctionBase import fitFunctionMap
 from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitUiTableModel import FitUiTableModel
-from modules.HashableDict import HashableDict
 from modules.MagnitudeUtilit import value
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.PyqtUtility import BlockSignals
 from modules.GuiAppearance import restoreGuiState, saveGuiState
+from fit.StoredFitFunction import StoredFitFunction
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
-
-    
-
-class StoredFitFunction(object):
-    def __init__(self, name=None, fitfunctionName=None ):
-        self.name = name
-        self.fitfunctionName = fitfunctionName
-        self.startParameters = tuple()
-        self.parameterEnabled = tuple()
-        self.results = HashableDict()
-        self.startParameterExpressions = None
-        self.useSmartStartValues = False
-
-    def fitfunction(self):
-        fitfunction = fitFunctionMap[self.fitfunctionName]()
-        fitfunction.startParameters = list(self.startParameters)
-        fitfunction.parameterEnabled = list(self.parameterEnabled)
-        fitfunction.useSmartStartValues = self.useSmartStartValues
-        fitfunction.startParameterExpressions = list(self.startParameterExpressions) if self.startParameterExpressions is not None else [None]*len(self.startParameters)
-        return fitfunction
-    
-    @classmethod
-    def fromFitfunction(cls, fitfunction):
-        instance = cls( name=None, fitfunctionName=fitfunction.name )
-        instance.startParameters = tuple(fitfunction.startParameters)
-        instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
-        instance.startParameterExpressions = tuple(fitfunction.startParameterExpressions) if fitfunction.startParameterExpressions is not None else tuple([None]*len(fitfunction.startParameters))
-        instance.useSmartStartValues = fitfunction.useSmartStartValues
-        for result in fitfunction.results.values():
-            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
-        return instance
-     
-    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'useSmartStartValues', 'startParameterExpressions'] 
-        
-    def __eq__(self,other):
-        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __hash__(self):
-        return hash(tuple(getattr(self,field) for field in self.stateFields))
-        
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.__dict__.setdefault( 'startParameterExpressions', None )
-        self.__dict__.setdefault( 'useSmartStartValues', False )
             
 class FitUi(fitForm, QtGui.QWidget):
     analysisNamesChanged = QtCore.pyqtSignal(object)

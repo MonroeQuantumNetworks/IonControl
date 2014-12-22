@@ -1,43 +1,52 @@
 from PyQt4 import QtCore, QtGui
 from modules.firstNotNone import firstNotNone
 from _functools import partial
+from fit.FitFunctionBase import fitFunctionMap
 
 
 class AnalysisTableModel(QtCore.QAbstractTableModel):
-    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}     
-    def __init__(self, analysisDefinition, config, globalDict, fitNames, evaluationNames, parent=None, *args): 
+    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
+    fitfunctionChanged = QtCore.pyqtSignal( object, object )
+    def __init__(self, analysisDefinition, config, globalDict, evaluationNames, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row:  QtCore.Qt.Checked if self.analysisDefinition[row].enabled else QtCore.Qt.Unchecked,
                             (QtCore.Qt.DisplayRole,1): lambda row: self.analysisDefinition[row].evaluation,
-                            (QtCore.Qt.DisplayRole,2): lambda row: self.analysisDefinition[row].analysis,
+                            (QtCore.Qt.DisplayRole,2): lambda row: self.analysisDefinition[row].fitfunctionName,
                             (QtCore.Qt.EditRole,1): lambda row: self.analysisDefinition[row].evaluation,
-                            (QtCore.Qt.EditRole,2): lambda row: self.analysisDefinition[row].analysis,
+                            (QtCore.Qt.EditRole,2): lambda row: self.analysisDefinition[row].fitfunctionName,
                             }                           
-        self.setDataLookup =   { (QtCore.Qt.EditRole,1): partial( self.setString, 'evaluation' ),
-                                 (QtCore.Qt.EditRole,2): partial( self.setString, 'analysis'),
+        self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setEvaluation,
+                                 (QtCore.Qt.EditRole,2): self.setFitfunction,
                                  (QtCore.Qt.CheckStateRole,0): self.setEnabled }
         self.analysisDefinition = analysisDefinition
         self.pushDestinations = []
         self.globalDict = globalDict
-        self.fitNames = fitNames
         self.evaluationNames = evaluationNames
                   
     def choice(self, index):
         if index.column()==1:
             return sorted(self.evaluationNames())
         elif index.column()==2:
-            return sorted(self.fitNames())
+            return sorted(fitFunctionMap.keys())
         return None
                          
     def setEnabled(self, row, value):
         self.analysisDefinition[row].enabled = value==QtCore.Qt.Checked
         return True
         
-    def setString(self, attr, row, value):
+    def setEvaluation(self, row, value):
         value =  str(value)
         if value:
-            setattr( self.analysisDefinition[row], attr, value)
+            self.analysisDefinition[row].evaluation = value
+            return True
+        return False
+
+    def setFitfunction(self, row, value):
+        value =  str(value)
+        if value and value!=self.analysisDefinition[row].fitfunctionName:
+            self.analysisDefinition[row].fitfunctionName = value
+            self.fitfunctionChanged.emit( row, value )
             return True
         return False
 
@@ -84,7 +93,7 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
         return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
 
-    headerDataLookup = ['Enable', 'Evaluation', 'Analysis']
+    headerDataLookup = ['Enable', 'Evaluation', 'Fit function']
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 

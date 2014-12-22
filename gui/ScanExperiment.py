@@ -169,7 +169,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea)
         self.evaluationConfigurationChanged = self.evaluationControlWidget.evaluationConfigurationChanged
         # Analysis Control
-        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName, self.fitWidget.analysisNames, self.evaluationControlWidget.evaluationNames )
+        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName, self.evaluationControlWidget.evaluationNames )
         self.analysisControlWidget.setupUi(self.analysisControlWidget)
         self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
 
@@ -202,15 +202,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
         
-#        self.fitWidget.addPushDestination('Global', self.globalVariablesUi )
+        self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
 
         
     def printTargets(self):
         return self.plotDict.keys()
 
     def addPushDestination(self, name, destination):
-        pass
-#        self.fitWidget.addPushDestination(name, destination)
+        self.analysisControlWidget.addPushDestination(name, destination)
         
     def setupAsDockWidget(self, widget, name, area=QtCore.Qt.RightDockWidgetArea, stackAbove=None, stackBelow=None ):
         dock = QtGui.QDockWidget(name)

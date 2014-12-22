@@ -97,7 +97,7 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         return True
                          
     def addVariable(self, pushVariable ):
-        if pushVariable.key not in self.pushVariables:
+        if self.pushVariables is not None and pushVariable.key not in self.pushVariables:
             self.beginInsertRows(QtCore.QModelIndex(), len(self.pushVariables), len(self.pushVariables))
             self.pushVariables[pushVariable.key] = pushVariable
             self.endInsertRows()
