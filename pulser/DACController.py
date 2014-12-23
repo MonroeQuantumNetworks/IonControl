@@ -7,6 +7,7 @@ from pulser.OKBase import OKBase, check
 # import logging
 import struct
 import numpy
+from itertools import chain
 
 class DACControllerException(Exception):
     pass
@@ -15,11 +16,11 @@ class DACController( OKBase ):
     channelCount = 96
     def toInteger(self, iterable):
         result = list()
-        for value in iterable:
+        for value in chain(iterable[0::4], iterable[1::4], iterable[2::4], iterable[3::4]):
             if not -10 <= value < 10:
-                raise DACControllerException("voltage {0} out of range -10V <= V < 10V")
+                raise DACControllerException("voltage {0} out of range -10V <= V < 10V".format(value))
             result.append( int( value / 10.0 * 0x7fff ) ) 
-        return result
+        return list( [0x000 for _ in range(96)]) #result #list(chain(range(96)[0::4], range(96)[1::4], range(96)[2::4], range(96)[3::4]))
     
     def writeVoltage(self, address, line ):
         if len(line)<self.channelCount:
@@ -28,7 +29,8 @@ class DACController( OKBase ):
         self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
         
         data = bytearray(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
-        print hex(data[0]), hex(data[1]), hex(data[2]), hex(data[3])
+        print self.toInteger(line)
+        check( self.xem.ActivateTriggerIn( 0x40, 2), 'ActivateTrigger' )
         return self.xem.WriteToPipeIn( 0x83, data )        
     
     def shuttle(self, startLine, beyondEndLine, idleCount=0, direction=0 ):
