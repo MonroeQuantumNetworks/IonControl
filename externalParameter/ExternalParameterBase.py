@@ -13,7 +13,7 @@ import time
 from functools import partial
 from modules.magnitude import is_magnitude
 from modules.AttributeRedirector import AttributeRedirector
-from externalParameter.OutputChannel import OutputChannel
+from externalParameter.OutputChannel import OutputChannel #@UnresolvedImport
 from modules.Observable import Observable
 
 def nextValue( current, target, stepsize, jump ):

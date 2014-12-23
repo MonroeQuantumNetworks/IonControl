@@ -4,15 +4,11 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import functools
-
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import PyQt4.uic
 
-import modules.magnitude as magnitude
-from uiModules.MagnitudeSpinBox import MagnitudeSpinBox
 from modules.SequenceDict import SequenceDict
-from voltageControl.VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel
+from voltageControl.VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel   #@UnresolvedImport
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 

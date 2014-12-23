@@ -7,7 +7,7 @@ import PyQt4.uic
 import logging
 from modules.SequenceDict import SequenceDict
 from scan.AnalysisTableModel import AnalysisTableModel
-from modules.GuiAppearance import saveGuiState, restoreGuiState
+from modules.GuiAppearance import saveGuiState, restoreGuiState    #@UnresolvedImport
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from scan.PushVariable import PushVariable                         #@UnresolvedImport
@@ -70,7 +70,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.currentAnalysisName =  self.config.get(self.configname+'.settingsName',None)
         self.currentEvaluation = None
         self.fitfunction = None
-        self.plottedTraceDict = dict()
+        self.plottedTraceDict = None
         
     def setupUi(self, parent):
         ControlForm.setupUi(self,parent)
@@ -114,6 +114,17 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
         restoreGuiState( self, self.config.get(self.configname+'.guiState') )
+        self.setButtonEnabledState()
+        
+    def setButtonEnabledState(self):
+        allEnable = self.plottedTraceDict is not None
+        currentEnable = self.plottedTraceDict is not None and self.currentEvaluation.evaluation in self.plottedTraceDict
+        self.fitAllButton.setEnabled( allEnable )
+        self.getSmartStartButton.setEnabled( currentEnable )
+        self.fitButton.setEnabled( currentEnable ) 
+        self.plotButton.setEnabled( currentEnable )
+        self.removePlotButton.setEnabled( currentEnable )
+        self.extractButton.setEnabled( currentEnable )
             
     def onFitfunctionChanged(self, row, newfitname ):
         """Swap out the fitfunction on the current analysis"""
@@ -124,15 +135,17 @@ class AnalysisControl(ControlForm, ControlBase ):
         else:
             self.setFitfunction( fitFunctionMap[newfitname]() )
             self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
+        self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables, self.fitfunction)
             
     def onActiveAnalysisChanged(self, selected, deselected=None):
         if deselected and self.fitfunction:
             self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
         self.currentEvaluation = self.analysisDefinition[selected.row()]
         self.currentEvaluationLabel.setText( "{0} - {1}".format(self.currentEvaluation.evaluation, self.currentEvaluation.fitfunctionName) )
-        self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables)
         if self.currentEvaluation.fitfunction:
             self.setFitfunction( self.currentEvaluation.fitfunction.fitfunction() )
+        self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables, self.fitfunction)
+        self.setButtonEnabledState()
             
     def onRemoveAnalysis(self):
         for index in sorted(unique([ i.row() for i in self.analysisTableView.selectedIndexes() ]),reverse=True):
@@ -235,11 +248,6 @@ class AnalysisControl(ControlForm, ControlBase ):
         for evaluation in self.analysisDefinition:
             self.onFit(evaluation)
     
-    def onShowFitFunction(self):
-        if self.currentEvaluation is not None:
-            # call on the fitui to display the fitfunction
-            pass
-
     def onLoadFitFunction(self, name=None):
         name = str(name) if name is not None else str(self.analysisNameComboBox.currentText())
         if name in self.analysisDefinitions:
@@ -255,6 +263,10 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
         self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
 #        self.evaluate()
+
+    def setPlottedTraceDict(self, plottedTraceDict):
+        self.plottedTraceDict = plottedTraceDict
+        self.setButtonEnabledState()
 
              
 if __name__=="__main__":

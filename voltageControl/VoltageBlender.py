@@ -19,7 +19,7 @@ from modules import MyException
 from modules.SequenceDict import SequenceDict
 from voltageControl.AdjustValue import AdjustValue
 
-from pulser.DACController import DACControllerException
+from pulser.DACController import DACControllerException   #@UnresolvedImport
 
 try:
     from Chassis.WaveformChassis import WaveformChassis

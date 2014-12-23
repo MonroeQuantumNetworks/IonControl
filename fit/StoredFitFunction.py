@@ -18,6 +18,13 @@ class StoredFitFunction(object):
         self.results = HashableDict()
         self.startParameterExpressions = None
         self.useSmartStartValues = False
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'parameters',tuple() )
+        self.__dict__.setdefault( 'parametersConfidence', tuple() )
+        self.__dict__.setdefault( 'startParameterExpressions', None )
+        self.__dict__.setdefault( 'useSmartStartValues', False )
 
     def fitfunction(self):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
@@ -53,7 +60,3 @@ class StoredFitFunction(object):
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
         
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.__dict__.setdefault( 'startParameterExpressions', None )
-        self.__dict__.setdefault( 'useSmartStartValues', False )

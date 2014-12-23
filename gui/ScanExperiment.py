@@ -464,21 +464,23 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
         
     def dataAnalysis(self):
-        for evaluation, plot in zip(self.evaluation.evalList, self.plottedTraceList):
-            if evaluation.analysis is not None:
-                fitfunction = self.fitWidget.analysisFitfunction(evaluation.analysis)
-                sigma = None
-                if plot.hasHeightColumn:
-                    sigma = plot.height
-                elif plot.hasTopColumn and plot.hasBottomColumn:
-                    sigma = abs(plot.top + plot.bottom)
-                fitfunction.evaluate( self.globalVariablesUi.variables )
-                fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
-                plot.fitFunction = copy.deepcopy(fitfunction)
-                evaluation.fitfunction = copy.deepcopy(fitfunction)
-                plot.plot(-2)
-                self.fitWidget.pushVariables(fitfunction.pushVariableValues(self.globalVariablesUi.variables))
-                self.fitWidget.showAnalysis(evaluation.analysis, fitfunction)
+        self.analysisControlWidget.setPlottedTraceDict( dict( ( (eval.name,plottedTrace) for eval, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        self.analysisControlWidget.onFitAll()
+#         for evaluation, plot in zip(self.evaluation.evalList, self.plottedTraceList):
+#             if evaluation.analysis is not None:
+#                 fitfunction = self.fitWidget.analysisFitfunction(evaluation.analysis)
+#                 sigma = None
+#                 if plot.hasHeightColumn:
+#                     sigma = plot.height
+#                 elif plot.hasTopColumn and plot.hasBottomColumn:
+#                     sigma = abs(plot.top + plot.bottom)
+#                 fitfunction.evaluate( self.globalVariablesUi.variables )
+#                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
+#                 plot.fitFunction = copy.deepcopy(fitfunction)
+#                 evaluation.fitfunction = copy.deepcopy(fitfunction)
+#                 plot.plot(-2)
+#                 self.fitWidget.pushVariables(fitfunction.pushVariableValues(self.globalVariablesUi.variables))
+#                 self.fitWidget.showAnalysis(evaluation.analysis, fitfunction)
                 
             
     def showTimestamps(self,data):
