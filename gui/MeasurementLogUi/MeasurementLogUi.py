@@ -16,7 +16,7 @@ from datetime import datetime, time, timedelta
 from _functools import partial
 from modules.firstNotNone import firstNotNone
 from modules.Utility import unique
-from gui.MeasurementLogUi.ScanNameTableModel import ScanNameTableModel
+from gui.MeasurementLogUi.ScanNameTableModel import ScanNameTableModel  #@UnresolvedImport
 from modules.PyqtUtility import updateComboBoxItems
 import weakref
 import logging
@@ -25,7 +25,7 @@ import numpy
 from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
 from modules import WeakMethod
-from modules.GuiAppearance import saveGuiState, restoreGuiState
+from modules.GuiAppearance import saveGuiState, restoreGuiState    #@UnresolvedImport
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 
