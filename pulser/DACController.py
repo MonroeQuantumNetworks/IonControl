@@ -20,7 +20,7 @@ class DACController( OKBase ):
             if not -10 <= value < 10:
                 raise DACControllerException("voltage {0} out of range -10V <= V < 10V".format(value))
             result.append( int( value / 10.0 * 0x7fff ) ) 
-        return list( [0x000 for _ in range(96)]) #result #list(chain(range(96)[0::4], range(96)[1::4], range(96)[2::4], range(96)[3::4]))
+        return result # list(chain(range(96)[0::4], range(96)[1::4], range(96)[2::4], range(96)[3::4])) # list( [0x000 for _ in range(96)]) #result #
     
     def writeVoltage(self, address, line ):
         if len(line)<self.channelCount:
