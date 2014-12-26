@@ -161,7 +161,7 @@
       <enum>Qt::Vertical</enum>
      </property>
      <widget class="TableViewExtended" name="analysisTableView"/>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -306,7 +306,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="copyButton">
+      <widget class="QToolButton" name="fitToStartButton">
        <property name="minimumSize">
         <size>
          <width>24</width>

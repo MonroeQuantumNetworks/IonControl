@@ -21,6 +21,7 @@ from fit.FitUiTableModel import FitUiTableModel
 from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitFunctionBase import fitFunctionMap
 from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
+from modules.MagnitudeUtilit import value
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -101,6 +102,10 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.pushButton.clicked.connect( self.onPush )
         self.fitButton.clicked.connect( self.onFit )
         self.fitAllButton.clicked.connect( self.onFitAll )
+        self.plotButton.clicked.connect( self.onPlot )
+        self.removePlotButton.clicked.connect( self.onRemoveFit )
+        self.extractButton.clicked.connect( self.onExtractFit )
+        self.fitToStartButton.clicked.connect( self.onFitToStart )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStart )
         self.analysisComboDelegate = ComboBoxDelegate()
         self.analysisTableModel = AnalysisTableModel(self.analysisDefinition, self.config, self.globalDict, self.evaluationNames )
@@ -324,7 +329,15 @@ class AnalysisControl(ControlForm, ControlBase ):
                 replacements.update( self.globalDict )
                 evaluation.updatePushVariables( replacements )
             
-    
+    def onPlot(self):
+        if self.currentEvaluation is not None:
+            plot = self.plottedTraceDict.get( self.currentEvaluation.evaluation )
+            fitfunction = copy.deepcopy(self.fitfunction)
+            fitfunction.parameters = [value(param) for param in fitfunction.startParameters]
+            plot.fitFunction = fitfunction
+            plot.plot(-2)
+            fitfunction.update()
+                    
     def onFitAll(self):
         self.fitAll()
         
@@ -366,7 +379,22 @@ class AnalysisControl(ControlForm, ControlBase ):
             replacements.update( self.globalDict )
             self.currentEvaluation.updatePushVariables( replacements )
         
+    def onRemoveFit(self):
+        if self.currentEvaluation is not None:
+            plot = self.plottedTraceDict.get( self.currentEvaluation.evaluation )
+            plot.fitFunction = None
+            plot.plot(-2)
+
+    def onExtractFit(self):
+        if self.currentEvaluation is not None:
+            plot = self.plottedTraceDict.get( self.currentEvaluation.evaluation )
+            self.setFitfunction( copy.deepcopy(plot.fitFunction))
             
+    def onFitToStart(self):
+        if self.fitfunction is not None:
+            self.fitfunction.startParameters = copy.deepcopy(self.fitfunction.parameters)
+            self.fitfunctionTableModel.startDataChanged()
+    
 if __name__=="__main__":
     import sys
     from PyQt4 import QtGui
