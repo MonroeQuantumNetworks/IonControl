@@ -60,7 +60,7 @@ class InputCalibrationChannel(SheetForm,SheetBase):
         else:
             self.param = Parameter.create(name='params', type='group', children=self.myCalibration.paramDef())
             self.treeWidget.setParameters(self.param, showTop=False)
-            self.param.sigTreeStateChanged.connect(self.myCalibration.update, QtCore.Qt.UniqueConnection)
+            self.param.sigTreeStateChanged.connect(self.myCalibration.update )   # should make this unique
         self.settings.calibration = calibration
         self.callback( self.channel, self.myCalibration )
             

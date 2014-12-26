@@ -6,21 +6,21 @@ Created on Dec 19, 2014
 import PyQt4.uic
 import logging
 from modules.SequenceDict import SequenceDict
-from scan.AnalysisTableModel import AnalysisTableModel
+from scan.AnalysisTableModel import AnalysisTableModel             #@UnresolvedImport
 from modules.GuiAppearance import saveGuiState, restoreGuiState    #@UnresolvedImport
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from scan.PushVariable import PushVariable                         #@UnresolvedImport
 from modules.Utility import unique
 import copy
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 from scan.PushVariableTableModel import PushVariableTableModel     #@UnresolvedImport
 from scan.DatabasePushDestination import DatabasePushDestination   #@UnresolvedImport
 from modules.firstNotNone import firstNotNone
 from fit.FitUiTableModel import FitUiTableModel
 from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitFunctionBase import fitFunctionMap
-from fit.StoredFitFunction import StoredFitFunction
+from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -46,6 +46,21 @@ class AnalysisDefinitionElement(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def pushVariableValues(self):
+        """get all push variable values that are within the bounds, no re-evaluation"""
+        pushVarValues = list()
+        for pushvar in self.pushVariables.values():
+            pushVarValues.extend( pushvar.pushRecord() )
+        return pushVarValues
+    
+    def updatePushVariables(self, replacements ):
+        for pushvar in self.pushVariables.itervalues():
+            pushvar.evaluate( replacements )
+            
+class AnalysisControlParameters(object):
+    def __init__(self):
+        self.autoSave = False
 
 class AnalysisControl(ControlForm, ControlBase ):
     def __init__(self, config, globalDict, parentname, evaluationNames, parent=None):
@@ -71,6 +86,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.currentEvaluation = None
         self.fitfunction = None
         self.plottedTraceDict = None
+        self.parameters = self.config.get( self.configname+'.parameters', AnalysisControlParameters() )
         
     def setupUi(self, parent):
         ControlForm.setupUi(self,parent)
@@ -83,14 +99,19 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.addPushButton.clicked.connect( self.onAddPushVariable )
         self.removePushButton.clicked.connect( self.onRemovePushVariable )
         self.pushButton.clicked.connect( self.onPush )
+        self.fitButton.clicked.connect( self.onFit )
+        self.fitAllButton.clicked.connect( self.onFitAll )
+        self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStart )
         self.analysisComboDelegate = ComboBoxDelegate()
         self.analysisTableModel = AnalysisTableModel(self.analysisDefinition, self.config, self.globalDict, self.evaluationNames )
         self.analysisTableModel.fitfunctionChanged.connect( self.onFitfunctionChanged )
+        self.analysisTableModel.analysisChanged.connect( self.autoSave )
         self.analysisTableView.setModel( self.analysisTableModel )
         self.analysisTableView.selectionModel().currentChanged.connect( self.onActiveAnalysisChanged )
         self.analysisTableView.setItemDelegateForColumn(1,self.analysisComboDelegate)
         self.analysisTableView.setItemDelegateForColumn(2,self.analysisComboDelegate)
         self.pushTableModel = PushVariableTableModel(self.config, self.globalDict)
+        self.pushTableModel.pushChanged.connect( self.autoSave )
         self.pushTableView.setModel( self.pushTableModel )
         self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.pushComboDelegate = ComboBoxDelegate()
@@ -109,16 +130,28 @@ class AnalysisControl(ControlForm, ControlBase ):
         # FitUi
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
+        self.fitfunctionTableModel.parametersChanged.connect( self.autoSave )
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
         restoreGuiState( self, self.config.get(self.configname+'.guiState') )
         self.setButtonEnabledState()
-        
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.autoSaveAction = QtGui.QAction( "auto save" , self)
+        self.autoSaveAction.setCheckable(True)
+        self.autoSaveAction.setChecked(self.parameters.autoSave )
+        self.autoSaveAction.triggered.connect( self.onAutoSave )
+        self.addAction( self.autoSaveAction )
+
+    def onUseSmartStart(self, state):
+        if self.fitfunction is not None:
+            self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
+            self.autoSave()
+
     def setButtonEnabledState(self):
         allEnable = self.plottedTraceDict is not None
-        currentEnable = self.plottedTraceDict is not None and self.currentEvaluation.evaluation in self.plottedTraceDict
+        currentEnable = self.plottedTraceDict is not None and self.currentEvaluation is not None and self.currentEvaluation.evaluation in self.plottedTraceDict
         self.fitAllButton.setEnabled( allEnable )
         self.getSmartStartButton.setEnabled( currentEnable )
         self.fitButton.setEnabled( currentEnable ) 
@@ -128,6 +161,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             
     def onFitfunctionChanged(self, row, newfitname ):
         """Swap out the fitfunction on the current analysis"""
+        self.currentEvaluation.fitfunctionCache[self.fitfunction.name] = StoredFitFunction.fromFitfunction( self.fitfunction )
         self.currentEvaluation.fitfunctionName = newfitname
         if newfitname in self.currentEvaluation.fitfunctionCache:
             self.currentEvaluation.fitfunction = self.currentEvaluation.fitfunctionCache[newfitname]
@@ -166,9 +200,16 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.pushTableModel.updateDestinations(self.pushDestinations )
 
     def onPush(self):
-        for destination, variable, value in self.fitfunction.pushVariableValues(self.globalDict):
+        self.push(self.currentEvaluation)
+
+    def push(self, evaluation ):
+        for destination, variable, value in evaluation.pushVariableValues():
             if destination in self.pushDestinations:
                 self.pushDestinations[destination].update( [(destination,variable,value)] )
+                
+    def pushAll(self):
+        for analysis in self.analysisDefinition:
+            self.push( analysis )
                 
     def pushVariables(self, pushVariables):
         for destination, variable, value in pushVariables:
@@ -177,14 +218,25 @@ class AnalysisControl(ControlForm, ControlBase ):
 
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
+        self.autoSave()
+        
+    def autoSave(self):
         if self.parameters.autoSave:
-            self.onSave()     
+            self.onSave()
+            self.saveButton.setEnabled( False )
+        else:
+            pass
+            
+    def saveable(self):
+        analysisName = str(self.analysisConfigurationComboBox.currentText())
+        return analysisName != '' and not (self.analysisDefinitionDict[self.currentAnalysisName] == self.analysisDefinition)            
                 
     def saveConfig(self):
         self.config[self.configname+'.dict'] = self.analysisDefinitionDict
         self.config[self.configname] = self.analysisDefinition
         self.config[self.configname+'.settingsName'] = self.currentAnalysisName
         self.config[self.configname+'.guiState'] = saveGuiState( self )
+        self.config[self.configname+'.parameters'] = self.parameters
     
     def onSave(self):
         self.currentAnalysisName = str(self.analysisConfigurationComboBox.currentText())
@@ -208,7 +260,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         if name and name in self.analysisDefinitionDict:
             self.currentAnalysisName = name
             self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
-            self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0))
+            self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0) )
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)
@@ -217,15 +269,6 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onReload(self):
         self.onLoadAnalysisConfiguration( self.analysisConfigurationComboBox.currentText() )
    
-    def pushVariableValues(self, globalDict=None ):
-        pushVarValues = list()
-        replacements = self.replacementDict()
-        if globalDict is not None:
-            replacements.update( globalDict )
-        for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord(replacements) )
-        return pushVarValues
-            
     def updatePushVariables(self, extraDict=None ):
         myReplacementDict = self.replacementDict()
         if extraDict is not None:
@@ -236,17 +279,53 @@ class AnalysisControl(ControlForm, ControlBase ):
             except Exception as e:
                 logging.getLogger(__name__).error( str(e) )
 
-    def onFit(self, evaluation=None):
-        evaluation = firstNotNone( evaluation, self.currentEvaluation )
-        if evaluation:
-            # update the fitfunction from the fitfunction dictionary
-            # fit
-            # update the gui to reflect the fited values
-            pass
+    def onFit(self):
+        self.fit( self.currentEvaluation )
+
+    def fit(self, evaluation):
+        if self.currentEvaluation is not None and evaluation == self.currentEvaluation:
+            plot = self.plottedTraceDict.get( evaluation.evaluation )
+            if plot is not None:
+                sigma = None
+                if plot.hasHeightColumn:
+                    sigma = plot.height
+                elif plot.hasTopColumn and plot.hasBottomColumn:
+                    sigma = abs(plot.top + plot.bottom)
+                self.fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
+                plot.fitFunction = copy.deepcopy(self.fitfunction)
+                plot.plot(-2)
+                self.fitfunctionTableModel.fitDataChanged()
+                self.fitResultsTableModel.fitDataChanged()
+                replacements = self.fitfunction.replacementDict()
+                replacements.update( self.globalDict )
+                evaluation.updatePushVariables( replacements )
+        else:
+            fitfunction = evaluation.fitfunction.fitfunction()
+            fitfunction.evaluate( self.globalDict )
+            plot = self.plottedTraceDict.get( evaluation.evaluation )
+            if plot is not None:
+                sigma = None
+                if plot.hasHeightColumn:
+                    sigma = plot.height
+                elif plot.hasTopColumn and plot.hasBottomColumn:
+                    sigma = abs(plot.top + plot.bottom)
+                fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
+                plot.fitFunction = fitfunction
+                plot.plot(-2)
+                evaluation.fitfunction = StoredFitFunction.fromFitfunction(fitfunction)
+                self.fitfunctionTableModel.fitDataChanged()
+                self.fitResultsTableModel.fitDataChanged()
+                replacements = fitfunction.replacementDict()
+                replacements.update( self.globalDict )
+                evaluation.updatePushVariables( replacements )
+            
     
     def onFitAll(self):
+        self.fitAll()
+        
+    def fitAll(self):
         for evaluation in self.analysisDefinition:
-            self.onFit(evaluation)
+            self.fit(evaluation)
     
     def onLoadFitFunction(self, name=None):
         name = str(name) if name is not None else str(self.analysisNameComboBox.currentText())
@@ -262,13 +341,27 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
         self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
         self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
-#        self.evaluate()
+        self.evaluate()
 
     def setPlottedTraceDict(self, plottedTraceDict):
         self.plottedTraceDict = plottedTraceDict
         self.setButtonEnabledState()
 
-             
+    def analyze(self, plottedTraceDict ):
+        self.setPlottedTraceDict(plottedTraceDict)
+        self.fitAll()
+        self.pushAll()
+
+    def evaluate(self, name=None):
+        if self.fitfunction is not None:
+            self.fitfunction.evaluate( self.globalDict )
+            self.fitfunctionTableModel.update()
+            self.parameterTableView.viewport().repaint()
+            replacements = self.fitfunction.replacementDict()
+            replacements.update( self.globalDict )
+            self.currentEvaluation.updatePushVariables( replacements )
+        
+            
 if __name__=="__main__":
     import sys
     from PyQt4 import QtGui

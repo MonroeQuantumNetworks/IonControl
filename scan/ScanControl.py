@@ -22,7 +22,7 @@ from modules.magnitude import MagnitudeError
 from modules.ScanDefinition import ScanSegmentDefinition
 from ScanSegmentTableModel import ScanSegmentTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate 
-import numpy
+from modules.function_base import linspace
 from modules.concatenate_iter import concatenate_iter
 import random
 from modules.concatenate_iter import interleave_iter
@@ -406,7 +406,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.scanTarget = str(scan.scanTarget)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized, ScanList.ScanType.CenterOut][self.settings.scantype]
         
-        scan.list = list( concatenate_iter( *( numpy.linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ) ) )
+        scan.list = list( concatenate_iter( *[ linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ] ) )
         if scan.type==0:
             scan.list = sorted( scan.list )
             scan.start = scan.list[0]

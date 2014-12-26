@@ -66,6 +66,10 @@ if __name__=="__main__":
     config = dict()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
+    
+    
+    data = SequenceDict( {})
+    
     ui = TreeViewTest()
     ui.setupUi(ui)
     MainWindow.setCentralWidget(ui)

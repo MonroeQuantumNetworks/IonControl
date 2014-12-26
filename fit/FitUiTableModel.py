@@ -5,7 +5,8 @@ from modules.firstNotNone import firstNotNone
 from PyQt4 import QtGui
 
 class FitUiTableModel(QtCore.QAbstractTableModel):
-    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}  
+    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
+    parametersChanged = QtCore.pyqtSignal()
     def __init__(self, config, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
@@ -71,16 +72,20 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
     def setData(self,index, value, role):
         if (role, index.column()) == (QtCore.Qt.CheckStateRole,0): 
             self.fitfunction.parameterEnabled[index.row()] = value==QtCore.Qt.Checked
+            self.parametersChanged.emit()
             return True
         if (role, index.column()) == (QtCore.Qt.EditRole,2):
             self.fitfunction.startParameters[index.row()] = value
+            self.parametersChanged.emit()
             return True
         if (role, index.column()) == (QtCore.Qt.UserRole,2):
             self.fitfunction.startParameterExpressions[index.row()] = value
+            self.parametersChanged.emit()
         return False
     
     def setValue(self, index, value):
         self.fitfunction.startParameters[index.row()] = value
+        self.parametersChanged.emit()
 
     def flags(self, index ):
         return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,

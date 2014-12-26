@@ -7,6 +7,7 @@ from fit.FitFunctionBase import fitFunctionMap
 class AnalysisTableModel(QtCore.QAbstractTableModel):
     backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
     fitfunctionChanged = QtCore.pyqtSignal( object, object )
+    analysisChanged = QtCore.pyqtSignal()
     def __init__(self, analysisDefinition, config, globalDict, evaluationNames, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
@@ -33,12 +34,14 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
                          
     def setEnabled(self, row, value):
         self.analysisDefinition[row].enabled = value==QtCore.Qt.Checked
+        self.analysisChanged.emit()
         return True
         
     def setEvaluation(self, row, value):
         value =  str(value)
         if value:
             self.analysisDefinition[row].evaluation = value
+            self.analysisChanged.emit()
             return True
         return False
 
@@ -47,6 +50,7 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
         if value and value!=self.analysisDefinition[row].fitfunctionName:
             self.analysisDefinition[row].fitfunctionName = value
             self.fitfunctionChanged.emit( row, value )
+            self.analysisChanged.emit()
             return True
         return False
 
@@ -54,11 +58,13 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
         self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
         self.analysisDefinition.append( analysis )
         self.endInsertRows()
+        self.analysisChanged.emit()
              
     def removeAnalysis(self, index):
         self.beginRemoveRows(QtCore.QModelIndex(), index, index)
         self.analysisDefinition.pop(index)
         self.endRemoveRows()       
+        self.analysisChanged.emit()
                          
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.analysisDefinition) if self.analysisDefinition else 0

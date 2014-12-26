@@ -3,7 +3,9 @@ from modules.firstNotNone import firstNotNone
 
 
 class PushVariableTableModel(QtCore.QAbstractTableModel):
-    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}     
+    backgroundLookup = {1:QtGui.QColor(QtCore.Qt.green).lighter(175), 0:QtGui.QColor(QtCore.Qt.white), 
+                        -1:QtGui.QColor(QtCore.Qt.red).lighter(175)}   
+    pushChanged = QtCore.pyqtSignal()  
     def __init__(self, config, globalDict, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
@@ -19,8 +21,9 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
                             (QtCore.Qt.EditRole,3): lambda row: self.pushVariables.at(row).definition,
                             (QtCore.Qt.EditRole,5): lambda row: firstNotNone( self.pushVariables.at(row).strMinimum, str(self.pushVariables.at(row).minimum)),
                             (QtCore.Qt.EditRole,6): lambda row: firstNotNone( self.pushVariables.at(row).strMaximum, str(self.pushVariables.at(row).maximum)),
-                            (QtCore.Qt.BackgroundRole,5): lambda row: self.backgroundLookup[self.pushVariables.at(row).strMinimum is not None],  
-                            (QtCore.Qt.BackgroundRole,6): lambda row: self.backgroundLookup[self.pushVariables.at(row).strMaximum is not None]  
+                            (QtCore.Qt.BackgroundRole,4): lambda row: self.backgroundLookup[self.pushVariables.at(row).valueStatus],  
+                            (QtCore.Qt.BackgroundRole,5): lambda row: self.backgroundLookup[self.pushVariables.at(row).hasStrMinimum],  
+                            (QtCore.Qt.BackgroundRole,6): lambda row: self.backgroundLookup[self.pushVariables.at(row).hasStrMaximum]  
 
                             }                           
         self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setDataDestinationName,
@@ -139,7 +142,10 @@ class PushVariableTableModel(QtCore.QAbstractTableModel):
         return None
         
     def setData(self,index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda row, value: None)(index.row(),value)
+        result = self.setDataLookup.get((role,index.column()), lambda row, value: None)(index.row(),value)
+        if result:
+            self.pushChanged.emit()
+        return result
     
     def setValue(self, index, value):
         self.setData( index, value, QtCore.Qt.EditRole)

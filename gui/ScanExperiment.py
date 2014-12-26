@@ -172,6 +172,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName, self.evaluationControlWidget.evaluationNames )
         self.analysisControlWidget.setupUi(self.analysisControlWidget)
         self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
+        self.globalVariablesUi.valueChanged.connect( self.analysisControlWidget.evaluate )
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
@@ -464,23 +465,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
         
     def dataAnalysis(self):
-        self.analysisControlWidget.setPlottedTraceDict( dict( ( (eval.name,plottedTrace) for eval, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
-        self.analysisControlWidget.onFitAll()
-#         for evaluation, plot in zip(self.evaluation.evalList, self.plottedTraceList):
-#             if evaluation.analysis is not None:
-#                 fitfunction = self.fitWidget.analysisFitfunction(evaluation.analysis)
-#                 sigma = None
-#                 if plot.hasHeightColumn:
-#                     sigma = plot.height
-#                 elif plot.hasTopColumn and plot.hasBottomColumn:
-#                     sigma = abs(plot.top + plot.bottom)
-#                 fitfunction.evaluate( self.globalVariablesUi.variables )
-#                 fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
-#                 plot.fitFunction = copy.deepcopy(fitfunction)
-#                 evaluation.fitfunction = copy.deepcopy(fitfunction)
-#                 plot.plot(-2)
-#                 self.fitWidget.pushVariables(fitfunction.pushVariableValues(self.globalVariablesUi.variables))
-#                 self.fitWidget.showAnalysis(evaluation.analysis, fitfunction)
+        self.analysisControlWidget.analyze( dict( ( (eval.name,plottedTrace) for eval, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
                 
             
     def showTimestamps(self,data):

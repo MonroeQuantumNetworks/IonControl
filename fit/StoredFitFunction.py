@@ -34,6 +34,8 @@ class StoredFitFunction(object):
         fitfunction.startParameterExpressions = list(self.startParameterExpressions) if self.startParameterExpressions is not None else [None]*len(self.startParameters)
         fitfunction.parameters = list(self.parameters)
         fitfunction.parametersConfidence = list(self.parametersConfidence)
+        for result in self.results.values():
+            fitfunction.results[result.name] = ResultRecord(name=result.name, definition=result.definition, value=result.value)
         return fitfunction
     
     @classmethod
@@ -46,7 +48,7 @@ class StoredFitFunction(object):
         instance.parametersConfidence = tuple(fitfunction.parametersConfidence)
         instance.useSmartStartValues = fitfunction.useSmartStartValues
         for result in fitfunction.results.values():
-            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
+            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition, value=result.value)
         return instance
      
     stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'useSmartStartValues', 'startParameterExpressions', 'parameters', 'parametersConfidence'] 

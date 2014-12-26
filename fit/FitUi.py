@@ -10,8 +10,8 @@ from fit.FitUiTableModel import FitUiTableModel
 from modules.MagnitudeUtilit import value
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.PyqtUtility import BlockSignals
-from modules.GuiAppearance import restoreGuiState, saveGuiState
-from fit.StoredFitFunction import StoredFitFunction
+from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
+from fit.StoredFitFunction import StoredFitFunction               #@UnresolvedImport
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
             

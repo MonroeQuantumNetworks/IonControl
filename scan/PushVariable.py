@@ -19,6 +19,9 @@ class PushVariable(object):
         self.maximum = ""
         self.strMinimum = None
         self.strMaximum = None
+        self.valueValid = True
+        self.minValid = True
+        self.maxValid = True
         
     def __setstate__(self, s):
         self.__dict__ = s
@@ -26,14 +29,32 @@ class PushVariable(object):
         self.__dict__.setdefault( 'variableName', None )
         self.__dict__.setdefault( 'strMinimum', None )
         self.__dict__.setdefault( 'strMaximum', None )
+        self.__dict__.setdefault( 'valueVlid', True )
+        self.__dict__.setdefault( 'minValid', True )
+        self.__dict__.setdefault( 'maxValid', True )
         
     def evaluate(self, variables=dict(), useFloat=False):
         if self.definition:
-            self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
+            try:
+                self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
+                self.valueValid = True
+            except Exception as e:
+                logging.getLogger(__name__).error(str(e))
+                self.valueValid = False
         if self.strMinimum:
-            self.minimum = self.expression.evaluate( self.strMinimum, variables, useFloat=useFloat )
+            try:
+                self.minimum = self.expression.evaluate( self.strMinimum, variables, useFloat=useFloat )
+                self.minValid = True
+            except Exception as e:
+                logging.getLogger(__name__).error(str(e))
+                self.minValid = False               
         if self.strMaximum:
-            self.maximum = self.expression.evaluate( self.strMaximum, variables, useFloat=useFloat )
+            try:
+                self.maximum = self.expression.evaluate( self.strMaximum, variables, useFloat=useFloat )
+                self.maxValid = True
+            except Exception as e:
+                logging.getLogger(__name__).error(str(e))
+                self.maxValid = False               
         
     def pushRecord(self, variables=None):
         if variables is not None:
@@ -51,4 +72,14 @@ class PushVariable(object):
     def key(self):
         return (self.destinationName, self.variableName)
 
+    @property
+    def hasStrMinimum(self):
+        return (1 if self.minValid else -1) if self.strMinimum is not None else 0
 
+    @property
+    def hasStrMaximum(self):
+        return (1 if self.maxValid else -1) if self.strMaximum is not None else 0
+    
+    @property
+    def valueStatus(self):
+        return 1 if self.valueValid else -1
