@@ -27,15 +27,14 @@ class Parameters(object):
         self.space = None
         self.parameter = None
         self.fromTime = None
+        self.spaceParamCache = dict()
 
 class ValueHistoryUi(Form,Base):
-    def __init__(self, config, traceui, plotDict, parent=None):
+    def __init__(self, config, parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
         self.config = config
         self.parameters = self.config.get("ValueHistory",Parameters())
-        self.traceui = traceui
-        self.plotDict = plotDict
         self.connection = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
         self.connection.open_session()
         self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
@@ -57,6 +56,9 @@ class ValueHistoryUi(Form,Base):
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.onSpaceChanged(self.parameters.space)
         
+    def onValueChangedString(self, param, value):
+        setattr( self.parameters, param, str(value) )
+
     def onValueChangedDateTime(self, param, value):
         setattr( self.parameters, param, value.toPyDateTime() )
 
@@ -69,7 +71,6 @@ class ValueHistoryUi(Form,Base):
             self.parameterNames[space].append(source)
         updateComboBoxItems( self.comboBoxSpace, sorted(self.parameterNames.keys()) )
         updateComboBoxItems( self.comboBoxParam, sorted(self.parameterNames[self.parameters.space]) )
-        updateComboBoxItems( self.comboBoxPlotName, sorted(self.plotDict.keys()) )        
         
     def onSpaceChanged(self, newSpace):
         newSpace = str(newSpace)
@@ -80,6 +81,9 @@ class ValueHistoryUi(Form,Base):
         updateComboBoxItems( self.comboBoxParam, sorted(self.parameterNames[self.parameters.space]) )
         if self.parameters.parameter is not None:
             self.comboBoxParam.setCurrentIndex( self.comboBoxParam.findText(self.parameters.parameter ))
+               
+    def onLoad(self):
+        pass
                 
     def doCreatePlot(self, space, parameter, fromTime, toTime, plotName, steps, forceUpdate=False ):
         ref, _ = self.cache.get( ( space, parameter ), (lambda: None, None)) 

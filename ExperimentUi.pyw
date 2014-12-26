@@ -44,7 +44,9 @@ from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
 from pulser.OKBase import OKBase
 from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
-from pulser.DACController import DACController 
+from pulser.DACController import DACController    #@UnresolvedImport
+from gui.ValueHistoryUi import ValueHistoryUi
+from modules.doProfile import doprofile
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -178,12 +180,19 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
+        self.valueHistoryUi = ValueHistoryUi(self.config)
+        self.valueHistoryUi.setupUi( self.valueHistoryUi )
+        self.valueHistoryDock = QtGui.QDockWidget("Value History")
+        self.valueHistoryDock.setWidget( self.valueHistoryUi )
+        self.valueHistoryDock.setObjectName("_valueHistory")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.valueHistoryDock )
         
         # tabify the dock widgets
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
         self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
+        self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
         
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=ExternalParameter)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -437,6 +446,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.instrumentLogger:
             self.instrumentLogger.shutdown()
 
+    #@doprofile
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
         for tab in self.tabDict.values():
