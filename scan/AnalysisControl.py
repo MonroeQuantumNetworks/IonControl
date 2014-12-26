@@ -143,6 +143,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.autoSaveAction.setChecked(self.parameters.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
+        self.autoSave()
 
     def onUseSmartStart(self, state):
         if self.fitfunction is not None:
@@ -225,10 +226,12 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.onSave()
             self.saveButton.setEnabled( False )
         else:
-            pass
+            self.saveButton.setEnabled( self.saveable() )
             
     def saveable(self):
         analysisName = str(self.analysisConfigurationComboBox.currentText())
+        if self.currentEvaluation is not None and self.fitfunction is not None:
+            self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction( self.fitfunction )
         return analysisName != '' and not (self.analysisDefinitionDict[self.currentAnalysisName] == self.analysisDefinition)            
                 
     def saveConfig(self):
@@ -245,6 +248,7 @@ class AnalysisControl(ControlForm, ControlBase ):
                 if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
                     self.analysisConfigurationComboBox.addItem(self.currentAnalysisName)
             self.analysisDefinitionDict[self.currentAnalysisName] = copy.deepcopy(self.analysisDefinition)
+            self.saveButton.setEnabled( False )
         
     def onRemoveAnalysisConfiguration(self):
         name = str(self.analysisConfigurationComboBox.currentText())
@@ -261,6 +265,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.currentAnalysisName = name
             self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
             self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0) )
+            self.autoSave()
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)

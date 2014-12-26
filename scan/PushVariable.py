@@ -29,10 +29,21 @@ class PushVariable(object):
         self.__dict__.setdefault( 'variableName', None )
         self.__dict__.setdefault( 'strMinimum', None )
         self.__dict__.setdefault( 'strMaximum', None )
-        self.__dict__.setdefault( 'valueVlid', True )
+        self.__dict__.setdefault( 'valueValid', True )
         self.__dict__.setdefault( 'minValid', True )
         self.__dict__.setdefault( 'maxValid', True )
         
+    stateFields = [ 'push', 'definition', 'destinationName', 'variableName', 'value', 'minimum','maximum', 'strMinimum', 'strMaximum', 'valueValid', 'minValid', 'maxValid'] 
+        
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+
     def evaluate(self, variables=dict(), useFloat=False):
         if self.definition:
             try:

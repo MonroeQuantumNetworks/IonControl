@@ -26,6 +26,17 @@ class ResultRecord(object):
         self.definition = definition
         self.value = value
 
+    stateFields = ['name', 'definition', 'value'] 
+        
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+
 class FitFunctionBase(object):
     expression = Expression()
     name = 'None'
