@@ -13,7 +13,7 @@ from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.Observable import Observable
 from _collections import defaultdict
-from modules.GuiAppearance import restoreGuiState, saveGuiState
+from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 

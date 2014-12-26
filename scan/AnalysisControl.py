@@ -22,6 +22,7 @@ from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitFunctionBase import fitFunctionMap
 from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
 from modules.MagnitudeUtilit import value
+from modules.PyqtUtility import BlockSignals
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -271,6 +272,9 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
             self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0) )
             self.autoSave()
+            if self.analysisConfigurationComboBox.currentText()!=name:
+                with BlockSignals(self.analysisConfigurationComboBox):
+                    self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(name) )
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)

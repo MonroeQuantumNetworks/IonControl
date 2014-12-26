@@ -19,18 +19,20 @@ from modules.SequenceDict import SequenceDict
 from gui.TodoListSettingsTableModel import TodoListSettingsTableModel 
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from modules.GuiAppearance import saveGuiState, restoreGuiState   #@UnresolvedImport
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
 
 
 class TodoListEntry(object):
-    def __init__(self, scan=None, measurement=None, evaluation=None):
+    def __init__(self, scan=None, measurement=None, evaluation=None, analysis=None):
         self.parent = None
         self.children = list()
         self.scan = scan
         self.evaluation = evaluation
         self.measurement = measurement
+        self.analysis = analysis
         self.scanParameter = None
         self.enabled = True
         self.scanSegment = ScanSegmentDefinition()
@@ -46,9 +48,10 @@ class TodoListEntry(object):
         self.__dict__.setdefault('enabled', True )
         self.__dict__.setdefault('settings', SequenceDict())
         self.__dict__.setdefault('revertSettings', False)
+        self.__dict__.setdefault('analysis', None)
         self.scan = str(self.scan) if self.scan is not None else None
 
-    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'settings' ] 
+    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'analysis', 'settings' ] 
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -109,6 +112,7 @@ class TodoList(Form, Base):
         self.scanModules = scanModules
         self.scanModuleMeasurements = dict()
         self.scanModuleEvaluations = dict()
+        self.scanModuleAnalysis = dict()
         self.currentMeasurementsDisplayedForScan = None
         self.currentScan = currentScan
         self.setCurrentScan = setCurrentScan
@@ -143,10 +147,11 @@ class TodoList(Form, Base):
         self.tableModel = TodoListTableModel( self.settings.todoList )
         self.tableView.setModel( self.tableModel )
         self.comboBoxDelegate = ComboBoxDelegate()
-        for column in range(1,4):
+        for column in range(1,5):
             self.tableView.setItemDelegateForColumn(column, self.comboBoxDelegate)
         self.tableModel.measurementSelection = self.scanModuleMeasurements
         self.tableModel.evaluationSelection = self.scanModuleEvaluations     
+        self.tableModel.analysisSelection = self.scanModuleAnalysis     
         self.addMeasurementButton.clicked.connect( self.onAddMeasurement )
         self.removeMeasurementButton.clicked.connect( self.onDropMeasurement )
         self.runButton.clicked.connect( partial( self.statemachine.processEvent, 'startCommand' ) )
@@ -192,10 +197,7 @@ class TodoList(Form, Base):
         self.loadLineAction.triggered.connect( self.onLoadLine  )
         self.tableView.addAction( self.loadLineAction )
         # 
-        for column, width in zip( range(0, self.tableModel.columnCount()), self.config.get('Todolist.ColumnWidth',list()) ):
-            self.tableView.setColumnWidth(column, width)
-        for column, width in zip( range(0, self.settingTableModel.columnCount()), self.config.get('Todolist.SettingsColumnWidth',list()) ):
-            self.settingTableView.setColumnWidth(column, width)
+        restoreGuiState( self, self.config.get('Todolist.guiState'))
        
     def onRevertChanged(self, state):
         self.masterSettings.revertGlobals = state==QtCore.Qt.Checked
@@ -269,6 +271,7 @@ class TodoList(Form, Base):
             self.currentMeasurementsDisplayedForScan = newscan
             updateComboBoxItems(self.measurementSelectionBox, self.scanModuleMeasurements[newscan] )
             updateComboBoxItems(self.evaluationSelectionBox, self.scanModuleEvaluations[newscan] )
+            updateComboBoxItems(self.analysisSelectionBox, self.scanModuleAnalysis[newscan] )
         
     def populateMeasurements(self):
         self.scanModuleMeasurements = dict()
@@ -281,9 +284,14 @@ class TodoList(Form, Base):
                 self.populateEvaluationItem( name, widget.evaluationControlWidget.settingsDict )
             else:
                 self.populateEvaluationItem( name, {} )
+            if hasattr(widget, 'analysisControlWidget' ):
+                self.populateAnalysisItem( name, widget.analysisControlWidget.analysisDefinitionDict )
+            else:
+                self.populateAnalysisItem( name, {} )
         if hasattr(self, 'tableModel'):
             self.tableModel.measurementSelection = self.scanModuleMeasurements
             self.tableModel.evaluationSelection = self.scanModuleEvaluations     
+            self.tableModel.analysisSelection = self.scanModuleAnalysis     
                 
     def populateMeasurementsItem(self, name, settingsDict ):
         self.scanModuleMeasurements[name] = sorted(settingsDict.keys())
@@ -294,6 +302,11 @@ class TodoList(Form, Base):
         self.scanModuleEvaluations[name] = sorted(settingsDict.keys())
         if name == self.currentMeasurementsDisplayedForScan:
             updateComboBoxItems( self.evaluationSelectionBox, self.scanModuleEvaluations[name] )            
+
+    def populateAnalysisItem(self, name, settingsDict ):
+        self.scanModuleAnalysis[name] = sorted(settingsDict.keys())
+        if name == self.currentMeasurementsDisplayedForScan:
+            updateComboBoxItems( self.analysisSelectionBox, self.scanModuleAnalysis[name] )            
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
@@ -339,18 +352,20 @@ class TodoList(Form, Base):
     def enterIdle(self):
         self.statusLabel.setText('Idle')
         if self.idleConfiguration is not None:
-            (previousName, previousScan, previousEvaluation) = self.idleConfiguration
+            (previousName, previousScan, previousEvaluation, previousAnalysis) = self.idleConfiguration
             currentname, currentwidget = self.currentScan()
             if previousName!=currentname:
                 self.setCurrentScan(previousName)
             currentwidget.scanControlWidget.loadSetting( previousScan )   
             currentwidget.evaluationControlWidget.loadSetting( previousEvaluation )  
+            currentwidget.analysisControlWidget.onLoadAnalysisConfiguration( previousAnalysis )
         
     def exitIdle(self):
         currentname, currentwidget = self.currentScan()
         currentScan = currentwidget.scanControlWidget.settingsName  
         currentEvaluation = currentwidget.evaluationControlWidget.settingsName
-        self.idleConfiguration = (currentname, currentScan, currentEvaluation)
+        currentAnalysis = currentwidget.analysisControlWidget.currentAnalysisName
+        self.idleConfiguration = (currentname, currentScan, currentEvaluation, currentAnalysis)
         
     def onLoadLine(self):
         allrows = sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]))
@@ -365,6 +380,7 @@ class TodoList(Form, Base):
         # load the correct measurement
         currentwidget.scanControlWidget.loadSetting( entry.measurement )   
         currentwidget.evaluationControlWidget.loadSetting( entry.evaluation )  
+        currentwidget.analysisControlWidget.onLoadAnalysisConfiguration( entry.analysis )
         
     def isSomethingTodo(self):
         for index in range( self.settings.currentIndex, len(self.settings.todoList) ) + (range(0, self.settings.currentIndex) if self.settings.repeat else []):
@@ -399,8 +415,7 @@ class TodoList(Form, Base):
         self.config['TodolistSettings'] = self.settings
         self.config['TodolistSettings.Cache'] = self.settingsCache
         self.config['Todolist.MasterSettings'] = self.masterSettings
-        self.config['Todolist.ColumnWidth'] = [self.tableView.columnWidth(i) for i in range(0, self.tableModel.columnCount())]
-        self.config['Todolist.SettingsColumnWidth'] = [self.settingTableView.columnWidth(i) for i in range(0, self.settingTableModel.columnCount())]
+        self.config['Todolist.guiState'] = saveGuiState( self )
        
         
         
