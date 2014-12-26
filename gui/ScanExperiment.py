@@ -43,14 +43,13 @@ from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
-import copy
 from modules.SceneToPrint import SceneToPrint
 from collections import defaultdict
 from gui.ScanMethods import ScanMethodsDict, ScanException 
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import  Measurement, Parameter, Result
-from scan.AnalysisControl import AnalysisControl
+from scan.AnalysisControl import AnalysisControl   #@UnresolvedImport
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -465,7 +464,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
         
     def dataAnalysis(self):
-        self.analysisControlWidget.analyze( dict( ( (eval.name,plottedTrace) for eval, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
                 
             
     def showTimestamps(self,data):
