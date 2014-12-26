@@ -15,6 +15,11 @@ from fit.StoredFitFunction import StoredFitFunction               #@UnresolvedIm
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
             
+class Parameters(object):
+    def __init__(self):
+        self.autoSave = False       
+
+            
 class FitUi(fitForm, QtGui.QWidget):
     analysisNamesChanged = QtCore.pyqtSignal(object)
     def __init__(self, traceui, config, parentname, globalDict=None, parent=None):
@@ -33,7 +38,7 @@ class FitUi(fitForm, QtGui.QWidget):
             self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
         except Exception:
             self.analysisDefinitions = dict()
-        self.showAnalysisEnabled = self.config.get(self.configname+"ShowAnalysisEnabled", True)
+        self.parameters = self.config.get(self.configname+".Parameters", Parameters())
         self.globalDict = globalDict
             
     def setupUi(self,widget, showCombos=True ):
@@ -50,6 +55,7 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitSelectionComboBox.addItems( sorted(fitFunctionMap.keys()) )
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
+        self.fitfunctionTableModel.parametersChanged.connect( self.autoSave )
         self.parameterTableView.setModel(self.fitfunctionTableModel)
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
@@ -69,26 +75,32 @@ class FitUi(fitForm, QtGui.QWidget):
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-#         self.autoSaveAction = QtGui.QAction( "auto save" , self)
-#         self.autoSaveAction.setCheckable(True)
-#         self.autoSaveAction.setChecked(self.parameters.autoSave )
-#         self.autoSaveAction.triggered.connect( self.onAutoSave )
-#         self.addAction( self.autoSaveAction )
-        self.showAnalysisAction = QtGui.QAction( "show analysis" , self)
-        self.showAnalysisAction.setCheckable(True)
-        self.showAnalysisAction.setChecked(self.showAnalysisEnabled )
-        self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
-        self.addAction( self.showAnalysisAction )
+        self.autoSaveAction = QtGui.QAction( "auto save" , self)
+        self.autoSaveAction.setCheckable(True)
+        self.autoSaveAction.setChecked(self.parameters.autoSave )
+        self.autoSaveAction.triggered.connect( self.onAutoSave )
+        self.addAction( self.autoSaveAction )
+#        self.showAnalysisAction = QtGui.QAction( "show analysis" , self)
+#        self.showAnalysisAction.setCheckable(True)
+#        self.showAnalysisAction.setChecked(self.showAnalysisEnabled )
+#        self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
+#        self.addAction( self.showAnalysisAction )
         restoreGuiState( self, self.config.get(self.configname+".guiState") )
         if not showCombos:
             self.fitSelectionComboBox.setVisible( False )
             self.widget.setVisible( False )
+        self.autoSave()
+            
+    def onAutoSave(self, state):
+        self.parameters.autoSave = state
+        self.autoSave()
             
     def onShowAnalysisEnabled(self, status):
         self.showAnalysisEnabled = status==QtCore.Qt.Checked
         
     def onUseSmartStartValues(self, state):
         self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
+        self.autoSave()
 
     def onFitfunctionChanged(self, name):
         name = str(name)
@@ -169,12 +181,9 @@ class FitUi(fitForm, QtGui.QWidget):
         self.config[self.configname+"AnalysisDefinitions"] = self.analysisDefinitions
         self.config[self.configname+"LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
         self.config[self.configname+"LastFitfunction"] = self.fitfunction
-        self.config[self.configname+"ShowAnalysisEnabled"] = self.showAnalysisEnabled
+        self.config[self.configname+".Parameters"] = self.parameters
         self.config[self.configname+".guiState"] = saveGuiState( self )
-            
-    def saveState(self):
-        pass
-    
+                
     def onRemoveAnalysis(self):
         name = str(self.analysisNameComboBox.currentText())
         if name in self.analysisDefinitions:
@@ -195,7 +204,21 @@ class FitUi(fitForm, QtGui.QWidget):
             self.analysisNameComboBox.addItem(name)
         if isNew:
             self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
+        self.saveButton.setEnabled( False )
         
+    def autoSave(self):
+        if self.parameters.autoSave:
+            self.onSaveAnalysis()
+            self.saveButton.setEnabled( False )
+        else:
+            self.saveButton.setEnabled( self.saveable() )
+ 
+    def saveable(self):
+        name = str(self.analysisNameComboBox.currentText())       
+        definition = StoredFitFunction.fromFitfunction(self.fitfunction)
+        definition.name = name
+        return name != '' and ( name not in self.analysisDefinitions or not (self.analysisDefinitions[name] == definition) )             
+                       
     def onLoadAnalysis(self, name=None):
         name = str(name) if name is not None else str(self.analysisNameComboBox.currentText())
         if name in self.analysisDefinitions:
