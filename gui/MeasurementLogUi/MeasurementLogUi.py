@@ -7,16 +7,16 @@ Created on Nov 21, 2014
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 from persist.MeasurementLog import MeasurementContainer
-from gui.MeasurementLogUi.MeasurementTableModel import MeasurementTableModel
-from gui.MeasurementLogUi.ResultTableModel import ResultTableModel 
-from gui.MeasurementLogUi.StudyTableModel import StudyTableModel
-from gui.MeasurementLogUi.ParameterTableModel import ParameterTableModel
+from MeasurementTableModel import MeasurementTableModel
+from ResultTableModel import ResultTableModel 
+from StudyTableModel import StudyTableModel
+from ParameterTableModel import ParameterTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from datetime import datetime, time, timedelta
 from _functools import partial
 from modules.firstNotNone import firstNotNone
 from modules.Utility import unique
-from gui.MeasurementLogUi.ScanNameTableModel import ScanNameTableModel  #@UnresolvedImport
+from ScanNameTableModel import ScanNameTableModel 
 from modules.PyqtUtility import updateComboBoxItems
 import weakref
 import logging
@@ -25,7 +25,7 @@ import numpy
 from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
 from modules import WeakMethod
-from modules.GuiAppearance import saveGuiState, restoreGuiState    #@UnresolvedImport
+from modules.GuiAppearance import saveGuiState, restoreGuiState    
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 

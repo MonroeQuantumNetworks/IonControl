@@ -16,7 +16,6 @@ import copy
 from PyQt4 import QtCore, QtGui
 from scan.PushVariableTableModel import PushVariableTableModel     #@UnresolvedImport
 from scan.DatabasePushDestination import DatabasePushDestination   #@UnresolvedImport
-from modules.firstNotNone import firstNotNone
 from fit.FitUiTableModel import FitUiTableModel
 from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitFunctionBase import fitFunctionMap
@@ -401,7 +400,6 @@ class AnalysisControl(ControlForm, ControlBase ):
     
 if __name__=="__main__":
     import sys
-    from PyQt4 import QtGui
     config = dict()
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()

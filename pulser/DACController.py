@@ -3,8 +3,7 @@ Created on Dec 15, 2014
 
 @author: pmaunz
 '''
-from pulser.OKBase import OKBase
-# import logging
+from OKBase import OKBase
 import struct
 import numpy
 

@@ -17,9 +17,8 @@ from Chassis.itfParser import itfParser
 from gui import ProjectSelection
 from modules import MyException
 from modules.SequenceDict import SequenceDict
-from voltageControl.AdjustValue import AdjustValue
-
-from pulser.DACController import DACControllerException   #@UnresolvedImport
+from AdjustValue import AdjustValue
+from pulser.DACController import DACControllerException   
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -229,7 +228,7 @@ class VoltageBlender(QtCore.QObject):
                         
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
-        for name, adjust in self.adjustDict.iteritems():
+        for _, adjust in self.adjustDict.iteritems():
             offset = offset + self.adjustLines[adjust.line] * float(adjust.value)
         offset *= self.adjustGain
         return (line+offset)

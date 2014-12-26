@@ -1,6 +1,4 @@
 from PyQt4 import QtCore, QtGui
-from modules.firstNotNone import firstNotNone
-from _functools import partial
 from fit.FitFunctionBase import fitFunctionMap
 
 

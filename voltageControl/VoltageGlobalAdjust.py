@@ -8,7 +8,7 @@ from PyQt4 import QtCore
 import PyQt4.uic
 
 from modules.SequenceDict import SequenceDict
-from voltageControl.VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel   #@UnresolvedImport
+from VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel   #@UnresolvedImport
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 

@@ -1,5 +1,3 @@
-import functools
-
 from PyQt4 import QtGui
 import PyQt4.uic
 
@@ -11,9 +9,9 @@ from functools import partial
 import time
 from collections import defaultdict
 from modules.Expression import Expression
-from pulser.DDSTableModel import DDSTableModel
+from DDSTableModel import DDSTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.GuiAppearance import restoreGuiState, saveGuiState
+from modules.GuiAppearance import restoreGuiState, saveGuiState 
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 

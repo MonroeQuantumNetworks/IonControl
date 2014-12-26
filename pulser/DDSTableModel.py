@@ -5,7 +5,7 @@ Created on Nov 21, 2014
 '''
 from PyQt4 import QtCore, QtGui
 from modules.firstNotNone import firstNotNone
-from _functools import partial
+from functools import partial
 
 class DDSTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['On', 'Name', 'Frequency', 'Phase', 'Amplitude' ]
