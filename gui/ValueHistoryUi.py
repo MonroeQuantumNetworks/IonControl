@@ -9,15 +9,12 @@ from PyQt4 import QtCore
 from functools import partial
 from persist.ValueHistory import ValueHistoryStore
 from modules.PyqtUtility import updateComboBoxItems
-from datetime import datetime, timedelta
-from trace.Trace import Trace
-from trace.PlottedTrace import PlottedTrace
-import numpy
+from datetime import datetime
 from collections import defaultdict
 import logging
-import pytz
-from modules import WeakMethod 
-import weakref
+from uiModules.GenericTableModel import GenericTableModel
+from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
+from modules.magnitude import mg
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ValueHistory.ui')
 
@@ -26,7 +23,7 @@ class Parameters(object):
     def __init__(self):
         self.space = None
         self.parameter = None
-        self.fromTime = None
+        self.fromTime = datetime(2014,1,1)
         self.spaceParamCache = dict()
 
 class ValueHistoryUi(Form,Base):
@@ -34,7 +31,7 @@ class ValueHistoryUi(Form,Base):
         Base.__init__(self,parent)
         Form.__init__(self)
         self.config = config
-        self.parameters = self.config.get("ValueHistory",Parameters())
+        self.parameters = self.config.get("ValueHistory.parameters",Parameters())
         self.connection = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
         self.connection.open_session()
         self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
@@ -55,6 +52,9 @@ class ValueHistoryUi(Form,Base):
         self.dateTimeEditFrom.dateTimeChanged.connect( partial(self.onValueChangedDateTime, 'fromTime')  )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.onSpaceChanged(self.parameters.space)
+        self.dataModel = GenericTableModel(self.config, list(), "ValueHistory", ["Date","Value"])
+        self.tableView.setModel( self.dataModel )
+        restoreGuiState( self, self.config.get('ValueHistory.guiState'))
         
     def onValueChangedString(self, param, value):
         setattr( self.parameters, param, str(value) )
@@ -63,7 +63,8 @@ class ValueHistoryUi(Form,Base):
         setattr( self.parameters, param, value.toPyDateTime() )
 
     def saveConfig(self):
-        self.config["InstrumentLoggerQueryUi"] = self.parameters
+        self.config["ValueHistory.parameters"] = self.parameters
+        self.config['ValueHistory.guiState'] = saveGuiState( self )
         
     def onRefresh(self):
         self.parameterNames = defaultdict( list )
@@ -83,47 +84,14 @@ class ValueHistoryUi(Form,Base):
             self.comboBoxParam.setCurrentIndex( self.comboBoxParam.findText(self.parameters.parameter ))
                
     def onLoad(self):
-        pass
-                
-    def doCreatePlot(self, space, parameter, fromTime, toTime, plotName, steps, forceUpdate=False ):
-        ref, _ = self.cache.get( ( space, parameter ), (lambda: None, None)) 
-        plottedTrace = ref() if (self.parameters.updatePrevious or forceUpdate) else None # get plottedtrace from the weakref if exists           
-        result = self.connection.getHistory( space, parameter, fromTime , toTime )
+        self.doLoad( self.parameters.space, self.parameters.parameter, self.parameters.fromTime )
+
+    def doLoad(self, space, parameter, fromTime ):
+        result = self.connection.getHistory( space, parameter, fromTime , datetime.now() )
         if not result:
             logging.getLogger(__name__).error("Database query returned empty set")
         elif len(result)>0:
-            epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if result[0].upd_date.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
-            time = [(e.upd_date - epoch).total_seconds() for e in result]
-            value = [e.value for e in result]
-            bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
-            top = [e.top -e.value if e.top is not None else e.value for e in result]
-            if plottedTrace is None:  # make a new plotted trace
-                trace = Trace(record_timestamps=False)
-                trace.name = parameter + " Query"
-                trace.y = numpy.array( value )
-                if plotName is None:
-                    plotName = str(self.comboBoxPlotName.currentText()) 
-                if steps:
-                    trace.x = numpy.array( time+[time[-1]] )
-                    plottedTrace = PlottedTrace( trace, self.plotDict[plotName]["view"], xAxisLabel = "local time", plotType=PlottedTrace.Types.steps, fill=False, windowName=plotName) #@UndefinedVariable
-                else:
-                    trace.x = numpy.array( time )
-                    trace.top = numpy.array( top )
-                    trace.bottom = numpy.array( bottom )
-                    plottedTrace = PlottedTrace( trace, self.plotDict[plotName]["view"], xAxisLabel = "local time", windowName=plotName) 
-                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
-                self.traceui.addTrace( plottedTrace, pen=-1)
-                self.traceui.resizeColumnsToContents()
-                self.cache[(space, parameter)] = ( weakref.ref(plottedTrace), (space, parameter, fromTime, toTime, plotName, steps) )
-            else:  # update the existing plotted trace
-                trace = plottedTrace.trace
-                trace.y = numpy.array( value )
-                if steps:
-                    trace.x = numpy.array( time+[time[-1]] )
-                else:
-                    trace.x = numpy.array( time )
-                    trace.top = numpy.array( top )
-                    trace.bottom = numpy.array( bottom )
-                plottedTrace.replot()     
+            self.data = [(e.upd_date, mg(e.value, e.unit)) for e in reversed(result)]
+            self.dataModel.setDataTable(self.data)
                 
            
