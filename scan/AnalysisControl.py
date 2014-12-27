@@ -132,6 +132,8 @@ class AnalysisControl(ControlForm, ControlBase ):
         else:
             self.currentAnalysisName = str( self.analysisConfigurationComboBox.currentText() )
         self.analysisConfigurationComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysisConfiguration )
+        self.analysisConfigurationComboBox.lineEdit().editingFinished.connect( self.autoSave ) 
+
         # FitUi
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
