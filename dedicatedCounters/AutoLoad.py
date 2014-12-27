@@ -540,7 +540,8 @@ class AutoLoad(UiForm,UiBase):
                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
                 self.allFreqsInRange.setToolTip("There are laser frequencies out of range")
                 #This is the interlock: loading is inhibited if frequencies are out of range
-                self.statemachine.processEvent( 'outOfLock' )
+                if self.settings.useInterlock:
+                    self.statemachine.processEvent( 'outOfLock' )
         
     def onValueChanged(self,attr,value):
         """Change the value of attr in settings to value"""
