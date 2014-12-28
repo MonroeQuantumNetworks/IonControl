@@ -182,7 +182,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
-        self.valueHistoryUi = ValueHistoryUi(self.config)
+        self.valueHistoryUi = ValueHistoryUi(self.config, self.dbConnection)
         self.valueHistoryUi.setupUi( self.valueHistoryUi )
         self.valueHistoryDock = QtGui.QDockWidget("Value History")
         self.valueHistoryDock.setWidget( self.valueHistoryUi )

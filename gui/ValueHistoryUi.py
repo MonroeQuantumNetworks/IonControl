@@ -27,12 +27,13 @@ class Parameters(object):
         self.spaceParamCache = dict()
 
 class ValueHistoryUi(Form,Base):
-    def __init__(self, config, parent=None):
+    def __init__(self, config, dbConnection, parent=None):
         Base.__init__(self,parent)
         Form.__init__(self)
         self.config = config
         self.parameters = self.config.get("ValueHistory.parameters",Parameters())
-        self.connection = ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol")
+        self.dbConnection = dbConnection
+        self.connection = ValueHistoryStore(dbConnection.connectionString)
         self.connection.open_session()
         self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
         self.cache = dict()
