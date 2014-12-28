@@ -47,6 +47,7 @@ from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
 from pulser.DACController import DACController    #@UnresolvedImport
 from gui.ValueHistoryUi import ValueHistoryUi
 from modules.doProfile import doprofile
+from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -202,16 +203,24 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
         self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.globalVariablesUi.variables )
-        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.ExternalParametersUi )
+        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.outputChannels(), self.ExternalParametersUi )
         self.globalVariablesUi.valueChanged.connect( self.ExternalParametersUi.evaluate )
 
         self.ExternalParameterDock = QtGui.QDockWidget("Params Control")
         self.ExternalParameterDock.setWidget(self.ExternalParametersUi)
         self.ExternalParameterDock.setObjectName("_ExternalParameterDock")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterDock)
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
+        self.ExternalParametersSelectionUi.outputChannelsChanged.connect( self.ExternalParametersUi.setupParameters )
+
+        self.instrumentLoggingDisplay = InstrumentLoggingDisplay(self.config)
+        self.instrumentLoggingDisplay.setupUi( self.ExternalParametersSelectionUi.inputChannels(), self.instrumentLoggingDisplay )
+        self.instrumentLoggingDisplayDock = QtGui.QDockWidget("Params Reading")
+        self.instrumentLoggingDisplayDock.setObjectName("_ExternalParameterDisplayDock")
+        self.instrumentLoggingDisplayDock.setWidget(self.instrumentLoggingDisplay)
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.instrumentLoggingDisplayDock)
+        self.ExternalParametersSelectionUi.inputChannelsChanged.connect( self.instrumentLoggingDisplay.setupParameters )
                
-        self.ExternalParametersSelectionUi.selectionChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
+        self.ExternalParametersSelectionUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
         self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.outputChannels() )
         
         self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab, self.globalVariablesUi )
@@ -331,7 +340,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     def onClear(self):
         self.currentTab.onClear()
     
-    def onSave(self):
+    def onSave(self, _):
         logger = logging.getLogger(__name__)
         self.currentTab.onSave()
         logger.info( "Saving config" )
@@ -446,7 +455,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.instrumentLogger:
             self.instrumentLogger.shutdown()
 
-    #@doprofile
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
         for tab in self.tabDict.values():

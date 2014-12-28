@@ -146,13 +146,13 @@ class ControlUi(UiForm,UiBase):
         self.tagetValue = dict()
         self.globalDict = firstNotNone( globalDict, dict() )
     
-    def setupUi(self,EnabledParameters,MainWindow):
+    def setupUi(self, outputChannels ,MainWindow):
         UiForm.setupUi(self,MainWindow)
         self.tableModel = ExternalParameterControlTableModel(self)
         self.tableView.setModel( self.tableModel )
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
-        self.setupParameters(  list(itertools.chain(*[p.outputChannels() for p in EnabledParameters.itervalues()]) ))
+        self.setupParameters( outputChannels )
         
     def setupParameters(self, outputChannels):
         self.tableModel.setParameterList( outputChannels )

@@ -15,6 +15,7 @@ from modules.magnitude import is_magnitude
 from modules.AttributeRedirector import AttributeRedirector
 from externalParameter.OutputChannel import OutputChannel #@UnresolvedImport
 from modules.Observable import Observable
+from externalParameter.InputChannel import InputChannel
 
 def nextValue( current, target, stepsize, jump ):
     if current is None:
@@ -37,6 +38,7 @@ class ExternalParameterBase(object):
         self.savedValue = dict()
         self.decimation = StaticDecimation()
         self.persistence = DBPersist()
+        self.inputObservable = dict()
 
     def dimension(self, channel):
         return self._outputChannels[channel]
@@ -138,7 +140,7 @@ class ExternalParameterBase(object):
         pass
     
     def fullName(self, channel):
-        return "{0}_{1}".format(self.name,channel)
+        return "{0}_{1}".format(self.name,channel) if channel is not None else self.name
     
     def useExternalValue(self, channel=None):
         return False
@@ -147,5 +149,10 @@ class ExternalParameterBase(object):
         return [(self.fullName(channel), OutputChannel(self,self.name,channel)) for channel in self._outputChannels.iterkeys()]
     
     def inputChannels(self):
-        return [(self.fullName(channel), OutputChannel(self,self.name,channel)) for channel in self._inputChannels.iterkeys()]
+        return [(self.fullName(channel), InputChannel(self,self.name,channel)) for channel in self._inputChannels.iterkeys()]
         
+    def getValue(self, channel):
+        return None
+    
+    def getInputData(self, channel):
+        return None
