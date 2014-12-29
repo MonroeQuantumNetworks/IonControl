@@ -50,6 +50,7 @@ from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import  Measurement, Parameter, Result
 from scan.AnalysisControl import AnalysisControl   #@UnresolvedImport
+from modules.Utility import join
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -710,15 +711,17 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             for obj in target.values():
                 measurement.parameters.append( Parameter(name=obj.name, value=obj.value, definition=obj.strValue if hasattr(obj,'strValue') else None, space=space) )
         # add results
-        for evaluation in self.evaluation.evalList:
-            if hasattr(evaluation,'fitfunction'):
-                fit = evaluation.fitfunction
-                for name, value, confidence in zip( fit.parameterNames, fit.parameters, fit.parametersConfidence ):
-                    measurement.results.append( Result(name=name, value=value, bottom=confidence, top=confidence))
-                for result in fit.results.itervalues():
-                    measurement.results.append( Result(name=result.name, value=result.value))
-                for pushvar in fit.pushVariables.itervalues():
-                    measurement.results.append( Result(name=pushvar.variableName, value=pushvar.value))   
+        for evaluationElement in self.analysisControlWidget.analysisDefinition:
+            fit = evaluationElement.fitfunction.fitfunction()
+            for name, value, confidence in zip( fit.parameterNames, fit.parameters, fit.parametersConfidence ):
+                fullName = join( '_', [evaluationElement.name, name] )
+                measurement.results.append( Result(name=fullName, value=value, bottom=confidence, top=confidence))
+            for result in fit.results.itervalues():
+                fullName = join( '_', [evaluationElement.name, result.name] )
+                measurement.results.append( Result(name=fullName, value=result.value))
+            for pushvar in evaluationElement.pushVariables.itervalues():
+                fullName = join( '_', [evaluationElement.name, pushvar.variableName] )
+                measurement.results.append( Result(name=fullName, value=pushvar.value))   
         # add Plots
         measurement.plottedTraceList = self.plottedTraceList              
         self.measurementLog.container.addMeasurement( measurement )

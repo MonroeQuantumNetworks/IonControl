@@ -8,3 +8,7 @@ def unique(seq):
 def flatten(listOfLists):
     "Flatten one level of nesting"
     return chain.from_iterable(listOfLists)
+
+def join( s, iterable ):
+    """join ignoring None values"""
+    return s.join( (i for i in iterable if i is not None and str(i) != ''))

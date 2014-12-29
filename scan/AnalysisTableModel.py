@@ -10,13 +10,16 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row:  QtCore.Qt.Checked if self.analysisDefinition[row].enabled else QtCore.Qt.Unchecked,
-                            (QtCore.Qt.DisplayRole,1): lambda row: self.analysisDefinition[row].evaluation,
-                            (QtCore.Qt.DisplayRole,2): lambda row: self.analysisDefinition[row].fitfunctionName,
-                            (QtCore.Qt.EditRole,1): lambda row: self.analysisDefinition[row].evaluation,
-                            (QtCore.Qt.EditRole,2): lambda row: self.analysisDefinition[row].fitfunctionName,
+                            (QtCore.Qt.DisplayRole,1): lambda row: self.analysisDefinition[row].name,
+                            (QtCore.Qt.DisplayRole,2): lambda row: self.analysisDefinition[row].evaluation,
+                            (QtCore.Qt.DisplayRole,3): lambda row: self.analysisDefinition[row].fitfunctionName,
+                            (QtCore.Qt.EditRole,1): lambda row: self.analysisDefinition[row].name,
+                            (QtCore.Qt.EditRole,2): lambda row: self.analysisDefinition[row].evaluation,
+                            (QtCore.Qt.EditRole,3): lambda row: self.analysisDefinition[row].fitfunctionName,
                             }                           
-        self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setEvaluation,
-                                 (QtCore.Qt.EditRole,2): self.setFitfunction,
+        self.setDataLookup =   { (QtCore.Qt.EditRole,1): self.setName,
+                                 (QtCore.Qt.EditRole,2): self.setEvaluation,
+                                 (QtCore.Qt.EditRole,3): self.setFitfunction,
                                  (QtCore.Qt.CheckStateRole,0): self.setEnabled }
         self.analysisDefinition = analysisDefinition
         self.pushDestinations = []
@@ -39,6 +42,14 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
         value =  str(value)
         if value:
             self.analysisDefinition[row].evaluation = value
+            self.analysisChanged.emit()
+            return True
+        return False
+
+    def setName(self, row, value):
+        value =  str(value.toString())
+        if value:
+            self.analysisDefinition[row].name = value
             self.analysisChanged.emit()
             return True
         return False
@@ -68,7 +79,7 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
         return len(self.analysisDefinition) if self.analysisDefinition else 0
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 3
+        return 4
 
     def update(self):
         self.dataChanged.emit( self.createIndex(0,0), self.createIndex(self.rowCount(),7) )
@@ -93,11 +104,11 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
     def flags(self, index ):
         if index.column()==0:
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable
-        if index.column() in [1,2]:
+        if index.column() in [1,2, 3]:
             return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
         return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
 
-    headerDataLookup = ['Enable', 'Evaluation', 'Fit function']
+    headerDataLookup = ['Enable', 'Name', 'Evaluation', 'Fit function']
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 

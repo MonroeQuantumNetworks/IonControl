@@ -27,6 +27,7 @@ ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
 class AnalysisDefinitionElement(object):
     def __init__(self):
+        self.name = ''
         self.enabled = True
         self.evaluation = None
         self.fitfunctionName = None
@@ -36,6 +37,7 @@ class AnalysisDefinitionElement(object):
         
     def __setstate__(self, state):
         self.__dict__ = state
+        self.__dict__.setdefault('name','')
         
     stateFields = ['enabled', 'evaluation', 'fitfunctionName', 'pushVariables', 'fitfunction', 'fitfunctionCache'] 
         
@@ -113,8 +115,8 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.analysisTableModel.analysisChanged.connect( self.autoSave )
         self.analysisTableView.setModel( self.analysisTableModel )
         self.analysisTableView.selectionModel().currentChanged.connect( self.onActiveAnalysisChanged )
-        self.analysisTableView.setItemDelegateForColumn(1,self.analysisComboDelegate)
         self.analysisTableView.setItemDelegateForColumn(2,self.analysisComboDelegate)
+        self.analysisTableView.setItemDelegateForColumn(3,self.analysisComboDelegate)
         self.pushTableModel = PushVariableTableModel(self.config, self.globalDict)
         self.pushTableModel.pushChanged.connect( self.autoSave )
         self.pushTableView.setModel( self.pushTableModel )
@@ -183,7 +185,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         if deselected and self.fitfunction:
             self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
         self.currentEvaluation = self.analysisDefinition[selected.row()]
-        self.currentEvaluationLabel.setText( "{0} - {1}".format(self.currentEvaluation.evaluation, self.currentEvaluation.fitfunctionName) )
+        self.currentEvaluationLabel.setText( self.currentEvaluation.name )
         if self.currentEvaluation.fitfunction:
             self.setFitfunction( self.currentEvaluation.fitfunction.fitfunction() )
         self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables, self.fitfunction)
