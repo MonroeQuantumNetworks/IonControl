@@ -23,13 +23,15 @@ class Settings:
     pass
 
 class VoltageControl(VoltageControlForm, VoltageControlBase ):    
-    def __init__(self,config,parent=None):
+    def __init__(self, config, globalDict=None, dacController=None, parent=None):
         VoltageControlForm.__init__(self)
         VoltageControlBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageControl.Settings'
         self.settings = self.config.get(self.configname,Settings())
-        self.voltageBlender = VoltageBlender.VoltageBlender()
+        self.dacController = dacController
+        self.voltageBlender = VoltageBlender.VoltageBlender(globalDict, dacController)
+        self.globalDict = globalDict
 
     def setupUi(self, parent):
         logger = logging.getLogger(__name__)
@@ -41,7 +43,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.adjustUi.updateOutput.connect( self.onUpdate )
         self.adjustUi.setupUi( self.adjustUi )
         self.adjustDock.setWidget( self.adjustUi )
-        self.globalAdjustUi = VoltageGlobalAdjust(self.config)
+        self.globalAdjustUi = VoltageGlobalAdjust(self.config, self.globalDict)
         self.globalAdjustUi.setupUi( self.globalAdjustUi )
         self.globalAdjustUi.updateOutput.connect( self.voltageBlender.setAdjust )
         self.globalAdjustDock.setWidget( self.globalAdjustUi )
