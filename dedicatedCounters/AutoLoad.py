@@ -33,6 +33,7 @@ from modules.GuiAppearance import restoreGuiState, saveGuiState #@UnresolvedImpo
 import copy
 from modules.PyqtUtility import updateComboBoxItems
 from _collections import defaultdict
+from persist.LoadingEvent import LoadingEvent, LoadingHistory
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
@@ -135,27 +136,29 @@ def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
     return (not logic if invert else logic)
 
-class LoadingEvent:
-    def __init__(self,loading=None,trappedAt=None):
-        self.loadingTime = loading
-        self.trappedAt = trappedAt
-        self.trappingTime = None
 
 class Parameters(object):
     def __init__(self):
         self.autoSave = False
+        self.historyLength = timedelta(days=1)
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'historyLength', timedelta(days=1) )
 
 class AutoLoad(UiForm,UiBase):
     ionReappeared = QtCore.pyqtSignal()
-    def __init__(self, config, pulser, dataAvailableSignal, globalVariablesUi, externalInstrumentObservable, parent=None):
+    def __init__(self, config, dbConnection, pulser, dataAvailableSignal, globalVariablesUi, externalInstrumentObservable, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
         self.config = config
+        self.parameters = self.config.get('AutoLoad.Parameters', Parameters() )
         self.settings = self.config.get('AutoLoad.Settings',AutoLoadSettings())
         self.settingsDict = self.config.get('AutoLoad.Settings.dict', dict())
         self.currentSettingsName = self.config.get('AutoLoad.SettingsName','')
-        self.loadingHistory = self.config.get('AutoLoad.History',list())
-        self.loadingHistoryDict = self.config.get('AutoLoad.HistoryDict',defaultdict( list ))
+        self.loadingHistory = LoadingHistory(dbConnection)
+        self.loadingHistory.open()
+        self.loadingHistory.query( datetime.now()-self.parameters.historyLength, datetime.now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
         self.timer = None
         self.pulser = pulser
         self.dataSignalConnected = False
@@ -170,7 +173,6 @@ class AutoLoad(UiForm,UiBase):
         self.globalVariablesUi = globalVariablesUi
         self.globalAdjustRevertList = list()
         self.externalInstrumentObservable = externalInstrumentObservable
-        self.parameters = self.config.get('AutoLoad.Parameters', Parameters() )
         
     def constructStatemachine(self):
         self.statemachine = Statemachine('AutoLoad')
@@ -326,7 +328,11 @@ class AutoLoad(UiForm,UiBase):
         self.removeProfileButton.clicked.connect( self.onRemoveProfile )
         self.initCheckBox(self.autoReloadBox, 'autoReload')
         
-        self.historyTableModel = LoadingHistoryModel(self.loadingHistory)
+        self.historyTableModel = LoadingHistoryModel(self.loadingHistory.loadingEvents )
+        self.loadingHistory.beginResetModel.subscribe( self.historyTableModel.beginResetModel )
+        self.loadingHistory.endResetModel.subscribe( self.historyTableModel.endResetModel )
+        self.loadingHistory.beginInsertRows.subscribe( self.historyTableModel.beginInsertRows )
+        self.loadingHistory.endInsertRows.subscribe( self.historyTableModel.endInsertRows )
         self.historyTableView.setModel(self.historyTableModel)
         self.keyFilter = KeyFilter(QtCore.Qt.Key_Delete)
         self.keyFilter.keyPressed.connect( self.deleteFromHistory )
@@ -390,8 +396,7 @@ class AutoLoad(UiForm,UiBase):
         self.parameterWidget.setParameters( self.parameter() )
         self.useInterlockGui.setChecked(self.settings.useInterlock)
         self.autoReloadBox.setChecked(self.settings.autoReload)
-        self.loadingHistory = self.loadingHistoryDict[name]
-        self.historyTableModel.history = self.loadingHistory
+        self.loadingHistory.query( datetime.now()-self.parameters.historyLength, datetime.now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
         self.globalsAdjustTableModel.setSettings(self.settings.globalsAdjustList)
         self.tableModel.setChannelDict( self.settings.interlock )
 
@@ -670,12 +675,13 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.numFailedAutoload = 0
-        self.trappingTime = self.loadingHistory[-1].trappedAt
+        self.trappingTime = self.loadingHistory[-1].trappingTime
         self.timerNullTime = self.trappingTime
         self.ionReappeared.emit()        
     
     def exitTrapped(self):
-        self.historyTableModel.updateLast('trappingTime',datetime.now()-self.trappingTime)
+        self.loadingHistory.loadingEvents[-1].trappingDuration = datetime.now()-self.trappingTime
+        self.historyTableModel.updateLast()
     
     def setFrozen(self):
         self.startButton.setEnabled( False )
@@ -734,11 +740,9 @@ class AutoLoad(UiForm,UiBase):
             
     def saveConfig(self):
         self.config['AutoLoad.Settings'] = self.settings
-        self.config['AutoLoad.History'] = self.loadingHistory
         self.config['AutoLoad.guiState'] = saveGuiState( self )
         self.config['AutoLoad.Settings.dict'] = self.settingsDict
         self.config['AutoLoad.SettingsName'] = self.currentSettingsName
-        self.config['AutoLoad.HistoryDict'] = self.loadingHistoryDict
         self.config['AutoLoad.Parameters'] = self.parameters
 
 
