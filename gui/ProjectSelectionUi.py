@@ -28,6 +28,12 @@ class ProjectSelectionUi(Form, Base):
         Form.setupUi(self,parent)
         self.projects = ProjectSelection.projects()
         self.projectList.addItems( self.projects )
+        self.projectList.doubleClicked.connect( self.onDoubleClicked )
+        self.project = ProjectSelection.lastProject()
+        if self.project:
+            found = self.projectList.findItems( self.project, QtCore.Qt.MatchExactly )
+            if found:
+                self.projectList.setCurrentItem(found[0])
         self.createButton.clicked.connect( self.onCreateProject )
         self.defaultCheckBox.setChecked( bool(self.defaultProject) )
         self.baseDirectoryEdit.setText( ProjectSelection.ProjectsBaseDir )
@@ -92,11 +98,16 @@ class ProjectSelectionUi(Form, Base):
             self.projects.append(name)
             self.projectList.addItem(name)
             
+    def onDoubleClicked(self, index):
+        self.accept()
+            
     def accept(self):
         if self.defaultCheckBox.isChecked():
-            ProjectSelection.setDefaultProject(str(self.projectList.currentItem().text()), self.databaseConnectionLookup)
+            ProjectSelection.setDefaultProject(str(self.projectList.currentItem().text()), lastProject=str(self.projectList.currentItem().text()), 
+                                               databaseConnectionLookup=self.databaseConnectionLookup)
         else:
-            ProjectSelection.setDefaultProject(None, self.databaseConnectionLookup)
+            ProjectSelection.setDefaultProject(None, lastProject=str(self.projectList.currentItem().text()), 
+                                               databaseConnectionLookup=self.databaseConnectionLookup)
         self.project = str(self.projectList.currentItem().text()) if self.projectList.currentItem() else None
         Base.accept(self)
         

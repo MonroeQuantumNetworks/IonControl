@@ -15,6 +15,7 @@ from persist.configshelve import configshelve
 ProjectsBaseDir = os.path.expanduser("~public\\Documents\\experiments")
 Project = None
 DefaultProject = None
+LastProject = None
 DatabaseConnectionLookup = dict()
 DatabaseConnection = None
 DefaultProjectCached = False
@@ -26,6 +27,7 @@ class ProjectException(Exception):
 if hasattr(__main__,'__file__'):
     with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
         DefaultProject = config.get('DefaultProject')
+        LastProject = config.get('LastProject')
         ProjectsBaseDir = config.get('ProjectBaseDir',ProjectsBaseDir)
         DataDirectory.DataDirectoryBase = ProjectsBaseDir
         DatabaseConnectionLookup = config.get('DatabaseConnectionLookup', dict())
@@ -41,22 +43,39 @@ def projects():
     return [name for name in os.listdir(ProjectsBaseDir)
             if os.path.isdir(os.path.join(ProjectsBaseDir, name))]
     
+def refreshCache():
+    global DefaultProject
+    global DatabaseConnectionLookup
+    global DefaultProjectCached
+    global LastProject
+    if hasattr(__main__,'__file__'):
+        with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
+            DefaultProject = config.get('DefaultProject')
+            LastProject = config.get('LastProject')
+            DatabaseConnectionLookup = config.get('DatabaseConnectionLookup', dict())
+        DefaultProjectCached = True
+    
 def defaultProject(returnDatabaseLookup=False):
     global DefaultProject
     global DatabaseConnectionLookup
     global DefaultProjectCached
+    global LastProject
     if not DefaultProjectCached:
-        if hasattr(__main__,'__file__'):
-            with configshelve(os.path.basename(__main__.__file__)+"-project.db") as config:
-                DefaultProject = config.get('DefaultProject')
-                DatabaseConnectionLookup = config.get('DatabaseConnectionLookup', dict())
-            DefaultProjectCached = True
+        refreshCache()
     return DefaultProject, DatabaseConnectionLookup if returnDatabaseLookup else DefaultProject
+
+def lastProject():
+    global DefaultProject
+    global DatabaseConnectionLookup
+    global DefaultProjectCached
+    if not DefaultProjectCached:
+        refreshCache()
+    return LastProject
     
 def createProject(name):
     os.mkdir(os.path.join(ProjectsBaseDir, name))
     
-def setDefaultProject(name, databaseConnectionLookup=None):
+def setDefaultProject(name, lastProject=None, databaseConnectionLookup=None):
     global DefaultProjectCached
     global DefaultProject
     DefaultProject = name
@@ -65,6 +84,8 @@ def setDefaultProject(name, databaseConnectionLookup=None):
             config['DefaultProject'] = name
             if databaseConnectionLookup:
                 config['DatabaseConnectionLookup'] = databaseConnectionLookup
+            if lastProject is not None:
+                config['LastProject'] = lastProject
     DefaultProjectCached = True
 
 def getDatabaseConnection():
