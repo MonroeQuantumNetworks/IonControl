@@ -7,18 +7,17 @@ Created on Nov 21, 2014
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 from persist.MeasurementLog import MeasurementContainer
-from gui.MeasurementLogUi.MeasurementTableModel import MeasurementTableModel
-from gui.MeasurementLogUi.ResultTableModel import ResultTableModel 
-from gui.MeasurementLogUi.StudyTableModel import StudyTableModel
-from gui.MeasurementLogUi.ParameterTableModel import ParameterTableModel
+from MeasurementTableModel import MeasurementTableModel
+from ResultTableModel import ResultTableModel 
+from StudyTableModel import StudyTableModel
+from ParameterTableModel import ParameterTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from datetime import datetime, time, timedelta
 from _functools import partial
 from modules.firstNotNone import firstNotNone
 from modules.Utility import unique
-from gui.MeasurementLogUi.ScanNameTableModel import ScanNameTableModel
-from modules.PyqtUtility import saveColumnWidth, restoreColumnWidth,\
-    updateComboBoxItems
+from ScanNameTableModel import ScanNameTableModel 
+from modules.PyqtUtility import updateComboBoxItems
 import weakref
 import logging
 import pytz
@@ -26,6 +25,7 @@ import numpy
 from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
 from modules import WeakMethod
+from modules.GuiAppearance import saveGuiState, restoreGuiState    
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
 
@@ -124,11 +124,6 @@ class MeasurementLogUi(Form, Base ):
         self.addParameterToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
         self.addParameterToMeasurementAction.triggered.connect( self.onAddParameterToMeasurement )
         self.parameterTableView.addAction( self.addParameterToMeasurementAction )
-        # restore splitter positions
-        for splitter in self.mySplitters:
-            name = self.configname+"."+splitter
-            if name in self.config:
-                getattr(self, splitter).restoreState( self.config[name] )
         self.timespanComboBox.addItems( self.timespans )
         self.timespanComboBox.setCurrentIndex( self.settings.timespan )
         self.timespanComboBox.currentIndexChanged[int].connect( self.onChangeTimespan )
@@ -144,9 +139,6 @@ class MeasurementLogUi(Form, Base ):
         self.toDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'toDateTimeEdit') )
         self.plainTextEdit.editingFinished.connect( self.onCommentFinished )
         self.onFilterRefresh()
-        # restore ColumnWidth
-        for tableView in self.myTableViews:
-            restoreColumnWidth( getattr(self,tableView), self.config.get( self.configname+"."+tableView, list() ) )
         self.scanNameFilterButton.clicked.connect( self.onFilterButton )
         self.updateComboBoxes()
         self.plotButton.clicked.connect( self.onCreatePlot )
@@ -159,6 +151,7 @@ class MeasurementLogUi(Form, Base ):
         self.yUnitEdit.setText( self.settings.yUnit )
         self.xUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'xUnit'))
         self.yUnitEdit.editingFinished.connect( partial(self.onEditingFinished, 'yUnit'))
+        restoreGuiState( self, self.config.get(self.configname+".guiSate") )
         
     def addTraceui(self, scan, traceui ):
         self.traceuiLookup[scan] = traceui 
@@ -224,11 +217,8 @@ class MeasurementLogUi(Form, Base ):
         self.onFilterRefresh()
 
     def saveConfig(self):
-        for splitter in self.mySplitters:
-            self.config[self.configname+"."+splitter] = getattr(self, splitter).saveState()
         self.config[self.configname] = self.settings
-        for tableView in self.myTableViews:
-            self.config[self.configname+"."+tableView] = saveColumnWidth(getattr(self,tableView))
+        self.config[self.configname+".guiSate"] = saveGuiState( self )
         
     def onActiveInstrumentChanged(self, modelIndex, modelIndex2 ):
         measurement = self.container.measurements[modelIndex.row()]

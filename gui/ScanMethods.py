@@ -96,7 +96,7 @@ class ExternalScanMethod(InternalScanMethod):
                 logger.info( "Status -> Idle" )
              
     def onData(self, data, queuesize, x ):
-        if not self.parameter.useExternalValue():
+        if not self.parameter.useExternalValue:
             x = self.experiment.generator.xValue(self.index)
             self.experiment.dataMiddlePart(data, queuesize, x)
         else:

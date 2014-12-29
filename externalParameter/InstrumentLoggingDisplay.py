@@ -9,9 +9,9 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from modules.SequenceDict import SequenceDict
-from InstrumentLoggingHandler import LoggingData
 from uiModules.KeyboardFilter import KeyListFilter
 from collections import defaultdict
+from externalParameter.InputData import InputData
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
@@ -37,6 +37,7 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
                      }
         self.data = SequenceDict()
         self.fontsizeCache = self.config.get("InstrumentLoggingDisplayTableModel.FontsizeCache", defaultdict(defaultFontsize))
+        self.inputChannels = dict()
 
     def resize(self, index, keyboardkey):
         if keyboardkey==QtCore.Qt.Key_Equal:
@@ -48,14 +49,19 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
         self.dataChanged.emit(index, index)
             
         
-    def setData(self, enabledObjects):
+    def setInputChannels(self, inputChannels ):
         self.beginResetModel()
         # drop everything that is not in the enabled parameter keys
         for key in self.data.keys():
-            if key not in enabledObjects:
+            if key not in inputChannels:
                 self.data.pop(key)
-        for key in enabledObjects.keys():
-            self.data.__setdefault__( key, LoggingData() )
+                channel = self.inputChannels.pop(key)
+                channel.observable.unsubscribe( self.updateHandler )
+        for key, channel in inputChannels.iteritems():
+            if key not in self.data: 
+                self.data[key] = InputData() 
+                channel.observable.subscribe( self.updateHandler )
+                self.inputChannels[key] = channel
         self.endResetModel()
         
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -76,6 +82,15 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
         if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
             return self.headerLookup[section]
         return None #QtCore.QVariant()
+ 
+    def updateHandler(self, event):
+        #self.update( event.name, event.data )
+        if event.name in self.data:
+            self.data[event.name].raw = event.data[1]
+            index = self.data.index(event.name)
+            leftInd = self.createIndex(index, 1)
+            rightInd = self.createIndex(index, 3)
+            self.dataChanged.emit(leftInd, rightInd) 
  
     def update(self, key, value):
         if key in self.data:
@@ -103,9 +118,8 @@ class InstrumentLoggingDisplay(UiForm,UiBase):
         self.filter.keyPressed.connect( self.onResize )
         self.tableView.installEventFilter(self.filter)
         
-    def setupParameters(self,EnabledParameters):
-        self.tableModel.setData( EnabledParameters )
-        self.tableView.resizeColumnsToContents()
+    def setupParameters(self, inputChannels ):
+        self.tableModel.setInputChannels( inputChannels )
         self.tableView.horizontalHeader().setStretchLastSection(True)
         
     def update(self, key, value):

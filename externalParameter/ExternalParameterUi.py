@@ -16,6 +16,7 @@ from modules.SequenceDict import SequenceDict
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
 from modules.Observable import Observable
+import itertools
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
@@ -44,14 +45,14 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.adjustingDevices = 0
         self.doneAdjusting = Observable()
 
-    def setParameterList(self, parameterList):
+    def setParameterList(self, outputChannelDict):
         self.beginResetModel()
-        self.parameterDict = SequenceDict(parameterList)
-        self.targetValues = [inst.currentValue() for inst in self.parameterDict.values()]
+        self.parameterDict = SequenceDict(outputChannelDict)
+        self.targetValues = [inst.value for inst in self.parameterDict.values()]
         self.externalValues = self.targetValues[:]
         self.toolTips = [None]*len(self.externalValues )
         for index,inst in enumerate(self.parameterDict.values()):
-            inst.displayValueCallback = functools.partial( self.showValue, index )
+            inst.observable.subscribe( functools.partial( self.showValue, index ) )
         self.endResetModel()
         
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -77,7 +78,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         return None #QtCore.QVariant()
  
     def showValue(self, index, value, tooltip=None):
-        self.externalValues[index] = value
+        self.externalValues[index] = value.value
         self.toolTips[index] = tooltip
         leftInd = self.createIndex(index, 2)
         rightInd = self.createIndex(index, 2)
@@ -101,8 +102,8 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         
     def setValueFollowup(self, row):
         logger = logging.getLogger(__name__)
-        logger.debug( "setValueFollowup {0}".format( self.parameterDict.at(row).currentValue() ) )
-        delay = int( self.parameterDict.at(row).settings.delay.toval('ms') )
+        logger.debug( "setValueFollowup {0}".format( self.parameterDict.at(row).value ) )
+        delay = int( self.parameterDict.at(row).delay.toval('ms') )
         if not self.parameterDict.at(row).setValue( self.targetValues[row] ):
             QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,row) )
         else:
@@ -115,7 +116,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         for destination, name, value in iterable:
             if destination=='External':
                 row = self.parameterDict.index(name)
-                self.parameterDict.at(row).setSavedValue( value )     # set saved value to make this new value the default
+                self.parameterDict.at(row).savedValue = value    # set saved value to make this new value the default
                 self.setValue( self.createIndex( row,1), value )
                 self.parameterDict.at(row).strValue = None
                 logging.info("Pushed to external parameter {0} value {1}".format(name,value)) 
@@ -126,7 +127,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
             if expr is not None:
                 value = self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict)
                 self._setValue( row, value )
-                self.parameterDict.at(row).setSavedValue( value )     # set saved value to make this new value the default
+                self.parameterDict.at(row).savedValue = value   # set saved value to make this new value the default
                 leftInd = self.createIndex(row, 1)
                 self.dataChanged.emit( leftInd, leftInd )
 
@@ -145,25 +146,22 @@ class ControlUi(UiForm,UiBase):
         self.tagetValue = dict()
         self.globalDict = firstNotNone( globalDict, dict() )
     
-    def setupUi(self,EnabledParameters,MainWindow):
+    def setupUi(self, outputChannels ,MainWindow):
         UiForm.setupUi(self,MainWindow)
         self.tableModel = ExternalParameterControlTableModel(self)
         self.tableView.setModel( self.tableModel )
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
-        self.setupParameters(EnabledParameters)
+        self.setupParameters( outputChannels )
         
-    def setupParameters(self,EnabledParameters):
-        logger = logging.getLogger(__name__)
-        logger.debug( "ControlUi.setupParameters {0}".format( EnabledParameters ) ) 
-        self.enabledParameters = EnabledParameters
-        self.tableModel.setParameterList( self.enabledParameters )
+    def setupParameters(self, outputChannels):
+        self.tableModel.setParameterList( outputChannels )
         self.tableView.resizeColumnsToContents()
         self.tableView.horizontalHeader().setStretchLastSection(True)   
         try:
             self.evaluate(None)
         except KeyError as e:
-            logger.error(str(e))
+            logging.getLogger(__name__).error(str(e))
         
     def keys(self):
         return self.tableModel.parameterDict.keys()

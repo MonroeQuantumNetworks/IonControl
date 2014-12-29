@@ -49,5 +49,3 @@ class ScanNameTableModel(QtCore.QAbstractTableModel):
             if (orientation == QtCore.Qt.Horizontal): 
                 return self.headerDataLookup[section]
         return None  # QtCore.QVariant()
-                
-            

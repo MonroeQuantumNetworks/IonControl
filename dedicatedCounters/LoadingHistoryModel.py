@@ -25,9 +25,9 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         if index.isValid():
             item = self.history[len(self.history)-index.row()-1]
             #print item.trappedAt, item.trappingTime, item.trappingTime
-            return { (QtCore.Qt.DisplayRole,0): item.trappedAt.strftime('%Y-%m-%d %H:%M:%S'),
-                     (QtCore.Qt.DisplayRole,1): self.formatDelta(item.loadingTime) if item.loadingTime else None,
-                     (QtCore.Qt.DisplayRole,2): self.formatDelta(item.trappingTime) if item.trappingTime else None,
+            return { (QtCore.Qt.DisplayRole,0): item.trappingTime.strftime('%Y-%m-%d %H:%M:%S'),
+                     (QtCore.Qt.DisplayRole,1): self.formatDelta(item.loadingDuration) if item.loadingDuration else None,
+                     (QtCore.Qt.DisplayRole,2): self.formatDelta(item.trappingDuration) if item.trappingDuration else None,
                      }.get((role,index.column()),None)
         return None
         
@@ -48,8 +48,9 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         
     @history.setter
     def history(self,value):
+        self.beginResetModel()
         self._history = value
-        self.dataChanged.emit( self.index(0,0), self.index(len(self._history)-1,2) )
+        self.endResetModel()
         
     def append(self,value):
         self.beginInsertRows(QtCore.QModelIndex(),0,0)
@@ -66,12 +67,10 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         components.append("{0:02d}:{1:02.0f}".format(int(minutes),seconds))
         return ":".join(components)
 
-    def updateLast(self,attr,value):
-        setattr(self.history[-1], attr, value)
+    def updateLast(self):
         self.dataChanged.emit(self.createIndex(0,0),self.createIndex(0,2))
         
-    def removeRow(self,row):
-        index = len(self.history)-row-1
-        self.beginRemoveRows( QtCore.QModelIndex(), row, row   )
-        self._history.pop(index)
-        self.endRemoveRows()
+    def beginInsertRows(self, event):
+        super(LoadingHistoryModel, self).beginInsertRows(QtCore.QModelIndex(), self.createIndex(event.first,0), self.createIndex(event.last, 2))
+        
+        

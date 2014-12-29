@@ -4,90 +4,21 @@ import logging
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-from fit.FitFunctionBase import fitFunctionMap, ResultRecord, PushVariable
+from fit.FitFunctionBase import fitFunctionMap
 from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitUiTableModel import FitUiTableModel
-from modules.HashableDict import HashableDict
 from modules.MagnitudeUtilit import value
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.SequenceDict import SequenceDict
-from PushVariableTableModel import PushVariableTableModel
-from modules.Utility import unique
-from uiModules.ComboBoxDelegate import ComboBoxDelegate
-from externalParameter.persistence import DBPersist
-import time
-from modules.magnitude import is_magnitude
-from modules.PyqtUtility import BlockSignals, restoreColumnWidth,\
-    saveColumnWidth
+from modules.PyqtUtility import BlockSignals
+from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
+from fit.StoredFitFunction import StoredFitFunction               #@UnresolvedImport
 
 fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
+            
+class Parameters(object):
+    def __init__(self):
+        self.autoSave = False       
 
-class DatabasePushDestination:
-    def __init__(self, space):
-        self.persist = DBPersist()
-        self.space = space
-    
-    def update(self, pushlist, upd_time=None ):
-        upd_time = time.time() if upd_time is None else upd_time
-        for _, variable, value in pushlist:
-            if is_magnitude(value):
-                value, unit = value.toval(returnUnit=True)
-            else:
-                unit = None
-            self.persist.persist(self.space, variable, upd_time, value, unit)
-    
-    def keys(self):
-        return (source for (space,source) in self.persist.sourceDict().keys() if space == self.space) 
-    
-
-class AnalysisDefinition(object):
-    def __init__(self, name=None, fitfunctionName=None ):
-        self.name = name
-        self.fitfunctionName = fitfunctionName
-        self.startParameters = tuple()
-        self.parameterEnabled = tuple()
-        self.results = HashableDict()
-        self.pushVariables = tuple()
-        self.startParameterExpressions = None
-        self.useSmartStartValues = False
-
-    def fitfunction(self):
-        fitfunction = fitFunctionMap[self.fitfunctionName]()
-        fitfunction.startParameters = list(self.startParameters)
-        fitfunction.parameterEnabled = list(self.parameterEnabled)
-        fitfunction.pushVariables = SequenceDict( (v.key, copy.deepcopy(v)) for v in self.pushVariables) 
-        fitfunction.useSmartStartValues = self.useSmartStartValues
-        fitfunction.startParameterExpressions = list(self.startParameterExpressions) if self.startParameterExpressions is not None else [None]*len(self.startParameters)
-        return fitfunction
-    
-    @classmethod
-    def fromFitfunction(cls, fitfunction):
-        instance = cls( name=None, fitfunctionName=fitfunction.name )
-        instance.startParameters = tuple(fitfunction.startParameters)
-        instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
-        instance.startParameterExpressions = tuple(fitfunction.startParameterExpressions) if fitfunction.startParameterExpressions is not None else tuple([None]*len(fitfunction.startParameters))
-        instance.useSmartStartValues = fitfunction.useSmartStartValues
-        for result in fitfunction.results.values():
-            instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition)
-        instance.pushVariables = tuple( (copy.deepcopy(v) for v in fitfunction.pushVariables.values()) )
-        return instance
-     
-    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'pushVariables', 'useSmartStartValues', 'startParameterExpressions'] 
-        
-    def __eq__(self,other):
-        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __hash__(self):
-        return hash(tuple(getattr(self,field) for field in self.stateFields))
-        
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.__dict__.setdefault( 'pushVariables', tuple() )
-        self.__dict__.setdefault( 'startParameterExpressions', None )
-        self.__dict__.setdefault( 'useSmartStartValues', False )
             
 class FitUi(fitForm, QtGui.QWidget):
     analysisNamesChanged = QtCore.pyqtSignal(object)
@@ -99,19 +30,24 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction = None
         self.traceui = traceui
         self.configname = "FitUi.{0}.".format(parentname)
-        self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
-        self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
-        self.showAnalysisEnabled = self.config.get(self.configname+"ShowAnalysisEnabled", True)
-        self.pushDestinations = dict()
+        try:
+            self.fitfunctionCache = self.config.get(self.configname+"FitfunctionCache", dict() )
+        except Exception:
+            self.fitfunctionCache = dict()
+        try:
+            self.analysisDefinitions = self.config.get(self.configname+"AnalysisDefinitions", dict())
+        except Exception:
+            self.analysisDefinitions = dict()
+        self.parameters = self.config.get(self.configname+".Parameters", Parameters())
         self.globalDict = globalDict
             
-    def setupUi(self,widget):
+    def setupUi(self,widget, showCombos=True ):
         fitForm.setupUi(self,widget)
         self.fitButton.clicked.connect( self.onFit )
         self.plotButton.clicked.connect( self.onPlot )
-        self.pushToGlobalButton.clicked.connect( self.onPush )
         self.removePlotButton.clicked.connect( self.onRemoveFit )
         self.extractButton.clicked.connect( self.onExtractFit )
+        self.getSmartStartButton.clicked.connect( self.onGetSmartStart )
         self.copyButton.clicked.connect( self.onCopy )
         self.removeAnalysisButton.clicked.connect( self.onRemoveAnalysis )
         self.saveButton.clicked.connect( self.onSaveAnalysis )
@@ -119,26 +55,13 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitSelectionComboBox.addItems( sorted(fitFunctionMap.keys()) )
         self.fitSelectionComboBox.currentIndexChanged[QtCore.QString].connect( self.onFitfunctionChanged )
         self.fitfunctionTableModel = FitUiTableModel(self.config)
+        self.fitfunctionTableModel.parametersChanged.connect( self.autoSave )
         self.parameterTableView.setModel(self.fitfunctionTableModel)
-        restoreColumnWidth( self.parameterTableView, self.config.get(self.configname+"ParameterColumnWidth") ) 
         self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
-        restoreColumnWidth( self.resultsTableView, self.config.get(self.configname+"ResultsColumnWidth") ) 
-        self.pushTableModel = PushVariableTableModel(self.config, self.globalDict)
-        self.pushTableView.setModel( self.pushTableModel )
-        self.pushItemDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
-        self.pushComboDelegate = ComboBoxDelegate()
-        self.pushTableView.setItemDelegateForColumn(1,self.pushComboDelegate)
-        self.pushTableView.setItemDelegateForColumn(2,self.pushComboDelegate)
-        self.pushTableView.setItemDelegateForColumn(3,self.pushItemDelegate)
-        self.pushTableView.setItemDelegateForColumn(4,self.pushItemDelegate)
-        self.pushTableView.setItemDelegateForColumn(5,self.pushItemDelegate)
-        self.pushTableView.setItemDelegateForColumn(6,self.pushItemDelegate)
         self.onFitfunctionChanged(str(self.fitSelectionComboBox.currentText()))
-        if self.configname+'splitter' in self.config:
-            self.splitter.restoreState( self.config[self.configname+'splitter'])
         # Analysis stuff
         lastAnalysisName = self.config.get(self.configname+"LastAnalysis", None)
         self.analysisNameComboBox.addItems( self.analysisDefinitions.keys() )
@@ -149,36 +72,36 @@ class FitUi(fitForm, QtGui.QWidget):
         if fitfunction:
             self.setFitfunction( fitfunction )
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )
-        self.addPushVariable.clicked.connect( self.onAddPushVariable )
-        self.removePushVariable.clicked.connect( self.onRemovePushVariable )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
-        self.pushDestinations['Database'] = DatabasePushDestination('fit')
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-#         self.autoSaveAction = QtGui.QAction( "auto save" , self)
-#         self.autoSaveAction.setCheckable(True)
-#         self.autoSaveAction.setChecked(self.parameters.autoSave )
-#         self.autoSaveAction.triggered.connect( self.onAutoSave )
-#         self.addAction( self.autoSaveAction )
-        self.showAnalysisAction = QtGui.QAction( "show analysis" , self)
-        self.showAnalysisAction.setCheckable(True)
-        self.showAnalysisAction.setChecked(self.showAnalysisEnabled )
-        self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
-        self.addAction( self.showAnalysisAction )
-        
+        self.autoSaveAction = QtGui.QAction( "auto save" , self)
+        self.autoSaveAction.setCheckable(True)
+        self.autoSaveAction.setChecked(self.parameters.autoSave )
+        self.autoSaveAction.triggered.connect( self.onAutoSave )
+        self.addAction( self.autoSaveAction )
+#        self.showAnalysisAction = QtGui.QAction( "show analysis" , self)
+#        self.showAnalysisAction.setCheckable(True)
+#        self.showAnalysisAction.setChecked(self.showAnalysisEnabled )
+#        self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
+#        self.addAction( self.showAnalysisAction )
+        restoreGuiState( self, self.config.get(self.configname+".guiState") )
+        if not showCombos:
+            self.fitSelectionComboBox.setVisible( False )
+            self.widget.setVisible( False )
+        self.autoSave()
+            
+    def onAutoSave(self, state):
+        self.parameters.autoSave = state
+        self.autoSave()
+            
     def onShowAnalysisEnabled(self, status):
         self.showAnalysisEnabled = status==QtCore.Qt.Checked
         
     def onUseSmartStartValues(self, state):
         self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
+        self.autoSave()
 
-    def onAddPushVariable(self):
-        self.pushTableModel.addVariable( PushVariable() )
-    
-    def onRemovePushVariable(self):
-        for index in sorted(unique([ i.row() for i in self.pushTableView.selectedIndexes() ]),reverse=True):
-            self.pushTableModel.removeVariable(index)
-             
     def onFitfunctionChanged(self, name):
         name = str(name)
         if self.fitfunction:
@@ -190,19 +113,21 @@ class FitUi(fitForm, QtGui.QWidget):
         
     def setFitfunction(self, fitfunction):
         self.fitfunction = fitfunction
-        self.fitfunction.updatePushVariables( self.globalDict )
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
-        self.pushTableModel.setFitfunction(self.fitfunction)
         self.descriptionLabel.setText( self.fitfunction.functionString )
         if str(self.fitSelectionComboBox.currentText())!= self.fitfunction.name:
             self.fitSelectionComboBox.setCurrentIndex(self.fitSelectionComboBox.findText(self.fitfunction.name))
-        self.resultsTableView.resizeColumnsToContents()
-        self.pushTableView.resizeColumnsToContents()
         self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
         self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
         self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
         self.evaluate()
+        
+    def onGetSmartStart(self):
+        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
+            smartParameters = self.fitfunction.smartStartValues(plot.x,plot.y,self.fitfunction.parameters,self.fitfunction.parameterEnabled)
+            self.fitfunction.startParameters = list(smartParameters)
+            self.fitfunctionTableModel.startDataChanged()     
         
     def onFit(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
@@ -216,22 +141,7 @@ class FitUi(fitForm, QtGui.QWidget):
             plot.plot(-2)
             self.fitfunctionTableModel.fitDataChanged()
             self.fitResultsTableModel.fitDataChanged()
-            self.pushTableModel.fitDataChanged( self.globalDict )
             
-    def addPushDestination(self, name, destination ):
-        self.pushDestinations[name] = destination
-        self.pushTableModel.updateDestinations(self.pushDestinations )
-
-    def onPush(self):
-        for destination, variable, value in self.fitfunction.pushVariableValues(self.globalDict):
-            if destination in self.pushDestinations:
-                self.pushDestinations[destination].update( [(destination,variable,value)] )
-                
-    def pushVariables(self, pushVariables):
-        for destination, variable, value in pushVariables:
-            if destination in self.pushDestinations:
-                self.pushDestinations[destination].update( [(destination,variable,value)] )
-
     def showAnalysis(self, analysis, fitfunction):
         if self.showAnalysisEnabled and analysis in self.analysisDefinitions:
             with BlockSignals(self.analysisNameComboBox):
@@ -259,7 +169,6 @@ class FitUi(fitForm, QtGui.QWidget):
             plot = plots[0]
             self.setFitfunction( copy.deepcopy(plot.fitFunction))
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name))
-            self.fitfunction.updatePushVariables()
     
     def onCopy(self):
         self.fitfunction.startParameters = copy.deepcopy(self.fitfunction.parameters)
@@ -269,17 +178,12 @@ class FitUi(fitForm, QtGui.QWidget):
         if self.fitfunction is not None:
             self.fitfunctionCache[self.fitfunction.name] = self.fitfunction
         self.config[self.configname+"FitfunctionCache"] = self.fitfunctionCache
-        self.config[self.configname+'Splitter'] = self.splitter.saveState()
         self.config[self.configname+"AnalysisDefinitions"] = self.analysisDefinitions
         self.config[self.configname+"LastAnalysis"] = str(self.analysisNameComboBox.currentText()) 
         self.config[self.configname+"LastFitfunction"] = self.fitfunction
-        self.config[self.configname+"ShowAnalysisEnabled"] = self.showAnalysisEnabled
-        self.config[self.configname+"ParameterColumnWidth"] = saveColumnWidth(self.parameterTableView)
-        self.config[self.configname+"ResultsColumnWidth"] = saveColumnWidth(self.resultsTableView)
-            
-    def saveState(self):
-        pass
-    
+        self.config[self.configname+".Parameters"] = self.parameters
+        self.config[self.configname+".guiState"] = saveGuiState( self )
+                
     def onRemoveAnalysis(self):
         name = str(self.analysisNameComboBox.currentText())
         if name in self.analysisDefinitions:
@@ -292,7 +196,7 @@ class FitUi(fitForm, QtGui.QWidget):
     
     def onSaveAnalysis(self):
         name = str(self.analysisNameComboBox.currentText())       
-        definition = AnalysisDefinition.fromFitfunction(self.fitfunction)
+        definition = StoredFitFunction.fromFitfunction(self.fitfunction)
         definition.name = name
         isNew = name not in self.analysisDefinitions
         self.analysisDefinitions[name] = definition
@@ -300,11 +204,25 @@ class FitUi(fitForm, QtGui.QWidget):
             self.analysisNameComboBox.addItem(name)
         if isNew:
             self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
+        self.saveButton.setEnabled( False )
         
+    def autoSave(self):
+        if self.parameters.autoSave:
+            self.onSaveAnalysis()
+            self.saveButton.setEnabled( False )
+        else:
+            self.saveButton.setEnabled( self.saveable() )
+ 
+    def saveable(self):
+        name = str(self.analysisNameComboBox.currentText())       
+        definition = StoredFitFunction.fromFitfunction(self.fitfunction)
+        definition.name = name
+        return name != '' and ( name not in self.analysisDefinitions or not (self.analysisDefinitions[name] == definition) )             
+                       
     def onLoadAnalysis(self, name=None):
         name = str(name) if name is not None else str(self.analysisNameComboBox.currentText())
         if name in self.analysisDefinitions:
-            if AnalysisDefinition.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
+            if StoredFitFunction.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
                 self.setFitfunction( self.analysisDefinitions[name].fitfunction() )
         
     def analysisNames(self):
@@ -317,6 +235,4 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction.evaluate( self.globalDict )
         self.fitfunctionTableModel.update()
         self.parameterTableView.viewport().repaint()
-        self.pushTableModel.update()
-        self.pushTableView.viewport().repaint()
             

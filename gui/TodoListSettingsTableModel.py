@@ -23,6 +23,7 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Name', 'Value']
     expression = Expression.Expression()
     persistSpace = 'globalVar'
+    edited = QtCore.pyqtSignal()
     def __init__(self, settings, globalDict, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
@@ -77,7 +78,10 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
             return False
        
     def setData(self, index, value, role):
-        return self.setDataLookup.get((role, index.column()), lambda row, value: False)(index, value)
+        result =  self.setDataLookup.get((role, index.column()), lambda row, value: False)(index, value)
+        if result:
+            self.edited.emit()
+        return result
 
     def flags(self, index):
         return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled

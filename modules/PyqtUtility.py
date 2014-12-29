@@ -1,5 +1,3 @@
-
-
 def updateComboBoxItems( combo, items, selected=None):
     """Update the items in a combo Box,
     if the selected item is still there select it 
@@ -28,14 +26,5 @@ class BlockSignals:
     def __exit__(self, exittype, value, traceback):
         self.widget.blockSignals(self.oldstate)
 
-def saveColumnWidth( tableView ):
-    return [tableView.columnWidth(i) for i in range(0, tableView.model().columnCount())]
-
-def restoreColumnWidth( tableView, widthData, autoscaleOnNone=True ):
-    if widthData:
-        for column, width in zip( range(0, tableView.model().columnCount()), widthData ):
-            tableView.setColumnWidth(column, width)
-    else:
-        tableView.resizeColumnsToContents()
-     
+    
     

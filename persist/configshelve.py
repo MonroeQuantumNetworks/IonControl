@@ -9,10 +9,11 @@ It also includes default directory for storing of config files.
 """
 
 import logging
-import pickle
+import cPickle as pickle
+#import pickle
 from shutil import copyfile
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Binary
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -26,12 +27,12 @@ class ShelveEntry(Base):
     __tablename__ = "shelve"
     category = Column(String, primary_key=True )
     key = Column(String, primary_key=True)
-    pvalue = Column(String)
+    pvalue = Column(Binary)
     
     def __init__(self,key,value,category=defaultcategory):
         self.category = category
         self.key = key
-        self.pvalue = pickle.dumps(value)
+        self.pvalue = pickle.dumps(value,2)
         
     def __repr__(self):
         return "<'{0}.{1}' '{2}'>".format(self.category, self.key, self.value)
@@ -42,12 +43,13 @@ class ShelveEntry(Base):
         
     @value.setter
     def value(self,value):
-        self.pvalue = pickle.dumps(value)
+        self.pvalue = pickle.dumps(value,2)
 
 class configshelve:
     def __init__(self,filename):
         self.configfile = filename
         self.engine = create_engine('sqlite:///'+self.configfile, echo=False)
+        self.elementCache = dict()
         
     def saveConfig(self, copyTo=None ):
         self.session.commit()
@@ -69,11 +71,15 @@ class configshelve:
             category, key = key
         else:
             category, key = defaultcategory, key
-        try:
-            elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
-        except NoResultFound:
-            elem = ShelveEntry(key,value,category)
-            self.session.add(elem)
+        if  (key,category) in self.elementCache:
+            elem = self.elementCache[(key,category)]
+        else:
+            try:
+                elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
+                self.elementCache[(key,category)] = elem
+            except NoResultFound:
+                elem = ShelveEntry(key,value,category)
+                self.session.add(elem)
         elem.value = value
         
     def __getitem__(self, key):
@@ -81,20 +87,27 @@ class configshelve:
             category, key = key
         else:
             category, key = defaultcategory, key
-        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
+        if (key,category) in self.elementCache:
+            return self.elementCache[(key,category)].value
+        else:
+            element = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
+            self.elementCache[(key,category)] = element
+            return element.value
             
     def __contains__(self, key):
         if isinstance(key,tuple):
             category, key = key
         else:
             category, key = defaultcategory, key
-        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).count()>0
+        return (key,category) in self.elementCache or self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).count()>0
         
     def get(self, key, default=None):
         if isinstance(key,tuple):
             category, key = key
         else:
             category, key = defaultcategory, key
+        if (key,category) in self.elementCache:
+            return self.elementCache[(key,category)].value
         try:
             return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
         except NoResultFound:
@@ -108,10 +121,12 @@ class configshelve:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.isOpen = True
+        self.elementCache = dict()
         
     def close(self):
         self.session.commit()
         self.isOpen = False
+        self.elementCache = dict()
         
 if __name__ == "__main__":
     with configshelve("new-test.db") as d:

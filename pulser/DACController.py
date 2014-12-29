@@ -3,8 +3,7 @@ Created on Dec 15, 2014
 
 @author: pmaunz
 '''
-from pulser.OKBase import OKBase, check
-# import logging
+from OKBase import OKBase, check
 import struct
 import numpy
 from itertools import chain
@@ -43,4 +42,3 @@ class DACController( OKBase ):
     
     def triggerShuttling(self):
         check( self.xem.ActivateTriggerIn( 0x40, 0), 'ActivateTrigger' )
-
