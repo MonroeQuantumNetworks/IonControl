@@ -15,8 +15,8 @@ from trace.pens import penList
 from uiModules.RotatedHeaderView import RotatedHeaderView
 from modules.concatenate_iter import concatenate_iter
 from _functools import partial
-from modules.PyqtUtility import restoreColumnWidth, saveColumnWidth
 from modules.doProfile import doprofile
+from modules.GuiAppearance import restoreGuiState, saveGuiState
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
@@ -99,10 +99,8 @@ class LogicAnalyzer(Form, Base ):
         self.showSelectedAction.triggered.connect( partial(self.onShow,  True) )
         self.signalTableView.addAction( self.hideSelectedAction )
         self.signalTableView.addAction( self.showSelectedAction )
-        restoreColumnWidth(self.signalTableView, self.config.get('LogicAnalyzer.SignalTable.ColumnWidth') )
-        restoreColumnWidth(self.traceTableView, self.config.get('LogicAnalyzer.TraceTable.ColumnWidth') )
+        restoreGuiState( self, self.config.get('LogicAnalyzer.guiState') )
         
-    @doprofile
     def onShow(self, show, checked):
         rows = sorted(unique([ i.row() for i in self.signalTableView.selectedIndexes() ]))
         if rows:
@@ -344,9 +342,7 @@ class LogicAnalyzer(Form, Base ):
         self.config["LogicAnalyzerSettings"] = self.settings
         self.signalTableModel.saveConfig()
         self.config['LogicAnalyzer.State'] = self.saveState()
-        self.config['LogicAnalyzer.SignalTable.ColumnWidth'] = saveColumnWidth(self.signalTableView)
-        self.config['LogicAnalyzer.TraceTable.ColumnWidth'] = saveColumnWidth(self.traceTableView)
-
+        self.config['LogicAnalyzer.guiState'] = saveGuiState(self)
     
     def onClose(self):
         pass
