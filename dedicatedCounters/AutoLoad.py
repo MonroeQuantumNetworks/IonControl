@@ -43,11 +43,11 @@ class AutoLoadSettings(object):
         self.counterChannel = 0
         self.shutterChannel = 0
         self.ovenChannel = 0
-        self.laserDelay = 0
-        self.maxTime = 0
-        self.thresholdBare = 0
-        self.thresholdOven = 0
-        self.checkTime = 0
+        self.laserDelay = mg(5,'s')
+        self.maxTime = mg(60,'s')
+        self.thresholdBare = mg(10,'kHz')
+        self.thresholdOven = mg(0,'kHz')
+        self.checkTime = mg(10, 's')
         self.useInterlock = False
         self.interlock = SequenceDict()
         self.wavemeterAddress = ""
@@ -69,15 +69,15 @@ class AutoLoadSettings(object):
         """
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
-        return [{'name': 'Oven background', 'type': 'magnitude', 'value': self.thresholdOven, 'tip': "background counts added by oven (frequency)", 'field': 'thresholdOven' },
-                {'name': 'Threshold during loading', 'type': 'magnitude', 'value': self.thresholdBare, 'tip': "presence threshold during loading (frequency)", 'field': 'thresholdBare' },
-                {'name': 'Threshold while running', 'type': 'magnitude', 'value': self.thresholdRunning, 'tip': "presence threshold during normal operation (frequency)", 'field': 'thresholdRunning'},
-                {'name': 'Check time', 'type': 'magnitude', 'value': self.checkTime, 'tip': "Time ions need to be present before switching to trapped", 'field': 'checkTime'},
-                {'name': 'Max time', 'type': 'magnitude', 'value': self.maxTime, 'tip': "Maximum time oven is on during one attempt", 'field': 'maxTime'},
-                {'name': 'Laser delay', 'type': 'magnitude', 'value': self.laserDelay, 'tip': "delay after which ionization laser is switched on", 'field': 'laserDelay'},
-                {'name': 'Wait for comeback', 'type': 'magnitude', 'value': self.waitForComebackTime, 'tip': "time to wait for re-appearance of an ion after it is lost", 'field': 'waitForComebackTime'},
-                {'name': 'Post sequence wait', 'type': 'magnitude', 'value': self.postSequenceWaitTime, 'tip': "wait time after running sequence is finished", 'field': 'postSequenceWaitTime'},
-                {'name': 'Oven cooling time', 'type': 'magnitude', 'value': self.ovenCoolingTime, 'tip': "time between load attemps in autoloading", 'field': 'ovenCoolingTime'},
+        return [{'name': 'Oven background', 'type': 'magnitude', 'value': self.thresholdOven, 'tip': "background counts added by oven (frequency)", 'field': 'thresholdOven', 'dimension': 'Hz' },
+                {'name': 'Threshold during loading', 'type': 'magnitude', 'value': self.thresholdBare, 'tip': "presence threshold during loading (frequency)", 'field': 'thresholdBare' , 'dimension': 'Hz'},
+                {'name': 'Threshold while running', 'type': 'magnitude', 'value': self.thresholdRunning, 'tip': "presence threshold during normal operation (frequency)", 'field': 'thresholdRunning', 'dimension': 'Hz'},
+                {'name': 'Check time', 'type': 'magnitude', 'value': self.checkTime, 'tip': "Time ions need to be present before switching to trapped", 'field': 'checkTime', 'dimension': 's'},
+                {'name': 'Max time', 'type': 'magnitude', 'value': self.maxTime, 'tip': "Maximum time oven is on during one attempt", 'field': 'maxTime', 'dimension': 's'},
+                {'name': 'Laser delay', 'type': 'magnitude', 'value': self.laserDelay, 'tip': "delay after which ionization laser is switched on", 'field': 'laserDelay', 'dimension': 's'},
+                {'name': 'Wait for comeback', 'type': 'magnitude', 'value': self.waitForComebackTime, 'tip': "time to wait for re-appearance of an ion after it is lost", 'field': 'waitForComebackTime', 'dimension': 's'},
+                {'name': 'Post sequence wait', 'type': 'magnitude', 'value': self.postSequenceWaitTime, 'tip': "wait time after running sequence is finished", 'field': 'postSequenceWaitTime', 'dimension': 's'},
+                {'name': 'Oven cooling time', 'type': 'magnitude', 'value': self.ovenCoolingTime, 'tip': "time between load attemps in autoloading", 'field': 'ovenCoolingTime', 'dimension': 's'},
                 {'name': 'Max failed autoload', 'type': 'magnitude', 'value': self.maxFailedAutoload, 'tip': "maximum number of consecutive failed loading attempts", 'field': 'maxFailedAutoload'},
                 {'name': 'Oven shutter', 'type': 'int', 'value': self.ovenChannel, 'tip': "Shutter channel controlling the oven", 'field': 'ovenChannel'},
                 {'name': 'Oven active low', 'type': 'bool', 'value': self.ovenChannelActiveLow, 'tip': "True means oven channel is active low", 'field': 'ovenChannelActiveLow'},
