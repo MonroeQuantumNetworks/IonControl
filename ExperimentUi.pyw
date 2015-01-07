@@ -255,7 +255,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
         try:
-            self.voltageControlWindow = VoltageControl(self.config)
+            self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables)
             self.voltageControlWindow.setupUi(self.voltageControlWindow)
         except MyException.MissingFile as e:
             self.voltageControlWindow = None

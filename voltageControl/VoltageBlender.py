@@ -16,6 +16,8 @@ from Chassis import DAQmxUtility
 from Chassis.itfParser import itfParser
 from gui import ProjectSelection
 from modules import MyException
+from modules.SequenceDict import SequenceDict
+from voltageControl.AdjustValue import AdjustValue
 
 
 try:
@@ -35,7 +37,7 @@ class VoltageBlender(QtCore.QObject):
     dataError = QtCore.pyqtSignal(object)
     shuttlingOnLine = QtCore.pyqtSignal(float)
     
-    def __init__(self):
+    def __init__(self, globalDict):
         logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
         if HardwareDriverLoaded:
@@ -51,18 +53,19 @@ class VoltageBlender(QtCore.QObject):
             logger.debug( str(self.DoLine) )
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
-        self.adjustDict = dict()  # names of the lines presented as possible adjusts
+        self.adjustDict = SequenceDict()  # names of the lines presented as possible adjusts
         self.adjustLines = []
         self.lineGain = 1.0
         self.globalGain = 1.0
         self.lineno = 0
         self.mappingpath = None
-        self.adjust = dict()
         self.outputVoltage = None
         self.electrodes = None
         self.aoNums = None
         self.dsubNums = None
         self.tableHeader = list()
+        self.globalDict = globalDict
+        self.adjustGain = 1.0
         
     def currentData(self):
         return self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
@@ -87,7 +90,7 @@ class VoltageBlender(QtCore.QObject):
 
     def loadGlobalAdjust(self,path):
         self.adjustLines = list()
-        self.adjustDict = dict()
+        self.adjustDict = SequenceDict()
         itf = itfParser()
         itf.eMapFilePath = self.mappingpath
         itf.open(path)
@@ -99,14 +102,15 @@ class VoltageBlender(QtCore.QObject):
         for name, value in itf.meta.iteritems():
             try:
                 if int(value)<len(self.adjustLines):
-                    self.adjustDict[name] = int(value)
+                    self.adjustDict[name] = AdjustValue(name=name, line=int(value), globalDict=self.globalDict)
             except ValueError:
                 pass   # if it's not an int we will ignore it here
         itf.close()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
     
-    def setAdjust(self, adjust):
-        self.adjust = adjust
+    def setAdjust(self, adjust, gain):
+        self.adjustDict = adjust
+        self.adjustGain = gain
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
@@ -172,11 +176,9 @@ class VoltageBlender(QtCore.QObject):
             
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
-        for name, value in self.adjust.iteritems():
-            if name in self.adjustDict:
-                offset = offset + self.adjustLines[self.adjustDict[name]] * float(value)
-        if "__GAIN__" in self.adjust:
-            offset *= float(self.adjust["__GAIN__"])
+        for name, adjust in self.adjustDict.iteritems():
+            offset = offset + self.adjustLines[adjust.line] * float(adjust.value)
+        offset *= self.adjustGain
         return (line+offset)
             
     def blendLines(self,lineno,lineGain):

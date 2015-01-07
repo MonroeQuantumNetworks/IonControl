@@ -63,6 +63,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
             self.valueChanged.emit(name)
+            self.variables.observables[name].fire(name=name, value=result)
             self.decimation[name].decimate(time.time(), result, partial(self.persistCallback, name))
             return True    
         except Exception:
@@ -108,6 +109,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         if not old.isIdenticalTo(value):
             self.variables[name] = value
             self.valueChanged.emit(name)
+            self.variables.observables[name].fire(name=name, value=value)
             self.decimation[name].decimate(time.time(), value, partial(self.persistCallback, name))
 
     def getVariables(self):
@@ -169,6 +171,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 old = self.variables[key]
                 if value.dimension() != old.dimension() or value != old:
                     self.variables[key] = value
+                    self.variables.observables[key].fire(name=key, value=value)
                     self.valueChanged.emit(key)
                     index = self.variables.index(key)
                     self.dataChanged.emit(self.createIndex(index, 1), self.createIndex(index, 1))
