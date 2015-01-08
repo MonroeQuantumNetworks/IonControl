@@ -77,6 +77,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.pushButtonLastDay.clicked.connect( partial(self.onLastTime, d=1) )
         self.pushButtonLastWeek.clicked.connect( partial(self.onLastTime, d=7) )
         self.pushButtonLastCustom.clicked.connect( partial(self.onLastTime, custom=True) )
+        self.pushButtonNow.clicked.connect( self.onNow )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.checkBoxSteps.setChecked( self.parameters.steps )
         self.checkBoxSteps.stateChanged.connect( partial(self.onStateChanged, 'steps') )
@@ -92,6 +93,9 @@ class InstrumentLoggerQueryUi(Form,Base):
         shift = timedelta(days=d, seconds=s)
         self.dateTimeEditFrom.setDateTime( now-shift )
         self.dateTimeEditTo.setDateTime( now )
+        
+    def onNow(self):
+        self.dateTimeEditTo.setDateTime( datetime.now() )
         
     def onStateChanged(self, attr, state):
         setattr( self.parameters, attr, state==QtCore.Qt.Checked )

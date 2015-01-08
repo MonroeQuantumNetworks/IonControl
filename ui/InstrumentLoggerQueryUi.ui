@@ -14,8 +14,50 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="1" colspan="5">
-    <widget class="QDateTimeEdit" name="dateTimeEditTo"/>
+   <item row="10" column="1">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Minutes</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinBoxCustomMinutes"/>
+     </item>
+    </layout>
+   </item>
+   <item row="12" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Graph</string>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="1">
+    <widget class="QPushButton" name="pushButtonUpdateAll">
+     <property name="text">
+      <string>Update All</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="5">
+    <widget class="QCheckBox" name="checkBoxUpdatePrevious">
+     <property name="text">
+      <string>Update previous</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="3">
+    <widget class="QComboBox" name="comboBoxSpace"/>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>To</string>
+     </property>
+    </widget>
    </item>
    <item row="8" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -111,13 +153,6 @@
    <item row="12" column="1" colspan="5">
     <widget class="QComboBox" name="comboBoxPlotName"/>
    </item>
-   <item row="12" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>Graph</string>
-     </property>
-    </widget>
-   </item>
    <item row="11" column="1" colspan="5">
     <widget class="QLineEdit" name="lineEditPlotUnit"/>
    </item>
@@ -158,44 +193,6 @@
    <item row="2" column="1" colspan="5">
     <widget class="QDateTimeEdit" name="dateTimeEditFrom"/>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>To</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1" colspan="3">
-    <widget class="QComboBox" name="comboBoxSpace"/>
-   </item>
-   <item row="13" column="5">
-    <widget class="QCheckBox" name="checkBoxUpdatePrevious">
-     <property name="text">
-      <string>Update previous</string>
-     </property>
-    </widget>
-   </item>
-   <item row="15" column="1">
-    <widget class="QPushButton" name="pushButtonUpdateAll">
-     <property name="text">
-      <string>Update All</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="1">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QLabel" name="label_8">
-       <property name="text">
-        <string>Minutes</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="spinBoxCustomMinutes"/>
-     </item>
-    </layout>
-   </item>
    <item row="9" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout_5">
      <item>
@@ -209,6 +206,16 @@
       <widget class="QSpinBox" name="spinBoxCustomHours"/>
      </item>
     </layout>
+   </item>
+   <item row="3" column="5">
+    <widget class="QPushButton" name="pushButtonNow">
+     <property name="text">
+      <string>Now</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1" colspan="4">
+    <widget class="QDateTimeEdit" name="dateTimeEditTo"/>
    </item>
   </layout>
  </widget>
