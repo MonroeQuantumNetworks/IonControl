@@ -25,7 +25,7 @@ class N6700BPowerSupply(ExternalParameterBase):
     Adjust the current on the N6700B current supply
     """
     className = "N6700 Powersupply"
-    dimension = magnitude.mg(1,'A')
+    _dimension = magnitude.mg(1,'A')
     _outputChannels = {"Curr1": "A", "Curr2": "A", "Curr3": "A", "Curr4": "A", "Volt1": "V" , "Volt2": "V", "Volt3": "V", "Volt4": "V"}
     _outputLookup = { "Curr1": ("Curr",1,"A"), "Curr2": ("Curr",2,"A"), "Curr3": ("Curr",3,"A"), "Curr4": ("Curr",4,"A"),
                       "Volt1": ("Volt",1,"V"), "Volt2": ("Volt",2,"V"), "Volt3": ("Volt",3,"V"), "Volt4": ("Volt",4,"V")}
@@ -83,7 +83,7 @@ class HP8672A(ExternalParameterBase):
     This class programs the 8672A using the directions in the manual, p. 3-17: cp.literature.agilent.com/litweb/pdf/08672-90086.pdf
     """
     className = "HP8672A"
-    dimension = magnitude.mg(1,'MHz')
+    _dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         self.setDefaults()
@@ -104,11 +104,10 @@ class HP8672A(ExternalParameterBase):
         if value is None: 
             return True
         newvalue, arrived = nextValue(self.settings.value[channel], value, self.settings.stepsize, self.settings.jump)
-        self._setValue( newvalue )
-        if self.displayValueCallback:
-            self.displayValueCallback(self.settings.value[channel],"{0}".format( self.settings.lockPoint - self.settings.value[channel] ) )
+        self._setValue( channel, newvalue )
+        self.displayValueObservable[channel].fire( value=self.settings.value[channel], tip="{0}".format( self.settings.lockPoint - self.settings.value[channel] ) )
         if arrived:
-            self.persist(self.settings.value[channel])
+            self.persist(channel, self.settings.value[channel])
         return arrived
             
     def _setValue(self, channel, value ):
@@ -118,7 +117,6 @@ class HP8672A(ExternalParameterBase):
         #Example string: P03205000Z0K1L6O1 would set the oscillator to 3.205 GHz, -13 dBm
         self.synthesizer.write(command)
         self.settings.value[channel] = value
-        self.settings.value = value
     
     def createAmplitudeString(self):
         """Create the string for setting the HP8672A amplitude.
@@ -166,7 +164,7 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
     Scan the microwave frequency of microwave synthesizer 
     """
     className = "Microwave Synthesizer"
-    dimension = magnitude.mg(1,'MHz')
+    _dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
         self.synthesizer = visa.instrument(instrument) #open visa session
@@ -201,7 +199,7 @@ class AgilentPowerSupply(ExternalParameterBase):
     currentValue and currentExternalValue are current applied voltage
     """
     className = "Agilent Powersupply"
-    dimension = magnitude.mg(1,'V')
+    _dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         ExternalParameterBase.__init__(self,name,config)
         self.powersupply = visa.instrument(instrument)#open visa session
@@ -240,7 +238,7 @@ class LaserWavemeterScan(AgilentPowerSupply):
     """
     
     className = "Laser VCO Wavemeter"
-    dimension = magnitude.mg(1,'V')
+    _dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         AgilentPowerSupply.__init__(self,name,config,instrument)
         self.setDefaults()
@@ -289,7 +287,7 @@ class LaserWavemeterLockScan(ExternalParameterBase):
     """
     
     className = "Laser Wavemeter Lock"
-    dimension = magnitude.mg(1,'GHz')
+    _dimension = magnitude.mg(1,'GHz')
     def __init__(self,name,config,instrument=None):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)

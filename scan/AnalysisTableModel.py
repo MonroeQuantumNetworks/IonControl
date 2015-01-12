@@ -27,9 +27,9 @@ class AnalysisTableModel(QtCore.QAbstractTableModel):
         self.evaluationNames = evaluationNames
                   
     def choice(self, index):
-        if index.column()==1:
+        if index.column()==2:
             return sorted(self.evaluationNames())
-        elif index.column()==2:
+        elif index.column()==3:
             return sorted(fitFunctionMap.keys())
         return None
                          

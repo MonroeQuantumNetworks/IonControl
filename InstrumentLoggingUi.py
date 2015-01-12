@@ -347,7 +347,7 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection = ProjectSelectionUi.GetProjectSelection(True)
     
     if project:
         DataDirectory.DefaultProject = project

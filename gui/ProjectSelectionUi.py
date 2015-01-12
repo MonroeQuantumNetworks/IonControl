@@ -113,7 +113,7 @@ class ProjectSelectionUi(Form, Base):
         
 def GetProjectSelection(atProgramStart=False):
     project, dbConnectionLookup = ProjectSelection.defaultProject(returnDatabaseLookup=True)
-    if (not project) or (not atProgramStart):
+    if (not project) or (not atProgramStart) or (not dbConnectionLookup):
         selectionui = ProjectSelectionUi()
         selectionui.setupUi(selectionui, atProgramStart)
         selectionui.exec_()

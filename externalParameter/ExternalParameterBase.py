@@ -41,7 +41,9 @@ class ExternalParameterBase(object):
         self.inputObservable = dict( ((name,Observable()) for name in self._inputChannels.iterkeys()) )
 
     def dimension(self, channel):
-        return self._outputChannels[channel]
+        if channel is None and hasattr(self, ' _dimension'):
+            return self._dimension
+        return self._outputChannels[channel] 
         
     @property
     def parameter(self):
@@ -60,6 +62,9 @@ class ExternalParameterBase(object):
             self.settings.value = dict()
         if not isinstance( self.settings.strValue, dict ):
             self.settings.strValue = dict()
+        for name in self._outputChannels.iterkeys():
+            self.settings.value.setdefault( name, None )
+            self.settings.strValue.setdefault( name, None )
     
     def saveValue(self, channel=None, overwrite=True):
         """
@@ -91,7 +96,7 @@ class ExternalParameterBase(object):
     
     def persist(self, channel, value):
         self.decimation.staticTime = self.settings.persistDelay
-        decimationName = self.channelName if channel is None else self.fullName(channel)
+        decimationName = self.name if channel is None else self.fullName(channel)
         self.decimation.decimate(time.time(), value, partial(self.persistCallback, decimationName) )
         
     def persistCallback(self, source, data):
