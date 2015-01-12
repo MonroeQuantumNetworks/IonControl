@@ -1088,7 +1088,8 @@ class Magnitude():
             if self.dimensionless():
                 return self.val == m
             else:
-                raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
+                return False
+                #raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
         return self.unit==m.unit and self.val==m.val
     
     def __ne__(self, m):
