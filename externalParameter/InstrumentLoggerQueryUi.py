@@ -73,12 +73,26 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.lineEditPlotUnit.textChanged.connect( partial(self.onValueChangedString, 'plotUnit') )
         self.pushButtonCreatePlot.clicked.connect( self.onCreatePlot )
         self.pushButtonUpdateAll.clicked.connect( self.onUpdateAll )
+        self.pushButtonLast15Min.clicked.connect( partial(self.onLastTime, s=900) )
+        self.pushButtonLastHour.clicked.connect( partial(self.onLastTime, s=3600) )
+        self.pushButtonLastDay.clicked.connect( partial(self.onLastTime, d=1) )
+        self.pushButtonLastWeek.clicked.connect( partial(self.onLastTime, d=7) )
+        self.pushButtonLastCustom.clicked.connect( partial(self.onLastTime, custom=True) )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.checkBoxSteps.setChecked( self.parameters.steps )
         self.checkBoxSteps.stateChanged.connect( partial(self.onStateChanged, 'steps') )
         self.checkBoxUpdatePrevious.setChecked( self.parameters.updatePrevious )
         self.checkBoxUpdatePrevious.stateChanged.connect( partial( self.onStateChanged, 'updatePrevious') )
         self.onSpaceChanged(self.parameters.space)
+
+    def onLastTime(self, d=0, s=0, custom=False):
+        now = datetime.now()
+        if custom:
+            d=self.spinBoxCustomDays.value()
+            s=self.spinBoxCustomMinutes.value()*60.0 + self.spinBoxCustomHours.value()*3600.0
+        shift = timedelta(days=d, seconds=s)
+        self.dateTimeEditFrom.setDateTime( now-shift )
+        self.dateTimeEditTo.setDateTime( now )
         
     def onStateChanged(self, attr, state):
         setattr( self.parameters, attr, state==QtCore.Qt.Checked )
