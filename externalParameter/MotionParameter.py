@@ -15,7 +15,7 @@ class ConexLinear(ExternalParameterBase):
     Adjust the current on the N6700B current supply
     """
     className = "Conex Linear Motion"
-    dimension = magnitude.mg(1,'mm')
+    _dimension = magnitude.mg(1,'mm')
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -60,21 +60,20 @@ class ConexLinear(ExternalParameterBase):
         del self.instrument
         
     def setValue(self, channel, value):
-        if self.displayValueCallback:
-            self.displayValueCallback( self._getValue() )
+        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
         if self.instrument.motionRunning():
             return False
         if value != self.settings.value[channel]:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( value-self.settings.belowMargin )
+                self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin
                 return False
             else:
-                self._setValue( value )
+                self._setValue( channel, value )
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
-            self.persist(self.settings.value[channel])
+            self.persist(channel, self.settings.value[channel])
         return arrived
 
 
@@ -84,7 +83,7 @@ class ConexRotation(ExternalParameterBase):
     Adjust the current on the N6700B current supply
     """
     className = "Conex Rotation"
-    dimension = magnitude.mg(1,'')
+    _dimension = magnitude.mg(1,'')
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -129,21 +128,20 @@ class ConexRotation(ExternalParameterBase):
         del self.instrument
 
     def setValue(self, channel, value):
-        if self.displayValueCallback:
-            self.displayValueCallback( self._getValue() )
+        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
         if self.instrument.motionRunning():
             return False
         if value != self.settings.value[channel]:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( value-self.settings.belowMargin )
+                self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin
                 return False
             else:
-                self._setValue( value )
+                self._setValue( channel, value )
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
-            self.persist(self.settings.value[channel])
+            self.persist(channel, self.settings.value[channel])
         return arrived
     
     
@@ -152,7 +150,7 @@ class PowerWaveplate(ExternalParameterBase):
     Adjust the current on the N6700B current supply
     """
     className = "Power Waveplate"
-    dimension = magnitude.mg(1,'W')
+    _dimension = magnitude.mg(1,'W')
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -161,7 +159,7 @@ class PowerWaveplate(ExternalParameterBase):
         self.instrument.open(instrument)
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.settings.value[None] = self._getValue()
+        self.settings.value[None] = self._getValue(None)
         if not self.instrument.readyToMove():
             logger.error("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
         self.lastValue = None
@@ -232,21 +230,20 @@ class PowerWaveplate(ExternalParameterBase):
         del self.instrument
 
     def setValue(self, channel, value):
-        if self.displayValueCallback:
-            self.displayValueCallback( self._getValue() )
+        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
         if self.instrument.motionRunning():
             return False
         if value != self.settings.value[channel]:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( value-self.settings.belowMargin )
+                self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin
                 return False
             else:
-                self._setValue( value )
+                self._setValue( channel, value )
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
-            self.persist(self.settings.value)
+            self.persist(channel, self.settings.value)
         return arrived
 
     def update(self, param, changes):

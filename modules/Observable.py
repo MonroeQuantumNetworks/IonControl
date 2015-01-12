@@ -15,6 +15,9 @@ class Observable(object):
     def unsubscribe(self, callback):
         self.callbacks.pop( self.callbacks.index(callback) )
         
+    def clear(self):
+        self.callbacks = []
+        
     def fire(self, **attrs):
         e = Event()
         e.source = self

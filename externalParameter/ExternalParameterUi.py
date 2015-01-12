@@ -52,6 +52,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.externalValues = self.targetValues[:]
         self.toolTips = [None]*len(self.externalValues )
         for index,inst in enumerate(self.parameterDict.values()):
+            inst.observable.clear()
             inst.observable.subscribe( functools.partial( self.showValue, index ) )
         self.endResetModel()
         

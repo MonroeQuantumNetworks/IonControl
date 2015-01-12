@@ -103,6 +103,8 @@ class ExternalParameterBase(object):
         time, value, minval, maxval = data
         if is_magnitude(value):
             value, unit = value.toval(returnUnit=True)
+        else:
+            value, unit = value, None
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
     
     def _setValue(self, channel, v):
