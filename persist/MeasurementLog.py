@@ -171,7 +171,7 @@ class Parameter(Base):
         
 class MeasurementContainer(object):
     def __init__(self,database_conn_str):
-        self.database_conn_str = database_conn_str
+        self.database_conn_str = database_conn_str.connectionString
         self.engine = create_engine(self.database_conn_str, echo=True)
         self.studies = list()
         self.measurements = list()

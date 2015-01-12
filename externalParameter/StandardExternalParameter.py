@@ -29,7 +29,7 @@ class N6700BPowerSupply(ExternalParameterBase):
     _outputChannels = {"Curr1": "A", "Curr2": "A", "Curr3": "A", "Curr4": "A", "Volt1": "V" , "Volt2": "V", "Volt3": "V", "Volt4": "V"}
     _outputLookup = { "Curr1": ("Curr",1,"A"), "Curr2": ("Curr",2,"A"), "Curr3": ("Curr",3,"A"), "Curr4": ("Curr",4,"A"),
                       "Volt1": ("Volt",1,"V"), "Volt2": ("Volt",2,"V"), "Volt3": ("Volt",3,"V"), "Volt4": ("Volt",4,"V")}
-    _inputChannels = set(["Curr1", "Curr2", "Curr3", "Curr4", "Volt1", "Volt2", "Volt3", "Volt4"])
+    _inputChannels = dict({"Curr1":"A", "Curr2":"A", "Curr3":"A", "Curr4":"A", "Volt1":"V", "Volt2":"V", "Volt3":"V", "Volt4":"V"})
     def __init__(self,name,config,instrument="QGABField"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)

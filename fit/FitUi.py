@@ -68,7 +68,10 @@ class FitUi(fitForm, QtGui.QWidget):
         self.analysisNameComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysis )
         if lastAnalysisName and lastAnalysisName in self.analysisDefinitions:
             self.analysisNameComboBox.setCurrentIndex( self.analysisNameComboBox.findText(lastAnalysisName))
-        fitfunction = self.config.get(self.configname+"LastFitfunction",None)
+        try:
+            fitfunction = self.config.get(self.configname+"LastFitfunction",None)
+        except Exception:
+            fitfunction = None
         if fitfunction:
             self.setFitfunction( fitfunction )
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )

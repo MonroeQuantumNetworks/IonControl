@@ -38,7 +38,7 @@ class ExternalParameterBase(object):
         self.savedValue = dict()
         self.decimation = StaticDecimation()
         self.persistence = DBPersist()
-        self.inputObservable = dict()
+        self.inputObservable = dict( ((name,Observable()) for name in self._inputChannels.iterkeys()) )
 
     def dimension(self, channel):
         return self._outputChannels[channel]
@@ -107,7 +107,7 @@ class ExternalParameterBase(object):
         """
         returns current value
         """
-        return self.settings.value[channel]
+        return self.settings.value.get(channel, 0) 
     
     def currentExternalValue(self, channel=None):
         """
