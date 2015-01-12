@@ -36,7 +36,8 @@ class PowerDetectorCalibration:
         if volt is None:
             return None
         if volt < self.minimum or volt > self.maximum:
-            return "oor"
+#            return "oor"
+            return mg(-0.001, 'W')
         dBm = self.p * volt**2 + self.m*volt + self.c
         value = mg( 10**((dBm/10)-3), 'W' )
         value.significantDigits = self.digits
