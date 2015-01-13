@@ -40,7 +40,8 @@ class StoredFitFunction(object):
     
     @classmethod
     def fromFitfunction(cls, fitfunction):
-        instance = cls( name=None, fitfunctionName=fitfunction.name )
+        fitfunctionName = fitfunction.name if fitfunction else None
+        instance = cls( name=None, fitfunctionName=fitfunctionName )
         instance.startParameters = tuple(fitfunction.startParameters)
         instance.parameterEnabled = tuple(fitfunction.parameterEnabled)
         instance.startParameterExpressions = tuple(fitfunction.startParameterExpressions) if fitfunction.startParameterExpressions is not None else tuple([None]*len(fitfunction.startParameters))

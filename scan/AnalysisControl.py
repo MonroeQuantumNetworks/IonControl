@@ -66,6 +66,7 @@ class AnalysisControlParameters(object):
         self.autoSave = False
 
 class AnalysisControl(ControlForm, ControlBase ):
+    analysisConfigurationChanged = QtCore.pyqtSignal( object )
     def __init__(self, config, globalDict, parentname, evaluationNames, parent=None):
         ControlForm.__init__(self)
         ControlBase.__init__(self,parent)
@@ -135,6 +136,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.currentAnalysisName = str( self.analysisConfigurationComboBox.currentText() )
         self.analysisConfigurationComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysisConfiguration )
         self.analysisConfigurationComboBox.lineEdit().editingFinished.connect( self.autoSave ) 
+        self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
 
         # FitUi
         self.fitfunctionTableModel = FitUiTableModel(self.config)
@@ -171,7 +173,8 @@ class AnalysisControl(ControlForm, ControlBase ):
             
     def onFitfunctionChanged(self, row, newfitname ):
         """Swap out the fitfunction on the current analysis"""
-        self.currentEvaluation.fitfunctionCache[self.fitfunction.name] = StoredFitFunction.fromFitfunction( self.fitfunction )
+        if self.fitfunction:
+            self.currentEvaluation.fitfunctionCache[self.fitfunction.name] = StoredFitFunction.fromFitfunction( self.fitfunction )
         self.currentEvaluation.fitfunctionName = newfitname
         if newfitname in self.currentEvaluation.fitfunctionCache:
             self.currentEvaluation.fitfunction = self.currentEvaluation.fitfunctionCache[newfitname]
@@ -241,7 +244,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         analysisName = str(self.analysisConfigurationComboBox.currentText())
         if self.currentEvaluation is not None and self.fitfunction is not None:
             self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction( self.fitfunction )
-        return analysisName != '' and not (self.analysisDefinitionDict[self.currentAnalysisName] == self.analysisDefinition)            
+        return analysisName != '' and ( self.currentAnalysisName not in self.analysisDefinitionDict or not (self.analysisDefinitionDict[self.currentAnalysisName] == self.analysisDefinition))            
                 
     def saveConfig(self):
         self.config[self.configname+'.dict'] = self.analysisDefinitionDict
@@ -258,6 +261,7 @@ class AnalysisControl(ControlForm, ControlBase ):
                     self.analysisConfigurationComboBox.addItem(self.currentAnalysisName)
             self.analysisDefinitionDict[self.currentAnalysisName] = copy.deepcopy(self.analysisDefinition)
             self.saveButton.setEnabled( False )
+            self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
         
     def onRemoveAnalysisConfiguration(self):
         name = str(self.analysisConfigurationComboBox.currentText())
@@ -267,6 +271,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             idx = self.analysisConfigurationComboBox.findText(name)
             if idx>=0:
                 self.analysisConfigurationComboBox.removeItem(idx)
+            self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
        
     def onLoadAnalysisConfiguration(self,name):
         name = str(name)

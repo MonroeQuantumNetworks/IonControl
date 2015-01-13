@@ -235,6 +235,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 widget.scanConfigurationListChanged.connect( partial( self.todoList.populateMeasurementsItem, name)  )
             if hasattr( widget, 'evaluationConfigurationChanged' ) and widget.evaluationConfigurationChanged is not None:
                 widget.evaluationConfigurationChanged.connect( partial( self.todoList.populateEvaluationItem, name)  )
+            if hasattr( widget, 'analysisConfigurationChanged' ) and widget.analysisConfigurationChanged is not None:
+                widget.analysisConfigurationChanged.connect( partial( self.todoList.populateAnalysisItem, name)  )
        
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
@@ -443,6 +445,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
+        self.config.saveConfig() 
         for tab in self.tabDict.values():
             tab.onClose()
         self.currentTab.deactivate()
