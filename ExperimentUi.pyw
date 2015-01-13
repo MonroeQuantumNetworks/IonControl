@@ -44,6 +44,7 @@ from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
 from pulser.OKBase import OKBase
 from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
+from pulser.DACController import DACController
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -114,7 +115,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
         self.okBase = OKBase()
         self.settingsDialog.addEntry( "32 Channel PMT", self.okBase )
-        self.dac = OKBase()
+        self.dac = DACController()
         self.settingsDialog.addEntry( "DAC system", self.dac)
         self.settingsDialog.initialize()
 
@@ -255,7 +256,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.logicAnalyzerWindow.setupUi(self.logicAnalyzerWindow)
         
         try:
-            self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables)
+            self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
             self.voltageControlWindow.setupUi(self.voltageControlWindow)
         except MyException.MissingFile as e:
             self.voltageControlWindow = None

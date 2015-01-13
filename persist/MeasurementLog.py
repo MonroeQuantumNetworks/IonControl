@@ -9,11 +9,9 @@ from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy import create_engine
 from modules.magnitude import mg, is_magnitude
 from sqlalchemy.exc import ProgrammingError, InvalidRequestError, IntegrityError
-#from sqlalchemy.exc import OperationalError
 import logging
-from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy import ForeignKey
 from modules.Observable import Observable
-#from sqlalchemy.orm.collections import attribute_mapped_collection
 import weakref
 from modules.SequenceDict import SequenceDict 
 from datetime import datetime, timedelta, time
