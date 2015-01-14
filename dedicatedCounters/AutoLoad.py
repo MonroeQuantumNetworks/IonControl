@@ -536,7 +536,7 @@ class AutoLoad(UiForm,UiBase):
         else:
             #Because of the bug where the wavemeter reads incorrectly after calibration,
             #Loading is only inhibited after 10 consecutive bad measurements
-            if self.outOfRangeCount < 20 and self.settings.useInterlock: #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
+            if self.outOfRangeCount < 20 : #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
                 self.outOfRangeCount += 1
 #                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 255, 0)}")
 #                 self.allFreqsInRange.setToolTip("There are laser frequencies temporarily of range")
