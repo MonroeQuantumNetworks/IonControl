@@ -94,6 +94,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         if self.targetValues[row] is None or value != self.targetValues[row]:
             self.targetValues[row] = value
             self.adjustingDevices += 1
+            logging.getLogger(__name__).info("Increasing adjusting devices to {0}".format(self.adjustingDevices))
             self.setValueFollowup(row)
         return True
  
@@ -109,6 +110,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
             QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,row) )
         else:
             self.adjustingDevices -= 1
+            logging.getLogger(__name__).info("Decreasing adjusting devices to {0}".format(self.adjustingDevices))
             if self.adjustingDevices==0:
                 self.doneAdjusting.firebare()
                 self.doneAdjusting.callbacks = list()
