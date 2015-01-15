@@ -68,7 +68,10 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
     
     def setData(self, index, value, role):
         if index.isValid():
-            return self.setDataLookup.get((role,index.column()),lambda index, value: None)(index, value)
+            value = self.setDataLookup.get((role,index.column()),lambda index, value: None)(index, value)
+            if value:
+                self.valueChanged.emit( None )
+            return value
         return False
        
     def flags(self, index ):

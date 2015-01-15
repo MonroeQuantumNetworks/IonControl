@@ -22,7 +22,7 @@ api2 = sip.getapi("QVariant") == 2
 class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Name', 'Value']
     expression = Expression.Expression()
-    persistSpace = 'globalVar'
+    edited = QtCore.pyqtSignal()
     def __init__(self, settings, globalDict, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
@@ -36,10 +36,8 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.EditRole, 1):    lambda row: str(self.variables.at(row)),
                              }
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
-                               (QtCore.Qt.EditRole, 1): self.setValue,
+                               (QtCore.Qt.EditRole, 1): self.setDataValue,
                                }
-        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(10, 's')))
-        self.persistence = DBPersist()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.variables) 
@@ -56,10 +54,9 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
         logger = logging.getLogger(__name__)
         try:
             strvalue = str(value if api2 else str(value.toString()))
-            result = self.expression.evaluate(strvalue, self.variabledict)
+            result = self.expression.evaluate(strvalue, self.globalDict )
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
-            self.decimation[name].decimate(time.time(), result, partial(self.persistCallback, name))
             return True    
         except Exception:
             logger.exception("No match for {0}".format(str(value.toString())))
@@ -77,7 +74,10 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
             return False
        
     def setData(self, index, value, role):
-        return self.setDataLookup.get((role, index.column()), lambda row, value: False)(index, value)
+        result =  self.setDataLookup.get((role, index.column()), lambda row, value: False)(index, value)
+        if result:
+            self.edited.emit()
+        return result
 
     def flags(self, index):
         return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
@@ -89,13 +89,7 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
         return None  # QtCore.QVariant()
             
     def setValue(self, index, value):
-        if index.column()==1:
-            name = self.variables.keyAt(index.row())
-            old = self.variables[name]
-            if not old.isIdenticalTo(value):
-                self.variables[name] = value
-        elif index.column()==0:
-            self.setDataName( index, value )
+        self.setData( index, value, QtCore.Qt.EditRole)            
 
     def getVariables(self):
         return self.variables
@@ -108,6 +102,7 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
             self.beginInsertRows(QtCore.QModelIndex(), len(self.variables), len(self.variables))
             self.variables[None] = magnitude.mg(0, '')
             self.endInsertRows()
+            self.edited.emit()
         return len(self.variables) - 1
         
     def dropSetting(self, row):
@@ -115,6 +110,7 @@ class TodoListSettingsTableModel(QtCore.QAbstractTableModel):
         name = self.variables.keyAt(row)
         self.variables.pop(name)
         self.endRemoveRows()
+        self.edited.emit()
         return name
     
     def choice(self, index):
