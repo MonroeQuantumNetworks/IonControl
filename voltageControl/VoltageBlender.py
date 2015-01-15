@@ -101,6 +101,7 @@ class FPGAHardware(object):
         
     def applyLine(self, line):
         self.dacController.writeVoltage( 0, line )
+        self.dacController.readVoltage(0, line)
         self.dacController.shuttle( 0, 1, 0, 0 )
         self.dacController.triggerShuttling()
         
