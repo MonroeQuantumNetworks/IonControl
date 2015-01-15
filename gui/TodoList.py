@@ -145,6 +145,7 @@ class TodoList(Form, Base):
         self.scanSelectionBox.currentIndexChanged[QtCore.QString].connect( self.updateMeasurementSelectionBox )
         self.updateMeasurementSelectionBox( self.scanSelectionBox.currentText() )
         self.tableModel = TodoListTableModel( self.settings.todoList )
+        self.tableModel.valueChanged.connect( self.checkSettingsSavable )
         self.tableView.setModel( self.tableModel )
         self.comboBoxDelegate = ComboBoxDelegate()
         for column in range(1,5):
@@ -181,6 +182,7 @@ class TodoList(Form, Base):
         # Settings
         self.settingTableModel = TodoListSettingsTableModel( SequenceDict(), self.globalVariablesUi.variables )
         self.settingTableView.setModel( self.settingTableModel )
+        self.settingTableModel.edited.connect( self.checkSettingsSavable )
         self.comboBoxDelegate = ComboBoxDelegate()
         self.magnitudeSpinBoxDelegate = MagnitudeSpinBoxDelegate()
         self.settingTableView.setItemDelegateForColumn( 0, self.comboBoxDelegate )
