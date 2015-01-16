@@ -315,7 +315,7 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         logger.debug( "setFrequency {0}, current frequency {1}".format(self.settings.value[channel], self.currentFrequency) )
         arrived = self.currentFrequency is not None and abs(self.currentFrequency-self.settings.value[channel])<self.settings.maxDeviation
         if arrived:
-            self.persist(self.settings.value[channel])
+            self.persist(channel, self.settings.value[channel])
         return arrived
            
                 
@@ -359,6 +359,33 @@ class DummyParameter(ExternalParameterBase):
         self.settings.value.setdefault('O1', magnitude.mg(1,'kHz'))
         self.settings.value.setdefault('O7', magnitude.mg(7,'kHz'))
         
+   
+    def _setValue(self, channel, value):
+        logger = logging.getLogger(__name__)
+        logger.debug( "Dummy output channel {0} set to: {1}".format( channel, value ) )
+        self.settings.value[channel] = value
+         
+    def paramDef(self):
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.settings.AOMFreq})
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
+        return superior
+
+class DummySingleParameter(ExternalParameterBase):
+    """
+    DummyParameter, used to debug this part of the software.
+    """
+    className = "DummySingle"
+    _dimension = magnitude.mg(1,'kHz')
+    def __init__(self,name,settings,instrument=''):
+        logger = logging.getLogger(__name__)
+        ExternalParameterBase.__init__(self,name,settings)
+        logger.info( "Opening DummyInstrument {0}".format(instrument) )
+
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('AOMFreq', magnitude.mg(123,'MHz') )      # s delay between subsequent updates
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump        
    
     def _setValue(self, channel, value):
         logger = logging.getLogger(__name__)
