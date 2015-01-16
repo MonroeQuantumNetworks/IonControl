@@ -187,11 +187,13 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onActiveAnalysisChanged(self, selected, deselected=None):
         if deselected and self.fitfunction:
             self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
-        self.currentEvaluation = self.analysisDefinition[selected.row()]
-        self.currentEvaluationLabel.setText( self.currentEvaluation.name )
-        if self.currentEvaluation.fitfunction:
+        self.currentEvaluation = self.analysisDefinition[selected.row()] if self.analysisDefinition else None
+        self.currentEvaluationLabel.setText( self.currentEvaluation.name if self.currentEvaluation else "" )
+        if self.currentEvaluation and self.currentEvaluation.fitfunction:
             self.setFitfunction( self.currentEvaluation.fitfunction.fitfunction() )
-        self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables, self.fitfunction)
+        else:
+            self.setFitfunction( None )
+        self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables if self.currentEvaluation else None, self.fitfunction)
         self.setButtonEnabledState()
             
     def onRemoveAnalysis(self):
@@ -367,10 +369,11 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.fitfunction = fitfunction
         self.fitfunctionTableModel.setFitfunction(self.fitfunction)
         self.fitResultsTableModel.setFitfunction(self.fitfunction)
-        self.descriptionLabel.setText( self.fitfunction.functionString )
-        self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
-        self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
-        self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
+        self.descriptionLabel.setText( self.fitfunction.functionString if self.fitfunction else "" )
+        if self.fitfunction:
+            self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
+            self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
+            self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
         self.evaluate()
 
     def setPlottedTraceDict(self, plottedTraceDict):

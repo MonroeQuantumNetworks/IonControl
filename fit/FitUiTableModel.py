@@ -51,7 +51,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
     def setFitfunction(self, fitfunction):
         self.beginResetModel()
         self.fitfunction = fitfunction
-        if self.fitfunction.startParameterExpressions is None:
+        if self.fitfunction and self.fitfunction.startParameterExpressions is None:
             self.fitfunction.startParameterExpressions = [None]*len(self.fitfunction.startParameters)
         self.endResetModel()
         
