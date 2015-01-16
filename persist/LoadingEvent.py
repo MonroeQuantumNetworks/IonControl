@@ -69,7 +69,7 @@ class LoadingHistory(object):
         try:
             self.session.add( loadingEvent )
             self.session.commit()
-            if self.currentProfile is None or loadingEvent.loadingProfile==self.currentProfile:
+            if self._currentProfile is None or loadingEvent.loadingProfile==self._currentProfile:
                 self.beginInsertRows.fire(first=len(self._loadingEvents),last=len(self._loadingEvents))
                 self._loadingEvents.append( loadingEvent )
                 self.endInsertRows.firebare()
@@ -100,4 +100,7 @@ class LoadingHistory(object):
     @property
     def loadingEvents(self):
         return self._loadingEvents
+    
+    def lastEvent(self):
+        return self._loadingEvents[-1]
     

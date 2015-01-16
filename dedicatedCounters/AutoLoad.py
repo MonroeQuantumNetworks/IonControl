@@ -37,6 +37,10 @@ from persist.LoadingEvent import LoadingEvent, LoadingHistory
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
+import pytz
+def now():
+    return datetime.utcnow().replace(tzinfo= pytz.utc )
+
 
 class AutoLoadSettings(object):
     def __init__(self):
@@ -158,7 +162,7 @@ class AutoLoad(UiForm,UiBase):
         self.currentSettingsName = self.config.get('AutoLoad.SettingsName','')
         self.loadingHistory = LoadingHistory(dbConnection)
         self.loadingHistory.open()
-        self.loadingHistory.query( datetime.now()-self.parameters.historyLength, datetime.now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
+        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
         self.timer = None
         self.pulser = pulser
         self.dataSignalConnected = False
@@ -166,10 +170,10 @@ class AutoLoad(UiForm,UiBase):
         self.dataSignal = dataAvailableSignal
         self.numFailedAutoload = 0
         self.constructStatemachine()
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
         self.trappingTime = None
         self.voltageControl = None
-        self.preheatStartTime = datetime.now()
+        self.preheatStartTime = now()
         self.globalVariablesUi = globalVariablesUi
         self.globalAdjustRevertList = list()
         self.externalInstrumentObservable = externalInstrumentObservable
@@ -304,7 +308,7 @@ class AutoLoad(UiForm,UiBase):
         self.autoSave()
     
     def ovenLimitReached(self):
-        return timedeltaToMagnitude(datetime.now() - self.preheatStartTime) > self.settings.maxTime
+        return timedeltaToMagnitude(now() - self.preheatStartTime) > self.settings.maxTime
         
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
@@ -396,7 +400,7 @@ class AutoLoad(UiForm,UiBase):
         self.parameterWidget.setParameters( self.parameter() )
         self.useInterlockGui.setChecked(self.settings.useInterlock)
         self.autoReloadBox.setChecked(self.settings.autoReload)
-        self.loadingHistory.query( datetime.now()-self.parameters.historyLength, datetime.now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
+        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
         self.globalsAdjustTableModel.setSettings(self.settings.globalsAdjustList)
         self.tableModel.setChannelDict( self.settings.interlock )
 
@@ -585,7 +589,7 @@ class AutoLoad(UiForm,UiBase):
         self.timer.timeout.connect( self.onTimer )
         self.timer.start(100)
         self.connectDataSignal()
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
     
     def setPreheat(self):
         """Execute when the loading process begins. Turn on timer, turn on oven."""
@@ -594,8 +598,8 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:red; }")
         self.statusLabel.setText("Preheating")
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
-        self.timerNullTime = datetime.now()
-        self.preheatStartTime = datetime.now()
+        self.timerNullTime = now()
+        self.preheatStartTime = now()
     
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
@@ -621,7 +625,7 @@ class AutoLoad(UiForm,UiBase):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
         self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
-        self.checkStarted = datetime.now()
+        self.checkStarted = now()
         self.statusLabel.setText("Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
@@ -647,7 +651,7 @@ class AutoLoad(UiForm,UiBase):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
         self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
-        self.checkStarted = datetime.now()
+        self.checkStarted = now()
         self.statusLabel.setText("Shuttle Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
@@ -659,13 +663,13 @@ class AutoLoad(UiForm,UiBase):
         logger = logging.getLogger(__name__)
         logger.info(  "Loading Trapped" )
         self.loadingTime = check.enterTime - self.timerNullTime
-        self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
+        self.loadingHistory.addLoadingEvent( LoadingEvent( loadingDuration=self.loadingTime, trappingTime=self.checkStarted, loadingProfile=self.currentSettingsName) )
            
     def idleToTrapped(self, check, trapped):
         logger = logging.getLogger(__name__)
         logger.info(  "Idle Trapped" )
         self.loadingTime = timedelta(0)
-        self.historyTableModel.append( LoadingEvent(self.loadingTime,datetime.now()) )
+        self.loadingHistory.addLoadingEvent( LoadingEvent( loadingDuration=self.loadingTime, trappingTime=now(), loadingProfile=self.currentSettingsName) )
            
     def setTrapped(self):
         self.startButton.setEnabled( True )
@@ -675,12 +679,12 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.numFailedAutoload = 0
-        self.trappingTime = self.loadingHistory[-1].trappingTime
+        self.trappingTime = self.loadingHistory.lastEvent().trappingTime
         self.timerNullTime = self.trappingTime
         self.ionReappeared.emit()        
     
     def exitTrapped(self):
-        self.loadingHistory.loadingEvents[-1].trappingDuration = datetime.now()-self.trappingTime
+        self.loadingHistory.loadingEvents[-1].trappingDuration = now()-self.trappingTime
         self.historyTableModel.updateLast()
     
     def setFrozen(self):
@@ -696,11 +700,11 @@ class AutoLoad(UiForm,UiBase):
 
     def setWaitingForComeback(self):
         self.statusLabel.setText("Waiting to see if ion comes back")
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
     
     def setCoolingOven(self):
         self.statusLabel.setText("Cooling Oven")
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
         self.numFailedAutoload += 1
     
     def setAutoReloadFailed(self):
@@ -717,7 +721,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.processEvent( 'ionStillTrapped' )
         
     def onTrappedIonNow(self):
-        current = datetime.now()
+        current = now()
         self.timerNullTime = current
         self.trappingTime = current
         self.checkStarted = current
@@ -727,7 +731,7 @@ class AutoLoad(UiForm,UiBase):
         """Execute whenever the timer sends a timeout signal, which is every 100 ms.
            Trigger status changes based on elapsed time. This controls the flow
            of the loading process."""
-        self.elapsed = datetime.now()-self.timerNullTime
+        self.elapsed = now()-self.timerNullTime
         self.elapsedLabel.setText(formatDelta(self.elapsed) )
         self.statemachine.processEvent( 'timer' )
     
