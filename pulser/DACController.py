@@ -14,7 +14,7 @@ class DACControllerException(Exception):
     pass
 
 class DACController( OKBase ):
-    channelCount = 128
+    channelCount = 112
     def toInteger(self, iterable):
         result = list()
         for value in chain(iterable[0::4], iterable[1::4], iterable[2::4], iterable[3::4]):
