@@ -323,6 +323,7 @@ class AnalysisControl(ControlForm, ControlBase ):
                 replacements = self.fitfunction.replacementDict()
                 replacements.update( self.globalDict )
                 evaluation.updatePushVariables( replacements )
+                self.pushTableModel.fitDataChanged()
         else:
             fitfunction = evaluation.fitfunction.fitfunction()
             fitfunction.evaluate( self.globalDict )

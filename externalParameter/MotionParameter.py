@@ -243,7 +243,7 @@ class PowerWaveplate(ExternalParameterBase):
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
-            self.persist(channel, self.settings.value)
+            self.persist(channel, self.settings.value[channel])
         return arrived
 
     def update(self, param, changes):

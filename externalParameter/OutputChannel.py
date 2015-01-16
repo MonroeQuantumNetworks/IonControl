@@ -29,7 +29,7 @@ class OutputChannel(object):
         self.device.saveValue(self.channelName)
         
     def restoreValue(self):
-        self.device.restoreValue(self.channelName)
+        return self.device.restoreValue(self.channelName)
         
     @property 
     def savedValue(self):
