@@ -46,6 +46,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.gainBox.valueChanged.connect( self.onGainChanged )
         self.tableModel = VoltageGlobalAdjustTableModel( self.globalAdjustDict, self.globalDict )
         self.tableView.setModel( self.tableModel )
+        self.tableView.setSortingEnabled(True)   # triggers sorting
         self.delegate =  MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(1,self.delegate)
         
