@@ -16,6 +16,7 @@ from uiModules.GenericTableModel import GenericTableModel
 from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
 from modules.magnitude import mg
 from modules.NamedTimespan import getRelativeDatetime, timespans
+from dateutil.tz import tzlocal
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ValueHistory.ui')
 
@@ -56,7 +57,7 @@ class ValueHistoryUi(Form,Base):
         self.dateTimeEditFrom.dateTimeChanged.connect( partial(self.onValueChangedDateTime, 'fromTime')  )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.onSpaceChanged(self.parameters.space)
-        self.dataModel = GenericTableModel(self.config, list(), "ValueHistory", ["Date","Value"], [lambda t: t.strftime('%Y-%m-%d %H:%M:%S'), str])
+        self.dataModel = GenericTableModel(self.config, list(), "ValueHistory", ["Date","Value"], [lambda t: t.astimezone(tzlocal()).strftime('%Y-%m-%d %H:%M:%S'), str])
         self.tableView.setModel( self.dataModel )
         restoreGuiState( self, self.config.get('ValueHistory.guiState'))
         

@@ -39,7 +39,7 @@ UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
 import pytz
 def now():
-    return datetime.utcnow().replace(tzinfo= pytz.utc )
+    return datetime.now(pytz.utc)
 
 
 class AutoLoadSettings(object):

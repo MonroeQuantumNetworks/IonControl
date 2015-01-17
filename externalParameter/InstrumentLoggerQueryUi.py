@@ -20,6 +20,7 @@ from modules import WeakMethod
 import weakref
 from gui.ProjectSelection import getDatabaseConnection
 from modules.NamedTimespan import getRelativeDatetime, timespans
+import pytz
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -149,8 +150,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         if not result:
             logging.getLogger(__name__).error("Database query returned empty set")
         elif len(result)>0:
-            epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if result[0].upd_date.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
-            time = [(e.upd_date - epoch).total_seconds() for e in result]
+            time = [(e.upd_date - datetime(1970,1,1, tzinfo=pytz.utc)).total_seconds() for e in result]
             value = [e.value for e in result]
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]

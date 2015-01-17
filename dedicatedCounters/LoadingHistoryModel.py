@@ -5,7 +5,7 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore
-
+from dateutil.tz import tzlocal
 
 class LoadingHistoryModel(QtCore.QAbstractTableModel):
     def __init__(self, history, parent=None, *args): 
@@ -25,7 +25,7 @@ class LoadingHistoryModel(QtCore.QAbstractTableModel):
         if index.isValid():
             item = self._history[len(self.history)-index.row()-1]
             #print item.trappedAt, item.trappingTime, item.trappingTime
-            return { (QtCore.Qt.DisplayRole,0): item.trappingTime.strftime('%Y-%m-%d %H:%M:%S'),
+            return { (QtCore.Qt.DisplayRole,0): item.trappingTime.astimezone(tzlocal()).strftime('%Y-%m-%d %H:%M:%S'),
                      (QtCore.Qt.DisplayRole,1): self.formatDelta(item.loadingDuration) if item.loadingDuration else None,
                      (QtCore.Qt.DisplayRole,2): self.formatDelta(item.trappingDuration) if item.trappingDuration else None,
                      }.get((role,index.column()),None)
