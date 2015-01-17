@@ -25,7 +25,7 @@ class DACController( OKBase ):
     
     def writeVoltage(self, address, line ):
         if len(line)<self.channelCount:
-            raise DACControllerException("Line contains only {0} voltages, need {1}".format(len(line), self.channelCount))
+            line.extend( [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
         startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
         # set the host write address
         self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
