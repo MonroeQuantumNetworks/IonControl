@@ -80,6 +80,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         except TypeError:
             logging.getLogger(__name__).info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.analysisDefinitionDict = dict()
+        self.analysisDefinitionDict.setdefault('', list() )  # add empty analysis
         try:
             self.analysisDefinition = self.config.get(self.configname,list())
         except Exception:
@@ -129,7 +130,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.pushTableView.setItemDelegateForColumn(column,self.pushItemDelegate)
         self.pushDestinations['Database'] = DatabasePushDestination('fit')
 
-        self.analysisConfigurationComboBox.addItems( self.analysisDefinitionDict.keys() )
+        self.analysisConfigurationComboBox.addItems( [ key for key in self.analysisDefinitionDict.iterkeys() if key ] )
         if self.currentAnalysisName in self.analysisDefinitionDict:
             self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(self.currentAnalysisName))
         else:
@@ -277,7 +278,7 @@ class AnalysisControl(ControlForm, ControlBase ):
        
     def onLoadAnalysisConfiguration(self,name):
         name = str(name)
-        if name and name in self.analysisDefinitionDict:
+        if name is not None and name in self.analysisDefinitionDict:
             self.currentAnalysisName = name
             self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
             self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0) )
