@@ -21,11 +21,8 @@ parameter MicrowaveAmp = 1023
 parameter<AD9912_FRQ> DetectFreq = 100 MHz
 parameter DetectAmp = 1023
 parameter<AD9912_FRQ> RamanFreq2_1 = 240 MHz
-parameter<AD9912_FRQFINE> RamanFreq2_1fine = 240 MHz
 parameter<AD9912_FRQ> RamanFreq2_2 = 240 MHz
-parameter<AD9912_FRQFINE> RamanFreq2_2fine = 240 MHz
 parameter<AD9912_FRQ> RamanFreq2_carrier = 240 MHz
-parameter<AD9912_FRQFINE> RamanFreq2_carrierfine = 240 MHz
 parameter<AD9912_FRQ> RamanFreq2_single = 240 MHz
 parameter <AD9912_FRQ> RedSidebandFreq_1 = 247 MHz
 parameter <AD9912_FRQ> RedSidebandFreq_2 = 247 MHz
@@ -92,8 +89,8 @@ parameter PresenceThresholdSingle = 6
 parameter PresenceThresholdMulti = 6
 
 # excitcodes
-exitcode IonLostExitcode = 0xfffe0001
-exitcode endLabel = 0xffffffff
+exitcode IonLostExitcode = 0xfffe000000000001
+exitcode endLabel = 0xffffffffffffffff
 
 # internal variables
 var experimentsleft = 100
@@ -209,10 +206,10 @@ while not pipe_empty():
     update()
     apply_next_scan_point()
 
-    set_dds( channel=DDSRaman2_1, freq=RamanFreq2_1, freqfine=RamanFreq2_1fine )
-    set_dds( channel=DDSRaman2_2, freq=RamanFreq2_2 , freqfine=RamanFreq2_2fine)
+    set_dds( channel=DDSRaman2_1, freq=RamanFreq2_1 )
+    set_dds( channel=DDSRaman2_2, freq=RamanFreq2_2 )
     set_dds( channel=DDSRaman2_single, freq=RamanFreq2_single )
-    set_dds( channel=DDSRaman2_carrier, freq=RamanFreq2_carrier, freqfine=RamanFreq2_carrierfine, phase=RamanAnalyzePhase )
+    set_dds( channel=DDSRaman2_carrier, freq=RamanFreq2_carrier, phase=RamanAnalyzePhase )
     set_dds( channel=DDSDetect, freq=DetectFreq, amp=DetectAmp )
     set_dds( channel=DDSMicrowave, freq=MicrowaveFreq, amp=MicrowaveAmp)
 
