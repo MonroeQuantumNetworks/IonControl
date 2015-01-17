@@ -19,6 +19,7 @@ import pytz
 from modules import WeakMethod 
 import weakref
 from gui.ProjectSelection import getDatabaseConnection
+from modules.NamedTimespan import getRelativeDatetime, timespans
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -28,6 +29,7 @@ class Parameters:
         self.parameter = None
         self.fromTime = datetime(2014,8,30)
         self.toTime = datetime.now()
+        self.useToTime = False
         self.plotName = None 
         self.plotUnit = ""
         self.steps = False
@@ -37,6 +39,8 @@ class Parameters:
     def __setstate__(self, s):
         self.__dict__ = s
         self.__dict__.setdefault('updatePrevious', True)
+        self.__dict__.setdefault('useToTime', False)
+        
 
 class InstrumentLoggerQueryUi(Form,Base):
     def __init__(self, config, traceui, plotDict, parent=None):
@@ -56,6 +60,11 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.comboBoxSpace.currentIndexChanged[QtCore.QString].connect( self.onSpaceChanged  )
         self.comboBoxParam.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'parameter') )      
         self.comboBoxPlotName.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'plotName') )
+        self.toTimeCheckBox.setChecked( self.parameters.useToTime )
+        self.toTimeCheckBox.stateChanged.connect( self.onUseToTime )
+        self.dateTimeEditTo.setEnabled( self.parameters.useToTime )
+        self.fromTimeCombo.addItems( ['Select timespan ...']+timespans )
+        self.fromTimeCombo.currentIndexChanged[QtCore.QString].connect( self.onNamedTimespan )
         self.onRefresh()
         if self.parameters.space is not None:
             self.comboBoxSpace.setCurrentIndex( self.comboBoxSpace.findText(self.parameters.space ))
@@ -73,11 +82,6 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.lineEditPlotUnit.textChanged.connect( partial(self.onValueChangedString, 'plotUnit') )
         self.pushButtonCreatePlot.clicked.connect( self.onCreatePlot )
         self.pushButtonUpdateAll.clicked.connect( self.onUpdateAll )
-        self.pushButtonLast15Min.clicked.connect( partial(self.onLastTime, s=900) )
-        self.pushButtonLastHour.clicked.connect( partial(self.onLastTime, s=3600) )
-        self.pushButtonLastDay.clicked.connect( partial(self.onLastTime, d=1) )
-        self.pushButtonLastWeek.clicked.connect( partial(self.onLastTime, d=7) )
-        self.pushButtonLastCustom.clicked.connect( partial(self.onLastTime, custom=True) )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.checkBoxSteps.setChecked( self.parameters.steps )
         self.checkBoxSteps.stateChanged.connect( partial(self.onStateChanged, 'steps') )
@@ -85,15 +89,18 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.checkBoxUpdatePrevious.stateChanged.connect( partial( self.onStateChanged, 'updatePrevious') )
         self.onSpaceChanged(self.parameters.space)
 
-    def onLastTime(self, d=0, s=0, custom=False):
-        now = datetime.now()
-        if custom:
-            d=self.spinBoxCustomDays.value()
-            s=self.spinBoxCustomMinutes.value()*60.0 + self.spinBoxCustomHours.value()*3600.0
-        shift = timedelta(days=d, seconds=s)
-        self.dateTimeEditFrom.setDateTime( now-shift )
-        self.dateTimeEditTo.setDateTime( now )
+    def onNamedTimespan(self, name):
+        dt = getRelativeDatetime(str(name), None)
+        if dt is not None:
+            self.parameters.fromTime = dt
+            self.dateTimeEditFrom.setDateTime( self.parameters.fromTime )
+            self.fromTimeCombo.setCurrentIndex(0)
         
+
+    def onUseToTime(self, state):
+        self.parameters.useToTime = state==QtCore.Qt.Checked
+        self.dateTimeEditTo.setEnabled( self.parameters.useToTime )
+
     def onStateChanged(self, attr, state):
         setattr( self.parameters, attr, state==QtCore.Qt.Checked )
         
@@ -126,7 +133,8 @@ class InstrumentLoggerQueryUi(Form,Base):
         
        
     def onCreatePlot(self): 
-        self.doCreatePlot(self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime, self.parameters.plotName, self.parameters.steps)
+        self.doCreatePlot(self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime if self.parameters.useToTime else None, 
+                          self.parameters.plotName, self.parameters.steps)
         self.cacheGarbageCollect()
         
     def cacheGarbageCollect(self):

@@ -487,6 +487,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.todoList.saveConfig()
         self.preferencesUi.saveConfig()
         self.measurementLog.saveConfig()
+        self.valueHistoryUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
