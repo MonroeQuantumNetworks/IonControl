@@ -319,6 +319,7 @@ class AnalysisControl(ControlForm, ControlBase ):
                 self.fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
                 plot.fitFunction = copy.deepcopy(self.fitfunction)
                 plot.plot(-2)
+                evaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
                 self.fitfunctionTableModel.fitDataChanged()
                 self.fitResultsTableModel.fitDataChanged()
                 replacements = self.fitfunction.replacementDict()
