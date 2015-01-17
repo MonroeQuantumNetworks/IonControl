@@ -19,6 +19,8 @@ import pytz
 from modules import WeakMethod 
 import weakref
 from gui.ProjectSelection import getDatabaseConnection
+from modules.NamedTimespan import getRelativeDatetime, timespans
+import pytz
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -28,6 +30,7 @@ class Parameters:
         self.parameter = None
         self.fromTime = datetime(2014,8,30)
         self.toTime = datetime.now()
+        self.useToTime = False
         self.plotName = None 
         self.plotUnit = ""
         self.steps = False
@@ -37,6 +40,8 @@ class Parameters:
     def __setstate__(self, s):
         self.__dict__ = s
         self.__dict__.setdefault('updatePrevious', True)
+        self.__dict__.setdefault('useToTime', False)
+        
 
 class InstrumentLoggerQueryUi(Form,Base):
     def __init__(self, config, traceui, plotDict, parent=None):
@@ -56,6 +61,11 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.comboBoxSpace.currentIndexChanged[QtCore.QString].connect( self.onSpaceChanged  )
         self.comboBoxParam.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'parameter') )      
         self.comboBoxPlotName.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'plotName') )
+        self.toTimeCheckBox.setChecked( self.parameters.useToTime )
+        self.toTimeCheckBox.stateChanged.connect( self.onUseToTime )
+        self.dateTimeEditTo.setEnabled( self.parameters.useToTime )
+        self.fromTimeCombo.addItems( ['Select timespan ...']+timespans )
+        self.fromTimeCombo.currentIndexChanged[QtCore.QString].connect( self.onNamedTimespan )
         self.onRefresh()
         if self.parameters.space is not None:
             self.comboBoxSpace.setCurrentIndex( self.comboBoxSpace.findText(self.parameters.space ))
@@ -79,7 +89,19 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.checkBoxUpdatePrevious.setChecked( self.parameters.updatePrevious )
         self.checkBoxUpdatePrevious.stateChanged.connect( partial( self.onStateChanged, 'updatePrevious') )
         self.onSpaceChanged(self.parameters.space)
+
+    def onNamedTimespan(self, name):
+        dt = getRelativeDatetime(str(name), None)
+        if dt is not None:
+            self.parameters.fromTime = dt
+            self.dateTimeEditFrom.setDateTime( self.parameters.fromTime )
+            self.fromTimeCombo.setCurrentIndex(0)
         
+
+    def onUseToTime(self, state):
+        self.parameters.useToTime = state==QtCore.Qt.Checked
+        self.dateTimeEditTo.setEnabled( self.parameters.useToTime )
+
     def onStateChanged(self, attr, state):
         setattr( self.parameters, attr, state==QtCore.Qt.Checked )
         
@@ -112,7 +134,8 @@ class InstrumentLoggerQueryUi(Form,Base):
         
        
     def onCreatePlot(self): 
-        self.doCreatePlot(self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime, self.parameters.plotName, self.parameters.steps)
+        self.doCreatePlot(self.parameters.space, self.parameters.parameter, self.parameters.fromTime , self.parameters.toTime if self.parameters.useToTime else None, 
+                          self.parameters.plotName, self.parameters.steps)
         self.cacheGarbageCollect()
         
     def cacheGarbageCollect(self):
@@ -127,8 +150,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         if not result:
             logging.getLogger(__name__).error("Database query returned empty set")
         elif len(result)>0:
-            epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if result[0].upd_date.tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
-            time = [(e.upd_date - epoch).total_seconds() for e in result]
+            time = [(e.upd_date - datetime(1970,1,1, tzinfo=pytz.utc)).total_seconds() for e in result]
             value = [e.value for e in result]
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]

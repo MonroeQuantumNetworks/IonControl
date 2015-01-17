@@ -52,6 +52,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.externalValues = self.targetValues[:]
         self.toolTips = [None]*len(self.externalValues )
         for index,inst in enumerate(self.parameterDict.values()):
+            inst.observable.clear()
             inst.observable.subscribe( functools.partial( self.showValue, index ) )
         self.endResetModel()
         
@@ -93,6 +94,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         if self.targetValues[row] is None or value != self.targetValues[row]:
             self.targetValues[row] = value
             self.adjustingDevices += 1
+            logger.debug("Increased adjusting instruments to {0}".format(self.adjustingDevices))
             self.setValueFollowup(row)
         return True
  
@@ -101,16 +103,21 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         return True
         
     def setValueFollowup(self, row):
-        logger = logging.getLogger(__name__)
-        logger.debug( "setValueFollowup {0}".format( self.parameterDict.at(row).value ) )
-        delay = int( self.parameterDict.at(row).delay.toval('ms') )
-        if not self.parameterDict.at(row).setValue( self.targetValues[row] ):
-            QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,row) )
-        else:
-            self.adjustingDevices -= 1
-            if self.adjustingDevices==0:
-                self.doneAdjusting.firebare()
-                self.doneAdjusting.callbacks = list()
+        try:
+            logger = logging.getLogger(__name__)
+            logger.debug( "setValueFollowup {0}".format( self.parameterDict.at(row).value ) )
+            delay = int( self.parameterDict.at(row).delay.toval('ms') )
+            if not self.parameterDict.at(row).setValue( self.targetValues[row] ):
+                QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,row) )
+            else:
+                self.adjustingDevices -= 1
+                logger.debug("Decreased adjusting instruments to {0}".format(self.adjustingDevices))
+                if self.adjustingDevices==0:
+                    self.doneAdjusting.firebare()
+                    self.doneAdjusting.callbacks = list()
+        except Exception as e:
+            logger.exception(e)
+            logger.error( "Exception during setValueFollowup, number of adjusting devices likely to be faulty")
 
     def update(self, iterable):
         for destination, name, value in iterable:

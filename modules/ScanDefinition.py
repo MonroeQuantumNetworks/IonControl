@@ -198,7 +198,10 @@ class ScanSegmentDefinition(object):
         return self._inconsistent
     
     def checkConsistency(self):
-        self._inconsistent = not ( self._start.unit == self._stop.unit == self._center.unit == self._span.unit == self._stepsize.unit )
+        try:
+            self._inconsistent = not ( self._start.unit == self._stop.unit == self._center.unit == self._span.unit == self._stepsize.unit )
+        except Exception:
+            self._inconsistent = True
         
     def evaluate(self, globalDict ):
         changed = False

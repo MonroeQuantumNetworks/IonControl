@@ -5,28 +5,20 @@ Created on Tue Mar 12 15:22:09 2013
 @author: wolverine
 """
 
+# The dictionary of External Instrument classes is maintained using a metaclass
+# To define a new External Instrument you need to
+# * define the class with a class attribute __metaclass__ = InstrumentMeta
+# * import the module containing the class in this module
+# * the dictionary of classes is InstrumentMeta.InstrumentDict
 
 import logging
 
-import StandardExternalParameter  
-from externalParameter import InterProcessParameters
+import StandardExternalParameter     #@UnusedImport
+from externalParameter import InterProcessParameters  #@UnusedImport
         
-ExternalParameter = { StandardExternalParameter.LaserWavemeterLockScan.className: StandardExternalParameter.LaserWavemeterLockScan, 
-                              StandardExternalParameter.HP8672A.className: StandardExternalParameter.HP8672A,
-                              StandardExternalParameter.AgilentPowerSupply.className: StandardExternalParameter.AgilentPowerSupply,
-                              StandardExternalParameter.LaserWavemeterScan.className : StandardExternalParameter.LaserWavemeterScan,
-                              StandardExternalParameter.DummyParameter.className: StandardExternalParameter.DummyParameter,
-                              StandardExternalParameter.N6700BPowerSupply.className: StandardExternalParameter.N6700BPowerSupply,
-                              StandardExternalParameter.MicrowaveSynthesizerScan.className : StandardExternalParameter.MicrowaveSynthesizerScan,
-                              InterProcessParameters.LockOutputFrequency.className:  InterProcessParameters.LockOutputFrequency}
-
 try:
-    import MotionParameter
-    ExternalParameter[ MotionParameter.ConexLinear.className ] = MotionParameter.ConexLinear 
-    ExternalParameter[ MotionParameter.ConexRotation.className ] = MotionParameter.ConexRotation 
-    ExternalParameter[ MotionParameter.PowerWaveplate.className ] = MotionParameter.PowerWaveplate 
+    import MotionParameter  #@UnusedImport
 except Exception as ex:
-    #logging.getLogger(__name__).exception(ex)
     logging.getLogger(__name__).error("Motion control devices are not available")
     
 

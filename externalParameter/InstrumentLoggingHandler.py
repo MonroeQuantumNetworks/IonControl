@@ -125,36 +125,37 @@ class DataHandling(object):
                 minval = minval.toval(unit)
             if is_magnitude(maxval):
                 maxval = maxval.toval(unit)
-        if self.trace is None:
-            self.trace = Trace(record_timestamps=True)
-            self.trace.name = source
-            self.trace.x = numpy.array( [takentime] )
-            self.trace.y = numpy.array( [value] )
-            if maxval is not None:
-                self.trace.top = numpy.array( [maxval - value])
-            if minval is not None:
-                self.trace.bottom = numpy.array( [value - minval])
-            self.plottedTrace = PlottedTrace(self.trace, plot, pens.penList, xAxisUnit = "s", xAxisLabel = "time", windowName=self.plotName) 
-            self.plottedTrace.trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTrace.traceFilename), self.filename )
-            traceui.addTrace( self.plottedTrace, pen=-1)
-            traceui.resizeColumnsToContents()
-        else:
-            if self.maximumPoints==0 or len(self.trace.x)<self.maximumPoints:
-                self.trace.x = numpy.append( self.trace.x, takentime )
-                self.trace.y = numpy.append( self.trace.y, value )
+        if type(value) is not str: #ignore erroneous values like 'oor'
+            if self.trace is None:
+                self.trace = Trace(record_timestamps=True)
+                self.trace.name = source
+                self.trace.x = numpy.array( [takentime] )
+                self.trace.y = numpy.array( [value] )
                 if maxval is not None:
-                    self.trace.top = numpy.append( self.trace.top, maxval - value )
+                    self.trace.top = numpy.array( [maxval - value])
                 if minval is not None:
-                    self.trace.bottom = numpy.append( self.trace.bottom, value - minval )
+                    self.trace.bottom = numpy.array( [value - minval])
+                self.plottedTrace = PlottedTrace(self.trace, plot, pens.penList, xAxisUnit = "s", xAxisLabel = "time", windowName=self.plotName) 
+                self.plottedTrace.trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTrace.traceFilename), self.filename )
+                traceui.addTrace( self.plottedTrace, pen=-1)
+                traceui.resizeColumnsToContents()
             else:
-                maxPoints = int(self.maximumPoints)
-                self.trace.x = numpy.append( self.trace.x[-maxPoints:], takentime )
-                self.trace.y = numpy.append( self.trace.y[-maxPoints:], value )
-                if maxval is not None:
-                    self.trace.top = numpy.append( self.trace.top[-maxPoints:], maxval - value )
-                if minval is not None:
-                    self.trace.bottom = numpy.append( self.trace.bottom[-maxPoints:], value - minval )                
-            self.plottedTrace.replot()            
+                if self.maximumPoints==0 or len(self.trace.x)<self.maximumPoints:
+                    self.trace.x = numpy.append( self.trace.x, takentime )
+                    self.trace.y = numpy.append( self.trace.y, value )
+                    if maxval is not None:
+                        self.trace.top = numpy.append( self.trace.top, maxval - value )
+                    if minval is not None:
+                        self.trace.bottom = numpy.append( self.trace.bottom, value - minval )
+                else:
+                    maxPoints = int(self.maximumPoints)
+                    self.trace.x = numpy.append( self.trace.x[-maxPoints:], takentime )
+                    self.trace.y = numpy.append( self.trace.y[-maxPoints:], value )
+                    if maxval is not None:
+                        self.trace.top = numpy.append( self.trace.top[-maxPoints:], maxval - value )
+                    if minval is not None:
+                        self.trace.bottom = numpy.append( self.trace.bottom[-maxPoints:], value - minval )                
+                self.plottedTrace.replot()            
 
 
 class InstrumentLoggingHandler(QtCore.QObject):

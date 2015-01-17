@@ -112,7 +112,7 @@ class Scan:
         return desc
     
     def evaluate(self, globalDictionary ):
-        return any( (segment.evaluate(globalDictionary) for segment in self.scanSegmentList ) )            
+        return any( [segment.evaluate(globalDictionary) for segment in self.scanSegmentList ] )            
 
 
 class ScanControlParameters:

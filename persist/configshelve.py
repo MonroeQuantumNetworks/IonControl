@@ -49,7 +49,6 @@ class configshelve:
     def __init__(self,filename):
         self.configfile = filename
         self.engine = create_engine('sqlite:///'+self.configfile, echo=False)
-        self.elementCache = dict()
         
     def saveConfig(self, copyTo=None ):
         self.session.commit()
@@ -71,15 +70,11 @@ class configshelve:
             category, key = key
         else:
             category, key = defaultcategory, key
-        if  (key,category) in self.elementCache:
-            elem = self.elementCache[(key,category)]
-        else:
-            try:
-                elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
-                self.elementCache[(key,category)] = elem
-            except NoResultFound:
-                elem = ShelveEntry(key,value,category)
-                self.session.add(elem)
+        try:
+            elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
+        except NoResultFound:
+            elem = ShelveEntry(key,value,category)
+            self.session.add(elem)
         elem.value = value
         
     def __getitem__(self, key):
@@ -87,27 +82,20 @@ class configshelve:
             category, key = key
         else:
             category, key = defaultcategory, key
-        if (key,category) in self.elementCache:
-            return self.elementCache[(key,category)].value
-        else:
-            element = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
-            self.elementCache[(key,category)] = element
-            return element.value
+        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
             
     def __contains__(self, key):
         if isinstance(key,tuple):
             category, key = key
         else:
             category, key = defaultcategory, key
-        return (key,category) in self.elementCache or self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).count()>0
+        return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).count()>0
         
     def get(self, key, default=None):
         if isinstance(key,tuple):
             category, key = key
         else:
             category, key = defaultcategory, key
-        if (key,category) in self.elementCache:
-            return self.elementCache[(key,category)].value
         try:
             return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
         except NoResultFound:
@@ -121,12 +109,10 @@ class configshelve:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
         self.isOpen = True
-        self.elementCache = dict()
         
     def close(self):
         self.session.commit()
         self.isOpen = False
-        self.elementCache = dict()
         
 if __name__ == "__main__":
     with configshelve("new-test.db") as d:
