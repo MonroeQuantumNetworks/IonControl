@@ -1,13 +1,15 @@
 from PyQt4 import QtCore
+from modules.firstNotNone import firstNotNone
 
 
 class GenericTableModel(QtCore.QAbstractTableModel):
-    def __init__(self, config, data, objectName, columnHeaders, parent=None, *args): 
+    def __init__(self, config, data, objectName, columnHeaders, printers=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.objectName = objectName
         self.data = data
         self.columnHeaders = columnHeaders
+        self.printers = printers if printers else [None for _ in range(len(self.columnHeaders))]
                         
     def setDataTable(self, data):
         self.beginResetModel()
@@ -34,7 +36,8 @@ class GenericTableModel(QtCore.QAbstractTableModel):
     def data(self, index, role): 
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
-                return str(self.data[index.row()][index.column()])
+                printer = firstNotNone( self.printers[index.column()], str )
+                return printer(self.data[index.row()][index.column()])
         return None
         
     def flags(self, index ):

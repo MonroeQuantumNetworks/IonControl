@@ -53,7 +53,7 @@ class ValueHistoryUi(Form,Base):
         self.dateTimeEditFrom.dateTimeChanged.connect( partial(self.onValueChangedDateTime, 'fromTime')  )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.onSpaceChanged(self.parameters.space)
-        self.dataModel = GenericTableModel(self.config, list(), "ValueHistory", ["Date","Value"])
+        self.dataModel = GenericTableModel(self.config, list(), "ValueHistory", ["Date","Value"], [lambda t: t.strftime('%Y-%m-%d %H:%M:%S'), str])
         self.tableView.setModel( self.dataModel )
         restoreGuiState( self, self.config.get('ValueHistory.guiState'))
         
