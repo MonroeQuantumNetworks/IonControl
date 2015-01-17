@@ -162,7 +162,7 @@ class AutoLoad(UiForm,UiBase):
         self.currentSettingsName = self.config.get('AutoLoad.SettingsName','')
         self.loadingHistory = LoadingHistory(dbConnection)
         self.loadingHistory.open()
-        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
+        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), self.currentSettingsName )
         self.timer = None
         self.pulser = pulser
         self.dataSignalConnected = False
@@ -179,7 +179,7 @@ class AutoLoad(UiForm,UiBase):
         self.externalInstrumentObservable = externalInstrumentObservable
         
     def constructStatemachine(self):
-        self.statemachine = Statemachine('AutoLoad')
+        self.statemachine = Statemachine('AutoLoad', now=now )
         self.statemachine.addState( 'Idle' , self.setIdle, self.exitIdle )
         self.statemachine.addState( 'AdjustToLoading')
         self.statemachine.addState( 'Preheat', self.setPreheat )
@@ -400,7 +400,7 @@ class AutoLoad(UiForm,UiBase):
         self.parameterWidget.setParameters( self.parameter() )
         self.useInterlockGui.setChecked(self.settings.useInterlock)
         self.autoReloadBox.setChecked(self.settings.autoReload)
-        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), [self.currentSettingsName] if self.currentSettingsName else None )
+        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), self.currentSettingsName )
         self.globalsAdjustTableModel.setSettings(self.settings.globalsAdjustList)
         self.tableModel.setChannelDict( self.settings.interlock )
 

@@ -18,27 +18,28 @@ class StatemachineException(Exception):
     pass
 
 class State(object):
-    def __init__(self, name, enterfunc=None, exitfunc=None ):
+    def __init__(self, name, enterfunc=None, exitfunc=None, now=None ):
         self.name = name
         self.enterfunc = enterfunc
         self.exitfunc = exitfunc
         self.enterTime = None
         self.exitTime = None
+        self.now = now if now is not None else datetime.now
         
     def enterState(self):
         logging.getLogger(__name__).log(25,"Entering state {0}".format(self.name))
-        self.enterTime = datetime.now()
+        self.enterTime = self.now()
         if self.enterfunc is not None:
             self.enterfunc()
         
     def exitState(self):
         logging.getLogger(__name__).log(25,"Exiting state {0}".format(self.name))
-        self.exitTime = datetime.now()
+        self.exitTime = self.now()
         if self.exitfunc is not None:
             self.exitfunc()
             
     def timeInState(self):
-        return mg( (datetime.now()-self.enterTime).total_seconds(), 's' )
+        return mg( (self.now()-self.enterTime).total_seconds(), 's' )
     
 class StateGroup(State):
     def __init__(self, name, states, enterfunc=None, exitfunc=None ):
@@ -59,7 +60,7 @@ class Transition:
             self.transitionfunc( fromObj, toObj )
 
 class Statemachine:
-    def __init__(self, name="Statemachine"):
+    def __init__(self, name="Statemachine", now=None ):
         self.states = dict()
         self.transitions = defaultdict( list )
         self.stateGroups = dict()
@@ -67,6 +68,7 @@ class Statemachine:
         self.currentState = None
         self.graph = nx.MultiDiGraph()
         self.name=name
+        self.now = now if now is not None else datetime.now 
         
     def initialize(self, state, enter=True):
         if enter:
@@ -75,7 +77,7 @@ class Statemachine:
         self.generateDiagram()
                 
     def addState(self, name, enterfunc=None, exitfunc=None):
-        self.states[name] = State( name, enterfunc, exitfunc )
+        self.states[name] = State( name, enterfunc, exitfunc, now=self.now )
         self.graph.add_node(name)
         
     def addStateGroup(self, name, states, enterfunc=None, exitfunc=None ):

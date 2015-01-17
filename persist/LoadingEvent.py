@@ -39,7 +39,7 @@ class LoadingHistory(object):
         self.endInsertRows = Observable()
         self.beginResetModel = Observable()
         self.endResetModel = Observable()
-        self._loadingEvents = SequenceDict()
+        self._loadingEvents = list()
         self._currentProfile = None
         self._profiles = set()
         
@@ -86,13 +86,12 @@ class LoadingHistory(object):
             self.session.rollback()
             self.session = self.Session()
         
-    def query(self, fromTime, toTime, loadingProfiles=None):
+    def query(self, fromTime, toTime, loadingProfile):
         self.beginResetModel.firebare()
-        if loadingProfiles is None:
-            self._loadingEvents = self.session.query(LoadingEvent).filter(LoadingEvent.trappingTime>=fromTime).filter(LoadingEvent.trappingTime<=toTime).order_by(LoadingEvent.trappingTime).all()
-        else:
-            self._loadingEvents = self.session.query(LoadingEvent).filter(LoadingEvent.trappingTime>=fromTime).filter(LoadingEvent.trappingTime<=toTime).filter(LoadingEvent.loadingProfile.in_(loadingProfiles)).order_by(LoadingEvent.trappingTime).all()
+        self._loadingEvents[:] = []   # clear the list in place
+        self._loadingEvents.extend( self.session.query(LoadingEvent).filter(LoadingEvent.trappingTime>=fromTime).filter(LoadingEvent.trappingTime<=toTime).filter(LoadingEvent.loadingProfile == loadingProfile).order_by(LoadingEvent.trappingTime).all())
         self.endResetModel.firebare()
+        self._currentProfile = loadingProfile
     
     def getProfiles(self):
         return None
