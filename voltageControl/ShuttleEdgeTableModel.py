@@ -16,7 +16,7 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole, 2): lambda row: self.shuttlingGraph[row].stopName,
                              (QtCore.Qt.DisplayRole, 3): lambda row: self.shuttlingGraph[row].stopLine,
                              (QtCore.Qt.DisplayRole, 4): lambda row: self.shuttlingGraph[row].steps,
-                             (QtCore.Qt.DisplayRole, 5): lambda row: self.shuttlingGraph[row].idle_count,
+                             (QtCore.Qt.DisplayRole, 5): lambda row: self.shuttlingGraph[row].idleCount,
                              (QtCore.Qt.EditRole, 0): lambda row: self.shuttlingGraph[row].startName,
                              (QtCore.Qt.EditRole, 1): lambda row: self.shuttlingGraph[row].startLine,
                              (QtCore.Qt.EditRole, 2): lambda row: self.shuttlingGraph[row].stopName,
@@ -38,9 +38,10 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
         self.endResetModel()
                         
     def add(self, edge ):
-        self.beginInsertRows(QtCore.QModelIndex(), len(self.data), len(self.data))
-        self.shuttlingGraph.addEdge(edge)
-        self.endInsertRows()
+        if self.shuttlingGraph.isValidEdge(edge):
+            self.beginInsertRows(QtCore.QModelIndex(), len(self.shuttlingGraph), len(self.shuttlingGraph))
+            self.shuttlingGraph.addEdge(edge)
+            self.endInsertRows()
              
     def remove(self, index):
         self.beginRemoveRows(QtCore.QModelIndex(), index, index)
@@ -48,7 +49,7 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
         self.endRemoveRows()
                                
     def rowCount(self, parent=QtCore.QModelIndex()): 
-        return self.shuttlingGraph.length if self.shuttlingGraph else 0
+        return len(self.shuttlingGraph) if self.shuttlingGraph else 0
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
         return len(self.columnHeaders) 
@@ -59,6 +60,8 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
         return None
     
     def setData(self, index, value, role):
+        if isinstance( value, QtCore.QVariant ):
+            value = value.toPyObject()
         return self.setDataLookup.get((role,index.column()), lambda row, value: False)(index.row(), value)
         
     def flags(self, index ):
