@@ -15,6 +15,7 @@ from modules.SequenceDict import SequenceDict
 from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
 from modules.PyqtUtility import updateComboBoxItems
+import itertools
 
 SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
 
@@ -33,9 +34,10 @@ class Parameter:
         self.__dict__ = state
 
 class SelectionUi(SelectionForm,SelectionBase):
-    selectionChanged = QtCore.pyqtSignal(object)
+    outputChannelsChanged = QtCore.pyqtSignal(object)
+    inputChannelsChanged = QtCore.pyqtSignal(object)
     
-    def __init__(self, config, classdict, instancename="ExternalParameterSelection.ParametersSequence", newDataSlot=None, parent=None):
+    def __init__(self, config, classdict, instancename="ExternalParameterSelection.ParametersSequence", parent=None):
         SelectionBase.__init__(self,parent)
         SelectionForm.__init__(self)
         self.config = config
@@ -43,7 +45,6 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.parameters = self.config.get(self.instancename,SequenceDict())
         self.enabledParametersObjects = SequenceDict()
         self.classdict = classdict
-        self.newDataSlot = newDataSlot
     
     def setupUi(self,MainWindow):
         logger = logging.getLogger(__name__)
@@ -67,9 +68,21 @@ class SelectionUi(SelectionForm,SelectionBase):
                 except Exception as e:
                     logger.error( "{0} while enabling instrument {1}".format(e,parameter.name))
                     parameter.enabled = False     
-        self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
-        self.selectionChanged.emit( self.enabledParametersObjects )
+        self.enabledParametersObjects.sortToMatch( self.parameters.keys() ) 
+        self.emitSelectionChanged()
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
+
+    def outputChannels(self):
+        self._outputChannels =  dict(itertools.chain(*[p.outputChannels() for p in self.enabledParametersObjects.itervalues()]))        
+        return self._outputChannels
+        
+    def inputChannels(self):
+        self._inputChannels =  dict(itertools.chain(*[p.inputChannels() for p in self.enabledParametersObjects.itervalues()]))        
+        return self._inputChannels
+        
+    def emitSelectionChanged(self):
+        self.outputChannelsChanged.emit( self.outputChannels() )
+        self.inputChannelsChanged.emit( self.inputChannels() )
 
     def getInstrumentSuggestions(self, className):
         className = str(className)
@@ -91,7 +104,7 @@ class SelectionUi(SelectionForm,SelectionBase):
                 for index in indexes:
                     selectionModel.select( self.parameterTableModel.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
             self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
-            self.selectionChanged.emit( self.enabledParametersObjects )
+            self.emitSelectionChanged()
 
     def onEnableChanged(self, name):
         logger = logging.getLogger(__name__)
@@ -128,13 +141,10 @@ class SelectionUi(SelectionForm,SelectionBase):
     def enableInstrument(self,parameter):
         if parameter.name not in self.enabledParametersObjects:
             logger = logging.getLogger(__name__)
-            if self.newDataSlot is None:
-                instance = self.classdict[parameter.className](parameter.name,parameter.settings,parameter.instrument)
-            else:
-                instance = self.classdict[parameter.className](parameter.name,parameter.settings,parameter.instrument, newDataSlot=self.newDataSlot)
+            instance = self.classdict[parameter.className](parameter.name,parameter.settings,parameter.instrument)
             self.enabledParametersObjects[parameter.name] = instance
             self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
-            self.selectionChanged.emit( self.enabledParametersObjects )
+            self.emitSelectionChanged()
             self.parameterTableModel.setParameterDict( self.parameters )
             logger.info("Enabled Instrument {0} as {1}".format(parameter.className,parameter.name))
             
@@ -144,7 +154,7 @@ class SelectionUi(SelectionForm,SelectionBase):
             instance = self.enabledParametersObjects.pop( name )
             instance.close()
             self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
-            self.selectionChanged.emit( self.enabledParametersObjects )
+            self.emitSelectionChanged()
             parameter = self.parameters[name]
             logger.info("Disabled Instrument {0} as {1}".format(parameter.className,parameter.name))
         

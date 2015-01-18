@@ -43,13 +43,14 @@ from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
-import copy
 from modules.SceneToPrint import SceneToPrint
 from collections import defaultdict
 from gui.ScanMethods import ScanMethodsDict, ScanException 
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import  Measurement, Parameter, Result
+from scan.AnalysisControl import AnalysisControl   #@UnresolvedImport
+from modules.Utility import join
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -68,6 +69,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
     evaluationConfigurationChanged = None
+    analysisConfigurationChanged = None
     def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -167,6 +169,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.fitWidget.analysisNamesChanged.connect( self.evaluationControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea)
         self.evaluationConfigurationChanged = self.evaluationControlWidget.evaluationConfigurationChanged
+        # Analysis Control
+        self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName, self.evaluationControlWidget.evaluationNames )
+        self.analysisControlWidget.setupUi(self.analysisControlWidget)
+        self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
+        self.globalVariablesUi.valueChanged.connect( self.analysisControlWidget.evaluate )
+        self.analysisConfigurationChanged = self.analysisControlWidget.analysisConfigurationChanged
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
@@ -197,14 +205,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.actionList.append(self.renamePlot)
         
-        self.fitWidget.addPushDestination('Global', self.globalVariablesUi )
+        self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
 
         
     def printTargets(self):
         return self.plotDict.keys()
 
     def addPushDestination(self, name, destination):
-        self.fitWidget.addPushDestination(name, destination)
+        self.analysisControlWidget.addPushDestination(name, destination)
         
     def setupAsDockWidget(self, widget, name, area=QtCore.Qt.RightDockWidgetArea, stackAbove=None, stackBelow=None ):
         dock = QtGui.QDockWidget(name)
@@ -326,7 +334,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.progressUi.setInterrupted(reason)       
     
     def onStop(self):
-        if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
+        if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted, self.OpStates.stopping ]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
@@ -459,21 +467,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
         
     def dataAnalysis(self):
-        for evaluation, plot in zip(self.evaluation.evalList, self.plottedTraceList):
-            if evaluation.analysis is not None:
-                fitfunction = self.fitWidget.analysisFitfunction(evaluation.analysis)
-                sigma = None
-                if plot.hasHeightColumn:
-                    sigma = plot.height
-                elif plot.hasTopColumn and plot.hasBottomColumn:
-                    sigma = abs(plot.top + plot.bottom)
-                fitfunction.evaluate( self.globalVariablesUi.variables )
-                fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
-                plot.fitFunction = copy.deepcopy(fitfunction)
-                evaluation.fitfunction = copy.deepcopy(fitfunction)
-                plot.plot(-2)
-                self.fitWidget.pushVariables(fitfunction.pushVariableValues(self.globalVariablesUi.variables))
-                self.fitWidget.showAnalysis(evaluation.analysis, fitfunction)
+        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
                 
             
     def showTimestamps(self,data):
@@ -663,6 +657,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.traceui.saveConfig()
         self.displayUi.saveConfig()
         self.fitWidget.saveConfig()
+        self.analysisControlWidget.saveConfig()
         
     def onClose(self):
         pass
@@ -718,15 +713,17 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             for obj in target.values():
                 measurement.parameters.append( Parameter(name=obj.name, value=obj.value, definition=obj.strValue if hasattr(obj,'strValue') else None, space=space) )
         # add results
-        for evaluation in self.evaluation.evalList:
-            if hasattr(evaluation,'fitfunction'):
-                fit = evaluation.fitfunction
-                for name, value, confidence in zip( fit.parameterNames, fit.parameters, fit.parametersConfidence ):
-                    measurement.results.append( Result(name=name, value=value, bottom=confidence, top=confidence))
-                for result in fit.results.itervalues():
-                    measurement.results.append( Result(name=result.name, value=result.value))
-                for pushvar in fit.pushVariables.itervalues():
-                    measurement.results.append( Result(name=pushvar.variableName, value=pushvar.value))   
+        for evaluationElement in self.analysisControlWidget.analysisDefinition:
+            fit = evaluationElement.fitfunction.fitfunction()
+            for name, value, confidence in zip( fit.parameterNames, fit.parameters, fit.parametersConfidence ):
+                fullName = join( '_', [evaluationElement.name, name] )
+                measurement.results.append( Result(name=fullName, value=value, bottom=confidence, top=confidence))
+            for result in fit.results.itervalues():
+                fullName = join( '_', [evaluationElement.name, result.name] )
+                measurement.results.append( Result(name=fullName, value=result.value))
+            for pushvar in evaluationElement.pushVariables.itervalues():
+                fullName = join( '_', [evaluationElement.name, pushvar.variableName] )
+                measurement.results.append( Result(name=fullName, value=pushvar.value))   
         # add Plots
         measurement.plottedTraceList = self.plottedTraceList              
         self.measurementLog.container.addMeasurement( measurement )

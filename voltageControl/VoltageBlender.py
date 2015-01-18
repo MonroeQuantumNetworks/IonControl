@@ -17,9 +17,8 @@ from Chassis.itfParser import itfParser
 from gui import ProjectSelection
 from modules import MyException
 from modules.SequenceDict import SequenceDict
-from voltageControl.AdjustValue import AdjustValue
-
-from pulser.DACController import DACControllerException
+from AdjustValue import AdjustValue
+from pulser.DACController import DACControllerException   
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -102,6 +101,7 @@ class FPGAHardware(object):
         
     def applyLine(self, line):
         self.dacController.writeVoltage( 0, line )
+        self.dacController.readVoltage(0, line)
         self.dacController.shuttle( 0, 1, 0, 0 )
         self.dacController.triggerShuttling()
         
@@ -229,7 +229,7 @@ class VoltageBlender(QtCore.QObject):
                         
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
-        for name, adjust in self.adjustDict.iteritems():
+        for _, adjust in self.adjustDict.iteritems():
             offset = offset + self.adjustLines[adjust.line] * float(adjust.value)
         offset *= self.adjustGain
         return (line+offset)

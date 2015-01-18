@@ -204,6 +204,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QComboBox" name="analysisSelectionBox">
+       <property name="maxVisibleItems">
+        <number>100</number>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QToolButton" name="addMeasurementButton">
        <property name="text">
         <string>...</string>

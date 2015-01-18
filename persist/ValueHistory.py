@@ -71,9 +71,13 @@ class ValueHistoryStore:
         return self.sourceDict    
         
     def getHistory(self, space, source, fromTime, toTime ):
-        return self.session.query(ValueHistoryEntry).filter(ValueHistoryEntry.source==self.getSource(space, source)).\
-                                              filter(ValueHistoryEntry.upd_date>fromTime).\
-                                              filter(ValueHistoryEntry.upd_date<toTime).order_by(ValueHistoryEntry.upd_date).all()
+        if toTime is not None:
+            return self.session.query(ValueHistoryEntry).filter(ValueHistoryEntry.source==self.getSource(space, source)).\
+                                                  filter(ValueHistoryEntry.upd_date>fromTime).\
+                                                  filter(ValueHistoryEntry.upd_date<toTime).order_by(ValueHistoryEntry.upd_date).all()
+        else:
+            return self.session.query(ValueHistoryEntry).filter(ValueHistoryEntry.source==self.getSource(space, source)).\
+                                                  filter(ValueHistoryEntry.upd_date>fromTime).order_by(ValueHistoryEntry.upd_date).all()
         
     def commit(self, copyTo=None ):
         self.session.commit()

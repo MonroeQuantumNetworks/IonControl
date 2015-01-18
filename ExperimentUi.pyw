@@ -38,13 +38,17 @@ from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
 from functools import partial
-from externalParameter.ExternalParameter import ExternalParameter
+import externalParameter.ExternalParameter
+from externalParameter.InstrumentDict import InstrumentDict
 from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
 from pulser.OKBase import OKBase
 from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
-from pulser.DACController import DACController
+from pulser.DACController import DACController    #@UnresolvedImport
+from gui.ValueHistoryUi import ValueHistoryUi
+from modules.doProfile import doprofile
+from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -52,7 +56,7 @@ WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
-    def __init__(self,config):
+    def __init__(self, config, dbConnection):
         self.config = config
         super(ExperimentUi, self).__init__()
         self.settings = SettingsDialog.Settings()
@@ -68,6 +72,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.printMenu = None
         self.instrumentLogger = None
+        self.dbConnection = dbConnection
         
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -129,7 +134,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        self.measurementLog = MeasurementLogUi(self.config)
+        self.measurementLog = MeasurementLogUi(self.config, self.dbConnection)
         self.measurementLog.setupUi(self.measurementLog)
         self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
         self.measurementLogDock.setWidget( self.measurementLog )
@@ -178,14 +183,21 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
+        self.valueHistoryUi = ValueHistoryUi(self.config, self.dbConnection)
+        self.valueHistoryUi.setupUi( self.valueHistoryUi )
+        self.valueHistoryDock = QtGui.QDockWidget("Value History")
+        self.valueHistoryDock.setWidget( self.valueHistoryUi )
+        self.valueHistoryDock.setObjectName("_valueHistory")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.valueHistoryDock )
         
         # tabify the dock widgets
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
         self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
+        self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
         
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=ExternalParameter)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
@@ -193,17 +205,25 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
         self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.globalVariablesUi.variables )
-        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.ExternalParametersUi )
+        self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.outputChannels(), self.ExternalParametersUi )
         self.globalVariablesUi.valueChanged.connect( self.ExternalParametersUi.evaluate )
 
         self.ExternalParameterDock = QtGui.QDockWidget("Params Control")
         self.ExternalParameterDock.setWidget(self.ExternalParametersUi)
         self.ExternalParameterDock.setObjectName("_ExternalParameterDock")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterDock)
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.ExternalParametersUi.setupParameters )
+        self.ExternalParametersSelectionUi.outputChannelsChanged.connect( self.ExternalParametersUi.setupParameters )
+
+        self.instrumentLoggingDisplay = InstrumentLoggingDisplay(self.config)
+        self.instrumentLoggingDisplay.setupUi( self.ExternalParametersSelectionUi.inputChannels(), self.instrumentLoggingDisplay )
+        self.instrumentLoggingDisplayDock = QtGui.QDockWidget("Params Reading")
+        self.instrumentLoggingDisplayDock.setObjectName("_ExternalParameterDisplayDock")
+        self.instrumentLoggingDisplayDock.setWidget(self.instrumentLoggingDisplay)
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.instrumentLoggingDisplayDock)
+        self.ExternalParametersSelectionUi.inputChannelsChanged.connect( self.instrumentLoggingDisplay.setupParameters )
                
-        self.ExternalParametersSelectionUi.selectionChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
-        self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.enabledParametersObjects )
+        self.ExternalParametersSelectionUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'External') )               
+        self.scanExperiment.updateScanTarget( 'External', self.ExternalParametersSelectionUi.outputChannels() )
         
         self.todoList = TodoList( self.tabDict, self.config, self.getCurrentTab, self.switchTab, self.globalVariablesUi )
         self.todoList.setupUi()
@@ -216,6 +236,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 widget.scanConfigurationListChanged.connect( partial( self.todoList.populateMeasurementsItem, name)  )
             if hasattr( widget, 'evaluationConfigurationChanged' ) and widget.evaluationConfigurationChanged is not None:
                 widget.evaluationConfigurationChanged.connect( partial( self.todoList.populateEvaluationItem, name)  )
+            if hasattr( widget, 'analysisConfigurationChanged' ) and widget.analysisConfigurationChanged is not None:
+                widget.analysisConfigurationChanged.connect( partial( self.todoList.populateAnalysisItem, name)  )
        
         #tabify 
         self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
@@ -249,7 +271,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
             
-        self.dedicatedCountersWindow = DedicatedCounters(self.config, self.pulser, self.globalVariablesUi, self.ExternalParametersUi.callWhenDoneAdjusting )
+        self.dedicatedCountersWindow = DedicatedCounters(self.config, self.dbConnection, self.pulser, self.globalVariablesUi, self.ExternalParametersUi.callWhenDoneAdjusting )
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
         
         self.logicAnalyzerWindow = LogicAnalyzer(self.config, self.pulser, self.channelNameData )
@@ -322,7 +344,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     def onClear(self):
         self.currentTab.onClear()
     
-    def onSave(self):
+    def onSave(self, _):
         logger = logging.getLogger(__name__)
         self.currentTab.onSave()
         logger.info( "Saving config" )
@@ -424,6 +446,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         logger = logging.getLogger("")
         logger.debug( "Saving Configuration" )
         self.saveConfig()
+        self.config.saveConfig() 
         for tab in self.tabDict.values():
             tab.onClose()
         self.currentTab.deactivate()
@@ -464,6 +487,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.todoList.saveConfig()
         self.preferencesUi.saveConfig()
         self.measurementLog.saveConfig()
+        self.valueHistoryUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
@@ -509,13 +533,13 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection = ProjectSelectionUi.GetProjectSelection(True)
     
     if project:
         DataDirectory.DefaultProject = project
         
         with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with ExperimentUi(config) as ui:
+            with ExperimentUi(config, dbConnection) as ui:
                 ui.setupUi(ui)
                 LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
                 ui.show()

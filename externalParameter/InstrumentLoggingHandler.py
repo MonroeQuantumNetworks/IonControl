@@ -17,26 +17,9 @@ from calibration import calibrationDict
 from persistence import persistenceDict
 from functools import partial
 from modules.magnitude import is_magnitude
+from externalParameter.InputData import InputData
 
-class LoggingData:
-    def __init__(self, raw=None, calibrated=None, decimated=None, persisted=None):
-        self.raw = raw
-        self.calibrated = calibrated
-        self.decimated = decimated
-        self.persisted = persisted
-        
-    def update(self, other):
-        if other.raw is not None:
-            self.raw = other.raw
-        if other.calibrated is not None:
-            self.calibrated = other.calibrated
-        if other.decimated is not None:
-            self.decimated = other.decimated
-        if other.persisted is not None:
-            self.persisted = other.persisted
-
-
-        
+       
 class DataHandling(object):
     def __init__(self):
         self.calibration = None
@@ -185,6 +168,15 @@ class InstrumentLoggingHandler(QtCore.QObject):
         self.config = config
         self.handlerDict = self.config.get("InstrumentLogging.HandlerDict", defaultdict( DataHandling ) )
         self.persistSpace = persistSpace
+        self.subscriptions = set()
+        
+    def addDataHandler(self, event):
+        self.addData(event.name, event.data)
+        
+    def setInputChannels(self, inputChannels ):
+        for key, channel in inputChannels.iteritems():
+            if key not in self.subscriptions:
+                channel.observable.subscribe( self.addDataHandler )
         
     def addData(self, source, data ):
         handler = self.handlerDict[source]
@@ -193,7 +185,7 @@ class InstrumentLoggingHandler(QtCore.QObject):
         else:
             handler.decimate( data[0], data[1], partial(self.dataCallback, source ))
             handler.persistenceDecimate( data[0], data[1], partial(self.persistenceCallback, source ) )
-            self.newData.emit( source, LoggingData(raw=data[1]) )
+            self.newData.emit( source, InputData(raw=data[1]) )
             
     def dataCallback(self, source, data):
         handler = self.handlerDict[source]
@@ -202,7 +194,7 @@ class InstrumentLoggingHandler(QtCore.QObject):
         if plot is None:
             plot = self.plotDict.values()[0]
         handler.addPoint( self.traceui, plot["view"], convdata, source )
-        self.newData.emit( source, LoggingData(calibrated=convdata[1], decimated=data[1]) )
+        self.newData.emit( source, InputData(calibrated=convdata[1], decimated=data[1]) )
                 
     def persistenceCallback(self, source, data):
         handler = self.handlerDict[source]
