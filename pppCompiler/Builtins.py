@@ -85,6 +85,13 @@ def set_dds( symboltable, arg=list(), kwarg=dict()):
         commandlist.append( "  DDSFRQFINE {0}, {1}".format(channel.name, freq.name)) 
         commandlist.append( "  NOP" )       
     return commandlist
+
+def serial_write( symboltable, arg=list(), kwarg=dict()):  # channel, variable
+    if len(arg)!=3:
+        raise CompileException( "expected exactly two arguments in serial_write" )
+    channel = symboltable.getConst( arg[1] )
+    value = symboltable.getVar( arg[2] )
+    return [ "  SERIALWRITE {0}, {1}".format(channel.name, value.name) ]
   
 def read_pipe( symboltable, arg=list(), kwarg=dict()):
     return ["  READPIPE"]
@@ -94,7 +101,7 @@ def write_pipe( symboltable, arg=list(), kwarg=dict()):
 
 def write_result( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     if len(arg)!=3:
-        raise CompileException( "expected exactly one argument in write_result" )
+        raise CompileException( "expected exactly two arguments in write_result" )
     channel = symboltable.getConst( arg[1] )
     value = symboltable.getVar( arg[2] )
     return [ "  WRITERESULTTOPIPE {0}, {1}".format(channel.name, value.name) ]

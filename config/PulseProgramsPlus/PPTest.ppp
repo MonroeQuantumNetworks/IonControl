@@ -2,6 +2,7 @@ const ResultChannel = 1
 const DebugChannel = 2
 const CounterChannel = 0
 const CounterChannel2 = 16
+const SerialCommand = 24
 const DDSDetect = 5
 
 counter TestCounter
@@ -36,5 +37,6 @@ while not pipe_empty():
         currentexperiment += 1
         update(waitTime)
         update()
+        serial_write( SerialCommand, b )
 
 exit( endLabel )

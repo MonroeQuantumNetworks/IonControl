@@ -95,6 +95,7 @@ OPS = {'NOP'    : 0x00,
        'SUBW' : 0x52,
        'WAITFORTRIGGER': 0x53,
        'WRITERESULTTOPIPE': 0x54,
+       'SERIALWRITE': 0x55,
        'DIVW': 0x56,
        'END'    : 0xFF }
 
