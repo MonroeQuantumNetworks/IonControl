@@ -9,13 +9,15 @@ from ExternalParameterBase import ExternalParameterBase
 from modules import magnitude
 import math
 import logging
+from InstrumentDict import InstrumentMeta
 
 class ConexLinear(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
+    __metaclass__ = InstrumentMeta
     className = "Conex Linear Motion"
-    dimension = magnitude.mg(1,'mm')
+    _dimension = magnitude.mg(1,'mm')
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -25,7 +27,7 @@ class ConexLinear(ExternalParameterBase):
         self.instrument.homeSearch()
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.value = self._getValue()
+        self.settings.value[None] = self._getValue(None)
         self.lastValue = None
 
     def setDefaults(self):
@@ -33,22 +35,22 @@ class ConexLinear(ExternalParameterBase):
         self.settings.__dict__.setdefault('limit' , magnitude.mg(10,'mm'))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('belowMargin' , magnitude.mg(0,'mm'))       # if True go to the target value in one jump
            
-    def _setValue(self, v):
+    def _setValue(self, channel, v):
         if v>self.settings.limit:
             v = self.settings.limit
         self.instrument.position = v.toval('mm')
-        self.value = v
+        self.settings.value[channel] = v
         
-    def _getValue(self):
-        self.value = magnitude.mg(self.instrument.position, 'mm') #set voltage
-        return self.value
+    def _getValue(self, channel):
+        self.settings.value[channel] = magnitude.mg(self.instrument.position, 'mm') #set voltage
+        return self.settings.value[channel]
         
-    def currentValue(self):
-        return self.value
+    def currentValue(self, channel):
+        return self.settings.value[channel]
     
-    def currentExternalValue(self):
-        self.value = magnitude.mg(self.instrument.position, 'mm') #set voltage
-        return self.value
+    def currentExternalValue(self, channel):
+        self.settings.value[channel] = magnitude.mg(self.instrument.position, 'mm') #set voltage
+        return self.settings.value[channel]
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
@@ -59,22 +61,21 @@ class ConexLinear(ExternalParameterBase):
     def close(self):
         del self.instrument
         
-    def setValue(self,value):
-        if self.displayValueCallback:
-            self.displayValueCallback( self._getValue() )
+    def setValue(self, channel, value):
+        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
         if self.instrument.motionRunning():
             return False
-        if value != self.value:
+        if value != self.settings.value[channel]:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( value-self.settings.belowMargin )
+                self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin
                 return False
             else:
-                self._setValue( value )
+                self._setValue( channel, value )
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
-            self.persist(self.value)
+            self.persist(channel, self.settings.value[channel])
         return arrived
 
 
@@ -83,8 +84,9 @@ class ConexRotation(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
+    __metaclass__ = InstrumentMeta
     className = "Conex Rotation"
-    dimension = magnitude.mg(1,'')
+    _dimension = magnitude.mg(1,'')
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -94,7 +96,7 @@ class ConexRotation(ExternalParameterBase):
         self.instrument.homeSearch()
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.value = self._getValue()
+        self.settings.value[None] = self._getValue()
         self.lastValue = None
 
     def setDefaults(self):
@@ -102,22 +104,22 @@ class ConexRotation(ExternalParameterBase):
         self.settings.__dict__.setdefault('limit' , magnitude.mg(360,''))       # if True go to the target value in one jump
         self.settings.__dict__.setdefault('belowMargin' , magnitude.mg(0,''))       # if True go to the target value in one jump
             
-    def _setValue(self, v):
+    def _setValue(self, channel, v):
         if v>self.settings.limit:
             v = self.setting.limit
         self.instrument.position = v.toval()
-        self.value = v
+        self.settings.value[channel] = v
         
-    def _getValue(self):
-        self.value = magnitude.mg(self.instrument.position) #set voltage
-        return self.value
+    def _getValue(self, channel):
+        self.settings.value[channel] = magnitude.mg(self.instrument.position) #set voltage
+        return self.settings.value[channel]
         
-    def currentValue(self):
-        return self.value
+    def currentValue(self, channel):
+        return self.settings.value[channel]
     
-    def currentExternalValue(self):
-        self.value = magnitude.mg(self.instrument.position) #set voltage
-        return self.value
+    def currentExternalValue(self, channel):
+        self.settings.value[channel] = magnitude.mg(self.instrument.position) #set voltage
+        return self.settings.value[channel]
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
@@ -128,22 +130,21 @@ class ConexRotation(ExternalParameterBase):
     def close(self):
         del self.instrument
 
-    def setValue(self,value):
-        if self.displayValueCallback:
-            self.displayValueCallback( self._getValue() )
+    def setValue(self, channel, value):
+        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
         if self.instrument.motionRunning():
             return False
-        if value != self.value:
+        if value != self.settings.value[channel]:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( value-self.settings.belowMargin )
+                self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin
                 return False
             else:
-                self._setValue( value )
+                self._setValue( channel, value )
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
-            self.persist(self.value)
+            self.persist(channel, self.settings.value[channel])
         return arrived
     
     
@@ -151,8 +152,9 @@ class PowerWaveplate(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
+    __metaclass__ = InstrumentMeta
     className = "Power Waveplate"
-    dimension = magnitude.mg(1,'W')
+    _dimension = magnitude.mg(1,'W')
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -161,7 +163,7 @@ class PowerWaveplate(ExternalParameterBase):
         self.instrument.open(instrument)
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.value = self._getValue()
+        self.settings.value[None] = self._getValue(None)
         if not self.instrument.readyToMove():
             logger.error("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
         self.lastValue = None
@@ -197,22 +199,22 @@ class PowerWaveplate(ExternalParameterBase):
             return (180/math.pi*math.asin(2*(power-self.settings.min_power)/(self.settings.max_power-self.settings.min_power)-1)+90)/k+self.settings.angle_at_min
         return None
             
-    def _setValue(self, v):
+    def _setValue(self, channel, v):
         setangle =self.angle(v)
         if setangle is not None and self.settings.min_angle_limit <= setangle <= self.settings.max_angle_limit:
             self.instrument.position = setangle.toval()
-            self.value = v
+            self.settings.value[channel] = v
         
-    def _getValue(self):
-        self.value = self.power( magnitude.mg(self.instrument.position) ) #set voltage
-        return self.value
+    def _getValue(self, channel):
+        self.settings.value[channel] = self.power( magnitude.mg(self.instrument.position) ) #set voltage
+        return self.settings.value[channel]
         
-    def currentValue(self):
-        return self.value
+    def currentValue(self, channel):
+        return self.settings.value[channel]
     
-    def currentExternalValue(self):
-        self.value = self.power( magnitude.mg(self.instrument.position) ) #set voltage
-        return self.value
+    def currentExternalValue(self, channel):
+        self.settings.value[channel] = self.power( magnitude.mg(self.instrument.position) ) #set voltage
+        return self.settings.value[channel]
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
@@ -231,22 +233,21 @@ class PowerWaveplate(ExternalParameterBase):
     def close(self):
         del self.instrument
 
-    def setValue(self,value):
-        if self.displayValueCallback:
-            self.displayValueCallback( self._getValue() )
+    def setValue(self, channel, value):
+        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
         if self.instrument.motionRunning():
             return False
-        if value != self.value:
+        if value != self.settings.value[channel]:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( value-self.settings.belowMargin )
+                self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin
                 return False
             else:
-                self._setValue( value )
+                self._setValue( channel, value )
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
         if arrived:
-            self.persist(self.value)
+            self.persist(channel, self.settings.value[channel])
         return arrived
 
     def update(self, param, changes):

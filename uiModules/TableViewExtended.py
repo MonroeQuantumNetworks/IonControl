@@ -11,6 +11,7 @@ from PyQt4 import QtGui, QtCore
 
 
 class TableViewExtended(QtGui.QTableView):
+    """ Adds Ctrl+C copy functionality to table view"""
     def keyReleaseEvent(self, e):
         if e.key()==QtCore.Qt.Key_C and e.modifiers()&QtCore.Qt.ControlModifier:
             indexes = sorted([(i.row(),i.column()) for i in self.selectedIndexes()])

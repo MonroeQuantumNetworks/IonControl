@@ -21,18 +21,28 @@ from dedicatedCounters.WavemeterInterlockTableModel import WavemeterInterlockTab
 from modules.SequenceDict import SequenceDict
 from modules.Utility import unique
 from modules.formatDelta import formatDelta
-from modules.magnitude import Magnitude, mg
+from modules.magnitude import mg
 from uiModules.KeyboardFilter import KeyFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.mymath import max_iterable
 from modules.statemachine import Statemachine, timedeltaToMagnitude
 from gui.TodoListSettingsTableModel import TodoListSettingsTableModel
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from pyqtgraph.parametertree.Parameter import Parameter
+from modules.GuiAppearance import restoreGuiState, saveGuiState #@UnresolvedImport
+import copy
+from modules.PyqtUtility import updateComboBoxItems
+from _collections import defaultdict
+from persist.LoadingEvent import LoadingEvent, LoadingHistory
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
 
+import pytz
+def now():
+    return datetime.now(pytz.utc)
 
-class AutoLoadSettings:
+
+class AutoLoadSettings(object):
     def __init__(self):
         self.counterChannel = 0
         self.shutterChannel = 0
@@ -59,6 +69,40 @@ class AutoLoadSettings:
         self.thresholdRunning = mg(5, 'kHz')
         self.globalsAdjustList = SequenceDict()
 
+    def paramDef(self):
+        """
+        return the parameter definition used by pyqtgraph parametertree to show the gui
+        """
+        return [{'name': 'Oven background', 'type': 'magnitude', 'value': self.thresholdOven, 'tip': "background counts added by oven (frequency)", 'field': 'thresholdOven' },
+                {'name': 'Threshold during loading', 'type': 'magnitude', 'value': self.thresholdBare, 'tip': "presence threshold during loading (frequency)", 'field': 'thresholdBare' },
+                {'name': 'Threshold while running', 'type': 'magnitude', 'value': self.thresholdRunning, 'tip': "presence threshold during normal operation (frequency)", 'field': 'thresholdRunning'},
+                {'name': 'Check time', 'type': 'magnitude', 'value': self.checkTime, 'tip': "Time ions need to be present before switching to trapped", 'field': 'checkTime'},
+                {'name': 'Max time', 'type': 'magnitude', 'value': self.maxTime, 'tip': "Maximum time oven is on during one attempt", 'field': 'maxTime'},
+                {'name': 'Laser delay', 'type': 'magnitude', 'value': self.laserDelay, 'tip': "delay after which ionization laser is switched on", 'field': 'laserDelay'},
+                {'name': 'Wait for comeback', 'type': 'magnitude', 'value': self.waitForComebackTime, 'tip': "time to wait for re-appearance of an ion after it is lost", 'field': 'waitForComebackTime'},
+                {'name': 'Post sequence wait', 'type': 'magnitude', 'value': self.postSequenceWaitTime, 'tip': "wait time after running sequence is finished", 'field': 'postSequenceWaitTime'},
+                {'name': 'Oven cooling time', 'type': 'magnitude', 'value': self.ovenCoolingTime, 'tip': "time between load attemps in autoloading", 'field': 'ovenCoolingTime'},
+                {'name': 'Max failed autoload', 'type': 'magnitude', 'value': self.maxFailedAutoload, 'tip': "maximum number of consecutive failed loading attempts", 'field': 'maxFailedAutoload'},
+                {'name': 'Oven shutter', 'type': 'int', 'value': self.ovenChannel, 'tip': "Shutter channel controlling the oven", 'field': 'ovenChannel'},
+                {'name': 'Oven active low', 'type': 'bool', 'value': self.ovenChannelActiveLow, 'tip': "True means oven channel is active low", 'field': 'ovenChannelActiveLow'},
+                {'name': 'Ionization shutter', 'type': 'int', 'value': self.shutterChannel, 'tip': "Shutter channel controlling the ionization laser", 'field': 'shutterChannel'},
+                {'name': 'Ionization active low', 'type': 'bool', 'value': self.shutterChannelActiveLow, 'tip': "Ionization shutter is active low", 'field': 'shutterChannelActiveLow'},
+                {'name': 'Counter channel', 'type': 'int', 'value': self.counterChannel, 'tip': "Counter channel", 'field': 'counterChannel'},
+                {'name': 'Wavemeter address', 'type': 'str', 'value': self.wavemeterAddress, 'tip': "Address of wavemeter interface (http://)", 'field': 'wavemeterAddress'}]
+        
+    def update(self, param, changes):
+        """
+        update the parameter, called by the signal of pyqtgraph parametertree
+        """
+        logger = logging.getLogger(__name__)
+        logger.debug( "ExternalParameterBase.update" )
+        for param, change, data in changes:
+            if change=='value':
+                logger.debug( " ".join( [str(self), "update", param.name(), str(data)] ) )
+                setattr( self, param.opts['field'], data)
+            elif change=='activated':
+                getattr( self, param.opts['field'] )()
+
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
         after unpickling. Only new class attributes need to be added here.
@@ -78,24 +122,47 @@ class AutoLoadSettings:
         self.__dict__.setdefault( 'thresholdRunning', mg(5, 'kHz'))
         self.__dict__.setdefault( 'globalsAdjustList', SequenceDict() )
 
+    stateFields = ['counterChannel', 'shutterChannel', 'ovenChannel', 'laserDelay', 'maxTime', 'thresholdBare', 'thresholdOven',
+                   'checkTime', 'useInterlock', 'interlock', 'wavemeterAddress', 'ovenChannelActiveLow', 'shutterChannelActiveLow',
+                   'autoReload', 'waitForComebackTime', 'minLaserScatter', 'maxFailedAutoload', 'postSequenceWaitTime', 'loadAlgorithm',
+                   'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList' ] 
+        
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+
 def invertIf( logic, invert ):
     """ returns logic for positive channel number, inverted for negative channel number """
     return (not logic if invert else logic)
 
-class LoadingEvent:
-    def __init__(self,loading=None,trappedAt=None):
-        self.loadingTime = loading
-        self.trappedAt = trappedAt
-        self.trappingTime = None
+
+class Parameters(object):
+    def __init__(self):
+        self.autoSave = False
+        self.historyLength = timedelta(days=1)
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'historyLength', timedelta(days=1) )
 
 class AutoLoad(UiForm,UiBase):
     ionReappeared = QtCore.pyqtSignal()
-    def __init__(self, config, pulser, dataAvailableSignal, globalVariablesUi, externalInstrumentObservable, parent=None):
+    def __init__(self, config, dbConnection, pulser, dataAvailableSignal, globalVariablesUi, externalInstrumentObservable, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
         self.config = config
+        self.parameters = self.config.get('AutoLoad.Parameters', Parameters() )
         self.settings = self.config.get('AutoLoad.Settings',AutoLoadSettings())
-        self.loadingHistory = self.config.get('AutoLoad.History',list())
+        self.settingsDict = self.config.get('AutoLoad.Settings.dict', dict())
+        self.currentSettingsName = self.config.get('AutoLoad.SettingsName','')
+        self.loadingHistory = LoadingHistory(dbConnection)
+        self.loadingHistory.open()
+        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), self.currentSettingsName )
         self.timer = None
         self.pulser = pulser
         self.dataSignalConnected = False
@@ -103,16 +170,16 @@ class AutoLoad(UiForm,UiBase):
         self.dataSignal = dataAvailableSignal
         self.numFailedAutoload = 0
         self.constructStatemachine()
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
         self.trappingTime = None
         self.voltageControl = None
-        self.preheatStartTime = datetime.now()
+        self.preheatStartTime = now()
         self.globalVariablesUi = globalVariablesUi
         self.globalAdjustRevertList = list()
         self.externalInstrumentObservable = externalInstrumentObservable
         
     def constructStatemachine(self):
-        self.statemachine = Statemachine('AutoLoad')
+        self.statemachine = Statemachine('AutoLoad', now=now )
         self.statemachine.addState( 'Idle' , self.setIdle, self.exitIdle )
         self.statemachine.addState( 'AdjustToLoading')
         self.statemachine.addState( 'Preheat', self.setPreheat )
@@ -230,8 +297,18 @@ class AutoLoad(UiForm,UiBase):
                                          transitionfunc = self.idleToTrapped,
                                          description="ionTrapped"  )
         
+    def parameter(self):
+        # re-create the parameters each time to prevent a exception that says the signal is not connected
+        self._parameter = Parameter.create(name='Settings', type='group',children=self.settings.paramDef())     
+        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        return self._parameter        
+    
+    def update(self, *args, **kwargs):
+        self.settings.update(*args, **kwargs)
+        self.autoSave()
+    
     def ovenLimitReached(self):
-        return timedeltaToMagnitude(datetime.now() - self.preheatStartTime) > self.settings.maxTime
+        return timedeltaToMagnitude(now() - self.preheatStartTime) > self.settings.maxTime
         
         
     def initMagnitude(self, ui, settingsname, dimension=None  ):
@@ -248,45 +325,29 @@ class AutoLoad(UiForm,UiBase):
         UiForm.setupUi(self,widget)
         #Set the GUI values from the settings stored in the config files, and
         #connect the valueChanged events of each button to the appropriate method
-        self.initMagnitude( self.counterChannelBox, 'counterChannel' )
-        self.initMagnitude( self.shutterChannelBox, 'shutterChannel' )
-        self.initMagnitude( self.ovenChannelBox, 'ovenChannel' )
-        self.initCheckBox( self.ovenChannelActiveLowBox, 'ovenChannelActiveLow') 
-        self.initCheckBox( self.shutterChannelActiveLowBox, 'shutterChannelActiveLow') 
-        self.initMagnitude( self.laserDelayBox, 'laserDelay', Magnitude(1,s=1) )
-        self.initMagnitude( self.maxTimeBox, 'maxTime', Magnitude(1,s=1) )
-        self.initMagnitude( self.thresholdBareBox, 'thresholdBare', Magnitude(1,s=-1) )
-        self.initMagnitude( self.thresholdOvenBox, 'thresholdOven', Magnitude(1,s=-1) )
-        self.initMagnitude( self.thresholdRunningBox, 'thresholdRunning', Magnitude(1,s=-1) )
-        self.initMagnitude( self.checkTimeBox, 'checkTime', Magnitude(1,s=1) )
-        self.initCheckBox( self.autoReloadBox, 'autoReload') 
-        self.initMagnitude( self.minLaserScatterBox, 'minLaserScatter', Magnitude(1,s=-1) )
-        self.initMagnitude( self.waitForComebackBox, 'waitForComebackTime', Magnitude(1,s=1) )
-        self.initMagnitude( self.maxFailedAutoloadBox, 'maxFailedAutoload' )
-        self.initMagnitude( self.postSequenceWaitTimeBox, 'postSequenceWaitTime' )
-        self.initMagnitude( self.shuttleLoadTimeBox, 'shuttleLoadTime',  Magnitude(1,s=1) )
-        self.initMagnitude( self.shuttleCheckTimeBox, 'shuttleCheckTime',  Magnitude(1,s=1) )
-        self.initMagnitude( self.ovenCoolingTimeBox, 'ovenCoolingTime', Magnitude(1,s=1) )
-       
-        self.loadAlgorithmBox.addItems( ['Static','Shuttling'])
-        self.loadAlgorithmBox.setCurrentIndex( self.settings.loadAlgorithm )
-        self.loadAlgorithmBox.currentIndexChanged[int].connect( self.onLoadAlgorithmChanged )
-       
+              
         self.startButton.clicked.connect( self.onStart )
         self.stopButton.clicked.connect( self.onStop )
-        self.historyTableModel = LoadingHistoryModel(self.loadingHistory)
+        self.saveProfileButton.clicked.connect( self.onSaveProfile )
+        self.removeProfileButton.clicked.connect( self.onRemoveProfile )
+        self.initCheckBox(self.autoReloadBox, 'autoReload')
+        
+        self.historyTableModel = LoadingHistoryModel(self.loadingHistory.loadingEvents )
+        self.loadingHistory.beginResetModel.subscribe( self.historyTableModel.beginResetModel )
+        self.loadingHistory.endResetModel.subscribe( self.historyTableModel.endResetModel )
+        self.loadingHistory.beginInsertRows.subscribe( self.historyTableModel.beginInsertRows )
+        self.loadingHistory.endInsertRows.subscribe( self.historyTableModel.endInsertRows )
         self.historyTableView.setModel(self.historyTableModel)
         self.keyFilter = KeyFilter(QtCore.Qt.Key_Delete)
         self.keyFilter.keyPressed.connect( self.deleteFromHistory )
         self.historyTableView.installEventFilter( self.keyFilter )                
-        
+                
         #Wavemeter interlock setup        
         self.am = QtNetwork.QNetworkAccessManager()
         self.useInterlockGui.setChecked(self.settings.useInterlock)
         self.useInterlockGui.stateChanged.connect(self.onUseInterlockClicked)
-        self.wavemeterAddressLineEdit.setText( self.settings.wavemeterAddress )
-        self.wavemeterAddressLineEdit.editingFinished.connect( self.onWavemeterAddress )
         self.tableModel = WavemeterInterlockTableModel( self.settings.interlock )
+        self.tableModel.edited.connect( self.autoSave )
         self.delegate = MagnitudeSpinBoxDelegate()
         self.interlockTableView.setItemDelegateForColumn(3, self.delegate ) 
         self.interlockTableView.setItemDelegateForColumn(4, self.delegate ) 
@@ -295,8 +356,6 @@ class AutoLoad(UiForm,UiBase):
         self.interlockTableView.setModel( self.tableModel )
         self.interlockTableView.resizeColumnsToContents()
         self.interlockTableView.setSortingEnabled(True)
-        self.addChannelButton.clicked.connect( self.tableModel.addChannel )        
-        self.removeChannelButton.clicked.connect( self.onRemoveChannel )        
         self.checkFreqsInRange() #Begins the loop which continually checks if frequencies are in range
         for ilChannel in self.settings.interlock.values():
             self.getWavemeterData(ilChannel.channel)
@@ -304,32 +363,96 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.ppActiveChanged.connect( self.setDisabled )
         self.statemachine.initialize( 'Idle' )
         
-        # Actions
-        self.createAction("Last ion is still trapped", self.onIonIsStillTrapped )
-        self.createAction("Trapped an ion now", self.onTrappedIonNow )
-        self.autoLoadTab.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-
         # Settings
         self.globalsAdjustTableModel = TodoListSettingsTableModel( self.settings.globalsAdjustList, self.globalVariablesUi.variables )
+        self.globalsAdjustTableModel.edited.connect( self.autoSave )
         self.globalsAdjustTableView.setModel( self.globalsAdjustTableModel )
         self.comboBoxDelegate = ComboBoxDelegate()
         self.magnitudeSpinBoxDelegate = MagnitudeSpinBoxDelegate()
         self.globalsAdjustTableView.setItemDelegateForColumn( 0, self.comboBoxDelegate )
         self.globalsAdjustTableView.setItemDelegateForColumn( 1, self.magnitudeSpinBoxDelegate )
-        self.addAdjustButton.clicked.connect( self.globalsAdjustTableModel.addSetting )
-        self.removeAdjustButton.clicked.connect( self.onRemoveSetting )
+
+        # Actions
+        self.createAction("Last ion is still trapped", self.onIonIsStillTrapped )
+        self.createAction("Trapped an ion now", self.onTrappedIonNow )
+        self.createAction("Add global adjustment", self.globalsAdjustTableModel.addSetting )
+        self.createAction("Remove selected global adjustments", self.onRemoveSetting)
+        self.createAction("Add wavemeter channel", self.tableModel.addChannel)
+        self.createAction("Remove selected wavemeter channels", self.onRemoveChannel)
+        self.createAction("auto save profile", self.onAutoSave, checkable=True, checked=self.parameters.autoSave )
+        self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        restoreGuiState( self, self.config.get('AutoLoad.guiState') )
+        
+        self.profileComboBox.addItems( self.settingsDict.keys() )
+        if self.currentSettingsName in self.settingsDict:
+            self.profileComboBox.setCurrentIndex( self.profileComboBox.findText(self.currentSettingsName))
+        else:
+            self.currentSettingsName = str( self.profileComboBox.currentText() )
+        self.profileComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadProfile )
+        self.profileComboBox.lineEdit().editingFinished.connect( self.autoSave ) 
+        
+        self.setProfile( self.currentSettingsName, self.settings )
+        self.autoSave()
+
+    def setProfile(self, name, profile):
+        self.settings = profile
+        self.currentSettingsName = name
+        self.parameterWidget.setParameters( self.parameter() )
+        self.useInterlockGui.setChecked(self.settings.useInterlock)
+        self.autoReloadBox.setChecked(self.settings.autoReload)
+        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), self.currentSettingsName )
+        self.globalsAdjustTableModel.setSettings(self.settings.globalsAdjustList)
+        self.tableModel.setChannelDict( self.settings.interlock )
+
+    def onLoadProfile(self, name):
+        name = str(name)
+        if name in self.settingsDict and name!=self.currentSettingsName:
+            self.setProfile( name, copy.deepcopy( self.settingsDict[name] ) )
+        
+    def onSaveProfile(self):
+        name = str(self.profileComboBox.currentText())
+        isNew = name not in self.settingsDict
+        self.settingsDict[name] = copy.deepcopy( self.settings )
+        if isNew:
+            updateComboBoxItems( self.profileComboBox, sorted(self.settingsDict.keys()), name)
+        self.saveProfileButton.setEnabled( False )
+        
+    def onRemoveProfile(self):
+        name = str(self.profileComboBox.currentText())
+        if name in self.settingsDict:
+            self.settingsDict.pop(name)
+        
+    def onAutoSave(self, enable):
+        self.parameters.autoSave = enable
+    
+    def autoSave(self):
+        if self.parameters.autoSave:
+            self.onSaveProfile()
+            self.saveProfileButton.setEnabled( False )
+        else:
+            self.saveProfileButton.setEnabled( self.saveable() )
+    
+    def saveable(self):
+        name = str(self.profileComboBox.currentText())
+        return name != '' and ( name not in self.settingsDict or not (self.settingsDict[name] == self.settings))                    
         
     def onRemoveSetting(self):
         for index in sorted(unique([ i.row() for i in self.globalsAdjustTableView.selectedIndexes() ]),reverse=True):
             self.globalsAdjustTableModel.dropSetting(index)
+        self.autoSave()
 
     def setVoltageControl(self, voltageControl ):
         self.voltageControl = voltageControl
         
-    def createAction(self, text, slot ):
+    def createAction(self, text, slot, target=None, checkable=False, checked=False ):
         action = QtGui.QAction( text, self )
         action.triggered.connect( slot )
-        self.autoLoadTab.addAction( action )
+        action.setCheckable(checkable)
+        action.setChecked(checked)
+        if target is not None:
+            target.addAction( action )
+        else:
+            self.addAction( action )
         
     def deleteFromHistory(self):
         for row in sorted(unique([ i.row() for i in self.historyTableView.selectedIndexes() ]),reverse=False):
@@ -338,18 +461,16 @@ class AutoLoad(UiForm,UiBase):
     def onRemoveChannel(self):
         for index in sorted(unique([ i.row() for i in self.interlockTableView.selectedIndexes() ]),reverse=True):
             self.tableModel.removeChannel(index)
+        self.autoSave()
             
     def onStateChanged(self, name, state):
         setattr( self.settings, name, state==QtCore.Qt.Checked )
-        
-    def onWavemeterAddress(self):
-        value = str(self.wavemeterAddressLineEdit.text())
-        self.settings.wavemeterAddress = value if value.find("http://")==0 else "http://" +value
-        self.wavemeterAddressLineEdit.setText(self.settings.wavemeterAddress)
+        self.autoSave()
         
     def onUseInterlockClicked(self):
         """Run if useInterlock button is clicked. Change settings to match."""
         self.settings.useInterlock = self.useInterlockGui.isChecked()
+        self.autoSave()
 
     def onWavemeterError(self, channel, reply, error):
         """Print out received error"""
@@ -419,7 +540,7 @@ class AutoLoad(UiForm,UiBase):
         else:
             #Because of the bug where the wavemeter reads incorrectly after calibration,
             #Loading is only inhibited after 10 consecutive bad measurements
-            if self.outOfRangeCount < 20 and self.settings.useInterlock: #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
+            if self.outOfRangeCount < 20 : #Count how many times the frequency measures out of range. Stop counting at 20. (why count forever?)
                 self.outOfRangeCount += 1
 #                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 255, 0)}")
 #                 self.allFreqsInRange.setToolTip("There are laser frequencies temporarily of range")
@@ -428,16 +549,19 @@ class AutoLoad(UiForm,UiBase):
                 self.allFreqsInRange.setStyleSheet("QLabel {background-color: rgb(255, 0, 0)}")
                 self.allFreqsInRange.setToolTip("There are laser frequencies out of range")
                 #This is the interlock: loading is inhibited if frequencies are out of range
-                self.statemachine.processEvent( 'outOfLock' )
+                if self.settings.useInterlock:
+                    self.statemachine.processEvent( 'outOfLock' )
         
     def onValueChanged(self,attr,value):
         """Change the value of attr in settings to value"""
         setattr( self.settings, attr, value)
+        self.autoSave()
         
     def onArrayValueChanged(self, index, attr, value):
         """Change the value of attr[index] in settings to value"""
         a = getattr(self.settings, attr)
         a[index] = value
+        self.autoSave()
         
     def onStart(self):
         """Execute when start button is clicked. Begin loading if idle."""
@@ -465,7 +589,7 @@ class AutoLoad(UiForm,UiBase):
         self.timer.timeout.connect( self.onTimer )
         self.timer.start(100)
         self.connectDataSignal()
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
     
     def setPreheat(self):
         """Execute when the loading process begins. Turn on timer, turn on oven."""
@@ -474,8 +598,8 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:red; }")
         self.statusLabel.setText("Preheating")
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
-        self.timerNullTime = datetime.now()
-        self.preheatStartTime = datetime.now()
+        self.timerNullTime = now()
+        self.preheatStartTime = now()
     
     def setLoad(self):
         """Execute after preheating. Turn on ionization laser, and begin
@@ -501,7 +625,7 @@ class AutoLoad(UiForm,UiBase):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
         self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
-        self.checkStarted = datetime.now()
+        self.checkStarted = now()
         self.statusLabel.setText("Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
@@ -527,7 +651,7 @@ class AutoLoad(UiForm,UiBase):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
         self.elapsedLabel.setStyleSheet("QLabel { color:blue; }")
-        self.checkStarted = datetime.now()
+        self.checkStarted = now()
         self.statusLabel.setText("Shuttle Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
@@ -539,13 +663,13 @@ class AutoLoad(UiForm,UiBase):
         logger = logging.getLogger(__name__)
         logger.info(  "Loading Trapped" )
         self.loadingTime = check.enterTime - self.timerNullTime
-        self.historyTableModel.append( LoadingEvent(self.loadingTime,self.checkStarted) )
+        self.loadingHistory.addLoadingEvent( LoadingEvent( loadingDuration=self.loadingTime, trappingTime=self.checkStarted, loadingProfile=self.currentSettingsName) )
            
     def idleToTrapped(self, check, trapped):
         logger = logging.getLogger(__name__)
         logger.info(  "Idle Trapped" )
         self.loadingTime = timedelta(0)
-        self.historyTableModel.append( LoadingEvent(self.loadingTime,datetime.now()) )
+        self.loadingHistory.addLoadingEvent( LoadingEvent( loadingDuration=self.loadingTime, trappingTime=now(), loadingProfile=self.currentSettingsName) )
            
     def setTrapped(self):
         self.startButton.setEnabled( True )
@@ -555,12 +679,13 @@ class AutoLoad(UiForm,UiBase):
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
         self.numFailedAutoload = 0
-        self.trappingTime = self.loadingHistory[-1].trappedAt
+        self.trappingTime = self.loadingHistory.lastEvent().trappingTime
         self.timerNullTime = self.trappingTime
         self.ionReappeared.emit()        
     
     def exitTrapped(self):
-        self.historyTableModel.updateLast('trappingTime',datetime.now()-self.trappingTime)
+        self.loadingHistory.loadingEvents[-1].trappingDuration = now()-self.trappingTime
+        self.historyTableModel.updateLast()
     
     def setFrozen(self):
         self.startButton.setEnabled( False )
@@ -575,11 +700,11 @@ class AutoLoad(UiForm,UiBase):
 
     def setWaitingForComeback(self):
         self.statusLabel.setText("Waiting to see if ion comes back")
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
     
     def setCoolingOven(self):
         self.statusLabel.setText("Cooling Oven")
-        self.timerNullTime = datetime.now()
+        self.timerNullTime = now()
         self.numFailedAutoload += 1
     
     def setAutoReloadFailed(self):
@@ -596,7 +721,7 @@ class AutoLoad(UiForm,UiBase):
         self.statemachine.processEvent( 'ionStillTrapped' )
         
     def onTrappedIonNow(self):
-        current = datetime.now()
+        current = now()
         self.timerNullTime = current
         self.trappingTime = current
         self.checkStarted = current
@@ -606,7 +731,7 @@ class AutoLoad(UiForm,UiBase):
         """Execute whenever the timer sends a timeout signal, which is every 100 ms.
            Trigger status changes based on elapsed time. This controls the flow
            of the loading process."""
-        self.elapsed = datetime.now()-self.timerNullTime
+        self.elapsed = now()-self.timerNullTime
         self.elapsedLabel.setText(formatDelta(self.elapsed) )
         self.statemachine.processEvent( 'timer' )
     
@@ -619,7 +744,11 @@ class AutoLoad(UiForm,UiBase):
             
     def saveConfig(self):
         self.config['AutoLoad.Settings'] = self.settings
-        self.config['AutoLoad.History'] = self.loadingHistory
+        self.config['AutoLoad.guiState'] = saveGuiState( self )
+        self.config['AutoLoad.Settings.dict'] = self.settingsDict
+        self.config['AutoLoad.SettingsName'] = self.currentSettingsName
+        self.config['AutoLoad.Parameters'] = self.parameters
+
 
     def setDisabled(self, disable):
         if disable:

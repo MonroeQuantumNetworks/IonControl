@@ -108,7 +108,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
 
         self.instrumentLoggingHandler = InstrumentLoggingHandler(self.traceui, self.plotDict, self.config, 'externalInput')
 
-        self.ExternalParametersSelectionUi = InstrumentLoggingSelection(self.config, classdict=LoggingInstruments,newDataSlot=self.instrumentLoggingHandler.addData, plotNames=self.plotDict.keys(),
+        self.ExternalParametersSelectionUi = InstrumentLoggingSelection(self.config, classdict=LoggingInstruments, plotNames=self.plotDict.keys(),
                                                                         instrumentLoggingHandler=self.instrumentLoggingHandler )
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
@@ -116,14 +116,16 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
         self.instrumentLoggingHandler.paramTreeChanged.connect( self.ExternalParametersSelectionUi.refreshParamTree)
+        self.instrumentLoggingHandler.setInputChannels( self.ExternalParametersSelectionUi.inputChannels() )
+        self.ExternalParametersSelectionUi.inputChannelsChanged.connect( self.instrumentLoggingHandler.setInputChannels )
     
         self.instrumentLoggingDisplay = InstrumentLoggingDisplay(self.config)
-        self.instrumentLoggingDisplay.setupUi( self.ExternalParametersSelectionUi.enabledParametersObjects, self.instrumentLoggingDisplay )
+        self.instrumentLoggingDisplay.setupUi( self.ExternalParametersSelectionUi.inputChannels(), self.instrumentLoggingDisplay )
         self.instrumentLoggingDisplayDock = QtGui.QDockWidget("Params Reading")
         self.instrumentLoggingDisplayDock.setObjectName("_ExternalParameterDisplayDock")
         self.instrumentLoggingDisplayDock.setWidget(self.instrumentLoggingDisplay)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.instrumentLoggingDisplayDock)
-        self.ExternalParametersSelectionUi.selectionChanged.connect( self.instrumentLoggingDisplay.setupParameters )
+        self.ExternalParametersSelectionUi.inputChannelsChanged.connect( self.instrumentLoggingDisplay.setupParameters )
         self.instrumentLoggingHandler.newData.connect( self.instrumentLoggingDisplay.update )
 
         self.instrumentLoggingQueryUi = InstrumentLoggerQueryUi(self.config, self.traceui, self.plotDict )
@@ -345,7 +347,7 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection = ProjectSelectionUi.GetProjectSelection(True)
     
     if project:
         DataDirectory.DefaultProject = project

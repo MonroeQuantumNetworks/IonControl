@@ -9,10 +9,11 @@ It also includes default directory for storing of config files.
 """
 
 import logging
-import pickle
+import cPickle as pickle
+#import pickle
 from shutil import copyfile
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Binary
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -26,12 +27,12 @@ class ShelveEntry(Base):
     __tablename__ = "shelve"
     category = Column(String, primary_key=True )
     key = Column(String, primary_key=True)
-    pvalue = Column(String)
+    pvalue = Column(Binary)
     
     def __init__(self,key,value,category=defaultcategory):
         self.category = category
         self.key = key
-        self.pvalue = pickle.dumps(value)
+        self.pvalue = pickle.dumps(value,2)
         
     def __repr__(self):
         return "<'{0}.{1}' '{2}'>".format(self.category, self.key, self.value)
@@ -42,7 +43,7 @@ class ShelveEntry(Base):
         
     @value.setter
     def value(self,value):
-        self.pvalue = pickle.dumps(value)
+        self.pvalue = pickle.dumps(value,2)
 
 class configshelve:
     def __init__(self,filename):

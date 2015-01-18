@@ -62,3 +62,9 @@ class VoltageGlobalAdjustTableModel(QtCore.QAbstractTableModel):
     def valueRecalcualted(self, name):
         index = self.createIndex(self.globalAdjustDict.index(name),1)
         self.dataChanged.emit( index, index )
+        
+    def sort(self, column, order):
+        if column == 0 and self.globalAdjustDict:
+            self.globalAdjustDict.sort(reverse=order == QtCore.Qt.DescendingOrder)
+            self.dataChanged.emit(self.index(0, 0), self.index(len(self.globalAdjustDict) - 1, 1))
+            

@@ -4,15 +4,11 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import functools
-
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import PyQt4.uic
 
-import modules.magnitude as magnitude
-from uiModules.MagnitudeSpinBox import MagnitudeSpinBox
 from modules.SequenceDict import SequenceDict
-from voltageControl.VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel
+from VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel   #@UnresolvedImport
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 
@@ -50,6 +46,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.gainBox.valueChanged.connect( self.onGainChanged )
         self.tableModel = VoltageGlobalAdjustTableModel( self.globalAdjustDict, self.globalDict )
         self.tableView.setModel( self.tableModel )
+        self.tableView.setSortingEnabled(True)   # triggers sorting
         self.delegate =  MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(1,self.delegate)
         

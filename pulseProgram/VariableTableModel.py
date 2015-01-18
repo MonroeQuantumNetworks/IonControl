@@ -18,7 +18,6 @@ class VariableTableModel(QtCore.QAbstractTableModel):
     flagsLookup = [ QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable |  QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                    QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled ]
     headerDataLookup = ['use','variable','value','evaluated']
     contentsChanged = QtCore.pyqtSignal()
