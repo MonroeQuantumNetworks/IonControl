@@ -68,6 +68,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     statusChanged = QtCore.pyqtSignal( object )
     scanConfigurationListChanged = None
     evaluationConfigurationChanged = None
+    analysisConfigurationChanged = None
     def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -172,6 +173,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.analysisControlWidget.setupUi(self.analysisControlWidget)
         self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
         self.globalVariablesUi.valueChanged.connect( self.analysisControlWidget.evaluate )
+        self.analysisConfigurationChanged = self.analysisControlWidget.analysisConfigurationChanged
 
         if self.experimentName+'.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
@@ -331,7 +333,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.progressUi.setInterrupted(reason)       
     
     def onStop(self):
-        if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
+        if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted, self.OpStates.stopping ]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()

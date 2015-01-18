@@ -38,10 +38,12 @@ class ExternalParameterBase(object):
         self.savedValue = dict()
         self.decimation = StaticDecimation()
         self.persistence = DBPersist()
-        self.inputObservable = dict()
+        self.inputObservable = dict( ((name,Observable()) for name in self._inputChannels.iterkeys()) )
 
     def dimension(self, channel):
-        return self._outputChannels[channel]
+        if channel is None and hasattr(self, ' _dimension'):
+            return self._dimension
+        return self._outputChannels[channel] 
         
     @property
     def parameter(self):
@@ -60,6 +62,9 @@ class ExternalParameterBase(object):
             self.settings.value = dict()
         if not isinstance( self.settings.strValue, dict ):
             self.settings.strValue = dict()
+        for name in self._outputChannels.iterkeys():
+            self.settings.value.setdefault( name, None )
+            self.settings.strValue.setdefault( name, None )
     
     def saveValue(self, channel=None, overwrite=True):
         """
@@ -91,13 +96,15 @@ class ExternalParameterBase(object):
     
     def persist(self, channel, value):
         self.decimation.staticTime = self.settings.persistDelay
-        decimationName = self.channelName if channel is None else self.fullName(channel)
+        decimationName = self.name if channel is None else self.fullName(channel)
         self.decimation.decimate(time.time(), value, partial(self.persistCallback, decimationName) )
         
     def persistCallback(self, source, data):
         time, value, minval, maxval = data
         if is_magnitude(value):
             value, unit = value.toval(returnUnit=True)
+        else:
+            value, unit = value, None
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
     
     def _setValue(self, channel, v):
@@ -107,7 +114,7 @@ class ExternalParameterBase(object):
         """
         returns current value
         """
-        return self.settings.value[channel]
+        return self.settings.value.get(channel, 0) 
     
     def currentExternalValue(self, channel=None):
         """

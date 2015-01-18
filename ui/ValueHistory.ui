@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="0" colspan="3">
+   <item row="4" column="0" colspan="3">
     <widget class="QTableView" name="tableView"/>
    </item>
    <item row="0" column="0">
@@ -83,6 +83,13 @@
      </property>
      <property name="autoRaise">
       <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QComboBox" name="namedTimespanComboBox">
+     <property name="maxVisibleItems">
+      <number>1000</number>
      </property>
     </widget>
    </item>

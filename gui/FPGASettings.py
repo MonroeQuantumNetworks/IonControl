@@ -92,11 +92,14 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
             
     def initialize(self):
         if self.resourcesAvailable():
-            if self.configSettings.autoUpload:
-                self.onUploadBitfile()
-            self.pulser.openBySerial(self.settings.deviceSerial)
-            self.showStatus(True)
-            return True
+            try:
+                if self.configSettings.autoUpload:
+                    self.onUploadBitfile()
+                self.pulser.openBySerial(self.settings.deviceSerial)
+                self.showStatus(True)
+                return True
+            except Exception as e:
+                return False
         return False
     
     def accept(self):
@@ -154,6 +157,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
             self.pulser.openBySerial( self.settings.deviceSerial )
             self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
+            logger.info( "{0}".format( self.pulser.getConfiguration() ) )
 
 
 class FPGASettingsDialog(ListForm, ListBase):

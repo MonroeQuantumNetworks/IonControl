@@ -146,6 +146,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.pulser.openBySerial( self.settings.deviceSerial )
             self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
+            logging.getLogger(__name__).info( "{0}".format( self.pulser.getConfiguration() ) )
 
             
 if __name__ == "__main__":

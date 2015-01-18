@@ -15,6 +15,8 @@ import logging
 from uiModules.GenericTableModel import GenericTableModel
 from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
 from modules.magnitude import mg
+from modules.NamedTimespan import getRelativeDatetime, timespans
+from dateutil.tz import tzlocal
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ValueHistory.ui')
 
@@ -42,7 +44,9 @@ class ValueHistoryUi(Form,Base):
         Form.setupUi(self,MainWindow)
         self.comboBoxSpace.currentIndexChanged[QtCore.QString].connect( self.onSpaceChanged  )
         self.comboBoxParam.currentIndexChanged[QtCore.QString].connect( partial(self.onValueChangedString, 'parameter') )    
-        self.loadButton.clicked.connect( self.onLoad )  
+        self.loadButton.clicked.connect( self.onLoad )       
+        self.namedTimespanComboBox.addItems( ['Select timespan ...']+timespans )
+        self.namedTimespanComboBox.currentIndexChanged[QtCore.QString].connect( self.onNamedTimespan )
         self.onRefresh()
         if self.parameters.space is not None:
             self.comboBoxSpace.setCurrentIndex( self.comboBoxSpace.findText(self.parameters.space ))
@@ -53,10 +57,17 @@ class ValueHistoryUi(Form,Base):
         self.dateTimeEditFrom.dateTimeChanged.connect( partial(self.onValueChangedDateTime, 'fromTime')  )
         self.toolButtonRefresh.clicked.connect( self.onRefresh )
         self.onSpaceChanged(self.parameters.space)
-        self.dataModel = GenericTableModel(self.config, list(), "ValueHistory", ["Date","Value"])
+        self.dataModel = GenericTableModel(self.config, list(), "ValueHistory", ["Date","Value"], [lambda t: t.astimezone(tzlocal()).strftime('%Y-%m-%d %H:%M:%S'), str])
         self.tableView.setModel( self.dataModel )
         restoreGuiState( self, self.config.get('ValueHistory.guiState'))
         
+    def onNamedTimespan(self, name):
+        dt = getRelativeDatetime(str(name), None)
+        if dt is not None:
+            self.parameters.fromTime = dt
+            self.dateTimeEditFrom.setDateTime( self.parameters.fromTime )
+            self.namedTimespanComboBox.setCurrentIndex(0)
+
     def onValueChangedString(self, param, value):
         setattr( self.parameters, param, str(value) )
 

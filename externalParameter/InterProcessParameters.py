@@ -2,15 +2,15 @@ import logging
 import modules.magnitude as magnitude
 from ExternalParameterBase import ExternalParameterBase
 from multiprocessing.connection import Client
-
-
+from InstrumentDict import InstrumentMeta
 
 class LockOutputFrequency(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
+    __metaclass__ = InstrumentMeta
     className = "Digital Lock Output Frequency"
-    dimension = magnitude.mg(200,'MHz')
+    _dimension = magnitude.mg(200,'MHz')
     _outputChannels = { "OutputFrequency": "MHz" }    # a single channel with key None designates a device only supporting a single channel
     def __init__(self,name,config,instrument="localhost:16888"):
         logger = logging.getLogger(__name__)

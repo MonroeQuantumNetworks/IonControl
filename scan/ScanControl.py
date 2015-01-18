@@ -112,7 +112,7 @@ class Scan:
         return desc
     
     def evaluate(self, globalDictionary ):
-        return any( (segment.evaluate(globalDictionary) for segment in self.scanSegmentList ) )            
+        return any( [segment.evaluate(globalDictionary) for segment in self.scanSegmentList ] )            
 
 
 class ScanControlParameters:
@@ -298,7 +298,10 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.loadPPComboBox.addItems(pulseProgramUi.contextDict.keys())
             if self.settings.loadPPName: 
                 self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-        self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        try:
+            self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        except TypeError:
+            pass   # if already connected we are happy
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()
