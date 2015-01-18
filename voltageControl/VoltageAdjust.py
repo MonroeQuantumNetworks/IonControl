@@ -11,6 +11,9 @@ from PyQt4 import QtCore
 import PyQt4.uic
 
 import modules.magnitude as magnitude
+from voltageControl.ShuttleEdgeTableModel import ShuttleEdgeTableModel
+from voltageControl.ShuttlingDefinition import ShuttlingGraph
+from modules.PyqtUtility import updateComboBoxItems
 
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
@@ -65,8 +68,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.configname = 'VoltageAdjust.Settings'
         self.settings = self.config.get(self.configname,Settings())
         self.adjust = self.settings.adjust
-        self.shuttlingEdges = list()
-        self.shuttlingDefinitions = list()
+        self.shuttlingGraph = ShuttlingGraph()
 
     def setupUi(self, parent):
         VoltageAdjustForm.setupUi(self,parent)
@@ -79,25 +81,28 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         # Shuttling
         self.addEdgeButton.clicked.connect( self.addShuttlingEdge )
         self.removeEdgeButton.clicked.connect( self.removeShuttlingEdge )
-        self.startShuttlingSeqFiniteButton.clicked.connect( self.onShuttleSequence )
-        self.startShuttlingSeqContButton.clicked.connect( functools.partial(self.onShuttleSequence, cont=True) )
-#        self.edgesVerticalLayout = QtGui.QVBoxLayout(self.shuttlingEdgesWidget)
-#        self.edgesVerticalLayout.setSpacing(0)
-#        self.shuttlingEdgesWidget.setLayout(self.edgesVerticalLayout)
+        self.shuttleEdgeTableModel = ShuttleEdgeTableModel(self.config, self.shuttlingGraph)
+        self.edgeTableView.setTableModel(self.shuttleEdgeTableModel)
+        self.currentPositionLabel.setText( self.shuttlingGraph.currentPositionName )
+        self.shuttlingGraph.currentPositionNameObservable.subscribe( self.onCurrentPositionEvent )
+        self.shuttlingGraph.graphChangedObservable.subscribe( self.setupGraphDependent )
+        self.setupGraphDependent()
+        self.uploadDataButton.clicked.connect( self.onUploadData )
+        self.uploadEdgesButton.clicked.connect( self.onUploadEdgesButton )
         
-        for index in range(2):
-            edge = ShuttlingEdgeUi()
-            edge.setupUi(edge)
-            edge.goButton.clicked.connect( functools.partial(self.onShuttleEdge, index) )
-            self.shuttlingEdges.append(edge)
-            self.verticalLayout.addWidget(edge)
-            
-#        AONumberVoltageAction = QtGui.QAction( "AO Number/10 voltage")
-#        AONumberVoltageAction.triggered.connect( self.applyAONumberVoltage )
-#        self.lineLabel.addAction( AONumberVoltageAction )
-#        DSubNumberVoltageAction = QtGui.QAction( "DSub Number/10 voltage")
-#        DSubNumberVoltageAction.triggered.connect( self.applyDSubNumberVoltage )
-#        self.lineLabel.addAction( DSubNumberVoltageAction )
+    def onUploadData(self):
+        pass
+    
+    def onUploadEdgesButton(self):
+        pass
+        
+    def setupGraphDependent(self):
+        updateComboBoxItems( self.destinationComboBox, self.shuttlingGraph.nodes() )
+
+    def onCurrentPositionEvent(self, event):
+        self.currentPositionLabel.setText( self.shuttlingGraph.currentPositionName )        
+        
+    
 
     def onShuttleSequence(self, cont=False):
         logger = logging.getLogger(__name__)

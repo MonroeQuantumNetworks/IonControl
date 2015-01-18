@@ -13,17 +13,6 @@ import logging
 class DACControllerException(Exception):
     pass
 
-class ShuttleEdge(object):
-    def __init__(self, startLine, stopLine, idle_count=0, direction=0, wait=0, soft_trigger=0 ):
-        self.startLine = startLine
-        self.stopLine = stopLine
-        self.idle_count = idle_count
-        self.direction = direction
-        self.wait = wait
-        
-    def code(self, channelCount):
-        struct.pack('=IIII', self.stopLine*2*channelCount, ( self.startLine*2*self.channelCount & 0x7fffffff ) | ((self.direction & 0x1) << 31 ),
-                             self.idle_count, (self.wait & 0x1) | ((self.soft_trigger &0x1)<<1))
 
 class DACController( OKBase ):
     channelCount = 112
@@ -77,7 +66,7 @@ class DACController( OKBase ):
         self.xem.ActivateTriggerIn( 0x40, 2)
         self.xem.WriteToPipeIn( 0x85, data )       
     
-    def shuttle(self, startLine, beyondEndLine, idleCount=0, direction=0, soft_trigger=1 ):
+    def shuttle(self, startLine, beyondEndLine, idleCount=0, direction=0, soft_trigger=0 ):
         startCode = ( startLine*2*self.channelCount & 0x7fffffff ) | ((direction & 0x1) << 31 )
         self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', (0x01000001) | ((soft_trigger &0x1)<<1) , idleCount, startCode, beyondEndLine*2*self.channelCount))
     
