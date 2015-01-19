@@ -160,6 +160,7 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onUseSmartStart(self, state):
         if self.fitfunction is not None:
             self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
+            self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
             self.autoSave()
 
     def setButtonEnabledState(self):
@@ -282,10 +283,10 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.currentAnalysisName = name
             self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
             self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0) )
-            self.autoSave()
             if self.analysisConfigurationComboBox.currentText()!=name:
                 with BlockSignals(self.analysisConfigurationComboBox):
                     self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(name) )
+            self.autoSave()
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)

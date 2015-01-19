@@ -20,6 +20,7 @@ from gui.TodoListSettingsTableModel import TodoListSettingsTableModel
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.GuiAppearance import saveGuiState, restoreGuiState   #@UnresolvedImport
+from modules.firstNotNone import firstNotNone
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
@@ -383,7 +384,7 @@ class TodoList(Form, Base):
         # load the correct measurement
         currentwidget.scanControlWidget.loadSetting( entry.measurement )   
         currentwidget.evaluationControlWidget.loadSetting( entry.evaluation )  
-        currentwidget.analysisControlWidget.onLoadAnalysisConfiguration( entry.analysis )
+        currentwidget.analysisControlWidget.onLoadAnalysisConfiguration( firstNotNone( entry.analysis, "")  )
         
     def isSomethingTodo(self):
         for index in range( self.settings.currentIndex, len(self.settings.todoList) ) + (range(0, self.settings.currentIndex) if self.settings.repeat else []):
