@@ -106,7 +106,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.lineBox.setValue(currentline)
         self.adjust.line = currentline
 
-    def onShuttleEdge(self, index):
+    def onShuttleEdge(self, destination):
         logger = logging.getLogger(__name__)
         logger.info( "ShuttleEdge {0}".format( index ) )
         definition = self.shuttlingEdges[index].definition
