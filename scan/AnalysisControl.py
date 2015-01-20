@@ -39,7 +39,7 @@ class AnalysisDefinitionElement(object):
         self.__dict__ = state
         self.__dict__.setdefault('name','')
         
-    stateFields = ['enabled', 'evaluation', 'fitfunctionName', 'pushVariables', 'fitfunction', 'fitfunctionCache'] 
+    stateFields = ['name', 'enabled', 'evaluation', 'fitfunctionName', 'pushVariables', 'fitfunction', 'fitfunctionCache'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -89,6 +89,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.pushDestinations = dict()
         self.currentAnalysisName =  self.config.get(self.configname+'.settingsName',None)
         self.currentEvaluation = None
+        self.currentEvaluationIndex = None
         self.fitfunction = None
         self.plottedTraceDict = None
         self.parameters = self.config.get( self.configname+'.parameters', AnalysisControlParameters() )
@@ -189,19 +190,27 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onActiveAnalysisChanged(self, selected, deselected=None):
         if deselected and self.fitfunction:
             self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
-        self.currentEvaluation = self.analysisDefinition[selected.row()] if self.analysisDefinition else None
-        self.currentEvaluationLabel.setText( self.currentEvaluation.name if self.currentEvaluation else "" )
-        if self.currentEvaluation and self.currentEvaluation.fitfunction:
-            self.setFitfunction( self.currentEvaluation.fitfunction.fitfunction() )
+        if selected.row()>=0:
+            self.currentEvaluation = self.analysisDefinition[selected.row()] if self.analysisDefinition else None
+            self.currentEvaluationIndex = selected.row() if self.analysisDefinition else None
+            self.currentEvaluationLabel.setText( self.currentEvaluation.name if self.currentEvaluation else "" )
+            if self.currentEvaluation and self.currentEvaluation.fitfunction:
+                self.setFitfunction( self.currentEvaluation.fitfunction.fitfunction() )
+            else:
+                self.setFitfunction( None )
+            self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables if self.currentEvaluation else None, self.fitfunction)
         else:
+            self.currentEvaluation = None
+            self.currentEvaluationIndex = None
+            self.currentEvaluationLabel.setText( "" )
             self.setFitfunction( None )
-        self.pushTableModel.setPushVariables(self.currentEvaluation.pushVariables if self.currentEvaluation else None, self.fitfunction)
+            self.pushTableModel.setPushVariables( None, self.fitfunction)
         self.setButtonEnabledState()
-            
+                       
     def onRemoveAnalysis(self):
         for index in sorted(unique([ i.row() for i in self.analysisTableView.selectedIndexes() ]),reverse=True):
             self.analysisTableModel.removeAnalysis(index)
-    
+            
     def onAddAnalysis(self):
         self.analysisTableModel.addAnalysis( AnalysisDefinitionElement() )
         
@@ -260,7 +269,7 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onSave(self):
         self.currentAnalysisName = str(self.analysisConfigurationComboBox.currentText())
         if self.currentAnalysisName != '':
-            if self.analysisDefinition != self.analysisDefinitionDict[self.currentAnalysisName]:
+            if self.currentAnalysisName not in self.analysisDefinitionDict or self.analysisDefinition != self.analysisDefinitionDict[self.currentAnalysisName]:
                 logging.getLogger(__name__).debug("Saving Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))
                 if self.currentAnalysisName not in self.analysisDefinitionDict:
                     if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
