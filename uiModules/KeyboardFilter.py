@@ -16,13 +16,35 @@ class KeyFilter(QtCore.QObject):
 
 class KeyListFilter(QtCore.QObject):
     keyPressed = QtCore.pyqtSignal( object )
+    controlKeyPressed = QtCore.pyqtSignal( object )
     
-    def __init__(self,keys,parent=None):
+    def __init__(self,keys,controlKeys=None,parent=None):
         QtCore.QObject.__init__(self, parent)
         self.keys = keys
+        self.alt = False
+        self.shift = False
+        self.control = False
+        self.controlKeys = controlKeys
     
     def eventFilter(self, obj, event):
-        if event.type()==QtCore.QEvent.KeyPress and event.key() in self.keys:
-            self.keyPressed.emit(event.key())
-            return True
+        if event.type()==QtCore.QEvent.KeyPress:
+            if event.key() in self.keys:
+                self.keyPressed.emit(event.key())
+                return True
+            if self.control and self.controlKeys and event.key() in self.controlKeys:
+                self.controlKeyPressed.emit(event.key())
+                return True
+            if event.key() == QtCore.Qt.Key_Alt:
+                self.alt = True
+            elif event.key() == QtCore.Qt.Key_Control:
+                self.control = True
+            elif event.key() == QtCore.Qt.Key_Shift:
+                self.shift = True
+        if event.type()==QtCore.QEvent.KeyRelease:
+            if event.key() == QtCore.Qt.Key_Alt:
+                self.alt = False
+            elif event.key() == QtCore.Qt.Key_Control:
+                self.control = False
+            elif event.key() == QtCore.Qt.Key_Shift:
+                self.shift = False     
         return False
