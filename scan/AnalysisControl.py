@@ -260,12 +260,14 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onSave(self):
         self.currentAnalysisName = str(self.analysisConfigurationComboBox.currentText())
         if self.currentAnalysisName != '':
-            if self.currentAnalysisName not in self.analysisDefinitionDict:
-                if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
-                    self.analysisConfigurationComboBox.addItem(self.currentAnalysisName)
-            self.analysisDefinitionDict[self.currentAnalysisName] = copy.deepcopy(self.analysisDefinition)
-            self.saveButton.setEnabled( False )
-            self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
+            if self.analysisDefinition != self.analysisDefinitionDict[self.currentAnalysisName]:
+                logging.getLogger(__name__).debug("Saving Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))
+                if self.currentAnalysisName not in self.analysisDefinitionDict:
+                    if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
+                        self.analysisConfigurationComboBox.addItem(self.currentAnalysisName)
+                self.analysisDefinitionDict[self.currentAnalysisName] = copy.deepcopy(self.analysisDefinition)
+                self.saveButton.setEnabled( False )
+                self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
         
     def onRemoveAnalysisConfiguration(self):
         name = str(self.analysisConfigurationComboBox.currentText())
