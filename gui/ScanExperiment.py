@@ -51,6 +51,7 @@ from modules.magnitude import is_magnitude
 from persist.MeasurementLog import  Measurement, Parameter, Result
 from scan.AnalysisControl import AnalysisControl   #@UnresolvedImport
 from modules.Utility import join
+import pytz
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -451,7 +452,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.registerMeasurement()
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
-                trace.description["traceFinalized"] = datetime.now()
+                trace.description["traceFinalized"] = datetime.now(pytz.utc)
                 trace.resave(saveIfUnsaved=self.scan.autoSave)
         if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
             if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
@@ -698,7 +699,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanControlWidget.updateScanTarget(target, parameterdict.keys() )
 
     def registerMeasurement(self):
-        measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, 
+        measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, scanTarget=self.scan.scanTarget,
+                                  scanPP = self.scan.loadPPName,
                                   evaluation=self.evaluation.settingsName, startDate=self.plottedTraceList[0].trace.description['traceCreation'], 
                                   duration=None, filename=None, comment=None, longComment=None)
         # add parameters

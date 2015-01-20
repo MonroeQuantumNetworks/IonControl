@@ -53,7 +53,6 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.plotDict = plotDict
         self.connection = ValueHistoryStore(getDatabaseConnection().connectionString)
         self.connection.open_session()
-        self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
         self.cache = dict()
     
     def setupUi(self,MainWindow):

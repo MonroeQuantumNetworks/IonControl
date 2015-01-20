@@ -9,6 +9,7 @@ This is the class in which the data associated with a single trace is stored.
 """
 
 from datetime import datetime
+from dateutil import parser
 import io
 from itertools import izip_longest
 import math
@@ -22,6 +23,7 @@ import xml.etree.ElementTree as ElementTree
 import time
 from modules.SequenceDictSignal import SequenceDictSignal as SequenceDict
 from modules.Observable import Observable
+import pytz
 
 try:
     from fit import FitFunctions
@@ -92,7 +94,7 @@ class TracePlottingList(list):
         return "TracePlotting length {0}".format(len(self))        
 
 varFactory = { 'str': str,
-               'datetime': lambda s: datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f'),
+               'datetime': lambda s: parser.parse(s), #datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f'),
                'float': float,
                'int': int }
     
@@ -123,7 +125,7 @@ class Trace(object):
         self.name = "noname" #name to display in table of traces
         self.description = SequenceDict()
         self.description["comment"] = ""
-        self.description["traceCreation"] = datetime.now()
+        self.description["traceCreation"] = datetime.now(pytz.utc)
         self.header = None
         self.headerDict = dict()
         self._filename = None

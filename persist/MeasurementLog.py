@@ -31,6 +31,8 @@ class Measurement(Base):
     scanType = Column(String, nullable=False)
     scanName = Column(String, nullable=False)
     scanParameter = Column(String)
+    scanTarget = Column(String)
+    scanPP = Column(String)
     evaluation = Column(String, nullable=False)
     startDate = Column(DateTime(timezone=True))
     duration = Column(Interval)

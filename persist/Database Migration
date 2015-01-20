@@ -1,0 +1,4 @@
+b3e5bdfbd0579510c3419e182b5cf71b56997233 1/19/2015
+
+alter table measurements add column "scanTarget" character varying;
+alter table measurements add column "scanPP" character varying;    

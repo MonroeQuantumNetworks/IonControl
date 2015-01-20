@@ -37,7 +37,6 @@ class ValueHistoryUi(Form,Base):
         self.dbConnection = dbConnection
         self.connection = ValueHistoryStore(dbConnection.connectionString)
         self.connection.open_session()
-        self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
         self.cache = dict()
     
     def setupUi(self,MainWindow):
