@@ -210,16 +210,20 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onRemoveAnalysis(self):
         for index in sorted(unique([ i.row() for i in self.analysisTableView.selectedIndexes() ]),reverse=True):
             self.analysisTableModel.removeAnalysis(index)
+        self.autoSave()
             
     def onAddAnalysis(self):
         self.analysisTableModel.addAnalysis( AnalysisDefinitionElement() )
-        
+        self.autoSave()
+       
     def onAddPushVariable(self):
         self.pushTableModel.addVariable( PushVariable() )
+        self.autoSave()
     
     def onRemovePushVariable(self):
         for index in sorted(unique([ i.row() for i in self.pushTableView.selectedIndexes() ]),reverse=True):
             self.pushTableModel.removeVariable(index)
+        self.autoSave()
 
     def addPushDestination(self, name, destination ):
         self.pushDestinations[name] = destination
@@ -248,6 +252,8 @@ class AnalysisControl(ControlForm, ControlBase ):
         
     def autoSave(self):
         if self.parameters.autoSave:
+            if self.currentEvaluation is not None and self.fitfunction is not None:
+                self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction( self.fitfunction )
             self.onSave()
             self.saveButton.setEnabled( False )
         else:
@@ -297,6 +303,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             if self.analysisConfigurationComboBox.currentText()!=name:
                 with BlockSignals(self.analysisConfigurationComboBox):
                     self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(name) )
+            logging.getLogger(__name__).debug("Loaded Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))                    
             self.autoSave()
 
     def setAnalysisDefinition(self, analysisDef ):
