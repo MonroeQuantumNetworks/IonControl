@@ -28,6 +28,7 @@ class Settings:
     
 class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object, object)
+    outputChannelsChanged = QtCore.pyqtSignal(object)
     
     def __init__(self, config, globalDict, parent=None):
         VoltageGlobalAdjustForm.__init__(self)
@@ -73,6 +74,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         for name, adjust in self.globalAdjustDict.iteritems():
             adjust.observable.subscribe( self.onValueChanged, unique=True )
         self.tableModel.setGlobalAdjust( adjustDict )
+        self.outputChannelsChanged.emit( self.outputChannels() )
         
     def onValueChanged(self, event):
         if event.origin=='recalculate':
@@ -105,6 +107,6 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         pass
     
     def outputChannels(self):
-        self._outputChannels = [VoltageOutputChannel(self, "VoltageGlobalAdjust", channelName) for channelName in self.globalAdjustDict.iterkeys() ]      
+        self._outputChannels = dict(( (channelName, VoltageOutputChannel(self, None, channelName)) for channelName in self.globalAdjustDict.iterkeys() ))      
         return self._outputChannels
         

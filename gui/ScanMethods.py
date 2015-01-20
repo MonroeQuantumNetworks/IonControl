@@ -58,11 +58,11 @@ class ExternalScanMethod(InternalScanMethod):
     
     def startScan(self):
         if self.experiment.scan.scanParameter not in self.experiment.scanTargetDict[self.experiment.scan.scanTarget]:
-            message = "External Scan Parameter '{0}' is not enabled.".format(self.experiment.scan.scanParameter)
+            message = "{0} Scan Parameter '{1}' is not enabled.".format(self.name,self.experiment.scan.scanParameter)
             logging.getLogger(__name__).error(message)
             raise ScanNotAvailableException(message) 
         if self.experiment.scan.scanMode==0:
-            self.parameter = self.experiment.scanTargetDict['External'][self.experiment.scan.scanParameter]
+            self.parameter = self.experiment.scanTargetDict[self.name][self.experiment.scan.scanParameter]
             self.parameter.saveValue(overwrite=False)
             self.index = 0                 
         self.experiment.progressUi.setStarting()
@@ -125,7 +125,7 @@ class ExternalScanMethod(InternalScanMethod):
             if self.experiment.scan.scanMode!=0 or self.parameter.setValue( self.experiment.scan.list[self.index]):
                 """We are done adjusting"""
                 self.experiment.pulserHardware.ppStart()
-                logger.info( "External Value: {0}".format(self.experiment.scan.list[self.index]) )
+                logger.info( "{0} Value: {1}".format(self.name, self.experiment.scan.list[self.index]) )
             else:
                 QtCore.QTimer.singleShot(100,self.dataBottomHalf)
 
@@ -137,8 +137,8 @@ class GlobalScanMethod(ExternalScanMethod):
     
 class VoltageScanMethod(object):
     name = 'Voltage'
-    def  __init(self):
-        pass
+    def __init__(self, experiment):
+        super( VoltageScanMethod, self).__init__(experiment)
 
 
 ScanMethodsDict = { InternalScanMethod.name: InternalScanMethod,
