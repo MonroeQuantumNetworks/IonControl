@@ -161,17 +161,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.setupAsDockWidget(self.displayUi, "Average", QtCore.Qt.RightDockWidgetArea)
         # Scan Control
         self.scanControlWidget = ScanControl(config, self.globalVariablesUi, self.experimentName)
+        self.scanControlWidget.currentScanChanged.connect( self.progressUi.setScanLabel )
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.setupAsDockWidget( self.scanControlWidget, "Scan Control", QtCore.Qt.RightDockWidgetArea)
         self.scanConfigurationListChanged = self.scanControlWidget.scanConfigurationListChanged
         # EvaluationControl
         self.evaluationControlWidget = EvaluationControl(config, self.globalVariablesUi, self.experimentName, self.plotDict.keys(), analysisNames=self.fitWidget.analysisNames() )
+        self.evaluationControlWidget.currentEvaluationChanged.connect( self.progressUi.setEvaluationLabel )
         self.evaluationControlWidget.setupUi(self.evaluationControlWidget)
         self.fitWidget.analysisNamesChanged.connect( self.evaluationControlWidget.setAnalysisNames )
         self.setupAsDockWidget( self.evaluationControlWidget, "Evaluation Control", QtCore.Qt.RightDockWidgetArea)
         self.evaluationConfigurationChanged = self.evaluationControlWidget.evaluationConfigurationChanged
         # Analysis Control
         self.analysisControlWidget = AnalysisControl(config, self.globalVariablesUi, self.experimentName, self.evaluationControlWidget.evaluationNames )
+        self.analysisControlWidget.currentAnalysisChanged.connect( self.progressUi.setAnalysisLabel )
         self.analysisControlWidget.setupUi(self.analysisControlWidget)
         self.setupAsDockWidget( self.analysisControlWidget, "Analysis Control", QtCore.Qt.RightDockWidgetArea)
         self.globalVariablesUi.valueChanged.connect( self.analysisControlWidget.evaluate )
@@ -207,7 +210,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.actionList.append(self.renamePlot)
         
         self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
-
         
     def printTargets(self):
         return self.plotDict.keys()

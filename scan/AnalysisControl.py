@@ -67,6 +67,7 @@ class AnalysisControlParameters(object):
 
 class AnalysisControl(ControlForm, ControlBase ):
     analysisConfigurationChanged = QtCore.pyqtSignal( object )
+    currentAnalysisChanged = QtCore.pyqtSignal( object )
     def __init__(self, config, globalDict, parentname, evaluationNames, parent=None):
         ControlForm.__init__(self)
         ControlBase.__init__(self,parent)
@@ -137,7 +138,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         else:
             self.currentAnalysisName = str( self.analysisConfigurationComboBox.currentText() )
         self.analysisConfigurationComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadAnalysisConfiguration )
-        self.analysisConfigurationComboBox.lineEdit().editingFinished.connect( self.autoSave ) 
+        self.analysisConfigurationComboBox.lineEdit().editingFinished.connect( self.onConfigurationEditingFinished ) 
         self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
 
         # FitUi
@@ -157,6 +158,12 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
         self.autoSave()
+        self.currentAnalysisChanged.emit( self.currentAnalysisName )
+        
+    def onConfigurationEditingFinished(self):
+        self.currentAnalysisName = str(self.analysisConfigurationComboBox.currentText())
+        self.autoSave()
+        self.currentAnalysisChanged.emit( self.currentAnalysisName )
 
     def onUseSmartStart(self, state):
         if self.fitfunction is not None:
@@ -260,10 +267,9 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.saveButton.setEnabled( self.saveable() )
             
     def saveable(self):
-        analysisName = str(self.analysisConfigurationComboBox.currentText())
         if self.currentEvaluation is not None and self.fitfunction is not None:
             self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction( self.fitfunction )
-        return analysisName != '' and ( self.currentAnalysisName not in self.analysisDefinitionDict or not (self.analysisDefinitionDict[self.currentAnalysisName] == self.analysisDefinition))            
+        return self.currentAnalysisName != '' and ( self.currentAnalysisName not in self.analysisDefinitionDict or not (self.analysisDefinitionDict[self.currentAnalysisName] == self.analysisDefinition))            
                 
     def saveConfig(self):
         self.config[self.configname+'.dict'] = self.analysisDefinitionDict
@@ -273,7 +279,6 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.config[self.configname+'.parameters'] = self.parameters
     
     def onSave(self):
-        self.currentAnalysisName = str(self.analysisConfigurationComboBox.currentText())
         if self.currentAnalysisName != '':
             if self.currentAnalysisName not in self.analysisDefinitionDict or self.analysisDefinition != self.analysisDefinitionDict[self.currentAnalysisName]:
                 logging.getLogger(__name__).debug("Saving Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))
@@ -285,11 +290,10 @@ class AnalysisControl(ControlForm, ControlBase ):
                 self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
         
     def onRemoveAnalysisConfiguration(self):
-        name = str(self.analysisConfigurationComboBox.currentText())
-        if name != '':
-            if name in self.analysisDefinitionDict:
-                self.analysisDefinitionDict.pop(name)
-            idx = self.analysisConfigurationComboBox.findText(name)
+        if self.currentAnalysisName != '':
+            if self.currentAnalysisName in self.analysisDefinitionDict:
+                self.analysisDefinitionDict.pop(self.currentAnalysisName)
+            idx = self.analysisConfigurationComboBox.findText(self.currentAnalysisName)
             if idx>=0:
                 self.analysisConfigurationComboBox.removeItem(idx)
             self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
@@ -305,13 +309,14 @@ class AnalysisControl(ControlForm, ControlBase ):
                     self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(name) )
             logging.getLogger(__name__).debug("Loaded Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))                    
             self.autoSave()
+            self.currentAnalysisChanged.emit( self.currentAnalysisName )
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)
         self.analysisTableModel.setAnalysisDefinition( self.analysisDefinition)
 
     def onReload(self):
-        self.onLoadAnalysisConfiguration( self.analysisConfigurationComboBox.currentText() )
+        self.onLoadAnalysisConfiguration( self.currentAnalysisName )
    
     def updatePushVariables(self, extraDict=None ):
         myReplacementDict = self.replacementDict()
@@ -382,7 +387,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.fit(evaluation)
     
     def onLoadFitFunction(self, name=None):
-        name = str(name) if name is not None else str(self.analysisNameComboBox.currentText())
+        name = str(name) if name is not None else self.currentAnalysisName
         if name in self.analysisDefinitions:
             if StoredFitFunction.fromFitfunction(self.fitfunction) != self.analysisDefinitions[name]:
                 self.setFitfunction( self.analysisDefinitions[name].fitfunction() )

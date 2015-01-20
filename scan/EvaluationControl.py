@@ -100,6 +100,7 @@ class EvaluationControlParameters:
 
 class EvaluationControl(ControlForm, ControlBase ):
     evaluationConfigurationChanged = QtCore.pyqtSignal( object )
+    currentEvaluationChanged = QtCore.pyqtSignal( object )
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     logger = logging.getLogger(__name__)
     def __init__(self, config, globalVariablesUi, parentname, plotnames=None, parent=None, analysisNames=None):
@@ -176,6 +177,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.autoSaveAction.setChecked(self.parameters.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
+        self.currentEvaluationChanged.emit( self.settingsName )
         
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
@@ -289,6 +291,7 @@ class EvaluationControl(ControlForm, ControlBase ):
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.evaluationConfigurationChanged.emit( self.settingsDict )
         self.checkSettingsSavable(False)
+        self.currentEvaluationChanged.emit( self.settingsName )        
         
     def onRemove(self):
         name = str(self.comboBox.currentText())
@@ -305,6 +308,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
         self.checkSettingsSavable()
+        self.currentEvaluationChanged.emit( self.settingsName )
 
     def loadSetting(self, name):
         if name and self.comboBox.findText(name)>=0:
