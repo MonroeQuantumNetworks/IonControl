@@ -10,6 +10,9 @@ import PyQt4.uic
 from modules.SequenceDict import SequenceDict
 from VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel   #@UnresolvedImport
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from externalParameter.VoltageOutputChannel import VoltageOutputChannel
+from _collections import defaultdict
+from modules.Observable import Observable
 
 
 VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')
@@ -39,6 +42,8 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.adjustHistoryName = None
         self.globalDict = globalDict
         self.adjustCache = self.config.get(self.configname+".cache",dict()) 
+        self.savedValue = defaultdict( lambda: None )
+        self.displayValueObservable = defaultdict( lambda: Observable() )
 
     def setupUi(self, parent):
         VoltageGlobalAdjustForm.setupUi(self,parent)
@@ -78,4 +83,28 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         self.config[self.configname] = self.settings
         self.adjustCache[self.adjustHistoryName] = [v.data for v in self.globalAdjustDict.values()]
         self.config[self.configname+".cache"] = self.adjustCache
+        
+    def setValue(self, channel, value):
+        self.globalAdjustDict[channel].value = value 
+    
+    def currentValue(self, channel):
+        return self.globalAdjustDict[channel].value
+    
+    def saveValue(self, channel):
+        self.savedValue[channel] = self.globalAdjustDict[channel].value
+    
+    def restoreValue(self, channel):
+        if self.savedValue[channel] is not None:
+            self.globalAdjustDict[channel].value = self.savedValue[channel]
+    
+    def strValue(self, channel):
+        adjust = self.globalAdjustDict[channel]
+        return adjust.string if adjust.hasDependency else None
+    
+    def setStrValue(self, channel, value):
+        pass
+    
+    def outputChannels(self):
+        self._outputChannels = [VoltageOutputChannel(self, "VoltageGlobalAdjust", channelName) for channelName in self.globalAdjustDict.iterkeys() ]      
+        return self._outputChannels
         

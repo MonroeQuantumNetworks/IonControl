@@ -710,6 +710,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         space = self.measurementLog.container.getSpace('GlobalVariables')
         for name, value in self.globalVariables.iteritems():
             measurement.parameters.append( Parameter(name=name, value=value, space=space) )
+        
         for targetname, target in self.scanTargetDict.iteritems():
             space = self.measurementLog.container.getSpace(targetname)
             for obj in target.values():

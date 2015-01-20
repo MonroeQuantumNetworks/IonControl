@@ -38,6 +38,7 @@ class ExpressionValue(object):
         self._string = s
         for name in self.registrations:
             self.globalDict.observables[name].unsubscribe(self.recalculate)
+        self.registrations[:] = []
         if self._string:
             self._value, dependencies = self.expression.evaluateAsMagnitude(self._string, self.globalDict, listDependencies=True)
             for dep in dependencies:
