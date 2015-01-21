@@ -5,7 +5,7 @@ from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_n
 
 from modules.Expression import Expression
 from modules.SequenceDict import SequenceDict
-from modules.magnitude import Magnitude
+from modules.magnitude import Magnitude, MagnitudeError
 import copy
 
 class CyclicDependencyException(Exception):
@@ -59,7 +59,7 @@ class VariableDictionary(SequenceDict):
                     var.value, dependencies = self.expression.evaluate(var.strvalue, self.valueView, listDependencies=True)
                     self.addDependencies(self.dependencyGraph, dependencies, name)
                     var.strerror = None
-                except KeyError as e:
+                except (KeyError, MagnitudeError) as e:
                     logging.getLogger(__name__).error( str(e) )
                     var.strerror = str(e)
             else:
@@ -159,7 +159,7 @@ class VariableDictionary(SequenceDict):
                 try:
                     var.value = self.expression.evaluate(var.strvalue, self.valueView)
                     var.strerror = None
-                except KeyError as e:
+                except (KeyError, MagnitudeError) as e:
                     var.strerror = str(e)
             else:
                 logging.getLogger(__name__).error("variable {0} does not have strvalue. Value is {1}".format(var, var.value))
