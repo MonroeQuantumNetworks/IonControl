@@ -309,8 +309,8 @@ class AnalysisControl(ControlForm, ControlBase ):
                     with BlockSignals(self.analysisConfigurationComboBox):
                         self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(name) )
                 logging.getLogger(__name__).debug("Loaded Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))                    
-                self.autoSave()
                 self.currentAnalysisChanged.emit( self.currentAnalysisName )
+            self.autoSave()
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)
