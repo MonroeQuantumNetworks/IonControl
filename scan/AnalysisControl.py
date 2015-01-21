@@ -21,7 +21,7 @@ from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitFunctionBase import fitFunctionMap
 from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
 from modules.MagnitudeUtilit import value
-from modules.PyqtUtility import BlockSignals
+from modules.PyqtUtility import BlockSignals, Override
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -301,15 +301,16 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onLoadAnalysisConfiguration(self,name):
         name = str(name)
         if name is not None and name in self.analysisDefinitionDict:
-            self.currentAnalysisName = name
-            self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
-            self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0) )
-            if self.analysisConfigurationComboBox.currentText()!=name:
-                with BlockSignals(self.analysisConfigurationComboBox):
-                    self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(name) )
-            logging.getLogger(__name__).debug("Loaded Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))                    
-            self.autoSave()
-            self.currentAnalysisChanged.emit( self.currentAnalysisName )
+            with Override( self.parameters, 'autoSave', False):
+                self.currentAnalysisName = name
+                self.setAnalysisDefinition( self.analysisDefinitionDict[name] )
+                self.onActiveAnalysisChanged(self.analysisTableModel.createIndex(0,0) )
+                if self.analysisConfigurationComboBox.currentText()!=name:
+                    with BlockSignals(self.analysisConfigurationComboBox):
+                        self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(name) )
+                logging.getLogger(__name__).debug("Loaded Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))                    
+                self.autoSave()
+                self.currentAnalysisChanged.emit( self.currentAnalysisName )
 
     def setAnalysisDefinition(self, analysisDef ):
         self.analysisDefinition = copy.deepcopy(analysisDef)
@@ -399,8 +400,9 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.descriptionLabel.setText( self.fitfunction.functionString if self.fitfunction else "" )
         if self.fitfunction:
             self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
-            self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
-            self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
+            with BlockSignals(self.checkBoxUseSmartStartValues):
+                self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
+                self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
         self.evaluate()
 
     def setPlottedTraceDict(self, plottedTraceDict):
