@@ -708,7 +708,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
         for var in  self.pulseProgramUi.variableTableModel.variabledict.values():
-            measurement.parameters.append( Parameter(name=var.name, value=var.value, definition=var.strvalue, space=space) )
+            measurement.parameters.append( Parameter(name=var.name, value=var.outValue(), definition=var.strvalue, space=space) )
         space = self.measurementLog.container.getSpace('GlobalVariables')
         for name, value in self.globalVariables.iteritems():
             measurement.parameters.append( Parameter(name=name, value=value, space=space) )
