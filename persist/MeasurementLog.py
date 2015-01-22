@@ -172,9 +172,9 @@ class Parameter(Base):
             self._value = magValue
         
 class MeasurementContainer(object):
-    def __init__(self,database_conn_str):
-        self.database_conn_str = database_conn_str.connectionString
-        self.engine = create_engine(self.database_conn_str, echo=True)
+    def __init__(self,dbConnection):
+        self.database_conn_str = dbConnection.connectionString
+        self.engine = create_engine(self.database_conn_str, echo=dbConnection.echo)
         self.studies = list()
         self.measurements = list()
         self.spaces = list()

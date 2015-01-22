@@ -20,7 +20,7 @@ class DBPersist:
         
     def initDB(self):
         if DBPersist.store is None:
-            DBPersist.store = ValueHistoryStore(getDatabaseConnection().connectionString)
+            DBPersist.store = ValueHistoryStore(getDatabaseConnection())
             DBPersist.store.open_session()        
         
     def persist(self, space, source, time, value, minval=None, maxval=None, unit=None):

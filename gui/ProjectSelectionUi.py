@@ -12,7 +12,7 @@ import PyQt4.uic
 
 import ProjectSelection
 from _functools import partial
-from persist.DatabaseConnectionSettings import DatabaseConectionSettings
+from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ProjectSelection.ui')
@@ -44,12 +44,12 @@ class ProjectSelectionUi(Form, Base):
                 self.project = self.defaultProject
                 index = self.projects.index(self.defaultProject)
                 self.projectList.setCurrentRow( index )
-                self.databaseConnectionLookup.setdefault( self.defaultProject, DatabaseConectionSettings())
+                self.databaseConnectionLookup.setdefault( self.defaultProject, DatabaseConnectionSettings())
             except ValueError:
                 pass
         self.startupWidgets.setVisible( atProgramStart )
         self.warningLabel.setVisible( not atProgramStart)
-        self.currentDatabaseConnection = self.databaseConnectionLookup.get(self.project, DatabaseConectionSettings())
+        self.currentDatabaseConnection = self.databaseConnectionLookup.get(self.project, DatabaseConnectionSettings())
         self.projectList.currentTextChanged.connect( self.onCurrentIndexChanged )
         self.userEdit.editingFinished.connect( partial( self.onStringValue, 'user', lambda: self.userEdit.text()))
         self.hostEdit.editingFinished.connect( partial( self.onStringValue, 'host', lambda: self.hostEdit.text()))
@@ -121,7 +121,7 @@ def GetProjectSelection(atProgramStart=False):
         dbConnectionLookup = selectionui.databaseConnectionLookup
         ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)
     ProjectSelection.setProject(project)
-    return project, ProjectSelection.projectDir(), dbConnectionLookup.get(project, DatabaseConectionSettings())
+    return project, ProjectSelection.projectDir(), dbConnectionLookup.get(project, DatabaseConnectionSettings())
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

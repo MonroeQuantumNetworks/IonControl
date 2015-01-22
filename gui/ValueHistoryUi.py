@@ -35,7 +35,7 @@ class ValueHistoryUi(Form,Base):
         self.config = config
         self.parameters = self.config.get("ValueHistory.parameters",Parameters())
         self.dbConnection = dbConnection
-        self.connection = ValueHistoryStore(dbConnection.connectionString)
+        self.connection = ValueHistoryStore(dbConnection)
         self.connection.open_session()
         self.cache = dict()
     
