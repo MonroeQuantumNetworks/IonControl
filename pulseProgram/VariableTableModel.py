@@ -21,9 +21,16 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled ]
     headerDataLookup = ['use','variable','value','evaluated']
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, variabledict=None, parent=None, *args): 
+    def __init__(self, variabledict=None, config=dict(), contextName=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.variabledict = variabledict if variabledict is not None else dict()
+        self.normalFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Normal )
+        self.boldFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Bold )
+        self.contextName = contextName
+        self.config = config
+        self.contextBoldSets = self.config.get("VariableTableModel.BoldContext", dict() )
+        self.contextBoldSets.setdefault( contextName, set() )
+        self.boldSet = self.contextBoldSets[self.contextName]
         self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda var: QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
                              (QtCore.Qt.DisplayRole,1):    lambda var: var.name,
                              (QtCore.Qt.DisplayRole,2):    lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
@@ -32,14 +39,18 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.ToolTipRole,2):    lambda var: var.strerror if hasattr(var,'strerror') and var.strerror else None,
                              (QtCore.Qt.DisplayRole,3):    lambda var: str(var.outValue()),
                              (QtCore.Qt.EditRole,2):       lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                             (QtCore.Qt.FontRole,1): lambda var: self.boldFont if var.name in self.boldSet else self.normalFont,
                              }
         self.setDataLookup ={    (QtCore.Qt.CheckStateRole,0): self.setVarEnabled,
                                  (QtCore.Qt.EditRole,2):       self.setDataValue,
                                 }
         
-    def setVariables(self, variabledict ):
+    def setVariables(self, variabledict, contextName ):
         self.beginResetModel()
         self.variabledict = variabledict
+        self.contextName = contextName
+        self.contextBoldSets.setdefault( contextName, set() )
+        self.boldSet = self.contextBoldSets[self.contextName]       
         self.endResetModel()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -106,3 +117,15 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                 return self.headerDataLookup[section]
         return None #QtCore.QVariant()
         
+    def saveConfig(self):
+        self.config["VariableTableModel.BoldContext"] = self.contextBoldSets
+        
+    def toggleBold(self, index):
+        key = self.variabledict.keyAt(index.row())
+        if key in self.boldSet:
+            self.boldSet.remove(key)
+        else:
+            self.boldSet.add(key)
+        self.dataChanged.emit( self.createIndex(index.row(), 1), self.createIndex(index.row(), 1) )
+    
+
