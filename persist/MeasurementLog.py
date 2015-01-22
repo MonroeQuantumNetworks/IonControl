@@ -41,6 +41,7 @@ class Measurement(Base):
     longComment = Column(String)
     study_id = Column(Integer, ForeignKey('studies.id'))
     study = relationship( "Study", backref=backref('measurements', order_by=id))
+    failedAnalysis = Column(String)
     
     def __init__(self, *args, **kwargs):
         super(Measurement, self).__init__(*args, **kwargs)
@@ -114,7 +115,9 @@ class Result(Base):
     
     @bottom.setter
     def bottom(self, magValue ):
-        if self.unit is None:
+        if magValue is None:
+            self._bottom = None     
+        elif self.unit is None:
             if is_magnitude(magValue):
                 self._bottom, self.unit = magValue.toval( returnUnit=True )
             else:
@@ -128,7 +131,9 @@ class Result(Base):
     
     @top.setter
     def top(self, magValue ):
-        if self.unit is None:
+        if magValue is None:
+            self._bottom = None     
+        elif self.unit is None:
             if is_magnitude(magValue):
                 self._top, self.unit = magValue.toval( returnUnit=True )
             else:
@@ -172,9 +177,9 @@ class Parameter(Base):
             self._value = magValue
         
 class MeasurementContainer(object):
-    def __init__(self,database_conn_str):
-        self.database_conn_str = database_conn_str.connectionString
-        self.engine = create_engine(self.database_conn_str, echo=True)
+    def __init__(self,dbConnection):
+        self.database_conn_str = dbConnection.connectionString
+        self.engine = create_engine(self.database_conn_str, echo=dbConnection.echo)
         self.studies = list()
         self.measurements = list()
         self.spaces = list()

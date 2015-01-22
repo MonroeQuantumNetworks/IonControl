@@ -28,6 +28,7 @@ import copy
 from ShutterDictionary import ShutterDictionary
 from TriggerDictionary import TriggerDictionary
 from CounterDictionary import CounterDictionary
+from uiModules.KeyboardFilter import KeyListFilter
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -117,6 +118,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.currentContext = self.config.get( self.configname+'.currentContext' , PulseProgramContext(self.globaldict) )
         self.currentContext.setGlobaldict(self.globaldict)
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
+        self.currentContextName = self.configParams.lastContextName
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
         self.contextComboBox.addItems( sorted(self.contextDict.keys()) )
@@ -142,11 +144,14 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
-        self.variableTableModel = VariableTableModel( self.currentContext.parameters )
+        self.variableTableModel = VariableTableModel( self.currentContext.parameters, self.config, self.currentContextName )
         if self.parameterChangedSignal:
             self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
         self.variableView.setModel(self.variableTableModel)
         self.variableView.resizeColumnToContents(0)
+        self.filter = KeyListFilter( [], [QtCore.Qt.Key_B] )
+        self.filter.controlKeyPressed.connect( self.onBold )
+        self.variableView.installEventFilter(self.filter)
         self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.currentContext.shutters, self.channelNameData[0:2] )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
@@ -185,7 +190,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.splitterVertical.restoreState( self.config[self.configname+".splitterVertical"] )
         self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
 
-
     def onAutoSave(self, checked):
         self.configParams.autoSaveContext = checked
         if checked:
@@ -207,12 +211,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
     def onSaveContext(self):
         name = str(self.contextComboBox.currentText())
+        isNewContext = not name in self.contextDict
         self.contextDict[ name ] = copy.deepcopy(self.currentContext)
         if self.contextComboBox.findText(name)<0:
             with BlockSignals(self.contextComboBox) as w:
                 w.addItem(name)
+        if isNewContext:
             self.contextDictChanged.emit(self.contextDict.keys())
         self.updateSaveStatus()
+        self.currentContextName = name
     
     def onDeleteContext(self):
         name = str(self.contextComboBox.currentText())
@@ -222,9 +229,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.contextComboBox.removeItem( index )
             self.contextDictChanged.emit(self.contextDict.keys())
             self.updateSaveStatus()
+            self.currentContextName = None
 
     def onLoadContext(self):
         name = str(self.contextComboBox.currentText())
+        self.currentContextName = name
         if name in self.contextDict:
             self.loadContext( self.contextDict[name] )
         else:
@@ -261,7 +270,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             textEdit.setReadOnly( self.currentContext.pulseProgramMode!='pp' )
 
     def updateDisplayContext(self):
-        self.variableTableModel.setVariables( self.currentContext.parameters )
+        self.variableTableModel.setVariables( self.currentContext.parameters, self.currentContextName )
         self.variableView.resizeColumnsToContents()
         self.shutterTableModel.setShutterdict( self.currentContext.shutters )
         self.triggerTableModel.setTriggerdict(self.currentContext.triggers)
@@ -435,6 +444,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname] = self.configParams
         self.config[self.configname+'.contextdict'] = self.contextDict 
         self.config[self.configname+'.currentContext'] = self.currentContext
+        self.variableTableModel.saveConfig()
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
@@ -482,6 +492,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.saveContextButton.setEnabled( not self.contextSaveStatus )
         except Exception:
             pass
+        
+    def onBold(self, key):
+        indexes = self.variableView.selectedIndexes()
+        for index in indexes:
+            self.variableTableModel.toggleBold( index )
+                    
+
 
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:

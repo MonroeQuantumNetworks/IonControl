@@ -53,9 +53,12 @@ class AnalysisDefinitionElement(object):
     def pushVariableValues(self):
         """get all push variable values that are within the bounds, no re-evaluation"""
         pushVarValues = list()
+        failedList = []
         for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord() )
-        return pushVarValues
+            pushRecord, failedRecord = pushvar.pushRecord()
+            failedList.extend( failedRecord )
+            pushVarValues.extend( pushRecord )
+        return pushVarValues, failedList
     
     def updatePushVariables(self, replacements ):
         for pushvar in self.pushVariables.itervalues():
@@ -240,13 +243,17 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.push(self.currentEvaluation)
 
     def push(self, evaluation ):
-        for destination, variable, value in evaluation.pushVariableValues():
+        pushVarValues, failedList = evaluation.pushVariableValues()
+        for destination, variable, value in pushVarValues:
             if destination in self.pushDestinations:
                 self.pushDestinations[destination].update( [(destination,variable,value)] )
+        return failedList
                 
     def pushAll(self):
-        for analysis in self.analysisDefinition:
-            self.push( analysis )
+        failedList = []
+        for analysis in self.analysisDefinition:    
+            failedList.extend( self.push( analysis ))
+        return failedList 
                 
     def pushVariables(self, pushVariables):
         for destination, variable, value in pushVariables:
@@ -412,7 +419,7 @@ class AnalysisControl(ControlForm, ControlBase ):
     def analyze(self, plottedTraceDict ):
         self.setPlottedTraceDict(plottedTraceDict)
         self.fitAll()
-        self.pushAll()
+        return self.pushAll()
 
     def evaluate(self, name=None):
         if self.fitfunction is not None:
