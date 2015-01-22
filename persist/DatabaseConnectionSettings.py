@@ -19,4 +19,4 @@ class DatabaseConnectionSettings(object):
     def connectionString(self):
         return "postgresql://{user}:{password}@{host}:{port}/{database}".format(**self.__dict__)
 
-DatabaseConectionSettings = DatabaseConnectionSettings
+DatabaseConectionSettings = DatabaseConnectionSettings   # make sure unpickling still works

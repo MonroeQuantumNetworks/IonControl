@@ -2,3 +2,7 @@ b3e5bdfbd0579510c3419e182b5cf71b56997233 1/19/2015
 
 alter table measurements add column "scanTarget" character varying;
 alter table measurements add column "scanPP" character varying;    
+
+d70f0e02d3163ec509ed6e39ffd0e72a1fb8b9dd 1/22/2015
+
+alter table measurements add column "failedAnalysis" character varying;    

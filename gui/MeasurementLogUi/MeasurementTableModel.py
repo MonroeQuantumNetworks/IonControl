@@ -4,7 +4,7 @@ Created on Nov 21, 2014
 @author: pmaunz
 '''
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui 
 from os.path import exists
 from _functools import partial
 from modules.firstNotNone import firstNotNone
@@ -24,6 +24,8 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
                              9: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                             }
+        self.failedBG =  QtGui.QColor(0xff,0xa6,0xa6,0xff)
+        self.defaultBG = QtGui.QColor(QtCore.Qt.white)
         self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda row: self.isPlotted(self.measurements[row]),
                              (QtCore.Qt.DisplayRole, 1): lambda row: self.measurements[row].study,
                              (QtCore.Qt.DisplayRole, 2): lambda row: self.measurements[row].scanType,
@@ -35,7 +37,18 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole, 8): lambda row: self.measurements[row].startDate.astimezone(tzlocal()).strftime('%Y-%m-%d %H:%M:%S'),
                              (QtCore.Qt.DisplayRole, 9): lambda row: self.measurements[row].comment,
                              (QtCore.Qt.DisplayRole, 10): self.getFilename, 
-                             (QtCore.Qt.EditRole, 9): lambda row: self.measurements[row].comment
+                             (QtCore.Qt.EditRole, 9): lambda row: self.measurements[row].comment,
+                             (QtCore.Qt.BackgroundColorRole, 0): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 2): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 3): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 4): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 5): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 6): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 7): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 8): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 9): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 10): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG
                              }
         self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setPlotted,
                                (QtCore.Qt.EditRole, 9): self.setComment

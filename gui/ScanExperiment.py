@@ -450,8 +450,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.otherDataFile.close()
             self.otherDataFile = None
         if reason == 'end of scan':
-            self.dataAnalysis()
-            self.registerMeasurement()
+            failedList = self.dataAnalysis()
+            self.registerMeasurement(failedList)
         for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
             if trace:
                 trace.description["traceFinalized"] = datetime.now(pytz.utc)
@@ -470,7 +470,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
         
     def dataAnalysis(self):
-        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        return self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
                 
             
     def showTimestamps(self,data):
@@ -700,11 +700,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanTargetDict[target] = parameterdict
         self.scanControlWidget.updateScanTarget(target, parameterdict.keys() )
 
-    def registerMeasurement(self):
+    def registerMeasurement(self, failedList):
+        failedEntry = ", ".join((name for target, name in failedList)) if failedList else None
         measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, scanTarget=self.scan.scanTarget,
                                   scanPP = self.scan.loadPPName,
                                   evaluation=self.evaluation.settingsName, startDate=self.plottedTraceList[0].trace.description['traceCreation'], 
-                                  duration=None, filename=None, comment=None, longComment=None)
+                                  duration=None, filename=None, comment=None, longComment=None, failedAnalysis=failedEntry)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
         for var in  self.pulseProgramUi.variableTableModel.variabledict.values():

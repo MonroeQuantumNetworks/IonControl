@@ -41,6 +41,7 @@ class Measurement(Base):
     longComment = Column(String)
     study_id = Column(Integer, ForeignKey('studies.id'))
     study = relationship( "Study", backref=backref('measurements', order_by=id))
+    failedAnalysis = Column(String)
     
     def __init__(self, *args, **kwargs):
         super(Measurement, self).__init__(*args, **kwargs)
