@@ -207,10 +207,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
     def onSaveContext(self):
         name = str(self.contextComboBox.currentText())
+        isNewContext = not name in self.contextDict
         self.contextDict[ name ] = copy.deepcopy(self.currentContext)
         if self.contextComboBox.findText(name)<0:
             with BlockSignals(self.contextComboBox) as w:
                 w.addItem(name)
+        if isNewContext:
             self.contextDictChanged.emit(self.contextDict.keys())
         self.updateSaveStatus()
     
