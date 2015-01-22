@@ -13,7 +13,6 @@ from sqlalchemy.exc import InvalidRequestError, IntegrityError, ProgrammingError
 from sqlalchemy.exc import OperationalError
 import logging
 from modules.Observable import Observable
-from modules.SequenceDict import SequenceDict
 
 Base = declarative_base()
 

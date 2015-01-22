@@ -32,7 +32,6 @@ from pyqtgraph.parametertree.Parameter import Parameter
 from modules.GuiAppearance import restoreGuiState, saveGuiState #@UnresolvedImport
 import copy
 from modules.PyqtUtility import updateComboBoxItems
-from _collections import defaultdict
 from persist.LoadingEvent import LoadingEvent, LoadingHistory
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
