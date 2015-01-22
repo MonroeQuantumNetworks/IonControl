@@ -114,7 +114,9 @@ class Result(Base):
     
     @bottom.setter
     def bottom(self, magValue ):
-        if self.unit is None:
+        if magValue is None:
+            self._bottom = None     
+        elif self.unit is None:
             if is_magnitude(magValue):
                 self._bottom, self.unit = magValue.toval( returnUnit=True )
             else:
@@ -128,7 +130,9 @@ class Result(Base):
     
     @top.setter
     def top(self, magValue ):
-        if self.unit is None:
+        if magValue is None:
+            self._bottom = None     
+        elif self.unit is None:
             if is_magnitude(magValue):
                 self._top, self.unit = magValue.toval( returnUnit=True )
             else:

@@ -18,4 +18,5 @@ class DatabaseConnectionSettings(object):
     @property
     def connectionString(self):
         return "postgresql://{user}:{password}@{host}:{port}/{database}".format(**self.__dict__)
-        
+
+DatabaseConectionSettings = DatabaseConnectionSettings

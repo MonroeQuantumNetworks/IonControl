@@ -728,7 +728,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 measurement.results.append( Result(name=fullName, value=result.value))
             for pushvar in evaluationElement.pushVariables.itervalues():
                 fullName = join( '_', [evaluationElement.name, pushvar.variableName] )
-                measurement.results.append( Result(name=fullName, value=pushvar.value))   
+                measurement.results.append( Result(name=fullName, value=pushvar.value, bottom=pushvar.minimum if pushvar.minimum else None,
+                                                                                       top=pushvar.maximum if pushvar.maximum else None))   
         # add Plots
         measurement.plottedTraceList = self.plottedTraceList              
         self.measurementLog.container.addMeasurement( measurement )
