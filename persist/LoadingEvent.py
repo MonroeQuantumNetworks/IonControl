@@ -77,6 +77,10 @@ class LoadingHistory(object):
             logging.getLogger(__name__).error( str(e) )
             self.session.rollback()
             self.session = self.Session()
+            
+    def setTrappingDuration(self, duration):
+        self._loadingEvents[-1].trappingDuration = duration
+        self.commit()
         
     def commit(self):
         try:

@@ -684,7 +684,7 @@ class AutoLoad(UiForm,UiBase):
         self.ionReappeared.emit()        
     
     def exitTrapped(self):
-        self.loadingHistory.loadingEvents[-1].trappingDuration = now()-self.trappingTime
+        self.loadingHistory.setTrappingDuration( now()-self.trappingTime )
         self.historyTableModel.updateLast()
     
     def setFrozen(self):
@@ -748,7 +748,8 @@ class AutoLoad(UiForm,UiBase):
         self.config['AutoLoad.Settings.dict'] = self.settingsDict
         self.config['AutoLoad.SettingsName'] = self.currentSettingsName
         self.config['AutoLoad.Parameters'] = self.parameters
-
+        if self.statemachine.currentState == 'Trapped':
+            self.loadingHistory.setTrappingDuration( now()-self.trappingTime )
 
     def setDisabled(self, disable):
         if disable:
