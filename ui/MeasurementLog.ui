@@ -21,6 +21,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="refreshButton">
+       <property name="toolTip">
+        <string>Repeat database Query</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -80,20 +83,6 @@
        </property>
       </spacer>
      </item>
-     <item>
-      <widget class="QToolButton" name="filterButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-       <property name="icon">
-        <iconset resource="Experiment.qrc">
-         <normaloff>:/kde/icons/view-filter.png</normaloff>:/kde/icons/view-filter.png</iconset>
-       </property>
-       <property name="autoRaise">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
@@ -115,6 +104,9 @@
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
               <widget class="QToolButton" name="scanNameFilterButton">
+               <property name="toolTip">
+                <string>Apply filter</string>
+               </property>
                <property name="text">
                 <string>...</string>
                </property>

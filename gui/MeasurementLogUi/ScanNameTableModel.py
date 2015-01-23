@@ -53,4 +53,6 @@ class ScanNameTableModel(QtCore.QAbstractTableModel):
     def showAll(self, show):
         for row in range(len(self.scanNames)):
             self.scanNames.setAt(row, show)
+            self.scanNameFilterChanged.emit( self.scanNames)
+            self.dataChanged.emit( self.createIndex(0,0), self.createIndex(0,len(self.scanNames)))
        
