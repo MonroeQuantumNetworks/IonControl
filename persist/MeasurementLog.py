@@ -245,12 +245,14 @@ class MeasurementContainer(object):
         if scanNameFilter is None:
             self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
             self._scanNames = SequenceDict(((m.scanName,self._scanNames.get(m.scanName,True)) for m in self.measurements))
+            self._scanNames.sort()
         else:
             self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).filter(Measurement.scanName.in_(scanNameFilter)).order_by(Measurement.id).all()
-            scanNames = self.session.query(Measurement.scanName).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).group_by(Measurement.scanName).all()
+            scanNames = self.session.query(Measurement.scanName).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).group_by(Measurement.scanName).order_by(Measurement.scanName).all()
             self._scanNames = SequenceDict(((name,name in scanNameFilter) for name, in scanNames))
         self.scanNamesChanged.fire( scanNames=self.scanNames )
         self.measurementsUpdated.fire(measurements=self.measurements)
+        self.fromTime, self.toTime = fromTime, toTime
     
     def refreshLookups(self):
         """Load the basic short tables into memory

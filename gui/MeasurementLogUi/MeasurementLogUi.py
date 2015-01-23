@@ -107,6 +107,14 @@ class MeasurementLogUi(Form, Base ):
         self.scanNameTableModel = ScanNameTableModel( self.container.scanNames, self.container)
         self.scanNameTableView.setModel( self.scanNameTableModel )
         self.scanNameTableModel.scanNameFilterChanged.connect( self.onFilterSelection )
+        # Context Menu for ScanName table
+        self.scanNameTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.selectAllAction = QtGui.QAction( "select all" , self)
+        self.selectAllAction.triggered.connect( partial( self.scanNameTableModel.showAll, True )  )
+        self.scanNameTableView.addAction( self.selectAllAction )
+        self.deselectAllAction = QtGui.QAction( "deselect all" , self)
+        self.deselectAllAction.triggered.connect( partial( self.scanNameTableModel.showAll, False )  )
+        self.scanNameTableView.addAction( self.deselectAllAction )
         # Context Menu for ResultsTable
         self.resultTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addResultToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
