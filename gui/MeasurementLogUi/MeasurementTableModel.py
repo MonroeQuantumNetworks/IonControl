@@ -79,7 +79,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def clearSubscriptions(self):
         for observable, callback in self.subscriptions:
             observable.unsubscribe( callback )
-                 
+        self.subscriptions[:] = []
     
     def commentChanged(self, row, event ):
         self.setComment( row, event.comment )
