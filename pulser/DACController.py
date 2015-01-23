@@ -25,7 +25,7 @@ class DACController( OKBase ):
     
     def writeVoltage(self, address, line ):
         if len(line)<self.channelCount:
-            line.extend( [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
+            line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
         startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
         # set the host write address
         self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
@@ -37,6 +37,8 @@ class DACController( OKBase ):
         return self.xem.WriteToPipeIn( 0x83, data )
     
     def readVoltage(self, address, line=None):
+        if len(line)<self.channelCount:
+            line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
         startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
         # set the host write address
         self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
@@ -46,7 +48,7 @@ class DACController( OKBase ):
         self.xem.ReadFromPipeOut( 0xa3, data )
         result = numpy.array( data, dtype=numpy.int8 ).view(dtype=numpy.int16)
         if line is not None:
-            matches = all(result == self.toInteger(line))
+            matches = all(result == numpy.array(self.toInteger(line)))
             if not matches:
                 logging.getLogger(__name__).error( "{0} {1}".format(len(self.toInteger(line)),list(self.toInteger(line))))
                 logging.getLogger(__name__).error( "{0} {1}".format(len(result),list(result)))            

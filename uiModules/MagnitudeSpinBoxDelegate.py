@@ -32,6 +32,10 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
         editor = MagnitudeSpinBox(parent, globalDict = localDict, valueChangedOnEditingFinished=False)
         editor.dimension = index.model().data(index,QtCore.Qt.UserRole)
         editor.valueChanged.connect( partial( index.model().setValue, index ))
+        completer = QtGui.QCompleter( localDict.keys(), self )
+        completer.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        completer.setCompletionMode(QtGui.QCompleter.InlineCompletion)
+        editor.lineEdit().setCompleter( completer )
         return editor
         
     def setEditorData(self, editor, index):

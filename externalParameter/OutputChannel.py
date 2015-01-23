@@ -12,7 +12,7 @@ class OutputChannel(object):
         
     @property
     def name(self):
-        return "{0}_{1}".format(self.deviceName, self.channelName)
+        return "{0}_{1}".format(self.deviceName, self.channelName) if self.deviceName else self.channelName
         
     @property
     def value(self):

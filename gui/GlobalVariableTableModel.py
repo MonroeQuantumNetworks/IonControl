@@ -6,7 +6,7 @@ Created on Fri Feb 08 22:02:08 2013
 """
 import logging
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 import sip
 
 from modules import Expression
@@ -27,16 +27,22 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Name', 'Value']
     expression = Expression.Expression()
     persistSpace = 'globalVar'
-    def __init__(self, variables, parent=None, *args): 
+    def __init__(self, config, variables, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
+        self.config = config
         self.variables = variables
+        self.normalFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Normal )
+        self.boldFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Bold )
+        self.boldSet = self.config.get('GlobalVariables.BoldSet', set())
         self.dataLookup = { (QtCore.Qt.DisplayRole, 0): lambda row: self.variables.keyAt(row),
                              (QtCore.Qt.DisplayRole, 1): lambda row: str(self.variables.at(row)),
                              (QtCore.Qt.EditRole, 0):    lambda row: self.variables.keyAt(row),
                              (QtCore.Qt.EditRole, 1):    lambda row: str(self.variables.at(row)),
+                             (QtCore.Qt.FontRole,0): lambda row: self.boldFont if self.variables.keyAt(row) in self.boldSet else self.normalFont,
+                             (QtCore.Qt.FontRole,1): lambda row: self.boldFont if self.variables.keyAt(row) in self.boldSet else self.normalFont,
                              }
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
                                (QtCore.Qt.EditRole, 1): self.setValue,
@@ -164,6 +170,14 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 return True
         return False
     
+    def toggleBold(self, index):
+        key = self.variables.keyAt(index.row())
+        if key in self.boldSet:
+            self.boldSet.remove(key)
+        else:
+            self.boldSet.add(key)
+        self.dataChanged.emit( self.createIndex(index.row(), 0), self.createIndex(index.row(), 3) )
+    
     def update(self, updlist):
         for destination, key, value in updlist:
             value = MagnitudeUtilit.mg(value)
@@ -176,3 +190,6 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                     index = self.variables.index(key)
                     self.dataChanged.emit(self.createIndex(index, 1), self.createIndex(index, 1))
                     self.decimation[key].decimate(time.time(), value, partial(self.persistCallback, key))
+
+    def saveConfig(self):
+        self.config['GlobalVariables.BoldSet'] = self.boldSet

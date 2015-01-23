@@ -4,16 +4,17 @@ Created on Nov 21, 2014
 @author: pmaunz
 '''
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui 
 from os.path import exists
 from _functools import partial
 from modules.firstNotNone import firstNotNone
 import os.path
+from dateutil.tz import tzlocal
 
 class MeasurementTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
-    headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Started', 'Comment', 'Filename' ]
-    coreColumnCount = 8
+    headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Target', 'Parameter', 'Pulse Program', 'Started', 'Comment', 'Filename' ]
+    coreColumnCount = 11
     def __init__(self, measurements, extraColumns, traceuiLookup, container=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.container = container 
@@ -21,20 +22,36 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         # measurements are given as a list
         self.measurements = measurements
         self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-                             6: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+                             9: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                             }
+        self.failedBG =  QtGui.QColor(0xff,0xa6,0xa6,0xff)
+        self.defaultBG = QtGui.QColor(QtCore.Qt.white)
         self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda row: self.isPlotted(self.measurements[row]),
                              (QtCore.Qt.DisplayRole, 1): lambda row: self.measurements[row].study,
                              (QtCore.Qt.DisplayRole, 2): lambda row: self.measurements[row].scanType,
                              (QtCore.Qt.DisplayRole, 3): lambda row: self.measurements[row].scanName,
                              (QtCore.Qt.DisplayRole, 4): lambda row: self.measurements[row].evaluation,
-                             (QtCore.Qt.DisplayRole, 5): lambda row: str(self.measurements[row].startDate),
-                             (QtCore.Qt.DisplayRole, 6): lambda row: self.measurements[row].comment,
-                             (QtCore.Qt.DisplayRole, 7): self.getFilename, 
-                             (QtCore.Qt.EditRole, 6): lambda row: self.measurements[row].comment
+                             (QtCore.Qt.DisplayRole, 5): lambda row: self.measurements[row].scanTarget,
+                             (QtCore.Qt.DisplayRole, 6): lambda row: self.measurements[row].scanParameter,                       
+                             (QtCore.Qt.DisplayRole, 7): lambda row: self.measurements[row].scanPP,                       
+                             (QtCore.Qt.DisplayRole, 8): lambda row: self.measurements[row].startDate.astimezone(tzlocal()).strftime('%Y-%m-%d %H:%M:%S'),
+                             (QtCore.Qt.DisplayRole, 9): lambda row: self.measurements[row].comment,
+                             (QtCore.Qt.DisplayRole, 10): self.getFilename, 
+                             (QtCore.Qt.EditRole, 9): lambda row: self.measurements[row].comment,
+                             (QtCore.Qt.BackgroundColorRole, 0): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 2): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 3): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 4): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 5): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 6): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 7): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 8): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 9): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, 10): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG
                              }
         self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setPlotted,
-                               (QtCore.Qt.EditRole, 6): self.setComment
+                               (QtCore.Qt.EditRole, 9): self.setComment
                               }
         self.traceuiLookup = traceuiLookup
         self.subscriptions = list()
@@ -62,7 +79,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def clearSubscriptions(self):
         for observable, callback in self.subscriptions:
             observable.unsubscribe( callback )
-                 
+        self.subscriptions[:] = []
     
     def commentChanged(self, row, event ):
         self.setComment( row, event.comment )

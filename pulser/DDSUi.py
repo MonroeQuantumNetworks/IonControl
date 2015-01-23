@@ -152,6 +152,8 @@ class DDSUi(DDSForm, DDSBase):
                 self.ad9912.setPhase(channel, setting.phase)
             if setting.evaluateAmplitude( self.globalDict ):
                 self.ad9912.setAmplitude(channel, setting.amplitude)
+        if self.autoApply: 
+            self.onApply()
         self.tableView.viewport().repaint() 
              
 if __name__ == "__main__":

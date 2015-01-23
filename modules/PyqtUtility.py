@@ -27,4 +27,20 @@ class BlockSignals:
         self.widget.blockSignals(self.oldstate)
 
     
+class Override:
+    """Encapulse temporary change of a boolean in __enter__ __exit__ idiom"""
+    def __init__(self, obj, attr, overrideValue):
+        self.obj = obj
+        self.attr = attr
+        self.overrideValue = overrideValue
+        
+    def __enter__(self):
+        self.previous = getattr( self.obj, self.attr )
+        setattr( self.obj, self.attr, self.overrideValue )
+        return self
+
+    def __exit__(self, exittype, value, traceback):
+        setattr( self.obj, self.attr, self.previous)
+
+    
     
