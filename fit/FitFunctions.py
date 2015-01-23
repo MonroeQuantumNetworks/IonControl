@@ -260,7 +260,7 @@ class SquareRabiFit(FitFunctionBase):
     def __setstate__(self, state):
         self.__dict__ = state
         self.hasSmartStart = True
-        self.results['maxVal'] = ResultRecord( name='maxVal',definition='maximum value of function' )
+        self.results.setdefault( 'maxVal', ResultRecord( name='maxVal',definition='maximum value of function' ))
         
     def functionEval(self, x, T, C, A, O, t ):
         R = numpy.pi/T
