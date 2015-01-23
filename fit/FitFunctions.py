@@ -255,10 +255,12 @@ class SquareRabiFit(FitFunctionBase):
         self.parameterEnabled = [True]*5
         self.parametersConfidence = [None]*5
         self.hasSmartStart = True
+        self.results['maxVal'] = ResultRecord( name='maxVal',definition='maximum value of function' )
           
     def __setstate__(self, state):
         self.__dict__ = state
         self.hasSmartStart = True
+        self.results['maxVal'] = ResultRecord( name='maxVal',definition='maximum value of function' )
         
     def functionEval(self, x, T, C, A, O, t ):
         R = numpy.pi/T
@@ -292,6 +294,11 @@ class SquareRabiFit(FitFunctionBase):
                 T = 0.79869/(x[indexplus]-x[indexminus])
         logging.getLogger(__name__).info("smart start values T={0}, C={1}, A={2}, O={3}, t={4}".format(T, C, A, O, t))
         return (T, C, A, O, t)
+    
+    def update(self,parameters=None):
+        T, C, A, O, t = parameters if parameters is not None else self.parameters #@UnusedVariable
+        R = numpy.pi/T
+        self.results['maxVal'].value = (A*numpy.square(numpy.sin(R*t/2.))) + O
 
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
