@@ -115,6 +115,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.removePlotButton.clicked.connect( self.onRemoveFit )
         self.extractButton.clicked.connect( self.onExtractFit )
         self.fitToStartButton.clicked.connect( self.onFitToStart )
+        self.getSmartStartButton.clicked.connect( self.onSmartToStart )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStart )
         self.analysisComboDelegate = ComboBoxDelegate()
         self.analysisTableModel = AnalysisTableModel(self.analysisDefinition, self.config, self.globalDict, self.evaluationNames )
@@ -377,7 +378,15 @@ class AnalysisControl(ControlForm, ControlBase ):
                 replacements = fitfunction.replacementDict()
                 replacements.update( self.globalDict )
                 evaluation.updatePushVariables( replacements )
-            
+
+    def onSmartToStart(self):
+        if self.fitfunction:
+            plot = self.plottedTraceDict.get( self.currentEvaluation.evaluation )
+            if plot is not None:
+                smartParameters = self.fitfunction.smartStartValues(plot.x,plot.y,self.fitfunction.parameters,self.fitfunction.parameterEnabled)
+                self.fitfunction.startParameters = list(smartParameters)
+                self.fitfunctionTableModel.startDataChanged()            
+           
     def onPlot(self):
         if self.currentEvaluation is not None:
             plot = self.plottedTraceDict.get( self.currentEvaluation.evaluation )
