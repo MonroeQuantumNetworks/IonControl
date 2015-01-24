@@ -104,7 +104,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         return True
 
     def setStartParameterExpression(self, row, value):
-        self.fitfunction.startParameterExpressions[row] = str(value)
+        self.fitfunction.startParameterExpressions[row] = str(value) if value is not None else None
         return True
 
     def setParametersBound(self, bound, row, value):

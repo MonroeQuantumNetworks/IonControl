@@ -27,10 +27,8 @@ class StoredFitFunction(object):
         self.__dict__.setdefault( 'parametersConfidence', tuple() )
         self.__dict__.setdefault( 'startParameterExpressions', None )
         self.__dict__.setdefault( 'useSmartStartValues', False )
-        self.__dict__.setdefault( 'parameterBounds', tuple())
-        self.__dict__.setdefault( 'parameterBoundsExpressions', tuple())
-        self.parameterBounds =  tuple(((None,None) for _ in range(len(self.parameters))))
-        self.parameterBoundsExpressions =   tuple(((None,None) for _ in range(len(self.parameters))))
+        self.__dict__.setdefault( 'parameterBounds', tuple(((None,None) for _ in range(len(self.parameters)))))
+        self.__dict__.setdefault( 'parameterBoundsExpressions', tuple(((None,None) for _ in range(len(self.parameters)))))
 
     def fitfunction(self):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
@@ -44,8 +42,6 @@ class StoredFitFunction(object):
             fitfunction.results[result.name] = ResultRecord(name=result.name, definition=result.definition, value=result.value)
         fitfunction.parameterBounds = [ list(bound) for bound in self.parameterBounds ] if self.parameterBounds else [[None,None] for _ in range(len(fitfunction.parameterNames))]
         fitfunction.parameterBoundsExpressions =  [ list(bound) for bound in self.parameterBoundsExpressions ] if self.parameterBoundsExpressions else [[None,None] for _ in range(len(fitfunction.parameterNames))]
-        fitfunction.parameterBounds =  [[None,None] for _ in range(len(fitfunction.parameterNames))]
-        fitfunction.parameterBoundsExpressions =   [[None,None] for _ in range(len(fitfunction.parameterNames))]
         return fitfunction
     
     @classmethod

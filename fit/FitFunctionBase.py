@@ -85,8 +85,6 @@ class FitFunctionBase(object):
         self.__dict__.setdefault( 'parameterBounds' , [[None,None] for _ in range(len(self.parameterNames)) ]  )
         self.__dict__.setdefault( 'parameterBoundsExpressions' , None)
         self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' ) 
-        self.parameterBounds = [[None,None] for _ in range(len(self.parameterNames)) ]
-        self.parameterBoundsExpressions =  [[None,None] for _ in range(len(self.parameterNames)) ]
  
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -100,14 +98,27 @@ class FitFunctionBase(object):
                 params.append(value(self.startParameters[index]))
         return params
     
-    def enabledStartParameters(self, parameters=None):
+    @staticmethod
+    def coercedValue( val, bounds ):
+        if bounds[1] is not None and val>=bounds[1]:
+            val = value(0.95*bounds[1]+0.05*bounds[0] if bounds[0] is not None else bounds[1]-0.01) 
+        if bounds[0] is not None and val<=bounds[0]:
+            val = value(0.95*bounds[0]+0.05*bounds[1] if bounds[1] is not None else bounds[0]+0.01)
+        return val
+    
+    def enabledStartParameters(self, parameters=None, bounded=False):
         """return a list of only the enabled start parameters"""
         if parameters is None:
             parameters = self.startParameters
         params = list()
-        for enabled, param in zip(self.parameterEnabled, parameters):
-            if enabled:
-                params.append(value(param))
+        if bounded:
+            for enabled, param, bounds in zip(self.parameterEnabled, parameters, self.parameterBounds):
+                if enabled:
+                    params.append(self.coercedValue(value(param), bounds))
+        else:
+            for enabled, param in zip(self.parameterEnabled, parameters):
+                if enabled:
+                    params.append(value(param))
         return params
 
     def enabledFitParameters(self, parameters=None):
@@ -183,7 +194,7 @@ class FitFunctionBase(object):
         
         myEnabledBounds = self.enabledBounds()
         if myEnabledBounds:
-            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsqbound(self.residuals, self.enabledStartParameters(parameters), 
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsqbound(self.residuals, self.enabledStartParameters(parameters, bounded=True), 
                                                                                                  args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True, bounds=myEnabledBounds)
         else:
             enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)

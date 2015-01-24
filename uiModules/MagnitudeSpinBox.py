@@ -108,7 +108,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def value(self):
         try:
-            text = str( self.lineEdit().text() )
+            text = str( self.lineEdit().text() ).strip()
             if len(text)>0:
                 value = self.expression.evaluateAsMagnitude(text, self.globalDict )
                 if self._dimension is not None and value.unit != self._dimension.unit:
