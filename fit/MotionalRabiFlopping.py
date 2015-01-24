@@ -52,9 +52,9 @@ def probabilityTable(nBar):
 class MotionalRabiFlopping(FitFunctionBase):
     name = "MotionalRabiFlopping"
     functionString =  'Motional Rabi Flopping'
+    parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength', 'delta_n']
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength', 'delta_n']
         self.parameters = [1.0,7.0,0.28,40,0,1.578,729,0.0]
         self.startParameters = [1.0,7.0,0.28,40,0,mg(1.578,'MHz'),mg(729,'nm'),0.0]
         self.units = [None, None, None, None, None, 'MHz', 'nm', None ]
@@ -122,9 +122,9 @@ class MotionalRabiFlopping(FitFunctionBase):
 class TwoModeMotionalRabiFlopping(FitFunctionBase):
     name = "TwoModeMotionalRabiFlopping"
     functionString =  'Two Mode Motional Rabi Flopping'
+    parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength', 'delta_n', 'n_2', 'trapFrequency_2']
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength', 'delta_n', 'n_2', 'trapFrequency_2']
         self.parameters = [1.0,7.0,0.28,40,0.0,1.578,729,0.0,0.0,1.5]
         self.startParameters = [1.0,7.0,0.28,40,0.0,mg(1.578,'MHz'),mg(729,'nm'),0.0,0.0,mg(1.578,'MHz')]
         self.units = [None, None, None, None, None, 'MHz', 'nm', None, None, 'MHz' ]

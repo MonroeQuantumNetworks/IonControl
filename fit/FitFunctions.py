@@ -17,9 +17,9 @@ import logging
 class CosFit(FitFunctionBase):
     name = "Cos"
     functionString =  'A*cos(2*pi*k*x+theta)+O'
+    parameterNames = [ 'A', 'k', 'theta', 'O' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 4)
-        self.parameterNames = [ 'A', 'k', 'theta', 'O' ]
         self.parameters = [1,1,0,0]
         self.startParameters = [1,1,0,0]
         
@@ -38,9 +38,9 @@ class CosFit(FitFunctionBase):
 class CosSqFit(FitFunctionBase):
     name = "Cos2"
     functionString =  'A*cos^2(pi*x/(2*T)+theta)+O'
+    parameterNames = [ 'A', 'T', 'theta', 'O' ]    
     def __init__(self):
         FitFunctionBase.__init__(self, 4)
-        self.parameterNames = [ 'A', 'T', 'theta', 'O' ]
         self.parameters = [1,100,0,0]
         self.startParameters = [1,1,0,0]
        
@@ -50,9 +50,9 @@ class CosSqFit(FitFunctionBase):
 class CosSqPeakFit(FitFunctionBase):
     name = "Cos2 Peak"
     functionString =  'A*cos^2(pi*(x-x0)/(2*T))+O'
+    parameterNames = [ 'A', 'T', 'x0', 'O' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 4)
-        self.parameterNames = [ 'A', 'T', 'x0', 'O' ]
         self.parameters = [1,100,0,0]
         self.startParameters = [1,1,0,0]
        
@@ -63,9 +63,9 @@ class CosSqPeakFit(FitFunctionBase):
 class SinSqFit(FitFunctionBase):
     name = "Sin2"
     functionString = '(max-min)*sin^2( pi*(x-x0)/(2*T) )+min'
+    parameterNames = [  'T', 'x0', 'max', 'min' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 4)
-        self.parameterNames = [  'T', 'x0', 'max', 'min' ]
         self.parameters = [100,0,1,0]
         self.startParameters = [100,0,1,0]
         
@@ -100,9 +100,9 @@ class SinSqFit(FitFunctionBase):
 class ChripedSinSqFit(FitFunctionBase):
     name = "ChirpedSin2"
     functionString = '(max-min)*sin^2( pi*(x-x0)/(2*(T+dt*x) ))+min'
+    parameterNames = [  'T', 'x0', 'max', 'min', 'dt' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 5)
-        self.parameterNames = [  'T', 'x0', 'max', 'min', 'dt' ]
         self.parameters = [100,0,1,0,0]
         self.startParameters = [100,0,1,0,0]
         
@@ -112,9 +112,9 @@ class ChripedSinSqFit(FitFunctionBase):
 class SaturationFit(FitFunctionBase):
     name = "Saturation"
     functionString = 'A*(x/s)/(1+(x/s))+O'
+    parameterNames = [  'A', 's', 'O' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 3)
-        self.parameterNames = [  'A', 's', 'O' ]
         self.parameters = [10,10,0]
         self.startParameters = [10,10,0]
         
@@ -135,9 +135,9 @@ class SaturationFit(FitFunctionBase):
 class SinSqExpFit(FitFunctionBase):
     name = "Sin2 Exponential Decay"
     functionString =  'A * exp(-x/tau) * sin^2(pi/(2*T)*x+theta) + O'
+    parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 5)
-        self.parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
         self.parameters = [1,100,0,0,1000]
         self.startParameters = [1,100,0,0,1000]
         
@@ -147,9 +147,9 @@ class SinSqExpFit(FitFunctionBase):
 class CosExpFit(FitFunctionBase):
     name = "Cos Exponential Decay"
     functionString =  '(A/2) * (1 - exp(-x/tau)Cos(pi*t/(2*T)+theta)) + O'
+    parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 5)
-        self.parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
         self.parameters = [1,100,0,0,1000]
         self.startParameters = [1,100,0,0,1000]
         
@@ -159,9 +159,9 @@ class CosExpFit(FitFunctionBase):
 class SinSqGaussFit(FitFunctionBase):
     name = "Sin2 Gaussian Decay"
     functionString =  'A * exp(-x^2/tau^2) * sin^2(pi/(2*T)*x+theta) + O'
+    parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 5)
-        self.parameterNames = [ 'A', 'T', 'theta', 'O', 'tau' ]
         self.parameters = [1,100,0,0, 1000]
         self.startParameters = [1,100,0,0, 1000]
         
@@ -172,9 +172,9 @@ class SinSqGaussFit(FitFunctionBase):
 class GaussianFit(FitFunctionBase):
     name = "Gaussian"
     functionString =  'A*exp(-(x-x0)**2/s**2)+O'
+    parameterNames = [ 'A', 'x0', 's', 'O' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 4)
-        self.parameterNames = [ 'A', 'x0', 's', 'O' ]
         self.parameters = [0]*4
         self.startParameters = [1,0,1,0]
         
@@ -210,9 +210,9 @@ class GaussianFit(FitFunctionBase):
 class SquareRabiFit(FitFunctionBase):
     name = "Square Rabi"
     functionString =  'A/(1+(2*pi*(x-C)/R)**2) * sin**2(sqrt(1+(2*pi*(x-C)/R)**2)*R*t/2) + O where R=pi/T'
+    parameterNames = [ 'T', 'C', 'A', 'O', 't' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 5)
-        self.parameterNames = [ 'T', 'C', 'A', 'O', 't' ]
         self.startParameters = [1.0,42.0,1.0,0.0,100.0]
         self.results['maxVal'] = ResultRecord( name='maxVal',definition='maximum value of function' )
           
@@ -261,9 +261,9 @@ class SquareRabiFit(FitFunctionBase):
 class LorentzianFit(FitFunctionBase):
     name = "Lorentzian"
     functionString =  'A*s**2*1/(s**2+(x-x0)**2)+O'
+    parameterNames = [ 'A', 's', 'x0', 'O' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 4)
-        self.parameterNames = [ 'A', 's', 'x0', 'O' ]
         self.startParameters = [1,1,0,0]
         
     def functionEval(self, x, A, s, x0, O ):
@@ -274,9 +274,9 @@ class LorentzianFit(FitFunctionBase):
 class TruncatedLorentzianFit(FitFunctionBase):
     name = "Truncated Lorentzian"
     functionString =  'A*s**2*1/(s**2+(x-x0)**2)+O'
+    parameterNames = [ 'A', 's', 'x0', 'O' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 4)
-        self.parameterNames = [ 'A', 's', 'x0', 'O' ]
         self.startParameters = [1,1,0,0]
         self.epsfcn=10.0
         
@@ -289,9 +289,9 @@ class LinearFit(FitFunctionBase):
     """
     name = "Line"
     functionString =  'm*x + b'
+    parameterNames = [ 'm', 'b' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 2)
-        self.parameterNames = [ 'm', 'b' ]
         self.parameters = [1,0]
         self.startParameters = [1,0]
         self.halfpoint = 0        
@@ -307,9 +307,9 @@ class LinearFit(FitFunctionBase):
 class RabiFieldProfileFit(FitFunctionBase):
     name = "RabiFieldProfileFit"
     functionString =  'A*sin(c*exp(-(x-x0)**2/w**2)**2+O'
+    parameterNames = [ 'A', 'c', 'x0', 'w', 'O' ]
     def __init__(self):
         FitFunctionBase.__init__(self, 5)
-        self.parameterNames = [ 'A', 'c', 'x0', 'w', 'O' ]
         self.startParameters = [1,1,0,1,0]
         
     def functionEval(self, x, A, c, x0, w, O ):
@@ -371,7 +371,7 @@ def fromXmlElement(element):
     for index, parameter in enumerate(element.findall("Parameter")):
         value = float(parameter.text)
         function.parameters[index] = value
-        function.parameterNames[index] = parameter.attrib['name']
+        #function.parameterNames[index] = parameter.attrib['name']
         function.parametersConfidence[index] = float(parameter.attrib['confidence']) if parameter.attrib['confidence'] != 'None' else None
         function.parameterEnabled[index] = parameter.attrib['enabled'] == "True"
     for index, parameter in enumerate(element.findall("Result")):

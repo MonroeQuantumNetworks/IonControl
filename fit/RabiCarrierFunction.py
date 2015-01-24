@@ -20,9 +20,9 @@ from modules.magnitude import mg
 class RabiCarrierFunction(FitFunctionBase):
     name = "RabiCarrier"
     functionString =  'Explicit Carrier Rabi Transition with Lamb-Dicke approximation'
+    parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength']
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength']
         self.parameters = [1,7,0.28,40,0,1.578,729]
         self.startParameters = [1,7,0.28,40,0,mg(1.578,'MHz'),mg(729,'nm')]
         self.units = [None, None, None, None, None, 'MHz', 'nm' ]

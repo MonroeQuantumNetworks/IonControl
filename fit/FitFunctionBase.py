@@ -61,10 +61,10 @@ class FitFunctionBase(object):
     __metaclass__ = FitFunctionMeta
     expression = Expression()
     name = 'None'
+    parameterNames = list()
     def __init__(self, numParameters):
         self.epsfcn=0.0
         self.parameters = [0] * numParameters
-        self.parameterNames = list()
         self.startParameters = [1] * numParameters 
         self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
         self.parameterEnabled = [True] * numParameters
