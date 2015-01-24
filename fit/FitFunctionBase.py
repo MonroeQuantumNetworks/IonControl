@@ -48,7 +48,8 @@ class FitFunctionMeta(type):
         if 'name' not in dct:
             raise FitFunctionException("Fitfunction class needs to have class attribute 'name'")
         instrclass = super(FitFunctionMeta, self).__new__(self, name, bases, dct)
-        fitFunctionMap[dct['name']] = instrclass
+        if name!='FitFunctionBase':
+            fitFunctionMap[dct['name']] = instrclass
         return instrclass
     
 def native(method):
@@ -62,7 +63,8 @@ class FitFunctionBase(object):
     expression = Expression()
     name = 'None'
     parameterNames = list()
-    def __init__(self, numParameters):
+    def __init__(self):
+        numParameters = len(self.parameterNames)
         self.epsfcn=0.0
         self.parameters = [0] * numParameters
         self.startParameters = [1] * numParameters 
