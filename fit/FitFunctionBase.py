@@ -74,16 +74,19 @@ class FitFunctionBase(object):
         self.useSmartStartValues = False
         self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' )
         self.parametersUpdated = Observable()
-        self.parameterBounds = [(None,None) for _ in range(numParameters) ]
+        self.parameterBounds = [[None,None] for _ in range(numParameters) ]
         self.parameterBoundsExpressions = None
         
     def __setstate__(self, state):
+        state.pop( 'parameterNames', None )
         self.__dict__ = state
         self.__dict__.setdefault( 'useSmartStartValues', False )
         self.__dict__.setdefault( 'startParameterExpressions', None )
-        self.__dict__.setdefault( 'hasSmartStart', not hasattr(self.smartStartValues, 'isNative' ) )
-        self.__dict__.setdefault( 'parameterBounds' , [(None,None) for _ in range(len(self.parameterNames)) ]  )
+        self.__dict__.setdefault( 'parameterBounds' , [[None,None] for _ in range(len(self.parameterNames)) ]  )
         self.__dict__.setdefault( 'parameterBoundsExpressions' , None)
+        self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' ) 
+        self.parameterBounds = [[None,None] for _ in range(len(self.parameterNames)) ]
+        self.parameterBoundsExpressions =  [[None,None] for _ in range(len(self.parameterNames)) ]
  
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -157,7 +160,7 @@ class FitFunctionBase(object):
             self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
 
     def enabledBounds(self):
-        result = [bounds for enabled, bounds in zip(self.parameterEnabled, self.parameterBounds) if enabled]
+        result = [[value(bounds[0]), value(bounds[1])] for enabled, bounds in zip(self.parameterEnabled, self.parameterBounds) if enabled]
         enabled = any( (any(bounds) for bounds in result) )
         return result if enabled else None
 

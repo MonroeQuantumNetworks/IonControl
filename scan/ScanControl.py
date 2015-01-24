@@ -300,7 +300,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.loadPPComboBox.addItems(pulseProgramUi.contextDict.keys())
             if self.settings.loadPPName: 
                 self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-        self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        try:
+            self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        except TypeError:
+            pass  # is raised if the connection already existed
+            
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()

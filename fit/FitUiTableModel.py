@@ -5,6 +5,9 @@ from modules.firstNotNone import firstNotNone
 from PyQt4 import QtGui
 from _functools import partial
 
+def mystr(x):
+    return '' if x is None else str(x)
+
 class FitUiTableModel(QtCore.QAbstractTableModel):
     backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
     parametersChanged = QtCore.pyqtSignal()
@@ -14,13 +17,13 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         self.dataLookup = { (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.fitfunction.parameterEnabled[row] else QtCore.Qt.Unchecked,
                             (QtCore.Qt.DisplayRole,1): lambda row: self.fitfunction.parameterNames[row],
                             (QtCore.Qt.DisplayRole,2): lambda row: str(self.fitfunction.startParameters[row]),
-                            (QtCore.Qt.DisplayRole,3): lambda row: self.fitfunction.parameterBounds[row][0],
-                            (QtCore.Qt.DisplayRole,4): lambda row: self.fitfunction.parameterBounds[row][1],
+                            (QtCore.Qt.DisplayRole,3): lambda row: mystr(self.fitfunction.parameterBounds[row][0]),
+                            (QtCore.Qt.DisplayRole,4): lambda row: mystr(self.fitfunction.parameterBounds[row][1]),
                             (QtCore.Qt.EditRole,2):    lambda row: firstNotNone( self.fitfunction.startParameterExpressions[row], str(self.fitfunction.startParameters[row])),
                             (QtCore.Qt.UserRole,2):    lambda row: self.fitfunction.units[row] if self.fitfunction.units else None,
-                            (QtCore.Qt.EditRole,3):    lambda row: firstNotNone( self.fitfunction.parameterBoundsExpressions[row][0], str(self.fitfunction.parameterBounds[row][0])),
+                            (QtCore.Qt.EditRole,3):    lambda row: firstNotNone( self.fitfunction.parameterBoundsExpressions[row][0], self.fitfunction.parameterBounds[row][0], ""),
                             (QtCore.Qt.UserRole,3):    lambda row: self.fitfunction.units[row] if self.fitfunction.units else None,
-                            (QtCore.Qt.EditRole,4):    lambda row: firstNotNone( self.fitfunction.parameterBoundsExpressions[row][1], str(self.fitfunction.parameterBounds[row][1])),
+                            (QtCore.Qt.EditRole,4):    lambda row: firstNotNone( self.fitfunction.parameterBoundsExpressions[row][1], self.fitfunction.parameterBounds[row][1], ""),
                             (QtCore.Qt.UserRole,4):    lambda row: self.fitfunction.units[row] if self.fitfunction.units else None,
                             (QtCore.Qt.DisplayRole,5): self.fitValue,
                             (QtCore.Qt.DisplayRole,6): self.confidenceValue,
@@ -68,7 +71,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         if self.fitfunction and self.fitfunction.startParameterExpressions is None:
             self.fitfunction.startParameterExpressions = [None]*len(self.fitfunction.startParameters)
         if self.fitfunction and self.fitfunction.parameterBoundsExpressions is None:
-            self.fitfunction.parameterBoundsExpressions = [(None,None) for _ in range(len(self.fitfunction.startParameters))]
+            self.fitfunction.parameterBoundsExpressions = [[None,None] for _ in range(len(self.fitfunction.startParameters))]
         self.endResetModel()
         
     def allDataChanged(self):
@@ -107,7 +110,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
         return True
     
     def setParametersBoundsExpression(self, bound, row, value):
-        self.fitfunction.parameterBoundsExpressions[row][bound] = str(value)
+        self.fitfunction.parameterBoundsExpressions[row][bound] = str(value) if value else None
         return True
 
     def setValue(self, index, value):
