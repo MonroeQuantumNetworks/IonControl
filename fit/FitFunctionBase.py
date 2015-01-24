@@ -20,6 +20,9 @@ from modules.Expression import Expression
 from modules.Observable import Observable
 
 
+class FitFunctionException(Exception):
+    pass
+
 class ResultRecord(object):
     def __init__(self, name=None, definition=None, value=None):
         self.name = name
@@ -36,14 +39,31 @@ class ResultRecord(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+fitFunctionMap = dict()    
+   
+class FitFunctionMeta(type):
+    def __new__(self, name, bases, dct):
+        if 'name' not in dct:
+            raise FitFunctionException("Fitfunction class needs to have class attribute 'name'")
+        instrclass = super(FitFunctionMeta, self).__new__(self, name, bases, dct)
+        fitFunctionMap[dct['name']] = instrclass
+        return instrclass
+    
+def native(method):
+    """Tag a method native to detect function overwrites in derived classes.
+    Used to detect whether smartStartValues are implemented"""
+    method.isNative = True
+    return method    
 
 class FitFunctionBase(object):
+    __metaclass__ = FitFunctionMeta
     expression = Expression()
     name = 'None'
     def __init__(self):
         self.epsfcn=0.0
-        self.parameterNames = []
         self.parameters = []
+        self.parameterNames = list()
         self.startParameters = []
         self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
         self.parameterEnabled = []
@@ -51,14 +71,14 @@ class FitFunctionBase(object):
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         self.useSmartStartValues = False
-        self.hasSmartStart = False
+        self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' )
         self.parametersUpdated = Observable()
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'useSmartStartValues', False )
         self.__dict__.setdefault( 'startParameterExpressions', None )
-        self.__dict__.setdefault( 'hasSmartStart', False)
+        self.__dict__.setdefault( 'hasSmartStart', not hasattr(self.smartStartValues, 'isNative' ) )
  
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -120,6 +140,7 @@ class FitFunctionBase(object):
             else:
                 self.parametersConfidence[index] = None        
 
+    @native
     def smartStartValues(self, x, y, parameters, enabled):
         return None
 
@@ -228,4 +249,3 @@ class FitFunctionBase(object):
     
         
         
-fitFunctionMap = dict()    
