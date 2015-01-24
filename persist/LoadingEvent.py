@@ -13,7 +13,6 @@ from sqlalchemy.exc import InvalidRequestError, IntegrityError, ProgrammingError
 from sqlalchemy.exc import OperationalError
 import logging
 from modules.Observable import Observable
-from modules.SequenceDict import SequenceDict
 
 Base = declarative_base()
 
@@ -77,6 +76,10 @@ class LoadingHistory(object):
             logging.getLogger(__name__).error( str(e) )
             self.session.rollback()
             self.session = self.Session()
+            
+    def setTrappingDuration(self, duration):
+        self._loadingEvents[-1].trappingDuration = duration
+        self.commit()
         
     def commit(self):
         try:

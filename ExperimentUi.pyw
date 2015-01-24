@@ -39,7 +39,6 @@ from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
 from functools import partial
 import externalParameter.ExternalParameter
-from externalParameter.InstrumentDict import InstrumentDict
 from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
@@ -49,6 +48,7 @@ from pulser.DACController import DACController    #@UnresolvedImport
 from gui.ValueHistoryUi import ValueHistoryUi
 from modules.doProfile import doprofile
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
+from externalParameter.ExternalParameterBase import InstrumentDict
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -280,6 +280,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         try:
             self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
             self.voltageControlWindow.setupUi(self.voltageControlWindow)
+            self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltages') )               
+            self.scanExperiment.updateScanTarget( 'Voltages', self.voltageControlWindow.globalAdjustUi.outputChannels() )
         except MyException.MissingFile as e:
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )

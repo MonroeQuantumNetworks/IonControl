@@ -79,14 +79,15 @@ class GlobalVariableUi(Form, Base ):
         Form.setupUi(self,parent)
         self.addButton.clicked.connect( self.onAddVariable )
         self.dropButton.clicked.connect( self.onDropVariable )
-        self.model = GlobalVariableTableModel(self.variables)
+        self.model = GlobalVariableTableModel(self.config, self.variables)
         self.tableView.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate()
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
         self.tableView.setSortingEnabled(True)   # triggers sorting
         self.model.restoreCustomOrder()          # to restore the last custom order
-        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
+        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown], [QtCore.Qt.Key_B] )
         self.filter.keyPressed.connect( self.onReorder )
+        self.filter.controlKeyPressed.connect( self.onBold )
         self.tableView.installEventFilter(self.filter)
         self.newNameEdit.returnPressed.connect( self.onAddVariable )
         # Context Menu
@@ -107,6 +108,7 @@ class GlobalVariableUi(Form, Base ):
     def saveConfig(self):
         self.config[self.configname] = self._variables_
         self.config[self.configname+".guiState"] = saveGuiState( self )
+        self.model.saveConfig()
 
     def onReorder(self, key):
         if key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
@@ -119,6 +121,11 @@ class GlobalVariableUi(Form, Base ):
                 selectionModel.clearSelection()
                 for index in indexes:
                     selectionModel.select( self.model.createIndex(index.row()+delta,index.column()), QtGui.QItemSelectionModel.Select )
+                    
+    def onBold(self, key):
+        indexes = self.tableView.selectedIndexes()
+        for index in indexes:
+            self.model.toggleBold( index )
                     
     def update(self, updlist):
         self.model.update(updlist)

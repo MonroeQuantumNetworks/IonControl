@@ -130,6 +130,7 @@ class ScanControlParameters:
 
 class ScanControl(ScanControlForm, ScanControlBase ):
     ScanModes = enum('SingleScan','RepeatedScan','StepInPlace','GateSequenceScan')
+    currentScanChanged = QtCore.pyqtSignal( object )
     integrationMode = enum('IntegrateAll','IntegrateRun','NoIntegration')
     scanConfigurationListChanged = QtCore.pyqtSignal( object )
     logger = logging.getLogger(__name__)
@@ -208,6 +209,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.evaluate(self.globalVariablesUi.variables)
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
         self.comboBoxScanTarget.currentIndexChanged[QtCore.QString].connect( self.onChangeScanTarget )
+        self.currentScanChanged.emit( self.settingsName )
        
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):
@@ -298,7 +300,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.loadPPComboBox.addItems(pulseProgramUi.contextDict.keys())
             if self.settings.loadPPName: 
                 self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
-        self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        try:
+            self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
+        except TypeError:
+            pass  # is raised if the connection already existed
+            
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()
@@ -444,6 +450,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settingsDict[self.settingsName] = copy.deepcopy(self.settings)
             self.scanConfigurationListChanged.emit( self.settingsDict )
         self.checkSettingsSavable(savable=False)
+        self.currentScanChanged.emit( self.settingsName )
 
     def onRemove(self):
         name = str(self.comboBox.currentText())
@@ -460,6 +467,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
         self.checkSettingsSavable()
+        self.currentScanChanged.emit( self.settingsName )
 
     def loadSetting(self, name):
         if name and self.comboBox.findText(name)>=0:

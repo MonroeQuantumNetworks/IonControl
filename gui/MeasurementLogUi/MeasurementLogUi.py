@@ -58,7 +58,7 @@ class Settings:
         self.__dict__.setdefault( 'yUnit', "")
 
 class MeasurementLogUi(Form, Base ):
-    timespans = ['Today','Three days','One week','One month', 'Three month', 'One year', 'All', 'Custom']
+    timespans = ['Today','Two days','Three days','One week','One month', 'Three month', 'One year', 'All', 'Custom']
     mySplitters = ['splitterHorizontal', "splitterVertical", "splitterHorizontalParam", "splitterLeftVertical" ]
     myTableViews = ["measurementTableView", "resultTableView", "studyTableView", "parameterTableView", "scanNameTableView"]
     def __init__(self, config, dbConnection, parent=None):
@@ -71,8 +71,9 @@ class MeasurementLogUi(Form, Base ):
         self.container = MeasurementContainer(dbConnection)
         self.container.open()
         self.fromToTimeLookup = [ lambda now: (datetime.combine(now.date(), time()), datetime.combine(now + timedelta(days=1), time())),              # today
-                           lambda now: (datetime.combine(now - timedelta(days=3), time()),  datetime.combine(now + timedelta(days=1), time())),  # three days ago
-                           lambda now: (datetime.combine(now - timedelta(days=7), time()),  datetime.combine(now + timedelta(days=1), time())),  # one week
+                           lambda now: (datetime.combine(now - timedelta(days=1), time()),  datetime.combine(now + timedelta(days=1), time())),  # three days ago
+                           lambda now: (datetime.combine(now - timedelta(days=2), time()),  datetime.combine(now + timedelta(days=1), time())),  # three days ago
+                           lambda now: (datetime.combine(now - timedelta(days=6), time()),  datetime.combine(now + timedelta(days=1), time())),  # one week
                            lambda now: (datetime.combine(now - timedelta(days=30), time()), datetime.combine(now + timedelta(days=1), time())),   # 30 days
                            lambda now: (datetime.combine(now - timedelta(days=90), time()), datetime.combine(now + timedelta(days=1), time())),   # 90 days
                            lambda now: (datetime.combine(now - timedelta(years=1), time()), datetime.combine(now + timedelta(days=1), time())),   # 1 year
@@ -106,6 +107,14 @@ class MeasurementLogUi(Form, Base ):
         self.scanNameTableModel = ScanNameTableModel( self.container.scanNames, self.container)
         self.scanNameTableView.setModel( self.scanNameTableModel )
         self.scanNameTableModel.scanNameFilterChanged.connect( self.onFilterSelection )
+        # Context Menu for ScanName table
+        self.scanNameTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.selectAllAction = QtGui.QAction( "select all" , self)
+        self.selectAllAction.triggered.connect( partial( self.scanNameTableModel.showAll, True )  )
+        self.scanNameTableView.addAction( self.selectAllAction )
+        self.deselectAllAction = QtGui.QAction( "deselect all" , self)
+        self.deselectAllAction.triggered.connect( partial( self.scanNameTableModel.showAll, False )  )
+        self.scanNameTableView.addAction( self.deselectAllAction )
         # Context Menu for ResultsTable
         self.resultTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addResultToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)

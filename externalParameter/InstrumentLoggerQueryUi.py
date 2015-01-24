@@ -51,9 +51,8 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.parameters = self.config.get("InstrumentLoggerQueryUi",Parameters())
         self.traceui = traceui
         self.plotDict = plotDict
-        self.connection = ValueHistoryStore(getDatabaseConnection().connectionString)
+        self.connection = ValueHistoryStore(getDatabaseConnection())
         self.connection.open_session()
-        self.utcOffset = (datetime.utcnow()-datetime.now()).total_seconds()
         self.cache = dict()
     
     def setupUi(self,MainWindow):

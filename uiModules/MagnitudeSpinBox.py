@@ -30,7 +30,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
     expression = Expression.Expression()
     
-    def __init__(self, parent=None, globalDict=None, valueChangedOnEditingFinished=True):
+    def __init__(self, parent=None, globalDict=None, valueChangedOnEditingFinished=True, emptyStringValue=0):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
         if valueChangedOnEditingFinished:
@@ -43,6 +43,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.blackTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.black )
         self._dimension = None   # if not None enforces the dimension
         self.globalDict = globalDict if globalDict is not None else dict()
+        self.emptyStringValue = emptyStringValue
 
     @property
     def dimension(self):
@@ -107,13 +108,13 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def value(self):
         try:
-            text = str( self.lineEdit().text() )
+            text = str( self.lineEdit().text() ).strip()
             if len(text)>0:
                 value = self.expression.evaluateAsMagnitude(text, self.globalDict )
                 if self._dimension is not None and value.unit != self._dimension.unit:
                     raise DimensionMismatch("Got unit {0} expected {1}".format(value.unit,self._dimension.unit))
             else:
-                value = 0
+                value = self.emptyStringValue
         except Exception as e:
             self.lineEdit().setPalette( self.redTextPalette )
             logging.getLogger(__name__).exception("value")

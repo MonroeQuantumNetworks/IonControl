@@ -18,6 +18,8 @@ class StoredFitFunction(object):
         self.results = HashableDict()
         self.startParameterExpressions = None
         self.useSmartStartValues = False
+        self.parameterBounds = tuple()
+        self.parameterBoundsExpressions = tuple()
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -25,6 +27,8 @@ class StoredFitFunction(object):
         self.__dict__.setdefault( 'parametersConfidence', tuple() )
         self.__dict__.setdefault( 'startParameterExpressions', None )
         self.__dict__.setdefault( 'useSmartStartValues', False )
+        self.__dict__.setdefault( 'parameterBounds', tuple(((None,None) for _ in range(len(self.parameters)))))
+        self.__dict__.setdefault( 'parameterBoundsExpressions', tuple(((None,None) for _ in range(len(self.parameters)))))
 
     def fitfunction(self):
         fitfunction = fitFunctionMap[self.fitfunctionName]()
@@ -36,6 +40,8 @@ class StoredFitFunction(object):
         fitfunction.parametersConfidence = list(self.parametersConfidence)
         for result in self.results.values():
             fitfunction.results[result.name] = ResultRecord(name=result.name, definition=result.definition, value=result.value)
+        fitfunction.parameterBounds = [ list(bound) for bound in self.parameterBounds ] if self.parameterBounds else [[None,None] for _ in range(len(fitfunction.parameterNames))]
+        fitfunction.parameterBoundsExpressions =  [ list(bound) for bound in self.parameterBoundsExpressions ] if self.parameterBoundsExpressions else [[None,None] for _ in range(len(fitfunction.parameterNames))]
         return fitfunction
     
     @classmethod
@@ -50,9 +56,12 @@ class StoredFitFunction(object):
         instance.useSmartStartValues = fitfunction.useSmartStartValues
         for result in fitfunction.results.values():
             instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition, value=result.value)
+        instance.parameterBounds = tuple( (tuple(bound) for bound in fitfunction.parameterBounds) )
+        instance.parameterBoundsExpressions = tuple( (tuple(bound) for bound in fitfunction.parameterBoundsExpressions) )
         return instance
      
-    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'useSmartStartValues', 'startParameterExpressions', 'parameters', 'parametersConfidence'] 
+    stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'useSmartStartValues', 'startParameterExpressions', 'parameters', 'parametersConfidence',
+                   'parameterBounds', 'parameterBoundsExpressions'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)

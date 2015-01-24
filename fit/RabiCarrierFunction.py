@@ -19,10 +19,10 @@ from modules.magnitude import mg
 
 class RabiCarrierFunction(FitFunctionBase):
     name = "RabiCarrier"
+    functionString =  'Explicit Carrier Rabi Transition with Lamb-Dicke approximation'
+    parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength']
     def __init__(self):
         FitFunctionBase.__init__(self)
-        self.functionString =  'Explicit Carrier Rabi Transition with Lamb-Dicke approximation'
-        self.parameterNames = [ 'A', 'n', 'rabiFreq', 'mass','angle','trapFrequency','wavelength']
         self.parameters = [1,7,0.28,40,0,1.578,729]
         self.startParameters = [1,7,0.28,40,0,mg(1.578,'MHz'),mg(729,'nm')]
         self.units = [None, None, None, None, None, 'MHz', 'nm' ]
@@ -50,9 +50,7 @@ class RabiCarrierFunction(FitFunctionBase):
         self.results['scIncrement'] = ResultRecord( name='scIncrement',value=(taufinal-scTimeInit)/nstart )
         self.results['numberLoops'] = ResultRecord( name='numberLoops',value=nstart )
         self.results['eta'] = ResultRecord( name='eta',value=eta )
-        
-
-        
+                
     def residuals(self,p, y, x, sigma):
         A,n,omega,mass,angle,trapFrequency,wavelength = self.allFitParameters(p)
         secfreq = trapFrequency*10**6
@@ -82,9 +80,9 @@ class RabiCarrierFunction(FitFunctionBase):
         
 class FullRabiCarrierFunction(RabiCarrierFunction):
     name = "FullRabiCarrier"
+    functionString =  'Numerical Carrier Rabi Transition without Lamb-Dicke approx'
     def __init__(self):
         super(FullRabiCarrierFunction,self).__init__()
-        self.functionString =  'Numerical Carrier Rabi Transition without Lamb-Dicke approx'
         self.laguerreCacheEta = -1
         self.laguerreTable = None
         self.pnCacheBeta = -1

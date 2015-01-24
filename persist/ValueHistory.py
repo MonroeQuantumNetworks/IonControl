@@ -12,6 +12,7 @@ from sqlalchemy.exc import InvalidRequestError, IntegrityError
 from modules.magnitude import is_magnitude
 from sqlalchemy.exc import OperationalError
 import logging
+from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 
 Base = declarative_base()
     
@@ -47,9 +48,9 @@ class ValueHistoryEntry(Base):
         
     
 class ValueHistoryStore:
-    def __init__(self,database_conn_str):
-        self.database_conn_str = database_conn_str
-        self.engine = create_engine(self.database_conn_str, echo=False)
+    def __init__(self,dbConnection):
+        self.database_conn_str = dbConnection.connectionString
+        self.engine = create_engine(self.database_conn_str, echo=dbConnection.echo)
         self.sourceDict = dict()
         self.databaseAvailable = False
         
@@ -97,7 +98,8 @@ class ValueHistoryStore:
             self.session = self.Session()
             self.refreshSourceDict()
             self.databaseAvailable = True
-        except OperationalError:
+        except OperationalError as e:
+            logging.getLogger(__name__).info( str(e))
             self.databaseAvailable = False
         return self
         
@@ -147,7 +149,7 @@ class ValueHistoryStore:
         
 if __name__ == "__main__":
     import datetime
-    with ValueHistoryStore("postgresql://python:yb171@localhost/ioncontrol") as d:
+    with ValueHistoryStore(DatabaseConnectionSettings(user='python', database='ioncontrol', password='yb171', host='localhost')) as d:
         d.add('test', 'Peter', 12, 'mm', datetime.datetime.now())
         d.add('test', 'Peter', 13, 'mm', datetime.datetime.now())
         d.add('test', 'Peter', 14, 'mm', datetime.datetime.now(), bottom=3, top=15 )

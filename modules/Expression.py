@@ -15,6 +15,7 @@ from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
     ZeroOrMore,Forward,nums,alphas
 
 import magnitude as magnitude
+from itertools import dropwhile
 
 
 point = Literal( "." )
@@ -147,7 +148,7 @@ class Expression:
     def _evaluate_literal(self, literal, useFloat):
         l = self.fmag.parseString(literal)
         m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
-        m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
+        m.significantDigits = len(list(dropwhile(lambda s: s=='0', filter( lambda s: s.isdigit(), l.get('num','1') ))))
         if useFloat and m.dimensionless():
             value = m.val
         else:

@@ -71,13 +71,17 @@ class PushVariable(object):
         if variables is not None:
             self.evaluate(variables)
         if (self.push and self.destinationName is not None and self.destinationName != 'None' and 
-            self.variableName is not None and self.variableName != 'None' and self.value is not None and 
-            (not self.minimum or self.value >= self.minimum) and 
-            (not self.maximum or self.value <= self.maximum)):
-            return [(self.destinationName, self.variableName, self.value)]
+            self.variableName is not None and self.variableName != 'None' and self.value is not None):
+            if ((not self.minimum or self.value >= self.minimum) and 
+                (not self.maximum or self.value <= self.maximum)):
+                return [(self.destinationName, self.variableName, self.value)], []
+            else:
+                logging.getLogger(__name__).error("Result out of range, Not pushing {0} to {1}: {2} <= {3} <= {4}".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
+                return [], [(self.destinationName, self.variableName)]
         else:
-            logging.getLogger(__name__).info("Not pushing {0} to {1}: {2} <= {3} <= {4}".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
-        return []
+            if (self.push):
+                logging.getLogger(__name__).error("Not pushing {0} to {1}: {2} <= {3} <= {4}, push not fully specified".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
+        return [], []
     
     @property
     def key(self):

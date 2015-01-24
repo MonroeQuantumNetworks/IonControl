@@ -16,10 +16,11 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
     is constructed.
     """    
     
-    def __init__(self, globalDict=None):
+    def __init__(self, globalDict=None, emptyStringValue=0):
         """Construct the TraceComboDelegate object, and set the penicons array."""
         QtGui.QItemDelegate.__init__(self)
         self.globalDict = globalDict if globalDict is not None else dict()
+        self.emptyStringValue = emptyStringValue
         
     def createEditor(self, parent, option, index ):
         """Create the combo box editor used to select which pen icon to use.
@@ -29,9 +30,13 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
             localDict.update( index.model().localReplacementDict() )
         else:
             localDict = self.globalDict
-        editor = MagnitudeSpinBox(parent, globalDict = localDict, valueChangedOnEditingFinished=False)
+        editor = MagnitudeSpinBox(parent, globalDict = localDict, valueChangedOnEditingFinished=False, emptyStringValue=self.emptyStringValue)
         editor.dimension = index.model().data(index,QtCore.Qt.UserRole)
         editor.valueChanged.connect( partial( index.model().setValue, index ))
+        completer = QtGui.QCompleter( localDict.keys(), self )
+        completer.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        completer.setCompletionMode(QtGui.QCompleter.InlineCompletion)
+        editor.lineEdit().setCompleter( completer )
         return editor
         
     def setEditorData(self, editor, index):

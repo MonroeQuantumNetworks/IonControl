@@ -49,3 +49,10 @@ class ScanNameTableModel(QtCore.QAbstractTableModel):
             if (orientation == QtCore.Qt.Horizontal): 
                 return self.headerDataLookup[section]
         return None  # QtCore.QVariant()
+    
+    def showAll(self, show):
+        for row in range(len(self.scanNames)):
+            self.scanNames.setAt(row, show)
+            self.scanNameFilterChanged.emit( self.scanNames)
+            self.dataChanged.emit( self.createIndex(0,0), self.createIndex(0,len(self.scanNames)))
+       

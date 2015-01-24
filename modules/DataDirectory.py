@@ -32,7 +32,7 @@ class DataDirectory:
     def setProject(self,project):
         self.project = project
     
-    def path(self, current=None):
+    def path(self, current=None, extradir=''):
         if not current:
             current = datetime.date.today()
         #basedir = os.path.join(os.path.expanduser("~\\Documents\\"),self.project)
@@ -40,11 +40,14 @@ class DataDirectory:
         yeardir = os.path.join(basedir,str(current.year))
         monthdir = os.path.join(yeardir,"{0}_{1:02d}".format(current.year,current.month))
         daydir = os.path.join(monthdir,"{0}_{1:02d}_{2:02d}".format(current.year,current.month,current.day))
+        fulldir = os.path.join(daydir,extradir)
         if not os.path.exists(basedir):
             raise DataDirectoryException("Data directory '{0}' does not exist.".format(basedir))
         if not os.path.exists(daydir):
             os.makedirs(daydir)
-        return daydir;
+        if extradir and not os.path.exists(fulldir):
+            os.makedirs(fulldir)
+        return daydir if not extradir else fulldir
         
     def sequencefile(self,name,  current=None):
         """
@@ -59,8 +62,9 @@ class DataDirectory:
         _000 serial is inserted before the file extension or at the end of the name if the filename has no extension.
         The directory is reread every time.
         """
-        directory = self.path(current)
-        fileName, fileExtension = os.path.splitext(name)
+        extradir, leaf = os.path.split(name)
+        directory = self.path(current, extradir=extradir)
+        fileName, fileExtension = os.path.splitext(leaf)
         pattern = re.compile(re.escape(fileName)+"_(?P<num>\\d+)"+re.escape(fileExtension))
         maxNumber = 0
         for name in os.listdir(directory):
