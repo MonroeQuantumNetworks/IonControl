@@ -18,6 +18,7 @@ from modules.SequenceDict import SequenceDict
 import xml.etree.ElementTree as ElementTree
 from modules.Expression import Expression
 from modules.Observable import Observable
+from packages.leastsqbound.leastsqbound import leastsqbound
 
 
 class FitFunctionException(Exception):
@@ -60,25 +61,29 @@ class FitFunctionBase(object):
     __metaclass__ = FitFunctionMeta
     expression = Expression()
     name = 'None'
-    def __init__(self):
+    def __init__(self, numParameters):
         self.epsfcn=0.0
-        self.parameters = []
+        self.parameters = [0] * numParameters
         self.parameterNames = list()
-        self.startParameters = []
+        self.startParameters = [1] * numParameters 
         self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
-        self.parameterEnabled = []
-        self.parametersConfidence = []
+        self.parameterEnabled = [True] * numParameters
+        self.parametersConfidence = [None] * numParameters
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         self.useSmartStartValues = False
         self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' )
         self.parametersUpdated = Observable()
+        self.parameterBounds = [(None,None) for _ in range(numParameters) ]
+        self.parameterBoundsExpressions = None
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'useSmartStartValues', False )
         self.__dict__.setdefault( 'startParameterExpressions', None )
         self.__dict__.setdefault( 'hasSmartStart', not hasattr(self.smartStartValues, 'isNative' ) )
+        self.__dict__.setdefault( 'parameterBounds' , [(None,None) for _ in range(len(self.parameterNames)) ]  )
+        self.__dict__.setdefault( 'parameterBoundsExpressions' , None)
  
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -151,6 +156,11 @@ class FitFunctionBase(object):
         if self.startParameterExpressions is not None:
             self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
 
+    def enabledBounds(self):
+        result = [bounds for enabled, bounds in zip(self.parameterEnabled, self.parameterBounds) if enabled]
+        enabled = any( (any(bounds) for bounds in result) )
+        return result if enabled else None
+
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
         # Ensure all values of sigma or non zero by replacing with the minimum nonzero value
@@ -164,7 +174,12 @@ class FitFunctionBase(object):
             if smartParameters is not None:
                 parameters = [ smartparam if enabled else param for enabled, param, smartparam in zip(self.parameterEnabled, parameters, smartParameters)]
         
-        enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
+        myEnabledBounds = self.enabledBounds()
+        if myEnabledBounds:
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsqbound(self.residuals, self.enabledStartParameters(parameters), 
+                                                                                                 args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True, bounds=myEnabledBounds)
+        else:
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
         self.setEnabledFitParameters(enabledOnlyParameters)
         self.update(self.parameters)
         logger.info( "chisq {0}".format( sum(self.infodict["fvec"]*self.infodict["fvec"]) ) )        
