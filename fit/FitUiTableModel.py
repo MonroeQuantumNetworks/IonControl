@@ -29,7 +29,9 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
                             (QtCore.Qt.DisplayRole,6): self.confidenceValue,
                             (QtCore.Qt.DisplayRole,7): self.relConfidenceValue,
                             (QtCore.Qt.ToolTipRole,2): lambda row: self.fitfunction.startParameterExpressions[row] if self.fitfunction.startParameterExpressions[row] is not None else None,
-                            (QtCore.Qt.BackgroundRole,2): lambda row: self.backgroundLookup[self.fitfunction.startParameterExpressions[row] is not None]  }
+                            (QtCore.Qt.BackgroundRole,2): lambda row: self.backgroundLookup[self.fitfunction.startParameterExpressions[row] is not None],
+                            (QtCore.Qt.BackgroundRole,3): lambda row: self.backgroundLookup[self.fitfunction.parameterBoundsExpressions[row][0] is not None],
+                            (QtCore.Qt.BackgroundRole,4): lambda row: self.backgroundLookup[self.fitfunction.parameterBoundsExpressions[row][1] is not None]  }
         self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setParametersEnabled,
                                (QtCore.Qt.EditRole,2): self.setStartParameters,
                                (QtCore.Qt.UserRole,2): self.setStartParameterExpression,

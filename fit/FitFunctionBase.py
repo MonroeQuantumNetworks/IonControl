@@ -158,6 +158,10 @@ class FitFunctionBase(object):
             myReplacementDict.update( globalDict )
         if self.startParameterExpressions is not None:
             self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
+        if self.parameterBoundsExpressions is not None:
+            self.parameterBounds = [[bound[0] if expr[0] is None else self.expression.evaluateAsMagnitude(expr[0], myReplacementDict),
+                                     bound[1] if expr[1] is None else self.expression.evaluateAsMagnitude(expr[0], myReplacementDict)]
+                                     for bound, expr in zip(self.parameterBounds, self.parameterBoundsExpressions)]
 
     def enabledBounds(self):
         result = [[value(bounds[0]), value(bounds[1])] for enabled, bounds in zip(self.parameterEnabled, self.parameterBounds) if enabled]
