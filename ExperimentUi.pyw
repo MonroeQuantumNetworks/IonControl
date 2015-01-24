@@ -39,7 +39,6 @@ from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
 from functools import partial
 import externalParameter.ExternalParameter
-from externalParameter.InstrumentDict import InstrumentDict
 from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
@@ -49,6 +48,7 @@ from pulser.DACController import DACController    #@UnresolvedImport
 from gui.ValueHistoryUi import ValueHistoryUi
 from modules.doProfile import doprofile
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
+from externalParameter.ExternalParameterBase import InstrumentDict
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
