@@ -12,6 +12,7 @@ from modules.Expression import Expression
 from DDSTableModel import DDSTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.GuiAppearance import restoreGuiState, saveGuiState 
+import logging
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
@@ -85,7 +86,10 @@ class DDSUi(DDSForm, DDSBase):
         self.writeAllButton.clicked.connect( self.onWriteAll )
         self.autoApplyBox.setChecked( self.autoApply )
         self.autoApplyBox.stateChanged.connect( self.onStateChanged )
-        self.onWriteAll()
+        try:
+            self.onWriteAll()
+        except Exception as e:
+            logging.getLogger(__name__).error( "Ignored error while setting DDS: {0}".format(e) )
         self.onApply()
         self.ddsTableModel.frequencyChanged.connect( self.onFrequency )
         self.ddsTableModel.phaseChanged.connect( self.onPhase )
