@@ -13,9 +13,14 @@ import logging
 class DACControllerException(Exception):
     pass
 
-
 class DACController( OKBase ):
     channelCount = 112
+    @staticmethod
+    def shuttleLookupCode(edge, channelCount):
+        return struct.pack('=IIII', edge.stopLine*2*channelCount, edge.startLine*2*edge.channelCount,
+                             edge.idle_count, 0x0)
+
+    
     def toInteger(self, iterable):
         result = list()
         for value in chain(iterable[0::4], iterable[1::4], iterable[2::4], iterable[3::4]):
@@ -62,15 +67,24 @@ class DACController( OKBase ):
     def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
         data = bytearray()
         for shuttleEdge in shuttleEdges:
-            data.extend( shuttleEdge.code( self.channelCount ) )
+            data.extend( self.shuttleLookupCode(shuttleEdge, self.channelCount ) )
         self.xem.SetWireInValue(0x3, startAddress<<3 )
         self.xem.UpdateWireIns()
         self.xem.ActivateTriggerIn( 0x40, 2)
         self.xem.WriteToPipeIn( 0x85, data )       
     
-    def shuttle(self, startLine, beyondEndLine, idleCount=0, direction=0, soft_trigger=0 ):
-        startCode = ( startLine*2*self.channelCount & 0x7fffffff ) | ((direction & 0x1) << 31 )
-        self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', (0x01000001) | ((soft_trigger &0x1)<<1) , idleCount, startCode, beyondEndLine*2*self.channelCount))
+    def shuttleDirect(self, startLine, beyondEndLine, idleCount=0, immediate_trigger=False ):
+        self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', (0x01000000 | self.boolToCode(immediate_trigger)), 
+                                                  idleCount, startLine*2*self.channelCount, beyondEndLine*2*self.channelCount))
+        
+    @staticmethod
+    def boolToCode( b, bit=0 ):
+        return 1<<bit if b else 0
+        
+    def shuttle(self, lookupIndex, reverse_edge=False, immediate_trigger=False):
+        self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', 0x03000000,  0x0, 
+                                                  self.boolToCode(reverse_edge, 1)|self.boolToCode(immediate_trigger), lookupIndex))
+        
     
     def triggerShuttling(self):
         check( self.xem.ActivateTriggerIn( 0x40, 0), 'ActivateTrigger' )

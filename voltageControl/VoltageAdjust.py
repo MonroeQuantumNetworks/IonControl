@@ -70,7 +70,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.uploadEdgesButton.clicked.connect( self.onUploadEdgesButton )
         restoreGuiState(self, self.config.get('VoltageAdjust.GuiState'))
         self.shuttlingGraph.currentPositionNameObservable.subscribe( self.setCurrentPositionLabel )
-        self.destinationComboBox.currentIndexChanged[QtCore.QString].connect( self.onShuttleEdge )
+        self.destinationComboBox.currentIndexChanged[QtCore.QString].connect( self.onShuttleSequence )
         
     def onUploadData(self):
         pass
@@ -84,42 +84,18 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     def onCurrentPositionEvent(self, event):
         self.currentPositionLabel.setText( firstNotNone(self.shuttlingGraph.currentPositionName, "") )           
 
-    def onShuttleSequence(self, cont=False):
+    def onShuttleSequence(self, destination, cont=False):
+        destination = str(destination)
         logger = logging.getLogger(__name__)
         logger.info( "ShuttleSequence" )
-#         first = self.shuttlingEdges[0].definition.fromLine
-#         last = self.shuttlingEdges[-1].definition.toLine
-#         if self.adjust.line==first:
-#             reverse = False
-#         elif self.adjust.line==last:
-#             reverse = True
-#         else:
-#             raise ShuttlingException("Current Line has to be either first line or last line of shuttling definition")
-#         definitionlist = [edgeui.definition for edgeui in self.shuttlingEdges]
-#         for item in definitionlist:
-#             item.lineGain = self.adjust.lineGain
-#             item.globalGain = self.adjust.globalGain
-#             item.reverse = reverse
-#         self.shuttleOutput.emit( definitionlist, cont )
+        path = self.shuttlingGraph.shuttlePath(None, destination)
+        if path:
+            self.shuttleOutput.emit( path, cont )
 
     def onShuttlingDone(self,currentline):
         self.lineBox.setValue(currentline)
         self.adjust.line = currentline
 
-    def onShuttleEdge(self, destination):
-        logger = logging.getLogger(__name__)
-        logger.info( "ShuttleEdge {0}".format( index ) )
-        definition = self.shuttlingEdges[index].definition
-        if self.adjust.line==definition.fromLine:
-            definition.reverse = False
-        elif self.adjust.line==definition.toLine:
-            definition.reverse = True
-        else:
-            raise ShuttlingException("Current Line has to be either first line or last line of shuttling definition")
-        definition.lineGain = self.adjust.lineGain
-        definition.globalGain = self.adjust.globalGain
-        self.shuttleOutput.emit( [self.shuttlingEdges[index].definition], False )
-        
     def addShuttlingEdge(self):
         edge = ShuttleEdge()
         self.shuttleEdgeTableModel.add(edge)

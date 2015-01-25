@@ -36,6 +36,7 @@ class HardwareException(Exception):
 
 class NoneHardware(object):
     name = "No DAC Hardware"
+    nativeShuttling = False
     def __init__(self):
         pass
     
@@ -96,6 +97,7 @@ class NIHardware(object):
 
 class FPGAHardware(object):
     name = "FPGA Hardware"
+    nativeShuttling = True
     def __init__(self, dacController):
         self.dacController = dacController
         
@@ -205,11 +207,11 @@ class VoltageBlender(QtCore.QObject):
             
     def shuttle(self, definition, cont):
         logger = logging.getLogger(__name__)
-        if True:
-            for edge in definition:
-                for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
-                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
-                    self.applyLine(line,edge.lineGain,edge.globalGain)
+        if not self.hardware.nativeShuttling:
+            for start, stop, edge in definition:
+                fromLine, toLine = (edge.startLine, edge.stopLine) if start==edge.startName else (edge.stopLine, edge.startLine)
+                for line in numpy.linspace(fromLine, toLine, edge.steps+2, True):
+                    self.applyLine(line,self.lineGain,self.globalGain)
                     logger.debug( "shuttling applied line {0}".format( line ) )
             self.shuttlingOnLine.emit(line)
         else:  # this stuff does not work yet

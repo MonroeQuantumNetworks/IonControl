@@ -21,11 +21,6 @@ class ShuttleEdge(object):
         self.startName = startName
         self.stopName = stopName
         self.steps = 0
-        
-    def code(self, channelCount):
-        struct.pack('=IIII', self.stopLine*2*channelCount, ( self.startLine*2*self.channelCount & 0x7fffffff ) | ((self.direction & 0x1) << 31 ),
-                             self.idle_count, (self.wait & 0x1) | ((self.soft_trigger &0x1)<<1))
-
 
 class ShuttlingGraphException(Exception):
     pass
@@ -139,7 +134,8 @@ class ShuttlingGraph(list):
             self.nodeLookup[edge.stopLine] = edge.stopName
             self.graphChangedObservable.firebare()
             self.setPosition(self.currentPosition)
-            return True      
+            return True  
+        return False
     
     def setIdleCount(self, edgeno, idleCount):
         self[edgeno].idleCount = idleCount
@@ -150,8 +146,9 @@ class ShuttlingGraph(list):
         return True      
     
     def shuttlePath(self, fromName, toName ):
+        fromName = firstNotNone(fromName, self.currentPositionName)
         sp = shortest_path(self.shuttlingGraph, fromName, toName)
-        return [ self.shuttlingGraph.edge[a][b]['edge'] for a,b in pairs_iter(sp)]
+        return [ (a,b,self.shuttlingGraph.edge[a][b]['edge']) for a,b in pairs_iter(sp)]
     
     def nodes(self):
         return self.shuttlingGraph.nodes()
