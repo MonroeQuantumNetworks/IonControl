@@ -28,7 +28,7 @@ try:
     HardwareDriverLoaded = True
 except ImportError as e:
     logger = logging.getLogger(__name__)
-    logger.error( "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e) )
+    logger.warning( "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e) )
     HardwareDriverLoaded = False
 
 class HardwareException(Exception):
@@ -40,10 +40,10 @@ class NoneHardware(object):
         pass
     
     def applyLine(self, line):
-        logging.getLogger(__name__).error( "Hardware Driver not loaded, cannot write voltages" )
+        logging.getLogger(__name__).warning( "Hardware Driver not loaded, cannot write voltages" )
 
     def shuttle(self, outputmatrix, lineno):
-        logging.getLogger(__name__).error( "Hardware Driver not loaded, cannot write voltages" )
+        logging.getLogger(__name__).warning( "Hardware Driver not loaded, cannot write voltages" )
 
     def close(self):
         pass

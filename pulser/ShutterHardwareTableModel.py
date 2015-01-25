@@ -44,7 +44,7 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
             if value in self.data.channels and index.column()==self.data.channels[value]: # no change
                 return True
             elif value in self.data.channels: # duplicate
-                logger.error( "cannot have the same name twice" )
+                logger.warning( "cannot have the same name twice" )
                 return False
             else:
                 if value != '':

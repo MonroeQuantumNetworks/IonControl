@@ -68,7 +68,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
                     else:
                         self.pulser.openBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
                 except IOError as e:
-                    logging.getLogger(__name__).error( e.strerror )
+                    logging.getLogger(__name__).warning( e.strerror )
                     self.exec_()
             else:
                 self.exec_()

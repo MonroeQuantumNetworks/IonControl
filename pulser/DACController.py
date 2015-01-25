@@ -50,8 +50,8 @@ class DACController( OKBase ):
         if line is not None:
             matches = all(result == numpy.array(self.toInteger(line)))
             if not matches:
-                logging.getLogger(__name__).error( "{0} {1}".format(len(self.toInteger(line)),list(self.toInteger(line))))
-                logging.getLogger(__name__).error( "{0} {1}".format(len(result),list(result)))            
+                logging.getLogger(__name__).warning( "{0} {1}".format(len(self.toInteger(line)),list(self.toInteger(line))))
+                logging.getLogger(__name__).warning( "{0} {1}".format(len(result),list(result)))            
                 #raise DACControllerException("Data read from memory does not match data written")
                 logging.getLogger(__name__).info("Data written and read does NOT match")
             else:

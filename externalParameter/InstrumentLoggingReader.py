@@ -34,7 +34,7 @@ class InstrumentLoggingReader(QtCore.QThread):
             logging.getLogger(__name__).info("ExceptionLogButton connected for new thread")
             self.newException.connect( GlobalExceptionLogButtonSlot )
         else:
-            logging.getLogger(__name__).error("ExceptionLogButton not available")            
+            logging.getLogger(__name__).warning("ExceptionLogButton not available")            
         while not self.exiting:
             try:
                 try:

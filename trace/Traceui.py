@@ -229,7 +229,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                             pass   # we ignore if the file cannot be found
                         self.model.dropTrace(parentIndex, row)
                     else:
-                        logger.error( "trace has children, please delete them first." )
+                        logger.warning( "trace has children, please delete them first." )
 
     def warningMessage(self, warningText, informativeText):
         """Pop up a warning message. Return the response."""
