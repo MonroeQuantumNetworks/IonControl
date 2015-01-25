@@ -148,7 +148,11 @@ class ShuttlingGraph(list):
     def shuttlePath(self, fromName, toName ):
         fromName = firstNotNone(fromName, self.currentPositionName)
         sp = shortest_path(self.shuttlingGraph, fromName, toName)
-        return [ (a,b,self.shuttlingGraph.edge[a][b]['edge']) for a,b in pairs_iter(sp)]
+        path = list()
+        for a,b in pairs_iter(sp):
+            edge = self.shuttlingGraph.edge[a][b]['edge']
+            path.append( (a,b,edge,self.index(edge) ))
+        return path
     
     def nodes(self):
         return self.shuttlingGraph.nodes()

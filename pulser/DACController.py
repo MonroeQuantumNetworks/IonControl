@@ -73,17 +73,17 @@ class DACController( OKBase ):
         self.xem.ActivateTriggerIn( 0x40, 2)
         self.xem.WriteToPipeIn( 0x85, data )       
     
-    def shuttleDirect(self, startLine, beyondEndLine, idleCount=0, immediate_trigger=False ):
-        self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', (0x01000000 | self.boolToCode(immediate_trigger)), 
+    def shuttleDirect(self, startLine, beyondEndLine, idleCount=0, immediateTrigger=False ):
+        self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', (0x01000000 | self.boolToCode(immediateTrigger)), 
                                                   idleCount, startLine*2*self.channelCount, beyondEndLine*2*self.channelCount))
         
     @staticmethod
     def boolToCode( b, bit=0 ):
         return 1<<bit if b else 0
         
-    def shuttle(self, lookupIndex, reverse_edge=False, immediate_trigger=False):
+    def shuttle(self, lookupIndex, reverseEdge=False, immediateTrigger=False):
         self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', 0x03000000,  0x0, 
-                                                  self.boolToCode(reverse_edge, 1)|self.boolToCode(immediate_trigger), lookupIndex))
+                                                  self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex))
         
     
     def triggerShuttling(self):
