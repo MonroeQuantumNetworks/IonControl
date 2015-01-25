@@ -13,7 +13,7 @@ import PyQt4.uic
 import modules.magnitude as magnitude
 from voltageControl.ShuttleEdgeTableModel import ShuttleEdgeTableModel
 from voltageControl.ShuttlingDefinition import ShuttlingGraph, ShuttleEdge
-from modules.PyqtUtility import updateComboBoxItems
+from modules.PyqtUtility import updateComboBoxItems, BlockSignals
 from modules.firstNotNone import firstNotNone
 from modules.Utility import unique
 from modules.GuiAppearance import restoreGuiState, saveGuiState
@@ -64,13 +64,12 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.shuttleEdgeTableModel = ShuttleEdgeTableModel(self.config, self.shuttlingGraph)
         self.edgeTableView.setModel(self.shuttleEdgeTableModel)
         self.currentPositionLabel.setText( firstNotNone( self.shuttlingGraph.currentPositionName, "" ) )
-        self.shuttlingGraph.currentPositionNameObservable.subscribe( self.onCurrentPositionEvent )
+        self.shuttlingGraph.currentPositionObservable.subscribe( self.onCurrentPositionEvent )
         self.shuttlingGraph.graphChangedObservable.subscribe( self.setupGraphDependent )
         self.setupGraphDependent()
         self.uploadDataButton.clicked.connect( self.onUploadData )
         self.uploadEdgesButton.clicked.connect( self.onUploadEdgesButton )
         restoreGuiState(self, self.config.get('VoltageAdjust.GuiState'))
-        self.shuttlingGraph.currentPositionNameObservable.subscribe( self.setCurrentPositionLabel )
         self.destinationComboBox.currentIndexChanged[QtCore.QString].connect( self.onShuttleSequence )
         
     def onUploadData(self):
@@ -86,7 +85,10 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         updateComboBoxItems( self.destinationComboBox, self.shuttlingGraph.nodes() )
 
     def onCurrentPositionEvent(self, event):
-        self.currentPositionLabel.setText( firstNotNone(self.shuttlingGraph.currentPositionName, "") )           
+        with BlockSignals(self.lineBox):
+            self.adjust.line = event.line
+            self.lineBox.setValue( self.adjust.line )          
+        self.currentPositionLabel.setText( firstNotNone(event.text, "") )           
 
     def onShuttleSequence(self, destination, cont=False):
         destination = str(destination)

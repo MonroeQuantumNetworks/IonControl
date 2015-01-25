@@ -230,6 +230,7 @@ class VoltageBlender(QtCore.QObject):
                 reverseEdge = start!=edge.startName
                 self.hardware.shuttle( index, reverseEdge, immediateTrigger=True)
                 self.shuttleTo = edge.startLine if reverseEdge else edge.stopLine
+            self.shuttlingOnLine.emit(self.shuttleTo)
                         
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))

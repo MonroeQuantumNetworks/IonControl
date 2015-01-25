@@ -32,7 +32,6 @@ class ShuttlingGraph(list):
         self.currentPositionName = None
         self.nodeLookup = dict()
         self.currentPositionObservable = Observable()
-        self.currentPositionNameObservable = Observable()
         self.graphChangedObservable = Observable()
         self.initGraph()
         
@@ -51,7 +50,7 @@ class ShuttlingGraph(list):
     def setPosition(self, line):
         self.currentPosition = line
         self.currentPositionName = self.position(line)
-        self.currentPositionNameObservable.fire( text = firstNotNone(self.currentPositionName, "") )
+        self.currentPositionObservable.fire( line=line, text=firstNotNone(self.currentPositionName, "") )
             
     def addEdge(self, edge):
         if not self.shuttlingGraph.has_edge( edge.startName, edge.stopName):

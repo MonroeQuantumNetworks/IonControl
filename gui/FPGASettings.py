@@ -91,7 +91,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
                 (self.configSettings.lastInstrument in self.deviceMap) and self.deviceMap[self.configSettings.lastInstrument].serial == self.settings.deviceSerial )            
             
     def initialize(self):
-        if self.resourcesAvailable():
+        if self.configSettings.enabled and self.resourcesAvailable():
             try:
                 if self.configSettings.autoUpload:
                     self.onUploadBitfile()
@@ -100,7 +100,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
                 return True
             except Exception as e:
                 return False
-        return False
+        return not self.configSettings.enabled
     
     def accept(self):
         if self.configSettings.enabled:
