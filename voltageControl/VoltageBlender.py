@@ -104,7 +104,7 @@ class FPGAHardware(object):
     def applyLine(self, line):
         self.dacController.writeVoltage( 0, line )
         self.dacController.readVoltage(0, line)
-        self.dacController.shuttle( 0, 1, 0, 0 )
+        self.dacController.shuttleDirect( 0, 1, idleCount=0, immediateTrigger=True )
         self.dacController.triggerShuttling()
         
     def shuttle(self, lookupIndex, reverseEdge=False, immediateTrigger=False ):
@@ -112,6 +112,13 @@ class FPGAHardware(object):
         
     def close(self):
         pass
+    
+    def writeData(self, address, lineList):
+        self.dacController.writeVoltages(address,lineList)
+        
+    def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
+        self.dacController.writeShuttleLookup(shuttleEdges, startAddress)
+ 
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
@@ -242,4 +249,9 @@ class VoltageBlender(QtCore.QObject):
     def close(self):
         self.hardware.close()
 
+    def writeShuttleLookup(self, edgeList, address=0):
+        self.dacController.writeShuttleLookup(edgeList,address)
     
+    def writeData(self):         
+        self.dacController.writeVoltages(1, [self.calculateLine(lineno, self.lineGain, self.globalGain) for lineno in range(len(self.lines))])
+        

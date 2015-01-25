@@ -39,7 +39,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageFilesUi = VoltageFiles(self.config)
         self.voltageFilesUi.setupUi( self.voltageFilesUi )
         self.voltageFilesDock.setWidget( self.voltageFilesUi )
-        self.adjustUi = VoltageAdjust(self.config)
+        self.adjustUi = VoltageAdjust(self.config, self.voltageBlender)
         self.adjustUi.updateOutput.connect( self.onUpdate )
         self.adjustUi.setupUi( self.adjustUi )
         self.adjustDock.setWidget( self.adjustUi )

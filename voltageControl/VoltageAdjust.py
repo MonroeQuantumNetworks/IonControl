@@ -40,7 +40,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
     shuttleOutput = QtCore.pyqtSignal(object, object)
     
-    def __init__(self,config,parent=None):
+    def __init__(self,config,voltageBlender,parent=None):
         VoltageAdjustForm.__init__(self)
         VoltageAdjustBase.__init__(self,parent)
         self.config = config
@@ -48,6 +48,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.settings = self.config.get(self.configname,Settings())
         self.adjust = self.settings.adjust
         self.shuttlingGraph = ShuttlingGraph()
+        self.voltageBlender = voltageBlender
 
     def setupUi(self, parent):
         VoltageAdjustForm.setupUi(self,parent)
@@ -73,11 +74,14 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.destinationComboBox.currentIndexChanged[QtCore.QString].connect( self.onShuttleSequence )
         
     def onUploadData(self):
-        pass
+        self.voltageBlender.writeData()
     
     def onUploadEdgesButton(self):
-        pass
+        self.writeShuttleLookup()
         
+    def writeShuttleLookup(self):
+        self.voltageBlender.writeShuttleLookup(self.shuttlingGraph)
+    
     def setupGraphDependent(self):
         updateComboBoxItems( self.destinationComboBox, self.shuttlingGraph.nodes() )
 

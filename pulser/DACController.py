@@ -15,10 +15,10 @@ class DACControllerException(Exception):
 
 class DACController( OKBase ):
     channelCount = 112
-    @staticmethod
-    def shuttleLookupCode(edge, channelCount):
-        return struct.pack('=IIII', edge.stopLine*2*channelCount, edge.startLine*2*edge.channelCount,
-                             edge.idle_count, 0x0)
+    @classmethod
+    def shuttleLookupCode(cls, edge, channelCount):
+        return struct.pack('=IIII', edge.stopLine*2*channelCount, edge.startLine*2*cls.channelCount,
+                             edge.idleCount, 0x0)
 
     
     def toInteger(self, iterable):
@@ -40,6 +40,20 @@ class DACController( OKBase ):
         data = bytearray(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
         print len(data), self.toInteger(line)
         #check( self.xem.ActivateTriggerIn( 0x40, 2), 'ActivateTrigger' )
+        return self.xem.WriteToPipeIn( 0x83, data )
+    
+    def writeVoltages(self, address, lineList ):
+        startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
+        # set the host write address
+        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
+        check( self.xem.ActivateTriggerIn( 0x43, 6), 'HostSetWriteAddress' )
+        
+        data = bytearray()
+        for line in lineList:
+            if len(line)<self.channelCount:
+                line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
+            data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
+        logging.getLogger(__name__).info("uploading {0} bytes to DAC controller, {1} voltage samples".format(len(data),len(data)/self.channelCount/2))
         return self.xem.WriteToPipeIn( 0x83, data )
     
     def readVoltage(self, address, line=None):
@@ -71,19 +85,20 @@ class DACController( OKBase ):
         self.xem.SetWireInValue(0x3, startAddress<<3 )
         self.xem.UpdateWireIns()
         self.xem.ActivateTriggerIn( 0x40, 2)
-        self.xem.WriteToPipeIn( 0x85, data )       
+        written = self.xem.WriteToPipeIn( 0x85, data )
+        logging.getLogger(__name__).info("Wrote ShuttleLookup table {0} bytes, {1} entries".format(written,written/16))   
     
     def shuttleDirect(self, startLine, beyondEndLine, idleCount=0, immediateTrigger=False ):
-        self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', (0x01000000 | self.boolToCode(immediateTrigger)), 
-                                                  idleCount, startLine*2*self.channelCount, beyondEndLine*2*self.channelCount))
+        self.xem.WriteToPipeIn( 0x86, bytearray( struct.pack('=IIII', (0x01000000 | self.boolToCode(immediateTrigger)), 
+                                                  idleCount, startLine*2*self.channelCount, beyondEndLine*2*self.channelCount)))
         
     @staticmethod
     def boolToCode( b, bit=0 ):
         return 1<<bit if b else 0
         
     def shuttle(self, lookupIndex, reverseEdge=False, immediateTrigger=False):
-        self.xem.WriteToPipeIn( 0x86, struct.pack('=IIII', 0x03000000,  0x0, 
-                                                  self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex))
+        self.xem.WriteToPipeIn( 0x86, bytearray(struct.pack('=IIII', 0x03000000,  0x0, 
+                                                  self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex)))
         
     
     def triggerShuttling(self):
