@@ -14,7 +14,7 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from pulser import DDSUi
-from mylogging.ExceptionLogButton import ExceptionLogButton
+from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
 from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
@@ -49,6 +49,7 @@ from gui.ValueHistoryUi import ValueHistoryUi
 from modules.doProfile import doprofile
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from externalParameter.ExternalParameterBase import InstrumentDict
+from mylogging.LoggingSetup import qtWarningButtonHandler
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -95,6 +96,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 
         logger = logging.getLogger()        
         self.toolBar.addWidget(ExceptionLogButton())
+        
+        self.warningLogButton = LogButton(messageIcon=":/petersIcons/icons/Warning.png", messageName="warnings")
+        self.toolBar.addWidget(self.warningLogButton)
+        qtWarningButtonHandler.textWritten.connect(self.warningLogButton.addMessage)
         
         # Setup Console Dockwidget
         self.levelComboBox.addItems(self.levelNameList)

@@ -14,6 +14,7 @@ from datetime import datetime
 
 from PyQt4 import QtGui
 import PyQt4.uic
+from modules.firstNotNone import firstNotNone
 
 ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
 
@@ -53,20 +54,20 @@ class ExceptionMessage( ExceptionMessageForm, ExceptionMessageBase):
 
 GlobalExceptionLogButtonSlot =  None
 
-class ExceptionLogButton( QtGui.QToolButton ):
-    def __init__(self,parent=None):
+
+class LogButton( QtGui.QToolButton  ):
+    def __init__(self,parent=None, noMessageIcon=None, messageIcon=None, maxMessages=None, messageName=None ):
         QtGui.QToolButton.__init__(self,parent)
         self.myMenu = QtGui.QMenu(self)
         self.setMenu( self.myMenu )
         self.setPopupMode(QtGui.QToolButton.InstantPopup)
-        sys.excepthook = self.myexcepthook
         self.exceptionsListed = 0
-        self.NoExceptionsIcon = QtGui.QIcon(":/petersIcons/icons/Success-01.png")
-        self.ExceptionsIcon = QtGui.QIcon(":/petersIcons/icons/Error-01.png")
+        self.NoExceptionsIcon = QtGui.QIcon( firstNotNone(noMessageIcon, ":/petersIcons/icons/Success-01.png") )
+        self.ExceptionsIcon = QtGui.QIcon( firstNotNone(messageIcon, ":/petersIcons/icons/Error-01.png") )
         self.setIcon( self.NoExceptionsIcon )
-        global GlobalExceptionLogButtonSlot
-        GlobalExceptionLogButtonSlot = self.excepthookSlot
         self.menuItemDict = dict()
+        self.maxMessages = maxMessages
+        self.clearAllMessage = "Clear All {0}".format( firstNotNone(messageName, "exceptions") )
         
     def removeAll(self):
         self.myMenu.clear()
@@ -75,7 +76,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.menuItemDict.clear()
          
     def addClearAllAction(self):
-        myMenuItem = ExceptionMessage("Clear All exceptions",self.myMenu, showTime=False)
+        myMenuItem = ExceptionMessage(self.clearAllMessage ,self.myMenu, showTime=False)
         myMenuItem.setupUi(myMenuItem)
         action = QtGui.QWidgetAction(self.myMenu)
         action.setDefaultWidget( myMenuItem )
@@ -98,7 +99,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
                 self.setIcon(self.ExceptionsIcon)
                 self.addClearAllAction()          
             self.exceptionsListed += 1
-            self.myMenu.addAction(action)
+            self.myMenu.addAction(action)                
         
     def removeMessage(self, action):
         self.menuItemDict.pop(str(action().defaultWidget().message))
@@ -107,6 +108,13 @@ class ExceptionLogButton( QtGui.QToolButton ):
         if self.exceptionsListed==0:
             self.removeAll()
             
+class ExceptionLogButton( LogButton ):
+    def __init__(self,parent=None):
+        super(ExceptionLogButton, self).__init__(parent)
+        sys.excepthook = self.myexcepthook
+        global GlobalExceptionLogButtonSlot
+        GlobalExceptionLogButtonSlot = self.excepthookSlot
+        
     def excepthookSlot(self, exceptinfo ):
         self.myexcepthook( *exceptinfo )
         
