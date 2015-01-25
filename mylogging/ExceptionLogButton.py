@@ -10,6 +10,7 @@ import inspect
 import logging
 import sys
 import weakref
+from datetime import datetime
 
 from PyQt4 import QtGui
 import PyQt4.uic
@@ -17,20 +18,37 @@ import PyQt4.uic
 ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
 
 class ExceptionMessage( ExceptionMessageForm, ExceptionMessageBase):
-    def __init__(self,message,parent=None):
+    def __init__(self,message,parent=None,showTime=True):
         ExceptionMessageForm.__init__(self,parent)
         ExceptionMessageBase.__init__(self)
-        self.message = message
+        self.message = str(message)
         self.count = 1
+        self.time = datetime.now()
+        self.showTime = showTime
+        
+    def messageText(self):
+        text = ""
+        if self.message:
+            if self.count==1:
+                if self.time is not None and self.showTime:
+                    text = "{0} {1}".format(self.time.strftime('%H:%M:%S'),self.message)
+                else:
+                    text = self.message
+            else:
+                if self.time is not None and self.showTime:
+                    text = "({0}) {1} {2}".format(self.count,self.time.strftime('%H:%M:%S'),self.message)
+                else:
+                    text = "({0}) {1}".format(self.count, self.message)
+        return text
         
     def setupUi(self, parent):
         ExceptionMessageForm.setupUi(self,parent)
-        if self.message:
-            self.messageLabel.setText(str(self.message))
+        self.messageLabel.setText(self.messageText())
 
     def increaseCount(self):
         self.count += 1
-        self.messageLabel.setText( "({0}) {1}".format(self.count, str(self.message)))
+        self.time = datetime.now() 
+        self.messageLabel.setText( self.messageText())
 
 
 GlobalExceptionLogButtonSlot =  None
@@ -57,7 +75,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
         self.menuItemDict.clear()
          
     def addClearAllAction(self):
-        myMenuItem = ExceptionMessage("Clear All exceptions",self.myMenu)
+        myMenuItem = ExceptionMessage("Clear All exceptions",self.myMenu, showTime=False)
         myMenuItem.setupUi(myMenuItem)
         action = QtGui.QWidgetAction(self.myMenu)
         action.setDefaultWidget( myMenuItem )
@@ -65,7 +83,8 @@ class ExceptionLogButton( QtGui.QToolButton ):
         myMenuItem.deleteButton.clicked.connect( self.removeAll )
                 
     def addMessage(self, message):
-        oldMenuItem  = self.menuItemDict.get( str(message) )
+        message = str(message)
+        oldMenuItem  = self.menuItemDict.get( message )
         if oldMenuItem is not None:
             oldMenuItem.increaseCount()
         else:
@@ -74,7 +93,7 @@ class ExceptionLogButton( QtGui.QToolButton ):
             action = QtGui.QWidgetAction(self.myMenu)
             action.setDefaultWidget(myMenuItem)
             myMenuItem.deleteButton.clicked.connect( functools.partial(self.removeMessage, weakref.ref(action) ) )
-            self.menuItemDict[str(message)] = myMenuItem
+            self.menuItemDict[message] = myMenuItem
             if self.exceptionsListed==0:
                 self.setIcon(self.ExceptionsIcon)
                 self.addClearAllAction()          
