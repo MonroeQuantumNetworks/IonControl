@@ -100,7 +100,7 @@ class ValueHistoryUi(Form,Base):
     def doLoad(self, space, parameter, fromTime ):
         result = self.connection.getHistory( space, parameter, fromTime , datetime.now() )
         if not result:
-            logging.getLogger(__name__).error("Database query returned empty set")
+            logging.getLogger(__name__).warning("Database query returned empty set")
         elif len(result)>0:
             self.data = [(e.upd_date, mg(e.value, e.unit)) for e in reversed(result)]
             self.dataModel.setDataTable(self.data)

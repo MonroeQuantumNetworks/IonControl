@@ -89,7 +89,7 @@ class DDSUi(DDSForm, DDSBase):
         try:
             self.onWriteAll()
         except Exception as e:
-            logging.getLogger(__name__).error( "Ignored error while setting DDS: {0}".format(e) )
+            logging.getLogger(__name__).warning( "Ignored error while setting DDS: {0}".format(e) )
         self.onApply()
         self.ddsTableModel.frequencyChanged.connect( self.onFrequency )
         self.ddsTableModel.phaseChanged.connect( self.onPhase )

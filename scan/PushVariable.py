@@ -50,21 +50,21 @@ class PushVariable(object):
                 self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
                 self.valueValid = True
             except Exception as e:
-                logging.getLogger(__name__).error(str(e))
+                logging.getLogger(__name__).warning(str(e))
                 self.valueValid = False
         if self.strMinimum:
             try:
                 self.minimum = self.expression.evaluate( self.strMinimum, variables, useFloat=useFloat )
                 self.minValid = True
             except Exception as e:
-                logging.getLogger(__name__).error(str(e))
+                logging.getLogger(__name__).warning(str(e))
                 self.minValid = False               
         if self.strMaximum:
             try:
                 self.maximum = self.expression.evaluate( self.strMaximum, variables, useFloat=useFloat )
                 self.maxValid = True
             except Exception as e:
-                logging.getLogger(__name__).error(str(e))
+                logging.getLogger(__name__).warning(str(e))
                 self.maxValid = False               
         
     def pushRecord(self, variables=None):
@@ -76,11 +76,11 @@ class PushVariable(object):
                 (not self.maximum or self.value <= self.maximum)):
                 return [(self.destinationName, self.variableName, self.value)], []
             else:
-                logging.getLogger(__name__).error("Result out of range, Not pushing {0} to {1}: {2} <= {3} <= {4}".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
+                logging.getLogger(__name__).warning("Result out of range, Not pushing {0} to {1}: {2} <= {3} <= {4}".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
                 return [], [(self.destinationName, self.variableName)]
         else:
             if (self.push):
-                logging.getLogger(__name__).error("Not pushing {0} to {1}: {2} <= {3} <= {4}, push not fully specified".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
+                logging.getLogger(__name__).warning("Not pushing {0} to {1}: {2} <= {3} <= {4}, push not fully specified".format(self.variableName, self.destinationName, self.minimum, self.value, self.maximum))
         return [], []
     
     @property

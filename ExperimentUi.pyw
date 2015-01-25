@@ -290,7 +290,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         except MyException.MissingFile as e:
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )
-            logger.error("Voltage subsystem disabled: {0}".format(str(e)))
+            logger.warning("Voltage subsystem disabled: {0}".format(str(e)))
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
         self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )

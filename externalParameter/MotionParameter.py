@@ -161,7 +161,7 @@ class PowerWaveplate(ExternalParameterBase):
         self.setDefaults()
         self.settings.value[None] = self._getValue(None)
         if not self.instrument.readyToMove():
-            logger.error("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
+            logger.warning("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
         self.lastValue = None
         
     def homeSearch(self):

@@ -90,7 +90,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 self.variables.renameAt(index.row(), strvalue)
                 return True
             else:
-                logging.getLogger(__name__).error("'{0}' is not a valid identifier".format(strvalue))    
+                logging.getLogger(__name__).warning("'{0}' is not a valid identifier".format(strvalue))    
                 return False
         except Exception:
             logger = logging.getLogger(__name__)

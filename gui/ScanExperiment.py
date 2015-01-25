@@ -133,7 +133,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.experimentName+'.pyqtgraph-dockareastate' in self.config:
                 self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
         except Exception as e:
-            logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+            logger.warning("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
         # Traceui
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
@@ -366,7 +366,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.otherDataFile = open( dumpFilename, "wb" )
             self.otherDataFile.write( self.pulserHardware.wordListToBytearray(data.other))
         if data.overrun:
-            logger.error( "Read Pipe Overrun" )
+            logger.warning( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
         elif data.final and data.exitcode not in [0,0xffff]:
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )

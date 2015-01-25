@@ -229,7 +229,7 @@ class MeasurementContainer(object):
                 self._scanNames.setdefault( measurement.scanName, True )
                 self.scanNamesChanged.fire( scanNames=self._scanNames )
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
-            logging.getLogger(__name__).error( str(e) )
+            logging.getLogger(__name__).warning( str(e) )
             self.session.rollback()
             self.session = self.Session()
         
@@ -237,7 +237,7 @@ class MeasurementContainer(object):
         try:
             self.session.commit()
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
-            logging.getLogger(__name__).error( str(e) )
+            logging.getLogger(__name__).warning( str(e) )
             self.session.rollback()
             self.session = self.Session()
         
@@ -260,7 +260,7 @@ class MeasurementContainer(object):
         try:
             self.spaces = dict(( (s.name,s) for s in self.session.query(Space).all() ))
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
-            logging.getLogger(__name__).error( str(e) )
+            logging.getLogger(__name__).warning( str(e) )
             self.session.rollback()
             self.session = self.Session()
         

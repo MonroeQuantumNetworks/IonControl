@@ -337,7 +337,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             try:          
                 pushvar.evaluate(myReplacementDict)
             except Exception as e:
-                logging.getLogger(__name__).error( str(e) )
+                logging.getLogger(__name__).warning( str(e) )
 
     def onFit(self):
         self.fit( self.currentEvaluation )

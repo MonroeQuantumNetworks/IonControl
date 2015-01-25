@@ -287,7 +287,7 @@ class MeasurementLogUi(Form, Base ):
         # Assemble data
         xData, yData, bottomData, topData = self.getData(xDataDef, yDataDef)
         if len(xData)==0:
-            logging.getLogger(__name__).error("Nothing to plot")
+            logging.getLogger(__name__).warning("Nothing to plot")
         else:
             if xDataDef==('measurement',None,'startDate'):
                 epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if xData[0].tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)

@@ -117,7 +117,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
                     self.doneAdjusting.callbacks = list()
         except Exception as e:
             logger.exception(e)
-            logger.error( "Exception during setValueFollowup, number of adjusting devices likely to be faulty")
+            logger.warning( "Exception during setValueFollowup, number of adjusting devices likely to be faulty")
 
     def update(self, iterable):
         for destination, name, value in iterable:
@@ -168,7 +168,7 @@ class ControlUi(UiForm,UiBase):
         try:
             self.evaluate(None)
         except KeyError as e:
-            logging.getLogger(__name__).error(str(e))
+            logging.getLogger(__name__).warning(str(e))
         
     def keys(self):
         return self.tableModel.parameterDict.keys()

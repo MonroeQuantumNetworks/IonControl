@@ -55,7 +55,7 @@ class Ad9912:
             check( self.pulser.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
             self.pulser.UpdateWireIns()
         else:
-            logger.error( "Pulser not available" )
+            logger.warning( "Pulser not available" )
         
     def update(self, channelmask):
         logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class Ad9912:
             self.pulser.UpdateWireIns()
             self.pulser.ActivateTriggerIn(0x41,2)
         else:
-            logger.error( "Pulser not available" )
+            logger.warning( "Pulser not available" )
         
     def reset(self, mask):
         logger = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ class Ad9912:
             if mask & 0xc: check( self.pulser.ActivateTriggerIn(0x42,1), "DDS Reset board 1" )
             if mask & 0x30: check( self.pulser.ActivateTriggerIn(0x42,2), "DDS Reset board 2" )
         else:
-            logger.error( "Pulser not available" )
+            logger.warning( "Pulser not available" )
 
         
 if __name__ == "__main__":
