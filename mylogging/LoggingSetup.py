@@ -84,11 +84,11 @@ formatter = logging.Formatter('%(levelname)s %(name)s(%(filename)s:%(lineno)d %(
 
 stdoutHandler = logging.StreamHandler(sys.stdout)
 stdoutHandler.setFormatter(formatter)
-stdoutHandler.addFilter(LevelThresholdFilter(logging.ERROR,False))
+stdoutHandler.addFilter(LevelThresholdFilter(logging.WARNING,False))
 
 stderrHandler = logging.StreamHandler(sys.stderr)
 stderrHandler.setFormatter(formatter)
-stderrHandler.addFilter(LevelThresholdFilter(logging.ERROR,True))
+stderrHandler.addFilter(LevelThresholdFilter(logging.WARNING,True))
 
 fileformatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
