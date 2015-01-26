@@ -18,15 +18,31 @@ class Structure(object):
         self.children = defaultdict( list )
         self.parent = dict()
         
-    def addEdge(self, parent, child):
+    def addChild(self, parent, child):
         self.children[parent].append(child)
         self.parent[child] = parent
         
-    def insertEdge(self, parent, child, index ):
+    def addChildren(self, parent, children ):
+        self.children[parent].extend(children)
+        for child in children:
+            self.parent[child] = parent
+                    
+    def insertChild(self, parent, child, index ):
         self.children[parent].insert(index,child)
         self.parent[child] = parent
         
-    def removeEdge(self, parent, child):
+    def insertChildren(self, parent, children, index ):
+        oldlist = self.children[parent]
+        newlist = oldlist[:index]
+        newlist.extend(children)
+        newlist.extend(oldlist[index:])
+        self.children[parent] = newlist
+        for child in children:
+            if child in self.parent:
+                self.removeChild(self.parent[child], child)
+            self.parent[child] = parent
+        
+    def removeChild(self, parent, child):
         children = self.children[parent]
         children.pop( children.index(child) )
         self.parent.pop(child)
@@ -47,7 +63,7 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         return self.dataLookup.get( (role,index.column()), lambda child: None )(nodeName)
 
     def flags(self, index):
-        if index.column()==0:
+        if index.column()<=0:
             return (QtCore.Qt.ItemIsEnabled |  QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled) 
         return (QtCore.Qt.ItemIsEnabled |  QtCore.Qt.ItemIsSelectable)
 
@@ -61,12 +77,16 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         if (parent.isValid() and parent.column() != 0):
             return QtCore.QModelIndex()
         parentName = self.getItem(parent)
-        childName =  self.structure.out_edges(parentName)[row][1]
+        if row>=len(self.structure.children[parentName]):
+            return QtCore.QModelIndex()
+        childName =  self.structure.children[parentName][row]
         if childName:
             return self.createIndex(row, column, childName)
     
     def getItem(self, index):
         if index.isValid():
+            if index.internalPointer() not in self.structure.parent:
+                return None
             return index.internalPointer()
         return self.rootNode    
 
@@ -74,14 +94,16 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         if not index.isValid():
             return QtCore.QModelIndex()
         childName = self.getItem(index)
-        parentName = self.structure.in_edges(childName)[0][0]
+        if childName is None:
+            return QtCore.QModelIndex()
+        parentName = self.structure.parent[childName]
         if parentName == self.rootNode:
             return QtCore.QModelIndex()
-        return self.createIndex(self.structure.out_edges(parentName).index((parentName,childName)), 0, parentName)
+        return self.createIndex(self.structure.children[parentName].index(childName), 0, parentName)
         
     def rowCount(self, parent):
         parentName = self.getItem(parent)
-        return len(self.structure.out_edges(parentName)) 
+        return len(self.structure.children[parentName]) 
     
     def columnCount(self, parent):
         return len(self.headerLookup)
@@ -101,7 +123,7 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         return mimedata
         
     def dropMimeData(self, mimedata, action, row, column, parentIndex ):
-        if not mimedata.hasFormat("text.list"):
+        if not mimedata.hasFormat("text.list") or column>0:
             return False
         items = str(mimedata.data("text.list")).splitlines()
         self.insertItems(row, items, parentIndex)
@@ -109,19 +131,31 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
     
     def insertItems(self, row, items, parentIndex):
         parentName = self.getItem(parentIndex)
-        self.beginInsertRows( parentIndex, row, row+len(items)-1 )
+        print "insert", items
         for item in items:
-            self.structure.add_edge( parentName, item )
+            oldParent = self.structure.parent[item]
+            oldRow = self.structure.children[oldParent].index(item)
+            self.beginRemoveRows( self.createIndex(0, 0, oldParent), oldRow, oldRow )
+            self.structure.removeChild(oldParent,item)
+            self.endRemoveRows()          
+        self.beginInsertRows( parentIndex, row, row+len(items)-1 )
+        self.structure.insertChildren( parentName, items, row+1 )
         self.endInsertRows()
         return True 
+    
+    def removeRows(self, row, count, parent):
+        print "removeRows", row, count, self.getItem(parent)
+        return True
 
 class TreeViewTest( ControlForm, ControlBase ):
     def __init__(self, parent=None):
         ControlForm.__init__(self)
         ControlBase.__init__(self,parent)
-        self.data = { 'alpha': 'a', 'beta':'b', 'gamma':'c' }
-        self.structure = DiGraph()
-        self.structure.add_edges_from([('root','alpha'),('gamma','beta'),('alpha','gamma')])
+        self.data = { 'alpha': 'a', 'beta':'b', 'gamma':'c' , 'delta':'d', 'epsilon':'e'}
+        #self.structure = DiGraph()
+        #self.structure.add_edges_from([('root','alpha'),('gamma','beta'),('alpha','gamma')])
+        self.structure = Structure()
+        self.structure.addChildren('root',['alpha','beta','gamma','delta','epsilon'] )
        
     def setupUi(self, parent):
         ControlForm.setupUi(self,parent)
