@@ -50,11 +50,13 @@ class Structure(object):
         
 
 class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
-    def __init__(self, data, structure, rootNode, parent=None ):
+    def __init__(self, data, structure, rootNode, denyStructuralChanges=False, keyColumn=0, parent=None ):
         super(TreeViewModelAdapter, self).__init__(parent)
         self.data = data
         self.structure = structure
         self.rootNode = rootNode
+        self.denyStructuralChanges = denyStructuralChanges
+        self.keyColumn = keyColumn
         self.dataLookup = { (QtCore.Qt.DisplayRole,0): lambda child: child,
                             (QtCore.Qt.DisplayRole,1): lambda child: self.data[child] }
         
@@ -63,7 +65,7 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         return self.dataLookup.get( (role,index.column()), lambda child: None )(nodeName)
 
     def flags(self, index):
-        if index.column()<=0:
+        if index.column() in [self.keyColumn,-1]:
             return (QtCore.Qt.ItemIsEnabled |  QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled) 
         return (QtCore.Qt.ItemIsEnabled |  QtCore.Qt.ItemIsSelectable)
 
@@ -82,6 +84,7 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         childName =  self.structure.children[parentName][row]
         if childName:
             return self.createIndex(row, column, childName)
+        return QtCore.QModelIndex()
     
     def getItem(self, index):
         if index.isValid():
@@ -126,6 +129,8 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         if not mimedata.hasFormat("text.list") or column>0:
             return False
         items = str(mimedata.data("text.list")).splitlines()
+        if self.denyStructuralChanges and any((self.structure.parent[item]!=self.getItem(parentIndex) for item in items)):
+            return False
         self.insertItems(row, items, parentIndex)
         return True
     
@@ -135,11 +140,12 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         for item in items:
             oldParent = self.structure.parent[item]
             oldRow = self.structure.children[oldParent].index(item)
-            self.beginRemoveRows( self.createIndex(0, 0, oldParent), oldRow, oldRow )
+            oldParentIndex = self.createIndex(0, 0, oldParent) if oldParent!=self.rootNode else QtCore.QModelIndex()
+            self.beginRemoveRows( oldParentIndex, oldRow, oldRow )
             self.structure.removeChild(oldParent,item)
             self.endRemoveRows()          
         self.beginInsertRows( parentIndex, row, row+len(items)-1 )
-        self.structure.insertChildren( parentName, items, row+1 )
+        self.structure.insertChildren( parentName, items, row )
         self.endInsertRows()
         return True 
     
@@ -159,7 +165,7 @@ class TreeViewTest( ControlForm, ControlBase ):
        
     def setupUi(self, parent):
         ControlForm.setupUi(self,parent)
-        self.model = TreeViewModelAdapter(self.data, self.structure, 'root')
+        self.model = TreeViewModelAdapter(self.data, self.structure, 'root', denyStructuralChanges=False, keyColumn=1)
         self.treeView.setModel( self.model )
         self.treeView.setDragEnabled(True)
         self.treeView.setAcceptDrops(True)
