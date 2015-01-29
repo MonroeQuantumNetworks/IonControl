@@ -135,7 +135,7 @@ class GlobalScanMethod(ExternalScanMethod):
     def __init__(self, experiment):
         super( GlobalScanMethod, self).__init__(experiment)
     
-class VoltageScanMethod(object):
+class VoltageScanMethod(ExternalScanMethod):
     name = 'Voltage'
     def __init__(self, experiment):
         super( VoltageScanMethod, self).__init__(experiment)

@@ -285,8 +285,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         try:
             self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
             self.voltageControlWindow.setupUi(self.voltageControlWindow)
-            self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltages') )               
-            self.scanExperiment.updateScanTarget( 'Voltages', self.voltageControlWindow.globalAdjustUi.outputChannels() )
+            self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage') )               
+            self.scanExperiment.updateScanTarget( 'Voltage', self.voltageControlWindow.globalAdjustUi.outputChannels() )
         except MyException.MissingFile as e:
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )
