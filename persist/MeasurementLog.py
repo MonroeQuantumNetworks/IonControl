@@ -222,8 +222,8 @@ class MeasurementContainer(object):
             self.session.add( measurement )
             self.session.commit()
             if self._scanNameFilter is None or measurement.scanName in self._scanNameFilter:
-                self.beginInsertMeasurement.fire(first=len(self.measurements),last=len(self.measurements))
-                self.measurements.append( measurement )
+                self.beginInsertMeasurement.fire(first=0,last=0)
+                self.measurements.insert( 0, measurement )
                 self.endInsertMeasurement.firebare()
             if measurement.scanName not in self._scanNames:
                 self._scanNames.setdefault( measurement.scanName, True )
@@ -243,11 +243,11 @@ class MeasurementContainer(object):
         
     def query(self, fromTime, toTime, scanNameFilter=None):
         if scanNameFilter is None:
-            self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id).all()
+            self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).order_by(Measurement.id.desc()).all() 
             self._scanNames = SequenceDict(((m.scanName,self._scanNames.get(m.scanName,True)) for m in self.measurements))
             self._scanNames.sort()
         else:
-            self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).filter(Measurement.scanName.in_(scanNameFilter)).order_by(Measurement.id).all()
+            self.measurements = self.session.query(Measurement).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).filter(Measurement.scanName.in_(scanNameFilter)).order_by(Measurement.id.desc()).all() 
             scanNames = self.session.query(Measurement.scanName).filter(Measurement.startDate>=fromTime).filter(Measurement.startDate<=toTime).group_by(Measurement.scanName).order_by(Measurement.scanName).all()
             self._scanNames = SequenceDict(((name,name in scanNameFilter) for name, in scanNames))
         self.scanNamesChanged.fire( scanNames=self.scanNames )

@@ -27,6 +27,7 @@ import numpy
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from pyqtgraph.exporters.ImageExporter import ImageExporter
+from pyqtgraph.exporters.SVGExporter import SVGExporter
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
@@ -676,6 +677,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 widget.render( painter )
                 del painter
         
+        with SceneToPrint(widget, 1, 1):
+            exporter = SVGExporter(widget._graphicsView.scene()) 
+            exporter.export(fileName = DataDirectory.DataDirectory().sequencefile(target+".svg")[0])
         # create an exporter instance, as an argument give it
         # the item you wish to export
         with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):

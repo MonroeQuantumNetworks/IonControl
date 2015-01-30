@@ -45,6 +45,7 @@
     <file>icons/ions.jpg</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/games-solve.png</file>
     <file>icons/measure.png</file>
     <file>icons/office-chart-bar-save.png</file>
     <file>icons/applications-internet-5.png</file>
