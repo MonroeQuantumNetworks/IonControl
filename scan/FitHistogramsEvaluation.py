@@ -102,7 +102,7 @@ class FitHistogramEvaluation(EvaluationBase):
             confidence.append( 0 )  # don't know what to do :(
             data.evaluated['FitHistogramsResult'] = (params, confidence, self.chisq/self.dof)
         if self.settings['Mode']=='Parity':
-            return params[0]+params[2]-params[1], (None,None), params[0]+params[2]-params[1]
+            return params[0]+params[2]-params[1], None, params[0]+params[2]-params[1]
         elif self.settings['Mode']=='Zero':
             return params[0], (confidence[0],  confidence[0]) , params[0]
         elif self.settings['Mode']=='One':
@@ -110,7 +110,7 @@ class FitHistogramEvaluation(EvaluationBase):
         elif self.settings['Mode']=='Two':
             return params[2], (confidence[2],  confidence[2]) , params[2]
         elif self.settings['Mode']=='Residuals':
-            return reducedchisq, (None,None), reducedchisq
+            return reducedchisq, None, reducedchisq
 
         
     def children(self):
