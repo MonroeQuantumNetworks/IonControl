@@ -5,12 +5,11 @@ Created on Dec 22, 2014
 '''
 
 import PyQt4.uic
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 from modules.SequenceDict import SequenceDict
-from networkx import DiGraph
 from _collections import defaultdict
 
-ControlForm, ControlBase = PyQt4.uic.loadUiType(r'..\..\ui\TreeViewTest.ui')
+ControlForm, ControlBase = PyQt4.uic.loadUiType(r'..\ui\TreeViewTest.ui')
 
 
 class Structure(object):
@@ -47,14 +46,20 @@ class Structure(object):
         children.pop( children.index(child) )
         self.parent.pop(child)
         
+    @staticmethod
+    def flatStructure( rootNode, dictionary ):
+        structure = Structure()
+        structure.addChildren( rootNode, dictionary.keys() )
+        return structure
+        
         
 
 class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
-    def __init__(self, data, structure, rootNode, denyStructuralChanges=False, keyColumn=0, parent=None ):
+    def __init__(self, data, structure=None, rootNode='rootNode', denyStructuralChanges=False, keyColumn=0, parent=None ):
         super(TreeViewModelAdapter, self).__init__(parent)
         self.data = data
-        self.structure = structure
         self.rootNode = rootNode
+        self.structure = structure if structure is not None else Structure.flatStructure(self.rootNode, self.data)
         self.denyStructuralChanges = denyStructuralChanges
         self.keyColumn = keyColumn
         self.dataLookup = { (QtCore.Qt.DisplayRole,0): lambda child: child,
@@ -150,29 +155,46 @@ class TreeViewModelAdapter( QtCore.QAbstractItemModel ):
         return True 
     
     def removeRows(self, row, count, parent):
-        print "removeRows", row, count, self.getItem(parent)
+        """This is called internally upon drag move, however it is only called AFTER the drop.
+        We need the entry to be removed before it is re-added, thus the drop target takes care
+        of both and this function does nothing and returns success."""
+        #print "removeRows", row, count, self.getItem(parent)
         return True
-
-class TreeViewTest( ControlForm, ControlBase ):
-    def __init__(self, parent=None):
-        ControlForm.__init__(self)
-        ControlBase.__init__(self,parent)
-        self.data = { 'alpha': 'a', 'beta':'b', 'gamma':'c' , 'delta':'d', 'epsilon':'e'}
-        #self.structure = DiGraph()
-        #self.structure.add_edges_from([('root','alpha'),('gamma','beta'),('alpha','gamma')])
-        self.structure = Structure()
-        self.structure.addChildren('root',['alpha','beta','gamma','delta','epsilon'] )
-       
-    def setupUi(self, parent):
-        ControlForm.setupUi(self,parent)
-        self.model = TreeViewModelAdapter(self.data, self.structure, 'root', denyStructuralChanges=False, keyColumn=1)
-        self.treeView.setModel( self.model )
-        self.treeView.setDragEnabled(True)
-        self.treeView.setAcceptDrops(True)
-        self.treeView.setDropIndicatorShown(True)
-        # History and Dictionary
+    
+    def addRow(self, key, value):
+        if key not in self.data:
+            rowCount = self.rowCount( QtCore.QModelIndex() )
+            self.beginInsertRows( QtCore.QModelIndex(), rowCount, rowCount)
+            self.data[key] = value
+            self.structure.addChild(self.rootNode, key)
+            self.endInsertRows()
+            
+    def popRow(self, key):
+        if key in self.data:
+            oldParent = self.structure.parent[key]
+            oldRow = self.structure.children[oldParent].index(key)
+            oldParentIndex = self.createIndex(0, 0, oldParent) if oldParent!=self.rootNode else QtCore.QModelIndex()
+            self.beginRemoveRows( oldParentIndex, oldRow, oldRow )
+            self.structure.removeChild(oldParent,key)
+            self.endRemoveRows()          
+            
 
 if __name__=="__main__":
+    class TreeViewTest( ControlForm, ControlBase ):
+        def __init__(self, parent=None):
+            ControlForm.__init__(self)
+            ControlBase.__init__(self,parent)
+            self.data = { 'alpha': 'a', 'beta':'b', 'gamma':'c' , 'delta':'d', 'epsilon':'e'}
+           
+        def setupUi(self, parent):
+            ControlForm.setupUi(self,parent)
+            self.model = TreeViewModelAdapter(self.data)
+            self.treeView.setModel( self.model )
+            self.treeView.setDragEnabled(True)
+            self.treeView.setAcceptDrops(True)
+            self.treeView.setDropIndicatorShown(True)
+            # History and Dictionary
+
     import sys
     from PyQt4 import QtGui
     config = dict()
