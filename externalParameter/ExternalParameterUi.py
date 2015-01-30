@@ -17,6 +17,7 @@ from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
 from modules.Observable import Observable
 import itertools
+from modules.GuiAppearance import restoreGuiState, saveGuiState
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
@@ -140,7 +141,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
 
 class ControlUi(UiForm,UiBase):
     
-    def __init__(self, globalDict=None, parent=None):
+    def __init__(self, config, globalDict=None, parent=None):
         UiBase.__init__(self,parent)
         UiForm.__init__(self)
         self.spacerItem = None
@@ -152,6 +153,7 @@ class ControlUi(UiForm,UiBase):
         self.displayWidget = dict()
         self.tagetValue = dict()
         self.globalDict = firstNotNone( globalDict, dict() )
+        self.config = config
     
     def setupUi(self, outputChannels ,MainWindow):
         UiForm.setupUi(self,MainWindow)
@@ -160,10 +162,10 @@ class ControlUi(UiForm,UiBase):
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
         self.setupParameters( outputChannels )
+        restoreGuiState( self, self.config.get('ControlUi.guiState'))
         
     def setupParameters(self, outputChannels):
         self.tableModel.setParameterList( outputChannels )
-        self.tableView.resizeColumnsToContents()
         self.tableView.horizontalHeader().setStretchLastSection(True)   
         try:
             self.evaluate(None)
@@ -189,5 +191,6 @@ class ControlUi(UiForm,UiBase):
         else:
             QtCore.QTimer.singleShot(0, callback)
             
-
+    def saveConfig(self):
+        self.config['ControlUi.guiState'] = saveGuiState(self)
     

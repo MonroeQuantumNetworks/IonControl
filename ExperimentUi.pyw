@@ -209,7 +209,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
-        self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.globalVariablesUi.variables )
+        self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.config, self.globalVariablesUi.variables )
         self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.outputChannels(), self.ExternalParametersUi )
         self.globalVariablesUi.valueChanged.connect( self.ExternalParametersUi.evaluate )
 
@@ -495,6 +495,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUi.saveConfig()
         self.measurementLog.saveConfig()
         self.valueHistoryUi.saveConfig()
+        self.ExternalParametersUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
