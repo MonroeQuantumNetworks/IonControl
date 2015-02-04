@@ -29,6 +29,7 @@ from ShutterDictionary import ShutterDictionary
 from TriggerDictionary import TriggerDictionary
 from CounterDictionary import CounterDictionary
 from uiModules.KeyboardFilter import KeyListFilter
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -164,6 +165,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
+        self.counterIdDelegate = MagnitudeSpinBoxDelegate()
+        self.counterTableView.setItemDelegateForColumn(0, self.counterIdDelegate)
         try:
             self.loadContext(self.currentContext)
             if self.configParams.lastContextName:

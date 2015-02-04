@@ -382,7 +382,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         evaluated = list()
         expected = self.generator.expected( self.currentIndex )
         for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
-            evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
+            evaluated.append( algo.evaluate( data, evaluation, expected=expected ) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, queuesize  )

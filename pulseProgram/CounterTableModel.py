@@ -27,15 +27,15 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         return len(self.counterdict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 32
+        return 33
  
     def currentState(self,index):
         data = self.counterdict.at(index.row()).data
-        bit = 0x80000000>>index.column()
+        bit = 0x80000000>>(index.column()-1)
         return bool( bit & data )
         
     def setState(self,index,state):
-        bit = 0x80000000>>index.column()
+        bit = 0x80000000>>(index.column()-1)
         var = self.counterdict.at(index.row())
         if state:
             var.data = (var.data & ~bit) | bit
@@ -43,6 +43,14 @@ class CounterTableModel(QtCore.QAbstractTableModel):
             var.data = var.data & ~bit 
         self.dataChanged.emit(index,index)
         self.contentsChanged.emit()
+        
+    def currentId(self, index):
+        var = self.counterdict.at(index.row())
+        return var.data >> 56
+    
+    def setCurrentId(self, index, newid):
+        var = self.counterdict.at(index.row())
+        var.data = (var.data & 0xffffffffffffff) | ((newid & 0xff) << 56)
         
     def displayData(self,index):
         return str(self.currentState(index))
@@ -52,24 +60,39 @@ class CounterTableModel(QtCore.QAbstractTableModel):
   
     def data(self, index, role): 
         if index.isValid():
-            return { #(QtCore.Qt.DisplayRole): functools.partial( self.displayData, index),
-                     (QtCore.Qt.BackgroundColorRole): functools.partial( self.displayDataColor, index),
-                     }.get(role,lambda : None)()
+            if index.column()>0:
+                if role == QtCore.Qt.BackgroundColorRole: 
+                    return self.displayDataColor( index )
+            elif index.column()==0:
+                if role == QtCore.Qt.DisplayRole:
+                    return str(self.currentId(index))
+                elif role==QtCore.Qt.EditRole:
+                    return self.currentId(index)
         return None
         
+    def setData(self, index, value, role):
+        if index.isValid() and index.column()==0 and role==QtCore.Qt.EditRole and 0<=value<256:
+            self.setCurrentId(index, int(value.toval()) )
+            return True
+        return False
+            
+    def setValue(self, index, value):
+        self.setData(index, QtCore.Qt.EditRole, value)
+        
     def flags(self, index ):
-        return  QtCore.Qt.ItemIsEnabled 
+        return  QtCore.Qt.ItemIsEnabled if index.column()>0 else (QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return str(31-section)
+                return str(31-section+1) if section>0 else 'id'
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.counterdict.at(section).name
         return None #QtCore.QVariant()
 
     def onClicked(self,index):
-        self.setState(index,not self.currentState(index))
+        if index.column()>0:
+            self.setState(index,not self.currentState(index))
         
     def getVariables(self):
         myvariables = dict()

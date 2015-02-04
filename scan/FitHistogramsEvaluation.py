@@ -91,10 +91,10 @@ class FitHistogramEvaluation(EvaluationBase):
         histsum = numpy.sum( hist )
         return (hist / histsum, histsum) if longOutput else hist/histsum
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+    def evaluate(self, data, evaluation, expected=None ):
         params, confidence, reducedchisq = data.evaluated.get('FitHistogramsResult',(None,None,None))
         if params is None:
-            y, x = numpy.histogram( data.count[counter] , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
+            y, x = numpy.histogram( evaluation.getChannelData(data) , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
             y, self.fitFunction.totalCounts = self.normalizeHistogram(y, longOutput=True)
             params, confidence = self.leastsq(x[0:-1], y, [0.3,0.3])
             params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter

@@ -19,10 +19,11 @@ from modules.Utility import unique
 from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules.enum import enum
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
-class EvaluationDefinition:
+class EvaluationDefinition(object):
     def __init__(self):
         self.counter = None
         self.evaluation = None
@@ -32,14 +33,18 @@ class EvaluationDefinition:
         self.settingsCache = HashableDict()
         self.showHistogram = False
         self.analysis = None
+        self.counterId = 0
+        self.type = 'Counter'
         
     def __setstate__(self, state):
         self.__dict__ = state
         if 'errorBars' in self.settings:   # remove errorBars property in old unpickled instances
             self.settings.pop('errorBars')
         self.__dict__.setdefault( 'analysis', None )
+        self.__dict__.setdefault( 'counterId', 0 )
+        self.__dict__.setdefault( 'type', 'Counter' )
         
-    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis'] 
+    stateFields = ['counterId', 'type', 'counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -53,6 +58,19 @@ class EvaluationDefinition:
             self.settings = HashableDict(self.settings)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
  
+    @property
+    def channelKey(self):
+        if self.type=='Counter':
+            return ((self.counterId&0xff)<<16) | (self.counter & 0xff)
+        else:
+            return (self.counter & 0xff)
+        
+    def getChannelData(self, data ):
+        if self.type=='Counter':
+            return data.count[self.channelKey]  
+        elif data.result is not None:
+            return data.result[self.channelKey]
+        return []
 
 class Evaluation:
     def __init__(self):
@@ -140,11 +158,13 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.evalTableModel.dataChanged.connect( self.checkSettingsSavable )
         self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.setModel( self.evalTableModel )
-        self.evalTableView.clicked.connect( self.editEvaluationTable )
         self.delegate = ComboBoxDelegate()
-        self.evalTableView.setItemDelegateForColumn(1, self.delegate )
-        self.evalTableView.setItemDelegateForColumn(4, self.delegate )
-        self.evalTableView.setItemDelegateForColumn(5, self.delegate )        
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.evalTableView.setItemDelegateForColumn(0, self.delegate)
+        self.evalTableView.setItemDelegateForColumn(1, self.magnitudeDelegate)
+        self.evalTableView.setItemDelegateForColumn(2, self.magnitudeDelegate)
+        self.evalTableView.setItemDelegateForColumn(3, self.delegate )
+        self.evalTableView.setItemDelegateForColumn(6, self.delegate )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
