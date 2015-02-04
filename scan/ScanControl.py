@@ -303,7 +303,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         try:
             self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
         except TypeError:
-            pass   # if already connected we are happy
+            pass  # is raised if the connection already existed
+            
 
         if not self.gateSequenceUi:
             self.gateSequenceUi = GateSequenceUi.GateSequenceUi()

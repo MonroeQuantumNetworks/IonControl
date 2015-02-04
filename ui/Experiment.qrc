@@ -27,6 +27,7 @@
     <file>icons/media-playback-stop-7.png</file>
   </qresource>
   <qresource prefix="petersIcons">
+    <file>icons/Warning.png</file>
     <file>icons/scope-icon-01.png</file>
     <file>icons/Error-01.png</file>
     <file>icons/Success-01.png</file>
@@ -44,6 +45,7 @@
     <file>icons/ions.jpg</file>
   </qresource>
   <qresource prefix="openicon">
+    <file>icons/games-solve.png</file>
     <file>icons/measure.png</file>
     <file>icons/office-chart-bar-save.png</file>
     <file>icons/applications-internet-5.png</file>

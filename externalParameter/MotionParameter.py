@@ -9,13 +9,11 @@ from ExternalParameterBase import ExternalParameterBase
 from modules import magnitude
 import math
 import logging
-from InstrumentDict import InstrumentMeta
 
 class ConexLinear(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
-    __metaclass__ = InstrumentMeta
     className = "Conex Linear Motion"
     _dimension = magnitude.mg(1,'mm')
     def __init__(self,name,config,instrument="COM3"):
@@ -84,7 +82,6 @@ class ConexRotation(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
-    __metaclass__ = InstrumentMeta
     className = "Conex Rotation"
     _dimension = magnitude.mg(1,'')
     def __init__(self,name,config,instrument="COM3"):
@@ -152,7 +149,6 @@ class PowerWaveplate(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
-    __metaclass__ = InstrumentMeta
     className = "Power Waveplate"
     _dimension = magnitude.mg(1,'W')
     def __init__(self,name,config,instrument="COM3"):
@@ -165,7 +161,7 @@ class PowerWaveplate(ExternalParameterBase):
         self.setDefaults()
         self.settings.value[None] = self._getValue(None)
         if not self.instrument.readyToMove():
-            logger.error("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
+            logger.warning("Conex device {0} needs to do a home search. Please press the home search button.".format(instrument))
         self.lastValue = None
         
     def homeSearch(self):

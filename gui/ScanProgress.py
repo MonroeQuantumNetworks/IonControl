@@ -37,10 +37,10 @@ class ScanProgress(Form,Base):
         self.scanLabel.setText( firstNotNone(scanName,"") )
         
     def setEvaluationLabel(self, scanName):        
-        self.evaluationLabel.setText(firstNotNone(scanName))
+        self.evaluationLabel.setText(firstNotNone(scanName,""))
         
     def setAnalysisLabel(self, scanName):        
-        self.analysisLabel.setText(firstNotNone(scanName))
+        self.analysisLabel.setText(firstNotNone(scanName,""))
         
     def setAveraged(self, num):
         if num is None:

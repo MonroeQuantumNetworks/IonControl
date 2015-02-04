@@ -33,7 +33,7 @@ class Wavemeter(QtCore.QObject):
     def onWavemeterError(self, channel, reply, error):
         """Print out received error"""
         self.queryRunning[channel] = False
-        logging.getLogger(__name__).error( "Error {0} accessing wavemeter query '{1}'".format(error, self.query) )
+        logging.getLogger(__name__).warning( "Error {0} accessing wavemeter query '{1}'".format(error, self.query) )
         reply.finished.disconnect()  # necessary to make reply garbage collectable
         reply.error.disconnect()
 

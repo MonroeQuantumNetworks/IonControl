@@ -149,7 +149,7 @@ class PulserHardwareServer(Process, OKBase):
         if (self.logicAnalyzerEnabled):
             logicAnalyzerData, _ = self.ppReadLogicAnalyzerData(8)
             if self.logicAnalyzerOverrun:
-                logger.error("Logic Analyzer Pipe overrun")
+                logger.warning("Logic Analyzer Pipe overrun")
                 self.logicAnalyzerClearOverrun()
                 self.logicAnalyzerData.overrun = True
             if logicAnalyzerData:
@@ -585,7 +585,7 @@ class PulserHardwareServer(Process, OKBase):
             matches = matches and data[start:start+self.quantum] == myslice[:length]
         logger.info( "ppWriteRamWordList {0}".format( len(data)) )
         if not matches:
-            logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
+            logger.warning( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
             raise PulserHardwareException("RAM write unsuccessful")
 
     def ppReadRamWordList(self, wordlist, address):
@@ -611,7 +611,7 @@ class PulserHardwareServer(Process, OKBase):
             matches = data == myslice
             logger.info( "ppWriteRamWordList {0}".format( len(data)) )
             if not matches:
-                logger.error( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
+                logger.warning( "Write unsuccessful data does not match write length {0} read length {1}".format(len(data),len(data)))
                 raise PulserHardwareException("RAM write unsuccessful")
                 
     def ppReadRamWordListShared(self, length, address):

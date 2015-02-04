@@ -12,6 +12,15 @@ class QtLoggingHandler(logging.Handler, QtCore.QObject):
 
     def emit(self, record):
         self.textWritten.emit(self.format(record).rstrip()+"\n", record.levelno)
+        
+class QtWarningButtonHandler(logging.Handler, QtCore.QObject):  
+    textWritten = QtCore.pyqtSignal(object)
+    def __init__(self):
+        logging.Handler.__init__(self)
+        QtCore.QObject.__init__(self)
+
+    def emit(self, record):
+        self.textWritten.emit(self.format(record).rstrip()+"\n")
 
 class LevelThresholdFilter(logging.Filter):
     def __init__(self, passlevel, reject):
@@ -23,6 +32,13 @@ class LevelThresholdFilter(logging.Filter):
             return (record.levelno >= self.passlevel)
         else:
             return (record.levelno < self.passlevel)
+        
+class LevelListFilter(logging.Filter):
+    def __init__(self, passlevellist):
+        self.passlevellist = passlevellist
+        
+    def filter(self, record):
+        return record.levelno in self.passlevellist
         
 class LevelFilter(logging.Filter):
     def __init__(self, passlevel):
@@ -68,11 +84,11 @@ formatter = logging.Formatter('%(levelname)s %(name)s(%(filename)s:%(lineno)d %(
 
 stdoutHandler = logging.StreamHandler(sys.stdout)
 stdoutHandler.setFormatter(formatter)
-stdoutHandler.addFilter(LevelThresholdFilter(logging.ERROR,False))
+stdoutHandler.addFilter(LevelThresholdFilter(logging.WARNING,False))
 
 stderrHandler = logging.StreamHandler(sys.stderr)
 stderrHandler.setFormatter(formatter)
-stderrHandler.addFilter(LevelThresholdFilter(logging.ERROR,True))
+stderrHandler.addFilter(LevelThresholdFilter(logging.WARNING,True))
 
 fileformatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
@@ -83,9 +99,14 @@ fileformatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s(%(filename
 qtHandler = QtLoggingHandler()
 qtHandler.setFormatter(formatter)
 
+qtWarningButtonHandler = QtWarningButtonHandler()
+qtWarningButtonHandler.setFormatter(formatter)
+qtWarningButtonHandler.addFilter(LevelListFilter( (logging.WARNING,) ) )
+
 logger.addHandler(stdoutHandler)
 logger.addHandler(stderrHandler)
 logger.addHandler(qtHandler)
+logger.addHandler(qtWarningButtonHandler)
 # logger.addHandler(fileHandler)
 
 pyqtlogger = logging.getLogger("PyQt4")

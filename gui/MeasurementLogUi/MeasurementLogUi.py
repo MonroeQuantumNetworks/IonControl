@@ -107,6 +107,14 @@ class MeasurementLogUi(Form, Base ):
         self.scanNameTableModel = ScanNameTableModel( self.container.scanNames, self.container)
         self.scanNameTableView.setModel( self.scanNameTableModel )
         self.scanNameTableModel.scanNameFilterChanged.connect( self.onFilterSelection )
+        # Context Menu for ScanName table
+        self.scanNameTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.selectAllAction = QtGui.QAction( "select all" , self)
+        self.selectAllAction.triggered.connect( partial( self.scanNameTableModel.showAll, True )  )
+        self.scanNameTableView.addAction( self.selectAllAction )
+        self.deselectAllAction = QtGui.QAction( "deselect all" , self)
+        self.deselectAllAction.triggered.connect( partial( self.scanNameTableModel.showAll, False )  )
+        self.scanNameTableView.addAction( self.deselectAllAction )
         # Context Menu for ResultsTable
         self.resultTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addResultToMeasurementAction = QtGui.QAction( "add as column to measurement" , self)
@@ -279,7 +287,7 @@ class MeasurementLogUi(Form, Base ):
         # Assemble data
         xData, yData, bottomData, topData = self.getData(xDataDef, yDataDef)
         if len(xData)==0:
-            logging.getLogger(__name__).error("Nothing to plot")
+            logging.getLogger(__name__).warning("Nothing to plot")
         else:
             if xDataDef==('measurement',None,'startDate'):
                 epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if xData[0].tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)

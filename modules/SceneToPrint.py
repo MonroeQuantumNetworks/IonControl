@@ -4,6 +4,7 @@ Created on Jul 8, 2014
 @author: pmaunz
 '''
 from pyqtgraph.graphicsItems.AxisItem import AxisItem
+import logging
 
 class SceneToPrint:
     def __init__(self, widget, gridLinewidth=1, curveLinewidth=1):
@@ -14,34 +15,49 @@ class SceneToPrint:
     def __enter__(self):
         self.widget._graphicsView.hideAllButtons(True)
         self.pencache = dict()
-        self.curveitemcache = dict()
+        if hasattr(self.widget, 'coordinateLabel'):
+            self.widget.coordinateLabel.hide()
         if self.gridLinewidth!=1 or self.curveLinewidth!=1:
             for item in self.widget._graphicsView.scene().items():
                 if hasattr(item, 'pen') and isinstance(item, AxisItem) and self.gridLinewidth!=1:
                     pen = item.pen()
                     width = pen.width()
-                    self.pencache[item] = width
+                    if pen in self.pencache:
+                        logging.getLogger(__name__).info("did not expect to find item in pencache")
+                    self.pencache[pen] = (item, width)
                     pen.setWidth( width*self.gridLinewidth )  
                     item.setPen( pen )
                 elif hasattr(item, 'opts') and self.curveLinewidth!=1:
                     shadowPen = item.opts.get('shadowPen')
                     pen = item.opts.get('pen')
-                    self.curveitemcache[item] = (shadowPen.width() if shadowPen else None, pen.width() if pen else None)
-                    if shadowPen:
-                        shadowPen.setWidth( shadowPen.width()*self.curveLinewidth )
-                    if pen:        
-                        pen.setWidth( pen.width()*self.curveLinewidth )                       
+                    if pen is not None:
+                        if pen in self.pencache:
+                            logging.getLogger(__name__).info("did not expect to find pen in pencache")
+                        else:
+                            self.pencache[pen] = (None, pen.width())
+                            pen.setWidth( pen.width()*self.curveLinewidth )
+                    if shadowPen is not None:
+                        if shadowPen in self.pencache:
+                            logging.getLogger(__name__).info("did not expect to find pen in pencache")
+                        else:
+                            self.pencache[shadowPen] = (None, shadowPen.width())
+                            shadowPen.setWidth( shadowPen.width()*self.curveLinewidth )
         return self.widget
 
     def __exit__(self, exittype, value, traceback):
         self.widget._graphicsView.hideAllButtons(False)
-        for item, width in self.pencache.iteritems():
-            pen = item.pen()
-            pen.setWidth( width )  
-            item.setPen( pen )              
+        if hasattr(self.widget, 'coordinateLabel'):
+            self.widget.coordinateLabel.show()
+        for pen, (item, width) in self.pencache.iteritems():
+            if item is not None:
+                pen = item.pen()
+                pen.setWidth(width)
+                item.setPen(pen)
+            else:
+                pen.setWidth( width )  
               
-        for item,(shadowWidth,width) in self.curveitemcache.iteritems():
-            if shadowWidth is not None:
-                item.opts['shadowPen'].setWidth(shadowWidth)
-            if width is not None:
-                item.opts['pen'].setWidth(width)
+#         for item,(shadowWidth,width) in self.curveitemcache.iteritems():
+#             if shadowWidth is not None:
+#                 item.opts['shadowPen'].setWidth(shadowWidth)
+#             if width is not None:
+#                 item.opts['pen'].setWidth(width)

@@ -49,7 +49,7 @@ class LoadingHistory(object):
             self.session = self.Session()
             self.isOpen = True
         except OperationalError as e:
-            logging.getLogger(__name__).error("Cannot open database: {0}".format(str(e)))
+            logging.getLogger(__name__).warning("Cannot open database: {0}".format(str(e)))
             self.isOpen = False
         
     def close(self):
@@ -73,7 +73,7 @@ class LoadingHistory(object):
                 self._loadingEvents.append( loadingEvent )
                 self.endInsertRows.firebare()
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
-            logging.getLogger(__name__).error( str(e) )
+            logging.getLogger(__name__).warning( str(e) )
             self.session.rollback()
             self.session = self.Session()
             
@@ -85,7 +85,7 @@ class LoadingHistory(object):
         try:
             self.session.commit()
         except (InvalidRequestError, IntegrityError, ProgrammingError) as e:
-            logging.getLogger(__name__).error( str(e) )
+            logging.getLogger(__name__).warning( str(e) )
             self.session.rollback()
             self.session = self.Session()
         

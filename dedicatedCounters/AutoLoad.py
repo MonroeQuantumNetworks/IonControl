@@ -473,7 +473,7 @@ class AutoLoad(UiForm,UiBase):
 
     def onWavemeterError(self, channel, reply, error):
         """Print out received error"""
-        logging.getLogger(__name__).error( "Error {0} accessing wavemeter at '{1}'".format(error, self.settings.wavemeterAddress) )
+        logging.getLogger(__name__).warning( "Error {0} accessing wavemeter at '{1}'".format(error, self.settings.wavemeterAddress) )
         reply.finished.disconnect()  # necessary to make reply garbage collectable
         reply.error.disconnect()
         reply.deleteLater()

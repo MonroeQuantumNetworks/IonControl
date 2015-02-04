@@ -135,7 +135,7 @@ class GateSequenceUi(Form,Base):
             updateComboBoxItems(self.GateSequenceBox, self.settings.gateSequenceCache.keys())
             self.updateDatastructures()
         except IOError as err:
-            logger.error( "{0} during loading of GateSequence Files, ignored.".format(err) )
+            logger.warning( "{0} during loading of GateSequence Files, ignored.".format(err) )
 
     def updateDatastructures(self):
         if self.settings.enabled:

@@ -19,6 +19,6 @@ from externalParameter import InterProcessParameters  #@UnusedImport
 try:
     import MotionParameter  #@UnusedImport
 except Exception as ex:
-    logging.getLogger(__name__).error("Motion control devices are not available")
+    logging.getLogger(__name__).warning("Motion control devices are not available")
     
 

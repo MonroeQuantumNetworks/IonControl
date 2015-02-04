@@ -13,7 +13,6 @@ import numpy
 import modules.magnitude as magnitude
 from wavemeter.Wavemeter import Wavemeter
 from ExternalParameterBase import ExternalParameterBase, nextValue
-from InstrumentDict import InstrumentMeta
 
 try:
     import visa  #@UnresolvedImport
@@ -25,7 +24,6 @@ class N6700BPowerSupply(ExternalParameterBase):
     """
     Adjust the current on the N6700B current supply
     """
-    __metaclass__ = InstrumentMeta
     className = "N6700 Powersupply"
     _dimension = magnitude.mg(1,'A')
     _outputChannels = {"Curr1": "A", "Curr2": "A", "Curr3": "A", "Curr4": "A", "Volt1": "V" , "Volt2": "V", "Volt3": "V", "Volt4": "V"}
@@ -84,7 +82,6 @@ class HP8672A(ExternalParameterBase):
     
     This class programs the 8672A using the directions in the manual, p. 3-17: cp.literature.agilent.com/litweb/pdf/08672-90086.pdf
     """
-    __metaclass__ = InstrumentMeta
     className = "HP8672A"
     _dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
@@ -166,7 +163,6 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
     """
     Scan the microwave frequency of microwave synthesizer 
     """
-    __metaclass__ = InstrumentMeta
     className = "Microwave Synthesizer"
     _dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
@@ -202,7 +198,6 @@ class AgilentPowerSupply(ExternalParameterBase):
     setValue is voltage of vco
     currentValue and currentExternalValue are current applied voltage
     """
-    __metaclass__ = InstrumentMeta
     className = "Agilent Powersupply"
     _dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
@@ -242,7 +237,6 @@ class LaserWavemeterScan(AgilentPowerSupply):
     currentExternalValue are frequency read from wavemeter
     """
     
-    __metaclass__ = InstrumentMeta
     className = "Laser VCO Wavemeter"
     _dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
@@ -291,8 +285,6 @@ class LaserWavemeterLockScan(ExternalParameterBase):
     currentValue is currently set value
     currentExternalValue is frequency read from wavemeter
     """
-    
-    __metaclass__ = InstrumentMeta
     className = "Laser Wavemeter Lock"
     _dimension = magnitude.mg(1,'GHz')
     def __init__(self,name,config,instrument=None):
@@ -352,7 +344,6 @@ class DummyParameter(ExternalParameterBase):
     """
     DummyParameter, used to debug this part of the software.
     """
-    __metaclass__ = InstrumentMeta
     className = "Dummy"
     _outputChannels = { 'O1':"Hz",'O7': "Hz"}
     def __init__(self,name,settings,instrument=''):
@@ -383,7 +374,6 @@ class DummySingleParameter(ExternalParameterBase):
     """
     DummyParameter, used to debug this part of the software.
     """
-    __metaclass__ = InstrumentMeta
     className = "DummySingle"
     _dimension = magnitude.mg(1,'kHz')
     def __init__(self,name,settings,instrument=''):

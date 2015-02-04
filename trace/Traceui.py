@@ -99,7 +99,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.plotButton.clicked.connect(self.onPlot)
-        self.shredderButton.clicked.connect(self.onShredder)
+        self.showOnlyLastButton.clicked.connect(self.onShowOnlyLast)
         self.selectAllButton.clicked.connect(self.traceTreeView.selectAll)
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.unplotSettingsAction = QtGui.QAction( "Unplot last trace", self )
@@ -229,7 +229,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                             pass   # we ignore if the file cannot be found
                         self.model.dropTrace(parentIndex, row)
                     else:
-                        logger.error( "trace has children, please delete them first." )
+                        logger.warning( "trace has children, please delete them first." )
 
     def warningMessage(self, warningText, informativeText):
         """Pop up a warning message. Return the response."""
@@ -299,6 +299,9 @@ class Traceui(TraceuiForm, TraceuiBase):
                 trace = self.model.getTrace(traceIndex)
                 traceList.append(trace)
         return traceList
+    
+    def onShowOnlyLast(self):
+        pass
         
 #if __name__ == '__main__':
 #    import sys

@@ -17,6 +17,20 @@ from externalParameter.OutputChannel import OutputChannel #@UnresolvedImport
 from modules.Observable import Observable
 from externalParameter.InputChannel import InputChannel
 
+InstrumentDict = dict()
+
+class InstrumentException(Exception):
+    pass
+
+class InstrumentMeta(type):
+    def __new__(self, name, bases, dct):
+        instrclass = super(InstrumentMeta, self).__new__(self, name, bases, dct)
+        if name!='ExternalParameterBase':
+            if 'className' not in dct:
+                raise InstrumentException("Instrument class needs to have class attribute 'className'")
+            InstrumentDict[dct['className']] = instrclass
+        return instrclass
+    
 def nextValue( current, target, stepsize, jump ):
     if current is None:
         return (target,True)
@@ -28,6 +42,7 @@ class ExternalParameterBase(object):
     strValue = AttributeRedirector('settings', 'strValue', None)
     _outputChannels = { None: None }    # a single channel with key None designates a device only supporting a single channel
     _inputChannels = dict()
+    __metaclass__ = InstrumentMeta
     def __init__(self,name,settings):
         self.name = name
         self.settings = settings

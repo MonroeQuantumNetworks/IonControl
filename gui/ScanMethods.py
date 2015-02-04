@@ -59,7 +59,7 @@ class ExternalScanMethod(InternalScanMethod):
     def startScan(self):
         if self.experiment.scan.scanParameter not in self.experiment.scanTargetDict[self.experiment.scan.scanTarget]:
             message = "{0} Scan Parameter '{1}' is not enabled.".format(self.name,self.experiment.scan.scanParameter)
-            logging.getLogger(__name__).error(message)
+            logging.getLogger(__name__).warning(message)
             raise ScanNotAvailableException(message) 
         if self.experiment.scan.scanMode==0:
             self.parameter = self.experiment.scanTargetDict[self.name][self.experiment.scan.scanParameter]
@@ -135,7 +135,7 @@ class GlobalScanMethod(ExternalScanMethod):
     def __init__(self, experiment):
         super( GlobalScanMethod, self).__init__(experiment)
     
-class VoltageScanMethod(object):
+class VoltageScanMethod(ExternalScanMethod):
     name = 'Voltage'
     def __init__(self, experiment):
         super( VoltageScanMethod, self).__init__(experiment)

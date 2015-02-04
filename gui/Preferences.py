@@ -16,9 +16,14 @@ class PrintPreferences(object):
         self.printY = 0.1
         self.gridLinewidth = 8
         self.curveLinewidth = 8
-        self.savePdf = True
+        self.savePdf = False
         self.savePng = False
         self.doPrint = True
+        self.saveSvg = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault('saveSvg',True)
 
     def paramDef(self):
         return [ {'name': 'resolution (dpi)', 'object': self, 'field': 'printResolution', 'type': 'int', 'value': self.printResolution},
@@ -28,35 +33,20 @@ class PrintPreferences(object):
                 {'name': 'grid linewidth (px)', 'object': self, 'field': 'gridLinewidth', 'type': 'int', 'value': self.gridLinewidth},
                 {'name': 'curve linewidth (px)', 'object': self, 'field': 'curveLinewidth', 'type': 'int', 'value': self.curveLinewidth},
                 {'name': 'save pdf', 'object': self, 'field': 'savePdf', 'type': 'bool', 'value': self.savePdf},
-                {'name': 'save png', 'object': self, 'field': 'savePng', 'type': 'bool', 'value': self.savePng},
+                {'name': 'save svg', 'object': self, 'field': 'saveSvg', 'type': 'bool', 'value': self.saveSvg},
                 {'name': 'print', 'object': self, 'field': 'doPrint', 'type': 'bool', 'value': self.doPrint}]    
 
-class DatabasePreferences(object):
-    def __init__(self):
-        self.databaseHost = None
-        self.databaseName = None
-        self.databaseUser = None
-        self.databasePassword = None
-
-    def paramDef(self):
-        return [ {'name': 'Hostname', 'object': self, 'field': 'databaseHost', 'type': 'str', 'value': self.databaseHost},
-                {'name': 'Database name', 'object': self, 'field': 'databaseName', 'type': 'str', 'value': self.databaseName},
-                {'name': 'Username', 'object': self, 'field': 'databaseUser', 'type': 'str', 'value': self.databaseUser},
-                {'name': 'Password', 'object': self, 'field': 'databasePassword', 'type': 'str', 'value': self.databasePassword}]
 
 class Preferences(object):
     def __init__(self):
         self.printPreferences = PrintPreferences()
-        self.databasePreferences = DatabasePreferences()
         # persistence database
         
     def __setstate__(self, state):
-        self.printPreferences = state.get('printpreferences', PrintPreferences())
-        self.databasePreferences = state.get('databasePreferences', DatabasePreferences())
+        self.printPreferences = state.get('printPreferences', PrintPreferences())
                
     def paramDef(self):
-        return [{'name': 'Print Preferences', 'type': 'group', 'children': self.printPreferences.paramDef() },
-                {'name': 'Persistence Preferences', 'type': 'group', 'children': self.databasePreferences.paramDef() } ]
+        return [{'name': 'Print Preferences', 'type': 'group', 'children': self.printPreferences.paramDef() } ]
         
 
 Form, Base = uic.loadUiType(r'ui\Preferences.ui')

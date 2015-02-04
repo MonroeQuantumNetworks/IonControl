@@ -6,6 +6,8 @@ debug/
 
 # Compiled files
 *.pyc
+*.py~ 
+*.tlog
 
 # Configuration files
 *.swp
@@ -35,3 +37,4 @@ Statemachine.png
 config/PulseProgramsPlus/generated_pp/MicrowaveGateSequence.ppc
 chain.png
 *.ppc
+*.c~

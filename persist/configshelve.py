@@ -98,7 +98,7 @@ class configshelve:
             category, key = defaultcategory, key
         try:
             return self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one().value
-        except NoResultFound:
+        except (NoResultFound, AttributeError):
             return default
         
     def next(self):

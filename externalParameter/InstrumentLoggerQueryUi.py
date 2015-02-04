@@ -147,7 +147,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         plottedTrace = ref() if (self.parameters.updatePrevious or forceUpdate) else None # get plottedtrace from the weakref if exists           
         result = self.connection.getHistory( space, parameter, fromTime , toTime )
         if not result:
-            logging.getLogger(__name__).error("Database query returned empty set")
+            logging.getLogger(__name__).warning("Database query returned empty set")
         elif len(result)>0:
             time = [(e.upd_date - datetime(1970,1,1, tzinfo=pytz.utc)).total_seconds() for e in result]
             value = [e.value for e in result]

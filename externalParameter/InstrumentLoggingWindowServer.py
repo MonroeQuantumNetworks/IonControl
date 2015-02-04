@@ -116,7 +116,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
             if 'pyqtgraph-dockareastate' in self.config:
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
         except Exception as e:
-            logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+            logger.warning("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
         QtCore.QTimer.singleShot(60000, self.onCommitConfig )      
 
                     

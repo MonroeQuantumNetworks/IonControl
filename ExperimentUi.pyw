@@ -13,8 +13,8 @@ import logging
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
-from pulser import DDSUi#, DDSUi9910
-from mylogging.ExceptionLogButton import ExceptionLogButton
+from pulser import DDSUi
+from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
 from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
@@ -39,7 +39,6 @@ from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
 from functools import partial
 import externalParameter.ExternalParameter
-from externalParameter.InstrumentDict import InstrumentDict
 from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
@@ -49,6 +48,8 @@ from pulser.DACController import DACController    #@UnresolvedImport
 from gui.ValueHistoryUi import ValueHistoryUi
 from modules.doProfile import doprofile
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
+from externalParameter.ExternalParameterBase import InstrumentDict
+from mylogging.LoggingSetup import qtWarningButtonHandler
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -95,6 +96,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 
         logger = logging.getLogger()        
         self.toolBar.addWidget(ExceptionLogButton())
+        
+        self.warningLogButton = LogButton(messageIcon=":/petersIcons/icons/Warning.png", messageName="warnings")
+        self.toolBar.addWidget(self.warningLogButton)
+        qtWarningButtonHandler.textWritten.connect(self.warningLogButton.addMessage)
         
         # Setup Console Dockwidget
         self.levelComboBox.addItems(self.levelNameList)
@@ -213,7 +218,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.ExternalParameterSelectionDock.setWidget(self.ExternalParametersSelectionUi)
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.ExternalParameterSelectionDock)
 
-        self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.globalVariablesUi.variables )
+        self.ExternalParametersUi = ExternalParameterUi.ControlUi( self.config, self.globalVariablesUi.variables )
         self.ExternalParametersUi.setupUi( self.ExternalParametersSelectionUi.outputChannels(), self.ExternalParametersUi )
         self.globalVariablesUi.valueChanged.connect( self.ExternalParametersUi.evaluate )
 
@@ -289,12 +294,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         try:
             self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
             self.voltageControlWindow.setupUi(self.voltageControlWindow)
-            self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltages') )               
-            self.scanExperiment.updateScanTarget( 'Voltages', self.voltageControlWindow.globalAdjustUi.outputChannels() )
+            self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage') )               
+            self.scanExperiment.updateScanTarget( 'Voltage', self.voltageControlWindow.globalAdjustUi.outputChannels() )
         except MyException.MissingFile as e:
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )
-            logger.error("Voltage subsystem disabled: {0}".format(str(e)))
+            logger.warning("Voltage subsystem disabled: {0}".format(str(e)))
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
         self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
@@ -501,6 +506,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUi.saveConfig()
         self.measurementLog.saveConfig()
         self.valueHistoryUi.saveConfig()
+        self.ExternalParametersUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()

@@ -149,8 +149,10 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.fitfunctionTableModel = FitUiTableModel(self.config)
         self.parameterTableView.setModel(self.fitfunctionTableModel)
         self.fitfunctionTableModel.parametersChanged.connect( self.autoSave )
-        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict)
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate(self.globalDict, emptyStringValue=None)
         self.parameterTableView.setItemDelegateForColumn(2,self.magnitudeDelegate)
+        self.parameterTableView.setItemDelegateForColumn(3,self.magnitudeDelegate)
+        self.parameterTableView.setItemDelegateForColumn(4,self.magnitudeDelegate)
         self.fitResultsTableModel = FitResultsTableModel(self.config)
         self.resultsTableView.setModel(self.fitResultsTableModel)
         restoreGuiState( self, self.config.get(self.configname+'.guiState') )
@@ -335,7 +337,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             try:          
                 pushvar.evaluate(myReplacementDict)
             except Exception as e:
-                logging.getLogger(__name__).error( str(e) )
+                logging.getLogger(__name__).warning( str(e) )
 
     def onFit(self):
         self.fit( self.currentEvaluation )

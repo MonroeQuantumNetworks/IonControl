@@ -60,7 +60,7 @@ class VariableDictionary(SequenceDict):
                     self.addDependencies(self.dependencyGraph, dependencies, name)
                     var.strerror = None
                 except (KeyError, MagnitudeError) as e:
-                    logging.getLogger(__name__).error( str(e) )
+                    logging.getLogger(__name__).warning( str(e) )
                     var.strerror = str(e)
             else:
                 var.strerror = None
@@ -162,7 +162,7 @@ class VariableDictionary(SequenceDict):
                 except (KeyError, MagnitudeError) as e:
                     var.strerror = str(e)
             else:
-                logging.getLogger(__name__).error("variable {0} does not have strvalue. Value is {1}".format(var, var.value))
+                logging.getLogger(__name__).warning("variable {0} does not have strvalue. Value is {1}".format(var, var.value))
             return var.value
         return None
             

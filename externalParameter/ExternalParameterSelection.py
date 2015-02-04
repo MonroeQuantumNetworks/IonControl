@@ -66,7 +66,7 @@ class SelectionUi(SelectionForm,SelectionBase):
                 try:
                     self.enableInstrument(parameter)
                 except Exception as e:
-                    logger.error( "{0} while enabling instrument {1}".format(e,parameter.name))
+                    logger.warning( "{0} while enabling instrument {1}".format(e,parameter.name))
                     parameter.enabled = False     
         self.enabledParametersObjects.sortToMatch( self.parameters.keys() ) 
         self.emitSelectionChanged()

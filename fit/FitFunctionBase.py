@@ -18,7 +18,11 @@ from modules.SequenceDict import SequenceDict
 import xml.etree.ElementTree as ElementTree
 from modules.Expression import Expression
 from modules.Observable import Observable
+from packages.leastsqbound.leastsqbound import leastsqbound
 
+
+class FitFunctionException(Exception):
+    pass
 
 class ResultRecord(object):
     def __init__(self, name=None, definition=None, value=None):
@@ -36,29 +40,53 @@ class ResultRecord(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+fitFunctionMap = dict()    
+   
+class FitFunctionMeta(type):
+    def __new__(self, name, bases, dct):
+        if 'name' not in dct:
+            raise FitFunctionException("Fitfunction class needs to have class attribute 'name'")
+        instrclass = super(FitFunctionMeta, self).__new__(self, name, bases, dct)
+        if name!='FitFunctionBase':
+            fitFunctionMap[dct['name']] = instrclass
+        return instrclass
+    
+def native(method):
+    """Tag a method native to detect function overwrites in derived classes.
+    Used to detect whether smartStartValues are implemented"""
+    method.isNative = True
+    return method    
 
 class FitFunctionBase(object):
+    __metaclass__ = FitFunctionMeta
     expression = Expression()
     name = 'None'
+    parameterNames = list()
     def __init__(self):
+        numParameters = len(self.parameterNames)
         self.epsfcn=0.0
-        self.parameterNames = []
-        self.parameters = []
-        self.startParameters = []
+        self.parameters = [0] * numParameters
+        self.startParameters = [1] * numParameters 
         self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
-        self.parameterEnabled = []
-        self.parametersConfidence = []
+        self.parameterEnabled = [True] * numParameters
+        self.parametersConfidence = [None] * numParameters
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
         self.useSmartStartValues = False
-        self.hasSmartStart = False
+        self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' )
         self.parametersUpdated = Observable()
+        self.parameterBounds = [[None,None] for _ in range(numParameters) ]
+        self.parameterBoundsExpressions = None
         
     def __setstate__(self, state):
+        state.pop( 'parameterNames', None )
         self.__dict__ = state
         self.__dict__.setdefault( 'useSmartStartValues', False )
         self.__dict__.setdefault( 'startParameterExpressions', None )
-        self.__dict__.setdefault( 'hasSmartStart', False)
+        self.__dict__.setdefault( 'parameterBounds' , [[None,None] for _ in range(len(self.parameterNames)) ]  )
+        self.__dict__.setdefault( 'parameterBoundsExpressions' , None)
+        self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' ) 
  
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
@@ -72,14 +100,27 @@ class FitFunctionBase(object):
                 params.append(value(self.startParameters[index]))
         return params
     
-    def enabledStartParameters(self, parameters=None):
+    @staticmethod
+    def coercedValue( val, bounds ):
+        if bounds[1] is not None and val>=bounds[1]:
+            val = value(0.95*bounds[1]+0.05*bounds[0] if bounds[0] is not None else bounds[1]-0.01) 
+        if bounds[0] is not None and val<=bounds[0]:
+            val = value(0.95*bounds[0]+0.05*bounds[1] if bounds[1] is not None else bounds[0]+0.01)
+        return val
+    
+    def enabledStartParameters(self, parameters=None, bounded=False):
         """return a list of only the enabled start parameters"""
         if parameters is None:
             parameters = self.startParameters
         params = list()
-        for enabled, param in zip(self.parameterEnabled, parameters):
-            if enabled:
-                params.append(value(param))
+        if bounded:
+            for enabled, param, bounds in zip(self.parameterEnabled, parameters, self.parameterBounds):
+                if enabled:
+                    params.append(self.coercedValue(value(param), bounds))
+        else:
+            for enabled, param in zip(self.parameterEnabled, parameters):
+                if enabled:
+                    params.append(value(param))
         return params
 
     def enabledFitParameters(self, parameters=None):
@@ -120,6 +161,7 @@ class FitFunctionBase(object):
             else:
                 self.parametersConfidence[index] = None        
 
+    @native
     def smartStartValues(self, x, y, parameters, enabled):
         return None
 
@@ -129,6 +171,15 @@ class FitFunctionBase(object):
             myReplacementDict.update( globalDict )
         if self.startParameterExpressions is not None:
             self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
+        if self.parameterBoundsExpressions is not None:
+            self.parameterBounds = [[bound[0] if expr[0] is None else self.expression.evaluateAsMagnitude(expr[0], myReplacementDict),
+                                     bound[1] if expr[1] is None else self.expression.evaluateAsMagnitude(expr[0], myReplacementDict)]
+                                     for bound, expr in zip(self.parameterBounds, self.parameterBoundsExpressions)]
+
+    def enabledBounds(self):
+        result = [[value(bounds[0]), value(bounds[1])] for enabled, bounds in zip(self.parameterEnabled, self.parameterBounds) if enabled]
+        enabled = any( (any(bounds) for bounds in result) )
+        return result if enabled else None
 
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
@@ -143,7 +194,12 @@ class FitFunctionBase(object):
             if smartParameters is not None:
                 parameters = [ smartparam if enabled else param for enabled, param, smartparam in zip(self.parameterEnabled, parameters, smartParameters)]
         
-        enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
+        myEnabledBounds = self.enabledBounds()
+        if myEnabledBounds:
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsqbound(self.residuals, self.enabledStartParameters(parameters, bounded=True), 
+                                                                                                 args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True, bounds=myEnabledBounds)
+        else:
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
         self.setEnabledFitParameters(enabledOnlyParameters)
         self.update(self.parameters)
         logger.info( "chisq {0}".format( sum(self.infodict["fvec"]*self.infodict["fvec"]) ) )        
@@ -228,4 +284,3 @@ class FitFunctionBase(object):
     
         
         
-fitFunctionMap = dict()    
