@@ -11,3 +11,5 @@ c = load_count(channel)
 
 write_result( channel, c )
 
+update( a, pulse_mode=True )
+

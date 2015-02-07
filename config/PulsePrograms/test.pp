@@ -21,6 +21,7 @@ here: NOP
 	ASYNCSHUTTER two
 	CounterMASK counteroff
 	WAIT
+	UPDATE 1, longdelay
 	UPDATE longdelay
 	LDWR counteron
 	WRITEPIPE

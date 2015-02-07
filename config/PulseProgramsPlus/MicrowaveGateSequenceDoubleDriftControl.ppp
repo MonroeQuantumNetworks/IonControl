@@ -87,9 +87,11 @@ parameter RamseyCalWaitTime
 var RamseySkipCounter
 parameter RamseyCalInitPhase
 parameter RamseyCalAnalyzePhase
+parameter<AD9912_FRQ>  RamseyCalAdjustGain
 counter RamseyCalCounter
 var RamseyCalDetectPhotons
 var RTemp
+var RamseySkipCounter
 
 
 def cool():
@@ -292,13 +294,15 @@ while not pipe_empty():
         if DetectTime>0:
             detect()
         if CalibrateEvery>0:
-#            if CalibrationSkipCounter > CalibrateEvery:
-            calibrate()
-#                CalibrationSkipCounter = 0
-#            else:
-#                CalibrationSkipCounter += 1
+            CalibrationSkipCounter += 1
+            if CalibrationSkipCounter >= CalibrateEvery:
+                calibrate()
+                CalibrationSkipCounter = 0
         if RamseyCalibrateEvery>0:
-            calibrateRamsey()
+            RamseySkipCounter += 1
+            if RamseySkipCounter>=RamseyCalibrateEvery:
+                calibrateRamsey()
+                RamseySkipCounter = 0
         currentexperiment += 1
 
 exit( endLabel )
