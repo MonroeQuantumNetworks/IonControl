@@ -13,6 +13,7 @@ from fit.MotionalRabiFlopping import MotionalRabiFlopping, TwoModeMotionalRabiFl
 from modules import MagnitudeParser
 from modules.XmlUtilit import stringToStringOrNone
 import logging
+import SelectionAnalysis  #@UnusedImport
 
 class CosFit(FitFunctionBase):
     name = "Cos"
