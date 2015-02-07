@@ -137,7 +137,7 @@ encodings = { 'AD9912_FRQ': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffffffffff
               'AD9910_PHASE': (360./2**16, '', Dimensions.dimensionless, 0xffff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
-              'TIME' : ( 20, 'ns', Dimensions.time, 0x1 ),
+              'TIME' : ( 5, 'ns', Dimensions.time, 0xffffffffffff ),
               None: (1, '', Dimensions.dimensionless, 0xffffffffffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffffffffffff ) }
 

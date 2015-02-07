@@ -4,6 +4,7 @@ Created on Feb 15, 2014
 @author: pmaunz
 '''
 from CompileException import CompileException
+from modules.stringutilit import stringToBool
 
 def set_shutter( symboltable, arg=list(), kwarg=dict() ):
     if len(arg)!=2:
@@ -49,10 +50,11 @@ def update( symboltable, arg=list(), kwarg=dict() ):
     if 'wait_dds' in kwarg:
         if not kwarg['wait_dds']:
             code = list()
-    if len(arg)==2:
+    pulseMode = stringToBool( kwarg.get('pulse_mode',False) )
+    if len(arg)>=2:
         symbol = symboltable.getVar( arg[1] )
         return code + ["  WAIT",
-                "  UPDATE {0}".format(symbol.name) ]
+                "  UPDATE {0} {1}".format('1,' if pulseMode else '', symbol.name) ]
     return code + ["  WAIT",
             "  UPDATE NULL"]
 
