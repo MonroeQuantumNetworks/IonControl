@@ -21,37 +21,27 @@ resultsTable = None
 headerList = list()
 
 gateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-DriftControl.xml"
-compositeGateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-B2-2-DriftControl.xml"
+compositeGateDefinitionFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GateDefinition-Microwave-B2-3-DriftControl.xml"
 
-trainingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GSTSequenceT4_2.xml"
-RBSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\Randomized-Clifford-2014-11-27.xml"
+trainingSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\GSTSequenceT5.xml"
+RBSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\Randomized-Clifford-2015-01-26.xml"
 
-goodGateSetTraining = [ (datetime.date(2014,11,28), [3, 4] ),
-                        (datetime.date(2014,11,29), range(1,8)),
-                        (datetime.date(2014,11,30), range(1,11) ),
-                        (datetime.date(2014,12,1), range(1,10) ),
-                        (datetime.date(2014,12,2), [1,2,3] )      ]
+goodGateSetTraining = [ ]
 
-goodCompositeGateSetTraining = [ (datetime.date(2014,11,28), [3, 4] ),
-                        (datetime.date(2014,11,29), range(1,7)),
-                        (datetime.date(2014,11,30), range(1,11) ),
-                        (datetime.date(2014,12,1), [1,2,3,4,5,7,8] ),
-                        (datetime.date(2014,12,2), range(1,5) )      ]
+goodCompositeGateSetTraining = [ (datetime.date(2015,1,30), [3] ),
+                        (datetime.date(2015,1,31), [2,3]),
+                        (datetime.date(2015,2,1), range(1,7) ),
+                        (datetime.date(2015,2,2), range(1,7) )    ]
 
-goodRB =[ (datetime.date(2014,11,28), [12, 13] ),
-                        (datetime.date(2014,11,29), range(1,7)),
-                        (datetime.date(2014,11,30), range(1,11) ),
-                        (datetime.date(2014,12,1), range(1,7) ),
-                        (datetime.date(2014,12,2), range(1,5) )         ]
+goodRB =[   ]
 
-goodCompositeRB = [ (datetime.date(2014,11,28), [16, 17] ),
-                        (datetime.date(2014,11,29), range(2,8)),
-                        (datetime.date(2014,11,30), range(1,10) ),
-                        (datetime.date(2014,12,1), [1,2,3,6,7] ),
-                        (datetime.date(2014,12,2), range(1,5) )         ]
+goodCompositeRB = [ (datetime.date(2015,1,30), [2] ),
+                        (datetime.date(2015,1,31), [1]),
+                        (datetime.date(2015,2,1), range(1,8) ),
+                        (datetime.date(2015,2,2), range(1,7) )       ]
 
 datadirectory = DataDirectory('QGA')
-outputpath = datadirectory.path( datetime.date(2014,12,2))
+outputpath = datadirectory.path( datetime.date(2015,2,2))
 
 gatedef = GateDefinition()
 gatedef.loadGateDefinition(gateDefinitionFile)    
@@ -110,6 +100,7 @@ def saveCondensedResults(resultsTable, sequence, filename):
         total[x] += 20
         
     with open(filename, 'w') as f:
+        f.write("## Columns = plus count, count total\n")
         for (x1, b), (x2, t) in zip( sorted(bright.iteritems()), sorted(total.iteritems()) ): #@UnusedVariable
             gateseq = sequence.GateSequenceAttributes[str(int(x1))].get('condensed', None)
             if gateseq is None:
@@ -210,44 +201,44 @@ def createSeparateLists( filenameTemplate, filenameKeys ):
     return linearList, randomizedList
                 
    
-linearGST, randomizedGST = createSeparateLists( "GSTDrift", goodGateSetTraining )
+#linearGST, randomizedGST = createSeparateLists( "GSTDrift", goodGateSetTraining )
 linearCompensatedGST, randomizedCompensatedGST = createSeparateLists( "GSTCompensatedDrift", goodCompositeGateSetTraining )
-linearRb, randomizedRb = createSeparateLists( "RBDrift", goodRB)
+#linearRb, randomizedRb = createSeparateLists( "RBDrift", goodRB)
 linearCompensatedRb, randomizedCompensatedRb = createSeparateLists( "RBCompensatedDrift", goodCompositeRB)
 
-print "GST"
-print  linearGST
-print  randomizedGST
+# print "GST"
+# print  linearGST
+# print  randomizedGST
 print "GSTCompensated"   
 print linearCompensatedGST
 print randomizedCompensatedGST
-print "RB"
-print linearRb
-print randomizedRb
+# print "RB"
+# print linearRb
+# print randomizedRb
 print "RBCompensated"
 print linearCompensatedRb
 print randomizedCompensatedRb
 
-assembleData( "GSTDrift", goodGateSetTraining, trainingSequence, 2922, 0.5)
-saveLookupTable(trainingSequence, os.path.join(outputpath,"GateSequenceTraining_lookup.txt"))
-assembleData( "GSTCompensatedDrift", goodCompositeGateSetTraining, trainingSequence, 2922, 4.5)
+#assembleData( "GSTDrift", goodGateSetTraining, trainingSequence, 2922, 0.5)
+#saveLookupTable(trainingSequence, os.path.join(outputpath,"GateSequenceTraining_lookup.txt"))
+assembleData( "GSTCompensatedDrift", goodCompositeGateSetTraining, trainingSequence, 3121, 4.5)
   
-assembleData( "RBDrift", goodRB, RBSequence, 834, 0.5)
-saveLookupTable(RBSequence, os.path.join(outputpath,"RB_lookup.txt"))
+#assembleData( "RBDrift", goodRB, RBSequence, 834, 0.5)
+#saveLookupTable(RBSequence, os.path.join(outputpath,"RB_lookup.txt"))
 assembleData( "RBCompensatedDrift", goodCompositeRB, RBSequence, 834, 4.5)
 
 # linear
 
-assembleData( "GSTDrift", linearGST, trainingSequence, 2922, 0.5, "linear_")
-assembleData( "GSTCompensatedDrift", linearCompensatedGST, trainingSequence, 2922, 4.5, "linear_")
+#assembleData( "GSTDrift", linearGST, trainingSequence, 2922, 0.5, "linear_")
+#assembleData( "GSTCompensatedDrift", linearCompensatedGST, trainingSequence, 2922, 4.5, "linear_")
   
-assembleData( "RBDrift", linearRb, RBSequence, 834, 0.5, "linear_")
-assembleData( "RBCompensatedDrift", linearCompensatedRb, RBSequence, 834, 4.5, "linear_")
+#assembleData( "RBDrift", linearRb, RBSequence, 834, 0.5, "linear_")
+#assembleData( "RBCompensatedDrift", linearCompensatedRb, RBSequence, 834, 4.5, "linear_")
 
 # randomized
 
-assembleData( "GSTDrift", randomizedGST, trainingSequence, 2922, 0.5, "randomized_")
-assembleData( "GSTCompensatedDrift", randomizedCompensatedGST, trainingSequence, 2922, 4.5, "randomized_")
+#assembleData( "GSTDrift", randomizedGST, trainingSequence, 2922, 0.5, "randomized_")
+#assembleData( "GSTCompensatedDrift", randomizedCompensatedGST, trainingSequence, 2922, 4.5, "randomized_")
   
-assembleData( "RBDrift", randomizedRb, RBSequence, 834, 0.5, "randomized_")
-assembleData( "RBCompensatedDrift", randomizedCompensatedRb, RBSequence, 834, 4.5, "randomized_")
+#assembleData( "RBDrift", randomizedRb, RBSequence, 834, 0.5, "randomized_")
+#assembleData( "RBCompensatedDrift", randomizedCompensatedRb, RBSequence, 834, 4.5, "randomized_")
