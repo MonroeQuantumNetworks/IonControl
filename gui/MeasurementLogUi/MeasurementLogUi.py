@@ -216,7 +216,7 @@ class MeasurementLogUi(Form, Base ):
             self.currentMeasurement._sa_instance_state.session.commit()
 
     def setDateTimeEdit(self, attr, value):
-        setattr( self.settings, attr, datetime(value) )
+        setattr( self.settings, attr, value.toPyDateTime() )
 
     def onChangeTimespan(self, index):
         self.settings.timespan = index

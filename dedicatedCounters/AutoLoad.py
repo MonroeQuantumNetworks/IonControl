@@ -87,7 +87,8 @@ class AutoLoadSettings(object):
                 {'name': 'Ionization shutter', 'type': 'int', 'value': self.shutterChannel, 'tip': "Shutter channel controlling the ionization laser", 'field': 'shutterChannel'},
                 {'name': 'Ionization active low', 'type': 'bool', 'value': self.shutterChannelActiveLow, 'tip': "Ionization shutter is active low", 'field': 'shutterChannelActiveLow'},
                 {'name': 'Counter channel', 'type': 'int', 'value': self.counterChannel, 'tip': "Counter channel", 'field': 'counterChannel'},
-                {'name': 'Wavemeter address', 'type': 'str', 'value': self.wavemeterAddress, 'tip': "Address of wavemeter interface (http://)", 'field': 'wavemeterAddress'}]
+                {'name': 'Wavemeter address', 'type': 'str', 'value': self.wavemeterAddress, 'tip': "Address of wavemeter interface (http://)", 'field': 'wavemeterAddress'},
+                {'name': 'History timespan', 'type': 'magnitude', 'value': self.historyLength, 'tip': "Time range to display loading history", 'field': 'historyLength'}]
         
     def update(self, param, changes):
         """
@@ -120,11 +121,12 @@ class AutoLoadSettings(object):
         self.__dict__.setdefault( 'ovenCoolingTime', mg( 80, 's') )
         self.__dict__.setdefault( 'thresholdRunning', mg(5, 'kHz'))
         self.__dict__.setdefault( 'globalsAdjustList', SequenceDict() )
+        self.__dict__.setdefault( 'historyLength', mg(7,'day') )
 
     stateFields = ['counterChannel', 'shutterChannel', 'ovenChannel', 'laserDelay', 'maxTime', 'thresholdBare', 'thresholdOven',
                    'checkTime', 'useInterlock', 'interlock', 'wavemeterAddress', 'ovenChannelActiveLow', 'shutterChannelActiveLow',
                    'autoReload', 'waitForComebackTime', 'minLaserScatter', 'maxFailedAutoload', 'postSequenceWaitTime', 'loadAlgorithm',
-                   'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList' ] 
+                   'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList', 'historyLength' ] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -143,11 +145,9 @@ def invertIf( logic, invert ):
 class Parameters(object):
     def __init__(self):
         self.autoSave = False
-        self.historyLength = timedelta(days=1)
         
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault( 'historyLength', timedelta(days=1) )
 
 class AutoLoad(UiForm,UiBase):
     ionReappeared = QtCore.pyqtSignal()
@@ -161,7 +161,7 @@ class AutoLoad(UiForm,UiBase):
         self.currentSettingsName = self.config.get('AutoLoad.SettingsName','')
         self.loadingHistory = LoadingHistory(dbConnection)
         self.loadingHistory.open()
-        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), self.currentSettingsName )
+        self.loadingHistory.query( now()-timedelta(seconds=self.settings.historyLength.toval('s')), now()+timedelta(hours=2), self.currentSettingsName )
         self.timer = None
         self.pulser = pulser
         self.dataSignalConnected = False
@@ -399,7 +399,7 @@ class AutoLoad(UiForm,UiBase):
         self.parameterWidget.setParameters( self.parameter() )
         self.useInterlockGui.setChecked(self.settings.useInterlock)
         self.autoReloadBox.setChecked(self.settings.autoReload)
-        self.loadingHistory.query( now()-self.parameters.historyLength, now()+timedelta(hours=2), self.currentSettingsName )
+        self.loadingHistory.query( now()-timedelta(seconds=self.settings.historyLength.toval('s')), now()+timedelta(hours=2), self.currentSettingsName )
         self.globalsAdjustTableModel.setSettings(self.settings.globalsAdjustList)
         self.tableModel.setChannelDict( self.settings.interlock )
 

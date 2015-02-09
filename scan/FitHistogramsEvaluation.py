@@ -168,7 +168,8 @@ class FitHistogramEvaluation(EvaluationBase):
     
                 #-----------------------------------------------
         else:
-            self.fitFunction.parametersConfidence = [None]*len(self.parametersConfidence)
+            if hasattr(self, "parametersConfidence"): #I don't know why this is necessary
+                self.fitFunction.parametersConfidence = [None]*len(self.parametersConfidence)
  
         return params, self.fitFunction.parametersConfidence
 
