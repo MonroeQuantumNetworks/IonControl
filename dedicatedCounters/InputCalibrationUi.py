@@ -56,7 +56,10 @@ class InputCalibrationChannel(SheetForm,SheetBase):
             self.treeWidget = ParameterTree()
             self.treeWidget.setParameters(self.param, showTop=False)
             self.verticalLayout.insertWidget(2,self.treeWidget)
-            self.param.sigTreeStateChanged.connect(self.myCalibration.update, QtCore.Qt.UniqueConnection)
+            try:
+                self.param.sigTreeStateChanged.connect(self.myCalibration.update, QtCore.Qt.UniqueConnection)
+            except TypeError:
+                pass
         else:
             self.param = Parameter.create(name='params', type='group', children=self.myCalibration.paramDef())
             self.treeWidget.setParameters(self.param, showTop=False)
