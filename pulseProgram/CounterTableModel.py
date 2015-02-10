@@ -11,12 +11,13 @@ from PyQt4 import QtCore, QtGui
 
 class CounterTableModel(QtCore.QAbstractTableModel):
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, counterdict, parent=None, *args): 
+    def __init__(self, counterdict, size=48, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.counterdict = counterdict
+        self.size = size
         
     def setCounterdict(self, counterdict):
         self.beginResetModel()
@@ -27,15 +28,15 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         return len(self.counterdict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 33
+        return self.size+1
  
     def currentState(self,index):
         data = self.counterdict.at(index.row()).data
-        bit = 0x80000000>>(index.column()-1)
+        bit = 0x1<<(self.size-index.column()-1)
         return bool( bit & data )
         
     def setState(self,index,state):
-        bit = 0x80000000>>(index.column()-1)
+        bit = 0x1<<(self.size-index.column()-1)
         var = self.counterdict.at(index.row())
         if state:
             var.data = (var.data & ~bit) | bit
@@ -85,7 +86,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return str(31-section+1) if section>0 else 'id'
+                return str(self.size-section) if section>0 else 'id'
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.counterdict.at(section).name
         return None #QtCore.QVariant()
