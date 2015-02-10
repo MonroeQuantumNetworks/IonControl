@@ -263,9 +263,7 @@ class PulserHardwareServer(Process, OKBase):
                         channel = (token >>48) & 0xff
                         sumvalue = token & 0xffffffff
                         count = (token >> 32) & 0xffff
-                        if self.data.result is None:
-                            self.data.result = defaultdict(list)
-                        self.data.result[channel + 256].append( sumvalue/float(count)  )
+                        self.data.count[channel + 32].append( sumvalue/float(count)  )
                     elif key==0x51:
                         channel = (token >>48) & 0xff 
                         value = token & 0x0000ffffffffffff
