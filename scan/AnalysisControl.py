@@ -345,6 +345,7 @@ class AnalysisControl(ControlForm, ControlBase ):
     def fit(self, evaluation):
         if self.currentEvaluation is not None and evaluation == self.currentEvaluation:
             plot = self.plottedTraceDict.get( evaluation.evaluation )
+            self.fitfunction.evaluate( self.globalDict )
             if plot is not None:
                 sigma = None
                 if plot.hasHeightColumn:
