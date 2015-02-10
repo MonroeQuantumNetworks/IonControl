@@ -61,6 +61,8 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         return str(self.currentState(index))
         
     def displayDataColor(self,index):
+        if index.column()==self.size:
+            return QtGui.QColor(QtCore.Qt.white)  
         return QtGui.QColor(QtCore.Qt.green) if self.currentState(index) else QtGui.QColor(QtCore.Qt.white)
   
     def data(self, index, role): 

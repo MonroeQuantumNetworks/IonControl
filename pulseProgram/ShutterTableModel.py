@@ -34,9 +34,9 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
  
     def currentState(self,index):
         var, mask = self.shutterdict.at(index.row())
-        mask = mask.data if mask else 0xffffffff
+        mask = mask.data if mask else 0xffffffffffffffff
         value = var.data
-        bit = 0x80000000>>index.column()
+        bit = 0x1<<(self.size-index.column()-1)
         if mask & bit:
             if value & bit:
                 return 1
@@ -46,7 +46,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
             return 0
         
     def setState(self,index,state):
-        bit = 0x80000000>>index.column()
+        bit = 0x1<<(self.size-index.column()-1)
         var, mask = self.shutterdict.at(index.row())
         if mask is not None:
             if state == 0:
