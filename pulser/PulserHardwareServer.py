@@ -141,6 +141,7 @@ class PulserHardwareServer(Process, OKBase):
             0x02ddnnxxxxxxxxxx timestamp result channel n id dd
             0x03ddnnxxxxxxxxxx timestamp gate start channel n id dd
             0x04nnxxxxxxxxxxxx other return
+            0x05nnxxxxxxxxxxxx ADC return MSB 16 bits count, LSB 32 bits sum
             0xeennxxxxxxxxxxxx dedicated result
             0x50nn00000000xxxx result n return Hi 16 bits, only being sent if xxxx is not identical to zero
             0x51nnxxxxxxxxxxxx result n return Low 48 bits, guaranteed to come first
@@ -258,6 +259,13 @@ class PulserHardwareServer(Process, OKBase):
                         channel = (token >>40) & 0xffff 
                         value = token & 0x000000ffffffffff
                         self.data.other.append(value)
+                    elif key==5: # ADC return
+                        channel = (token >>48) & 0xff
+                        sumvalue = token & 0xffffffff
+                        count = (token >> 32) & 0xffff
+                        if self.data.result is None:
+                            self.data.result = defaultdict(list)
+                        self.data.result[channel + 256].append( sumvalue/float(count)  )
                     elif key==0x51:
                         channel = (token >>48) & 0xff 
                         value = token & 0x0000ffffffffffff

@@ -11,13 +11,17 @@ from PyQt4 import QtCore, QtGui
 
 class CounterTableModel(QtCore.QAbstractTableModel):
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, counterdict, size=48, parent=None, *args): 
+    def __init__(self, counterdict, size=40, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.counterdict = counterdict
         self.size = size
+        self.channelNames = ['Count {0}'.format(i) for i in range(24)]
+        self.channelNames.extend( ['TS {0}'.format(i) for i in range(8)] )
+        self.channelNames.extend( ['ADC {0}'.format(i) for i in range(8)] )
+        self.channelNames.append('id')
         
     def setCounterdict(self, counterdict):
         self.beginResetModel()
@@ -86,7 +90,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
-                return str(self.size-section) if section>0 else 'id'
+                return self.channelNames[self.size-section]
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.counterdict.at(section).name
         return None #QtCore.QVariant()
