@@ -16,19 +16,19 @@ parameter timeFour
 parameter initTime = 1 ms
 
 set_shutter( initShutter )
-update (initTime)
+update (initTime, wait_dds=False)
 set_dds( channel=DDSDetect, freq=DetectFreq, phase=DetectPhase, amp=DetectAmp )
 #wait_dds()
 set_shutter(first)
 update(  timeOne, wait_dds=False)
 set_inv_shutter(first)
 set_shutter(second)
-update( timeTwo )
+update( timeTwo, wait_dds=False )
 set_inv_shutter(second)
 set_shutter(third)
-update( timeThree )
+update( timeThree, wait_dds=False )
 set_inv_shutter( third)
 set_shutter( fourth )
-update(timeFour)
+update(timeFour, wait_dds=False)
 
 exit( endLabel )

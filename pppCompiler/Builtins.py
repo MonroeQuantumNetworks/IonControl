@@ -46,10 +46,7 @@ def clear_counter( symboltable, arg=list(), kwarg=dict() ):
     return ["  COUNTERMASK NULL"]
 
 def update( symboltable, arg=list(), kwarg=dict() ):
-    code = ["  WAITDDSWRITEDONE"]
-    if 'wait_dds' in kwarg:
-        if not kwarg['wait_dds']:
-            code = list()
+    code = ["  WAITDDSWRITEDONE"] if stringToBool(kwarg.get('wait_dds',True)) else list()
     pulseMode = stringToBool( kwarg.get('pulse_mode',False) )
     if len(arg)>=2:
         symbol = symboltable.getVar( arg[1] )
