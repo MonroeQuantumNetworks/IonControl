@@ -91,6 +91,13 @@ def serial_write( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     channel = symboltable.getConst( arg[1] )
     value = symboltable.getVar( arg[2] )
     return [ "  SERIALWRITE {0}, {1}".format(channel.name, value.name) ]
+
+def set_parameter( symboltable, arg=list(), kwarg=dict()):  # index, variable):
+    if len(arg)!=3:
+        raise CompileException( "expected exactly two arguments in set_parameter" )
+    channel = symboltable.getConst( arg[1] )
+    value = symboltable.getVar( arg[2] )
+    return [ "  SETPARAMETER {0}, {1}".format(channel.name, value.name) ]
   
 def read_pipe( symboltable, arg=list(), kwarg=dict()):
     return ["  READPIPE"]

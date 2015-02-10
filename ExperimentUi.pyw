@@ -163,7 +163,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                     
         self.scanExperiment = self.tabDict["Scan"]
                     
-        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal) )
+        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal), size=48 )
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
         self.pulser.ppActiveChanged.connect( self.shutterUi.setDisabled )

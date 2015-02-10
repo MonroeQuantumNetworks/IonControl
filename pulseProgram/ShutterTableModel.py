@@ -11,7 +11,7 @@ from PyQt4 import QtCore, QtGui
 
 class ShutterTableModel(QtCore.QAbstractTableModel):
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, shutterdict, channelNameData, parent=None, *args): 
+    def __init__(self, shutterdict, channelNameData, size=32, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
@@ -19,6 +19,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         self.shutterdict = shutterdict
         self.channelNames, self.channelSignal = channelNameData
         self.channelSignal.dataChanged.connect( self.onHeaderChanged )
+        self.size = size
         
     def setShutterdict(self, shutterdict):
         self.beginResetModel()
@@ -29,7 +30,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         return len(self.shutterdict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 32
+        return self.size
  
     def currentState(self,index):
         var, mask = self.shutterdict.at(index.row())
@@ -84,7 +85,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         self.headerDataChanged.emit( QtCore.Qt.Horizontal, first, last )
 
     def headerData(self, section, orientation, role ):
-        index = 31-section
+        index = self.size-1-section
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal):
                 if index in self.channelNames.names:

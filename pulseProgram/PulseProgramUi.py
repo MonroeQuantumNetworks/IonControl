@@ -153,7 +153,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filter = KeyListFilter( [], [QtCore.Qt.Key_B] )
         self.filter.controlKeyPressed.connect( self.onBold )
         self.variableView.installEventFilter(self.filter)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.currentContext.shutters, self.channelNameData[0:2] )
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.currentContext.shutters, self.channelNameData[0:2], size=48 )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)

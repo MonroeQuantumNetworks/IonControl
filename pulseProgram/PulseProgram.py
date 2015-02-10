@@ -97,6 +97,7 @@ OPS = {'NOP'    : 0x00,
        'WRITERESULTTOPIPE': 0x54,
        'SERIALWRITE': 0x55,
        'DIVW': 0x56,
+       'SETPARAMETER': 0x57,
        'END'    : 0xFF }
 
 class Dimensions:

@@ -65,6 +65,7 @@ class SymbolTable(OrderedDict):
         self['wait_trigger'] = Builtin( 'wait_trigger', Builtins.wait_trigger )
         self['write_result'] = Builtin( 'write_result', Builtins.write_result )
         self['serial_write'] = Builtin( 'serial_write', Builtins.serial_write )
+        self['set_parameter'] = Builtin( 'set_parameter', Builtins.set_parameter )
         
     def setInlineParameter(self, name, value):
         self.inlineParameterValues[value] = name
