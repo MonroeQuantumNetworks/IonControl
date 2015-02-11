@@ -49,7 +49,6 @@ class Ad9912:
         logger = logging.getLogger(__name__)
         if self.pulser:
             check( self.pulser.SetWireInValue(0x03, (channel & 0xff)<<4 | (cmd & 0xf) ), "Ad9912" ) 
-            check( self.pulser.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
             self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x12, data)) )
             self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
@@ -60,8 +59,7 @@ class Ad9912:
     def update(self, channelmask):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x08, channelmask & 0xff), "Ad9912 apply" )
-            self.pulser.UpdateWireIns()
+            self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x11, channelmask)) )
             self.pulser.ActivateTriggerIn(0x41,2)
         else:
             logger.warning( "Pulser not available" )
