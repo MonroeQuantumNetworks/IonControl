@@ -61,7 +61,7 @@ class EvaluationDefinition(object):
     @property
     def channelKey(self):
         if self.type=='Counter':
-            return ((self.counterId&0xff)<<16) | (self.counter & 0xff)
+            return ((self.counterId&0xff)<<8) | (self.counter & 0xff)
         else:
             return (self.counter & 0xff)
         

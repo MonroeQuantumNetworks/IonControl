@@ -36,11 +36,11 @@ class CounterTableModel(QtCore.QAbstractTableModel):
  
     def currentState(self,index):
         data = self.counterdict.at(index.row()).data
-        bit = 0x1<<(self.size-index.column()-1)
+        bit = 0x1<<(self.size-index.column())
         return bool( bit & data )
         
     def setState(self,index,state):
-        bit = 0x1<<(self.size-index.column()-1)
+        bit = 0x1<<(self.size-index.column())
         var = self.counterdict.at(index.row())
         if state:
             var.data = (var.data & ~bit) | bit
@@ -61,7 +61,7 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         return str(self.currentState(index))
         
     def displayDataColor(self,index):
-        if index.column()==self.size:
+        if index.column()==0:
             return QtGui.QColor(QtCore.Qt.white)  
         return QtGui.QColor(QtCore.Qt.green) if self.currentState(index) else QtGui.QColor(QtCore.Qt.white)
   

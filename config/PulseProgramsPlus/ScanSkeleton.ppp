@@ -1,0 +1,25 @@
+###########################################################################
+#
+#  example for PulseProgramPlus input
+#
+const ResultChannel = 4
+
+# excitcodes
+exitcode IonLostExitcode = 0xfffe000000000001
+exitcode endLabel = 0xffffffffffffffff
+
+parameter delay
+masked_shutter my_shutter
+counter my_counter
+
+
+while not pipe_empty():
+    update()
+    apply_next_scan_point()
+    set_counter( my_counter )
+    update(delay)
+    clear_counter()
+    write_result( ResultChannel, delay )
+
+
+exit( endLabel )

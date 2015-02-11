@@ -77,7 +77,7 @@ class FinishException(Exception):
     pass
 
 class PulserHardwareServer(Process, OKBase):
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
     dedicatedDataClass = DedicatedData
     def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         Process.__init__(self)
@@ -200,7 +200,7 @@ class PulserHardwareServer(Process, OKBase):
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
-                #print hex(token)
+                print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -261,10 +261,11 @@ class PulserHardwareServer(Process, OKBase):
                         value = token & 0x000000ffffffffff
                         self.data.other.append(value)
                     elif key==5: # ADC return
-                        channel = (token >>48) & 0xff
-                        sumvalue = token & 0xffffffff
-                        count = (token >> 32) & 0xffff
-                        self.data.count[channel + 32].append( sumvalue/float(count)  )
+                        channel = (token >>40) & 0xffff
+                        sumvalue = token & 0xfffffff
+                        count = (token >> 28) & 0xfff
+                        if count>0:
+                            self.data.count[channel + 32].append( sumvalue/float(count)  )
                     elif key==0x51:
                         channel = (token >>48) & 0xff 
                         value = token & 0x0000ffffffffffff
