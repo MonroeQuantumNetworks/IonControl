@@ -45,6 +45,7 @@ class AutoLoadSettings(object):
     def __init__(self):
         self.counterChannel = 0
         self.shutterChannel = 0
+        self.shutterChannel2 = 0
         self.ovenChannel = 0
         self.laserDelay = 0
         self.maxTime = 0
@@ -56,6 +57,7 @@ class AutoLoadSettings(object):
         self.wavemeterAddress = ""
         self.ovenChannelActiveLow = False
         self.shutterChannelActiveLow = False
+        self.shutterChannelActiveLow2 = False
         self.autoReload = False
         self.waitForComebackTime =  mg( 60, 's' )
         self.minLaserScatter = mg( 0.1, 'kHz' )
@@ -86,6 +88,8 @@ class AutoLoadSettings(object):
                 {'name': 'Oven active low', 'type': 'bool', 'value': self.ovenChannelActiveLow, 'tip': "True means oven channel is active low", 'field': 'ovenChannelActiveLow'},
                 {'name': 'Ionization shutter', 'type': 'int', 'value': self.shutterChannel, 'tip': "Shutter channel controlling the ionization laser", 'field': 'shutterChannel'},
                 {'name': 'Ionization active low', 'type': 'bool', 'value': self.shutterChannelActiveLow, 'tip': "Ionization shutter is active low", 'field': 'shutterChannelActiveLow'},
+                {'name': 'Ionization shutter 2', 'type': 'int', 'value': self.shutterChannel2, 'tip': "Shutter channel controlling the second ionization laser", 'field': 'shutterChannel2'},
+                {'name': 'Ionization active low 2', 'type': 'bool', 'value': self.shutterChannelActiveLow2, 'tip': "Ionization 2 shutter is active low", 'field': 'shutterChannelActiveLow2'},
                 {'name': 'Counter channel', 'type': 'int', 'value': self.counterChannel, 'tip': "Counter channel", 'field': 'counterChannel'},
                 {'name': 'Wavemeter address', 'type': 'str', 'value': self.wavemeterAddress, 'tip': "Address of wavemeter interface (http://)", 'field': 'wavemeterAddress'},
                 {'name': 'History timespan', 'type': 'magnitude', 'value': self.historyLength, 'tip': "Time range to display loading history", 'field': 'historyLength'}]
@@ -110,6 +114,8 @@ class AutoLoadSettings(object):
         self.__dict__ = state
         self.__dict__.setdefault( 'ovenChannelActiveLow', False)
         self.__dict__.setdefault( 'shutterChannelActiveLow', False )
+        self.__dict__.setdefault( 'shutterChannel2', False )
+        self.__dict__.setdefault( 'shutterChannelActiveLow2', False )
         self.__dict__.setdefault( 'autoReload', False )
         self.__dict__.setdefault( 'waitForComebackTime', mg( 60, 's' ) )
         self.__dict__.setdefault( 'minLaserScatter', mg( 0.1, 'kHz' ) )
@@ -123,8 +129,8 @@ class AutoLoadSettings(object):
         self.__dict__.setdefault( 'globalsAdjustList', SequenceDict() )
         self.__dict__.setdefault( 'historyLength', mg(7,'day') )
 
-    stateFields = ['counterChannel', 'shutterChannel', 'ovenChannel', 'laserDelay', 'maxTime', 'thresholdBare', 'thresholdOven',
-                   'checkTime', 'useInterlock', 'interlock', 'wavemeterAddress', 'ovenChannelActiveLow', 'shutterChannelActiveLow',
+    stateFields = ['counterChannel', 'shutterChannel', 'shutterChannel2', 'ovenChannel', 'laserDelay', 'maxTime', 'thresholdBare', 'thresholdOven',
+                   'checkTime', 'useInterlock', 'interlock', 'wavemeterAddress', 'ovenChannelActiveLow', 'shutterChannelActiveLow', 'shutterChannelActiveLow2',
                    'autoReload', 'waitForComebackTime', 'minLaserScatter', 'maxFailedAutoload', 'postSequenceWaitTime', 'loadAlgorithm',
                    'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList', 'historyLength' ] 
         
@@ -582,6 +588,7 @@ class AutoLoad(UiForm,UiBase):
         self.disconnectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
     
     def exitIdle(self):
         self.timer = QtCore.QTimer()
@@ -608,6 +615,7 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
         self.statusLabel.setText("Loading")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
    
     def adjustFromLoading(self):
@@ -627,6 +635,7 @@ class AutoLoad(UiForm,UiBase):
         self.checkStarted = now()
         self.statusLabel.setText("Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
 
     def setShuttleLoad(self):
@@ -637,6 +646,7 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
         self.statusLabel.setText("Shuttle Loading")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
         if self.voltageControl:
             self.voltageControl.onShuttleSequence()
@@ -653,6 +663,7 @@ class AutoLoad(UiForm,UiBase):
         self.checkStarted = now()
         self.statusLabel.setText("Shuttle Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
         
     def setPostSequenceWait(self):
@@ -677,6 +688,7 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Trapped :)")       
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2) )
         self.numFailedAutoload = 0
         self.trappingTime = self.loadingHistory.lastEvent().trappingTime
         self.timerNullTime = self.trappingTime
@@ -715,6 +727,7 @@ class AutoLoad(UiForm,UiBase):
         self.disconnectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
         
     def onIonIsStillTrapped(self):
         self.statemachine.processEvent( 'ionStillTrapped' )
