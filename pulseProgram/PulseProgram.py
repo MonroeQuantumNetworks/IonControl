@@ -174,7 +174,7 @@ class PulseProgram:
         self.adIndexList = [(x,0) for x in range(8) ]
         self.adBoards = [ Board() ]*8
         
-        self.timestep = magnitude.mg(20.0,'ns')
+        self.timestep = magnitude.mg(5.0,'ns')
 
     def setHardware(self, adIndexList, adBoards, timestep ):
         self.adIndexList = adIndexList
