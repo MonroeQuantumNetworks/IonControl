@@ -96,12 +96,10 @@ class FitHistogramEvaluation(EvaluationBase):
         if params is None:
             y, x = numpy.histogram( data.count[counter] , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
             y, self.fitFunction.totalCounts = self.normalizeHistogram(y, longOutput=True)
-            params, cov_x, infodict, _, _ = self.leastsq(x[0:-1], y, [0.3,0.3], full_output=True)
-            chisq = sum(infodict["fvec"]*infodict["fvec"])
-            dof=len(x)-len(params)
-            Confidence = list(numpy.sqrt(numpy.diagonal(cov_x))*sqrt(chisq/dof))
+            params, confidence = self.leastsq(x[0:-1], y, [0.3,0.3])
             params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter
-            Confidence.append( Confidence[0]+Confidence[1] )  # don't know what to do :(
+            confidence = list(confidence)
+            confidence.append( 0 )  # don't know what to do :(
             data.evaluated['FitHistogramsResult'] = (params, confidence, self.chisq/self.dof)
         if self.settings['Mode']=='Parity':
             return params[0]+params[2]-params[1], None, params[0]+params[2]-params[1]
