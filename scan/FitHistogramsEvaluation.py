@@ -15,7 +15,6 @@ import xml.etree.ElementTree as ElementTree
 from itertools import izip_longest
 from copy import deepcopy
 from os import path
-from statsmodels.sandbox.mle import full_output
 
 class HistogramFitFunction:
     name = "HistogramApproximation"
