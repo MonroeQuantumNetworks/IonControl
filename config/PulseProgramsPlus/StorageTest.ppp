@@ -1,0 +1,13 @@
+const ResultChannel = 4
+
+parameter a
+parameter b
+
+exitcode endlabel = 0xfffe000000000001
+
+a = b
+a = b
+write_result( ResultChannel, a )
+
+exit( endlabel )
+ 
