@@ -588,7 +588,8 @@ class AutoLoad(UiForm,UiBase):
         self.disconnectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
     
     def exitIdle(self):
         self.timer = QtCore.QTimer()
@@ -615,7 +616,8 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
         self.statusLabel.setText("Loading")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
    
     def adjustFromLoading(self):
@@ -635,7 +637,8 @@ class AutoLoad(UiForm,UiBase):
         self.checkStarted = now()
         self.statusLabel.setText("Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2) )
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
 
     def setShuttleLoad(self):
@@ -646,7 +649,8 @@ class AutoLoad(UiForm,UiBase):
         self.elapsedLabel.setStyleSheet("QLabel { color:purple; }")
         self.statusLabel.setText("Shuttle Loading")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
         if self.voltageControl:
             self.voltageControl.onShuttleSequence()
@@ -663,7 +667,8 @@ class AutoLoad(UiForm,UiBase):
         self.checkStarted = now()
         self.statusLabel.setText("Shuttle Checking for ion")
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(True,self.settings.shutterChannelActiveLow) )
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(True,self.settings.shutterChannelActiveLow2) )
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(True,self.settings.ovenChannelActiveLow) )
         
     def setPostSequenceWait(self):
@@ -688,7 +693,8 @@ class AutoLoad(UiForm,UiBase):
         self.statusLabel.setText("Trapped :)")       
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow) )
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2) )
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2) )
         self.numFailedAutoload = 0
         self.trappingTime = self.loadingHistory.lastEvent().trappingTime
         self.timerNullTime = self.trappingTime
@@ -727,7 +733,8 @@ class AutoLoad(UiForm,UiBase):
         self.disconnectDataSignal()
         self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
         self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
-        self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
         
     def onIonIsStillTrapped(self):
         self.statemachine.processEvent( 'ionStillTrapped' )
