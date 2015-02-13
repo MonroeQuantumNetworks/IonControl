@@ -50,6 +50,7 @@ from modules.doProfile import doprofile
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from externalParameter.ExternalParameterBase import InstrumentDict
 from mylogging.LoggingSetup import qtWarningButtonHandler
+from pulser.PulserParameterUi import PulserParameterUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -182,6 +183,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
+        self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.variables)
+        self.pulserParameterUi.setupUi()
+        self.pulserParameterUiDock = QtGui.QDockWidget("Pulser Parameters")
+        self.pulserParameterUiDock.setWidget(self.pulserParameterUi)
+        self.pulserParameterUiDock.setObjectName("_pulserParameterUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.pulserParameterUiDock)
+
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.variables )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
@@ -203,6 +211,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.valueHistoryDock )
         
         # tabify the dock widgets
+        self.tabifyDockWidget( self.pulserParameterUiDock, self.preferencesUiDock)
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
@@ -419,7 +428,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
+                     self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock, self.pulserParameterUiDock,
                      #self.DDS9910DockWidget, 
                      self.loggerDock, self.todoListDock, self.measurementLogDock ]:
             self.menuView.addAction(dock.toggleViewAction())
@@ -507,6 +516,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLog.saveConfig()
         self.valueHistoryUi.saveConfig()
         self.ExternalParametersUi.saveConfig()
+        self.pulserParameterUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()

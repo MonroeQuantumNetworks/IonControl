@@ -318,6 +318,13 @@ class PulserHardwareServer(Process, OKBase):
     def getTrigger(self):
         return self._trigger
             
+    def setExtendedWireIn(self, address, value ):
+        if self.xem:
+            self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', address, value)) )
+            logging.getLogger(__name__).debug("Writing Extended wire {0} value {1}".format(address,value))
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            
     def setTrigger(self,value):
         if self.xem:
             self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x11, value)) )
