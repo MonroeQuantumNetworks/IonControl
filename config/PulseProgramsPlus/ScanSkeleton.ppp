@@ -11,6 +11,7 @@ exitcode endLabel = 0xffffffffffffffff
 parameter dummy
 parameter delay
 parameter pulse_time
+shutter init_shutter
 masked_shutter my_shutter
 masked_shutter pulse_shutter
 masked_shutter pulse_shutter_2
@@ -21,16 +22,20 @@ parameter usePulses
 
 
 while not pipe_empty():
-    update(delay)
     apply_next_scan_point()
+    write_result( ResultChannel, currentexperiment )
+    set_shutter( init_shutter )
+    update(delay)
 
     if usePulses>0:
         set_shutter( pulse_shutter )
         update(pulse_time, pulse_mode=True)
         update(pulse_time)
         set_shutter( pulse_shutter )
+        set_counter( my_counter )
         update(pulse_time, pulse_mode=True)
         update(pulse_time)
+        clear_counter()
         set_shutter( pulse_shutter )
         update(pulse_time, pulse_mode=True)
         update(pulse_time)
@@ -58,7 +63,4 @@ while not pipe_empty():
 #    set_shutter( pulse_shutter )
 #    update(pulse_time, pulse_mode=True)
 #    update(pulse_time)
-
-    write_result( ResultChannel, currentexperiment )
-
 exit( endLabel )

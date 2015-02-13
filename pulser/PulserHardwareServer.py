@@ -78,7 +78,7 @@ class FinishException(Exception):
 
 class PulserHardwareServer(Process, OKBase):
     timestep = magnitude.mg(5,'ns')
-    integrationTimestep = magnitude(20, 'ns')
+    integrationTimestep = magnitude.mg(20, 'ns')
     dedicatedDataClass = DedicatedData
     def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         Process.__init__(self)
@@ -242,7 +242,7 @@ class PulserHardwareServer(Process, OKBase):
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
                     key = token >> 56 
-                    #print hex(token)
+                    #print "token", hex(token)
                     if key==1:   # count
                         channel = (token >>40) & 0xffff 
                         value = token & 0x000000ffffffffff
