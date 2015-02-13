@@ -135,6 +135,7 @@ class MeasurementLogUi(Form, Base ):
         self.parameterTableView.addAction( self.addParameterToMeasurementAction )
         self.timespanComboBox.addItems( self.timespans )
         self.timespanComboBox.setCurrentIndex( self.settings.timespan )
+        isCustom = self.timespans[self.settings.timespan] == 'Custom'
         self.timespanComboBox.currentIndexChanged[int].connect( self.onChangeTimespan )
         self.container.beginInsertMeasurement.subscribe( self.measurementModel.beginInsertRows )
         self.container.endInsertMeasurement.subscribe( self.measurementModel.endInsertRows )  
@@ -146,6 +147,8 @@ class MeasurementLogUi(Form, Base ):
         self.toDateTimeEdit.setDateTime( self.settings.toDateTimeEdit )
         self.fromDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'fromDateTimeEdit') )
         self.toDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'toDateTimeEdit') )
+        self.toDateTimeEdit.setEnabled( isCustom )
+        self.fromDateTimeEdit.setEnabled( isCustom )
         self.plainTextEdit.editingFinished.connect( self.onCommentFinished )
         self.onFilterRefresh()
         self.scanNameFilterButton.clicked.connect( self.onFilterButton )
