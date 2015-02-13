@@ -78,6 +78,7 @@ class FinishException(Exception):
 
 class PulserHardwareServer(Process, OKBase):
     timestep = magnitude.mg(5,'ns')
+    integrationTimestep = magnitude(20, 'ns')
     dedicatedDataClass = DedicatedData
     def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         Process.__init__(self)
@@ -375,7 +376,7 @@ class PulserHardwareServer(Process, OKBase):
         return self.integrationTimeBinary
             
     def getIntegrationTimeBinary(self, value):
-        return int( (value/self.timestep).toval() ) & 0xffffffff
+        return int( (value/self.integrationTimestep).toval() ) & 0xffffffff
     
     def ppUpload(self, (code,data), codestartaddress=0, datastartaddress=0 ):
         self.ppUploadCode(code, codestartaddress)
