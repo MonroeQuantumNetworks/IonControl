@@ -200,7 +200,7 @@ class PulserHardwareServer(Process, OKBase):
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
-                print hex(token)
+                #print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -221,7 +221,7 @@ class PulserHardwareServer(Process, OKBase):
                         self.dedicatedData = self.dedicatedDataClass()
                     self.dedicatedData.data[channel] = token & 0xffffffffffff
                     self.dedicatedData.timestamp = time_time()
-                    logger.debug("dedicated {0} {1}".format(channel, token & 0xffffffffffff))
+                    #logger.debug("dedicated {0} {1}".format(channel, token & 0xffffffffffff))
                 elif token & 0xff00000000000000 == 0xff00000000000000:
                     if token == 0xffffffffffffffff:    # end of run
                         self.data.final = True
