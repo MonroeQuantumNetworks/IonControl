@@ -73,8 +73,9 @@ class APTInstrument(object):
             raise APTException( "Error setting position")
     
     def motionRunning(self):
-        status = ctypes.c_long()
+        status = ctypes.c_ulong()
         APTDll.MOT_GetStatusBits(self.plSerialNumber, ctypes.byref(status))
+        #print "running", hex(status.value), hex(status.value & 0x30)
         return bool(status.value & 0x30) 
     
     def close(self):
@@ -113,8 +114,7 @@ class APTRotation(ExternalParameterBase):
         self.settings.value[channel] = v
         
     def _getValue(self, channel):
-        self.settings.value[channel] = magnitude.mg(self.instrument.position) #set voltage
-        return self.settings.value[channel]
+        return magnitude.mg(self.instrument.position) #set voltage
         
     def currentValue(self, channel):
         return self.settings.value[channel]
