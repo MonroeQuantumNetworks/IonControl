@@ -242,7 +242,7 @@ class PulserHardwareServer(Process, OKBase):
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
                     key = token >> 56 
-                    #print hex(token)
+                    #print "token", hex(token)
                     if key==1:   # count
                         channel = (token >>40) & 0xffff 
                         value = token & 0x000000ffffffffff
