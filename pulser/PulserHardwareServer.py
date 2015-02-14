@@ -78,7 +78,7 @@ class FinishException(Exception):
 
 class PulserHardwareServer(Process, OKBase):
     timestep = magnitude.mg(5,'ns')
-    integrationTimestep = magnitude(20, 'ns')
+    integrationTimestep = magnitude.mg(20, 'ns')
     dedicatedDataClass = DedicatedData
     def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         Process.__init__(self)
@@ -201,7 +201,7 @@ class PulserHardwareServer(Process, OKBase):
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
-                #print hex(token)
+                print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -364,7 +364,7 @@ class PulserHardwareServer(Process, OKBase):
         return self._integrationTime
         
     def setIntegrationTime(self, value):
-        self.integrationTimeBinary = int( (value/self.timestep).toval() )
+        self.integrationTimeBinary = int( (value/self.integrationTimestep).toval() )
         if self.xem:
             logging.getLogger(__name__).info(  "set dedicated integration time {0} {1}".format( value, self.integrationTimeBinary ) )
             check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
