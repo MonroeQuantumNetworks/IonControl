@@ -99,7 +99,7 @@ class FitHistogramEvaluation(EvaluationBase):
             params, confidence = self.leastsq(x[0:-1], y, [0.3,0.3])
             params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter
             confidence = list(confidence)
-            confidence.append( 0 )  # don't know what to do :(
+            confidence.append( confidence[0]+confidence[1] )  # don't know what to do :(
             data.evaluated['FitHistogramsResult'] = (params, confidence, self.chisq/self.dof)
         if self.settings['Mode']=='Parity':
             return params[0]+params[2]-params[1], None, params[0]+params[2]-params[1]
@@ -168,8 +168,7 @@ class FitHistogramEvaluation(EvaluationBase):
     
                 #-----------------------------------------------
         else:
-            if hasattr(self, "parametersConfidence"): #I don't know why this is necessary
-                self.fitFunction.parametersConfidence = [None]*len(self.parametersConfidence)
+            self.fitFunction.parametersConfidence = [None]*2
  
         return params, self.fitFunction.parametersConfidence
 
