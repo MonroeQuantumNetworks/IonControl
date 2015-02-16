@@ -23,6 +23,7 @@ parameter usePulses
 
 while not pipe_empty():
     apply_next_scan_point()
+    currentexperiment += 1
     write_result( ResultChannel, currentexperiment )
     set_shutter( init_shutter )
     update(delay)
