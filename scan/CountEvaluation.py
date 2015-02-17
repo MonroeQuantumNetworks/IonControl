@@ -77,11 +77,11 @@ class MeanEvaluation(EvaluationBase):
     """
     name = 'Mean'
     tooltip = "Mean of observed counts" 
-    errorBarType = enum('shotnoise','statistical')
+    errorBarType = enum('shotnoise','statistical','min max')
     expression = Expression()
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
-        self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical ]
+        self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical, self.evaluateMinMax ]
         
     def setDefault(self):
         self.settings.setdefault('errorBarType',0)
@@ -98,6 +98,10 @@ class MeanEvaluation(EvaluationBase):
         mean = numpy.mean( countarray )
         stderr = numpy.std( countarray, ddof=1 ) / math.sqrt( max( len(countarray)-1, 1) )
         return mean, (stderr/2.,stderr/2.), numpy.sum( countarray )
+    
+    def evaluateMinMax(self, countarray):
+        mean = numpy.mean( countarray )
+        return numpy.mean(countarray), (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
     
     def evaluate(self, data, evaluation, expected=None):
         countarray = evaluation.getChannelData(data)
