@@ -201,7 +201,7 @@ class PulserHardwareServer(Process, OKBase):
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
-                print hex(token)
+                #print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )

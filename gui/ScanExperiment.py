@@ -510,7 +510,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         index = 0
         for evaluation, algo in zip(evalList, evalAlgoList):
             if evaluation.showHistogram:
-                y, x, function = algo.histogram( data, evaluation.counter, self.evaluation.histogramBins) 
+                y, x, function = algo.histogram( data, evaluation, self.evaluation.histogramBins ) 
                 if self.evaluation.integrateHistogram and len(self.histogramList)>index:
                     self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name, None )
                 elif len(self.histogramList)>index:
