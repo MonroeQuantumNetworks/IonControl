@@ -35,6 +35,33 @@ class CosFit(FitFunctionBase):
         A,k,theta, O = self.parameters if p is None else p
         return A*numpy.cos(2*numpy.pi*k*x+theta)+O
 
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        A,k,theta,O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        maximum = numpy.amax(y)
+        minimum = numpy.amin(y)
+        A=(maximum-minimum)/2
+        O=(maximum+minimum)/2
+        #minindex = numpy.argmin(y)
+        maxindex = numpy.argmax(y)
+        theta = x[maxindex]
+        threshold = (maximum+minimum)/2.0
+        NewZeroCrossing = x[0]
+        PreviousZeroCrossing = x[0]
+        maxZeroCrossingDelta = 0
+        for ind in range(len(y)-1):
+            if (y[ind] <= threshold <= y[ind+1]) or (y[ind+1] <= threshold <= y[ind]):
+                NewZeroCrossing = x[ind]
+                NewZeroCrossingDelta = NewZeroCrossing-PreviousZeroCrossing
+                if NewZeroCrossingDelta > maxZeroCrossingDelta:
+                    maxZeroCrossingDelta = NewZeroCrossingDelta 
+                PreviousZeroCrossing = NewZeroCrossing
+        k = 1.0/(2.0*maxZeroCrossingDelta)
+#        theta = numpy.remainder(x0,T)
+        logging.getLogger(__name__).info("smart start values A={0}, k={1}, theta={2}, O={3}".format(A,k,theta,O))
+        return (A,k,theta,O )
 
 class CosSqFit(FitFunctionBase):
     name = "Cos2"
