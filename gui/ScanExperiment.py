@@ -211,6 +211,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
         self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
         
+    def reAnalyze(self, plottedTrace):
+        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        
     def printTargets(self):
         return self.plotDict.keys()
 
