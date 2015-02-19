@@ -117,6 +117,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.fitToStartButton.clicked.connect( self.onFitToStart )
         self.getSmartStartButton.clicked.connect( self.onSmartToStart )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStart )
+        self.useErrorBarsCheckBox.stateChanged.connect( self.onUseErrorBars )
         self.analysisComboDelegate = ComboBoxDelegate()
         self.analysisTableModel = AnalysisTableModel(self.analysisDefinition, self.config, self.globalDict, self.evaluationNames )
         self.analysisTableModel.fitfunctionChanged.connect( self.onFitfunctionChanged )
@@ -165,6 +166,12 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.addAction( self.autoSaveAction )
         self.autoSave()
         self.currentAnalysisChanged.emit( self.currentAnalysisName )
+        
+    def onUseErrorBars(self, state):
+        if self.fitfunction is not None:
+            self.fitfunction.useErrorBars = state==QtCore.Qt.Checked
+            self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
+            self.autoSave()        
         
     def onConfigurationEditingFinished(self):
         self.currentAnalysisName = str(self.analysisConfigurationComboBox.currentText())
@@ -422,6 +429,8 @@ class AnalysisControl(ControlForm, ControlBase ):
             with BlockSignals(self.checkBoxUseSmartStartValues):
                 self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
                 self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
+            with BlockSignals(self.useErrorBarsCheckBox):
+                self.useErrorBarsCheckBox.setChecked(self.fitfunction.useErrorBars)
         self.evaluate()
 
     def setPlottedTraceDict(self, plottedTraceDict):

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>359</width>
-    <height>833</height>
+    <height>608</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -150,6 +150,13 @@
       <widget class="QCheckBox" name="checkBoxUseSmartStartValues">
        <property name="text">
         <string>Use Smart Start Values</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="useErrorBarsCheckBox">
+       <property name="text">
+        <string>Use Errorbars</string>
        </property>
       </widget>
      </item>
