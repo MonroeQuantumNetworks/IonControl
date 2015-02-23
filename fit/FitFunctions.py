@@ -235,6 +235,45 @@ class GaussianFit(FitFunctionBase):
         logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
         return (A, x0, s, O)
 
+class InvertedGaussianFit(FitFunctionBase):
+    name = "InvertedGaussian"
+    functionString =  'A*exp(-(x-x0)**2/s**2)+O'
+    parameterNames = [ 'A', 'x0', 's', 'O' ]
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.parameters = [0]*4
+        self.startParameters = [1,0,1,0]
+        
+    def functionEval(self, x, A, x0, s, O ):
+        return A*numpy.exp(-numpy.square((x-x0)/s))+O
+
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        A, x0, s, O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        maxindex = numpy.argmax(y)
+        minindex = numpy.argmin(y)
+        minimum = y[minindex]
+        maximum = y[maxindex]
+        x0 = x[minindex]
+        A = minimum-maximum
+        O = maximum
+        threshold = (maximum+minimum)/2.
+        indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
+        for ind, val in enumerate(y[minindex:]):
+            if val > threshold:
+                indexplus = ind + minindex
+                break
+        indexminus = 0 #If the threshold point is never found, indexplus is set to the index of the first element
+        for ind, val in enumerate(y[minindex::-1]):
+            if val > threshold:
+                indexminus = minindex-ind
+                break
+        s = 0.60056*(x[indexplus]-x[indexminus])
+        logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
+        return (A, x0, s, O)
+
 class SquareRabiFit(FitFunctionBase):
     name = "Square Rabi"
     functionString =  'A/(1+(2*pi*(x-C)/R)**2) * sin**2(sqrt(1+(2*pi*(x-C)/R)**2)*R*t/2) + O where R=pi/T'
