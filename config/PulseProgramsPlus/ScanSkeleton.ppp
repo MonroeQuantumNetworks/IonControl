@@ -19,12 +19,13 @@ counter my_counter
 parameter experiments
 var currentexperiment
 parameter usePulses
-
+var mycounter = 7
 
 while not pipe_empty():
     apply_next_scan_point()
     currentexperiment += 1
-    write_result( ResultChannel, currentexperiment )
+    mycounter += 2
+    write_result( ResultChannel, mycounter )
     set_shutter( init_shutter )
     update(delay)
 
