@@ -51,7 +51,7 @@ def update( symboltable, arg=list(), kwarg=dict() ):
     if len(arg)>=2:
         symbol = symboltable.getVar( arg[1] )
         return code + ["  WAIT",
-                "  UPDATE {0} {1}".format('1,' if pulseMode else '', symbol.name) ]
+                "  UPDATE {0}{1}".format('1, ' if pulseMode else '', symbol.name) ]
     return code + ["  WAIT",
             "  UPDATE NULL"]
 

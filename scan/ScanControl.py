@@ -341,8 +341,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.scanMode = index
         self.scanTypeCombo.setEnabled(index in [0,2])
         self.scanRepeatComboBox.setEnabled( index in [0,2] )
-        self.xUnitEdit.setEnabled( index==0)
-        self.xExprEdit.setEnabled( index==0)
+        self.xUnitEdit.setEnabled( index in [0,3] )
+        self.xExprEdit.setEnabled( index in [0,3] )
         self.comboBoxParameter.setEnabled( index==0 )
         self.comboBoxScanTarget.setEnabled( index==0 )    
         self.tableView.setEnabled( index==0 )           

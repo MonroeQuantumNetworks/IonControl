@@ -30,6 +30,7 @@ from TriggerDictionary import TriggerDictionary
 from CounterDictionary import CounterDictionary
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from PulseProgramEditUi import Ui_Form as PulseProgramWidget
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -402,36 +403,33 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 positionCache = dict()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
                     self.pulseProgram.source[name] = str(textEdit.toPlainText())
-                    positionCache[name] = ( textEdit.textEdit.textCursor().position(),
-                                            textEdit.textEdit.verticalScrollBar().value() )
+                    positionCache[name] = ( textEdit.textEdit.cursorPosition(),
+                                            textEdit.textEdit.scrollPosition() )
                 self.pulseProgram.loadFromMemory()
                 self.updateppDisplay()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
                     textEdit.clearHighlightError()
-                    cursor = textEdit.textEdit.textCursor()
-                    cursorpos, scrollpos = positionCache[name]
-                    cursor.setPosition( cursorpos )
-                    textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                    textEdit.textEdit.setTextCursor( cursor )
+                    if name in positionCache:
+                        cursorpos, scrollpos = positionCache[name]
+                        textEdit.textEdit.setCursorPosition( *cursorpos )
+                        textEdit.textEdit.setScrollPosition( scrollpos )
             except PulseProgram.ppexception as ppex:
                 textEdit = self.sourceCodeEdits[ ppex.file ].highlightError(str(ppex), ppex.line, ppex.context )
         else:
             positionCache = dict()
             for name, textEdit in self.pppCodeEdits.iteritems():
                 self.pppSource = str(textEdit.toPlainText())
-                positionCache[name] = ( textEdit.textEdit.textCursor().position(),
-                                        textEdit.textEdit.verticalScrollBar().value() )
+                positionCache[name] = ( textEdit.textEdit.cursorPosition(),
+                                        textEdit.textEdit.scrollPosition() )
             ppFilename = getPpFileName( self.pppSourcePath )
             if self.compileppp(ppFilename):
                 self.loadppFile(ppFilename, cache=False)
                 for name, textEdit in self.pppCodeEdits.iteritems():
                     textEdit.clearHighlightError()
-                    cursor = textEdit.textEdit.textCursor()
                     if name in positionCache:
                         cursorpos, scrollpos = positionCache[name]
-                        cursor.setPosition( cursorpos )
-                        textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                        textEdit.textEdit.setTextCursor( cursor )
+                        textEdit.textEdit.setCursorPosition( *cursorpos )
+                        textEdit.textEdit.setScrollPosition( scrollpos )
             
                     
     def onAccept(self):

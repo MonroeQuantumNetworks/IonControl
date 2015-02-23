@@ -97,7 +97,7 @@ class ExternalScanMethod(InternalScanMethod):
              
     def onData(self, data, queuesize, x ):
         if not self.parameter.useExternalValue:
-            x = self.experiment.generator.xValue(self.index)
+            x = self.experiment.generator.xValue(self.index, data)
             self.experiment.dataMiddlePart(data, queuesize, x)
         else:
             self.parameter.asyncCurrentExternalValue( partial( self.experiment.dataMiddlePart, data, queuesize) )
