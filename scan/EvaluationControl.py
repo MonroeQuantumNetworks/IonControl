@@ -20,6 +20,7 @@ from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules.enum import enum
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from cPickle import UnpicklingError
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
@@ -131,7 +132,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
-        except TypeError:
+        except (TypeError, UnpicklingError):
             logger.info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.settingsDict = dict()
         self.evaluationConfigurationChanged.emit( self.settingsDict )

@@ -211,6 +211,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
         self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
         
+    def reAnalyze(self, plottedTrace):
+        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        
     def printTargets(self):
         return self.plotDict.keys()
 
@@ -372,7 +375,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
             logger.info( "onData {0} {1} {2}".format( self.currentIndex, [len(data.count[i]) for i in range(16)], data.scanvalue ) )
-            x = self.generator.xValue(self.currentIndex)
+            x = self.generator.xValue(self.currentIndex, data)
             self.scanMethod.onData( data, queuesize, x )
         
     def dataMiddlePart(self, data, queuesize, x):
