@@ -75,7 +75,7 @@ class QPPPEditor(QsciScintilla):
         self.setTabIndents(True)
         self.setIndentationGuides(True)
         #self.SendScintilla(QsciScintilla.SCI_SETINDENTATIONGUIDES, QsciScintilla.SC_IV_LOOKFORWARD )
-        
+        self.setEolMode(self.EolWindows)
 
         # not too small
         self.setMinimumSize(200, 100)
@@ -109,6 +109,9 @@ class QPPPEditor(QsciScintilla):
         self.errorIndicators.append( (line-1,col-1,toline-1,tocolumn) )
     
     def clearError(self):
-        for line, col, toline, tocol in self.errorIndicators:
-            self.clearIndicatorRange(line, col, toline, tocol, 2)
+#         for line, col, toline, tocol in self.errorIndicators:
+#             self.clearIndicatorRange(line, col, toline, tocol, 2)
+        toline = self.lines()-1
+        col = self.lineLength(toline-1)
+        self.clearIndicatorRange(0, 0, toline, col, 2 )
         self.errorIndicators = list()
