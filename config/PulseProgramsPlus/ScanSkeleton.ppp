@@ -2,7 +2,8 @@
 #
 #  example for PulseProgramPlus input
 #
-const ResultChannel = 4
+const ResultChannel = 4
+const DDSChannel = 0
 
 # excitcodes
 exitcode IonLostExitcode = 0xfffe000000000001
@@ -19,27 +20,34 @@ counter my_counter
 parameter experiments
 var currentexperiment
 parameter usePulses
-
+var mycounter = 7
+parameter a
+parameter b
+var result
+parameter gap_time
 
 while not pipe_empty():
     apply_next_scan_point()
     currentexperiment += 1
-    write_result( ResultChannel, currentexperiment )
+    mycounter += 2
+    result = a / b
+    write_result( ResultChannel, result )
     set_shutter( init_shutter )
     update(delay)
 
     if usePulses>0:
         set_shutter( pulse_shutter )
         update(pulse_time, pulse_mode=True)
-        update(pulse_time)
+        update(gap_time)
         set_shutter( pulse_shutter )
         set_counter( my_counter )
         update(pulse_time, pulse_mode=True)
-        update(pulse_time)
+        update(gap_time)
         clear_counter()
-        set_shutter( pulse_shutter )
-        update(pulse_time, pulse_mode=True)
-        update(pulse_time)
+        set_shutter( pulse_shutter )
+        #set_dds( channel=DDSChannel, freq=a )
+        update(pulse_time, pulse_mode=True, wait_dds=True)
+        update(gap_time)
     else:
         set_shutter( pulse_shutter )
         update(pulse_time)
@@ -57,7 +65,6 @@ while not pipe_empty():
         update(pulse_time)
         set_inv_shutter( pulse_shutter )
         update(pulse_time)
-
 #    set_shutter( pulse_shutter )
 #    update(pulse_time, pulse_mode=True)
 #    update(pulse_time)
