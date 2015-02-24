@@ -23,7 +23,8 @@ parameter usePulses
 var mycounter = 7
 parameter a
 parameter b
-var result
+var result
+parameter gap_time
 
 while not pipe_empty():
     apply_next_scan_point()
@@ -37,16 +38,16 @@ while not pipe_empty():
     if usePulses>0:
         set_shutter( pulse_shutter )
         update(pulse_time, pulse_mode=True)
-        update(pulse_time)
+        update(gap_time)
         set_shutter( pulse_shutter )
         set_counter( my_counter )
         update(pulse_time, pulse_mode=True)
-        update(pulse_time)
+        update(gap_time)
         clear_counter()
         set_shutter( pulse_shutter )
-        set_dds( channel=DDSChannel, freq=a )
-        update(pulse_time, pulse_mode=True, wait_dds=False)
-        update(pulse_time)
+        #set_dds( channel=DDSChannel, freq=a )
+        update(pulse_time, pulse_mode=True, wait_dds=True)
+        update(gap_time)
     else:
         set_shutter( pulse_shutter )
         update(pulse_time)
@@ -64,7 +65,6 @@ while not pipe_empty():
         update(pulse_time)
         set_inv_shutter( pulse_shutter )
         update(pulse_time)
-
 #    set_shutter( pulse_shutter )
 #    update(pulse_time, pulse_mode=True)
 #    update(pulse_time)

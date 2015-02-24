@@ -70,10 +70,12 @@ class QPPPEditor(QsciScintilla):
         # here: http://www.scintilla.org/ScintillaDoc.html)
         self.SendScintilla(QsciScintilla.SCI_SETHSCROLLBAR, 0)
         
-        self.SendScintilla(QsciScintilla.SCI_SETINDENT, 4)
-        self.SendScintilla(QsciScintilla.SCI_SETTABINDENTS, True)
-        self.SendScintilla(QsciScintilla.SCI_SETINDENTATIONGUIDES, QsciScintilla.SC_IV_LOOKFORWARD )
-         
+        self.setIndentationWidth(4)
+        self.setIndentationsUseTabs(False)
+        self.setTabIndents(True)
+        self.setIndentationGuides(True)
+        #self.SendScintilla(QsciScintilla.SCI_SETINDENTATIONGUIDES, QsciScintilla.SC_IV_LOOKFORWARD )
+        
 
         # not too small
         self.setMinimumSize(200, 100)
