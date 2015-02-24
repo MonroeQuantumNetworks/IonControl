@@ -64,13 +64,13 @@ comparisonCommands = { "==": "CMPEQUAL",
                        "<=": "CMPLE",
                        ">=": "CMPGE" }
 
-shiftLookup = { "<<": "SHL", ">>": "SHR", "+": "ADDW", "-": "SUBW", "*": "MULTW" }
+shiftLookup = { "<<": "SHL", ">>": "SHR", "+": "ADDW", "-": "SUBW", "*": "MULTW", "/": 'DIVW' }
 
 jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
                     "!=" : { True: "JMPNZ", False: "JMPZ"},
                     ">" : {True: "JMPNZ", False: "JMPZ" } }
 
-opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW', '>>=': "SHR", "<<=": "SHL" }
+opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW', '>>=': "SHR", "<<=": "SHL", '/=': 'DIVW' }
 
 #from pppCompiler.Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
@@ -117,7 +117,7 @@ class pppCompiler:
         rExp = Forward()
         #numexpression = Forward()
         
-        opexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") | Literal("+") | Literal("*") | Literal("-"))("op") + Group(rExp)("argument")).setParseAction(self.opexpression_action)
+        opexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") | Literal("+") | Literal("*") | Literal("/") | Literal("-"))("op") + Group(rExp)("argument")).setParseAction(self.opexpression_action)
         rExp << ( procedurecall | opexpression | identifier("identifier") | value.setParseAction(self.value_action) | 
                   #Group( Suppress("(") + rExp + Suppress(")") ) |
                   #Group( "+" + rExp) |
@@ -127,7 +127,7 @@ class pppCompiler:
         rExp.setParseAction(self.rExp_action)
         
         assignment = ((identifier | pointer)("lval") + assign + rExp("rval")).setParseAction(self.assignment_action)
-        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") | Literal(">>=") | Literal("<<="))("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
+        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") | Literal(">>=") | Literal("/=") | Literal("<<="))("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
         
         statement = Forward()
         statementBlock = indentedBlock(statement, indentStack).setParseAction(self.statementBlock_action)
