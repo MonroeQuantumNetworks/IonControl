@@ -9,5 +9,10 @@ a = b
 a = b
 write_result( ResultChannel, a )
 
+if a>0:
+    while a>0:
+        if a==b:
+            a=b
+
 exit( endlabel )
  
