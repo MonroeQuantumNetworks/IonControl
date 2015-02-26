@@ -101,7 +101,8 @@ class MeanEvaluation(EvaluationBase):
     
     def evaluateMinMax(self, countarray):
         mean = numpy.mean( countarray )
-        return numpy.mean(countarray), (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
+        print countarray
+        return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
     
     def evaluate(self, data, evaluation, expected=None):
         countarray = evaluation.getChannelData(data)
@@ -115,6 +116,7 @@ class MeanEvaluation(EvaluationBase):
             mean = self.expression.evaluate(self.settings['transformation'], meandict)
             plus = self.expression.evaluate(self.settings['transformation'], plusdict)
             minus = self.expression.evaluate(self.settings['transformation'], minusdict)
+            return mean, (mean-minus, plus-mean), raw
         return mean, (minus, plus), raw
 
     def children(self):
