@@ -103,7 +103,12 @@ def read_pipe( symboltable, arg=list(), kwarg=dict()):
     return ["  READPIPE"]
 
 def write_pipe( symboltable, arg=list(), kwarg=dict()):
-    return ["  WRITEPIPE"]
+    code = list()
+    if len(arg)>1:
+        value = symboltable.getVar( arg[1] )
+        code.append("  LDWR {0}".format(value.name))
+    code.append("  WRITEPIPE")
+    return code
 
 def write_result( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     if len(arg)!=3:
@@ -148,13 +153,9 @@ def apply_next_scan_point( symboltable, arg=list(), kwarg=dict()):
     if len(arg)!=1:
         raise CompileException( "apply_next_scan_point does not take arguments" )
     return [  "apply_next_scan_point:  READPIPEINDF",
-#              "  NOP",
               "  WRITEPIPEINDF",
-#              "  NOP",
               "  READPIPE",
-#              "  NOP",
               "  WRITEPIPE",
-#              "  NOP",
               "  STWI",
               "  JMPCMP apply_next_scan_point"  ]
     
