@@ -33,7 +33,7 @@ ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
 
 class Scan:
-    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan')
+    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan','Freerunning')
     ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized','CenterOut')
     ScanRepeat = enum('SingleScan','RepeatedScan')
     def __init__(self):
@@ -412,24 +412,27 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.scanTarget = str(scan.scanTarget)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized, ScanList.ScanType.CenterOut][self.settings.scantype]
         
-        scan.list = list( concatenate_iter( *[ linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ] ) )
-        if scan.type==0:
-            scan.list = sorted( scan.list )
-            scan.start = scan.list[0]
-            scan.stop = scan.list[-1]
-        elif scan.type==1:
-            scan.list = sorted( scan.list, reverse=True )
-            scan.start = scan.list[-1]
-            scan.stop = scan.list[0]
-        elif scan.type==2:
-            scan.list = sorted( scan.list )
-            scan.start = scan.list[0]
-            scan.stop = scan.list[-1]
-            random.shuffle( scan.list )
-        elif scan.type==3:        
-            scan.list = sorted( scan.list )
-            center = len(scan.list)/2
-            scan.list = list( interleave_iter(scan.list[center:],reversed(scan.list[:center])) )
+        if scan.scanMode==Scan.ScanMode.Freerunning:
+            scan.list = None
+        else:
+            scan.list = list( concatenate_iter( *[ linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ] ) )
+            if scan.type==0:
+                scan.list = sorted( scan.list )
+                scan.start = scan.list[0]
+                scan.stop = scan.list[-1]
+            elif scan.type==1:
+                scan.list = sorted( scan.list, reverse=True )
+                scan.start = scan.list[-1]
+                scan.stop = scan.list[0]
+            elif scan.type==2:
+                scan.list = sorted( scan.list )
+                scan.start = scan.list[0]
+                scan.stop = scan.list[-1]
+                random.shuffle( scan.list )
+            elif scan.type==3:        
+                scan.list = sorted( scan.list )
+                center = len(scan.list)/2
+                scan.list = list( interleave_iter(scan.list[center:],reversed(scan.list[:center])) )
             
         scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName

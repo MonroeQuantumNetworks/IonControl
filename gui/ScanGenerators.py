@@ -163,7 +163,7 @@ class FreerunningGenerator:
         return None
         
     def xValue(self,index, data):
-        return self.expression.evaluate( self.scan.xExpression, { 'x': data.scanvalue } ) 
+        return self.expression.evaluate( self.scan.xExpression, { 'x': data.scanvalue if data.scanvalue else 0} )  if self.scan.xExpression else data.scanvalue
 
     def xRange(self):
         return []
