@@ -101,7 +101,6 @@ class MeanEvaluation(EvaluationBase):
     
     def evaluateMinMax(self, countarray):
         mean = numpy.mean( countarray )
-        print countarray
         return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
     
     def evaluate(self, data, evaluation, expected=None):
