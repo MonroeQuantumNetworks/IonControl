@@ -54,8 +54,8 @@ parameter UseGateSequence = 0
 parameter offset = 40ns
 
 # exitcodes
-exitcode IonLostExitcode = 0xfffe0001
-exitcode endLabel = 0xfffe0000
+exitcode IonLostExitcode = 0xfffe000000000001
+exitcode endLabel = 0xfffe000000000000
 
 # internal variables
 var experimentsleft = 100
