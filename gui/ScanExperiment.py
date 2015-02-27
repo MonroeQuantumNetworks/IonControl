@@ -27,6 +27,7 @@ import numpy
 from pyqtgraph.dockarea import DockArea, Dock
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from pyqtgraph.exporters.ImageExporter import ImageExporter
+from pyqtgraph.exporters.SVGExporter import SVGExporter
 
 from AverageViewTable import AverageViewTable
 import MainWindowWidget
@@ -45,7 +46,7 @@ from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 from modules.SceneToPrint import SceneToPrint
 from collections import defaultdict
-from gui.ScanMethods import ScanMethodsDict, ScanException 
+from gui.ScanMethods import ScanMethodsDict, ScanException
 from gui.ScanGenerators import GeneratorList
 from modules.magnitude import is_magnitude
 from persist.MeasurementLog import  Measurement, Parameter, Result
@@ -57,8 +58,7 @@ ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperimen
 
 ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
 
-
-
+FifoDepth = 1020
 
 class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )
@@ -211,6 +211,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
         self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
         
+    def reAnalyze(self, plottedTrace):
+        self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
+        
     def printTargets(self):
         return self.plotDict.keys()
 
@@ -291,6 +294,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.generator = GeneratorList[self.scan.scanMode](self.scan)
             (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
             if data:
+                logging.getLogger(__name__).info("Writing {0} bytes to RAM ({1}%)".format(len(data)*8, 100*len(data)/(2**24) ))
                 self.pulserHardware.ppWriteRamWordList(data,0, check=True)
                 datacopy = [0]*len(data)
                 datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
@@ -372,7 +376,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
             logger.info( "onData {0} {1} {2}".format( self.currentIndex, [len(data.count[i]) for i in range(16)], data.scanvalue ) )
-            x = self.generator.xValue(self.currentIndex)
+            x = self.generator.xValue(self.currentIndex, data)
             self.scanMethod.onData( data, queuesize, x )
         
     def dataMiddlePart(self, data, queuesize, x):
@@ -382,7 +386,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         evaluated = list()
         expected = self.generator.expected( self.currentIndex )
         for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
-            evaluated.append( algo.evaluate( data, counter=evaluation.counter, name=evaluation.name, expected=expected ) ) # returns mean, error, raw
+            evaluated.append( algo.evaluate( data, evaluation, expected=expected ) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, queuesize  )
@@ -510,7 +514,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         index = 0
         for evaluation, algo in zip(evalList, evalAlgoList):
             if evaluation.showHistogram:
-                y, x, function = algo.histogram( data, evaluation.counter, self.evaluation.histogramBins) 
+                y, x, function = algo.histogram( data, evaluation, self.evaluation.histogramBins ) 
                 if self.evaluation.integrateHistogram and len(self.histogramList)>index:
                     self.histogramList[index] = (self.histogramList[index][0] + y, self.histogramList[index][1], evaluation.name, None )
                 elif len(self.histogramList)>index:
@@ -676,6 +680,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 widget.render( painter )
                 del painter
         
+        with SceneToPrint(widget, 1, 1):
+            exporter = SVGExporter(widget._graphicsView.scene()) 
+            exporter.export(fileName = DataDirectory.DataDirectory().sequencefile(target+".svg")[0])
         # create an exporter instance, as an argument give it
         # the item you wish to export
         with SceneToPrint(widget, preferences.gridLinewidth, preferences.curveLinewidth):

@@ -17,7 +17,7 @@ ShutterForm, ShutterBase = PyQt4.uic.loadUiType(r'ui\Shutter.ui')
 class ShutterUi(ShutterForm, ShutterBase):
     onColor =  QtGui.QColor(QtCore.Qt.green)
     offColor =  QtGui.QColor(QtCore.Qt.red)
-    def __init__(self,pulserHardware,outputname,config, dataContainer, parent=None):
+    def __init__(self,pulserHardware,outputname,config, dataContainer, size=32, parent=None):
         ShutterBase.__init__(self,parent)
         ShutterForm.__init__(self)
         self.pulserHardware = pulserHardware
@@ -25,12 +25,13 @@ class ShutterUi(ShutterForm, ShutterBase):
         self.config = config
         self.configname = 'ShutterUi.'+self.outputname
         self.dataContainer = dataContainer
+        self.size = size
         
     def setupUi(self,parent,dynupdate=False):
         logger = logging.getLogger(__name__)
         ShutterForm.setupUi(self,parent)
         self.applyButton.setVisible(False)
-        self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.pulserHardware,self.outputname, self.dataContainer )
+        self.shutterTableModel = ShutterHardwareTableModel.ShutterHardwareTableModel(self.pulserHardware,self.outputname, self.dataContainer, size=self.size )
         logger.info( "Set old shutter values {0} 0x{1:x}".format( (self.configname, 'Value') in self.config, self.config.get((self.configname, 'Value'),0) ) )
         self.shutterTableModel.shutter = self.config.get((self.configname, 'Value'),0) 
         self.shutterTableModel.offColor = self.offColor

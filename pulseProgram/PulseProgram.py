@@ -15,6 +15,7 @@ import copy
 
 import modules.magnitude as magnitude
 
+writeBinaryData = False
 
 # add deg to magnitude
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
@@ -31,10 +32,6 @@ OPS = {'NOP'    : 0x00,
        'DDSFRQ' : 0x01,
        'DDSAMP' : 0x02,
        'DDSPHS' : 0x03,
-       'DDSCHN' : 0x04,
-       'SHUTR'  : 0x05,
-       'COUNT'  : 0x06,
-       'DELAY'  : 0x07,
        'LDWR'   : 0x08,
        'LDWI'   : 0x09,
        'STWR'   : 0x0A,
@@ -49,18 +46,25 @@ OPS = {'NOP'    : 0x00,
        'JMP'    : 0x13,
        'JMPZ'   : 0x14,
        'JMPNZ'  : 0x15,
-       'DAC'    : 0x17,
-       'DACUP'  : 0x18,
-       'COUNT1'	: 0x20,
-       'COUNTBOTH' : 0x21,
-       'LDWR1'	: 0x22,
-       'STWR1'  : 0x23,
-       'CMP1'   : 0x24,
-       'JMPZ1'  : 0x25,
-       'JMPNZ1'	: 0x26,
-       'CLRW1'	: 0x27,
-       'SHL': 0x28,
-       'SHR': 0x29,
+       'SHL': 0x16,
+       'SHR': 0x17,
+       'DDS9910_SAVEAMP': 0x19,
+       'DDS9910_SAVEPHS': 0x20,
+       'DDS9910_SAVEFRQ': 0x21, 
+       'DDS9910_SETAPF': 0x22,
+       'DDS9910_SAVERAMPSTEPDOWN': 0x23,
+       'DDS9910_SAVERAMPSTEPUP' : 0x24,
+       'DDS9910_SETRAMPSTEPS' : 0x25,
+       'DDS9910_SAVERAMPTIMESTEPDOWN' : 0x26,
+       'DDS9910_SAVERAMPTIMESTEPUP': 0x27,
+       'DDS9910_SETRAMPTIMESTEPS': 0x28,
+       'DDS9910_SAVERAMPMAX': 0x29,
+       'DDS9910_SAVERAMPMIN': 0x2a, 
+       'DDS9910_SETRAMPLIMITS': 0x2b,
+       'DDS9910_SAVENODWELLHIGH': 0x2c,
+       'DDS9910_SAVENODWELLLOW': 0x2d,
+       'DDS9910_SAVERAMPTYPE': 0x2e,
+       'DDS9910_SETCFR2RAMPPARAMS': 0x2f,
        'SHUTTERMASK' : 0x30,
        'ASYNCSHUTTER' : 0x31,
        'COUNTERMASK' : 0x32,
@@ -96,8 +100,10 @@ OPS = {'NOP'    : 0x00,
        'CMPNOTEQUAL': 0x51,
        'SUBW' : 0x52,
        'WAITFORTRIGGER': 0x53,
-       'WRITERESULTTOPIPELOW': 0x54,
-       'WRITERESULTTOPIPEHIGH': 0x55,
+       'WRITERESULTTOPIPE': 0x54,
+       'SERIALWRITE': 0x55,
+       'DIVW': 0x56,
+       'SETPARAMETER': 0x57,
        'END'    : 0xFF }
 
 class Dimensions:
@@ -132,14 +138,15 @@ class Variable:
     def outValue(self):
         return self.value if self.enabled else self.value * 0
 
-encodings = { 'AD9912_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
-              'AD9912_FRQFINE': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffff ),
+encodings = { 'AD9912_FRQ': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffffffffffff ),
+              'AD9910_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
+              'AD9910_PHASE': (360./2**16, '', Dimensions.dimensionless, 0xffff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
-              'TIME' : ( 20, 'ns', Dimensions.time, 0x1 ),
-              None: (1, '', Dimensions.dimensionless, 0xffffffff ),
-              'None': (1, '', Dimensions.dimensionless, 0xffffffff ) }
+              'TIME' : ( 5, 'ns', Dimensions.time, 0xffffffffffff ),
+              None: (1, '', Dimensions.dimensionless, 0xffffffffffffffff ),
+              'None': (1, '', Dimensions.dimensionless, 0xffffffffffffffff ) }
 
 
 def variableValueDict( variabledict ):
@@ -173,7 +180,7 @@ class PulseProgram:
         self.adIndexList = [(x,0) for x in range(8) ]
         self.adBoards = [ Board() ]*8
         
-        self.timestep = magnitude.mg(20.0,'ns')
+        self.timestep = magnitude.mg(5.0,'ns')
 
     def setHardware(self, adIndexList, adBoards, timestep ):
         self.adIndexList = adIndexList
@@ -210,7 +217,7 @@ class PulseProgram:
                 var.value = value
                 logger.debug( "updateVariables {0} at address 0x{2:x} value {1}, 0x{3:x}".format(name,value,address,int(var.data)) )
                 var.data = self.convertParameter(value, var.encoding )
-                self.bytecode[address] = (self.bytecode[address][0], var.data )
+                self.dataBytecode[address] =  var.data 
                 self.variabledict[name] = var
             else:
                 logger.error( "variable {0} not found in dictionary.".format(name) )
@@ -266,9 +273,18 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         self.binarycode = bytearray()
         for wordno, (op, arg) in enumerate(self.bytecode):
-            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(int(op)), hex(int(arg)), hex(int((int(op)<<24) + int(arg))) ) )
-            self.binarycode += struct.pack('I', int((op<<24) + arg))
-        return self.binarycode
+            logger.debug( "{0} {1} {2} {3}".format( hex(wordno), hex(op), hex(arg), hex((op<<(32-8)) + arg)) ) 
+            self.binarycode += struct.pack('I', (op<<(32-8)) + arg)
+        self.dataBinarycode = bytearray()
+        for wordno, arg in enumerate(self.dataBytecode):
+            logger.debug( "{0} {1}".format( hex(wordno), hex(long(arg)) )) 
+            self.dataBinarycode += struct.pack('Q' if arg>0 else 'q', long(arg))
+        if writeBinaryData:
+            self.writeBinaryCodeForSimulation(self.binarycode, 'ppcmdmem.mif')
+            self.writeBinaryCodeForSimulation(self.dataBinarycode, 'ppmem6.mif')
+            self.writeBinaryCodeForReference(self.binarycode, 'ppcmdmem.txt')
+            self.writeBinaryDataForReference(self.dataBinarycode, 'ppmem6.txt')
+        return self.binarycode, self.dataBinarycode
         
     def currentVariablesText(self):
         lines = list()
@@ -276,6 +292,26 @@ class PulseProgram:
             lines.append("{0} {1}".format(name,var.value))
         return '\n'.join(lines)
            
+    def writeBinaryCodeForSimulation(self, code, filename):
+        from pulser.PulserHardwareServer import sliceview
+        with open(filename,'w') as f:
+            for v in sliceview( code,2):
+                (value,) = struct.unpack('H',v)
+                f.write("{0:016b}\n".format(value))
+
+    def writeBinaryCodeForReference(self, code, filename):
+        from pulser.PulserHardwareServer import sliceview
+        with open(filename,'w') as f:
+            for v in sliceview( code,4):
+                (value,) = struct.unpack('I',v)
+                f.write("{0:08x}\n".format(value))
+
+    def writeBinaryDataForReference(self, code, filename):
+        from pulser.PulserHardwareServer import sliceview
+        with open(filename,'w') as f:
+            for v in sliceview( code,8):
+                (value,) = struct.unpack('Q',v)
+                f.write("{0:016x}\n".format(value))
 
 # routines below here should not be needed by the user   
 
@@ -370,8 +406,8 @@ class PulseProgram:
                         logger.error( "Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno) )
                         raise ppexception("Error processing line {2}: '{0}' in file '{1}' (unknown opcode?)".format(text, sourcename, lineno),
                                           sourcename, lineno, text)
-        self.appendVariableCode()
-        return self.code
+        self.dataCode = self.appendVariableCode()
+        return self.code, self.dataCode
 
     def addLabel(self,label,address, sourcename, lineno):
         if label is not None:
@@ -384,10 +420,12 @@ class PulseProgram:
     def appendVariableCode(self):
         """ append all variables to the instruction part of the code
         """
+        self.dataCode = []
         for var in self.variabledict.values():
-            address = len(self.code)
-            self.code.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin, 0 ))
-            var.address = address        
+            address = len(self.dataCode)
+            self.dataCode.append((address, 'NOP', var.data if var.enabled else 0, None, var.origin, 0 ))
+            var.address = address    
+        return self.dataCode    
 
     def addVariable(self, m, lineno, sourcename):
         """ add a variable to the self.variablesdict
@@ -415,7 +453,7 @@ class PulseProgram:
         else:
             var.value = magnitude.mg( float(data), '' )
             var.value.output_prec(0)   # without dimension the parameter has to be int. Thus, we do not want decimal places :)
-            data = int(round(float(data)))
+            data = int(data)
 
         if label in self.defines:
             logger.error( "Error in file '%s': attempted to reassign '%s' to '%s' (from prev. value of '%s') in a var statement." %(sourcename,label,data,self.defines[label]) )
@@ -428,7 +466,7 @@ class PulseProgram:
         var.strvalue = str(var.value)
         self.variabledict.update({ label: var})
         if var.type == "exitcode":
-            self._exitcodes[data & 0x0000ffff] = var
+            self._exitcodes[data & 0x0000ffffffffffff] = var
 
     # code is (address, operation, data, label or variablename, currentfile)
     def toBytecode(self):
@@ -437,6 +475,7 @@ class PulseProgram:
         logger = logging.getLogger(__name__)
         logger.debug( "\nCode ---> ByteCode:" )
         self.bytecode = []
+        self.dataBytecode = []
         for line in self.code:
             logger.debug( "{0}: {1}".format(hex(line[0]),  line[1:] )) 
             bytedata = 0
@@ -459,14 +498,43 @@ class PulseProgram:
                     channel, data = line[2]
                     if isinstance(data,basestring):
                         data = self.variabledict[data].address
-                    bytedata = ((int(channel) & 0xff) << 16) | (int(data) & 0x0fff)
+                    bytedata = ((int(channel) & 0xff) << (32-16)) | (int(data) & 0x0fff)
             except KeyError:
                 logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
                 raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
             self.bytecode.append((byteop, bytedata))
             logger.debug( "---> {0} {1}".format(hex(byteop), hex(bytedata)) )
     
-        return self.bytecode 
+        for line in self.dataCode:
+            logger.debug( "{0}: {1}".format(hex(line[0]),  line[1:] )) 
+            bytedata = 0
+            if line[1] not in OPS:
+                raise ppexception("Unknown command {0}".format(line[1]), line[4], line[5], line[1]) 
+            byteop = OPS[line[1]]
+            try:
+                data = line[2]
+                #attempt to locate commands with constant data
+                if (data == ''):
+                    #found empty data
+                    bytedata = 0
+                elif isinstance(data,(int,long)):
+                    bytedata = data
+                elif isinstance(data,float):
+                    bytedata = int(data)
+                elif isinstance(data,basestring): # now we are dealing with a variable and need its address
+                    bytedata = self.variabledict[line[2]].address if line[2] in self.variabledict else self.labeldict[line[2]]
+                elif isinstance(data,list): # list is what we have for DDS, will have 8bit channel and 16bit address
+                    channel, data = line[2]
+                    if isinstance(data,basestring):
+                        data = self.variabledict[data].address
+                    bytedata = ((int(channel) & 0xf) << (64-16)) | (int(data) & 0x0fff)
+            except KeyError:
+                logger.error( "Error assembling bytecode from file '{0}': Unknown variable: '{1}'. \n".format(line[4],data) )
+                raise ppexception("{0}: Unknown variable {1}".format(line[4],data), line[4], line[5], data)
+            self.dataBytecode.append( bytedata )
+            logger.debug( "---> {0} {1}".format(hex(byteop), hex(bytedata)) )
+
+        return self.bytecode, self.dataBytecode
 
 
     def convertParameter(self, mag, encoding=None ):

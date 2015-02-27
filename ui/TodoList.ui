@@ -125,6 +125,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="stopImmediatelyButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/road-sign-us-stop.png</normaloff>:/openicon/icons/road-sign-us-stop.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QToolButton" name="repeatButton">
        <property name="text">
         <string>...</string>

@@ -184,6 +184,11 @@
            <string>Gate Sequence Scan</string>
           </property>
          </item>
+         <item>
+          <property name="text">
+           <string>Freerunning</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item>

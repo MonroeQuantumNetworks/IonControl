@@ -27,6 +27,7 @@ dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
 numfnumber = Combine( Word( "+-"+nums, nums ) + 
                    Optional( point + Optional( Word( nums ) ) ) +
                    Optional( e + Word( "+-"+nums, nums ) ) )
+hexNumber = Combine( Literal("0x") + Word("0123456789abcdef") )
 fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 funit = Combine( fnumber + Optional(Word(" "," ")) + ident )
@@ -93,7 +94,7 @@ class Expression:
         expr    :: term [ addop term ]*
         """
         expr = Forward()
-        atom = (Optional("-") + ( funit | fnumber | ident + lpar + expr + rpar | ident ).setParseAction( self.pushFirst ) | ( lpar + expr.suppress() + rpar )).setParseAction(self.pushUMinus) 
+        atom = (Optional("-") + ( hexNumber | funit | fnumber |  ident + lpar + expr + rpar | ident ).setParseAction( self.pushFirst ) | ( lpar + expr.suppress() + rpar )).setParseAction(self.pushUMinus) 
         
         # by defining exponentiation as "atom [ ^ factor ]..." instead of "atom [ ^ atom ]...", we get right-to-left exponents, instead of left-to-righ
         # that is, 2^3^2 = 2^(3^2), not (2^3)^2.
@@ -140,6 +141,8 @@ class Expression:
             return self.variabledict[op]
         elif op[0].isalpha():
             raise KeyError("operand '{0}' not found in dictionary.".format(op))
+        elif op[0:2]=="0x":
+            return int(op,0)
         else:
             return self._evaluate_literal(op, useFloat)
         return 0
@@ -266,6 +269,7 @@ if __name__ == "__main__":
     test( "2 * sqrt ( 4s / 1 s)",4 )
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
     test( "piTime * 1  ms",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10)} )
+    test( "0xff" , magnitude.mg(255,''))
 
     print ExprEval.evaluate( "4 MHz" )
     print ExprEval._evaluate_literal.cache_info()

@@ -157,7 +157,7 @@ class VariableDictionary(SequenceDict):
             var = self[node]
             if hasattr(var,'strvalue'):
                 try:
-                    var.value = self.expression.evaluate(var.strvalue, self.valueView)
+                    var.value = self.expression.evaluate(var.strvalue, self.valueView) if var.enabled else 0
                     var.strerror = None
                 except (KeyError, MagnitudeError) as e:
                     var.strerror = str(e)

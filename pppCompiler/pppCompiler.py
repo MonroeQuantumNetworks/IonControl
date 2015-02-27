@@ -9,7 +9,7 @@ from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, on
 import logging
 import sys
 from CompileException import CompileException
-import pppCompiler
+
 """
 BNF of grammar
 
@@ -64,16 +64,16 @@ comparisonCommands = { "==": "CMPEQUAL",
                        "<=": "CMPLE",
                        ">=": "CMPGE" }
 
-shiftLookup = { "<<": "SHL", ">>": "SHR", "+": "ADDW", "-": "SUBW", "*": "MULTW" }
+shiftLookup = { "<<": "SHL", ">>": "SHR", "+": "ADDW", "-": "SUBW", "*": "MULTW", "/": 'DIVW' }
 
 jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
                     "!=" : { True: "JMPNZ", False: "JMPZ"},
                     ">" : {True: "JMPNZ", False: "JMPZ" } }
 
-opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW', '>>=': "SHR", "<<=": "SHL" }
+opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW', '>>=': "SHR", "<<=": "SHL", '/=': 'DIVW' }
 
+#from pppCompiler.Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
-
 
 def list_rtrim( l, trimvalue=None ):
     """in place list right trim"""
@@ -91,6 +91,11 @@ def find_and_get( parse_result, key ):
         if key in result:
             return result[key]
     return None
+
+
+def is_power2(num):
+    return ((num & (num - 1)) == 0) and num > 0
+
 
 class pppCompiler:
     def __init__(self):
@@ -112,7 +117,7 @@ class pppCompiler:
         rExp = Forward()
         #numexpression = Forward()
         
-        opexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") | Literal("+") | Literal("*") | Literal("-"))("op") + Group(rExp)("argument")).setParseAction(self.opexpression_action)
+        opexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") | Literal("+") | Literal("*") | Literal("/") | Literal("-"))("op") + Group(rExp)("argument")).setParseAction(self.opexpression_action)
         rExp << ( procedurecall | opexpression | identifier("identifier") | value.setParseAction(self.value_action) | 
                   #Group( Suppress("(") + rExp + Suppress(")") ) |
                   #Group( "+" + rExp) |
@@ -122,7 +127,7 @@ class pppCompiler:
         rExp.setParseAction(self.rExp_action)
         
         assignment = ((identifier | pointer)("lval") + assign + rExp("rval")).setParseAction(self.assignment_action)
-        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") | Literal(">>=") | Literal("<<="))("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
+        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") | Literal(">>=") | Literal("/=") | Literal("<<="))("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
         
         statement = Forward()
         statementBlock = indentedBlock(statement, indentStack).setParseAction(self.statementBlock_action)
@@ -190,9 +195,7 @@ class pppCompiler:
         except Exception as e:
             raise CompileException(text,loc,str(e),self)            
         return arg
-
-            
-    
+   
     def condition_action(self, text, loc, arg):
         logger.debug( "condition_action {0} {1}".format( lineno(loc, text), arg ))
         try:
@@ -468,7 +471,7 @@ def pppcompile( sourcefile, targetfile, referencefile ):
 
 if __name__=="__main__":
     def ppCompile( assemblerfile ):
-        from pulseProgram.PulseProgram import PulseProgram    
+        from pulseProgram.PulseProgram import PulseProgram
         pp = PulseProgram()
         pp.debug = True
         pp.loadSource(r"YtterbiumScan.auto.pp")

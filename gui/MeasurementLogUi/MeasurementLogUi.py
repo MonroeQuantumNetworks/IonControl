@@ -123,8 +123,11 @@ class MeasurementLogUi(Form, Base ):
         # Context Menu for Measurements Table
         self.measurementTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.removeColumnAction = QtGui.QAction( "remove selected column" , self)
+        self.reAnalyzeAction = QtGui.QAction( "re analyze data", self )
         self.removeColumnAction.triggered.connect( self.onRemoveMeasurementColumn  )
+        self.reAnalyzeAction.triggered.connect( self.onReAnalyze )
         self.measurementTableView.addAction( self.removeColumnAction )
+        self.measurementTableView.addAction( self.reAnalyzeAction )
         # Context Menu for Parameters Table
         self.parameterTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addManualParameterAction = QtGui.QAction( "add manual parameter" , self)
@@ -135,6 +138,7 @@ class MeasurementLogUi(Form, Base ):
         self.parameterTableView.addAction( self.addParameterToMeasurementAction )
         self.timespanComboBox.addItems( self.timespans )
         self.timespanComboBox.setCurrentIndex( self.settings.timespan )
+        isCustom = self.timespans[self.settings.timespan] == 'Custom'
         self.timespanComboBox.currentIndexChanged[int].connect( self.onChangeTimespan )
         self.container.beginInsertMeasurement.subscribe( self.measurementModel.beginInsertRows )
         self.container.endInsertMeasurement.subscribe( self.measurementModel.endInsertRows )  
@@ -146,6 +150,8 @@ class MeasurementLogUi(Form, Base ):
         self.toDateTimeEdit.setDateTime( self.settings.toDateTimeEdit )
         self.fromDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'fromDateTimeEdit') )
         self.toDateTimeEdit.dateTimeChanged.connect( partial( self.setDateTimeEdit, 'toDateTimeEdit') )
+        self.toDateTimeEdit.setEnabled( isCustom )
+        self.fromDateTimeEdit.setEnabled( isCustom )
         self.plainTextEdit.editingFinished.connect( self.onCommentFinished )
         self.onFilterRefresh()
         self.scanNameFilterButton.clicked.connect( self.onFilterButton )
@@ -208,6 +214,10 @@ class MeasurementLogUi(Form, Base ):
         for index in sorted(unique([ i.column() for i in self.measurementTableView.selectedIndexes() if i.column()>=self.measurementModel.coreColumnCount])):
             self.measurementModel.removeColumn(index)
             self.updateComboBoxes()
+            
+    def onReAnalyze(self):
+        for index in sorted(unique([ i.row() for i in self.measurementTableView.selectedIndexes() ])):
+            self.container.measurements[index]
                         
     def onCommentFinished(self, document):
         if self.currentMeasurement is not None:
@@ -216,7 +226,7 @@ class MeasurementLogUi(Form, Base ):
             self.currentMeasurement._sa_instance_state.session.commit()
 
     def setDateTimeEdit(self, attr, value):
-        setattr( self.settings, attr, datetime(value) )
+        setattr( self.settings, attr, value.toPyDateTime() )
 
     def onChangeTimespan(self, index):
         self.settings.timespan = index

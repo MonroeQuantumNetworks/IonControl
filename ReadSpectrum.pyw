@@ -7,10 +7,15 @@ Created on Mon Dec 17 07:02:00 2012
 
 from trace import Traceui
 from trace import pens
+import logging
+from mylogging import LoggingSetup  #@UnusedImport
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
-import visa  #@UnresolvedImport
+try:
+    import visa  #@UnresolvedImport
+except ImportError:
+    logging.getLogger(__name__).error("Visa not present")
 
 from modules import DataDirectory
 from persist import configshelve 
@@ -21,6 +26,7 @@ from readInstrument import Read_N9342CN
 
 instrumentmap = {
     'N9342CN' : Read_N9342CN.N9342CN,
+    'N9344C' : Read_N9342CN.N9342CN,
     'E5100B' : Read_E5100B.E5100B,
     'N9010A' : Read_N9010A.N9010A
 }

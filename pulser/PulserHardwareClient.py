@@ -6,6 +6,7 @@ from Queue import Queue
 import logging
 import multiprocessing
 from multiprocessing.sharedctypes import Array
+from ctypes import c_longlong
 import numpy
 
 from PyQt4 import QtCore 
@@ -14,6 +15,7 @@ from PulserHardwareServer import FinishException
 from pulser.OKBase import ErrorMessages, FPGAException
 from PulserHardwareServer import PulserHardwareServer
 import modules.magnitude as magnitude
+from pulser.PulserHardwareServer import PulserHardwareException
 
 
 def check(number, command):
@@ -89,7 +91,7 @@ class PulserHardware(QtCore.QObject):
     shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )
     ppActiveChanged = QtCore.pyqtSignal( object )
     
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
 
     sharedMemorySize = 256*1024
     def __init__(self):
@@ -104,7 +106,7 @@ class PulserHardware(QtCore.QObject):
         self.dataQueue = multiprocessing.Queue()
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
         self.loggingQueue = multiprocessing.Queue()
-        self.sharedMemoryArray = Array( 'L', self.sharedMemorySize , lock=True )
+        self.sharedMemoryArray = Array( c_longlong, self.sharedMemorySize , lock=True )
                 
         self.serverProcess = self.serverClass(self.dataQueue, self.serverPipe, self.loggingQueue, self.sharedMemoryArray )
         self.serverProcess.start()
@@ -207,24 +209,26 @@ class PulserHardware(QtCore.QObject):
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
-        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
+        return bytearray(numpy.array(wordlist, dtype=numpy.int64).view(dtype=numpy.int8))
 
     def bytearrayToWordList(self, barray):
-        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int64 ))
             
     
     def ppWriteRamWordList(self, wordlist, address, check=True):
+        if address+len(wordlist)>2**24:
+            raise PulserHardwareException("Wordlist of length {0} exceeds memory depth ({1} words)".format(address+len(wordlist),2**24))
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
             self.sharedMemoryArray[0:length] = wordlist[start:start+length]
-            self.clientPipe.send( ('ppWriteRamWordListShared', (length, address+4*start, check) ) )
+            self.clientPipe.send( ('ppWriteRamWordListShared', (length, address+8*start, check) ) )
             processReturn( self.clientPipe.recv() )
         return True
             
     def ppReadRamWordList(self, wordlist, address):
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
-            self.clientPipe.send( ('ppReadRamWordListShared', (length, address+4*start) ) )
+            self.clientPipe.send( ('ppReadRamWordListShared', (length, address+8*start) ) )
             processReturn( self.clientPipe.recv() )
             wordlist[start:start+length] =  self.sharedMemoryArray[0:length] 
         return wordlist

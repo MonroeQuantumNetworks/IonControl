@@ -7,7 +7,7 @@ from modules.Expression import Expression
 import numpy
 import logging
 import random
-from modules import DataDirectory
+from modules import DataDirectory, MagnitudeUtilit
 from modules import enum
 
 ExpectedLookup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
@@ -22,6 +22,7 @@ class ParameterScanGenerator:
         self.numUpdatedVariables = 1
         
     def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
+        self.maxUpdatesToWrite = maxUpdatesToWrite
         if self.scan.gateSequenceUi.settings.enabled:
             _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
         else:
@@ -30,7 +31,6 @@ class ParameterScanGenerator:
             self.scan.code, self.numVariablesPerUpdate = pulseProgramUi.variableScanCode(self.scan.scanParameter, self.scan.list, extendedReturn=True)
             self.numUpdatedVariables = len(self.scan.code)/2/len(self.scan.list)
             maxWordsToWrite = 2040 if maxUpdatesToWrite is None else 2*self.numUpdatedVariables*maxUpdatesToWrite
-            self.maxUpdatesToWrite = maxUpdatesToWrite
             if len(self.scan.code)>maxWordsToWrite:
                 self.nextIndexToWrite = maxWordsToWrite
                 return ( self.scan.code[:maxWordsToWrite], data)
@@ -49,7 +49,7 @@ class ParameterScanGenerator:
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
         
-    def xValue(self, index):
+    def xValue(self, index, data):
         value = self.scan.list[index]
         if self.scan.xExpression:
             value = self.expression.evaluate( self.scan.xExpression, {"x": value} )
@@ -111,7 +111,7 @@ class StepInPlaceGenerator:
     def dataNextCode(self, experiment):
         return self.scan.code
         
-    def xValue(self,index):
+    def xValue(self,index, data):
         return index
 
     def xRange(self):
@@ -136,6 +136,47 @@ class StepInPlaceGenerator:
                     if error is not None:
                         trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0])
                         trace.top = numpy.append(trace.top[-steps+1:], error[1])
+
+    def dataOnFinal(self, experiment, currentState):
+        experiment.onStop()                   
+
+    def expected(self, index):
+        return None
+
+class FreerunningGenerator:
+    expression = Expression()
+    def __init__(self, scan):
+        self.scan = scan
+        
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
+        if self.scan.gateSequenceUi.settings.enabled:
+            _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
+        else:
+            data = []
+        return ([], data) # write 5 points to the fifo queue at start,
+                        # this prevents the Step in Place from stopping in case the computer lags behind evaluating by up to 5 points
+
+    def restartCode(self,currentIndex):
+        return []
+        
+    def dataNextCode(self, experiment):
+        return None
+        
+    def xValue(self,index, data):
+        return self.expression.evaluate( self.scan.xExpression, { 'x': data.scanvalue if data.scanvalue else 0} )  if self.scan.xExpression else data.scanvalue
+
+    def xRange(self):
+        return []
+
+    def appendData(self,traceList,x,evaluated):
+        if evaluated and traceList:
+            traceList[0].x = numpy.append(traceList[0].x, x)
+            for trace, (y, error, raw) in zip(traceList, evaluated):                                  
+                trace.y = numpy.append(trace.y, y)
+                trace.raw = numpy.append(trace.raw, raw)
+                if error is not None:
+                    trace.bottom = numpy.append(trace.bottom, error[0])
+                    trace.top = numpy.append(trace.top, error[1])
 
     def dataOnFinal(self, experiment, currentState):
         experiment.onStop()                   
@@ -195,7 +236,7 @@ class GateSequenceScanGenerator:
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
 
-    def xValue(self,index):
+    def xValue(self,index, data):
         return self.scan.index[index]
 
     def dataNextCode(self, experiment):
@@ -233,4 +274,4 @@ class GateSequenceScanGenerator:
             return expected
         return None 
         
-GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSequenceScanGenerator]   
+GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSequenceScanGenerator, FreerunningGenerator]   

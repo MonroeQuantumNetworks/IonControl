@@ -91,18 +91,19 @@ class FitHistogramEvaluation(EvaluationBase):
         histsum = numpy.sum( hist )
         return (hist / histsum, histsum) if longOutput else hist/histsum
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+    def evaluate(self, data, evaluation, expected=None ):
         params, confidence, reducedchisq = data.evaluated.get('FitHistogramsResult',(None,None,None))
         if params is None:
-            y, x = numpy.histogram( data.count[counter] , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
+            countarray = evaluation.getChannelData(data)
+            y, x = numpy.histogram( countarray , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
             y, self.fitFunction.totalCounts = self.normalizeHistogram(y, longOutput=True)
             params, confidence = self.leastsq(x[0:-1], y, [0.3,0.3])
             params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter
             confidence = list(confidence)
-            confidence.append( 0 )  # don't know what to do :(
+            confidence.append( (confidence[0]+confidence[1]) if confidence[0] is not None and confidence[1] is not None else None)  # don't know what to do :(
             data.evaluated['FitHistogramsResult'] = (params, confidence, self.chisq/self.dof)
         if self.settings['Mode']=='Parity':
-            return params[0]+params[2]-params[1], (None,None), params[0]+params[2]-params[1]
+            return params[0]+params[2]-params[1], None, params[0]+params[2]-params[1]
         elif self.settings['Mode']=='Zero':
             return params[0], (confidence[0],  confidence[0]) , params[0]
         elif self.settings['Mode']=='One':
@@ -110,7 +111,7 @@ class FitHistogramEvaluation(EvaluationBase):
         elif self.settings['Mode']=='Two':
             return params[2], (confidence[2],  confidence[2]) , params[2]
         elif self.settings['Mode']=='Residuals':
-            return reducedchisq, (None,None), reducedchisq
+            return reducedchisq, None, reducedchisq
 
         
     def children(self):
@@ -168,7 +169,7 @@ class FitHistogramEvaluation(EvaluationBase):
     
                 #-----------------------------------------------
         else:
-            self.fitFunction.parametersConfidence = [None]*len(self.parametersConfidence)
+            self.fitFunction.parametersConfidence = [None]*2
  
         return params, self.fitFunction.parametersConfidence
 

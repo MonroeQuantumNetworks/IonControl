@@ -82,7 +82,7 @@ class InstrumentLoggingWindow(QtCore.QObject):
     shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )
     ppActiveChanged = QtCore.pyqtSignal( object )
     
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
 
     sharedMemorySize = 256*1024
     def __init__(self, project):

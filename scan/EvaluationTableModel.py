@@ -1,11 +1,12 @@
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 
 from scan.EvaluationAlgorithms import EvaluationAlgorithms
+from modules import MagnitudeUtilit
 
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )
-    headerDataLookup = ['Counter','Evaluation','Name','Hist', 'Plot', 'Analysis' ]
+    headerDataLookup = ['Type','Id','Channel','Evaluation','Name','Hist', 'Plot', 'Analysis' ]
     def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None, analysisNames=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
@@ -16,27 +17,50 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.updateSaveStatus = updateSaveStatus
         self.evalAlgorithmList = list()
         self.analysisNames = analysisNames if analysisNames is not None else list()
-        self.setDataLookup =  {  (QtCore.Qt.EditRole,0): self.setCounter,
-                                 (QtCore.Qt.EditRole,1): self.setAlgorithm,
-                                 (QtCore.Qt.EditRole,2): self.setDataName,
-                                 (QtCore.Qt.EditRole,4): self.setPlotName,
-                                 (QtCore.Qt.CheckStateRole,3): self.setShowHistogram,
+        self.setDataLookup =  {  (QtCore.Qt.EditRole,0): self.setType,
+                                 (QtCore.Qt.EditRole,1): self.setCounterId,
+                                 (QtCore.Qt.EditRole,2): self.setCounter,
+                                 (QtCore.Qt.EditRole,3): self.setAlgorithm,
+                                 (QtCore.Qt.EditRole,4): self.setDataName,
+                                 (QtCore.Qt.EditRole,6): self.setPlotName,
+                                 (QtCore.Qt.CheckStateRole,5): self.setShowHistogram,
                                 }
-        self.dataLookup = {  (QtCore.Qt.DisplayRole,0): lambda self, row: self.evalList[row].counter,
-                             (QtCore.Qt.DisplayRole,1): lambda self, row: self.evalList[row].evaluation,
-                             (QtCore.Qt.DisplayRole,2): lambda self, row: self.evalList[row].name,
-                             (QtCore.Qt.DisplayRole,4): lambda self, row: self.evalList[row].plotname,
-                             (QtCore.Qt.EditRole,0):    lambda self, row: self.evalList[row].counter,
-                             (QtCore.Qt.EditRole,1):    lambda self, row: self.evalList[row].evaluation,
-                             (QtCore.Qt.EditRole,2):    lambda self, row: self.evalList[row].name,
-                             (QtCore.Qt.EditRole,4):    lambda self, row: self.evalList[row].plotname,
-                             (QtCore.Qt.CheckStateRole,3): lambda self, row: QtCore.Qt.Checked if self.evalList[row].showHistogram else QtCore.Qt.Unchecked,
+        self.dataLookup = {  (QtCore.Qt.DisplayRole,0): lambda e: e.type if self.hasChannel(e) else "",
+                             (QtCore.Qt.DisplayRole,1): lambda e: e.counterId if e.type=='Counter' and self.hasChannel(e) else "",
+                             (QtCore.Qt.DisplayRole,2): lambda e: e.counter if self.hasChannel(e) else "",
+                             (QtCore.Qt.DisplayRole,3): lambda e: e.evaluation,
+                             (QtCore.Qt.DisplayRole,4): lambda e: e.name,
+                             (QtCore.Qt.DisplayRole,6): lambda e: e.plotname,
+                             (QtCore.Qt.EditRole,0): lambda e: e.type,
+                             (QtCore.Qt.EditRole,1): lambda e: str(e.counterId),
+                             (QtCore.Qt.EditRole,2):    lambda e: e.counter,
+                             (QtCore.Qt.EditRole,3):    lambda e: e.evaluation,
+                             (QtCore.Qt.EditRole,4):    lambda e: e.name,
+                             (QtCore.Qt.EditRole,6):    lambda e: e.plotname,
+                             (QtCore.Qt.CheckStateRole,5): lambda e: QtCore.Qt.Checked if e.showHistogram else QtCore.Qt.Unchecked,
+                             (QtCore.Qt.BackgroundColorRole,1): lambda e: QtCore.Qt.white if e.type=='Counter' and self.hasChannel(e) else QtGui.QColor(200,200,200),
+                             (QtCore.Qt.BackgroundColorRole,2): lambda e: QtCore.Qt.white if self.hasChannel(e) else QtGui.QColor(200,200,200),
+                             (QtCore.Qt.BackgroundColorRole,0): lambda e: QtCore.Qt.white if self.hasChannel(e) else QtGui.QColor(200,200,200)
                              }
-        self.choiceLookup = { 1: EvaluationAlgorithms.keys,
-                              4: self.getPlotnames }
+        self.choiceLookup = { 0: lambda: ['Counter','Result'],
+                              3: EvaluationAlgorithms.keys,
+                              6: self.getPlotnames }
+        
+    @staticmethod
+    def hasChannel(evaluation):
+        algo = EvaluationAlgorithms.get(evaluation.evaluation)
+        return algo and algo.hasChannel
         
     def setAnalysisNames(self, names):
         self.analysisNames = names
+        
+    def setType(self, index, t):
+        self.evalList[index.row()].type = str(t)
+        self.dataChanged.emit( index, self.index(index.row(),1) )
+        
+        
+    def setCounterId(self, index, value):
+        self.evalList[index.row()].counterId = int(MagnitudeUtilit.value(value))
         
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
@@ -60,18 +84,22 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return len(self.evalList)
     
     def columnCount(self,  parent=QtCore.QModelIndex()):
-        return 5
+        return 7
     
     def data(self, index, role): 
         if index.isValid():
-            return self.dataLookup.get((role,index.column()),lambda self, row: None)(self,index.row())
+            return self.dataLookup.get((role,index.column()),lambda e: None)(self.evalList[index.row()])
         return None
         
     def flags(self, index ):
-        if index.column() in [0,1,2,4]:
+        if index.column() in [3,4,6]:
             return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
-        if index.column()==3:
+        if index.column()==5:
             return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+        if index.column()==1 and self.evalList[index.row()].type=='Counter' and self.hasChannel(self.evalList[index.row()] ):
+            return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+        if index.column() in [0,2] and self.hasChannel(self.evalList[index.row()] ):
+            return  QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
         return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     def headerData(self, section, orientation, role ):
@@ -83,7 +111,7 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         return None 
 
     def setCounter(self,index,value):
-        self.evalList[index.row()].counter, _ = value.toInt()
+        self.evalList[index.row()].counter = int(MagnitudeUtilit.value(value))
         self.dataChanged.emit( index, index )
         return True      
 
@@ -107,15 +135,6 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
         self.dataChanged.emit( index, index )
         return True
     
-    def setAnalysis(self, index, name):
-        name = str(name)
-        if name=="":
-            self.evalList[index.row()].analysis = None
-        else:    
-            self.evalList[index.row()].analysis = name
-        self.dataChanged.emit( index, index)
-        return True
-        
     def setAlgorithm(self, index, algorithm):
         algorithm = str(algorithm)
         evaluation = self.evalList[index.row()]
@@ -130,4 +149,4 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
                 evaluation.settings = dict()
             algo.setSettings( evaluation.settings, evaluation.name )
             self.evalAlgorithmList[index.row()] = algo     
-            self.dataChanged.emit(index, index) 
+            self.dataChanged.emit( self.index(index.row(),0), index )

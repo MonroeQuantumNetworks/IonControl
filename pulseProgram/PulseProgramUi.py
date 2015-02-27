@@ -29,6 +29,8 @@ from ShutterDictionary import ShutterDictionary
 from TriggerDictionary import TriggerDictionary
 from CounterDictionary import CounterDictionary
 from uiModules.KeyboardFilter import KeyListFilter
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from PulseProgramEditUi import Ui_Form as PulseProgramWidget
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -152,7 +154,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filter = KeyListFilter( [], [QtCore.Qt.Key_B] )
         self.filter.controlKeyPressed.connect( self.onBold )
         self.variableView.installEventFilter(self.filter)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.currentContext.shutters, self.channelNameData[0:2] )
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.currentContext.shutters, self.channelNameData[0:2], size=48 )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
@@ -164,6 +166,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
+        self.counterIdDelegate = MagnitudeSpinBoxDelegate()
+        self.counterTableView.setItemDelegateForColumn(0, self.counterIdDelegate)
         try:
             self.loadContext(self.currentContext)
             if self.configParams.lastContextName:
@@ -399,36 +403,33 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 positionCache = dict()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
                     self.pulseProgram.source[name] = str(textEdit.toPlainText())
-                    positionCache[name] = ( textEdit.textEdit.textCursor().position(),
-                                            textEdit.textEdit.verticalScrollBar().value() )
+                    positionCache[name] = ( textEdit.textEdit.cursorPosition(),
+                                            textEdit.textEdit.scrollPosition() )
                 self.pulseProgram.loadFromMemory()
                 self.updateppDisplay()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
                     textEdit.clearHighlightError()
-                    cursor = textEdit.textEdit.textCursor()
-                    cursorpos, scrollpos = positionCache[name]
-                    cursor.setPosition( cursorpos )
-                    textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                    textEdit.textEdit.setTextCursor( cursor )
+                    if name in positionCache:
+                        cursorpos, scrollpos = positionCache[name]
+                        textEdit.textEdit.setCursorPosition( *cursorpos )
+                        textEdit.textEdit.setScrollPosition( scrollpos )
             except PulseProgram.ppexception as ppex:
                 textEdit = self.sourceCodeEdits[ ppex.file ].highlightError(str(ppex), ppex.line, ppex.context )
         else:
             positionCache = dict()
             for name, textEdit in self.pppCodeEdits.iteritems():
                 self.pppSource = str(textEdit.toPlainText())
-                positionCache[name] = ( textEdit.textEdit.textCursor().position(),
-                                        textEdit.textEdit.verticalScrollBar().value() )
+                positionCache[name] = ( textEdit.textEdit.cursorPosition(),
+                                        textEdit.textEdit.scrollPosition() )
             ppFilename = getPpFileName( self.pppSourcePath )
             if self.compileppp(ppFilename):
                 self.loadppFile(ppFilename, cache=False)
                 for name, textEdit in self.pppCodeEdits.iteritems():
                     textEdit.clearHighlightError()
-                    cursor = textEdit.textEdit.textCursor()
                     if name in positionCache:
                         cursorpos, scrollpos = positionCache[name]
-                        cursor.setPosition( cursorpos )
-                        textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                        textEdit.textEdit.setTextCursor( cursor )
+                        textEdit.textEdit.setCursorPosition( *cursorpos )
+                        textEdit.textEdit.setScrollPosition( scrollpos )
             
                     
     def onAccept(self):
@@ -470,6 +471,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             upd_names.append( variablename )
             upd_values.append( currentval )
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
+            logging.getLogger(__name__).info("{0}: {1}".format(upd_names, upd_values))
         if extendedReturn:
             return updatecode, numVariablesPerUpdate
         return updatecode

@@ -7,11 +7,12 @@ import math
 from multiprocessing import Process
 import struct
 import numpy
-
+from time import time as time_time
 
 from mylogging.ServerLogging import configureServerLogging
 from modules import enum
 import modules.magnitude as magnitude
+
 from pulser.OKBase import OKBase, check
 from _collections import defaultdict
 
@@ -20,9 +21,9 @@ class PulserHardwareException(Exception):
 
 class Data:
     def __init__(self):
-        self.count = [list() for _ in range(16)]        # list of counts in the counter channel
-        self.timestamp = [list() for _ in range(8)]     
-        self.timestampZero = [0]*8
+        self.count = defaultdict(list)       # list of counts in the counter channel
+        self.timestamp = None   
+        self.timestampZero = dict()
         self.scanvalue = None                           # scanvalue
         self.final = False
         self.other = list()
@@ -34,19 +35,22 @@ class Data:
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
+    
+    def defaultTimestampZero(self):
+        return 0
 
 class DedicatedData:
     def __init__(self):
-        self.data = [None]*13
+        self.data = [None]*17
         
     def count(self):
         return self.data[0:8]
         
     def analog(self):
-        return self.data[8:12]
+        return self.data[8:16]
         
     def integration(self):
-        return self.data[12]
+        return self.data[16]
 
 class LogicAnalyzerData:
     def __init__(self):
@@ -73,7 +77,8 @@ class FinishException(Exception):
     pass
 
 class PulserHardwareServer(Process, OKBase):
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
+    integrationTimestep = magnitude.mg(20, 'ns')
     dedicatedDataClass = DedicatedData
     def __init__(self, dataQueue=None, commandPipe=None, loggingQueue=None, sharedMemoryArray=None):
         Process.__init__(self)
@@ -100,6 +105,7 @@ class PulserHardwareServer(Process, OKBase):
         self.logicAnalyzerData = LogicAnalyzerData()
         
         self.logicAnalyzerBuffer = bytearray()
+        self.logicAnalyzerReadStatus = 0      #
         
     def run(self):
         configureServerLogging(self.loggingQueue)
@@ -128,16 +134,18 @@ class PulserHardwareServer(Process, OKBase):
     analyzingState = enum.enum('normal','scanparameter', 'dependentscanparameter')
     def readDataFifo(self):
         """ run is responsible for reading the data back from the FPGA
-            0xffffffff end of experiment marker
-            0xfffexxxx exitcode marker
-            0xff000000 timestamping overflow marker
-            0xffffxxxx scan parameter, followed by scanparameter value
-            0x1nxxxxxx count result from channel n
-            0x2nxxxxxx timestamp result channel n
-            0x3nxxxxxx timestamp gate start channel n
-            0x4xxxxxxx other return
-            0x50nnxxxx result n return Hi word
-            0x51nnxxxx result n return Low word
+            0xffffffffffffffff end of experiment marker
+            0xfffexxxxxxxxxxxx exitcode marker
+            0xfffd000000000000 timestamping overflow marker
+            0xfffcxxxxxxxxxxxx scan parameter, followed by scanparameter value
+            0x01ddnnxxxxxxxxxx count result from channel n id dd
+            0x02ddnnxxxxxxxxxx timestamp result channel n id dd
+            0x03ddnnxxxxxxxxxx timestamp gate start channel n id dd
+            0x04nnxxxxxxxxxxxx other return
+            0x05nnxxxxxxxxxxxx ADC return MSB 16 bits count, LSB 32 bits sum
+            0xeennxxxxxxxxxxxx dedicated result
+            0x50nn00000000xxxx result n return Hi 16 bits, only being sent if xxxx is not identical to zero
+            0x51nnxxxxxxxxxxxx result n return Low 48 bits, guaranteed to come first
         """
         logger = logging.getLogger(__name__)
         if (self.logicAnalyzerEnabled):
@@ -149,33 +157,51 @@ class PulserHardwareServer(Process, OKBase):
             if logicAnalyzerData:
                 self.logicAnalyzerBuffer.extend(logicAnalyzerData)
             for s in sliceview(self.logicAnalyzerBuffer,8):
-                (code, ) = struct.unpack('Q',s)
-                self.logicAnalyzerData.wordcount += 1
-                time = (code&0xffffff) + self.logicAnalyzerData.countOffset
-                pattern = (code >> 24) & 0xffffffff
-                header = (code >> 56 )
-                if header==2:  # overrun marker
-                    self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
-                elif header==1:  # end marker
-                    self.logicAnalyzerData.stopMarker = time
-                    self.dataQueue.put( self.logicAnalyzerData )
-                    self.logicAnalyzerData = LogicAnalyzerData()
-                elif header==4: # trigger
-                    self.logicAnalyzerData.trigger.append( (time,pattern) )
-                elif header==3: # standard
-                    self.logicAnalyzerData.data.append( (time,pattern) )  
-                elif header==5: # aux data
-                    self.logicAnalyzerData.auxData.append( (time,pattern))
-                elif header==6:
-                    self.logicAnalyzerData.gateData.append( (time,pattern) )                                          
-                logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(time, header, pattern, code, self.logicAnalyzerData.countOffset))
+                if self.logicAnalyzerReadStatus==0:
+                    (code, ) = struct.unpack('Q',s)
+                    self.logicAnalyzerData.wordcount += 1
+                    self.logicAnalyzerTime = (code & 0xffffff) + self.logicAnalyzerData.countOffset
+                    pattern = (code >> 24) & 0xffffffff
+                    header = (code >> 56 )
+                    if header==2:  # overrun marker
+                        self.logicAnalyzerData.countOffset += 0x1000000   # overrun of 24 bit counter
+                    elif header==1:  # end marker
+                        self.logicAnalyzerData.stopMarker = self.logicAnalyzerTime
+                        self.dataQueue.put( self.logicAnalyzerData )
+                        self.logicAnalyzerData = LogicAnalyzerData()
+                    elif header==4: # trigger
+                        self.logicAnalyzerReadStatus = 4
+                    elif header==3: # standard
+                        self.logicAnalyzerReadStatus = 3  
+                    elif header==5: # aux data
+                        self.logicAnalyzerReadStatus = 5
+                    elif header==6:
+                        self.logicAnalyzerReadStatus = 6                                       
+                    logger.debug("Time {0:x} header {1} pattern {2:x} {3:x} {4:x}".format(self.logicAnalyzerTime, header, pattern, code, self.logicAnalyzerData.countOffset))
+                elif self.logicAnalyzerReadStatus==3:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.data.append( (self.logicAnalyzerTime,pattern) )
+                    self.logicAnalyzerReadStatus = 0
+                elif self.logicAnalyzerReadStatus==4:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.trigger.append( (self.logicAnalyzerTime,pattern) )
+                    self.logicAnalyzerReadStatus = 0
+                elif self.logicAnalyzerReadStatus==5:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.auxData.append( (self.logicAnalyzerTime,pattern))
+                    self.logicAnalyzerReadStatus = 0
+                elif self.logicAnalyzerReadStatus==6:
+                    (pattern, ) = struct.unpack('Q',s) 
+                    self.logicAnalyzerData.gateData.append( (self.logicAnalyzerTime,pattern) )
+                    self.logicAnalyzerReadStatus = 0
             self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
 
                    
-        data, self.data.overrun = self.ppReadData(4)
+        data, self.data.overrun = self.ppReadData(8)
         if data:
-            for s in sliceview(data,4):
-                (token,) = struct.unpack('I',s)
+            for s in sliceview(data,8):
+                (token,) = struct.unpack('Q',s)
+                #print hex(token)
                 if self.state == self.analyzingState.dependentscanparameter:
                     self.data.dependentValues.append(token)
                     logger.debug( "Dependent value {0} received".format(token) )
@@ -189,50 +215,68 @@ class PulserHardwareServer(Process, OKBase):
                         self.data = Data()
                         self.data.scanvalue = token
                     self.state = self.analyzingState.normal
-                elif token & 0xf0000000 == 0xe0000000: # dedicated results
-                    channel = (token >>24) & 0xf
+                elif token & 0xff00000000000000 == 0xee00000000000000: # dedicated results
+                    channel = (token >>48) & 0xff
                     if self.dedicatedData.data[channel] is not None:
                         self.dataQueue.put( self.dedicatedData )
                         self.dedicatedData = self.dedicatedDataClass()
-                    self.dedicatedData.data[channel] = token & 0xffffff
-                elif token & 0xff000000 == 0xff000000:
-                    if token == 0xffffffff:    # end of run
+                    self.dedicatedData.data[channel] = token & 0xffffffffffff
+                    self.dedicatedData.timestamp = time_time()
+                    #logger.debug("dedicated {0} {1}".format(channel, token & 0xffffffffffff))
+                elif token & 0xff00000000000000 == 0xff00000000000000:
+                    if token == 0xffffffffffffffff:    # end of run
                         self.data.final = True
                         self.data.exitcode = 0x0000
                         self.dataQueue.put( self.data )
                         logger.info( "End of Run marker received" )
                         self.data = Data()
-                    elif token & 0xffff0000 == 0xfffe0000:  # exitparameter
+                    elif token & 0xffff000000000000 == 0xfffe000000000000:  # exitparameter
                         self.data.final = True
-                        self.data.exitcode = token & 0x0000ffff
+                        self.data.exitcode = token & 0x0000ffffffffffff
                         logger.info( "Exitcode {0} received".format(self.data.exitcode) )
                         self.dataQueue.put( self.data )
                         self.data = Data()
-                    elif token == 0xff000000:
+                    elif token == 0xfffd000000000000:
                         self.timestampOffset += 1<<28
-                    elif token & 0xffff0000 == 0xffff0000:  # new scan parameter
+                    elif token & 0xffff000000000000 == 0xfffc000000000000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
-                    key = token >> 28
-                    channel = (token >>24) & 0xf
-                    value = token & 0xffffff
-                    #print hex(token)
+                    key = token >> 56 
+                    #print "token", hex(token)
                     if key==1:   # count
-                        (self.data.count[channel]).append(value)
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
+                        (self.data.count[ channel ]).append(value)
                     elif key==2:  # timestamp
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
+                        if self.data.timestamp is None:
+                            self.data.timestamp = defaultdict(list)
                         self.data.timestamp[channel].append(self.timestampOffset + value - self.data.timestampZero[channel])
                     elif key==3:  # timestamp gate start
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
                         self.data.timestampZero[channel] = self.timestampOffset + value
                     elif key==4: # other return value
+                        channel = (token >>40) & 0xffff 
+                        value = token & 0x000000ffffffffff
                         self.data.other.append(value)
-                    elif key==5:
-                        resultkey = (value >> 16)
+                    elif key==5: # ADC return
+                        channel = (token >>40) & 0xffff
+                        sumvalue = token & 0xfffffff
+                        count = (token >> 28) & 0xfff
+                        if count>0:
+                            self.data.count[channel + 32].append( sumvalue/float(count)  )
+                    elif key==0x51:
+                        channel = (token >>48) & 0xff 
+                        value = token & 0x0000ffffffffffff
                         if self.data.result is None:
                             self.data.result = defaultdict(list)
-                        if channel==1:  # High word comes first
-                            self.data.result[resultkey].append( (value & 0xffff) << 16 )
-                        else:
-                            self.data.result[resultkey][-1] |= ( value & 0xffff )                           
+                        self.data.result[channel].append( value  )
+                    elif key==0x50:
+                        channel = (token >>48) & 0xff 
+                        value = token & 0x000000000000ffff
+                        self.data.result[channel][-1] |= ( value << 48 )                           
 #                  logger.debug("result key: {0} hi-low: {1} value: {2} length: {3} value: {4}".format(resultkey,channel,value&0xffff,len(self.data.result[resultkey]),self.data.result[resultkey][-1]))
                     else:
                         self.data.other.append(token)
@@ -260,9 +304,8 @@ class PulserHardwareServer(Process, OKBase):
          
     def setShutter(self, value):
         if self.xem:
-            check( self.xem.SetWireInValue(0x06, value, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x07, value>>16, 0xFFFF)	, 'SetWireInValue' )
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
+            data = bytearray(struct.pack('=HQ', 0x10, value))
+            self.xem.WriteToPipeIn(0x84, data )
             self._shutter = value
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
@@ -276,12 +319,16 @@ class PulserHardwareServer(Process, OKBase):
     def getTrigger(self):
         return self._trigger
             
+    def setExtendedWireIn(self, address, value ):
+        if self.xem:
+            self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', address, value)) )
+            logging.getLogger(__name__).debug("Writing Extended wire {0} value {1}".format(address,value))
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            
     def setTrigger(self,value):
         if self.xem:
-            check( self.xem.SetWireInValue(0x08, value, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x09, value>>16, 0xFFFF)	, 'SetWireInValue' )
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )
-            check( self.xem.ActivateTriggerIn( 0x41, 2), 'ActivateTrigger' )
+            self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x11, value)) )
             self._trigger = value
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
@@ -317,7 +364,7 @@ class PulserHardwareServer(Process, OKBase):
         return self._integrationTime
         
     def setIntegrationTime(self, value):
-        self.integrationTimeBinary = int( (value/self.timestep).toval() )
+        self.integrationTimeBinary = int( (value/self.integrationTimestep).toval() )
         if self.xem:
             logging.getLogger(__name__).info(  "set dedicated integration time {0} {1}".format( value, self.integrationTimeBinary ) )
             check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
@@ -329,32 +376,88 @@ class PulserHardwareServer(Process, OKBase):
         return self.integrationTimeBinary
             
     def getIntegrationTimeBinary(self, value):
-        return int( (value/self.timestep).toval() ) & 0xffffffff
-            
-    def ppUpload(self,binarycode,startaddress=0):
+        return int( (value/self.integrationTimestep).toval() ) & 0xffffffff
+    
+    def ppUpload(self, (code,data), codestartaddress=0, datastartaddress=0 ):
+        self.ppUploadCode(code, codestartaddress)
+        self.ppUploadData(data, datastartaddress)
+        
+    def ppUploadCode(self,binarycode,startaddress=0):
         if self.xem:
             logger = logging.getLogger(__name__)
-            logger.info(  "starting PP upload" )
+            logger.info( "PP Code segment uses {0} / {1} words {2:.0f} %".format(len(binarycode)/4,4095,len(binarycode)/4/40.95))
+            if len(binarycode)/4 > 4095:
+                raise PulserHardwareException("Code segment exceeds 4095 words ({0})".format(len(binarycode)/4))
+            logger.info(  "starting PP Code upload" )
             check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )	# start addr at zero
             self.xem.UpdateWireIns()
             check( self.xem.ActivateTriggerIn(0x41, 1), "ppUpload trigger" )
             logger.info(  "{0} bytes".format(len(binarycode)) )
-            num = self.xem.WriteToPipeIn(0x80, bytearray(binarycode) )
+            num = self.xem.WriteToPipeIn(0x83, bytearray(binarycode) )
             check(num, 'Write to program pipe' )
             logger.info(   "uploaded pp file {0} bytes".format(num) )
-            num, data = self.ppDownload(0,num)
+            num, data = self.ppDownloadCode(0,num)
             logger.info(   "Verified {0} bytes. {1}".format(num,data==binarycode) )
             return True
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return False
             
-    def ppDownload(self,startaddress,length):
+    def ppDownloadCode(self,startaddress,length):
         if self.xem:
             self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)	# start addr at 3900
             self.xem.UpdateWireIns()
             self.xem.ActivateTriggerIn(0x41, 0)
             self.xem.ActivateTriggerIn(0x41, 1)
+            data = bytearray('\000'*length)
+            num = self.xem.ReadFromPipeOut(0xA4, data)
+            return num, data
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            return 0,None
+        
+    configurationFields = ['magic', 'Type', 'HardwareConfigurationId', 'AD9912Channels', 'AD9910Channels', 'ADCChannels', 'DACChannels', 
+                           'CounterChannels', 'FirstDDSEnableShutter', 'SerialChannels' ]
+    def getConfiguration(self):
+        configuration = dict()
+        if self.xem:
+            data = bytearray('\000'*64)
+            self.xem.ReadFromPipeOut(0xAf, data)
+            for field, s in zip( self.configurationFields, sliceview(data,2) ):
+                (value, ) = struct.unpack('H', s)
+                configuration[field] = value
+            if configuration['magic']!= 0xfedc:
+                logging.getLogger(__name__).info('No Configuration information found in firmware')
+                return dict()
+        return configuration                            
+        
+    def ppUploadData(self, binarydata,startaddress=0):
+        if self.xem:
+            logger = logging.getLogger(__name__)
+            logger.info( "PP Data segment uses {0} / {1} words ( {2:.0f} % )".format(len(binarydata)/8,4095,len(binarydata)/8/40.95))
+            if len(binarydata)/8 > 4095:
+                raise PulserHardwareException("Code segment exceeds 4095 words ({0})".format(len(binarydata)/8))
+            logger.info(  "starting PP Datasegment upload" )
+            check( self.xem.SetWireInValue(0x00, startaddress, 0x0FFF), "ppUpload write start address" )    # start addr at zero
+            self.xem.UpdateWireIns()
+            check( self.xem.ActivateTriggerIn(0x41, 10), "ppUpload trigger" )
+            logger.info(  "{0} bytes".format(len(binarydata)) )
+            num = self.xem.WriteToPipeIn(0x80, bytearray(binarydata) )
+            check(num, 'Write to program pipe' )
+            logger.info(   "uploaded pp file {0} bytes".format(num) )
+            num, data = self.ppDownloadData(0,num)
+            logger.info(   "Verified {0} bytes. {1}".format(num,data==binarydata) )
+            return True
+        else:
+            logging.getLogger(__name__).warning("Pulser Hardware not available")
+            return False
+        
+    def ppDownloadData(self,startaddress,length):
+        if self.xem:
+            self.xem.SetWireInValue(0x00, startaddress, 0x0FFF)    # start addr at 3900
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn(0x41, 0)
+            self.xem.ActivateTriggerIn(0x41, 10)
             data = bytearray('\000'*length)
             num = self.xem.ReadFromPipeOut(0xA0, data)
             return num, data
@@ -418,18 +521,18 @@ class PulserHardwareServer(Process, OKBase):
             else:
                 code = bytearray()
                 for item in data:
-                    code.extend(struct.pack('I',item))
+                    code.extend(struct.pack('Q' if item>0 else 'q',item))
                 #print "ppWriteData length",len(code)
                 return self.xem.WriteToPipeIn(0x81,code)
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return None
                 
-    def ppReadData(self,minbytes=4):
+    def ppReadData(self,minbytes=8):
         if self.xem:
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
-            byteswaiting = (wirevalue & 0xffe)*2
+            byteswaiting = (wirevalue & 0x1ffe)*2
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa2, data)
@@ -453,10 +556,10 @@ class PulserHardwareServer(Process, OKBase):
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
-        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
+        return bytearray(numpy.array(wordlist, dtype=numpy.int64).view(dtype=numpy.int8))
 
     def bytearrayToWordList(self, barray):
-        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int64 ))
             
     def ppWriteRam(self,data,address):
         if self.xem:
@@ -528,7 +631,7 @@ class PulserHardwareServer(Process, OKBase):
                 raise PulserHardwareException("RAM write unsuccessful")
                 
     def ppReadRamWordListShared(self, length, address):
-        data = bytearray([0]*length*4)
+        data = bytearray([0]*length*8)
         self.ppReadRam(data, address)
         self.sharedMemoryArray[:length] = self.bytearrayToWordList(data)
         return True

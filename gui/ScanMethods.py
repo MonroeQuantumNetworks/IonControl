@@ -23,7 +23,7 @@ class InternalScanMethod(object):
     
     def startScan(self):
         logger = logging.getLogger(__name__)
-        self.experiment.progressUi.setRunning( max(len(self.experiment.scan.list),1) ) 
+        self.experiment.progressUi.setRunning( max(len(self.experiment.scan.list),1) if self.experiment.scan.list is not None else 100) 
         logger.info( "Starting" )
         self.experiment.pulserHardware.ppStart()
         self.experiment.currentIndex = 0
@@ -38,8 +38,10 @@ class InternalScanMethod(object):
     def prepareNextPoint(self, data):
         if data.final:
             self.experiment.finalizeData(reason='end of scan')
-            logging.getLogger(__name__).info( "current index {0} expected {1}".format(self.experiment.currentIndex, len(self.experiment.scan.list) ) )
-            if self.experiment.currentIndex >= len(self.experiment.scan.list):    # if all points were taken
+            if self.experiment.scan.list is None:
+                self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
+            elif self.experiment.currentIndex >= len(self.experiment.scan.list):    # if all points were taken
+                logging.getLogger(__name__).error( "current index {0} expected {1}".format(self.experiment.currentIndex, len(self.experiment.scan.list) ) )
                 self.experiment.generator.dataOnFinal(self.experiment, self.experiment.progressUi.state )
             else:
                 self.experiment.onInterrupt( self.experiment.pulseProgramUi.exitcode(data.exitcode) )
@@ -97,7 +99,7 @@ class ExternalScanMethod(InternalScanMethod):
              
     def onData(self, data, queuesize, x ):
         if not self.parameter.useExternalValue:
-            x = self.experiment.generator.xValue(self.index)
+            x = self.experiment.generator.xValue(self.index, data)
             self.experiment.dataMiddlePart(data, queuesize, x)
         else:
             self.parameter.asyncCurrentExternalValue( partial( self.experiment.dataMiddlePart, data, queuesize) )
@@ -135,7 +137,7 @@ class GlobalScanMethod(ExternalScanMethod):
     def __init__(self, experiment):
         super( GlobalScanMethod, self).__init__(experiment)
     
-class VoltageScanMethod(object):
+class VoltageScanMethod(ExternalScanMethod):
     name = 'Voltage'
     def __init__(self, experiment):
         super( VoltageScanMethod, self).__init__(experiment)
