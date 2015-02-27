@@ -521,7 +521,7 @@ class PulserHardwareServer(Process, OKBase):
             else:
                 code = bytearray()
                 for item in data:
-                    code.extend(struct.pack('Q',item))
+                    code.extend(struct.pack('Q' if item>0 else 'q',item))
                 #print "ppWriteData length",len(code)
                 return self.xem.WriteToPipeIn(0x81,code)
         else:
