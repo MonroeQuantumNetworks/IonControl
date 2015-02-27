@@ -417,6 +417,10 @@ class Trace(object):
     def tracePlottingList(self):
         return self.description["tracePlottingList"]
     
+    @property
+    def indexColumn(self):
+        return numpy.arange( 0, len(self.x), 1)
+    
 #     def __del__(self):
 #         print "Deleting Trace"
 #         
