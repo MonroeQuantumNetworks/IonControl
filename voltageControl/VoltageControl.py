@@ -50,7 +50,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         if hasattr(self.settings,'state'):
             self.restoreState( self.settings.state )
         self.voltageFilesUi.loadMapping.connect( self.voltageBlender.loadMapping )
-        self.voltageFilesUi.loadDefinition.connect( self.voltageBlender.loadVoltage )
+        self.voltageFilesUi.loadDefinition.connect( self.onLoadVoltage )
         self.voltageFilesUi.loadGlobalAdjust.connect( self.onLoadGlobalAdjust )
         self.voltageTableModel = VoltageTableModel.VoltageTableModel(self.voltageBlender)
         self.tableView.setModel( self.voltageTableModel )
@@ -67,6 +67,10 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
             logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.shuttlingGraph.setPosition )
+    
+    def onLoadVoltage(self, path, shuttledefpath ):
+        self.voltageBlender.loadVoltage(path)
+        self.adjustUi.loadShuttleDef( shuttledefpath )
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )

@@ -9,9 +9,11 @@ from networkx import Graph, shortest_path, simple_cycles, dfs_postorder_nodes, d
 from modules.pairs_iter import pairs_iter 
 from modules.Observable import Observable
 from modules.firstNotNone import firstNotNone
+import xml.etree.ElementTree as ElementTree
 
 
 class ShuttleEdge(object):
+    stateFields = ['startLine', 'stopLine', 'idleCount', 'direction', 'wait', 'startName', 'stopName', 'steps' ]
     def __init__(self, startName="start", stopName="stop", startLine=0.0, stopLine=1.0, idleCount=0, direction=0, wait=0, soft_trigger=0 ):
         self.startLine = startLine
         self.stopLine = stopLine
@@ -21,6 +23,22 @@ class ShuttleEdge(object):
         self.startName = startName
         self.stopName = stopName
         self.steps = 0
+
+    def toXmlElement(self, root):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in self.stateFields ))
+        myElement = ElementTree.SubElement(root, 'ShuttleEdge', mydict )
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        a = element.attrib
+        edge = ShuttleEdge( startName=a.get('startName','start'),  stopName=a.get('stopName',"stop"), startLine=float(a.get('startLine','0.0')), 
+                            stopLine=float(a.get('stopLine','1.0')), idleCount=float(a.get('idleCount','0.0')), direction=int(a.get('direction','0')), 
+                            wait=int(a.get('wait','0')), soft_trigger=int(a.get('softTrigger','0')) )
+        edge.steps = int(a.get('steps','0'))
+        return edge
+
+
 
 class ShuttlingGraphException(Exception):
     pass
@@ -157,5 +175,17 @@ class ShuttlingGraph(list):
     
     def nodes(self):
         return self.shuttlingGraph.nodes()
-        
-    #def storeTo
+    
+    def toXmlElement(self, root):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('currentPosition','currentPositionName') if getattr(self,key) is not None  ) ) 
+        myElement = ElementTree.SubElement(root, "ShuttlingGraph", attrib=mydict )
+        for edge in self:
+            edge.toXmlElement( myElement )
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        edgeElementList = element.findall("ShuttleEdge")
+        edgeList = [ ShuttleEdge.fromXmlElement(e) for e in edgeElementList ]
+        return ShuttlingGraph(edgeList)
+

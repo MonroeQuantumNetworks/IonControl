@@ -17,7 +17,9 @@ from modules.PyqtUtility import updateComboBoxItems, BlockSignals
 from modules.firstNotNone import firstNotNone
 from modules.Utility import unique
 from modules.GuiAppearance import restoreGuiState, saveGuiState
-
+from xml.etree import ElementTree 
+from xml.dom import minidom
+import os.path
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
 ShuttlingEdgeForm, ShuttlingEdgeBase = PyQt4.uic.loadUiType(r'ui\ShuttlingEdge.ui')
@@ -49,6 +51,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.adjust = self.settings.adjust
         self.shuttlingGraph = ShuttlingGraph()
         self.voltageBlender = voltageBlender
+        self.shuttlingDefinitionFile = None
 
     def setupUi(self, parent):
         VoltageAdjustForm.setupUi(self,parent)
@@ -123,4 +126,31 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     def saveConfig(self):
         self.config[self.configname] = self.settings
         self.config['VoltageAdjust.GuiState'] = saveGuiState(self)
+        root = ElementTree.Element('VoltageAdjust')
+        self.shuttlingGraph.toXmlElement(root)
+        if self.shuttlingDefinitionFile:
+            with open(self.shuttlingDefinitionFile,'w') as f:
+                f.write(self.prettify(root))
+            
+    def prettify(self, elem):
+        """Return a pretty-printed XML string for the Element.
+        """
+        rough_string = ElementTree.tostring(elem, 'utf-8')
+        reparsed = minidom.parseString(rough_string)
+        return reparsed.toprettyxml(indent="  ")
+
+    def loadShuttleDef(self, filename):
+        if filename is not None:
+            self.shuttlingDefinitionFile = filename
+            if os.path.exists(filename):
+                tree = ElementTree.parse(filename)
+                root = tree.getroot()
+                
+                # load pulse definition
+                ShuttlingGraphElement = root.find("ShuttlingGraph")
+                self.shuttlingGraph = ShuttlingGraph.fromXmlElement(ShuttlingGraphElement)
+                self.shuttleEdgeTableModel.setShuttlingGraph(self.shuttlingGraph)
+                self.currentPositionLabel.setText( firstNotNone( self.shuttlingGraph.currentPositionName, "" ) )
+                self.shuttlingGraph.currentPositionObservable.subscribe( self.onCurrentPositionEvent )
+                self.shuttlingGraph.graphChangedObservable.subscribe( self.setupGraphDependent )
         
