@@ -79,6 +79,7 @@ class ShuttlingGraph(list):
         self.setPosition(self.currentPosition)
     
     def setStartName(self, edgeno, startName):
+        startName = str(startName)
         edge = self[edgeno]
         if edge.startName!=startName:
             if not self.shuttlingGraph.has_edge( startName, edge.stopName):
@@ -96,6 +97,7 @@ class ShuttlingGraph(list):
         return True
     
     def setStopName(self, edgeno, stopName):
+        stopName = str(stopName)
         edge = self[edgeno]
         if edge.stopName!=stopName:
             if not self.shuttlingGraph.has_edge( edge.startName, stopName):
@@ -156,4 +158,4 @@ class ShuttlingGraph(list):
     def nodes(self):
         return self.shuttlingGraph.nodes()
         
-        
+    #def storeTo
