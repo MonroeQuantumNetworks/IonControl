@@ -21,10 +21,14 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules.enum import enum
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from cPickle import UnpicklingError
+from scan.AbszisseType import AbszisseType
 
+ 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
+
 class EvaluationDefinition(object):
+    AbszisseType = enum( 'x', 'time', 'index' )
     def __init__(self):
         self.counter = None
         self.evaluation = None
@@ -36,6 +40,7 @@ class EvaluationDefinition(object):
         self.analysis = None
         self.counterId = 0
         self.type = 'Counter'
+        self.abszisse = AbszisseType.x
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -44,8 +49,9 @@ class EvaluationDefinition(object):
         self.__dict__.setdefault( 'analysis', None )
         self.__dict__.setdefault( 'counterId', 0 )
         self.__dict__.setdefault( 'type', 'Counter' )
+        self.__dict__.setdefault( 'abszisse', AbszisseType.x )
         
-    stateFields = ['counterId', 'type', 'counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis'] 
+    stateFields = ['counterId', 'type', 'counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis', 'abszisse'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -166,6 +172,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.evalTableView.setItemDelegateForColumn(2, self.magnitudeDelegate)
         self.evalTableView.setItemDelegateForColumn(3, self.delegate )
         self.evalTableView.setItemDelegateForColumn(6, self.delegate )
+        self.evalTableView.setItemDelegateForColumn(7, self.delegate )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
