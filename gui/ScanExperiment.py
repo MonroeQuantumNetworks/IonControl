@@ -294,13 +294,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.generator = GeneratorList[self.scan.scanMode](self.scan)
             (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
             if data:
+                logging.getLogger(__name__).info("Writing {0} bytes to RAM ({1}%)".format(len(data)*8, 100*len(data)/(2**25) ))
                 self.pulserHardware.ppWriteRamWordList(data,0, check=True)
                 datacopy = [0]*len(data)
-#                 datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
-#                 if data!=datacopy:
-#                     logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
-#                     logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
-#                     raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
+                datacopy = self.pulserHardware.ppReadRamWordList(datacopy,0)
+                if data!=datacopy:
+                    logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
+                    logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
+                    raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(PulseProgramBinary)

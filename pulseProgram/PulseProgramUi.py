@@ -471,6 +471,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             upd_names.append( variablename )
             upd_values.append( currentval )
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
+            logging.getLogger(__name__).info("{0}: {1}".format(upd_names, upd_values))
         if extendedReturn:
             return updatecode, numVariablesPerUpdate
         return updatecode

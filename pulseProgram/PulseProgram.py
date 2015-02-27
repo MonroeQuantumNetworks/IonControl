@@ -278,7 +278,7 @@ class PulseProgram:
         self.dataBinarycode = bytearray()
         for wordno, arg in enumerate(self.dataBytecode):
             logger.debug( "{0} {1}".format( hex(wordno), hex(long(arg)) )) 
-            self.dataBinarycode += struct.pack('Q', long(arg))
+            self.dataBinarycode += struct.pack('Q' if arg>0 else 'q', long(arg))
         if writeBinaryData:
             self.writeBinaryCodeForSimulation(self.binarycode, 'ppcmdmem.mif')
             self.writeBinaryCodeForSimulation(self.dataBinarycode, 'ppmem6.mif')

@@ -631,7 +631,7 @@ class PulserHardwareServer(Process, OKBase):
                 raise PulserHardwareException("RAM write unsuccessful")
                 
     def ppReadRamWordListShared(self, length, address):
-        data = bytearray([0]*length*4)
+        data = bytearray([0]*length*8)
         self.ppReadRam(data, address)
         self.sharedMemoryArray[:length] = self.bytearrayToWordList(data)
         return True
