@@ -133,7 +133,6 @@ class TodoList(Form, Base):
         self.statemachine.addTransition('startCommand', 'Idle', 'MeasurementRunning', self.checkReadyToRun )
         self.statemachine.addTransitionList('stopCommand', ['Idle', 'Paused'], 'Idle')
         self.statemachine.addTransition( 'stopCommand', 'MeasurementRunning', 'Waiting for Completion')
-        self.statemachine.addTransition( 'stopImmediatelyCommand', 'MeasurementRunning','Idle' )
         self.statemachine.addTransition('measurementFinished','MeasurementRunning','Check', self.checkReadyToRun )
         self.statemachine.addTransition('measurementFinished','Waiting for Completion','Idle' )
         self.statemachine.addTransition('docheck', 'Check', 'MeasurementRunning', lambda state: (self.settings.currentIndex>0 or self.settings.repeat) and self.isSomethingTodo())
@@ -159,7 +158,6 @@ class TodoList(Form, Base):
         self.removeMeasurementButton.clicked.connect( self.onDropMeasurement )
         self.runButton.clicked.connect( partial( self.statemachine.processEvent, 'startCommand' ) )
         self.stopButton.clicked.connect( partial( self.statemachine.processEvent, 'stopCommand' ) )
-        self.stopImmediatelyButton.clicked.connect( partial( self.statemachine.processEvent, 'stopImmediatelyCommand' ) )
         self.repeatButton.setChecked( self.settings.repeat )
         self.repeatButton.clicked.connect( self.onRepeatChanged )
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
@@ -357,8 +355,6 @@ class TodoList(Form, Base):
 
     def enterIdle(self):
         self.statusLabel.setText('Idle')
-        _, currentwidget = self.currentScan()
-        currentwidget.onStart()
         if self.idleConfiguration is not None:
             (previousName, previousScan, previousEvaluation, previousAnalysis) = self.idleConfiguration
             currentname, currentwidget = self.currentScan()
