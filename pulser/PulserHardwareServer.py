@@ -32,6 +32,7 @@ class Data:
         self.dependentValues = list()                   # additional scan values
         self.evaluated = dict()
         self.result = None                              # data received in the result channels dict with channel number as key
+        self.externalStatus = None
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -42,6 +43,7 @@ class Data:
 class DedicatedData:
     def __init__(self):
         self.data = [None]*17
+        self.externalStatus = None
         
     def count(self):
         return self.data[0:8]
@@ -197,7 +199,8 @@ class PulserHardwareServer(Process, OKBase):
             self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
 
                    
-        data, self.data.overrun = self.ppReadData(8)
+        data, self.data.overrun, self.data.externalStatus = self.ppReadData(8)
+        self.dedicatedData.externalStatus = self.data.externalStatus
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
@@ -533,12 +536,14 @@ class PulserHardwareServer(Process, OKBase):
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
             byteswaiting = (wirevalue & 0x1ffe)*2
+            externalStatus = self.xem.GetWireOutValue(0x30) | (self.xem.GetWireOutValue(0x31) << 16)
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa2, data)
                 overrun = (wirevalue & 0x4000)!=0
-                return data, overrun
-        return None, False
+                return data, overrun, externalStatus
+            return None, False, externalStatus
+        return None, False, None
                         
     def ppReadLogicAnalyzerData(self,minbytes=8):
         if self.xem:
