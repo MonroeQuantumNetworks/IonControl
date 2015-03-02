@@ -17,6 +17,9 @@ point = Literal( "." )
 e     = CaselessLiteral( "E" )
 plus  = Literal( "+" )
 minus = Literal( "-" )
+none = Literal("None")
+nan = Literal("nan")
+inf = Literal("inf")
 dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
                    Optional( e + Word( "+-"+nums, nums ) ) )
 numfnumber = Combine( Optional(plus | minus) + Word( nums ) + 
@@ -25,12 +28,18 @@ numfnumber = Combine( Optional(plus | minus) + Word( nums ) +
 fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 
-valueexpr = ( fnumber + Optional(ident)  )
+valueexpr = ( nan | inf | none | fnumber + Optional(ident)  )
 precisionexpr = (  Word( "+-"+nums, nums ) + Optional(point + Optional(Word( nums, nums ))) )
+
+specialValues = { "None": None,
+                  "nan" : float('nan'),
+                  "inf" : float('inf')}
 
 @lru_cache(maxsize=100)
 def parse( string ):
     val = valueexpr.parseString( string )
+    if val[0] in specialValues:
+        return specialValues[val[0]]
     precres = precisionexpr.parseString( string )
     prec = len(precres[2]) if len(precres)==3 else 0
     retval = magnitude.mg(float(val[0]),val[1] if len(val)>1 else None)
@@ -79,6 +88,9 @@ def positionawareTrim( string, position ):
 
 if __name__=="__main__":
     print isValueExpression('2kHz')
+    print parse("None")
+    print parse("inf")
+    print parse("nan")
 #     print positionawareTrim('   1234',10)
 #     for line in ['12MHz', '12.123456789 MHz','-200.234e3 us','   12.000 MHz','40']:
 #         try:
