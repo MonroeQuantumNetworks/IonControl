@@ -41,7 +41,7 @@ goodRB =[  (datetime.date(2015,2,28), [1] ),
 
 goodCompositeRB = [ (datetime.date(2015,2,28), [1,2,3] ),
                         (datetime.date(2015,3,1), [1,2]),
-                        (datetime.date(2015,3,2), [1] )       ]
+                        (datetime.date(2015,3,2), [1,2] )       ]
 
 datadirectory = DataDirectory('QGA')
 outputpath = datadirectory.path( datetime.date(2015,3,2))
@@ -95,7 +95,7 @@ def saveResultsWithLookup(resultsTable, sequence, filename):
             gateseq = "".join(gateseq) if gateseq else "0"
             print >> f, gateseq, " ".join( map(str, r[1:]))
 
-def saveCondensedResults(resultsTable, sequence, filename):
+def saveCondensedResults(resultsTable, sequence, filename, recordIndex=False):
     bright =  defaultdict( lambda: 0 )
     total = defaultdict( lambda:0 )
     for x, b, _, _ in resultsTable:
@@ -114,7 +114,10 @@ def saveCondensedResults(resultsTable, sequence, filename):
                     gateseq = '{}'
             else:
                 gateseq = addGs(gateseq)
-            print >> f, gateseq, b, t, 0, 0
+            if recordIndex:
+                print >> f, x1, b, t, 0, 0
+            else:
+                print >> f, gateseq, b, t, 0, 0
 
 
 def saveResultsRaw(resultsTable, filename):
@@ -180,7 +183,8 @@ def assembleData( filenameTemplate, filenameKeys, sequence, expectedLength, accu
     
     saveResultsWithLookup(RawResultsTable, sequence, os.path.join(outputpath,"{0}_{1}assemble.txt".format(filenameBody,qualifier) ) )
     saveResultsRaw(RawResultsTable, os.path.join(outputpath,"{0}_{1}assemble_raw.txt".format(filenameBody,qualifier) ) )
-    saveCondensedResults(RawResultsTable, sequence, os.path.join(outputpath,"{0}_{1}condensed.txt".format(filenameBody,qualifier) ) )
+    saveCondensedResults(RawResultsTable, sequence, os.path.join(outputpath,"{0}_{1}condensed.txt".format(filenameBody,qualifier) ), recordIndex=False )
+    saveCondensedResults(RawResultsTable, sequence, os.path.join(outputpath,"{0}_{1}condensed_idx.txt".format(filenameBody,qualifier) ), recordIndex=True )
     print "Total experiments {0}".format(totalexperiments)
     
 def createSeparateLists( filenameTemplate, filenameKeys ):
