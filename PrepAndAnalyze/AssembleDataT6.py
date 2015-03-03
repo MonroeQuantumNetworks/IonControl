@@ -28,23 +28,27 @@ RBSequenceFile = r"C:\Users\Public\Documents\experiments\QGA\config\GateSets\Ran
 
 #allemptyI
 goodGateSetTraining = [ (datetime.date(2015,3,1), [1,2,3] ),
-                        (datetime.date(2015,3,2), [1] ) ]
+                        (datetime.date(2015,3,2), [1,4] ),
+                        (datetime.date(2015,3,3), [1] )  ]
 
 goodCompositeGateSetTraining = [ (datetime.date(2015,2,27), [0,1] ),
                         (datetime.date(2015,2,28), [1,2,3]),
                         (datetime.date(2015,3,1), [1,2] ),
-                        (datetime.date(2015,3,2), [1] )    ]
+                        (datetime.date(2015,3,2), [1,3] ),
+                        (datetime.date(2015,3,3), [1] )    ]
 
 goodRB =[  (datetime.date(2015,2,28), [1] ), 
            (datetime.date(2015,3,1), [1,2] ), 
-           (datetime.date(2015,3,2), [1] ) ]
+           (datetime.date(2015,3,2), [1,2] ), 
+           (datetime.date(2015,3,3), [1] ) ]
 
 goodCompositeRB = [ (datetime.date(2015,2,28), [1,2,3] ),
                         (datetime.date(2015,3,1), [1,2]),
-                        (datetime.date(2015,3,2), [1,2] )       ]
+                        (datetime.date(2015,3,2), [1,2,3] ),
+                        (datetime.date(2015,3,3), [] )       ]
 
 datadirectory = DataDirectory('QGA')
-outputpath = datadirectory.path( datetime.date(2015,3,2))
+outputpath = datadirectory.path( datetime.date(2015,3,3))
 
 gatedef = GateDefinition()
 gatedef.loadGateDefinition(gateDefinitionFile)    
