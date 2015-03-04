@@ -111,7 +111,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.statusDisplay = StatusDisplay(self.config)
         self.statusDisplay.setupUi(self.statusDisplay)
         self.statusDock = QtGui.QDockWidget("Status display")
-        self.autoLoadDock.setObjectName("Status display")
+        self.statusDock.setObjectName("Status display")
         self.statusDock.setWidget( self.statusDisplay )
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.statusDock)
         
