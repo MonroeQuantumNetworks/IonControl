@@ -1,9 +1,10 @@
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 from modules.firstNotNone import firstNotNone
 
 
 class StatusTableModel(QtCore.QAbstractTableModel):
-    colorLookup = { (0,True): QtCore.Qt.green, (1,True): QtCore.Qt.red, (0,False): QtCore.Qt.white, (1,False): QtCore.Qt.white }
+    colorLookup = { (0,True): QtGui.QColor(QtCore.Qt.green), (1,True): QtGui.QColor(QtCore.Qt.red), 
+                    (0,False): QtGui.QColor(QtCore.Qt.white), (1,False): QtGui.QColor(QtCore.Qt.white) }
     def __init__(self, description, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.description = description
@@ -11,7 +12,7 @@ class StatusTableModel(QtCore.QAbstractTableModel):
                         
     def setData(self, data):
         self.externalStatus = data
-        self.dataChanged.emit( self.createIndex(1,0), self.createIndex(1,len(self.description)))
+        self.dataChanged.emit( self.createIndex(0,1), self.createIndex(len(self.description),1))
                         
     def add(self, key, value ):
         if key not in self.data:
