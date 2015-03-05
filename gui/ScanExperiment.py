@@ -290,6 +290,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
+            self.pulserHardware.ppStop()
             PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
             self.generator = GeneratorList[self.scan.scanMode](self.scan)
             (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
@@ -364,6 +365,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
+        if len(data.count[0])>100:
+            print data.count
         if data.other and self.scan.gateSequenceSettings.debug:
             if self.otherDataFile is None:
                 dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
