@@ -495,6 +495,7 @@ class PulserHardwareServer(Process, OKBase):
     def ppStart(self):#, widget = None, data = None):
         if self.xem:
             self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
+            self.xem.ActivateTriggerIn(0x41, 4)  # clear fifo
             self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
             self.readDataFifo()
             self.readDataFifo()   # after the first time the could still be data in the FIFO not reported by the fifo count
