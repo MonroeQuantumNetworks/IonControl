@@ -107,6 +107,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.area = DockArea()
         self.setCentralWidget(self.area)
         self.plotDict = dict()
+        axesType = self.config.get( self.experimentName+'.axesType', defaultdict( lambda: False ))
         if self.experimentName+'.plotNames' in self.config:
             plotNames = self.config[self.experimentName+'.plotNames']
         else:
@@ -121,6 +122,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self, name=name)
+            widget.setTimeAxis(axesType[name])
             view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -290,6 +292,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
+            self.pulserHardware.ppStop()
             PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
             self.generator = GeneratorList[self.scan.scanMode](self.scan)
             (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
@@ -364,6 +367,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
+        if len(data.count[0])>100:
+            print data.count
         if data.other and self.scan.gateSequenceSettings.debug:
             if self.otherDataFile is None:
                 dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
@@ -660,6 +665,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config[self.experimentName+'.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
         self.config[self.experimentName+'.plotNames'] = self.plotDict.keys()
+        self.config[self.experimentName+".axesType"] = dict( ((key,value["widget"].timeAxis) for key, value in self.plotDict.iteritems()) )
         self.scanControlWidget.saveConfig()
         self.evaluationControlWidget.saveConfig()
         self.traceui.saveConfig()

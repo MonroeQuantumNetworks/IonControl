@@ -139,6 +139,9 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         size = fontMetrics.boundingRect(self.lineEdit().text()).size()
         size += QtCore.QSize( 8,0)
         return size
+    
+    def wheelEvent(self, *args, **kwargs):
+        return QtGui.QAbstractSpinBox.wheelEvent(self, *args, **kwargs)
  
 #    def makeDrag(self):
 #        dr = QtGui.QDrag(self)

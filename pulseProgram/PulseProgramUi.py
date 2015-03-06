@@ -222,7 +222,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 w.addItem(name)
         if isNewContext:
             self.contextDictChanged.emit(self.contextDict.keys())
-        self.updateSaveStatus()
+        self.updateSaveStatus(isSaved=True)
         self.currentContextName = name
     
     def onDeleteContext(self):

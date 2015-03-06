@@ -32,6 +32,7 @@ class Data:
         self.dependentValues = list()                   # additional scan values
         self.evaluated = dict()
         self.result = None                              # data received in the result channels dict with channel number as key
+        self.externalStatus = None
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -42,6 +43,7 @@ class Data:
 class DedicatedData:
     def __init__(self):
         self.data = [None]*17
+        self.externalStatus = None
         
     def count(self):
         return self.data[0:8]
@@ -197,7 +199,8 @@ class PulserHardwareServer(Process, OKBase):
             self.logicAnalyzerBuffer = bytearray( sliceview_remainder(self.logicAnalyzerBuffer, 8) )           
 
                    
-        data, self.data.overrun = self.ppReadData(8)
+        data, self.data.overrun, self.data.externalStatus = self.ppReadData(8)
+        self.dedicatedData.externalStatus = self.data.externalStatus
         if data:
             for s in sliceview(data,8):
                 (token,) = struct.unpack('Q',s)
@@ -321,7 +324,7 @@ class PulserHardwareServer(Process, OKBase):
             
     def setExtendedWireIn(self, address, value ):
         if self.xem:
-            self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', address, value)) )
+            self.xem.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ' if value>0 else '=Hq', address, value)) )
             logging.getLogger(__name__).debug("Writing Extended wire {0} value {1}".format(address,value))
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
@@ -492,6 +495,7 @@ class PulserHardwareServer(Process, OKBase):
     def ppStart(self):#, widget = None, data = None):
         if self.xem:
             self.xem.ActivateTriggerIn(0x40, 3)  # pp_stop_trig
+            self.xem.ActivateTriggerIn(0x41, 4)  # clear fifo
             self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
             self.readDataFifo()
             self.readDataFifo()   # after the first time the could still be data in the FIFO not reported by the fifo count
@@ -533,12 +537,14 @@ class PulserHardwareServer(Process, OKBase):
             self.xem.UpdateWireOuts()
             wirevalue = self.xem.GetWireOutValue(0x25)   # pipe_out_available
             byteswaiting = (wirevalue & 0x1ffe)*2
+            externalStatus = self.xem.GetWireOutValue(0x30) | (self.xem.GetWireOutValue(0x31) << 16)
             if byteswaiting:
                 data = bytearray('\x00'*byteswaiting)
                 self.xem.ReadFromPipeOut(0xa2, data)
                 overrun = (wirevalue & 0x4000)!=0
-                return data, overrun
-        return None, False
+                return data, overrun, externalStatus
+            return None, False, externalStatus
+        return None, False, None
                         
     def ppReadLogicAnalyzerData(self,minbytes=8):
         if self.xem:
