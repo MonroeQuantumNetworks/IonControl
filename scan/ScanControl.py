@@ -295,11 +295,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         logger.debug( "ScanControl.setPulseProgramUi {0}".format(pulseProgramUi.configParams.recentFiles.keys()) )
         isStartup = self.pulseProgramUi is None
         self.pulseProgramUi = pulseProgramUi
-        with BlockSignals(self.loadPPComboBox):
-            self.loadPPComboBox.clear()
-            self.loadPPComboBox.addItems(pulseProgramUi.contextDict.keys())
-            if self.settings.loadPPName: 
-                self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
+        updateComboBoxItems(self.loadPPComboBox, sorted(pulseProgramUi.contextDict.keys()), self.settings.loadPPName)
         try:
             self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
         except TypeError:
@@ -376,7 +372,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         updateComboBoxItems( self.comboBoxScanTarget, self.scanTargetDict.keys(), self.parameters.currentScanTarget )
         self.parameters.currentScanTarget = firstNotNone(self.parameters.currentScanTarget, target)
         if target==self.parameters.currentScanTarget:
-            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, scannames, self.settings.scanParameter ))
+            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, sorted(scannames), self.settings.scanParameter ))
 
     def onChangeScanTarget(self, name):
         """ called on currentIndexChanged[QString] signal of ComboBox"""
@@ -384,7 +380,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if name!=self.parameters.currentScanTarget:
             self.parameters.scanTargetCache[self.parameters.currentScanTarget] = self.settings.scanParameter
             cachedParam = self.parameters.scanTargetCache.get(name)
-            cachedParam = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], cachedParam )
+            cachedParam = updateComboBoxItems( self.comboBoxParameter, sorted(self.scanTargetDict[name]), cachedParam )
             self.settings.scanParameter = cachedParam
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
@@ -397,7 +393,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if name!=self.parameters.currentScanTarget:
             with BlockSignals(self.comboBoxScanTarget):
                 self.comboBoxScanTarget.setCurrentIndex( self.comboBoxScanTarget.findText(name) )
-            scanParameter = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], scanParameter )
+            scanParameter = updateComboBoxItems( self.comboBoxParameter, sorted(self.scanTargetDict[name]), scanParameter )
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
         else:
