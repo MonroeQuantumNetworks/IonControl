@@ -207,7 +207,10 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         self.timeAxis = False
         
     def onToggleTimeAxis(self):
-        if not self.timeAxis:
+        self.setTimeAxis( not self.timeAxis )
+        
+    def setTimeAxis(self, timeAxis=False):
+        if timeAxis:
             dateAxisItem = DateAxisItem(orientation='bottom') 
             originalAxis = self._graphicsView.getAxis('bottom')
             dateAxisItem.linkToView(self._graphicsView.vb)

@@ -107,6 +107,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.area = DockArea()
         self.setCentralWidget(self.area)
         self.plotDict = dict()
+        axesType = self.config.get( self.experimentName+'.axesType', defaultdict( lambda: False ))
         if self.experimentName+'.plotNames' in self.config:
             plotNames = self.config[self.experimentName+'.plotNames']
         else:
@@ -121,6 +122,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self, name=name)
+            widget.setTimeAxis(axesType[name])
             view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -663,6 +665,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.config[self.experimentName+'.MainWindow.State'] = QtGui.QMainWindow.saveState(self)
         self.config[self.experimentName+'.pyqtgraph-dockareastate'] = self.area.saveState()
         self.config[self.experimentName+'.plotNames'] = self.plotDict.keys()
+        self.config[self.experimentName+".axesType"] = dict( ((key,value["widget"].timeAxis) for key, value in self.plotDict.iteritems()) )
         self.scanControlWidget.saveConfig()
         self.evaluationControlWidget.saveConfig()
         self.traceui.saveConfig()
