@@ -15,6 +15,7 @@ import modules.magnitude as magnitude
 
 from pulser.OKBase import OKBase, check
 from _collections import defaultdict
+import json
 
 class PulserHardwareException(Exception):
     pass
@@ -39,6 +40,14 @@ class Data:
     
     def defaultTimestampZero(self):
         return 0
+    
+    def dataString(self):
+        parts = list()
+        parts.append( json.dumps(self.timestep) )
+        parts.append( json.dumps(self.scanvalue) )
+        parts.append( json.dumps(self.count) )
+        parts.append( json.dumps(self.result) )
+        return ' '.join(parts)
 
 class DedicatedData:
     def __init__(self):

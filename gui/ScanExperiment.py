@@ -99,6 +99,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scanTargetDict = dict()     
         self.measurementLog = measurementLog 
         self.callWhenDoneAdjusting = callWhenDoneAdjusting
+        self.rawDataFile = None
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -272,6 +273,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.startScan()
         else:
             self.callWhenDoneAdjusting(self.startScan)
+        if self.scan.saveRawData and self.scan.rawFilename:
+            self.rawDataFile = open(DataDirectory.DataDirectory().sequencefile(self.scan.rawFilename)[0],'w')
 
     def createAverageTrace(self,evalList):
         trace = Trace()
@@ -350,6 +353,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
             self.scanMethod.onStop()
+            if self.rawDataFile:
+                self.rawDataFile.close()
+                self.rawDataFile = None
             if self.scan:
                 self.finalizeData(reason='stopped')
 
@@ -367,8 +373,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         queuesize is the size of waiting messages, dont't do expensive unnecessary stuff if queue is deep
         """
         logger = logging.getLogger(__name__)
-        if len(data.count[0])>100:
-            print data.count
         if data.other and self.scan.gateSequenceSettings.debug:
             if self.otherDataFile is None:
                 dumpFilename, _ = DataDirectory.DataDirectory().sequencefile("other_data.bin")
@@ -383,6 +387,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             logger.info( "onData {0} {1} {2}".format( self.currentIndex, [len(data.count[i]) for i in range(16)], data.scanvalue ) )
             x = self.generator.xValue(self.currentIndex, data)
             self.scanMethod.onData( data, queuesize, x )
+            if self.rawDataFile is not None:
+                self.rawDataFile.write( data.dataString() )
+                self.rawDataFile.write( '\n' )
+                
         
     def dataMiddlePart(self, data, queuesize, x):
         if is_magnitude(x):

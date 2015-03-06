@@ -58,6 +58,8 @@ class Scan:
         self.xExpression = ""
         self.loadPP = False
         self.loadPPName = ""
+        self.saveRawData = False
+        self.rawFilename = ""
         # GateSequence Settings
         self.gateSequenceSettings = GateSequenceUi.Settings()
         self.scanSegmentList = [ScanSegmentDefinition()]
@@ -81,6 +83,8 @@ class Scan:
         self.__dict__.setdefault('histogramFilename', "")
         self.__dict__.setdefault('histogramSave', False)
         self.__dict__.setdefault('scanTarget', None)
+        self.__dict__.setdefault('saveRawData', False)
+        self.__dict__.setdefault('rawFilename', "")
 
     def __eq__(self,other):
         try:
@@ -97,7 +101,7 @@ class Scan:
         
     stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
-                'scanSegmentList' ]
+                'scanSegmentList', 'saveRawData', 'rawFilename' ]
 
     documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
