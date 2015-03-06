@@ -23,6 +23,7 @@ from modules.round import roundToNDigits
 import logging
 from pyqtgraphAddons.DateAxisItem import DateAxisItem
 from datetime import datetime
+from pyqtgraph.graphicsItems.AxisItem import AxisItem
 
 grid_opacity = 0.3
 icons_dir = '.\\ui\\icons\\'
@@ -203,22 +204,33 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         action = QtGui.QAction("toggle time axis", self._graphicsView.ctrlMenu)
         action.triggered.connect( self.onToggleTimeAxis )
         self._graphicsView.ctrlMenu.addAction(action)
-        self.timeAxis = None
+        self.timeAxis = False
         
     def onToggleTimeAxis(self):
-        if self.timeAxis is None:
-            self.dateAxisItem = DateAxisItem('bottom')
-            self.originalAxis = self._graphicsView.getAxis('bottom')
-            self._graphicsView.axes['bottom']['item'] = self.dateAxisItem
+        if not self.timeAxis:
+            dateAxisItem = DateAxisItem(orientation='bottom') 
+            originalAxis = self._graphicsView.getAxis('bottom')
+            dateAxisItem.linkToView(self._graphicsView.vb)
+            self._graphicsView.axes['bottom']['item'] = dateAxisItem
+            self._graphicsView.layout.removeItem(originalAxis)
+            del originalAxis
+            self._graphicsView.layout.addItem(dateAxisItem,3,1)
             self.timeAxis = True
-        elif self.timeAxis:
-            self._graphicsView.axes['bottom']['item'] = self.originalAxis
-            self._graphicsView._checkScaleKey('bottom')
-            self.timeAxis = False
+            dateAxisItem.setZValue(-1000)
+            dateAxisItem.setFlag(dateAxisItem.ItemNegativeZStacksBehindParent)
+            dateAxisItem.linkedViewChanged(self._graphicsView.vb)
         else:
-            self._graphicsView.axes['bottom']['item'] = self.dateAxisItem
-            self._graphicsView._checkScaleKey('bottom')
-            self.timeAxis = True
+            axisItem = AxisItem(orientation='bottom') 
+            originalAxis = self._graphicsView.getAxis('bottom')
+            axisItem.linkToView(self._graphicsView.vb)
+            self._graphicsView.axes['bottom']['item'] = axisItem
+            self._graphicsView.layout.removeItem(originalAxis)
+            del originalAxis
+            self._graphicsView.layout.addItem(axisItem,3,1)
+            self.timeAxis = False
+            axisItem.setZValue(-1000)
+            axisItem.setFlag(axisItem.ItemNegativeZStacksBehindParent)
+            axisItem.linkedViewChanged(self._graphicsView.vb)
         
     def setPrintView(self, printview=True):
         self._graphicsView.hideAllButtons(printview)
