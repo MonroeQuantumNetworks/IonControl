@@ -43,7 +43,6 @@ class Data:
     
     def dataString(self):
         parts = list()
-        parts.append( json.dumps(self.timestep) )
         parts.append( json.dumps(self.scanvalue) )
         parts.append( json.dumps(self.count) )
         parts.append( json.dumps(self.result) )
