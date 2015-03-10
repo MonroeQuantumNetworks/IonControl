@@ -38,3 +38,4 @@ config/PulseProgramsPlus/generated_pp/MicrowaveGateSequence.ppc
 chain.png
 *.ppc
 *.c~
+debug.bin
