@@ -308,6 +308,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     logger.info("original: {0}".format(data) if len(data)<202 else "original {0} ... {1}".format(data[0:100], data[-100:]) )
                     logger.info("received: {0}".format(datacopy) if len(datacopy)<202 else "received {0} ... {1}".format(datacopy[0:100], datacopy[-100:]) )
                     raise ScanException("Ram write unsuccessful datalength {0} checked length {1}".format(len(data),len(datacopy)))
+                if self.scan.gateSequenceSettings.debug:
+                    with open("debug.bin",'w') as f:
+                        f.write( ' '.join(map(str,data)) )
             self.pulserHardware.ppFlushData()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppUpload(PulseProgramBinary)
@@ -353,9 +356,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
             self.scanMethod.onStop()
-            if self.rawDataFile:
-                self.rawDataFile.close()
-                self.rawDataFile = None
             if self.scan:
                 self.finalizeData(reason='stopped')
 
@@ -390,6 +390,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.rawDataFile is not None:
                 self.rawDataFile.write( data.dataString() )
                 self.rawDataFile.write( '\n' )
+                self.rawDataFile.flush()
                 
         
     def dataMiddlePart(self, data, queuesize, x):
@@ -467,6 +468,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.otherDataFile is not None:
             self.otherDataFile.close()
             self.otherDataFile = None
+        if self.rawDataFile is not None:
+            self.rawDataFile.close()
+            self.rawDataFile = None
+            logging.getLogger(__name__).info("Closed raw data file")
         if reason == 'end of scan':
             failedList = self.dataAnalysis()
             self.registerMeasurement(failedList)
