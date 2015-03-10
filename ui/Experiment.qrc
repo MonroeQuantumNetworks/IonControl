@@ -27,6 +27,7 @@
     <file>icons/media-playback-stop-7.png</file>
   </qresource>
   <qresource prefix="petersIcons">
+    <file>icons/Owwnotebook_icon.png</file>
     <file>icons/Warning.png</file>
     <file>icons/scope-icon-01.png</file>
     <file>icons/Error-01.png</file>

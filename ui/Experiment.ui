@@ -47,6 +47,7 @@
    </attribute>
    <addaction name="actionStart"/>
    <addaction name="actionPause"/>
+   <addaction name="actionAbort"/>
    <addaction name="actionStop"/>
    <addaction name="actionContinue"/>
    <addaction name="actionSave"/>
@@ -59,6 +60,7 @@
    <addaction name="actionSettings"/>
    <addaction name="actionLogic"/>
    <addaction name="actionLogging"/>
+   <addaction name="actionMeasurementLog"/>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -409,6 +411,30 @@
    </property>
    <property name="text">
     <string>Logging</string>
+   </property>
+  </action>
+  <action name="actionAbort">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/edit-delete-6.png</normaloff>:/openicon/icons/edit-delete-6.png</iconset>
+   </property>
+   <property name="text">
+    <string>Abort</string>
+   </property>
+   <property name="toolTip">
+    <string>Abort scan, do NOT save data</string>
+   </property>
+  </action>
+  <action name="actionMeasurementLog">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/petersIcons/icons/Owwnotebook_icon.png</normaloff>:/petersIcons/icons/Owwnotebook_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>MeasurementLog</string>
+   </property>
+   <property name="toolTip">
+    <string>Measurement Log</string>
    </property>
   </action>
  </widget>

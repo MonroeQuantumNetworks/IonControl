@@ -143,10 +143,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         self.measurementLog = MeasurementLogUi(self.config, self.dbConnection)
         self.measurementLog.setupUi(self.measurementLog)
-        self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
-        self.measurementLogDock.setWidget( self.measurementLog )
-        self.measurementLogDock.setObjectName('_MeasurementLog')
-        self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
+        #self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
+        #self.measurementLogDock.setWidget( self.measurementLog )
+        #self.measurementLogDock.setObjectName('_MeasurementLog')
+        #self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
         
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, 
                                                             measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan"),
@@ -271,6 +271,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionSave.triggered.connect(self.onSave)
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
+        self.actionAbort.triggered.connect(self.onAbort)
         self.actionSettings.triggered.connect(self.onSettings)
         self.actionExit.triggered.connect(self.onClose)
         self.actionContinue.triggered.connect(self.onContinue)
@@ -278,6 +279,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionReload.triggered.connect(self.onReload)
         self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
+        self.actionMeasurementLog.triggered.connect(self.onMeasurementLog)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
         self.actionLogging.triggered.connect(self.startLoggingProcess)
@@ -366,6 +368,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setWindowState(QtCore.Qt.WindowActive)
         self.voltageControlWindow.raise_()
         
+    def onMeasurementLog(self):
+        self.measurementLog.show()
+        self.measurementLog.setWindowState(QtCore.Qt.WindowActive)
+        self.measurementLog.raise_()
+        
     def onClear(self):
         self.currentTab.onClear()
     
@@ -393,6 +400,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     
     def onStop(self):
         self.currentTab.onStop()
+        
+    def onAbort(self):
+        self.currentTab.onStop(reason='aborted')
         
     def onContinue(self):
         if hasattr(self.currentTab,'onContinue'):
@@ -430,7 +440,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock, self.pulserParameterUiDock,
                      #self.DDS9910DockWidget, 
-                     self.loggerDock, self.todoListDock, self.measurementLogDock ]:
+                     self.loggerDock, self.todoListDock, #self.measurementLogDock 
+                     ]:
             self.menuView.addAction(dock.toggleViewAction())
         # Print menu
         if self.printMenu is not None:
