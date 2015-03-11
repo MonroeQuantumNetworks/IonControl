@@ -42,7 +42,7 @@ class SymbolTable(OrderedDict):
         self.addBuiltins()
         self.inlineParameterValues = dict() 
         self.setInlineParameter( 'NULL', 0 )
-        self.setInlineParameter( 'FFFFFFFF', 0xffffffff )
+        self.setInlineParameter( 'FFFFFFFF', 0xffffffffffffffff )
         self.labelNumber = 0 
         
     def addBuiltins(self):

@@ -5,33 +5,32 @@ Created on Fri Apr 12 23:45:54 2013
 @author: pmaunz
 """
 
-import functools
-import logging
-
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.SequenceDict import SequenceDict
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
-from modules.Observable import Observable
-import itertools
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 from gui.ExpressionValue import ExpressionValue
 from _functools import partial
 from modules import MagnitudeUtilit 
+from _collections import defaultdict
+from pulseProgram import PulseProgram
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
 class PulserParameter(ExpressionValue):
-    def __init__(self, name=None, address=0, value=None, string=None, onChange=None, globalDict=None):
+    def __init__(self, name=None, address=0, value=None, string=None, onChange=None, bitmask=0xffffffffffffffff, shift=0, encoding=None, globalDict=None):
         super(PulserParameter, self).__init__(name=name, globalDict=globalDict)
         self.address = address
         if onChange is not None:
             self.observable.subscribe(onChange)
         self.value = value
         self.string = string
+        self.bitmask = bitmask
+        self.shift = shift
+        self.encoding = encoding
 
 class PulserParameterTableModel( QtCore.QAbstractTableModel ):
     expression = Expression()
@@ -82,33 +81,6 @@ class PulserParameterTableModel( QtCore.QAbstractTableModel ):
         return True
         
 
-VariableList = [ ('Output delay 0',0x13,0),
-                 ('Output delay 1',0x14,0),
-                 ('Output delay 2',0x15,0),
-                 ('Output delay 3',0x16,0),
-                 ('Output delay 4',0x17,0),
-                 ('Output delay 5',0x18,0),
-                 ('Output delay 6',0x19,0),
-                 ('Output delay 7',0x1a,0),
-                 ('Ch 0 p Coefficient',0x20,0),
-                 ('Ch 0 i Coefficient',0x21,0),
-                 ('Ch 0 delay',0x22,0),
-                 ('Ch 0 offset',0x23,0),
-                 ('Ch 1 p Coefficient',0x24,0),
-                 ('Ch 1 i Coefficient',0x25,0),
-                 ('Ch 1 delay',0x26,0),
-                 ('Ch 1 offset',0x27,0),
-                 ('Ch 2 p Coefficient',0x28,0),
-                 ('Ch 2 i Coefficient',0x29,0),
-                 ('Ch 2 delay',0x2a,0),
-                 ('Ch 2 offset',0x2b,0),
-                 ('Ch 3 p Coefficient',0x2c,0),
-                 ('Ch 3 i Coefficient',0x2d,0),
-                 ('Ch 3 delay',0x2e,0),
-                 ('Ch 3 offset',0x2f,0)
-                  ]
-
-
 class PulserParameterUi(UiForm,UiBase):
     def __init__(self, pulser, config, globalDict=None, parent=None):
         UiBase.__init__(self,parent)
@@ -119,10 +91,13 @@ class PulserParameterUi(UiForm,UiBase):
         self.pulser = pulser
         oldValues = self.config.get( 'PulserParameterValues', dict() )
         self.parameterList = list()
-        for index, (name, address, value) in enumerate(VariableList):
-            value, string = oldValues.get(name,(value,None))
-            self.parameterList.append( PulserParameter(name=name, address=address, value=value, string=string,
-                                                       onChange=partial(self.onChange,address,index), globalDict=self.globalDict))
+        pulserconfig = self.pulser.pulserConfiguration()
+        self.currentWireValues = defaultdict( lambda: 0 )
+        for index, extendedWireIn in enumerate(pulserconfig.extendedWireIns):
+            value, string = oldValues.get(extendedWireIn.name,(extendedWireIn.default,None))
+            self.parameterList.append( PulserParameter(name=extendedWireIn.name, address=extendedWireIn.address, value=value, string=string,
+                                                       bitmask=extendedWireIn.bitmask, shift=extendedWireIn.shift, encoding=extendedWireIn.encoding,
+                                                       onChange=partial(self.onChange,extendedWireIn,index), globalDict=self.globalDict))
     
     def setupUi(self):
         UiForm.setupUi(self, self)
@@ -137,8 +112,10 @@ class PulserParameterUi(UiForm,UiBase):
         self.config['PulserParameterValues'] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
         self.config['PulserParameterUi.guiState'] = saveGuiState(self)
     
-    def onChange(self, address, index, event ):
-        self.pulser.setExtendedWireIn( address, int(MagnitudeUtilit.value(event.value)) )
-        if self.isSetup:
+    def onChange(self, extendedWireParameter, index, event ):
+        encoded = PulseProgram.encode( event.value, extendedWireParameter.encoding )
+        self.currentWireValues[extendedWireParameter.address] = ((self.currentWireValues[extendedWireParameter.address] & ~extendedWireParameter.bitmask) | extendedWireParameter.bitmask & (encoded << (extendedWireParameter.shift)) )
+        self.pulser.setExtendedWireIn( extendedWireParameter.address, self.currentWireValues[extendedWireParameter.address] )
+        if self.isSetup and event.origin!='value':
             self.tableModel.dataChanged.emit( self.tableModel.createIndex(index,1), self.tableModel.createIndex(index,1))
         

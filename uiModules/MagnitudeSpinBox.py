@@ -18,6 +18,7 @@ import sip
 from modules import Expression
 from modules import MagnitudeParser
 from modules import magnitude
+from math import copysign
 
 
 debug = False
@@ -140,8 +141,8 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         size += QtCore.QSize( 8,0)
         return size
     
-    def wheelEvent(self, *args, **kwargs):
-        return QtGui.QAbstractSpinBox.wheelEvent(self, *args, **kwargs)
+    def wheelEvent(self, wheelEvent):
+        self.stepBy( copysign(1,wheelEvent.delta()) )
  
 #    def makeDrag(self):
 #        dr = QtGui.QDrag(self)
