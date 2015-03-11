@@ -358,10 +358,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
-            QApplication.processEvents()
-            self.scanMethod.onStop()
+            #QApplication.processEvents()
             if self.scan:
                 self.finalizeData(reason=reason)
+            self.scanMethod.onStop()
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
