@@ -75,6 +75,8 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
             adjust.observable.subscribe( self.onValueChanged, unique=True )
         self.tableModel.setGlobalAdjust( adjustDict )
         self.outputChannelsChanged.emit( self.outputChannels() )
+        self.gainBox.setValue(self.settings.gain)
+        self.updateOutput.emit(self.globalAdjustDict, self.settings.gain)        
         
     def onValueChanged(self, event):
         if event.origin=='recalculate':
