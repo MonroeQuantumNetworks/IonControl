@@ -53,6 +53,7 @@ from persist.MeasurementLog import  Measurement, Parameter, Result
 from scan.AnalysisControl import AnalysisControl   #@UnresolvedImport
 from modules.Utility import join
 import pytz
+from PyQt4.QtGui import QApplication
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -100,6 +101,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.measurementLog = measurementLog 
         self.callWhenDoneAdjusting = callWhenDoneAdjusting
         self.rawDataFile = None
+        self.dataFinalized = False
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -275,6 +277,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.callWhenDoneAdjusting(self.startScan)
         if self.scan.saveRawData and self.scan.rawFilename:
             self.rawDataFile = open(DataDirectory.DataDirectory().sequencefile(self.scan.rawFilename)[0],'w')
+        self.dataFinalized = False
 
     def createAverageTrace(self,evalList):
         trace = Trace()
@@ -349,15 +352,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.pulserHardware.ppStop()
         self.progressUi.setInterrupted(reason)       
     
-    def onStop(self):
+    def onStop(self, reason='stopped'):
         if self.progressUi.state in [self.OpStates.starting, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted, self.OpStates.stopping ]:
             self.pulserHardware.ppStop()
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
+            QApplication.processEvents()
             self.scanMethod.onStop()
             if self.scan:
-                self.finalizeData(reason='stopped')
+                self.finalizeData(reason=reason)
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
@@ -463,34 +467,36 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     plottedTrace.replot()
 
     def finalizeData(self, reason='end of scan'):
-        logger = logging.getLogger(__name__)
-        logger.info( "finalize Data" )
-        if self.otherDataFile is not None:
-            self.otherDataFile.close()
-            self.otherDataFile = None
-        if self.rawDataFile is not None:
-            self.rawDataFile.close()
-            self.rawDataFile = None
-            logging.getLogger(__name__).info("Closed raw data file")
-        if reason == 'end of scan':
-            failedList = self.dataAnalysis()
-            self.registerMeasurement(failedList)
-        for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
-            if trace:
-                trace.description["traceFinalized"] = datetime.now(pytz.utc)
-                trace.resave(saveIfUnsaved=self.scan.autoSave)
-        if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
-            if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
-                averagePlottedTrace = None
-                for averagePlottedTrace in self.averagePlottedTraceList:
-                    averagePlottedTrace.averageChildren()
-                    averagePlottedTrace.plot(7) #average trace is plotted in black
-                if averagePlottedTrace:
-                    self.progressUi.setAveraged(averagePlottedTrace.childCount())
-                    averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
-        if self.scan.histogramSave:
-            self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
-            
+        if not self.dataFinalized:  # is not yet finalized
+            logger = logging.getLogger(__name__)
+            logger.info( "finalize Data reason: {0}".format(reason) )
+            saveData = reason != 'aborted'
+            if self.otherDataFile is not None:
+                self.otherDataFile.close()
+                self.otherDataFile = None
+            if self.rawDataFile is not None:
+                self.rawDataFile.close()
+                self.rawDataFile = None
+                logging.getLogger(__name__).info("Closed raw data file")
+            if saveData:
+                failedList = self.dataAnalysis()
+                self.registerMeasurement(failedList)
+            for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
+                if trace:
+                    trace.description["traceFinalized"] = datetime.now(pytz.utc)
+                    trace.resave(saveIfUnsaved=self.scan.autoSave and saveData)
+            if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
+                if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
+                    averagePlottedTrace = None
+                    for averagePlottedTrace in self.averagePlottedTraceList:
+                        averagePlottedTrace.averageChildren()
+                        averagePlottedTrace.plot(7) #average trace is plotted in black
+                    if averagePlottedTrace:
+                        self.progressUi.setAveraged(averagePlottedTrace.childCount())
+                        averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
+            if self.scan.histogramSave:
+                self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
+            self.dataFinalized = reason
         
     def dataAnalysis(self):
         return self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
@@ -731,7 +737,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         failedEntry = ", ".join((name for target, name in failedList)) if failedList else None
         measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, scanTarget=self.scan.scanTarget,
                                   scanPP = self.scan.loadPPName,
-                                  evaluation=self.evaluation.settingsName, startDate=self.plottedTraceList[0].trace.description['traceCreation'], 
+                                  evaluation=self.evaluation.settingsName, 
+                                  startDate=self.plottedTraceList[0].trace.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc), 
                                   duration=None, filename=None, comment=None, longComment=None, failedAnalysis=failedEntry)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
