@@ -356,12 +356,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
             QApplication.processEvents()
-            self.scanMethod.onStop()
             if self.rawDataFile:
                 self.rawDataFile.close()
                 self.rawDataFile = None
-            if self.scan:
-                self.finalizeData(reason=reason)
+            try:
+                if self.scan:
+                    self.finalizeData(reason=reason)
+            except Exception as e:
+                logging.getLogger(__name__).warning("Failure during data analysis: {0}".format(str(e)))
+            self.scanMethod.onStop()
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()

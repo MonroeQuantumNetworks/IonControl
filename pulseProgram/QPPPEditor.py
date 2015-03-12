@@ -105,8 +105,9 @@ class QPPPEditor(QsciScintilla):
     
     def highlightError(self, line, col, toline, tocol):
         tocolumn = self.lineLength(toline-1) if tocol<0 else tocol
-        self.fillIndicatorRange(line-1, col-1, toline-1, tocolumn, 2)
-        self.errorIndicators.append( (line-1,col-1,toline-1,tocolumn) )
+        fromcol = col-1 if col else 0
+        self.fillIndicatorRange(line-1, fromcol, toline-1, tocolumn, 2)
+        self.errorIndicators.append( (line-1,fromcol,toline-1,tocolumn) )
     
     def clearError(self):
 #         for line, col, toline, tocol in self.errorIndicators:
