@@ -494,6 +494,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.close()
         self.pulseProgramDialog.onClose()
         self.logicAnalyzerWindow.close()
+        self.measurementLog.close()
         if self.instrumentLogger:
             self.instrumentLogger.shutdown()
 

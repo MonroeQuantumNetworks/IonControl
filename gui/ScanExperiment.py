@@ -358,9 +358,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppClearWriteFifo()
             self.pulserHardware.ppFlushData()
             self.NeedsDDSRewrite.emit()
-            #QApplication.processEvents()
-            if self.scan:
-                self.finalizeData(reason=reason)
+            QApplication.processEvents()
+            try:
+                if self.scan:
+                    self.finalizeData(reason=reason)
+            except Exception as e:
+                logging.getLogger(__name__).warning("Analysis failed: {0}".format(str(e)))
             self.scanMethod.onStop()
 
     def traceFilename(self, pattern):
