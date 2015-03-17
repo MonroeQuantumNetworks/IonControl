@@ -390,12 +390,12 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         superior.append({'name': 'maxAge', 'type': 'magnitude', 'value': self.settings.maxAge})
         return superior
 
-    def saveValue(self, channel, overwrite=True):
-        """
-        save current value
-        """
-        if not self.savedValue or overwrite:
-            self.savedValue = self.currentExternalValue()
+#     def saveValue(self, channel, overwrite=True):
+#         """
+#         save current value
+#         """
+#         if not self.savedValue or overwrite:
+#             self.savedValue[channel] = self.currentExternalValue(channel)
 
 class DummyParameter(ExternalParameterBase):
     """

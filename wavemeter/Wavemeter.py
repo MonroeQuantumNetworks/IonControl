@@ -20,7 +20,7 @@ class Wavemeter(QtCore.QObject):
     
     def __init__(self, address):
         super(Wavemeter, self).__init__()
-        self.address = address if address else "http://132.175.165.36:8082"
+        self.address = address if address else "http://132.175.165.24:8082"
         self.nAttempts = 0
         self.nMaxAttempts = 10
         #self.connection.set_debuglevel(5)
