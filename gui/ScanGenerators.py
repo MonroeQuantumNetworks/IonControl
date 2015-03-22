@@ -7,7 +7,7 @@ from modules.Expression import Expression
 import numpy
 import logging
 import random
-from modules import DataDirectory, MagnitudeUtilit
+from modules import DataDirectory
 from modules import enum
 
 ExpectedLookup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }

@@ -2,7 +2,7 @@
 
 import warnings
 
-from numpy import array, take, eye, triu, transpose, dot, finfo
+from numpy import take, eye, triu, transpose, dot, finfo
 from numpy import empty_like, sqrt, cos, sin, arcsin, asarray
 from numpy import atleast_1d, shape, issubdtype, dtype, inexact
 from scipy.optimize import _minpack, leastsq
