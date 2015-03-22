@@ -85,6 +85,8 @@ class ExternalParameterBase(object):
         """
         save current value
         """
+        if self.savedValue is None:
+            self.savedValue = dict()
         if not channel in self.savedValue or overwrite:
             self.savedValue[channel] = self.settings.value[channel]
             
