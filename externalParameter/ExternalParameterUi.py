@@ -16,7 +16,6 @@ from modules.SequenceDict import SequenceDict
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
 from modules.Observable import Observable
-import itertools
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')

@@ -14,7 +14,6 @@ from modules.Expression import Expression
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 from gui.ExpressionValue import ExpressionValue
 from _functools import partial
-from modules import MagnitudeUtilit 
 from _collections import defaultdict
 from pulseProgram import PulseProgram
 

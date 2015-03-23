@@ -20,10 +20,11 @@ germs = [ ('x',), ('y',) , ('I',), ('x','y'), ('x' ,'y','I'), ('x','I','y'), ('x
 
 
 spamTime = 0.002
-gateTime = 0.000045
+gateTime = 0.000040  
+gateTimeBB1 = 9*gateTime
 
-nmax = 12
-filename = "GSTSequenceT7.xml"
+nmax = 8
+filename = "GSTSequenceT7-256.xml"
 
 class BlochState:
     positions = ['d','u','i','-i','1','-1']  # the 6 points on the Bloch sphere
@@ -154,6 +155,7 @@ root = ElementTree.Element('GateSequenceDefinition')
 #'i' counts each element. Every time a gate sequence is added, i is incremented.
 i = 0
 totalTime = 0
+totalTimeBB1 = 0
 
 gstSet = set()   # used to check for redundant sequences
 
@@ -161,7 +163,6 @@ root.append( ElementTree.Comment('Strings of length 0'))
 gstSet.add( tuple() )
 gateSequence(root,str(i),[],i)
 i += 1
-totalTime += spamTime
 
 germlist = [g for g in germs if len(g)==1]
 for length in range(1,4):
@@ -172,7 +173,9 @@ for length in range(1,4):
             gstSet.add(flatTuple)
             gateSequence(root,str(i),sequence,i)
             i += 1
-            totalTime += spamTime + gateTime*len(list(flatten(sequence)))
+            gatecount = len(list(flatten(sequence)))
+            totalTime += spamTime + gateTime*gatecount
+            totalTimeBB1 += spamTime + gateTimeBB1*gatecount
 
 #GST sequences, of the form prep-G^n-analyze 
 seqlengths = [2**n for n in range(1, nmax+1)]
@@ -184,7 +187,9 @@ for length in seqlengths:
             gstSet.add(flatTuple)
             gateSequence(root, str(i), sequence, i, condensed=''.join(flattenAll(condensed)))
             i += 1
-            totalTime += spamTime + gateTime*len(list(flatten(sequence)))
+            gatecount = len(list(flatten(sequence)))
+            totalTime += spamTime + gateTime*gatecount
+            totalTimeBB1 += spamTime + gateTimeBB1*gatecount
         else:
             print "Skipping {0} ".format(''.join(flattenAll(condensed)), sequence)
 
@@ -195,4 +200,6 @@ with open(filename,'w') as f:
 
 print "Number of sequences:", i
 print "Total time for 1 experiment per sequence [s]:", totalTime
-print "Total time for 1000 experiments per sequence [h]:", totalTime/3.6
+print "Total time for 1 experiment BB1 per sequence [s]:", totalTimeBB1
+print "Total time for 100 experiments per sequence [h]:", totalTime/36
+print "Total time for 100 experiments BB1 per sequence [h]:", totalTimeBB1/36

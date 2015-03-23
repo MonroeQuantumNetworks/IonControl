@@ -9,13 +9,12 @@ from PyQt4 import QtCore
 from functools import partial
 from persist.ValueHistory import ValueHistoryStore
 from modules.PyqtUtility import updateComboBoxItems
-from datetime import datetime, timedelta
+from datetime import datetime
 from trace.Trace import Trace
 from trace.PlottedTrace import PlottedTrace
 import numpy
 from collections import defaultdict
 import logging
-import pytz
 from modules import WeakMethod 
 import weakref
 from gui.ProjectSelection import getDatabaseConnection
