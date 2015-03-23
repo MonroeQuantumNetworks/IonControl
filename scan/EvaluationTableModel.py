@@ -63,10 +63,12 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
     def setType(self, index, t):
         self.evalList[index.row()].type = str(t)
         self.dataChanged.emit( index, self.index(index.row(),1) )
-        
+        return True
         
     def setCounterId(self, index, value):
         self.evalList[index.row()].counterId = int(MagnitudeUtilit.value(value))
+        self.dataChanged.emit( index, index )
+        return True      
         
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
@@ -143,7 +145,8 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
     
     def setAbszisse(self, index, abszisse):
         self.evalList[index.row()].abszisse = AbszisseType(str(abszisse))
-        self.dataChanged.emit( index, index )         
+        self.dataChanged.emit( index, index ) 
+        return True        
     
     def setAlgorithm(self, index, algorithm):
         algorithm = str(algorithm)
@@ -160,3 +163,4 @@ class EvaluationTableModel( QtCore.QAbstractTableModel):
             algo.setSettings( evaluation.settings, evaluation.name )
             self.evalAlgorithmList[index.row()] = algo     
             self.dataChanged.emit( self.index(index.row(),0), index )
+        return True

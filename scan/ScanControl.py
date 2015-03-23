@@ -58,6 +58,8 @@ class Scan:
         self.xExpression = ""
         self.loadPP = False
         self.loadPPName = ""
+        self.saveRawData = False
+        self.rawFilename = ""
         # GateSequence Settings
         self.gateSequenceSettings = GateSequenceUi.Settings()
         self.scanSegmentList = [ScanSegmentDefinition()]
@@ -81,6 +83,8 @@ class Scan:
         self.__dict__.setdefault('histogramFilename', "")
         self.__dict__.setdefault('histogramSave', False)
         self.__dict__.setdefault('scanTarget', None)
+        self.__dict__.setdefault('saveRawData', False)
+        self.__dict__.setdefault('rawFilename', "")
 
     def __eq__(self,other):
         try:
@@ -97,7 +101,7 @@ class Scan:
         
     stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
-                'scanSegmentList' ]
+                'scanSegmentList', 'saveRawData', 'rawFilename' ]
 
     documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
@@ -191,9 +195,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBoxParameter.currentIndexChanged[QtCore.QString].connect( self.onCurrentTextChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
+        self.saveRawCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData') )
         self.histogramSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'histogramSave') )
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
         self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
+        self.rawFilenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.rawFilenameEdit, 'rawFilename') )
         self.histogramFilenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.histogramFilenameEdit, 'histogramFilename') )
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
@@ -237,6 +243,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
+        self.saveRawCheckBox.setChecked(self.settings.saveRawData)
         self.histogramSaveCheckBox.setChecked(self.settings.histogramSave)
         if self.settings.scanTarget:
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, self.settings.scanParameter)
@@ -244,6 +251,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             self.settings.scanTarget = self.comboBoxScanTarget.currentText()
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, None)
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
+        self.rawFilenameEdit.setText( getattr(self.settings,'rawFilename','') )
         self.histogramFilenameEdit.setText( getattr(self.settings,'histogramFilename','') )
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )

@@ -19,6 +19,7 @@ writeBinaryData = False
 
 # add deg to magnitude
 magnitude.new_mag( 'deg', magnitude.mg(math.pi/180,'rad') )
+timestep =  magnitude.mg(5.0,'ns')
   
 class ppexception(Exception):
     def __init__(self, message, filename, line, context):
@@ -142,11 +143,30 @@ encodings = { 'AD9912_FRQ': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffffffffff
               'AD9910_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
               'AD9912_PHASE': (360./2**14, '', Dimensions.dimensionless, 0x3fff),
               'AD9910_PHASE': (360./2**16, '', Dimensions.dimensionless, 0xffff),
+              'ADC_VOLTAGE': (5./2**12,'V', Dimensions.voltage, 0xfff),
+              'ADCTI122S101_VOLTAGE': (3.33/2**12,'V', Dimensions.voltage, 0xfff),
+              'DAC8568_VOLTAGE': (2.5/2**16,'V', Dimensions.voltage, 0xffff),
+              'ADC7606_VOLTAGE': (2.5/2**16,'V', Dimensions.voltage, 0xffff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
               'TIME' : ( 5, 'ns', Dimensions.time, 0xffffffffffff ),
               None: (1, '', Dimensions.dimensionless, 0xffffffffffffffff ),
               'None': (1, '', Dimensions.dimensionless, 0xffffffffffffffff ) }
+
+def encode( value, encoding ):
+    if isinstance(value, magnitude.Magnitude):
+        if tuple(value.dimension())==Dimensions.time:
+            result = int((value/timestep).round()) 
+        else:
+            step, unit, _, mask = encodings[encoding]
+            result = int(math.floor(value.toval(unit)/step)) & mask
+    else:
+        if encoding:
+            step, unit, _, mask = encodings[encoding]
+            result = int(math.floor(value/step)) & mask
+        else:
+            result = int(value)
+    return result
 
 
 def variableValueDict( variabledict ):
@@ -180,7 +200,7 @@ class PulseProgram:
         self.adIndexList = [(x,0) for x in range(8) ]
         self.adBoards = [ Board() ]*8
         
-        self.timestep = magnitude.mg(5.0,'ns')
+        self.timestep = timestep
 
     def setHardware(self, adIndexList, adBoards, timestep ):
         self.adIndexList = adIndexList

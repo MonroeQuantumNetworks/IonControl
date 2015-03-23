@@ -4,8 +4,6 @@ Created on Fri Feb 08 22:02:08 2013
 
 @author: pmaunz
 """
-import functools
-
 from PyQt4 import QtCore, QtGui
 
 

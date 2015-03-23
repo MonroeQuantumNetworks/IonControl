@@ -216,7 +216,7 @@ class FitFunctionBase(object):
         # calculate final chi square
         self.chisq=sum(self.infodict["fvec"]*self.infodict["fvec"])
         
-        self.dof=len(x)-len(parameters)
+        self.dof = max( len(x)-len(parameters), 1)
         RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
         RMSres.significantDigits = 3
         self.results['RMSres'].value = RMSres

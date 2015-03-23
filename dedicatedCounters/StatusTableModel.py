@@ -1,6 +1,4 @@
 from PyQt4 import QtCore, QtGui
-from modules.firstNotNone import firstNotNone
-
 
 class StatusTableModel(QtCore.QAbstractTableModel):
     colorLookup = { (0,True): QtGui.QColor(QtCore.Qt.green), (1,True): QtGui.QColor(QtCore.Qt.red), 

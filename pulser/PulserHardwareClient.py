@@ -16,7 +16,10 @@ from pulser.OKBase import ErrorMessages, FPGAException
 from PulserHardwareServer import PulserHardwareServer
 import modules.magnitude as magnitude
 from pulser.PulserHardwareServer import PulserHardwareException
-
+from pulser.PulserConfig import getPulserConfiguration
+from gui import ProjectSelection
+import os.path
+import shutil
 
 def check(number, command):
     if number is not None and number<0:
@@ -117,7 +120,16 @@ class PulserHardware(QtCore.QObject):
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
         self.ppActive = False
+        
+        configpath = os.path.join( ProjectSelection.configDir(), 'PulserConfig.xml' )
+        if not os.path.exists(configpath):
+            skeletonpath = os.path.join( os.path.dirname(os.path.realpath(__file__)), '..', 'config', 'PulserConfig.xml' )
+            shutil.copy( skeletonpath, configpath )
+        self.pulserConfigurationList = getPulserConfiguration( configpath )
 
+    def pulserConfiguration(self):
+        config = self.getConfiguration()
+        return self.pulserConfigurationList[config['HardwareConfigurationId']]
 
     def shutdown(self):
         self.clientPipe.send( ('finish', () ) )
