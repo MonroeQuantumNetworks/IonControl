@@ -30,7 +30,8 @@ while not pipe_empty():
     apply_next_scan_point()
     currentexperiment += 1
     mycounter += 2
-    result = a / b
+    result = a 
+    result /= b
     write_result( ResultChannel, result )
     set_shutter( init_shutter )
     update(delay)

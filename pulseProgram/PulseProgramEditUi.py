@@ -132,4 +132,4 @@ class Ui_Form(object):
         self.actionFind.setText(_translate("Form", "find", None))
         self.actionFind.setShortcut(_translate("Form", "Ctrl+F", None))
 
-import Experiment_rc
+import Experiment_rc #@UnusedImport

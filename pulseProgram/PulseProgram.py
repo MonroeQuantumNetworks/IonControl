@@ -145,6 +145,8 @@ encodings = { 'AD9912_FRQ': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffffffffff
               'AD9910_PHASE': (360./2**16, '', Dimensions.dimensionless, 0xffff),
               'ADC_VOLTAGE': (5./2**12,'V', Dimensions.voltage, 0xfff),
               'ADCTI122S101_VOLTAGE': (3.33/2**12,'V', Dimensions.voltage, 0xfff),
+              'DAC8568_VOLTAGE': (2.5/2**16,'V', Dimensions.voltage, 0xffff),
+              'ADC7606_VOLTAGE': (2.5/2**16,'V', Dimensions.voltage, 0xffff),
               'CURRENT': (1, 'A', Dimensions.current, 0xffffffff ),
               'VOLTAGE': (1, 'V', Dimensions.voltage, 0xffffffff ),
               'TIME' : ( 5, 'ns', Dimensions.time, 0xffffffffffff ),

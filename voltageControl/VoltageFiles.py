@@ -11,6 +11,7 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 from gui import ProjectSelection
+from modules.firstNotNone import firstNotNone
 
 
 VoltageFilesForm, VoltageFilesBase = PyQt4.uic.loadUiType(r'ui\VoltageFiles.ui')
@@ -32,7 +33,7 @@ class Files:
 
 class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
     loadMapping = QtCore.pyqtSignal(str)
-    loadDefinition = QtCore.pyqtSignal(str)
+    loadDefinition = QtCore.pyqtSignal(str,str)
     loadGlobalAdjust = QtCore.pyqtSignal(str)
     loadLocalAdjust = QtCore.pyqtSignal(str)
     
@@ -75,7 +76,7 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         if self.files.mappingFile:
             self.loadMapping.emit(self.files.mappingFile)
         if self.files.definitionFile:
-            self.loadDefinition.emit(self.files.definitionFile)
+            self.loadDefinition.emit(self.files.definitionFile, self.shuttlingDefinitionPath() )
         if self.files.globalFile:
             self.loadGlobalAdjust.emit(self.files.globalFile)
         if self.files.localFile:
@@ -91,7 +92,7 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
     def onDefinitionChanged(self,value):
         logger = logging.getLogger(__name__)
         self.files.definitionFile = self.files.definitionHistory[str(value)]
-        self.loadDefinition.emit(self.files.definitionFile)
+        self.loadDefinition.emit(self.files.definitionFile, self.shuttlingDefinitionPath())
         logger.info( "onDefinitionChanged {0}".format(self.files.definitionFile) )
         
     def onGlobalChanged(self,value):
@@ -134,7 +135,14 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
                 self.files.definitionHistory[filename] = path
             self.definitionCombo.setCurrentIndex( self.definitionCombo.findText(filename))
             self.files.definitionFile = path
-            self.loadDefinition.emit(path)
+            self.loadDefinition.emit(path, self.shuttlingDefinitionPath(path) )
+            
+    def shuttlingDefinitionPath(self, definitionpath=None ):
+        path = firstNotNone( definitionpath, self.files.definitionFile )
+        filedir, filename = os.path.split(path)
+        basename, _ = os.path.splitext(filename)
+        return os.path.join( filedir, basename+"_shuttling.xml" )
+
 
     def onLoadGlobal(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, "Open global adjust file:", self.lastDir))

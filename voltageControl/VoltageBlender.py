@@ -36,6 +36,7 @@ class HardwareException(Exception):
 
 class NoneHardware(object):
     name = "No DAC Hardware"
+    nativeShuttling = False
     def __init__(self):
         pass
     
@@ -96,23 +97,28 @@ class NIHardware(object):
 
 class FPGAHardware(object):
     name = "FPGA Hardware"
+    nativeShuttling = True
     def __init__(self, dacController):
         self.dacController = dacController
         
     def applyLine(self, line):
         self.dacController.writeVoltage( 0, line )
         self.dacController.readVoltage(0, line)
-        self.dacController.shuttle( 0, 1, 0, 0 )
+        self.dacController.shuttleDirect( 0, 1, idleCount=0, immediateTrigger=True )
         self.dacController.triggerShuttling()
         
-    def shuttle(self, outputmatrix):
-        logging.getLogger(__name__).error( "FPGAHardware: Shuttling not implemented" )
-        self.dacController.writeVoltage( 0, (numpy.array(outputmatrix)).flatten('F') )
-        self.dacController.shuttle( 0, 0, 0, 0 )  # needs startline beyondendline gapcount direction
-        self.dacController.triggerShuttling()
+    def shuttle(self, lookupIndex, reverseEdge=False, immediateTrigger=False ):
+        self.dacController.shuttle( lookupIndex, reverseEdge, immediateTrigger  )  
         
     def close(self):
         pass
+    
+    def writeData(self, address, lineList):
+        self.dacController.writeVoltages(address,lineList)
+        
+    def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
+        self.dacController.writeShuttleLookup(shuttleEdges, startAddress)
+ 
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
@@ -187,12 +193,7 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
-        line = self.blendLines(lineno,lineGain)
-        self.lineGain = lineGain
-        self.globalGain = globalGain
-        self.lineno = lineno
-        line = self.adjustLine( line )
-        line *= self.globalGain
+        line = self.calculateLine(lineno,lineGain,globalGain)
         try:
             self.hardware.applyLine(line)
             self.outputVoltage = line
@@ -203,29 +204,33 @@ class VoltageBlender(QtCore.QObject):
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
             
+    def calculateLine(self, lineno, lineGain, globalGain):
+        line = self.blendLines(lineno,lineGain)
+        self.lineGain = lineGain
+        self.globalGain = globalGain
+        self.lineno = lineno
+        line = self.adjustLine( line )
+        line *= self.globalGain
+        return line
+            
     def shuttle(self, definition, cont):
         logger = logging.getLogger(__name__)
-        if True:
-            for edge in definition:
-                for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
-                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
-                    self.applyLine(line,edge.lineGain,edge.globalGain)
+        if not self.hardware.nativeShuttling:
+            for start, _, edge, _ in definition:
+                fromLine, toLine = (edge.startLine, edge.stopLine) if start==edge.startName else (edge.stopLine, edge.startLine)
+                for line in numpy.linspace(fromLine, toLine, edge.steps+2, True):
+                    self.applyLine(line,self.lineGain,self.globalGain)
                     logger.debug( "shuttling applied line {0}".format( line ) )
             self.shuttlingOnLine.emit(line)
         else:  # this stuff does not work yet
             logger.info( "Starting finite shuttling" )
-            outputmatrix = list()
             globaladjust = [0]*len(self.lines[0])
             self.adjustLine(globaladjust)
-            for edge in definition:
-                for lineno in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
-                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
-                    outputmatrix.append( (self.blendLines(lineno,edge.lineGain)+globaladjust)*self.globalGain )
-            try:
-                self.hardware.shuttle( outputmatrix )
-                self.shuttleTo = lineno
-            except (HardwareException, DACControllerException) as e:
-                logger.exception("")
+            for start, _, edge, index in definition:
+                reverseEdge = start!=edge.startName
+                self.hardware.shuttle( index, reverseEdge, immediateTrigger=True)
+                self.shuttleTo = edge.startLine if reverseEdge else edge.stopLine
+            self.shuttlingOnLine.emit(self.shuttleTo)
                         
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
@@ -245,4 +250,9 @@ class VoltageBlender(QtCore.QObject):
     def close(self):
         self.hardware.close()
 
+    def writeShuttleLookup(self, edgeList, address=0):
+        self.dacController.writeShuttleLookup(edgeList,address)
     
+    def writeData(self):         
+        self.dacController.writeVoltages(1, [self.calculateLine(lineno, self.lineGain, self.globalGain) for lineno in range(len(self.lines))])
+        

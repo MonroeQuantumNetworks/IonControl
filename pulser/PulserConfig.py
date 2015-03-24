@@ -22,7 +22,7 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attribute type="xs:string" name="address" use="required"/>
-        <xs:attribute type="xs:byte" name="default" use="optional"/>
+        <xs:attribute type="xs:string" name="default" use="optional"/>
         <xs:attribute type="xs:string" name="bitmask" use="required"/>
         <xs:attribute type="xs:byte" name="shift" use="required"/>
         <xs:attribute type="xs:string" name="name" use="required"/>

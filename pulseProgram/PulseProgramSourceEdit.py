@@ -7,7 +7,7 @@ Created on Fri May 24 17:32:35 2013
 
 import functools
 
-from PyQt4 import uic, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 
 from pulseProgram.PPSyntaxHighlighter import PPHighlighter
 from pppCompiler.PPPSyntaxHighlighter import PPPHighlighter
