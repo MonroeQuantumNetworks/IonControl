@@ -481,13 +481,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.rawDataFile.close()
                 self.rawDataFile = None
                 logging.getLogger(__name__).info("Closed raw data file")
-            if saveData:
-                failedList = self.dataAnalysis()
-                self.registerMeasurement(failedList)
             for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
                 if trace:
                     trace.description["traceFinalized"] = datetime.now(pytz.utc)
                     trace.resave(saveIfUnsaved=self.scan.autoSave and saveData)
+            if saveData:
+                failedList = self.dataAnalysis()
+                self.registerMeasurement(failedList)
             if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
                 if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
                     averagePlottedTrace = None
