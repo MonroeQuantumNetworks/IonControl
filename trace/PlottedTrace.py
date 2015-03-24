@@ -223,6 +223,8 @@ class PlottedTrace(object):
             self.fitFunctionPenIndex = penindex
             self.fitx = numpy.linspace(numpy.min(self.x), numpy.max(self.x) ,300)
             self.fity = self.fitFunction.value(self.fitx)
+            if self.fitcurve is not None:
+                self._graphicsView.removeItem(self.fitcurve)
             self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
     def replotFitFunction(self):
@@ -240,6 +242,8 @@ class PlottedTrace(object):
             self.fitFunctionPenIndex = penindex
             self.fitx = numpy.linspace(numpy.min(self.x)+0.5, numpy.max(self.x)-1.5 , len(self.x)-1 )
             self.fity = self.fitFunction.value(self.fitx)
+            if self.fitcurve is not None:
+                self._graphicsView.removeItem(self.fitcurve)
             self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
             
     def replotStepsFitFunction(self):
