@@ -157,7 +157,8 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
             self.pulser.openBySerial( self.settings.deviceSerial )
             self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
-            logger.info( "{0}".format( self.pulser.getConfiguration() ) )
+            if hasattr( self.pulser, 'getConfiguration'):
+                logger.info( "{0}".format( self.pulser.getConfiguration() ) )
 
 
 class FPGASettingsDialog(ListForm, ListBase):
