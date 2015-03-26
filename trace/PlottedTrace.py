@@ -207,10 +207,11 @@ class PlottedTrace(object):
         self.y = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
 
     def removePlots(self):
-        if self.curve is not None and self._graphicsView is not None:
-            self._graphicsView.removeItem(self.curve)
-            self.curve = None
-            self.penUsageDict[self.curvePen] -= 1
+        if self._graphicsView is not None:
+            if self.curve is not None:
+                self._graphicsView.removeItem(self.curve)
+                self.curve = None
+                self.penUsageDict[self.curvePen] -= 1
             if self.errorBarItem is not None:
                 self._graphicsView.removeItem(self.errorBarItem)  
                 self.errorBarItem = None
