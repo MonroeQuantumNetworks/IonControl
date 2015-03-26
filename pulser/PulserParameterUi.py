@@ -20,16 +20,25 @@ from pulseProgram import PulseProgram
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
 class PulserParameter(ExpressionValue):
-    def __init__(self, name=None, address=0, value=None, string=None, onChange=None, bitmask=0xffffffffffffffff, shift=0, encoding=None, globalDict=None):
+    def __init__(self, name=None, address=0, string=None, onChange=None, bitmask=0xffffffffffffffff, shift=0, encoding=None, globalDict=None):
         super(PulserParameter, self).__init__(name=name, globalDict=globalDict)
         self.address = address
         if onChange is not None:
             self.observable.subscribe(onChange)
-        self.value = value
         self.string = string
         self.bitmask = bitmask
         self.shift = shift
         self.encoding = encoding
+        self._magnitude = None
+
+    @property
+    def encodedValue(self):
+        return (PulseProgram.encode( self.value, self.encoding ) & self.bitmask) << self.shift
+    
+    def setBits(self, inputMask):
+        shiftedMask = self.bitmask << self.shift
+        return inputMask & (~shiftedMask) | self.encodedValue
+        
 
 class PulserParameterTableModel( QtCore.QAbstractTableModel ):
     expression = Expression()
@@ -94,9 +103,11 @@ class PulserParameterUi(UiForm,UiBase):
         self.currentWireValues = defaultdict( lambda: 0 )
         for index, extendedWireIn in enumerate(pulserconfig.extendedWireIns):
             value, string = oldValues.get(extendedWireIn.name,(extendedWireIn.default,None))
-            self.parameterList.append( PulserParameter(name=extendedWireIn.name, address=extendedWireIn.address, value=value, string=string,
-                                                       bitmask=extendedWireIn.bitmask, shift=extendedWireIn.shift, encoding=extendedWireIn.encoding,
-                                                       onChange=partial(self.onChange,extendedWireIn,index), globalDict=self.globalDict))
+            parameter = PulserParameter(name=extendedWireIn.name, address=extendedWireIn.address, string=string,
+                                        bitmask=extendedWireIn.bitmask, shift=extendedWireIn.shift, encoding=extendedWireIn.encoding,
+                                        onChange=partial(self.onChange,index), globalDict=self.globalDict)
+            self.parameterList.append( parameter )
+            parameter.value = value
     
     def setupUi(self):
         UiForm.setupUi(self, self)
@@ -111,10 +122,10 @@ class PulserParameterUi(UiForm,UiBase):
         self.config['PulserParameterValues'] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
         self.config['PulserParameterUi.guiState'] = saveGuiState(self)
     
-    def onChange(self, extendedWireParameter, index, event ):
-        encoded = PulseProgram.encode( event.value, extendedWireParameter.encoding )
-        self.currentWireValues[extendedWireParameter.address] = ((self.currentWireValues[extendedWireParameter.address] & ~extendedWireParameter.bitmask) | extendedWireParameter.bitmask & (encoded << (extendedWireParameter.shift)) )
-        self.pulser.setExtendedWireIn( extendedWireParameter.address, self.currentWireValues[extendedWireParameter.address] )
+    def onChange(self, index, event ):
+        parameter = self.parameterList[index]
+        self.currentWireValues[parameter.address] = parameter.setBits(self.currentWireValues[parameter.address])
+        self.pulser.setExtendedWireIn( parameter.address, self.currentWireValues[parameter.address] )
         if self.isSetup and event.origin!='value':
             self.tableModel.dataChanged.emit( self.tableModel.createIndex(index,1), self.tableModel.createIndex(index,1))
         
