@@ -406,8 +406,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         evaluated = list()
         expected = self.generator.expected( self.currentIndex )
+        replacementDict = dict(self.pulseProgramUi.currentContext.parameters.valueView.iteritems()) 
         for evaluation, algo in zip(self.evaluation.evalList,self.evaluation.evalAlgorithmList):
-            evaluated.append( algo.evaluate( data, evaluation, expected=expected ) ) # returns mean, error, raw
+            evaluated.append( algo.evaluate( data, evaluation, expected=expected, globalDict=replacementDict) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
             self.updateMainGraph(x, evaluated, queuesize  )
