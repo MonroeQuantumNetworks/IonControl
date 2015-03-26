@@ -21,7 +21,7 @@ from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitFunctionBase import fitFunctionMap
 from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
 from modules.MagnitudeUtilit import value
-from modules.PyqtUtility import BlockSignals, Override
+from modules.PyqtUtility import BlockSignals, Override, updateComboBoxItems
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -137,7 +137,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.pushTableView.setItemDelegateForColumn(column,self.pushItemDelegate)
         self.pushDestinations['Database'] = DatabasePushDestination('fit')
 
-        self.analysisConfigurationComboBox.addItems( [ key for key in self.analysisDefinitionDict.iterkeys() if key ] )
+        self.analysisConfigurationComboBox.addItems( sorted([ key for key in self.analysisDefinitionDict.iterkeys() if key ]) )
         if self.currentAnalysisName in self.analysisDefinitionDict:
             self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(self.currentAnalysisName))
         else:
@@ -299,10 +299,9 @@ class AnalysisControl(ControlForm, ControlBase ):
         if self.currentAnalysisName != '':
             if self.currentAnalysisName not in self.analysisDefinitionDict or self.analysisDefinition != self.analysisDefinitionDict[self.currentAnalysisName]:
                 logging.getLogger(__name__).debug("Saving Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))
-                if self.currentAnalysisName not in self.analysisDefinitionDict:
-                    if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
-                        self.analysisConfigurationComboBox.addItem(self.currentAnalysisName)
                 self.analysisDefinitionDict[self.currentAnalysisName] = copy.deepcopy(self.analysisDefinition)
+                if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
+                    updateComboBoxItems(self.analysisConfigurationComboBox, sorted([ key for key in self.analysisDefinitionDict.iterkeys() if key ]))
                 self.saveButton.setEnabled( False )
                 self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
         
