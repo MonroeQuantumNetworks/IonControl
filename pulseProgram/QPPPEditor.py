@@ -75,7 +75,7 @@ class QPPPEditor(QsciScintilla):
         self.setTabIndents(True)
         self.setIndentationGuides(True)
         #self.SendScintilla(QsciScintilla.SCI_SETINDENTATIONGUIDES, QsciScintilla.SC_IV_LOOKFORWARD )
-        self.setEolMode(self.EolWindows)
+        self.setEolMode(self.EolUnix)
 
         # not too small
         self.setMinimumSize(200, 100)
