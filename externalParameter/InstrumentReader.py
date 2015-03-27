@@ -27,6 +27,7 @@ class InstrumentReader( InstrumentReaderBase ):
         self.commandQueue.put(("stop", ()) )
         processReturn( self.responseQueue.get() )
         self.reader.wait()
+        self.inputObservable[None].fire( name=self.name, data=None )
         
     @classmethod
     def connectedInstruments(cls):

@@ -37,7 +37,7 @@ def set_inv_shutter( symboltable, arg=list(), kwarg=dict() ):
 def set_counter( symboltable, arg=list(), kwarg=dict() ):
     if len(arg)!=2:
         raise CompileException( "expected exactly one argument in set_counter" )
-    symbol = symboltable.getVar( arg[1], type_ = "counter" )
+    symbol = symboltable.getVar( arg[1] )
     return ["  COUNTERMASK {0}".format(symbol.name)]
 
 def clear_counter( symboltable, arg=list(), kwarg=dict() ):

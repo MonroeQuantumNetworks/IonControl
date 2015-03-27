@@ -91,7 +91,7 @@ class FitHistogramEvaluation(EvaluationBase):
         histsum = numpy.sum( hist )
         return (hist / histsum, histsum) if longOutput else hist/histsum
         
-    def evaluate(self, data, evaluation, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         params, confidence, reducedchisq = data.evaluated.get('FitHistogramsResult',(None,None,None))
         if params is None:
             countarray = evaluation.getChannelData(data)

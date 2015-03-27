@@ -270,6 +270,8 @@ if __name__ == "__main__":
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
     test( "piTime * 1  ms",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10)} )
     test( "0xff" , magnitude.mg(255,''))
+    test( "(4s)^2", magnitude.mg(16,'s2'))
+    test( "x0+sqrt(s^2*(A/(12-O)-1)" , 0.816496580928, {'x0': magnitude.mg(0), 's':1, 'A':magnitude.mg(20), 'O':magnitude.mg(0)})
 
     print ExprEval.evaluate( "4 MHz" )
     print ExprEval._evaluate_literal.cache_info()

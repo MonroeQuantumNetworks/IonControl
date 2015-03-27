@@ -17,6 +17,7 @@ from modules.Observable import Observable
 from modules.enum import enum 
 import logging
 from modules.Expression import Expression
+from modules import MagnitudeUtilit
 
 class EvaluationException(Exception):
     pass
@@ -103,18 +104,20 @@ class MeanEvaluation(EvaluationBase):
         mean = numpy.mean( countarray )
         return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
     
-    def evaluate(self, data, evaluation, expected=None):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, (0,0), 0
         mean, (minus, plus), raw =  self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
         if self.settings['transformation']!="":
-            meandict = { 'y': mean }
-            plusdict = { 'y': mean+plus }
-            minusdict = { 'y': mean-minus }
-            mean = self.expression.evaluate(self.settings['transformation'], meandict)
-            plus = self.expression.evaluate(self.settings['transformation'], plusdict)
-            minus = self.expression.evaluate(self.settings['transformation'], minusdict)
+            mydict = { 'y': mean }
+            if globalDict:
+                mydict.update( globalDict )
+            mean = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
+            mydict['y'] = mean+plus
+            plus = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
+            mydict['y'] = mean-minus
+            minus = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
             return mean, (mean-minus, plus-mean), raw
         return mean, (minus, plus), raw
 
@@ -135,7 +138,7 @@ class NumberEvaluation(EvaluationBase):
     def setDefault(self):
         pass
     
-    def evaluate(self, data, evaluation, expected=None):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -160,7 +163,7 @@ class ThresholdEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -201,7 +204,7 @@ class RangeEvaluation(EvaluationBase):
         self.settings.setdefault('max',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -246,7 +249,7 @@ class DoubleRangeEvaluation(EvaluationBase):
         self.settings.setdefault('max_2',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -294,7 +297,7 @@ class FidelityEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -341,7 +344,7 @@ class ParityEvaluation(EvaluationBase):
         self.settings.setdefault('Ion_1','')
         self.settings.setdefault('Ion_2','')
         
-    def evaluate(self, data, evaluation, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         name1, name2 = self.settings['Ion_1'], self.settings['Ion_2']
         eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2) 
         if eval1 is None:
@@ -393,7 +396,7 @@ class TwoIonEvaluation(EvaluationBase):
         self.settings.setdefault('bd',-1)
         self.settings.setdefault('bb',1)
         
-    def evaluate(self, data, evaluation, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         name1, name2 = self.settings['Ion_1'], self.settings['Ion_2']
         eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2) 
         if eval1 is None:
