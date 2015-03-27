@@ -13,7 +13,7 @@ import PyQt4.uic
 
 from scan.EvaluationAlgorithms import EvaluationAlgorithms
 from EvaluationTableModel import EvaluationTableModel
-from modules import MagnitudeUtilit
+from modules import MagnitudeUtilit, DataDirectory
 from modules.HashableDict import HashableDict
 from modules.Utility import unique
 from modules.magnitude import mg, MagnitudeError
@@ -22,6 +22,8 @@ from modules.enum import enum
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from cPickle import UnpicklingError
 from scan.AbszisseType import AbszisseType
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify
 
  
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
@@ -79,6 +81,14 @@ class EvaluationDefinition(object):
             return data.result[self.channelKey]
         return []
 
+    def exportXml(self, element):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('counterId', 'type', 'counter', 'evaluation', 
+                                                                   'name', 'plotname', 'showHistogram', 'analysis', 'abszisse') if getattr(self,key) is not None  ) ) 
+        myElement = ElementTree.SubElement(element, "EvaluationItem", attrib=mydict )
+        for key, value in self.settings.iteritems():
+            ElementTree.SubElement(myElement, "Settings", attrib={'key':key, 'value':str(value)} )
+        return myElement     
+
 class Evaluation:
     def __init__(self):
         # Evaluation
@@ -117,7 +127,16 @@ class Evaluation:
         
     stateFields = [ 'histogramBins', 'integrateHistogram', 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 
                     'saveRawData', 'evalList' , 'counterChannel']
-   
+    
+    def exportXml(self, element, attrib):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('histogramBins', 'integrateHistogram', 'enableTimestamps', 'binwidth', 'roiStart', 
+                                                                   'roiWidth', 'integrateTimestamps', 'timestampsChannel', 
+                                                                   'saveRawData', 'counterChannel') if getattr(self,key) is not None  ) ) 
+        mydict.update(attrib)
+        myElement = ElementTree.SubElement(element, "Evaluation", attrib=mydict )
+        for evaluation in self.evalList:
+            evaluation.exportXml(myElement)
+        return myElement     
 
 class EvaluationControlParameters:
     def __init__(self):
@@ -206,6 +225,14 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
         self.currentEvaluationChanged.emit( self.settingsName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self):
+        root = ElementTree.Element('EvaluationList')
+        for name, setting in self.settingsDict.iteritems():
+            setting.exportXml(root,{'name':name})
+        with open(DataDirectory.DataDirectory().sequencefile("EvaluationList.xml")[0],'w') as f:
+            f.write(prettify(root))
         
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked

@@ -22,6 +22,9 @@ from fit.FitFunctionBase import fitFunctionMap
 from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
 from modules.MagnitudeUtilit import value
 from modules.PyqtUtility import BlockSignals, Override, updateComboBoxItems
+from modules import DataDirectory
+from modules.XmlUtilit import prettify
+import xml.etree.ElementTree as ElementTree
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -49,6 +52,15 @@ class AnalysisDefinitionElement(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('name', 'enabled', 'evaluation', 'fitfunctionName') if getattr(self,key) is not None  ) ) 
+        myElement = ElementTree.SubElement(element, "AnalysisDefinition", attrib=mydict )
+        pushElement = ElementTree.SubElement(myElement, "PushVariables", attrib=mydict )
+        for var in self.pushVariables.itervalues():
+            var.exportXml(pushElement)
+        self.fitfunction.fitfunction().toXmlElement(myElement)
+        return myElement
     
     def pushVariableValues(self):
         """get all push variable values that are within the bounds, no re-evaluation"""
@@ -166,6 +178,16 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.addAction( self.autoSaveAction )
         self.autoSave()
         self.currentAnalysisChanged.emit( self.currentAnalysisName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self):
+        root = ElementTree.Element('AnalysisListContainer')
+        for name, setting in self.analysisDefinitionDict.iteritems():
+            for item in setting:
+                myElement = ElementTree.SubElement(root, "AnalysisList", attrib={'name':name} )
+                item.exportXml(myElement)
+        with open(DataDirectory.DataDirectory().sequencefile("AnalysisList.xml")[0],'w') as f:
+            f.write(prettify(root))
         
     def onUseErrorBars(self, state):
         if self.fitfunction is not None:

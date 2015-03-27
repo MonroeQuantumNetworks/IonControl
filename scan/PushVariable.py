@@ -5,6 +5,7 @@ Created on Dec 20, 2014
 '''
 from modules.Expression import Expression
 import logging
+import xml.etree.ElementTree as ElementTree
 
 
 class PushVariable(object):
@@ -34,6 +35,11 @@ class PushVariable(object):
         self.__dict__.setdefault( 'maxValid', True )
         
     stateFields = [ 'push', 'definition', 'destinationName', 'variableName', 'value', 'minimum','maximum', 'strMinimum', 'strMaximum', 'valueValid', 'minValid', 'maxValid'] 
+        
+    def exportXml(self, element):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('push', 'definition', 'destinationName', 'variableName', 'value', 'minimum','maximum', 'strMinimum', 'strMaximum', 'valueValid', 'minValid', 'maxValid') if getattr(self,key) is not None  ) ) 
+        myElement = ElementTree.SubElement(element, "PushVariable", attrib=mydict )
+        return myElement
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
