@@ -21,6 +21,9 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.GuiAppearance import saveGuiState, restoreGuiState   #@UnresolvedImport
 from modules.firstNotNone import firstNotNone
+import xml.etree.ElementTree as ElementTree
+from modules import DataDirectory
+from modules.XmlUtilit import prettify
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
@@ -52,7 +55,7 @@ class TodoListEntry(object):
         self.__dict__.setdefault('analysis', None)
         self.scan = str(self.scan) if self.scan is not None else None
 
-    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'analysis', 'settings' ] 
+    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'analysis', 'settings', 'enabled' ] 
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -65,6 +68,13 @@ class TodoListEntry(object):
             logging.getLogger(__name__).info("Replacing list with hashable list")
             self.todoList = HashableList(self.todoList)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('scan', 'measurement', 'scanParameter', 'evaluation', 'analysis', 'enabled') if getattr(self,key) is not None  ) ) 
+        myElement = ElementTree.SubElement(element, "TodoListItem", attrib=mydict )
+        for key, value in self.settings.iteritems():
+            ElementTree.SubElement(myElement, "GlobalSetting", attrib={'name':key, 'value':repr(value)} )
+        return myElement
     
 class Settings:
     def __init__(self):
@@ -90,6 +100,15 @@ class Settings:
             logging.getLogger(__name__).info("Replacing list with hashable list")
             self.todoList = HashableList(self.todoList)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element, attrib=dict()):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('currentIndex', 'repeat') if getattr(self,key) is not None  ) ) 
+        mydict.update(attrib)
+        myElement = ElementTree.SubElement(element, "TodoList", attrib=mydict )
+        for item in self.todoList:
+            item.exportXml(myElement)
+        return myElement
+        
     
 class MasterSettings:
     def __init__(self):
@@ -200,7 +219,15 @@ class TodoList(Form, Base):
         self.loadLineAction.triggered.connect( self.onLoadLine  )
         self.tableView.addAction( self.loadLineAction )
         # 
+        self.exportXmlButton.clicked.connect( self.onExportXml )
         restoreGuiState( self, self.config.get('Todolist.guiState'))
+       
+    def onExportXml(self):
+        root = ElementTree.Element('TodoListContainer')
+        for name, setting in self.settingsCache.iteritems():
+            setting.exportXml(root,{'name':name})
+        with open(DataDirectory.DataDirectory().sequencefile("TodoList.xml")[0],'w') as f:
+            f.write(prettify(root))
        
     def onRevertChanged(self, state):
         self.masterSettings.revertGlobals = state==QtCore.Qt.Checked
