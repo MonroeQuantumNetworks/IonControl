@@ -30,6 +30,9 @@ from TriggerDictionary import TriggerDictionary
 from CounterDictionary import CounterDictionary
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify
+from modules import DataDirectory
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -80,6 +83,28 @@ class PulseProgramContext:
         
     def setGlobaldict(self, globaldict):
         self.parameters.setGlobaldict(globaldict)
+        
+    def exportXml(self, element, attrib=dict()):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('pulseProgramFile', 'pulseProgramMode') if getattr(self,key) is not None  ) )
+        mydict.update(attrib) 
+        myElement = ElementTree.SubElement(element, "PulseProgramContext", attrib=mydict )
+        paramElement = ElementTree.SubElement(myElement, "ParameterList" )
+        for parameter in self.parameters.itervalues():
+            parameter.exportXml(paramElement)
+        shutterElement = ElementTree.SubElement(myElement, "ShutterList" )
+        for parameter in self.shutters.itervalues():
+            shutterItemElement = ElementTree.SubElement(shutterElement, "Shutter" )
+            for item in parameter:
+                if item is not None:
+                    item.exportXml(shutterItemElement)
+        counterElement = ElementTree.SubElement(myElement, "CounterList" )
+        for parameter in self.counters.itervalues():
+            parameter.exportXml(counterElement)
+        triggerElement = ElementTree.SubElement(myElement, "TriggerList" )
+        for parameter in self.counters.itervalues():
+            parameter.exportXml(triggerElement)
+        return myElement     
+        
         
 class ConfiguredParams:
     def __init__(self):
@@ -192,6 +217,14 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.configname+".splitterVertical" in self.config:
             self.splitterVertical.restoreState( self.config[self.configname+".splitterVertical"] )
         self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self):
+        root = ElementTree.Element('PulseProgramList')
+        for name, context in self.contextDict.iteritems():
+            context.exportXml(root,{'name':name})
+        with open(DataDirectory.DataDirectory().sequencefile("PulseProgramList.xml")[0],'w') as f:
+            f.write(prettify(root))
 
     def onAutoSave(self, checked):
         self.configParams.autoSaveContext = checked

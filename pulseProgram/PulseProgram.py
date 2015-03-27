@@ -12,6 +12,8 @@ import math
 import re, os
 import struct
 import copy
+import xml.etree.ElementTree as ElementTree
+
 
 import modules.magnitude as magnitude
 
@@ -138,6 +140,11 @@ class Variable:
     
     def outValue(self):
         return self.value if self.enabled else self.value * 0
+    
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, "PPVariable", attrib=( dict( (key, repr(value)) for key, value in self.__dict__.iteritems() ) ) )
+        return myElement
+        
 
 encodings = { 'AD9912_FRQ': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffffffffffff ),
               'AD9910_FRQ': (1e9/2**32, 'Hz', Dimensions.frequency, 0xffffffff ),
