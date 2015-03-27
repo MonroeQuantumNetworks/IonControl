@@ -6,6 +6,7 @@ Created on May 18, 2014
 import math
 from modules.magnitude import MagnitudeError
 from modules import Expression
+import xml.etree.ElementTree as ElementTree
 
 class ScanSegmentDefinition(object):
     expression = Expression.Expression()
@@ -45,6 +46,11 @@ class ScanSegmentDefinition(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('_start', '_stop', '_center', '_span', '_steps', '_stepsize', '_stepPreference', '_startText', '_stopText', '_centerText', '_spanText', '_stepsText', '_stepsizeText') if getattr(self,key) is not None  ) ) 
+        myElement = ElementTree.SubElement(element, "ScanSegmentDefinition", attrib=mydict )
+        return myElement
         
     @property
     def startText(self):

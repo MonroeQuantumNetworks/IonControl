@@ -18,6 +18,7 @@ from GateSequenceContainer import GateSequenceContainer
 from modules.enum import enum
 from modules.PyqtUtility import updateComboBoxItems
 from modules.HashableDict import HashableDict
+import xml.etree.ElementTree as ElementTree
 
 
 Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
@@ -70,6 +71,11 @@ class Settings:
         return "\n".join(m)
 
     documentationList = [ 'gateDefinition', 'gateSequence', 'startAddressParam' ]
+    
+    def exportXml(self, element):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' ) if getattr(self,key) is not None  ) ) 
+        myElement = ElementTree.SubElement(element, "GateSequence", attrib=mydict )
+        return myElement
     
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )

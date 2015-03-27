@@ -13,7 +13,7 @@ import PyQt4.uic
 
 import ScanList
 from gateSequence import GateSequenceUi
-from modules import MagnitudeUtilit
+from modules import MagnitudeUtilit, DataDirectory
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
@@ -28,6 +28,8 @@ import random
 from modules.concatenate_iter import interleave_iter
 from gateSequence.GateSequenceContainer import GateSequenceException
 from modules.firstNotNone import firstNotNone
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -106,6 +108,17 @@ class Scan:
     documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
+    def exportXml(self, element, attrib=dict()):
+        mydict = dict( ( (key, str(getattr(self,key))) for key in ('scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
+                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 
+                'saveRawData', 'rawFilename') if getattr(self,key) is not None  ) ) 
+        mydict.update(attrib)
+        myElement = ElementTree.SubElement(element, "Scan", attrib=mydict )
+        self.gateSequenceSettings.exportXml(myElement)
+        for segment in self.scanSegmentList:
+            segment.exportXml(myElement)
+        return myElement
+
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
         r += self.gateSequenceSettings.documentationString()
@@ -216,6 +229,14 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
         self.comboBoxScanTarget.currentIndexChanged[QtCore.QString].connect( self.onChangeScanTarget )
         self.currentScanChanged.emit( self.settingsName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self):
+        root = ElementTree.Element('ScanList')
+        for name, setting in self.settingsDict.iteritems():
+            setting.exportXml(root,{'name':name})
+        with open(DataDirectory.DataDirectory().sequencefile("ScanList.xml")[0],'w') as f:
+            f.write(prettify(root))
        
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):
