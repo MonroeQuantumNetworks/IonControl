@@ -1030,7 +1030,9 @@ class Magnitude():
             n = n.val
         r.val = pow(r.val, n, modulo)
         for i in range(len(r.unit)):
-            r.unit[i] *= n
+            r.unit[i] *= int(n)
+        r.out_unit = None
+        r.significantDigits = r.significantDigits * int(n) if r.significantDigits else None
         return r
 
     def __ipow__(self, n):
