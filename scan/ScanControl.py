@@ -29,7 +29,7 @@ from modules.concatenate_iter import interleave_iter
 from gateSequence.GateSequenceContainer import GateSequenceException
 from modules.firstNotNone import firstNotNone
 import xml.etree.ElementTree as ElementTree
-from modules.XmlUtilit import prettify
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -109,15 +109,20 @@ class Scan:
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
     def exportXml(self, element, attrib=dict()):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
-                'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 
-                'saveRawData', 'rawFilename') if getattr(self,key) is not None  ) ) 
-        mydict.update(attrib)
-        myElement = ElementTree.SubElement(element, "Scan", attrib=mydict )
+        myElement = ElementTree.SubElement(element, "Scan", attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
         self.gateSequenceSettings.exportXml(myElement)
         for segment in self.scanSegmentList:
             segment.exportXml(myElement)
         return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        s = Scan()
+        s.__dict__.update( xmlParseAttributes(element) )
+        s.gateSequenceSettings = GateSequenceUi.Settings.fromXmlElement( element )
+        s.scanSegmentList = [ ScanSegmentDefinition.fromXmlElement(e) for e in element.findall(ScanSegmentDefinition.XMLTagName)]
+        return s    
 
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )

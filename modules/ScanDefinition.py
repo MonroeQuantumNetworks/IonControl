@@ -7,9 +7,12 @@ import math
 from modules.magnitude import MagnitudeError
 from modules import Expression
 import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes
+from __builtin__ import staticmethod
 
 class ScanSegmentDefinition(object):
     expression = Expression.Expression()
+    XMLTagName = "ScanSegmentDefinition"
     def __init__(self):
         self._start = 0
         self._stop = 1
@@ -48,9 +51,16 @@ class ScanSegmentDefinition(object):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
     
     def exportXml(self, element):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('_start', '_stop', '_center', '_span', '_steps', '_stepsize', '_stepPreference', '_startText', '_stopText', '_centerText', '_spanText', '_stepsText', '_stepsizeText') if getattr(self,key) is not None  ) ) 
-        myElement = ElementTree.SubElement(element, "ScanSegmentDefinition", attrib=mydict )
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement )
         return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        myElement = element.find( ScanSegmentDefinition.XMLTagName )
+        o = ScanSegmentDefinition()
+        o.__dict__.update( xmlParseAttributes(myElement) )
+        return o
         
     @property
     def startText(self):

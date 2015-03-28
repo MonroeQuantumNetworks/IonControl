@@ -567,6 +567,8 @@ class Magnitude():
         return st
 
     def _formatNumber_(self, strFormat ):
+        if strFormat=="__repr__":
+            return repr(self.val)
         strFormat = self.strFormat if strFormat is None else strFormat
         if self.significantDigits and strFormat==self.Format.significantDigits:
             #st = repr( roundToNDigits(self.val,self.significantDigits) )
@@ -591,6 +593,9 @@ class Magnitude():
         if _prn_units:
             return " ".join( self.toStringTuple() )
         return self.toStringTuple()[0]  
+    
+    def __repr__(self):
+        return " ".join( self.toStringTuple("__repr__") )
     
     def toString(self, strFormat=None ):
         if _prn_units:

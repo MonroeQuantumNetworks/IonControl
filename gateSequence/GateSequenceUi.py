@@ -19,6 +19,9 @@ from modules.enum import enum
 from modules.PyqtUtility import updateComboBoxItems
 from modules.HashableDict import HashableDict
 import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
+    xmlEncodeDict, xmlParseDictionary
+from string import split
 
 
 Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
@@ -26,6 +29,7 @@ Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
 
 class Settings:
     stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' , 'gateSequenceCache', 'gateDefinitionCache' ]
+    XMLTagName = "GateSequence"
     def __init__(self):
         self.enabled = False
         self.gate = []
@@ -73,9 +77,23 @@ class Settings:
     documentationList = [ 'gateDefinition', 'gateSequence', 'startAddressParam' ]
     
     def exportXml(self, element):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' ) if getattr(self,key) is not None  ) ) 
-        myElement = ElementTree.SubElement(element, "GateSequence", attrib=mydict )
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement)
+        xmlEncodeDict(self.gateDefinitionCache, ElementTree.SubElement(myElement, "GateDefinitionCache" ), "Item")
+        xmlEncodeDict(self.gateSequenceCache, ElementTree.SubElement(myElement, "GateSequenceCache" ), "Item")
+        gateElement = ElementTree.SubElement(myElement, "Gate" )
+        gateElement.text = ",".join( self.gate )
         return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        myElement = element.find( Settings.XMLTagName )
+        s = Settings()
+        s.__dict__.update( xmlParseAttributes(myElement) )
+        s.gateDefinitionCache = xmlParseDictionary(myElement.find("GateDefinitionCache"), "Item")
+        s.gateSequenceCache = xmlParseDictionary(myElement.find("GateSequenceCache"), "Item")
+        s.gate = split( myElement.find("Gate"), ",")
+        return s    
     
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
