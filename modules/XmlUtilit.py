@@ -31,7 +31,7 @@ def stringToStringOrNone(string):
     return string if string != "None" else None
 
 
-def xmlEncodeDict( dictionary, element, tagName ):
+def xmlEncodeDictionary( dictionary, element, tagName ):
     for name, attr in dictionary.iteritems():
         if typeName(attr) in supportedTypes:
             e = ElementTree.SubElement(element, tagName, attrib={'type': typeName(attr), 'name':name } )
@@ -39,14 +39,14 @@ def xmlEncodeDict( dictionary, element, tagName ):
     
     
 def xmlEncodeAttributes( dictionary, element ):
-    return xmlEncodeDict(dictionary, element, "attribute")
+    return xmlEncodeDictionary(dictionary, element, "attribute")
             
 def xmlParseDictionary( element, tagName ):
     result = dict()
     for e in element.findall(tagName):
-        parser = supportedTypes.get( e.attrib['type'][1], None )
+        parser = supportedTypes.get( e.attrib['type'], None )
         if parser:
-            result[e.attrib['name']] = parser(e.text)
+            result[e.attrib['name']] = parser[1](e.text)
     return result
 
 def xmlParseAttributes( element ):

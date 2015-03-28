@@ -20,7 +20,7 @@ from modules.PyqtUtility import updateComboBoxItems
 from modules.HashableDict import HashableDict
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
-    xmlEncodeDict, xmlParseDictionary
+    xmlEncodeDictionary, xmlParseDictionary
 from string import split
 
 
@@ -79,8 +79,8 @@ class Settings:
     def exportXml(self, element):
         myElement = ElementTree.SubElement(element, self.XMLTagName )
         xmlEncodeAttributes( self.__dict__, myElement)
-        xmlEncodeDict(self.gateDefinitionCache, ElementTree.SubElement(myElement, "GateDefinitionCache" ), "Item")
-        xmlEncodeDict(self.gateSequenceCache, ElementTree.SubElement(myElement, "GateSequenceCache" ), "Item")
+        xmlEncodeDictionary(self.gateDefinitionCache, ElementTree.SubElement(myElement, "GateDefinitionCache" ), "Item")
+        xmlEncodeDictionary(self.gateSequenceCache, ElementTree.SubElement(myElement, "GateSequenceCache" ), "Item")
         gateElement = ElementTree.SubElement(myElement, "Gate" )
         gateElement.text = ",".join( self.gate )
         return myElement

@@ -23,7 +23,8 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from cPickle import UnpicklingError
 from scan.AbszisseType import AbszisseType
 import xml.etree.ElementTree as ElementTree
-from modules.XmlUtilit import prettify
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlEncodeDictionary,\
+    xmlParseAttributes, xmlParseDictionary
 
  
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
@@ -31,6 +32,7 @@ ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
 class EvaluationDefinition(object):
     AbszisseType = enum( 'x', 'time', 'index' )
+    XMLTagName = "EvaluationItem"
     def __init__(self):
         self.counter = None
         self.evaluation = None
@@ -82,12 +84,18 @@ class EvaluationDefinition(object):
         return []
 
     def exportXml(self, element):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('counterId', 'type', 'counter', 'evaluation', 
-                                                                   'name', 'plotname', 'showHistogram', 'analysis', 'abszisse') if getattr(self,key) is not None  ) ) 
-        myElement = ElementTree.SubElement(element, "EvaluationItem", attrib=mydict )
-        for key, value in self.settings.iteritems():
-            ElementTree.SubElement(myElement, "Settings", attrib={'key':key, 'value':str(value)} )
-        return myElement     
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement )
+        xmlEncodeDictionary( self.settings, myElement, "Parameter")
+        return myElement 
+    
+    @staticmethod
+    def fromXmlElement( element, flat=False ):
+        myElement = element if flat else element.find( EvaluationDefinition.XMLTagName )
+        e = EvaluationDefinition()
+        e.__dict__.update( xmlParseAttributes( myElement ))
+        e.settings = xmlParseDictionary( myElement, "Parameter")
+        return e   
 
 class Evaluation:
     def __init__(self):
@@ -129,14 +137,19 @@ class Evaluation:
                     'saveRawData', 'evalList' , 'counterChannel']
     
     def exportXml(self, element, attrib):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('histogramBins', 'integrateHistogram', 'enableTimestamps', 'binwidth', 'roiStart', 
-                                                                   'roiWidth', 'integrateTimestamps', 'timestampsChannel', 
-                                                                   'saveRawData', 'counterChannel') if getattr(self,key) is not None  ) ) 
-        mydict.update(attrib)
-        myElement = ElementTree.SubElement(element, "Evaluation", attrib=mydict )
+        myElement = ElementTree.SubElement(element, "Evaluation", attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
         for evaluation in self.evalList:
             evaluation.exportXml(myElement)
         return myElement     
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element.find("Evaluation")
+        e = Evaluation()
+        e.__dict__.update( xmlParseAttributes(myElement) )
+        e.evalList = [ EvaluationDefinition.fromXmlElement(e, flat=True) for e in myElement.findAll(EvaluationDefinition.XMLTagName)]
+        return e
 
 class EvaluationControlParameters:
     def __init__(self):
