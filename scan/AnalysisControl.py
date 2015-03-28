@@ -23,8 +23,9 @@ from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedI
 from modules.MagnitudeUtilit import value
 from modules.PyqtUtility import BlockSignals, Override, updateComboBoxItems
 from modules import DataDirectory
-from modules.XmlUtilit import prettify
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 import xml.etree.ElementTree as ElementTree
+from fit.FitFunctions import fromXmlElement
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
@@ -54,13 +55,21 @@ class AnalysisDefinitionElement(object):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
     
     def exportXml(self, element):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('name', 'enabled', 'evaluation', 'fitfunctionName') if getattr(self,key) is not None  ) ) 
-        myElement = ElementTree.SubElement(element, "AnalysisDefinition", attrib=mydict )
-        pushElement = ElementTree.SubElement(myElement, "PushVariables", attrib=mydict )
+        myElement = ElementTree.SubElement(element, "AnalysisDefinition" )
+        xmlEncodeAttributes(self.__dict__, myElement)
         for var in self.pushVariables.itervalues():
-            var.exportXml(pushElement)
+            var.exportXml(myElement)
         self.fitfunction.fitfunction().toXmlElement(myElement)
         return myElement
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element.find("AnalysisDefinition")
+        a = AnalysisDefinitionElement()
+        a.__dict__.update( xmlParseAttributes(myElement) )
+        a.pushVariables = [ PushVariable.fromXmlElement(e, flat=True) for e in myElement.findAll(PushVariable.XMLTagName)]
+        a.fitfunction = StoredFitFunction.fromFitfunction( fromXmlElement( myElement.find("FitFunction")) )
+        return a
     
     def pushVariableValues(self):
         """get all push variable values that are within the bounds, no re-evaluation"""
