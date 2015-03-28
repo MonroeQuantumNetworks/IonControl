@@ -30,6 +30,7 @@ from fit.FitFunctions import fromXmlElement
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
 class AnalysisDefinitionElement(object):
+    XMLTagName = "AnalysisDefinition"
     def __init__(self):
         self.name = ''
         self.enabled = True
@@ -55,7 +56,7 @@ class AnalysisDefinitionElement(object):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
     
     def exportXml(self, element):
-        myElement = ElementTree.SubElement(element, "AnalysisDefinition" )
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
         xmlEncodeAttributes(self.__dict__, myElement)
         for var in self.pushVariables.itervalues():
             var.exportXml(myElement)
@@ -64,10 +65,10 @@ class AnalysisDefinitionElement(object):
     
     @staticmethod
     def fromXmlElement( element ):
-        myElement = element.find("AnalysisDefinition")
+        myElement = element if element.tag==AnalysisDefinitionElement.XMLTagName else element.find(AnalysisDefinitionElement.XMLTagName)
         a = AnalysisDefinitionElement()
         a.__dict__.update( xmlParseAttributes(myElement) )
-        a.pushVariables = [ PushVariable.fromXmlElement(e, flat=True) for e in myElement.findAll(PushVariable.XMLTagName)]
+        a.pushVariables = [ PushVariable.fromXmlElement(e, flat=True) for e in myElement.findall(PushVariable.XMLTagName)]
         a.fitfunction = StoredFitFunction.fromFitfunction( fromXmlElement( myElement.find("FitFunction")) )
         return a
     
@@ -192,12 +193,28 @@ class AnalysisControl(ControlForm, ControlBase ):
     def onExportXml(self):
         root = ElementTree.Element('AnalysisListContainer')
         for name, setting in self.analysisDefinitionDict.iteritems():
+            myElement = ElementTree.SubElement(root, "AnalysisList", attrib={'name':name} )
             for item in setting:
-                myElement = ElementTree.SubElement(root, "AnalysisList", attrib={'name':name} )
                 item.exportXml(myElement)
-        with open(DataDirectory.DataDirectory().sequencefile("AnalysisList.xml")[0],'w') as f:
+        filename = DataDirectory.DataDirectory().sequencefile("AnalysisList.xml")[0]
+        with open(filename,'w') as f:
             f.write(prettify(root))
+        self.onImportXml(filename, mode="")
         
+    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newAnalysisDefinitionDict = dict()
+        for listElement in root.findall("AnalysisList"):
+            newAnalysisDefinitionDict[listElement.attrib['name']] = [ AnalysisDefinitionElement.fromXmlElement(e) for e in listElement.findall(AnalysisDefinitionElement.XMLTagName)]
+        if mode=="replace":
+            self.analysisDefinitionDict = newAnalysisDefinitionDict
+        elif mode=="update":
+            self.analysisDefinitionDict.update( newAnalysisDefinitionDict )
+        elif mode=="addMissing":
+            newAnalysisDefinitionDict.update( self.analysisDefinitionDict )
+            self.analysisDefinitionDict = newAnalysisDefinitionDict
+
     def onUseErrorBars(self, state):
         if self.fitfunction is not None:
             self.fitfunction.useErrorBars = state==QtCore.Qt.Checked

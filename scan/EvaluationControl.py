@@ -98,6 +98,7 @@ class EvaluationDefinition(object):
         return e   
 
 class Evaluation:
+    XMLTagName = "Evaluation"
     def __init__(self):
         # Evaluation
         self.histogramBins = 50
@@ -137,7 +138,7 @@ class Evaluation:
                     'saveRawData', 'evalList' , 'counterChannel']
     
     def exportXml(self, element, attrib):
-        myElement = ElementTree.SubElement(element, "Evaluation", attrib=attrib )
+        myElement = ElementTree.SubElement(element, Evaluation.XMLTagName, attrib=attrib )
         xmlEncodeAttributes(self.__dict__, myElement)
         for evaluation in self.evalList:
             evaluation.exportXml(myElement)
@@ -145,11 +146,11 @@ class Evaluation:
     
     @staticmethod
     def fromXmlElement( element ):
-        myElement = element.find("Evaluation")
+        myElement = element if element.tag==Evaluation.XMLTagName else element.find(Evaluation.XMLTagName)
         e = Evaluation()
         e.__dict__.update( xmlParseAttributes(myElement) )
-        e.evalList = [ EvaluationDefinition.fromXmlElement(e, flat=True) for e in myElement.findAll(EvaluationDefinition.XMLTagName)]
-        return e
+        e.evalList = [ EvaluationDefinition.fromXmlElement(e, flat=True) for e in myElement.findall(EvaluationDefinition.XMLTagName)]
+        return (myElement.attrib['name'],e)
 
 class EvaluationControlParameters:
     def __init__(self):
@@ -244,9 +245,22 @@ class EvaluationControl(ControlForm, ControlBase ):
         root = ElementTree.Element('EvaluationList')
         for name, setting in self.settingsDict.iteritems():
             setting.exportXml(root,{'name':name})
-        with open(DataDirectory.DataDirectory().sequencefile("EvaluationList.xml")[0],'w') as f:
+        filename = DataDirectory.DataDirectory().sequencefile("EvaluationList.xml")[0]
+        with open(filename,'w') as f:
             f.write(prettify(root))
         
+    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newSettingsDict = dict( Evaluation.fromXmlElement(e) for e in root.findall(Evaluation.XMLTagName) )
+        if mode=="replace":
+            self.settingsDict = newSettingsDict
+        elif mode=="update":
+            self.settingsDict.update( newSettingsDict )
+        elif mode=="addMissing":
+            newSettingsDict.update( self.settingsCache )
+            self.settingsDict = newSettingsDict
+
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
         if self.parameters.autoSave:
