@@ -92,7 +92,8 @@ class Settings:
         s.__dict__.update( xmlParseAttributes(myElement) )
         s.gateDefinitionCache = xmlParseDictionary(myElement.find("GateDefinitionCache"), "Item")
         s.gateSequenceCache = xmlParseDictionary(myElement.find("GateSequenceCache"), "Item")
-        s.gate = split( myElement.find("Gate"), ",")
+        gateText = myElement.find("Gate").text
+        s.gate = gateText.split(",") if gateText else list()
         return s    
     
     def documentationString(self):

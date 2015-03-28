@@ -38,6 +38,7 @@ class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan','Freerunning')
     ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized','CenterOut')
     ScanRepeat = enum('SingleScan','RepeatedScan')
+    XMLTagName = "Scan"
     def __init__(self):
         # Scan
         self.scanParameter = None
@@ -109,7 +110,7 @@ class Scan:
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
     def exportXml(self, element, attrib=dict()):
-        myElement = ElementTree.SubElement(element, "Scan", attrib=attrib )
+        myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
         xmlEncodeAttributes(self.__dict__, myElement)
         self.gateSequenceSettings.exportXml(myElement)
         for segment in self.scanSegmentList:
@@ -118,11 +119,12 @@ class Scan:
     
     @staticmethod
     def fromXmlElement(element):
+        myElement = element if element.tag == Scan.XMLTagName else element.find(Scan.XMLTagName)
         s = Scan()
-        s.__dict__.update( xmlParseAttributes(element) )
-        s.gateSequenceSettings = GateSequenceUi.Settings.fromXmlElement( element )
-        s.scanSegmentList = [ ScanSegmentDefinition.fromXmlElement(e) for e in element.findall(ScanSegmentDefinition.XMLTagName)]
-        return s    
+        s.__dict__.update( xmlParseAttributes(myElement) )
+        s.gateSequenceSettings = GateSequenceUi.Settings.fromXmlElement( myElement )
+        s.scanSegmentList = [ ScanSegmentDefinition.fromXmlElement(e) for e in myElement.findall(ScanSegmentDefinition.XMLTagName)]
+        return (myElement.attrib['name'],s)    
 
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
@@ -240,8 +242,21 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         root = ElementTree.Element('ScanList')
         for name, setting in self.settingsDict.iteritems():
             setting.exportXml(root,{'name':name})
-        with open(DataDirectory.DataDirectory().sequencefile("ScanList.xml")[0],'w') as f:
+        filename = DataDirectory.DataDirectory().sequencefile("ScanList.xml")[0]
+        with open(filename,'w') as f:
             f.write(prettify(root))
+            
+    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newSettingsDict = dict( Scan.fromXmlElement(e) for e in root.findall(Scan.XMLTagName) )
+        if mode=="replace":
+            self.settingsDict = newSettingsDict
+        elif mode=="update":
+            self.settingsDict.update( newSettingsDict )
+        elif mode=="addMissing":
+            newSettingsDict.update( self.settingsCache )
+            self.settingsDict = newSettingsDict
        
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):

@@ -57,7 +57,7 @@ class ScanSegmentDefinition(object):
     
     @staticmethod
     def fromXmlElement(element):
-        myElement = element.find( ScanSegmentDefinition.XMLTagName )
+        myElement = element if element.tag==ScanSegmentDefinition.XMLTagName else element.find( ScanSegmentDefinition.XMLTagName )
         o = ScanSegmentDefinition()
         o.__dict__.update( xmlParseAttributes(myElement) )
         return o
