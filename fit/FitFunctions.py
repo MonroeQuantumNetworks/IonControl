@@ -435,12 +435,18 @@ def fromXmlElement(element):
     function = fitFunctionMap[name]()
     function.parametersConfidence = [None]*len(function.parameters)
     function.parameterEnabled = [True]*len(function.parameters)
+    function.startParameterExpressions = [None]*len(function.parameters)
+    function.parameterBounds = [[None,None]]*len(function.parameters)
+    function.parameterBoundsExpressions = [[None,None]]*len(function.parameters)
     for index, parameter in enumerate(element.findall("Parameter")):
         value = float(parameter.text)
         function.parameters[index] = value
         #function.parameterNames[index] = parameter.attrib['name']
         function.parametersConfidence[index] = float(parameter.attrib['confidence']) if parameter.attrib['confidence'] != 'None' else None
         function.parameterEnabled[index] = parameter.attrib['enabled'] == "True"
+        function.startParameterExpressions[index] = stringToStringOrNone( parameter.attrib.get('startExpression','None') )
+        function.parameterBounds[index] = map( stringToStringOrNone, parameter.attrib.get('bounds','None,None').split(",") )
+        function.parameterBoundsExpressions[index] = map( stringToStringOrNone, parameter.attrib.get('boundsExpression','None,None').split(",") )
     for index, parameter in enumerate(element.findall("Result")):
         name= parameter.attrib['name']
         function.results[name] = ResultRecord( name=name,

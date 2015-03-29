@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ElementTree
 
 
 import modules.magnitude as magnitude
+from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes
 
 writeBinaryData = False
 
@@ -141,9 +142,17 @@ class Variable:
     def outValue(self):
         return self.value if self.enabled else self.value * 0
     
-    def exportXml(self, element):
-        myElement = ElementTree.SubElement(element, "PPVariable", attrib=( dict( (key, repr(value)) for key, value in self.__dict__.iteritems() ) ) )
+    def exportXml(self, element, tagname):
+        myElement = ElementTree.SubElement(element, tagname )
+        xmlEncodeAttributes(self.__dict__, myElement)
         return myElement
+    
+    @staticmethod
+    def fromXMLElement( element, tagname=None, returnTuple=False ):
+        myElement = element if element.tag==tagname or tagname is None else element.find(tagname)
+        v = Variable()
+        v.__dict__.update( xmlParseAttributes(myElement))
+        return (v.name,v) if returnTuple else v
         
 
 encodings = { 'AD9912_FRQ': (1e9/2**48, 'Hz', Dimensions.frequency, 0xffffffffffff ),

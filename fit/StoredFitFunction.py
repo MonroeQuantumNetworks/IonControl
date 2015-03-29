@@ -60,8 +60,8 @@ class StoredFitFunction(object):
         instance.useErrorBars = fitfunction.useErrorBars
         for result in fitfunction.results.values():
             instance.results[result.name] = ResultRecord(name=result.name, definition=result.definition, value=result.value)
-        instance.parameterBounds = tuple( (tuple(bound) for bound in fitfunction.parameterBounds) )
-        instance.parameterBoundsExpressions = tuple( (tuple(bound) for bound in fitfunction.parameterBoundsExpressions) )
+        instance.parameterBounds = tuple( (tuple(bound) for bound in fitfunction.parameterBounds) ) if fitfunction.parameterBounds else  tuple((None,None) for _ in range(len(fitfunction.parameterNames)))
+        instance.parameterBoundsExpressions = tuple( (tuple(bound) for bound in fitfunction.parameterBoundsExpressions) ) if fitfunction.parameterBoundsExpressions else tuple((None,None) for _ in range(len(fitfunction.parameterNames)))
         return instance
      
     stateFields = ['name', 'fitfunctionName', 'startParameters', 'parameterEnabled', 'results', 'useSmartStartValues', 'startParameterExpressions', 'parameters', 'parametersConfidence',

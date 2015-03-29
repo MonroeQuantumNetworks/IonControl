@@ -31,8 +31,9 @@ from CounterDictionary import CounterDictionary
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 import xml.etree.ElementTree as ElementTree
-from modules.XmlUtilit import prettify
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 from modules import DataDirectory
+from PulseProgram import Variable
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -52,6 +53,7 @@ def getPpFileName( filename ):
 
 
 class PulseProgramContext:
+    XMLTagName = "PulseProgramContext"
     def __init__(self, globaldict):
         self.parameters = VariableDictionary()
         self.parameters.setGlobaldict(globaldict)
@@ -85,25 +87,35 @@ class PulseProgramContext:
         self.parameters.setGlobaldict(globaldict)
         
     def exportXml(self, element, attrib=dict()):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('pulseProgramFile', 'pulseProgramMode') if getattr(self,key) is not None  ) )
-        mydict.update(attrib) 
-        myElement = ElementTree.SubElement(element, "PulseProgramContext", attrib=mydict )
-        paramElement = ElementTree.SubElement(myElement, "ParameterList" )
+        myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
         for parameter in self.parameters.itervalues():
-            parameter.exportXml(paramElement)
-        shutterElement = ElementTree.SubElement(myElement, "ShutterList" )
-        for parameter in self.shutters.itervalues():
-            shutterItemElement = ElementTree.SubElement(shutterElement, "Shutter" )
+            parameter.exportXml(myElement, "PPVariable")
+        for name, parameter in self.shutters.iteritems():
+            shutterItemElement = ElementTree.SubElement(myElement, "Shutter", attrib={'name':name} )
             for item in parameter:
                 if item is not None:
-                    item.exportXml(shutterItemElement)
-        counterElement = ElementTree.SubElement(myElement, "CounterList" )
+                    item.exportXml(shutterItemElement, "PPShutter")
         for parameter in self.counters.itervalues():
-            parameter.exportXml(counterElement)
-        triggerElement = ElementTree.SubElement(myElement, "TriggerList" )
-        for parameter in self.counters.itervalues():
-            parameter.exportXml(triggerElement)
-        return myElement     
+            parameter.exportXml(myElement, "PPCounter")
+        for parameter in self.triggers.itervalues():
+            parameter.exportXml(myElement, "PPTrigger")
+        return myElement   
+    
+    @staticmethod
+    def fromXmlElement( element, globaldict ):
+        myElement = element if element.tag==PulseProgramContext.XMLTagName else element.find(PulseProgramContext.XMLTagName)
+        c = PulseProgramContext(globaldict)
+        c.__dict__.update( xmlParseAttributes(myElement))
+        c.parameters = VariableDictionary( (Variable.fromXMLElement(e, returnTuple=True) for e in myElement.findall("PPVariable") ) )
+        c.counters = CounterDictionary( (Variable.fromXMLElement(e, returnTuple=True) for e in myElement.findall("PPCounter") ) )
+        c.triggers = TriggerDictionary( (Variable.fromXMLElement(e, returnTuple=True) for e in myElement.findall("PPTrigger") ) )
+        c.shutters = ShutterDictionary()
+        for e in myElement.findall("Shutter"):
+            c.shutters[e.attrib['name']] = tuple((Variable.fromXMLElement(e) for e in myElement.findall("PPShutter") ))
+        return (myElement.attrib['name'], c)
+            
+        
         
         
 class ConfiguredParams:
@@ -223,9 +235,23 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         root = ElementTree.Element('PulseProgramList')
         for name, context in self.contextDict.iteritems():
             context.exportXml(root,{'name':name})
-        with open(DataDirectory.DataDirectory().sequencefile("PulseProgramList.xml")[0],'w') as f:
+        filename = DataDirectory.DataDirectory().sequencefile("PulseProgramList.xml")[0]
+        with open(filename,'w') as f:
             f.write(prettify(root))
+        self.onImportXml(filename, mode="")
 
+    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newDict = dict( PulseProgramContext.fromXmlElement(e, self.globaldict) for e in root.findall(PulseProgramContext.XMLTagName) )
+        if mode=="replace":
+            self.contextDict = newDict
+        elif mode=="update":
+            self.contextDict.update( newDict )
+        elif mode=="addMissing":
+            newDict.update( self.contextDict )
+            self.contextDict = newDict
+       
     def onAutoSave(self, checked):
         self.configParams.autoSaveContext = checked
         if checked:
