@@ -190,16 +190,18 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.currentAnalysisChanged.emit( self.currentAnalysisName )
         self.exportXmlButton.clicked.connect( self.onExportXml )
 
-    def onExportXml(self):
-        root = ElementTree.Element('AnalysisListContainer')
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('AnalysisListContainer')
         for name, setting in self.analysisDefinitionDict.iteritems():
             myElement = ElementTree.SubElement(root, "AnalysisList", attrib={'name':name} )
             for item in setting:
                 item.exportXml(myElement)
-        filename = DataDirectory.DataDirectory().sequencefile("AnalysisList.xml")[0]
-        with open(filename,'w') as f:
-            f.write(prettify(root))
-        self.onImportXml(filename, mode="")
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("AnalysisList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+            self.onImportXml(filename, mode="")
+        return root
         
     def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
         tree = ElementTree.parse(filename)

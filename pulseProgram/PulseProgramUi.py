@@ -231,14 +231,16 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
         self.exportXmlButton.clicked.connect( self.onExportXml )
 
-    def onExportXml(self):
-        root = ElementTree.Element('PulseProgramList')
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('PulseProgramList')
         for name, context in self.contextDict.iteritems():
             context.exportXml(root,{'name':name})
-        filename = DataDirectory.DataDirectory().sequencefile("PulseProgramList.xml")[0]
-        with open(filename,'w') as f:
-            f.write(prettify(root))
-        self.onImportXml(filename, mode="")
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("PulseProgramList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+            self.onImportXml(filename, mode="")
+        return root
 
     def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
         tree = ElementTree.parse(filename)

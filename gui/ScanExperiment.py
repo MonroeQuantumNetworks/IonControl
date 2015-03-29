@@ -216,6 +216,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
         self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
         
+    def exportXml(self, element):
+        self.scanControlWidget.onExportXml(element)
+        self.analysisControlWidget.onExportXml(element)
+        self.evaluationControlWidget.onExportXml(element)
+        self.pulseProgramUi.onExportXml(element)
+        
     def reAnalyze(self, plottedTrace):
         self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
         

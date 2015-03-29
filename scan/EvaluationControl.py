@@ -241,13 +241,15 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.currentEvaluationChanged.emit( self.settingsName )
         self.exportXmlButton.clicked.connect( self.onExportXml )
 
-    def onExportXml(self):
-        root = ElementTree.Element('EvaluationList')
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('EvaluationList')
         for name, setting in self.settingsDict.iteritems():
             setting.exportXml(root,{'name':name})
-        filename = DataDirectory.DataDirectory().sequencefile("EvaluationList.xml")[0]
-        with open(filename,'w') as f:
-            f.write(prettify(root))
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("EvaluationList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+        return root
         
     def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
         tree = ElementTree.parse(filename)
