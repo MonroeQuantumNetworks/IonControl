@@ -129,7 +129,16 @@ class PulserHardware(QtCore.QObject):
 
     def pulserConfiguration(self):
         config = self.getConfiguration()
-        return self.pulserConfigurationList[config['HardwareConfigurationId']]
+        if not config:
+            logging.getLogger(__name__).error("No configuration information returned from FPGA")
+            return None
+        HardwareConfigurationId = config['HardwareConfigurationId']
+        if HardwareConfigurationId in self.pulserConfigurationList:
+            return self.pulserConfigurationList[config['HardwareConfigurationId']]
+        else:
+            logging.getLogger(__name__).error("No information on configuration {0} in configuration file".format(HardwareConfigurationId))
+        return None
+            
 
     def shutdown(self):
         self.clientPipe.send( ('finish', () ) )
