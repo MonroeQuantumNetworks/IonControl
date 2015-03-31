@@ -101,14 +101,15 @@ class PulserParameterUi(UiForm,UiBase):
         self.parameterList = list()
         pulserconfig = self.pulser.pulserConfiguration()
         self.currentWireValues = defaultdict( lambda: 0 )
-        for index, extendedWireIn in enumerate(pulserconfig.extendedWireIns):
-            value, string = oldValues.get(extendedWireIn.name,(extendedWireIn.default,None))
-            parameter = PulserParameter(name=extendedWireIn.name, address=extendedWireIn.address, string=string,
-                                        bitmask=extendedWireIn.bitmask, shift=extendedWireIn.shift, encoding=extendedWireIn.encoding,
-                                        onChange=partial(self.onChange,index), globalDict=self.globalDict)
-            self.parameterList.append( parameter )
-            parameter.value = value
-    
+        if pulserconfig:
+            for index, extendedWireIn in enumerate(pulserconfig.extendedWireIns):
+                value, string = oldValues.get(extendedWireIn.name,(extendedWireIn.default,None))
+                parameter = PulserParameter(name=extendedWireIn.name, address=extendedWireIn.address, string=string,
+                                            bitmask=extendedWireIn.bitmask, shift=extendedWireIn.shift, encoding=extendedWireIn.encoding,
+                                            onChange=partial(self.onChange,index), globalDict=self.globalDict)
+                self.parameterList.append( parameter )
+                parameter.value = value
+        
     def setupUi(self):
         UiForm.setupUi(self, self)
         self.tableModel = PulserParameterTableModel(self.parameterList)

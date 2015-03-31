@@ -61,6 +61,20 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QToolButton" name="exportXmlButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/kde/icons/ExportToXMLFile-48.png</normaloff>:/kde/icons/ExportToXMLFile-48.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

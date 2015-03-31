@@ -50,6 +50,8 @@ from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from externalParameter.ExternalParameterBase import InstrumentDict
 from mylogging.LoggingSetup import qtWarningButtonHandler
 from pulser.PulserParameterUi import PulserParameterUi
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -268,6 +270,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionClear.triggered.connect(self.onClear)
         self.actionPause.triggered.connect(self.onPause)
         self.actionSave.triggered.connect(self.onSave)
+        self.actionExport_to_XML.triggered.connect(self.onXmlExport)
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
         self.actionAbort.triggered.connect(self.onAbort)
@@ -382,6 +385,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         filename, _ = DataDirectory.DataDirectory().sequencefile("configuration.db")
         self.saveConfig()
         self.config.saveConfig(filename)
+        
+    def onXmlExport(self):
+        root = ElementTree.Element('IonControlSettings')
+        self.globalVariablesUi.onExportXml(root, writeToFile=False)
+        if hasattr(self.currentTab,'exportXml'):
+            self.currentTab.exportXml(root)   
+        filename = DataDirectory.DataDirectory().sequencefile("IonControlSettings.xml")[0]
+        with open(filename,'w') as f:
+            f.write(prettify(root))
         
     def onCommitConfig(self):
         logger = logging.getLogger(__name__)
@@ -573,16 +585,17 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir, dbConnection = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
     
-    if project:
-        DataDirectory.DefaultProject = project
-        
-        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with ExperimentUi(config, dbConnection) as ui:
-                ui.setupUi(ui)
-                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                ui.show()
-                sys.exit(app.exec_())
-    else:
-        logger.warning( "No project selected. Nothing I can do about that ;)" )
+    if accepted:
+        if project:
+            DataDirectory.DefaultProject = project
+            
+            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+                with ExperimentUi(config, dbConnection) as ui:
+                    ui.setupUi(ui)
+                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                    ui.show()
+                    sys.exit(app.exec_())
+        else:
+            logger.warning( "No project selected. Nothing I can do about that ;)" )

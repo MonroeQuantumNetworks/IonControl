@@ -18,6 +18,10 @@ from GateSequenceContainer import GateSequenceContainer
 from modules.enum import enum
 from modules.PyqtUtility import updateComboBoxItems
 from modules.HashableDict import HashableDict
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
+    xmlEncodeDictionary, xmlParseDictionary
+from string import split
 
 
 Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
@@ -25,6 +29,7 @@ Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
 
 class Settings:
     stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' , 'gateSequenceCache', 'gateDefinitionCache' ]
+    XMLTagName = "GateSequence"
     def __init__(self):
         self.enabled = False
         self.gate = []
@@ -70,6 +75,26 @@ class Settings:
         return "\n".join(m)
 
     documentationList = [ 'gateDefinition', 'gateSequence', 'startAddressParam' ]
+    
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement)
+        xmlEncodeDictionary(self.gateDefinitionCache, ElementTree.SubElement(myElement, "GateDefinitionCache" ), "Item")
+        xmlEncodeDictionary(self.gateSequenceCache, ElementTree.SubElement(myElement, "GateSequenceCache" ), "Item")
+        gateElement = ElementTree.SubElement(myElement, "Gate" )
+        gateElement.text = ",".join( self.gate )
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        myElement = element.find( Settings.XMLTagName )
+        s = Settings()
+        s.__dict__.update( xmlParseAttributes(myElement) )
+        s.gateDefinitionCache = xmlParseDictionary(myElement.find("GateDefinitionCache"), "Item")
+        s.gateSequenceCache = xmlParseDictionary(myElement.find("GateSequenceCache"), "Item")
+        gateText = myElement.find("Gate").text
+        s.gate = gateText.split(",") if gateText else list()
+        return s    
     
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )

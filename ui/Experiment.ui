@@ -52,6 +52,7 @@
    <addaction name="actionContinue"/>
    <addaction name="actionSave"/>
    <addaction name="actionClear"/>
+   <addaction name="actionExport_to_XML"/>
    <addaction name="separator"/>
    <addaction name="actionDedicatedCounters"/>
    <addaction name="actionPulses"/>
@@ -435,6 +436,18 @@
    </property>
    <property name="toolTip">
     <string>Measurement Log</string>
+   </property>
+  </action>
+  <action name="actionExport_to_XML">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ExportToXMLFile-48.png</normaloff>:/kde/icons/ExportToXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export to XML</string>
+   </property>
+   <property name="toolTip">
+    <string>Export settings to XML (subset)</string>
    </property>
   </action>
  </widget>

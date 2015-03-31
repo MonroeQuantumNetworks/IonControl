@@ -13,7 +13,7 @@ import PyQt4.uic
 
 import ScanList
 from gateSequence import GateSequenceUi
-from modules import MagnitudeUtilit
+from modules import MagnitudeUtilit, DataDirectory
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
@@ -28,6 +28,8 @@ import random
 from modules.concatenate_iter import interleave_iter
 from gateSequence.GateSequenceContainer import GateSequenceException
 from modules.firstNotNone import firstNotNone
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
@@ -36,6 +38,7 @@ class Scan:
     ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan','Freerunning')
     ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized','CenterOut')
     ScanRepeat = enum('SingleScan','RepeatedScan')
+    XMLTagName = "Scan"
     def __init__(self):
         # Scan
         self.scanParameter = None
@@ -106,6 +109,23 @@ class Scan:
     documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
+    def exportXml(self, element, attrib=dict()):
+        myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        self.gateSequenceSettings.exportXml(myElement)
+        for segment in self.scanSegmentList:
+            segment.exportXml(myElement)
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        myElement = element if element.tag == Scan.XMLTagName else element.find(Scan.XMLTagName)
+        s = Scan()
+        s.__dict__.update( xmlParseAttributes(myElement) )
+        s.gateSequenceSettings = GateSequenceUi.Settings.fromXmlElement( myElement )
+        s.scanSegmentList = [ ScanSegmentDefinition.fromXmlElement(e) for e in myElement.findall(ScanSegmentDefinition.XMLTagName)]
+        return (myElement.attrib['name'],s)    
+
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
         r += self.gateSequenceSettings.documentationString()
@@ -216,6 +236,29 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
         self.comboBoxScanTarget.currentIndexChanged[QtCore.QString].connect( self.onChangeScanTarget )
         self.currentScanChanged.emit( self.settingsName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('ScanList')
+        for name, setting in self.settingsDict.iteritems():
+            setting.exportXml(root,{'name':name})
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("ScanList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+        return root
+            
+    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newSettingsDict = dict( Scan.fromXmlElement(e) for e in root.findall(Scan.XMLTagName) )
+        if mode=="replace":
+            self.settingsDict = newSettingsDict
+        elif mode=="update":
+            self.settingsDict.update( newSettingsDict )
+        elif mode=="addMissing":
+            newSettingsDict.update( self.settingsCache )
+            self.settingsDict = newSettingsDict
        
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):

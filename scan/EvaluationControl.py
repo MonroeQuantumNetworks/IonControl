@@ -13,7 +13,7 @@ import PyQt4.uic
 
 from scan.EvaluationAlgorithms import EvaluationAlgorithms
 from EvaluationTableModel import EvaluationTableModel
-from modules import MagnitudeUtilit
+from modules import MagnitudeUtilit, DataDirectory
 from modules.HashableDict import HashableDict
 from modules.Utility import unique
 from modules.magnitude import mg, MagnitudeError
@@ -22,6 +22,9 @@ from modules.enum import enum
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from cPickle import UnpicklingError
 from scan.AbszisseType import AbszisseType
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlEncodeDictionary,\
+    xmlParseAttributes, xmlParseDictionary
 
  
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
@@ -29,6 +32,7 @@ ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
 class EvaluationDefinition(object):
     AbszisseType = enum( 'x', 'time', 'index' )
+    XMLTagName = "EvaluationItem"
     def __init__(self):
         self.counter = None
         self.evaluation = None
@@ -79,7 +83,22 @@ class EvaluationDefinition(object):
             return data.result[self.channelKey]
         return []
 
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement )
+        xmlEncodeDictionary( self.settings, myElement, "Parameter")
+        return myElement 
+    
+    @staticmethod
+    def fromXmlElement( element, flat=False ):
+        myElement = element if flat else element.find( EvaluationDefinition.XMLTagName )
+        e = EvaluationDefinition()
+        e.__dict__.update( xmlParseAttributes( myElement ))
+        e.settings = xmlParseDictionary( myElement, "Parameter")
+        return e   
+
 class Evaluation:
+    XMLTagName = "Evaluation"
     def __init__(self):
         # Evaluation
         self.histogramBins = 50
@@ -117,7 +136,21 @@ class Evaluation:
         
     stateFields = [ 'histogramBins', 'integrateHistogram', 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 
                     'saveRawData', 'evalList' , 'counterChannel']
-   
+    
+    def exportXml(self, element, attrib):
+        myElement = ElementTree.SubElement(element, Evaluation.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        for evaluation in self.evalList:
+            evaluation.exportXml(myElement)
+        return myElement     
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag==Evaluation.XMLTagName else element.find(Evaluation.XMLTagName)
+        e = Evaluation()
+        e.__dict__.update( xmlParseAttributes(myElement) )
+        e.evalList = [ EvaluationDefinition.fromXmlElement(e, flat=True) for e in myElement.findall(EvaluationDefinition.XMLTagName)]
+        return (myElement.attrib['name'],e)
 
 class EvaluationControlParameters:
     def __init__(self):
@@ -206,7 +239,30 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
         self.currentEvaluationChanged.emit( self.settingsName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('EvaluationList')
+        for name, setting in self.settingsDict.iteritems():
+            setting.exportXml(root,{'name':name})
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("EvaluationList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+        return root
         
+    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newSettingsDict = dict( Evaluation.fromXmlElement(e) for e in root.findall(Evaluation.XMLTagName) )
+        if mode=="replace":
+            self.settingsDict = newSettingsDict
+        elif mode=="update":
+            self.settingsDict.update( newSettingsDict )
+        elif mode=="addMissing":
+            newSettingsDict.update( self.settingsCache )
+            self.settingsDict = newSettingsDict
+
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
         if self.parameters.autoSave:

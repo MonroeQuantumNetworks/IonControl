@@ -347,16 +347,17 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir, dbConnection = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
     
-    if project:
-        DataDirectory.DefaultProject = project
-        
-        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with InstrumentLoggingUi(project, config) as ui:
-                ui.setupUi(ui)
-                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                ui.show()
-                sys.exit(app.exec_())
-    else:
-        logger.warning( "No project selected. Nothing I can do about that ;)" )
+    if accepted:
+        if project:
+            DataDirectory.DefaultProject = project
+            
+            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+                with InstrumentLoggingUi(project, config) as ui:
+                    ui.setupUi(ui)
+                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                    ui.show()
+                    sys.exit(app.exec_())
+        else:
+            logger.warning( "No project selected. Nothing I can do about that ;)" )

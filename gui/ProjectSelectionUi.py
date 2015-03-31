@@ -112,16 +112,17 @@ class ProjectSelectionUi(Form, Base):
         Base.accept(self)
         
 def GetProjectSelection(atProgramStart=False):
+    accepted = True
     project, dbConnectionLookup = ProjectSelection.defaultProject(returnDatabaseLookup=True)
     if (not project) or (not atProgramStart) or (not dbConnectionLookup):
         selectionui = ProjectSelectionUi()
         selectionui.setupUi(selectionui, atProgramStart)
-        selectionui.exec_()
+        accepted = bool(selectionui.exec_())
         project = selectionui.project
         dbConnectionLookup = selectionui.databaseConnectionLookup
         ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)
     ProjectSelection.setProject(project)
-    return project, ProjectSelection.projectDir(), dbConnectionLookup.get(project, DatabaseConnectionSettings())
+    return project, ProjectSelection.projectDir(), dbConnectionLookup.get(project, DatabaseConnectionSettings()), accepted
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

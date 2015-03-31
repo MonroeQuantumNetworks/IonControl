@@ -42,11 +42,7 @@ class Data:
         return 0
     
     def dataString(self):
-        parts = list()
-        parts.append( json.dumps(self.scanvalue) )
-        parts.append( json.dumps(self.count) )
-        parts.append( json.dumps(self.result) )
-        return ' '.join(parts)
+        return json.dumps( [ self.scanvalue, self.count, self.result ] )  
 
 class DedicatedData:
     def __init__(self):

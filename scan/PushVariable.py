@@ -5,10 +5,13 @@ Created on Dec 20, 2014
 '''
 from modules.Expression import Expression
 import logging
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes
 
 
 class PushVariable(object):
     expression = Expression()
+    XMLTagName = "PushVariable"
     def __init__(self):
         self.push = False
         self.destinationName = None
@@ -34,6 +37,18 @@ class PushVariable(object):
         self.__dict__.setdefault( 'maxValid', True )
         
     stateFields = [ 'push', 'definition', 'destinationName', 'variableName', 'value', 'minimum','maximum', 'strMinimum', 'strMaximum', 'valueValid', 'minValid', 'maxValid'] 
+        
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement)
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement( element, flat=False ):
+        myElement = element if flat else element.find(PushVariable.XMLTagName)
+        v = PushVariable()
+        v.__dict__.update( xmlParseAttributes( myElement ) )
+        return v
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)

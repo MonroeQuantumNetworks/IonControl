@@ -23,13 +23,15 @@ from modules.GuiAppearance import saveGuiState, restoreGuiState   #@UnresolvedIm
 from modules.firstNotNone import firstNotNone
 import xml.etree.ElementTree as ElementTree
 from modules import DataDirectory
-from modules.XmlUtilit import prettify
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlEncodeDictionary,\
+    xmlParseAttributes, xmlParseDictionary
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
 
 
 class TodoListEntry(object):
+    XMLTagName = "TodoListItem"
     def __init__(self, scan=None, measurement=None, evaluation=None, analysis=None):
         self.parent = None
         self.children = list()
@@ -70,13 +72,21 @@ class TodoListEntry(object):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
     
     def exportXml(self, element):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('scan', 'measurement', 'scanParameter', 'evaluation', 'analysis', 'enabled') if getattr(self,key) is not None  ) ) 
-        myElement = ElementTree.SubElement(element, "TodoListItem", attrib=mydict )
-        for key, value in self.settings.iteritems():
-            ElementTree.SubElement(myElement, "GlobalSetting", attrib={'name':key, 'value':repr(value)} )
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        xmlEncodeDictionary(self.settings, myElement, "GlobalSetting")
         return myElement
     
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag == TodoListEntry.XMLTagName else element.find(TodoListEntry.XMLTagName )
+        e = TodoListEntry()
+        e.__dict__.update( xmlParseAttributes(myElement) )
+        e.settings = xmlParseDictionary(myElement,"GlobalSetting")
+        return e
+    
 class Settings:
+    XMLTagName = "TodoList"
     def __init__(self):
         self.todoList = list()
         self.currentIndex = 0
@@ -102,13 +112,19 @@ class Settings:
         return hash(tuple(getattr(self,field) for field in self.stateFields))
     
     def exportXml(self, element, attrib=dict()):
-        mydict = dict( ( (key, str(getattr(self,key))) for key in ('currentIndex', 'repeat') if getattr(self,key) is not None  ) ) 
-        mydict.update(attrib)
-        myElement = ElementTree.SubElement(element, "TodoList", attrib=mydict )
+        myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
         for item in self.todoList:
             item.exportXml(myElement)
         return myElement
-        
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag == Settings.XMLTagName else element.find( Settings.XMLTagName)
+        s = Settings()
+        s.__dict__.update( xmlParseAttributes(myElement))
+        s.todoList = [ TodoListEntry.fromXmlElement(e) for e in myElement.findall(TodoListEntry.XMLTagName)]
+        return (myElement.attrib['name'],s)
     
 class MasterSettings:
     def __init__(self):
@@ -226,8 +242,21 @@ class TodoList(Form, Base):
         root = ElementTree.Element('TodoListContainer')
         for name, setting in self.settingsCache.iteritems():
             setting.exportXml(root,{'name':name})
-        with open(DataDirectory.DataDirectory().sequencefile("TodoList.xml")[0],'w') as f:
+        filename = DataDirectory.DataDirectory().sequencefile("TodoList.xml")[0]
+        with open(filename,'w') as f:
             f.write(prettify(root))
+            
+    def onImportXml(self, filename, mode="add"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newSettingsCache = dict( Settings.fromXmlElement(e) for e in root.findall(Settings.XMLTagName) )
+        if mode=="replace":
+            self.settingsCache = newSettingsCache
+        elif mode=="update":
+            self.settingsCache.update( newSettingsCache )
+        elif mode=="addMissing":
+            newSettingsCache.update( self.settingsCache )
+            self.settingsCache = newSettingsCache
        
     def onRevertChanged(self, state):
         self.masterSettings.revertGlobals = state==QtCore.Qt.Checked

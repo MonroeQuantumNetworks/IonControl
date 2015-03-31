@@ -22,10 +22,15 @@ from fit.FitFunctionBase import fitFunctionMap
 from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
 from modules.MagnitudeUtilit import value
 from modules.PyqtUtility import BlockSignals, Override, updateComboBoxItems
+from modules import DataDirectory
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
+import xml.etree.ElementTree as ElementTree
+from fit.FitFunctions import fromXmlElement
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
 class AnalysisDefinitionElement(object):
+    XMLTagName = "AnalysisDefinition"
     def __init__(self):
         self.name = ''
         self.enabled = True
@@ -49,6 +54,23 @@ class AnalysisDefinitionElement(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        for var in self.pushVariables.itervalues():
+            var.exportXml(myElement)
+        self.fitfunction.fitfunction().toXmlElement(myElement)
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag==AnalysisDefinitionElement.XMLTagName else element.find(AnalysisDefinitionElement.XMLTagName)
+        a = AnalysisDefinitionElement()
+        a.__dict__.update( xmlParseAttributes(myElement) )
+        a.pushVariables = [ PushVariable.fromXmlElement(e, flat=True) for e in myElement.findall(PushVariable.XMLTagName)]
+        a.fitfunction = StoredFitFunction.fromFitfunction( fromXmlElement( myElement.find("FitFunction")) )
+        return a
     
     def pushVariableValues(self):
         """get all push variable values that are within the bounds, no re-evaluation"""
@@ -166,7 +188,35 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.addAction( self.autoSaveAction )
         self.autoSave()
         self.currentAnalysisChanged.emit( self.currentAnalysisName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('AnalysisListContainer')
+        for name, setting in self.analysisDefinitionDict.iteritems():
+            myElement = ElementTree.SubElement(root, "AnalysisList", attrib={'name':name} )
+            for item in setting:
+                item.exportXml(myElement)
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("AnalysisList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+            self.onImportXml(filename, mode="")
+        return root
         
+    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newAnalysisDefinitionDict = dict()
+        for listElement in root.findall("AnalysisList"):
+            newAnalysisDefinitionDict[listElement.attrib['name']] = [ AnalysisDefinitionElement.fromXmlElement(e) for e in listElement.findall(AnalysisDefinitionElement.XMLTagName)]
+        if mode=="replace":
+            self.analysisDefinitionDict = newAnalysisDefinitionDict
+        elif mode=="update":
+            self.analysisDefinitionDict.update( newAnalysisDefinitionDict )
+        elif mode=="addMissing":
+            newAnalysisDefinitionDict.update( self.analysisDefinitionDict )
+            self.analysisDefinitionDict = newAnalysisDefinitionDict
+
     def onUseErrorBars(self, state):
         if self.fitfunction is not None:
             self.fitfunction.useErrorBars = state==QtCore.Qt.Checked
