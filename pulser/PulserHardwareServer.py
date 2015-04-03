@@ -34,6 +34,7 @@ class Data:
         self.evaluated = dict()
         self.result = None                              # data received in the result channels dict with channel number as key
         self.externalStatus = None
+        self.creationTime = time_time()
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -42,7 +43,7 @@ class Data:
         return 0
     
     def dataString(self):
-        return json.dumps( [ self.scanvalue, self.count, self.result ] )  
+        return json.dumps( [ self.scanvalue, self.count, self.result, self.creationTime ] )  
 
 class DedicatedData:
     def __init__(self):
