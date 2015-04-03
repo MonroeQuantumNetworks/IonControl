@@ -75,6 +75,68 @@ opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', 
 #from pppCompiler.Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 
+class CodeGenerator(object):
+    def __call__(self):
+        return "# CodeGenerator"
+
+class WhileGenerator(CodeGenerator):
+    def __init__(self, symbols, JMPCMD, block0, block1, block2 ):
+        self.JMPCMD = JMPCMD
+        self.block0 = block0
+        self.block1 = block1
+        self.block2 = block2
+        self.symbols = symbols
+        
+    def __call__(self):
+        labelNumber = self.symbols.getLabelNumber()
+        topLabel = "while_label_{0}".format(labelNumber)
+        endLabel = "end_while_label_{0}".format(labelNumber)
+        code = list(self.block0)
+        code.append("{0}: NOP".format(topLabel))
+        code.extend( self.block1 )
+        code.append("  {1} {0}".format(endLabel, self.JMPCMD))
+        code.extend( self.block2 )
+        code.extend([ "  JMP {0}".format(topLabel) , "{0}: NOP".format(endLabel), "# end while" ])
+        return code
+
+class IfGenerator(CodeGenerator):
+    def __init__(self, symbols, JMPCMD, block0, block1, block2 ):
+        self.JMPCMD = JMPCMD
+        self.block0 = block0
+        self.block1 = block1
+        self.block2 = block2
+        self.symbols = symbols
+        
+    def __call__(self):
+        labelNumber = self.symbols.getLabelNumber()
+        elseLabel = "else_label_{0}".format( labelNumber )
+        endifLabel = "end_if_label_{0}".format( labelNumber )
+        code = list(self.block0)
+        if self.block2 is None:
+            code.append("  {1} {0}".format(endifLabel, self.JMPCMD))
+            code.append( "# IF block")
+            code.extend( self.block1 )
+            code.append( "{0}: NOP".format(endifLabel))
+        else:
+            code.append("  {1} {0}".format(elseLabel, self.JMPCMD))
+            code.append( "# IF block")
+            code.extend( self.block1 )
+            code += ["  JMP {0}".format(endifLabel),
+                     "{0}: NOP".format(elseLabel),
+                     "# ELSE block" ]
+            code.extend( self.block2 )
+            code.append( "{0}: NOP".format(endifLabel) )
+        code.append( "# end if" )
+        return code
+
+def generate(l):
+    for el in l:
+        if isinstance(el, CodeGenerator):
+            for sub in generate( el() ):
+                yield sub
+        else:
+            yield el
+
 def list_rtrim( l, trimvalue=None ):
     """in place list right trim"""
     while len(l)>0 and l[-1]==trimvalue:
@@ -279,31 +341,20 @@ class pppCompiler:
     def if_action(self, text, loc, arg):
         logger.debug( "if_action {0} {1}".format( lineno(loc, text), arg ))
         try:
-            code = ["# line {0} if statement {1}".format(lineno(loc,text), line(loc,text)) ]
+            block0 = ["# line {0} if statement {1}".format(lineno(loc,text), line(loc,text)) ]
             if isinstance(arg.condition.code,list):
-                code += arg.condition.code
+                block0 += arg.condition.code
                 JMPCMD = arg.condition.get( 'jmpcmd', {False: "JMPNCMP"} )[False]
             else:
                 JMPCMD = arg.condition.code[True]            
-            labelNumber = self.symbols.getLabelNumber()
-            elseLabel = "else_label_{0}".format( labelNumber )
-            endifLabel = "end_if_label_{0}".format( labelNumber )
+
             if 'elseblock' in arg:
-                code.append("  {1} {0}".format(elseLabel, JMPCMD))
-                code.append( "# IF block")
-                code += arg.ifblock.ifblock.code
-                code += ["  JMP {0}".format(endifLabel),
-                         "{0}: NOP".format(elseLabel) ]
-                code.append( "# ELSE block")
-                code += arg.elseblock.elseblock['code'] if 'elseblock' in arg.elseblock else arg.elseblock['code']
-                code += ["{0}: NOP".format(endifLabel)]
+                block1 =  arg.ifblock.ifblock.code
+                block2 = arg.elseblock.elseblock['code'] if 'elseblock' in arg.elseblock else arg.elseblock['code']
             else: 
-                code.append("  {1} {0}".format(endifLabel, JMPCMD))
-                code.append( "# IF block")
-                code += arg.ifblock.ifblock['code']
-                code.append( "{0}: NOP".format(endifLabel))
-            code.append( "# end if" )
-            arg['code'] = code
+                block1 = arg.ifblock.ifblock['code']
+                block2 = None
+            arg['code'] = [ IfGenerator( self.symbols, JMPCMD, block0, block1, block2 ) ]
         except Exception as e:
             raise CompileException(text,loc,str(e),self)                        
         return arg
@@ -311,30 +362,25 @@ class pppCompiler:
     def while_action(self, text, loc, arg):
         logger.debug( "while_action {0} {1}".format( lineno(loc, text),  arg ))
         try:
-            labelNumber = self.symbols.getLabelNumber()
-            topLabel = "while_label_{0}".format(labelNumber)
-            endLabel = "end_while_label_{0}".format(labelNumber)
-            code = [ "# line {0} while_statement {1}".format(lineno(loc,text),line(loc,text)),
-                     "{0}: NOP".format(topLabel) ]
+            block0 = [ "# line {0} while_statement {1}".format(lineno(loc,text),line(loc,text))]
             if 'code' in arg.condition:
                 if isinstance(arg.condition.code,list):
-                    code += arg.condition.code
+                    block1 = arg.condition.code
                     JMPCMD = arg.condition.get('jmpcmd', {False: "JMPNCMP"} )[False]
                 else:
-                    JMPCMD = arg.condition.code[True]            
+                    JMPCMD = arg.condition.code[True]  
+                    block1 = []          
             elif 'rExp' in arg.condition and 'code' in arg.condition.rExp:
                 if isinstance(arg.condition.rExp.code,list):
-                    code += arg.condition.rExp.code
+                    block1 = arg.condition.rExp.code
                     JMPCMD = arg.condition.rExp.get('jmpcmd', "JMPNCMP" )
                 else:
-                    JMPCMD = arg.condition.rExp.code[True]            
-            code += [ "  {1} {0}".format(endLabel, JMPCMD)]
-            code += arg.statementBlock.statementBlock['code']
-            code += [ "  JMP {0}".format(topLabel) ]
-            code += [ "{0}: NOP".format(endLabel) ]
-            code.append("# end while")
-            arg['code'] = code
-            logger.debug( "while_action generated code {0}".format(code))
+                    JMPCMD = arg.condition.rExp.code[True]     
+                    block1 = []       
+            block2 = arg.statementBlock.statementBlock['code']
+                        
+            arg['code'] =  [ WhileGenerator(self.symbols, JMPCMD, block0, block1, block2) ]
+            logger.debug( "while_action generated code ")
         except Exception as e:
             raise CompileException(text,loc,str(e),self)                        
         return arg
@@ -418,7 +464,7 @@ class pppCompiler:
                 allcode += element[0]['code']
         header = self.createHeader()        
 
-        codetext = "\n".join(header + allcode)
+        codetext = "\n".join(header + list(generate(allcode)))
         return codetext
     
     def createHeader(self):
@@ -487,7 +533,7 @@ if __name__=="__main__":
     import os.path
     resultMessage = { None: 'no comparison', False: 'failed', True: 'passed' }
     folder = "test"
-    testfiles = [ "Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld" ]
+    testfiles =  [ "Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld" , "ProcedureCalls" ]
     result = list()
     for name in testfiles:    
         result.append( pppcompile( os.path.join(folder,name+".ppp"), os.path.join(folder,name+".ppc"), os.path.join(folder,name+".ppc.reference") ) )

@@ -1,7 +1,7 @@
 # const values
 # variables 
 var NULL 0
-var FFFFFFFF 4294967295
+var FFFFFFFF 18446744073709551615
 var a 1
 var b 2
 # inline variables
