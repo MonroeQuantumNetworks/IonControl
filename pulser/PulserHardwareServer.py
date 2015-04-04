@@ -104,7 +104,8 @@ class PulserHardwareServer(Process, OKBase):
 
         self._shutter = 0
         self._trigger = 0
-        self._adcCounterMask = 0
+        self._counterMask = 0
+        self._adcMask = 0
         self._integrationTime = magnitude.mg(100,'ms')
         
         self.logicAnalyzerEnabled = False
@@ -343,30 +344,28 @@ class PulserHardwareServer(Process, OKBase):
         return self._trigger
             
     def getCounterMask(self):
-        return self._adcCounterMask & 0xff
+        return self._counterMask 
         
     def setCounterMask(self, value):
         if self.xem:
-            self._adcCounterMask = (self._adcCounterMask & 0xf00) | (value & 0xff)
-            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
-            logging.getLogger(__name__).info( "set counterMask {0}".format( hex(self._adcCounterMask) ) )
+            self._counterMask = (value & 0xffff)
+            self.setExtendedWireIn(0x1d, self._counterMask)
+            logging.getLogger(__name__).info( "set counterMask {0}".format( hex(self._counterMask) ) )
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
-        return self._adcCounterMask & 0xff
+        return self._counterMask 
 
     def getAdcMask(self):
-        return (self._adcCounterMask >> 8) & 0xff
+        return self._adcMask 
         
     def setAdcMask(self, value):
         if self.xem:
-            self._adcCounterMask = ((value<<8) & 0xf00) | (self._adcCounterMask & 0xff)
-            check( self.xem.SetWireInValue(0x0a, self._adcCounterMask, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )  
-            logging.getLogger(__name__).info( "set adc mask {0}".format(hex(self._adcCounterMask)) )
+            self._adcMask = value & 0xffff
+            self.setExtendedWireIn(0x1c, self._adcMask)
+            logging.getLogger(__name__).info( "set adc mask {0}".format(hex(self._adcMask)) )
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
-        return (self._adcCounterMask >> 8) & 0xff
+        return self._adcMask
         
     def getIntegrationTime(self):
         return self._integrationTime
@@ -375,9 +374,7 @@ class PulserHardwareServer(Process, OKBase):
         self.integrationTimeBinary = int( (value/self.integrationTimestep).toval() )
         if self.xem:
             logging.getLogger(__name__).info(  "set dedicated integration time {0} {1}".format( value, self.integrationTimeBinary ) )
-            check( self.xem.SetWireInValue(0x0b, self.integrationTimeBinary >> 16, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.SetWireInValue(0x0c, self.integrationTimeBinary, 0xFFFF) , 'SetWireInValue' )	
-            check( self.xem.UpdateWireIns(), 'UpdateWireIns' )            
+            self.setExtendedWireIn(0x1b, self.integrationTimeBinary)
             self._integrationTime = value
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
