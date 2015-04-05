@@ -204,7 +204,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.DACDockWidget = QtGui.QDockWidget("DAC")
         self.DACDockWidget.setObjectName("_DAC_")
         self.DACDockWidget.setWidget( self.DACUi )
-        self.globalVariablesUi.valueChanged.connect( self.DACUi.evaluate )
         self.pulser.ppActiveChanged.connect( self.DACUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DACUi.onWriteAll )
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.DACDockWidget )

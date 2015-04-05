@@ -22,11 +22,15 @@ def extendTo(array, length, defaulttype):
 class DACUi(dacForm, dacBase):
     persistSpace = 'DAC'
     def __init__(self,config,pulser,globalDict,parent=None):
+        self.isSetup = False
         dacBase.__init__(self,parent)
         dacForm.__init__(self)
         self.config = config
         self.dac = DAC(pulser)
-        self.dacChannels = self.config.get('dacUi.dacChannels', [DACChannelSetting() for _ in range(self.dac.numChannels) ] )
+        self.dacChannels = self.config.get('dacUi.dacExpressionChannels', [DACChannelSetting(globalDict=globalDict) for _ in range(self.dac.numChannels) ] )
+        for index, channel in enumerate(self.dacChannels):
+            channel.globalDict = globalDict
+            channel.onChange = partial( self.onChange, index )
         self.autoApply = self.config.get('dacUi.autoApply',False)
         self.decimation = defaultdict( lambda: StaticDecimation(mg(30,'s')) )
         self.persistence = DBPersist()
@@ -52,6 +56,7 @@ class DACUi(dacForm, dacBase):
         self.dacTableModel.voltageChanged.connect( self.onVoltage )
         self.dacTableModel.enableChanged.connect( self.onEnableChanged )
         restoreGuiState( self, self.config.get('dacUi.guiState') )
+        self.isSetup = True
             
     def onEnableChanged(self, channel, value):
         self.dac.setVoltage(channel, self.dacChannels[channel].outputVoltage )
@@ -81,7 +86,7 @@ class DACUi(dacForm, dacBase):
             self.onApply()
         
     def saveConfig(self):
-        self.config['dacUi.dacChannels'] = self.dacChannels
+        self.config['dacUi.dacExpressionChannels'] = self.dacChannels
         self.config['dacUi.autoApply'] = self.autoApply
         self.config['dacUi.guiState'] = saveGuiState( self )
         
@@ -91,13 +96,10 @@ class DACUi(dacForm, dacBase):
     def onReset(self):
         self.dac.reset(0xff)
         
-    def evaluate(self, name):
-        for channel, setting in enumerate(self.dacChannels):
-            if setting.evaluateVoltage( self.globalDict ):
-                self.dac.setVoltage(channel, setting.outputVoltage)
-        if self.autoApply: 
-            self.onApply()
-        self.tableView.viewport().repaint() 
+    def onChange(self, index, event ):
+        if self.isSetup and event.origin!='value':
+            self.dacTableModel.dataChanged.emit( self.dacTableModel.createIndex(index,2), self.dacTableModel.createIndex(index,2))
+        
              
 if __name__ == "__main__":
     import sys

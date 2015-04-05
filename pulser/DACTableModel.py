@@ -22,7 +22,7 @@ class DACTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.DisplayRole, 2): lambda row: str(self.dacChannels[row].voltage),
                              (QtCore.Qt.EditRole, 1): lambda row: self.dacChannels[row].name,
                              (QtCore.Qt.EditRole, 2): lambda row: firstNotNone( self.dacChannels[row].voltageText, str(self.dacChannels[row].voltage)),
-                             (QtCore.Qt.BackgroundColorRole,2): lambda row: self.defaultBG if self.dacChannels[row].voltageText is None else self.textBG,
+                             (QtCore.Qt.BackgroundColorRole,2): lambda row: self.textBG if self.dacChannels[row]._voltage.hasDependency else self.defaultBG,
                               }
         self.setDataLookup =  {  (QtCore.Qt.CheckStateRole,0): self.setEnabled,
                                  (QtCore.Qt.EditRole,1): self.setName,

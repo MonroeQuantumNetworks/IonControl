@@ -13,34 +13,57 @@ from modules.magnitude import mg
 from modules.Expression import Expression
 from pulseProgram.PulseProgram import encode, decode
 from pulser.PulserConfig import DAADInfo
+from gui.ExpressionValue import ExpressionValue
+from modules.SetterProperty import SetterProperty
 
 class DACException(Exception):
     pass
 
 class DACChannelSetting(object):
     expression = Expression()
-    def __init__(self):
-        self.voltage = mg(0,'V')
-        self.voltageText = None
+    def __init__(self, globalDict=None ):
+        self._globalDict = None
+        self._voltage = ExpressionValue(None, self._globalDict)
         self.enabled = False
         self.name = ""
         
     @property
     def outputVoltage(self):
-        return self.voltage if self.enabled else mg(0,'V')
+        return self._voltage.value if self.enabled else mg(0,'V')
 
-    def evaluateVoltage(self, globalDict ):
-        if self.voltageText:
-            oldVoltage = self.voltage
-            self.voltage = self.expression.evaluateAsMagnitude(self.voltageText, globalDict)
-            return self.voltage!=oldVoltage
-        return False
-
+    @property
+    def globalDict(self):
+        return self._globalDict
+    
+    @globalDict.setter
+    def globalDict(self, globalDict):
+        self._globalDict = globalDict
+        self._voltage.globalDict = globalDict
+        
+    @property
+    def voltage(self):
+        return self._voltage.value
+    
+    @voltage.setter
+    def voltage(self, v):
+        self._voltage.value = v
+    
+    @property
+    def voltageText(self):
+        return self._voltage.string
+    
+    @voltageText.setter
+    def voltageText(self, s):
+        self._voltage.string = s
+        
+    @SetterProperty
+    def onChange(self, onChange):
+        self._voltage.observable.subscribe(onChange)
+    
 class DAC:
     def __init__(self,pulser):
         self.pulser = pulser
         self.numChannels = self.pulser.getConfiguration()['DACChannels']
-        self.channelSettings = [ DACChannelSetting() for _ in range(self.numChannels) ]
         config = self.pulser.pulserConfiguration()
         self.dacInfo = config.dac if config else DAADInfo() 
 
