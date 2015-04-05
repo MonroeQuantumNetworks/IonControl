@@ -23,24 +23,6 @@
             <Parameter address="0x2e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 delay Coefficient" encoding="TIME" enabled="True"/>
             <Parameter address="0x2f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
 
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="0" name="DDS0 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="8" name="DDS1 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="16" name="DDS2 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="24" name="DDS3 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="32" name="DDS4 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="40" name="DDS5 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="48" name="DDS6 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="56" name="DDS7 regulator input" encoding="None" enabled="True" />
-
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="0" name="DAC0 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="8" name="DAC1 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="16" name="DAC2 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="24" name="DAC3 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="32" name="DAC4 regulator input" encoding="None" enabled="False" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="40" name="DAC5 regulator input" encoding="None" enabled="False" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="48" name="DAC6 regulator input" encoding="None" enabled="False" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="56" name="DAC7 regulator input" encoding="None" enabled="False" />
-
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="0" name="Output delay channel 0" encoding="TIME" enabled="True"/>
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="8" name="Output delay channel 1" encoding="TIME" enabled="True"/>
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="16" name="Output delay channel 2" encoding="TIME" enabled="True"/>
@@ -122,7 +104,9 @@
 			<StatusBit bitNo="5" active="error" name="PI 2 overflow"/>
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
-		</StatusBits>		
+		</StatusBits>
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
 	</Pulser> 
 	<Pulser configurationId="0x4202">
 		<Description>QGA Pulse Programmer with Sandia breakout v2</Description>
@@ -147,24 +131,6 @@
             <Parameter address="0x2e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 delay Coefficient" encoding="TIME" enabled="True"/>
             <Parameter address="0x2f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
 
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="0" name="DDS0 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="8" name="DDS1 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="16" name="DDS2 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="24" name="DDS3 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="32" name="DDS4 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="40" name="DDS5 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="48" name="DDS6 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="56" name="DDS7 regulator input" encoding="None" enabled="True" />
-
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="0" name="DAC0 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="8" name="DAC1 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="16" name="DAC2 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="24" name="DAC3 regulator input" encoding="None" enabled="True" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="32" name="DAC4 regulator input" encoding="None" enabled="False" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="40" name="DAC5 regulator input" encoding="None" enabled="False" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="48" name="DAC6 regulator input" encoding="None" enabled="False" />
-			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="56" name="DAC7 regulator input" encoding="None" enabled="False" />
-
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="0" name="Output delay channel 0" encoding="TIME" enabled="True"/>
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="8" name="Output delay channel 1" encoding="TIME" enabled="True"/>
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="16" name="Output delay channel 2" encoding="TIME" enabled="True"/>
@@ -247,9 +213,13 @@
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
 		</StatusBits>		
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
 	</Pulser> 
 	<Pulser configurationId="0x4201">
 		<Description>Sandia breakout v1</Description>
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
 	</Pulser> 
 	<Pulser configurationId="0x7701">
 		<Description>Duke breakout</Description>
@@ -394,5 +364,7 @@
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
 		</StatusBits>		
+		<DAC numChannels="8" encoding="DAC8568_VOLTAGE" />	
+		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" />
 	</Pulser> 
 </PulserList>

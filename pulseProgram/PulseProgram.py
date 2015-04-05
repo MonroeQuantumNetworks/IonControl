@@ -184,6 +184,11 @@ def encode( value, encoding ):
             result = int(value)
     return result
 
+def decode( value, encoding ):
+    step, unit, _, _ = encodings[encoding]
+    return magnitude.mg( val*step, unit )
+    
+
 
 def variableValueDict( variabledict ):
     returndict = dict()
