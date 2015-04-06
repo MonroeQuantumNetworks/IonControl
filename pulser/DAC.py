@@ -63,7 +63,7 @@ class DACChannelSetting(object):
 class DAC:
     def __init__(self,pulser):
         self.pulser = pulser
-        self.numChannels = self.pulser.getConfiguration()['DACChannels']
+        self.numChannels = self.pulser.getConfiguration().get('DACChannels',0)
         config = self.pulser.pulserConfiguration()
         self.dacInfo = config.dac if config else DAADInfo() 
 
