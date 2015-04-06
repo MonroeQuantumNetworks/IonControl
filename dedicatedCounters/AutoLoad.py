@@ -69,6 +69,7 @@ class AutoLoadSettings(object):
         self.ovenCoolingTime = mg( 80, 's' )
         self.thresholdRunning = mg(5, 'kHz')
         self.globalsAdjustList = SequenceDict()
+        self.historyLength = mg(7, 'day')
 
     def paramDef(self):
         """

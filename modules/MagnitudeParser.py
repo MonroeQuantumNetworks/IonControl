@@ -8,10 +8,11 @@ Parser for magnitude expressions. Can parse arithmetic expressions with values i
 """
 
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
-    nums,alphas
+    nums,alphas, ParseException
 
 import modules.magnitude as magnitude
 from modules.lru_cache import lru_cache
+import logging
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )
@@ -20,6 +21,7 @@ minus = Literal( "-" )
 none = Literal("None")
 nan = Literal("nan")
 inf = Literal("inf")
+ninf = Literal("-inf")
 dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
                    Optional( e + Word( "+-"+nums, nums ) ) )
 numfnumber = Combine( Optional(plus | minus) + Word( nums ) + 
@@ -28,22 +30,27 @@ numfnumber = Combine( Optional(plus | minus) + Word( nums ) +
 fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 
-valueexpr = ( nan | inf | none | fnumber + Optional(ident)  )
+valueexpr = ( nan | ninf | inf | none | fnumber + Optional(ident)  )
 precisionexpr = (  Word( "+-"+nums, nums ) + Optional(point + Optional(Word( nums, nums ))) )
 
 specialValues = { "None": None,
                   "nan" : float('nan'),
-                  "inf" : float('inf')}
+                  "inf" : float('inf'),
+                  "-inf" : float('-inf')}
 
 @lru_cache(maxsize=100)
 def parse( string ):
-    val = valueexpr.parseString( string )
-    if val[0] in specialValues:
-        return specialValues[val[0]]
-    precres = precisionexpr.parseString( string )
-    prec = len(precres[2]) if len(precres)==3 else 0
-    retval = magnitude.mg(float(val[0]),val[1] if len(val)>1 else None)
-    retval.output_prec( prec )
+    try:
+        val = valueexpr.parseString( string )
+        if val[0] in specialValues:
+            return specialValues[val[0]]
+        precres = precisionexpr.parseString( string )
+        prec = len(precres[2]) if len(precres)==3 else 0
+        retval = magnitude.mg(float(val[0]),val[1] if len(val)>1 else None)
+        retval.output_prec( prec )
+    except ParseException as e:
+        logging.getLogger(__name__).error("Error parsing '{0}' using MagnitudeParser".format(string))
+        raise
     return retval
 
 @lru_cache(maxsize=100)

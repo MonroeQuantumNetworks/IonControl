@@ -15,8 +15,26 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
       <xs:element type="xs:string" name="Description"/>
       <xs:element type="ExtendedWireInsType" name="ExtendedWireIns" minOccurs="0"/>
       <xs:element type="StatusBitsType" name="StatusBits" minOccurs="0"/>
+      <xs:element type="DACType" name="DAC" minOccurs="1"/>
+      <xs:element type="ADCType" name="ADC" minOccurs="1"/>
     </xs:sequence>
     <xs:attribute type="xs:string" name="configurationId" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="DACType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="numChannels" use="optional"/>
+        <xs:attribute type="xs:string" name="encoding" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ADCType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="numChannels" use="optional"/>
+        <xs:attribute type="xs:string" name="encoding" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
   </xs:complexType>
   <xs:complexType name="ParameterType">
     <xs:simpleContent>
@@ -60,11 +78,18 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
 class ExtendedWireParameter(object):
     pass
 
+class DAADInfo(object):
+    def __init__(self, numChannels=0, encoding=None ):
+        self.numChannels = numChannels
+        self.encoding = encoding
+
 class PulserConfig(object):
     def __init__(self):
         self.description = None
         self.extendedWireIns = list()
         self.statusBits = list()
+        self.dac = DAADInfo()
+        self.adc = DAADInfo()
 
 def startPulseProgrammer(parent, elem):
     context = PulserConfig()
@@ -90,12 +115,23 @@ def endStatusbit(parent, elem):
     a = elem.attrib
     parent.append( (a.get('name'), int(a.get('bitNo'),0), a.get('active')))
     
+def endDAC(parent, elem):
+    a = elem.attrib
+    parent.dac = DAADInfo( int(a.get("numChannels","0")), a.get("encoding", "None") )
+    
+def endADC(parent, elem):
+    a = elem.attrib
+    parent.adc = DAADInfo( int(a.get("numChannels","0")), a.get("encoding", "None") )
+    
+    
 starthandler = { 'Pulser': startPulseProgrammer, 
                  'ExtendedWireIns': lambda parent, elem: parent.extendedWireIns,
                  'StatusBits': lambda parent, elem: parent.statusBits }
 endhandler = { 'Parameter': endParameter,
                'Description': endDescription,
-               'StatusBit': endStatusbit }
+               'StatusBit': endStatusbit,
+               'DAC': endDAC,
+               'ADC': endADC }
 
 
 def getPulserConfiguration( filename ):

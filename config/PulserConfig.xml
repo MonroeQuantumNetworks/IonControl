@@ -104,7 +104,9 @@
 			<StatusBit bitNo="5" active="error" name="PI 2 overflow"/>
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
-		</StatusBits>		
+		</StatusBits>
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
 	</Pulser> 
 	<Pulser configurationId="0x4202">
 		<Description>QGA Pulse Programmer with Sandia breakout v2</Description>
@@ -211,9 +213,13 @@
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
 		</StatusBits>		
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
 	</Pulser> 
 	<Pulser configurationId="0x4201">
 		<Description>Sandia breakout v1</Description>
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
 	</Pulser> 
 	<Pulser configurationId="0x7701">
 		<Description>Duke breakout</Description>
@@ -358,5 +364,7 @@
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
 		</StatusBits>		
+		<DAC numChannels="8" encoding="DAC8568_VOLTAGE" />	
+		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" />
 	</Pulser> 
 </PulserList>

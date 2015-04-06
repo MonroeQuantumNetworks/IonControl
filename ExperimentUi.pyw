@@ -14,6 +14,7 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from pulser import DDSUi
+from pulser.DACUi import DACUi
 from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
 from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
@@ -198,6 +199,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
+        self.DACUi = DACUi(self.config, self.pulser, self.globalVariablesUi.variables )
+        self.DACUi.setupUi(self.DACUi)
+        self.DACDockWidget = QtGui.QDockWidget("DAC")
+        self.DACDockWidget.setObjectName("_DAC_")
+        self.DACDockWidget.setWidget( self.DACUi )
+        self.pulser.ppActiveChanged.connect( self.DACUi.setDisabled )
+        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DACUi.onWriteAll )
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.DACDockWidget )
+
 #         self.DDSUi9910 = DDSUi9910.DDSUi(self.config, self.pulser )
 #         self.DDSUi9910.setupUi(self.DDSUi9910)
 #         self.DDS9910DockWidget.setWidget( self.DDSUi9910 )
@@ -216,9 +226,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
+        self.tabifyDockWidget( self.DDSDockWidget, self.DACDockWidget )
 #        self.tabifyDockWidget( self.DDSDockWidget, self.DDS9910DockWidget )
 #        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
-        self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
+        self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
         
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
@@ -448,7 +459,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
+        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, self.DACDockWidget,
                      self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock, self.pulserParameterUiDock,
                      #self.DDS9910DockWidget, 
                      self.loggerDock, self.todoListDock, #self.measurementLogDock 
@@ -524,6 +535,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
+        self.DACUi.saveConfig()
         #self.DDSUi9910.saveConfig()
         self.shutterUi.saveConfig()
         self.triggerUi.saveConfig()
