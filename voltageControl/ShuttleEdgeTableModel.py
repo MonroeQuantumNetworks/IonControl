@@ -4,6 +4,7 @@ Created on Jan 18, 2015
 @author: pmaunz
 '''
 from PyQt4 import QtCore
+from voltageControl.ShuttlingDefinition import ShuttlingGraph
 
 class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
     def __init__(self, config, shuttlingGraph, parent=None, *args): 
@@ -24,12 +25,12 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.EditRole, 4): lambda row: self.shuttlingGraph[row].steps,
                              (QtCore.Qt.EditRole, 5): lambda row: self.shuttlingGraph[row].idleCount,
                               }
-        self.setDataLookup = {(QtCore.Qt.EditRole, 0): self.shuttlingGraph.setStartName,
-                             (QtCore.Qt.EditRole, 1): self.shuttlingGraph.setStartLine,
-                             (QtCore.Qt.EditRole, 2): self.shuttlingGraph.setStopName,
-                             (QtCore.Qt.EditRole, 3): self.shuttlingGraph.setStopLine,
-                             (QtCore.Qt.EditRole, 4): self.shuttlingGraph.setSteps,
-                             (QtCore.Qt.EditRole, 5): self.shuttlingGraph.setIdleCount
+        self.setDataLookup = {(QtCore.Qt.EditRole, 0): ShuttlingGraph.setStartName,
+                             (QtCore.Qt.EditRole, 1): ShuttlingGraph.setStartLine,
+                             (QtCore.Qt.EditRole, 2): ShuttlingGraph.setStopName,
+                             (QtCore.Qt.EditRole, 3): ShuttlingGraph.setStopLine,
+                             (QtCore.Qt.EditRole, 4): ShuttlingGraph.setSteps,
+                             (QtCore.Qt.EditRole, 5): ShuttlingGraph.setIdleCount
                               }
                         
     def setShuttlingGraph(self, shuttlingGraph):
@@ -62,7 +63,7 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role):
         if isinstance( value, QtCore.QVariant ):
             value = value.toPyObject()
-        return self.setDataLookup.get((role,index.column()), lambda row, value: False)(index.row(), value)
+        return self.setDataLookup.get((role,index.column()), lambda g, row, value: False)(self.shuttlingGraph, index.row(), value)
         
     def flags(self, index ):
         return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
