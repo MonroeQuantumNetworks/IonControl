@@ -82,11 +82,24 @@ class DACController( OKBase ):
         data = bytearray()
         for shuttleEdge in shuttleEdges:
             data.extend( self.shuttleLookupCode(shuttleEdge, self.channelCount ) )
+        data = bytearray( struct.pack('=IIII', 0x1111111, 0x2222222, 0x3333333, 0x4444444 ) )
+        data.extend( struct.pack('=IIII', 0x5555555, 0x6666666, 0x7777777, 0x8888888 ) )
+        data.extend( struct.pack('=IIII', 0x9999999, 0xaaaaaaa, 0xbbbbbbb, 0xccccccc ) )
         self.xem.SetWireInValue(0x3, startAddress<<3 )
         self.xem.UpdateWireIns()
         self.xem.ActivateTriggerIn( 0x40, 2)
         written = self.xem.WriteToPipeIn( 0x85, data )
         logging.getLogger(__name__).info("Wrote ShuttleLookup table {0} bytes, {1} entries".format(written,written/16))   
+        self.xem.SetWireInValue(0x3, startAddress<<3 )
+        self.xem.UpdateWireIns()
+        self.xem.ActivateTriggerIn( 0x40, 2)
+        mybuffer = bytearray( len(data) )
+        self.xem.ReadFromPipeOut( 0xa4, mybuffer )
+        if data==mybuffer:
+            logging.getLogger(__name__).info("Writted and read lookup data matches")
+        else:
+            logging.getLogger(__name__).error("Written and read lookup data do NOT match")
+               
     
     def shuttleDirect(self, startLine, beyondEndLine, idleCount=0, immediateTrigger=False ):
         self.xem.WriteToPipeIn( 0x86, bytearray( struct.pack('=IIII', (0x01000000 | self.boolToCode(immediateTrigger)), 
