@@ -96,7 +96,7 @@ class DACController( OKBase ):
         mybuffer = bytearray( len(data) )
         self.xem.ReadFromPipeOut( 0xa4, mybuffer )
         if data==mybuffer:
-            logging.getLogger(__name__).info("Writted and read lookup data matches")
+            logging.getLogger(__name__).info("Written and read lookup data matches")
         else:
             logging.getLogger(__name__).error("Written and read lookup data do NOT match")
                
