@@ -203,11 +203,15 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.onImportXml(filename, mode="")
         return root
         
-    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
         tree = ElementTree.parse(filename)
-        root = tree.getroot()
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
         newAnalysisDefinitionDict = dict()
-        for listElement in root.findall("AnalysisList"):
+        for listElement in element.findall("AnalysisList"):
             newAnalysisDefinitionDict[listElement.attrib['name']] = [ AnalysisDefinitionElement.fromXmlElement(e) for e in listElement.findall(AnalysisDefinitionElement.XMLTagName)]
         if mode=="replace":
             self.analysisDefinitionDict = newAnalysisDefinitionDict

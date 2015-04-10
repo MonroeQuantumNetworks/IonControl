@@ -76,10 +76,25 @@
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menuImport_from_XML">
+     <property name="title">
+      <string>Import from XML</string>
+     </property>
+     <addaction name="actionImport_from_XML_add"/>
+     <addaction name="actionImport_from_XML_replace"/>
+     <addaction name="actionImport_from_XML_update"/>
+    </widget>
+    <widget class="QMenu" name="menu">
+     <property name="title">
+      <string/>
+     </property>
+    </widget>
     <addaction name="actionSettings"/>
     <addaction name="actionExit"/>
     <addaction name="actionClear"/>
     <addaction name="actionSave"/>
+    <addaction name="actionExport_to_XML"/>
+    <addaction name="menuImport_from_XML"/>
     <addaction name="separator"/>
     <addaction name="actionProject"/>
    </widget>
@@ -101,9 +116,20 @@
      <string>Print</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+    <addaction name="actionLogic"/>
+    <addaction name="actionVoltageControl"/>
+    <addaction name="actionDedicatedCounters"/>
+    <addaction name="actionPulses"/>
+    <addaction name="actionMeasurementLog"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuOperation"/>
    <addaction name="menuView"/>
+   <addaction name="menuWindows"/>
    <addaction name="menuPrint"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetConsole">
@@ -370,7 +396,7 @@
      <normaloff>:/openicon/icons/gnome-power-statistics.png</normaloff>:/openicon/icons/gnome-power-statistics.png</iconset>
    </property>
    <property name="text">
-    <string>DedicatedCounters</string>
+    <string>Dedicated Counters</string>
    </property>
    <property name="toolTip">
     <string>Dedicated Counters</string>
@@ -382,7 +408,7 @@
      <normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</iconset>
    </property>
    <property name="text">
-    <string>VoltageControl</string>
+    <string>Voltage Control</string>
    </property>
    <property name="toolTip">
     <string>Voltage Control</string>
@@ -432,7 +458,7 @@
      <normaloff>:/petersIcons/icons/Owwnotebook_icon.png</normaloff>:/petersIcons/icons/Owwnotebook_icon.png</iconset>
    </property>
    <property name="text">
-    <string>MeasurementLog</string>
+    <string>Measurement Log</string>
    </property>
    <property name="toolTip">
     <string>Measurement Log</string>
@@ -448,6 +474,42 @@
    </property>
    <property name="toolTip">
     <string>Export settings to XML (subset)</string>
+   </property>
+  </action>
+  <action name="actionImport_from_XML_add">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ImportXMLFile-48.png</normaloff>:/kde/icons/ImportXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import from XML (Add)</string>
+   </property>
+   <property name="toolTip">
+    <string>Import XML</string>
+   </property>
+  </action>
+  <action name="actionImport_from_XML_replace">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ImportXMLFile-48.png</normaloff>:/kde/icons/ImportXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import from XML (Replace)</string>
+   </property>
+   <property name="toolTip">
+    <string>Import XML</string>
+   </property>
+  </action>
+  <action name="actionImport_from_XML_update">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ImportXMLFile-48.png</normaloff>:/kde/icons/ImportXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import from XML (Update)</string>
+   </property>
+   <property name="toolTip">
+    <string>Import XML</string>
    </property>
   </action>
  </widget>

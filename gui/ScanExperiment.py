@@ -222,6 +222,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.evaluationControlWidget.onExportXml(element)
         self.pulseProgramUi.onExportXml(element)
         
+    def importXml(self, element, mode):
+        self.scanControlWidget.importXml(element, mode=mode)
+        self.analysisControlWidget.importXml(element, mode=mode)
+        self.evaluationControlWidget.importXml(element, mode=mode)
+        self.pulseProgramUi.importXml(element, mode=mode)
+        
     def reAnalyze(self, plottedTrace):
         self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
         
