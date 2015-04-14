@@ -11,6 +11,9 @@ from PyQt4 import QtCore
 import PyQt4.uic
 
 import modules.magnitude as magnitude
+from modules.Expression import Expression
+from gui.ExpressionValue import ExpressionValue
+from modules.magnitude import mg
 
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
@@ -41,11 +44,72 @@ class ShuttlingEdgeUi( ShuttlingEdgeForm, ShuttlingEdgeBase ):
     def onValueChanged(self, attr, value):
         setattr( self.definition, attr, value.toval() if isinstance( value, magnitude.Magnitude) else value )
     
-class Adjust:
-    def __init__(self):
-        self.line = 0.0
-        self.lineGain = 1.0
-        self.globalGain = 1.0
+class Adjust(object):
+    expression = Expression()
+    def __init__(self, globalDict=dict()):
+        self._globalDict = globalDict
+        self._line = ExpressionValue( name="line", globalDict=globalDict, value=mg(0.0) )
+        self._lineGain = ExpressionValue( name="lineGain", globalDict=globalDict, value=mg(1.0) )
+        self._globalGain = ExpressionValue( name="globalGain", globalDict=globalDict, value=mg(1.0) )
+        
+    @property 
+    def globalDict(self):
+        return self._globalDict
+    
+    @globalDict.setter
+    def globalDict(self, globalDict):
+        self._globalDict = globalDict
+        self._line.globalDict = globalDict
+        self._lineGain.globalDict = globalDict
+        self._globalGain.globalDict = globalDict        
+        
+    @property
+    def line(self):
+        return self._line.value
+    
+    @line.setter
+    def line(self, value):
+        self._line.value = value
+    
+    @property
+    def lineGain(self):
+        return self._lineGain.value
+    
+    @lineGain.setter
+    def lineGain(self, value):
+        self._lineGain.value = value
+    
+    @property
+    def globalGain(self):
+        return self._globalGain.value
+    
+    @globalGain.setter
+    def globalGain(self, value):
+        self._globalGain.value = value
+        
+    @property
+    def lineString(self):
+        return self._line.string
+    
+    @lineString.setter
+    def lineString(self, s):
+        self._line.string = s
+    
+    @property
+    def lineGainString(self):
+        return self._lineGain.string
+    
+    @lineGainString.setter
+    def lineGainString(self, s):
+        self._lineGain.string = s
+    
+    @property
+    def globalGainString(self):
+        return self._globalGain.value
+    
+    @globalGainString.setter
+    def globalGainString(self, s):
+        self._globalGain.string = s
         
 class Settings:
     def __init__(self):
@@ -58,24 +122,28 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
     shuttleOutput = QtCore.pyqtSignal(object, object)
     
-    def __init__(self,config,parent=None):
+    def __init__(self, config, globalDict, parent=None):
         VoltageAdjustForm.__init__(self)
         VoltageAdjustBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageAdjust.Settings'
         self.settings = self.config.get(self.configname,Settings())
+        self.settings.adjust.globalDict = globalDict
         self.adjust = self.settings.adjust
         self.shuttlingEdges = list()
         self.shuttlingDefinitions = list()
 
     def setupUi(self, parent):
         VoltageAdjustForm.setupUi(self,parent)
-        self.lineBox.setValue( self.adjust.line )
-        self.lineGainBox.setValue( self.adjust.lineGain )
-        self.globalGainBox.setValue( self.adjust.globalGain )
-        self.lineBox.valueChanged.connect( functools.partial(self.onValueChanged,"line") )
-        self.lineGainBox.valueChanged.connect( functools.partial(self.onValueChanged,"lineGain") )
-        self.globalGainBox.valueChanged.connect( functools.partial(self.onValueChanged,"globalGain") )
+        self.lineBox.globalDict = self.settings.adjust.globalDict
+        self.lineGainBox.globalDict = self.settings.adjust.globalDict
+        self.globalGainBox.globalDict = self.settings.adjust.globalDict
+        self.lineBox.setExpression( self.adjust._line )
+        self.lineGainBox.setExpression( self.adjust._lineGain )
+        self.globalGainBox.setExpression( self.adjust._globalGain )
+        self.lineBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_line") )
+        self.lineGainBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_lineGain") )
+        self.globalGainBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_globalGain") )
         # Shuttling
         self.addEdgeButton.clicked.connect( self.addShuttlingEdge )
         self.removeEdgeButton.clicked.connect( self.removeShuttlingEdge )
@@ -148,10 +216,10 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     def removeShuttlingEdge(self):
         pass        
         
-    def onValueChanged(self, attribute, value):
-        setattr(self.adjust,attribute,value.toval() if isinstance( value, magnitude.Magnitude) else value) 
+    def onExpressionChanged(self, attribute, value):
+        setattr(self.adjust,attribute,value) 
         self.updateOutput.emit(self.adjust)
-    
+        
     def saveConfig(self):
         self.config[self.configname] = self.settings
         

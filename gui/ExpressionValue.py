@@ -14,11 +14,11 @@ class ExpressionValueException(Exception):
 
 class ExpressionValue(object):
     expression = Expression()
-    def __init__(self, name=None, globalDict=None):
+    def __init__(self, name=None, globalDict=None, value=mg(0)):
         self._globalDict = globalDict
         self.name = name
         self._string = None
-        self._value = mg(0)
+        self._value = value
         self.observable = Observable()
         self.registrations = list()        # subscriptions to global variable values
         
@@ -68,7 +68,8 @@ class ExpressionValue(object):
                        
     @property
     def hasDependency(self):
-        return self._string is not None
+        #return self._string is not None
+        return len(self.registrations)>0
     
     @property
     def data(self):
