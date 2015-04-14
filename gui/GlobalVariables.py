@@ -91,10 +91,14 @@ class GlobalVariableUi(Form, Base ):
                 f.write(prettify(root))
         return root
             
-    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
         tree = ElementTree.parse(filename)
-        root = tree.getroot()
-        newGlobalDict = GlobalVariables.fromXmlElement(root) 
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+        newGlobalDict = GlobalVariables.fromXmlElement(element) 
         if mode=="replace":
             self._variables_.clear()
             self._variables_.update( newGlobalDict )

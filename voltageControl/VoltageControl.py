@@ -14,6 +14,7 @@ import VoltageBlender
 from VoltageFiles import VoltageFiles
 from VoltageGlobalAdjust import VoltageGlobalAdjust
 import VoltageTableModel
+from modules import MagnitudeUtilit
 
 
 VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
@@ -39,7 +40,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageFilesUi = VoltageFiles(self.config)
         self.voltageFilesUi.setupUi( self.voltageFilesUi )
         self.voltageFilesDock.setWidget( self.voltageFilesUi )
-        self.adjustUi = VoltageAdjust(self.config, self.voltageBlender)
+        self.adjustUi = VoltageAdjust(self.config, self.voltageBlender, self.globalDict)
         self.adjustUi.updateOutput.connect( self.onUpdate )
         self.adjustUi.setupUi( self.adjustUi )
         self.adjustDock.setWidget( self.adjustUi )
@@ -73,7 +74,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.adjustUi.loadShuttleDef( shuttledefpath )
     
     def onUpdate(self, adjust):
-        self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
+        self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain) )
         self.adjustUi.setLine( adjust.line )
                      
     def onLoadGlobalAdjust(self, path):

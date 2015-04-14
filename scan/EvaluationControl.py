@@ -251,10 +251,14 @@ class EvaluationControl(ControlForm, ControlBase ):
                 f.write(prettify(root))
         return root
         
-    def onImportXml(self, filename, mode="addMissing"):   # modes: replace, update, addMissing
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
         tree = ElementTree.parse(filename)
-        root = tree.getroot()
-        newSettingsDict = dict( Evaluation.fromXmlElement(e) for e in root.findall(Evaluation.XMLTagName) )
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+        newSettingsDict = dict( Evaluation.fromXmlElement(e) for e in element.findall(Evaluation.XMLTagName) )
         if mode=="replace":
             self.settingsDict = newSettingsDict
         elif mode=="update":

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="kde">
+    <file>icons/ImportXMLFile-48.png</file>
     <file>icons/ExportToXMLFile-48.png</file>
     <file>icons/view-filter.png</file>
     <file>icons/print_printer.png</file>

@@ -32,7 +32,7 @@
     </widget>
    </item>
    <item row="0" column="2" colspan="3">
-    <widget class="MagnitudeSpinBox" name="lineBox">
+    <widget class="ExpressionSpinBox" name="lineBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>1</horstretch>
@@ -52,7 +52,7 @@
     </widget>
    </item>
    <item row="2" column="2" colspan="3">
-    <widget class="MagnitudeSpinBox" name="globalGainBox">
+    <widget class="ExpressionSpinBox" name="globalGainBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>1</horstretch>
@@ -106,7 +106,7 @@
     <widget class="QTableView" name="edgeTableView"/>
    </item>
    <item row="1" column="2" colspan="3">
-    <widget class="MagnitudeSpinBox" name="lineGainBox">
+    <widget class="ExpressionSpinBox" name="lineGainBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>1</horstretch>
@@ -174,9 +174,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MagnitudeSpinBox</class>
+   <class>ExpressionSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>uiModules.MagnitudeSpinBox</header>
+   <header>uiModules.ExpressionSpinBox</header>
   </customwidget>
  </customwidgets>
  <tabstops>

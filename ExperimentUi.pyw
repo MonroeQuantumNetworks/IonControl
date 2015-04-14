@@ -282,6 +282,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionPause.triggered.connect(self.onPause)
         self.actionSave.triggered.connect(self.onSave)
         self.actionExport_to_XML.triggered.connect(self.onXmlExport)
+        self.actionImport_from_XML_add.triggered.connect( partial(self.onXmlImport,'addMissing'))
+        self.actionImport_from_XML_replace.triggered.connect(partial(self.onXmlImport,'replace'))
+        self.actionImport_from_XML_update.triggered.connect(partial(self.onXmlImport,'update'))
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
         self.actionAbort.triggered.connect(self.onAbort)
@@ -405,7 +408,16 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         filename = DataDirectory.DataDirectory().sequencefile("IonControlSettings.xml")[0]
         with open(filename,'w') as f:
             f.write(prettify(root))
-        
+            
+    def onXmlImport(self, mode):
+        filename = QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filter="*.xml" )
+        if filename:
+            tree = ElementTree.parse(filename)
+            root = tree.getroot()
+            self.globalVariablesUi.importXml(root, mode=mode)
+            if hasattr(self.currentTab,'importXml'):
+                self.currentTab.importXml(root, mode)   
+         
     def onCommitConfig(self):
         logger = logging.getLogger(__name__)
         self.currentTab.onSave()
