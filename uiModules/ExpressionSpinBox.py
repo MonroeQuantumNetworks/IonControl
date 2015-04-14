@@ -15,11 +15,13 @@ class ExpressionSpinBox(MagnitudeSpinBox):
         self.expressionValue = None
     
     def focusInEvent(self, event):
+        super(ExpressionSpinBox, self).focusInEvent(event)
         if self.expressionValue:
             self.setValue( self.expressionValue.string )
             self.updateStyleSheet()
 
     def focusOutEvent(self, event):
+        super(ExpressionSpinBox, self).focusOutEvent(event)
         if self.expressionValue:
             self.setValue( self.expressionValue.value )
             self.updateStyleSheet()
@@ -42,9 +44,9 @@ class ExpressionSpinBox(MagnitudeSpinBox):
         self.updateStyleSheet()
 
     def stepBy(self, steps ):
-        newvalue = super(ExpressionSpinBox, self).setpBy(steps)
+        newvalue = MagnitudeSpinBox.stepBy(self, steps)
         if newvalue:
-            self.expressionValue.value = newvalue
+            self.expressionValue._value = newvalue
             self.expressionValue.string = None
             self.expressionChanged.emit( self.expressionValue )
             self.updateStyleSheet()
