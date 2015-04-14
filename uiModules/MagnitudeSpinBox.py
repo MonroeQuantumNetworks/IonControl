@@ -130,10 +130,14 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return str(self.lineEdit().text()).strip()
         
     def setText(self,string):
+        cursorpos = self.lineEdit().cursorPosition()
         self.lineEdit().setText( string )
+        self.lineEdit().setCursorPosition(cursorpos)
         
     def setValue(self,value):
+        cursorpos = self.lineEdit().cursorPosition()
         self.lineEdit().setText( str(value) )
+        self.lineEdit().setCursorPosition(cursorpos)
         
     def onEditingFinished(self):
         self.textValueChanged.emit( self.text() )
