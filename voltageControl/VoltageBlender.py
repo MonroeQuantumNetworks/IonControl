@@ -254,5 +254,8 @@ class VoltageBlender(QtCore.QObject):
         self.dacController.writeShuttleLookup(edgeList,address)
     
     def writeData(self):         
-        self.dacController.writeVoltages(1, [self.calculateLine(lineno, self.lineGain, self.globalGain) for lineno in range(len(self.lines))])
+        towrite = [self.calculateLine(lineno, self.lineGain, self.globalGain) for lineno in range(len(self.lines))]
+        self.dacController.writeVoltages(1, towrite )
+        self.dacController.readVoltages(1, towrite )
+        
         

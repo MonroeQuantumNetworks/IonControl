@@ -153,7 +153,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.voltageBlender.writeShuttleLookup(self.shuttlingGraph)
     
     def setupGraphDependent(self):
-        updateComboBoxItems( self.destinationComboBox, self.shuttlingGraph.nodes() )
+        updateComboBoxItems( self.destinationComboBox, sorted(self.shuttlingGraph.nodes()) )
 
     def onCurrentPositionEvent(self, event):
         with BlockSignals(self.lineBox):
@@ -221,4 +221,5 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
                 self.currentPositionLabel.setText( firstNotNone( self.shuttlingGraph.currentPositionName, "" ) )
                 self.shuttlingGraph.currentPositionObservable.subscribe( self.onCurrentPositionEvent )
                 self.shuttlingGraph.graphChangedObservable.subscribe( self.setupGraphDependent )
+                self.setupGraphDependent()
         

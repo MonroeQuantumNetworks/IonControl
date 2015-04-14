@@ -75,7 +75,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     
     def onUpdate(self, adjust):
         self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain) )
-        self.adjustUi.setLine( adjust.line )
+        self.adjustUi.setLine( MagnitudeUtilit.value(adjust.line) )
                      
     def onLoadGlobalAdjust(self, path):
         self.voltageBlender.loadGlobalAdjust(str(path) )

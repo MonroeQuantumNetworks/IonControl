@@ -17,7 +17,7 @@ class DACController( OKBase ):
     channelCount = 112
     @classmethod
     def shuttleLookupCode(cls, edge, channelCount):
-        return struct.pack('=IIII', edge.stopLine*2*channelCount, edge.startLine*2*cls.channelCount,
+        return struct.pack('=IIII', (edge.stopLine+1)*2*channelCount, (edge.startLine)*2*cls.channelCount,
                              edge.idleCount, 0x0)
 
     
@@ -34,7 +34,7 @@ class DACController( OKBase ):
             line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
         startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
         # set the host write address
-        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
+        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x4, startaddress)))  # write start address to extended wire 2
         check( self.xem.ActivateTriggerIn( 0x43, 6), 'HostSetWriteAddress' )
         
         data = bytearray(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
@@ -45,7 +45,7 @@ class DACController( OKBase ):
     def writeVoltages(self, address, lineList ):
         startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
         # set the host write address
-        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
+        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x4, startaddress)))  # write start address to extended wire 2
         check( self.xem.ActivateTriggerIn( 0x43, 6), 'HostSetWriteAddress' )
         
         data = bytearray()
@@ -77,14 +77,32 @@ class DACController( OKBase ):
             else:
                 logging.getLogger(__name__).info("Data written and read matches")
         return result
+
+    def readVoltages(self, address, lineList):
+        startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
+        # set the host write address
+        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
+        check( self.xem.ActivateTriggerIn( 0x43, 7), 'HostSetWriteAddress' )
+        
+        data = bytearray()
+        for line in lineList:
+            if len(line)<self.channelCount:
+                line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
+            data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
+
+        returndata = bytearray(len(data))
+        self.xem.ReadFromPipeOut( 0xa3, returndata )
+        matches = data == returndata
+        if not matches:
+            logging.getLogger(__name__).error("Data written and read does NOT match")
+        else:
+            logging.getLogger(__name__).info("Data written and read matches")
+        return returndata
         
     def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
         data = bytearray()
         for shuttleEdge in shuttleEdges:
             data.extend( self.shuttleLookupCode(shuttleEdge, self.channelCount ) )
-        data = bytearray( struct.pack('=IIII', 0x1111111, 0x2222222, 0x3333333, 0x4444444 ) )
-        data.extend( struct.pack('=IIII', 0x5555555, 0x6666666, 0x7777777, 0x8888888 ) )
-        data.extend( struct.pack('=IIII', 0x9999999, 0xaaaaaaa, 0xbbbbbbb, 0xccccccc ) )
         self.xem.SetWireInValue(0x3, startAddress<<3 )
         self.xem.UpdateWireIns()
         self.xem.ActivateTriggerIn( 0x40, 2)
