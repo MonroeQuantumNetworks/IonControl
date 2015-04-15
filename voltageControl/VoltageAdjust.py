@@ -22,6 +22,7 @@ import os.path
 from modules.Expression import Expression
 from gui.ExpressionValue import ExpressionValue
 from modules.magnitude import mg
+import re
 
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
@@ -98,9 +99,20 @@ class Adjust(object):
 class Settings:
     def __init__(self):
         self.adjust = Adjust()
+        self.shuttlingRoute = ""
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault('shuttlingRoute',"")
         
 class ShuttlingException(Exception):
     pass
+
+def triplet_iterator(iterable):
+    i = 0
+    while i+2<len(iterable):
+        yield iterable[i:i+3]
+        i += 2
     
 class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object)
@@ -142,6 +154,21 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.uploadEdgesButton.clicked.connect( self.onUploadEdgesButton )
         restoreGuiState(self, self.config.get('VoltageAdjust.GuiState'))
         self.destinationComboBox.currentIndexChanged[QtCore.QString].connect( self.onShuttleSequence )
+        self.shuttlingRouteEdit.setText( " ".join(self.settings.shuttlingRoute) )
+        self.shuttlingRouteEdit.editingFinished.connect( self.onSetShuttlingRoute )
+        self.shuttlingRouteButton.clicked.connect( self.onShuttlingRoute )
+        
+    def onSetShuttlingRoute(self):
+        self.settings.shuttlingRoute = re.split(r'\s*(-|,)\s*', str(self.shuttlingRouteEdit.text()) )
+        
+    def onShuttlingRoute(self):
+        if self.settings.shuttlingRoute:
+            path = list()
+            for start, transition, stop in triplet_iterator(self.settings.shuttlingRoute):
+                if transition=="-":
+                    path.extend( self.shuttlingGraph.shuttlePath(start, stop) )
+            if path:
+                self.shuttleOutput.emit( path, False )                               
         
     def onUploadData(self):
         self.voltageBlender.writeData()
