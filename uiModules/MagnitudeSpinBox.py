@@ -95,10 +95,8 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             value, delta, _, newdecimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
             lineEdit.setCursorPosition( pos + newdecimalpos - decimalpos )
             self.valueChanged.emit( newvalue )
-            return newvalue
         except Exception:
             pass # logging.getLogger(__name__).exception(e)
-            return None
             
         
     def interpretText(self):

@@ -13,6 +13,7 @@ class ExpressionSpinBox(MagnitudeSpinBox):
     def __init__(self, parent=None, globalDict=None, valueChangedOnEditingFinished=True, emptyStringValue=0):
         super(ExpressionSpinBox,self).__init__(parent, globalDict, valueChangedOnEditingFinished, emptyStringValue)    
         self.expressionValue = None
+        self.valueChanged.connect( self.onStepBy )
     
     def focusInEvent(self, event):
         super(ExpressionSpinBox, self).focusInEvent(event)
@@ -21,6 +22,8 @@ class ExpressionSpinBox(MagnitudeSpinBox):
             self.updateStyleSheet()
 
     def focusOutEvent(self, event):
+        self.expressionValue.string = self.text()
+        self.expressionValue.value = self.value()
         super(ExpressionSpinBox, self).focusOutEvent(event)
         if self.expressionValue:
             self.setValue( self.expressionValue.value )
@@ -38,13 +41,10 @@ class ExpressionSpinBox(MagnitudeSpinBox):
         self.setStyleSheet("ExpressionSpinBox { background-color: #bfffbf; }") if self.expressionValue.hasDependency and not self.hasFocus() else self.lineEdit().setStyleSheet("")
         
     def onEditingFinished(self):
-        self.expressionValue.string = self.text()
-        self.expressionValue.value = self.value()
         self.expressionChanged.emit( self.expressionValue )
         self.updateStyleSheet()
 
-    def stepBy(self, steps ):
-        newvalue = MagnitudeSpinBox.stepBy(self, steps)
+    def onStepBy(self, newvalue ):
         if newvalue:
             self.expressionValue._value = newvalue
             self.expressionValue.string = None

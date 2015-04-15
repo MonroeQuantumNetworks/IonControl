@@ -8,6 +8,7 @@ Created on Dec 22, 2014
 from modules.Expression import Expression
 from modules.magnitude import mg
 from modules.Observable import Observable
+from modules import WeakMethod
 
 class ExpressionValueException(Exception):
     pass
@@ -57,14 +58,15 @@ class ExpressionValue(object):
         if self._globalDict is None:
             raise ExpressionValueException("Global dictionary is not set in {0}".format(self.name))
         self._string = s
-        for name in self.registrations:
-            self._globalDict.observables[name].unsubscribe(self.recalculate)
+        for name, reference in self.registrations:
+            self._globalDict.observables[name].unsubscribe(reference)
         self.registrations[:] = []
         if self._string:
             self._value, dependencies = self.expression.evaluateAsMagnitude(self._string, self._globalDict, listDependencies=True)
             for dep in dependencies:
-                self._globalDict.observables[dep].subscribe(self.recalculate)
-                self.registrations.append(dep)
+                reference = WeakMethod.ref(self.recalculate)
+                self._globalDict.observables[dep].subscribe(reference)
+                self.registrations.append((dep, reference))
                        
     @property
     def hasDependency(self):
