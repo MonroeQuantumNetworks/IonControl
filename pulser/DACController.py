@@ -131,6 +131,11 @@ class DACController( OKBase ):
         self.xem.WriteToPipeIn( 0x86, bytearray(struct.pack('=IIII', 0x03000000,  0x0, 
                                                   self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex)))
         
+    def shuttlePath(self, path):
+        data = bytearray()
+        for lookupIndex, reverseEdge, immediateTrigger in path:
+            data.extend( struct.pack('=IIII', 0x03000000,  0x0, self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex))
+        self.xem.WriteToPipeIn( 0x86, data)        
     
     def triggerShuttling(self):
         check( self.xem.ActivateTriggerIn( 0x40, 0), 'ActivateTrigger' )

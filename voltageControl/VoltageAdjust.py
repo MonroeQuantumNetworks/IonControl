@@ -159,7 +159,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.shuttlingRouteButton.clicked.connect( self.onShuttlingRoute )
         
     def onSetShuttlingRoute(self):
-        self.settings.shuttlingRoute = re.split(r'\s*(-|,)\s*', str(self.shuttlingRouteEdit.text()) )
+        self.settings.shuttlingRoute = re.split(r'\s*(-|,)\s*', str(self.shuttlingRouteEdit.text()).strip() )
         
     def onShuttlingRoute(self):
         if self.settings.shuttlingRoute:

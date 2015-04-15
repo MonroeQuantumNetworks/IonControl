@@ -110,6 +110,9 @@ class FPGAHardware(object):
     def shuttle(self, lookupIndex, reverseEdge=False, immediateTrigger=False ):
         self.dacController.shuttle( lookupIndex, reverseEdge, immediateTrigger  )  
         
+    def shuttlePath(self, path):
+        self.dacController.shuttlePath(path)
+        
     def close(self):
         pass
     
@@ -223,14 +226,14 @@ class VoltageBlender(QtCore.QObject):
                     logger.debug( "shuttling applied line {0}".format( line ) )
             self.shuttlingOnLine.emit(line)
         else:  # this stuff does not work yet
-            logger.info( "Starting finite shuttling" )
-            globaladjust = [0]*len(self.lines[0])
-            self.adjustLine(globaladjust)
-            for start, _, edge, index in definition:
-                reverseEdge = start!=edge.startName
-                self.hardware.shuttle( index, reverseEdge, immediateTrigger=True)
-                self.shuttleTo = edge.startLine if reverseEdge else edge.stopLine
-            self.shuttlingOnLine.emit(self.shuttleTo)
+            if definition:
+                logger.info( "Starting finite shuttling" )
+                globaladjust = [0]*len(self.lines[0])
+                self.adjustLine(globaladjust)
+                self.hardware.shuttlePath( [(index, start!=edge.startName, True) for start, _, edge, index in definition] )
+                start, _, edge, _ = definition[-1]
+                self.shuttleTo = edge.startLine if start!=edge.startName else edge.stopLine
+                self.shuttlingOnLine.emit(self.shuttleTo)
                         
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
