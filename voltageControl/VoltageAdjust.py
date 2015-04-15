@@ -201,7 +201,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.adjust.line = currentline
 
     def addShuttlingEdge(self):
-        edge = ShuttleEdge()
+        edge = self.shuttlingGraph.getValidEdge()
         self.shuttleEdgeTableModel.add(edge)
 
     def removeShuttlingEdge(self):

@@ -72,5 +72,7 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal): 
                 return self.columnHeaders[section]
+            else:
+                return str(section)
         return None #QtCore.QVariant()
     

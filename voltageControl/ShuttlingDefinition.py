@@ -83,6 +83,20 @@ class ShuttlingGraph(list):
         return (not self.shuttlingGraph.has_edge( edge.startName, edge.stopName)  
                 and edge.startLine not in self.nodeLookup 
                 and edge.stopLine not in self.nodeLookup )
+        
+    def getValidEdge(self):
+        index = 0
+        while self.shuttlingGraph.has_node("Start_{0}".format(index)):
+            index += 1
+        startName = "Start_{0}".format(index)
+        index = 0
+        while self.shuttlingGraph.has_node("Stop_{0}".format(index)):
+            index += 1
+        stopName = "Stop_{0}".format(index)
+        index = 0
+        startLine = max( self.nodeLookup.keys() )+1
+        stopLine = startLine + 1
+        return ShuttleEdge(startName, stopName, startLine, stopLine, 0, 0, 0, 0)
     
     def removeEdge(self, edgeno):
         edge = self.pop(edgeno)
