@@ -118,7 +118,7 @@ class ShuttlingGraph(list):
             index += 1
         stopName = "Stop_{0}".format(index)
         index = 0
-        startLine = max( self.nodeLookup.keys() )+1
+        startLine = (max( self.nodeLookup.keys() )+1) if self.nodeLookup else 1
         stopLine = startLine + 1
         return ShuttleEdge(startName, stopName, startLine, stopLine, 0, 0, 0, 0)
     

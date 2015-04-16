@@ -348,7 +348,6 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
         self.wavemeter = Wavemeter(instrument)
-        self.savedValue = None
         logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
         self.setDefaults()
 
