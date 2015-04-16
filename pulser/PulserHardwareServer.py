@@ -35,6 +35,7 @@ class Data:
         self.result = None                              # data received in the result channels dict with channel number as key
         self.externalStatus = None
         self.creationTime = time_time()
+        self.timeTick = list()
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -43,7 +44,11 @@ class Data:
         return 0
     
     def dataString(self):
-        return json.dumps( [ self.scanvalue, self.count, self.result, self.creationTime ] )  
+        return json.dumps( [ self.scanvalue, self.count, self.result, self.creationTime, self.timeTick, self.externalStatus, self.dependentValues ] )  
+    
+    def __repr__(self):
+        return json.dumps( [ self.count, self.timestamp, self.timestampZero, self.scanvalue, self.final, self.other, self.overrun,
+                             self.exitcode, self.dependentValues, self.result, self.externalStatus, self.creationTime, self.timeTick ] )
 
 class DedicatedData:
     def __init__(self):
@@ -245,7 +250,7 @@ class PulserHardwareServer(Process, OKBase):
                         self.dataQueue.put( self.data )
                         self.data = Data()
                     elif token == 0xfffd000000000000:
-                        self.timestampOffset += 1<<28
+                        self.timestampOffset += 1<<49
                     elif token & 0xffff000000000000 == 0xfffc000000000000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
@@ -275,6 +280,8 @@ class PulserHardwareServer(Process, OKBase):
                         count = (token >> 28) & 0xfff
                         if count>0:
                             self.data.count[channel + 32].append( sumvalue/float(count)  )
+                    elif key==6: # clock timestamp
+                        self.data.timeTick.append( self.timestampOffset + (token & 0xffffffffff) )
                     elif key==0x51:
                         channel = (token >>48) & 0xff 
                         value = token & 0x0000ffffffffffff
