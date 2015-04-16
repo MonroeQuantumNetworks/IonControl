@@ -19,6 +19,7 @@ from modules import MyException
 from modules.SequenceDict import SequenceDict
 from AdjustValue import AdjustValue
 from pulser.DACController import DACControllerException   
+from numpy import linspace
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -256,8 +257,15 @@ class VoltageBlender(QtCore.QObject):
     def writeShuttleLookup(self, edgeList, address=0):
         self.dacController.writeShuttleLookup(edgeList,address)
     
-    def writeData(self):         
-        towrite = [self.calculateLine(lineno, self.lineGain, self.globalGain) for lineno in range(len(self.lines))]
+    def writeData(self, shuttlingGraph):
+        towrite = list()
+        currentline = 1
+        for edge in shuttlingGraph:         
+            steps = abs(edge.stopLine - edge.startLine)*edge.steps + 2
+            towrite.extend( [self.calculateLine(lineno, self.lineGain, self.globalGain) for lineno in linspace(edge.startLine, edge.stopLine, steps)] )
+            edge.interpolStartLine = currentline
+            currentline += steps
+            edge.interpolStopLine = currentline - 1
         self.dacController.writeVoltages(1, towrite )
         self.dacController.readVoltages(1, towrite )
         

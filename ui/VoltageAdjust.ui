@@ -14,10 +14,10 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="6" column="2" colspan="3">
+   <item row="6" column="2" colspan="4">
     <widget class="QComboBox" name="destinationComboBox"/>
    </item>
-   <item row="3" column="4">
+   <item row="3" column="5">
     <widget class="QToolButton" name="removeEdgeButton">
      <property name="text">
       <string>...</string>
@@ -38,14 +38,14 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="2" colspan="3">
+   <item row="5" column="2" colspan="4">
     <widget class="QLabel" name="currentPositionLabel">
      <property name="text">
       <string>Current Position</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="2" colspan="3">
+   <item row="1" column="2" colspan="4">
     <widget class="ExpressionSpinBox" name="lineGainBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -65,7 +65,7 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="5">
+   <item row="4" column="0" colspan="6">
     <widget class="QTableView" name="edgeTableView"/>
    </item>
    <item row="0" column="0">
@@ -85,7 +85,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="2" colspan="3">
+   <item row="0" column="2" colspan="4">
     <widget class="ExpressionSpinBox" name="lineBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -105,7 +105,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="2" colspan="3">
+   <item row="2" column="2" colspan="4">
     <widget class="ExpressionSpinBox" name="globalGainBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -118,7 +118,7 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="5">
+   <item row="8" column="0" colspan="6">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer">
@@ -184,7 +184,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="4">
+   <item row="7" column="5">
     <widget class="QToolButton" name="shuttlingRouteButton">
      <property name="text">
       <string>...</string>
@@ -195,6 +195,13 @@
      </property>
      <property name="autoRaise">
       <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="4">
+    <widget class="QSpinBox" name="repetitionBox">
+     <property name="toolTip">
+      <string>Number of repetitions</string>
      </property>
     </widget>
    </item>

@@ -100,10 +100,12 @@ class Settings:
     def __init__(self):
         self.adjust = Adjust()
         self.shuttlingRoute = ""
+        self.shuttlingRepetitions = 1
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('shuttlingRoute',"")
+        self.__dict__.setdefault('shuttlingRepetitions',1)
         
 class ShuttlingException(Exception):
     pass
@@ -157,6 +159,11 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.shuttlingRouteEdit.setText( " ".join(self.settings.shuttlingRoute) )
         self.shuttlingRouteEdit.editingFinished.connect( self.onSetShuttlingRoute )
         self.shuttlingRouteButton.clicked.connect( self.onShuttlingRoute )
+        self.repetitionBox.setValue(self.setting.shuttlingRepetitions)
+        self.repetitionBox.valueChanged.connect( self.onShuttlingRepetitions )
+        
+    def onShuttlingRepetitions(self, value):
+        self.settings.shuttlingRepetitions = int(value)
         
     def onSetShuttlingRoute(self):
         self.settings.shuttlingRoute = re.split(r'\s*(-|,)\s*', str(self.shuttlingRouteEdit.text()).strip() )
@@ -168,10 +175,10 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
                 if transition=="-":
                     path.extend( self.shuttlingGraph.shuttlePath(start, stop) )
             if path:
-                self.shuttleOutput.emit( path, False )                               
+                self.shuttleOutput.emit( path*self.settings.shuttlingRepetitions, False )                               
         
     def onUploadData(self):
-        self.voltageBlender.writeData()
+        self.voltageBlender.writeData(self.shuttlingGraph)
     
     def onUploadEdgesButton(self):
         self.writeShuttleLookup()

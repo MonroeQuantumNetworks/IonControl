@@ -17,6 +17,8 @@ class ShuttleEdge(object):
     def __init__(self, startName="start", stopName="stop", startLine=0.0, stopLine=1.0, idleCount=0, direction=0, wait=0, soft_trigger=0 ):
         self.startLine = startLine
         self.stopLine = stopLine
+        self.interpolStartLine = startLine
+        self.interpolStopLine = stopLine
         self.idleCount = idleCount
         self.direction = direction
         self.wait = wait
