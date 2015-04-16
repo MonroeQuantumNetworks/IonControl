@@ -10,6 +10,7 @@ from modules.pairs_iter import pairs_iter
 from modules.Observable import Observable
 from modules.firstNotNone import firstNotNone
 import xml.etree.ElementTree as ElementTree
+from modules.magnitude import mg
 
 
 class ShuttleEdge(object):
@@ -39,7 +40,18 @@ class ShuttleEdge(object):
                             wait=int(a.get('wait','0')), soft_trigger=int(a.get('softTrigger','0')) )
         edge.steps = int(a.get('steps','0'))
         return edge
+    
+    @property
+    def timePerSample(self):
+        return mg(2.06,'us') + self.idleCount*mg(0.02,'us')
 
+    @property 
+    def sampleCount(self):
+        return abs(self.stopLine - self.startLine)*max(self.steps,1) + 1
+    
+    @property
+    def totalTime(self):
+        return self.sampleCount*self.timePerSample
 
 
 class ShuttlingGraphException(Exception):

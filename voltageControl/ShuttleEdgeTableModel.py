@@ -11,13 +11,16 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.shuttlingGraph = shuttlingGraph
-        self.columnHeaders = ['From Name','From Line','To Name','To Line','Steps per line', 'Idle count' ]
+        self.columnHeaders = ['From Name','From Line','To Name','To Line','Steps per line', 'Idle count', 'timer per sample', 'total time' ]
         self.dataLookup = {  (QtCore.Qt.DisplayRole, 0): lambda row: self.shuttlingGraph[row].startName,
                              (QtCore.Qt.DisplayRole, 1): lambda row: self.shuttlingGraph[row].startLine,
                              (QtCore.Qt.DisplayRole, 2): lambda row: self.shuttlingGraph[row].stopName,
                              (QtCore.Qt.DisplayRole, 3): lambda row: self.shuttlingGraph[row].stopLine,
                              (QtCore.Qt.DisplayRole, 4): lambda row: self.shuttlingGraph[row].steps,
                              (QtCore.Qt.DisplayRole, 5): lambda row: self.shuttlingGraph[row].idleCount,
+                             (QtCore.Qt.DisplayRole, 6): lambda row: str(self.shuttlingGraph[row].timePerSample),
+                             (QtCore.Qt.ToolTipRole, 6): lambda row: str(1/self.shuttlingGraph[row].timePerSample),
+                             (QtCore.Qt.DisplayRole, 7): lambda row: str(self.shuttlingGraph[row].totalTime),
                              (QtCore.Qt.EditRole, 0): lambda row: self.shuttlingGraph[row].startName,
                              (QtCore.Qt.EditRole, 1): lambda row: self.shuttlingGraph[row].startLine,
                              (QtCore.Qt.EditRole, 2): lambda row: self.shuttlingGraph[row].stopName,
@@ -66,7 +69,7 @@ class ShuttleEdgeTableModel(QtCore.QAbstractTableModel):
         return self.setDataLookup.get((role,index.column()), lambda g, row, value: False)(self.shuttlingGraph, index.row(), value)
         
     def flags(self, index ):
-        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | ( QtCore.Qt.ItemIsEditable if index.column()<6 else 0)
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):

@@ -17,7 +17,7 @@ class DACController( OKBase ):
     channelCount = 112
     @classmethod
     def shuttleLookupCode(cls, edge, channelCount):
-        return struct.pack('=IIII', (edge.interpolStopLine+1)*2*channelCount, (edge.interpolStartLine)*2*cls.channelCount,
+        return struct.pack('=IIII', (edge.interpolStopLine)*2*channelCount, (edge.interpolStartLine)*2*cls.channelCount,
                              edge.idleCount, 0x0)
 
     
