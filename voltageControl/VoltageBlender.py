@@ -15,7 +15,7 @@ import numpy
 from Chassis import DAQmxUtility     
 from Chassis.itfParser import itfParser
 from gui import ProjectSelection
-from modules import MyException
+from modules import MyException, MagnitudeUtilit
 from modules.SequenceDict import SequenceDict
 from AdjustValue import AdjustValue
 from pulser.DACController import DACControllerException   
@@ -260,9 +260,11 @@ class VoltageBlender(QtCore.QObject):
     def writeData(self, shuttlingGraph):
         towrite = list()
         currentline = 1
+        lineGain = MagnitudeUtilit.value(self.lineGain)
+        globalGain = MagnitudeUtilit.value(self.globalGain)
         for edge in shuttlingGraph:         
             steps = abs(edge.stopLine - edge.startLine)*edge.steps + 2
-            towrite.extend( [self.calculateLine(lineno, self.lineGain, self.globalGain) for lineno in linspace(edge.startLine, edge.stopLine, steps)] )
+            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in linspace(edge.startLine, edge.stopLine, steps)] )
             edge.interpolStartLine = currentline
             currentline += steps
             edge.interpolStopLine = currentline - 1

@@ -159,7 +159,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.shuttlingRouteEdit.setText( " ".join(self.settings.shuttlingRoute) )
         self.shuttlingRouteEdit.editingFinished.connect( self.onSetShuttlingRoute )
         self.shuttlingRouteButton.clicked.connect( self.onShuttlingRoute )
-        self.repetitionBox.setValue(self.setting.shuttlingRepetitions)
+        self.repetitionBox.setValue(self.settings.shuttlingRepetitions)
         self.repetitionBox.valueChanged.connect( self.onShuttlingRepetitions )
         
     def onShuttlingRepetitions(self, value):
@@ -169,6 +169,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.settings.shuttlingRoute = re.split(r'\s*(-|,)\s*', str(self.shuttlingRouteEdit.text()).strip() )
         
     def onShuttlingRoute(self):
+        self.synchronize()
         if self.settings.shuttlingRoute:
             path = list()
             for start, transition, stop in triplet_iterator(self.settings.shuttlingRoute):
@@ -196,6 +197,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.currentPositionLabel.setText( firstNotNone(event.text, "") )           
 
     def onShuttleSequence(self, destination, cont=False):
+        self.synchronize()
         destination = str(destination)
         logger = logging.getLogger(__name__)
         logger.info( "ShuttleSequence" )
@@ -257,3 +259,10 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
                 self.shuttlingGraph.graphChangedObservable.subscribe( self.setupGraphDependent )
                 self.setupGraphDependent()
         
+    def synchronize(self):
+        if self.shuttlingGraph.hasChanged:
+            logging.getLogger(__name__).info("Uploading Shuttling data")
+            self.voltageBlender.writeData(self.shuttlingGraph)
+            self.writeShuttleLookup()
+            self.shuttlingGraph.hasChanged = False
+            

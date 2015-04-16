@@ -54,6 +54,7 @@ class ShuttlingGraph(list):
         self.currentPositionObservable = Observable()
         self.graphChangedObservable = Observable()
         self.initGraph()
+        self._hasChanged = True
         
     def initGraph(self):
         self.shuttlingGraph = Graph()
@@ -63,6 +64,14 @@ class ShuttlingGraph(list):
             self.shuttlingGraph.add_edge( edge.startName, edge.stopName, edge=edge, weight=abs(edge.stopLine-edge.startLine) )
             self.nodeLookup[edge.startLine] = edge.startName
             self.nodeLookup[edge.stopLine] = edge.stopName
+        
+    @property 
+    def hasChanged(self):
+        return self._hasChanged
+    
+    @hasChanged.setter
+    def hasChanged(self, value):
+        self._hasChanged = value
             
     def position(self, line):
         return self.nodeLookup.get(line)
@@ -74,6 +83,7 @@ class ShuttlingGraph(list):
             
     def addEdge(self, edge):
         if not self.shuttlingGraph.has_edge( edge.startName, edge.stopName):
+            self._hasChanged = True
             self.append( edge )
             self.shuttlingGraph.add_edge( edge.startName, edge.stopName, edge=edge, weight=abs(edge.stopLine-edge.startLine) )
             self.nodeLookup[edge.startLine] = edge.startName
@@ -101,6 +111,7 @@ class ShuttlingGraph(list):
         return ShuttleEdge(startName, stopName, startLine, stopLine, 0, 0, 0, 0)
     
     def removeEdge(self, edgeno):
+        self._hasChanged = True
         edge = self.pop(edgeno)
         self.shuttlingGraph.remove_edge( edge.startName, edge.stopName )
         if self.shuttlingGraph.degree( edge.startName )==0:
@@ -113,6 +124,7 @@ class ShuttlingGraph(list):
         self.setPosition(self.currentPosition)
     
     def setStartName(self, edgeno, startName):
+        self._hasChanged = True
         startName = str(startName)
         edge = self[edgeno]
         if edge.startName!=startName:
@@ -131,6 +143,7 @@ class ShuttlingGraph(list):
         return True
     
     def setStopName(self, edgeno, stopName):
+        self._hasChanged = True
         stopName = str(stopName)
         edge = self[edgeno]
         if edge.stopName!=stopName:
@@ -149,6 +162,7 @@ class ShuttlingGraph(list):
         return True    
     
     def setStartLine(self, edgeno, startLine):
+        self._hasChanged = True
         edge = self[edgeno]
         if startLine!=edge.startLine and startLine not in self.nodeLookup:
             self.nodeLookup.pop(edge.startLine)
@@ -161,6 +175,7 @@ class ShuttlingGraph(list):
         return False  
     
     def setStopLine(self, edgeno, stopLine):
+        self._hasChanged = True
         edge = self[edgeno]
         if stopLine!=edge.stopLine and stopLine not in self.nodeLookup:
             self.nodeLookup.pop(edge.stopLine)
@@ -173,10 +188,12 @@ class ShuttlingGraph(list):
         return False
     
     def setIdleCount(self, edgeno, idleCount):
+        self._hasChanged = True
         self[edgeno].idleCount = idleCount
         return True      
 
     def setSteps(self, edgeno, steps):
+        self._hasChanged = True
         self[edgeno].steps = steps
         return True      
     

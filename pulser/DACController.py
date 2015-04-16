@@ -43,100 +43,111 @@ class DACController( OKBase ):
         return self.xem.WriteToPipeIn( 0x83, data )
     
     def writeVoltages(self, address, lineList ):
-        startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
-        # set the host write address
-        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x4, startaddress)))  # write start address to extended wire 2
-        check( self.xem.ActivateTriggerIn( 0x43, 6), 'HostSetWriteAddress' )
-        
-        data = bytearray()
-        for line in lineList:
-            if len(line)<self.channelCount:
-                line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
-            data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
-        logging.getLogger(__name__).info("uploading {0} bytes to DAC controller, {1} voltage samples".format(len(data),len(data)/self.channelCount/2))
-        return self.xem.WriteToPipeIn( 0x83, data )
+        if self.xem:
+            startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
+            # set the host write address
+            self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x4, startaddress)))  # write start address to extended wire 2
+            check( self.xem.ActivateTriggerIn( 0x43, 6), 'HostSetWriteAddress' )
+            
+            data = bytearray()
+            for line in lineList:
+                if len(line)<self.channelCount:
+                    line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
+                data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
+            logging.getLogger(__name__).info("uploading {0} bytes to DAC controller, {1} voltage samples".format(len(data),len(data)/self.channelCount/2))
+            return self.xem.WriteToPipeIn( 0x83, data )
+        return 0
     
     def readVoltage(self, address, line=None):
-        if len(line)<self.channelCount:
-            line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
-        startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
-        # set the host write address
-        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
-        check( self.xem.ActivateTriggerIn( 0x43, 7), 'HostSetReadAddress' )
-        
-        data = bytearray(2*self.channelCount)
-        self.xem.ReadFromPipeOut( 0xa3, data )
-        result = numpy.array( data, dtype=numpy.int8 ).view(dtype=numpy.int16)
-        if line is not None:
-            matches = all(result == numpy.array(self.toInteger(line)))
-            if not matches:
-                logging.getLogger(__name__).warning( "{0} {1}".format(len(self.toInteger(line)),list(self.toInteger(line))))
-                logging.getLogger(__name__).warning( "{0} {1}".format(len(result),list(result)))            
-                #raise DACControllerException("Data read from memory does not match data written")
-                logging.getLogger(__name__).info("Data written and read does NOT match")
-            else:
-                logging.getLogger(__name__).info("Data written and read matches")
-        return result
-
-    def readVoltages(self, address, lineList):
-        startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
-        # set the host write address
-        self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
-        check( self.xem.ActivateTriggerIn( 0x43, 7), 'HostSetWriteAddress' )
-        
-        data = bytearray()
-        for line in lineList:
+        if self.xem:
             if len(line)<self.channelCount:
                 line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
-            data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
+            startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
+            # set the host write address
+            self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
+            check( self.xem.ActivateTriggerIn( 0x43, 7), 'HostSetReadAddress' )
+            
+            data = bytearray(2*self.channelCount)
+            self.xem.ReadFromPipeOut( 0xa3, data )
+            result = numpy.array( data, dtype=numpy.int8 ).view(dtype=numpy.int16)
+            if line is not None:
+                matches = all(result == numpy.array(self.toInteger(line)))
+                if not matches:
+                    logging.getLogger(__name__).warning( "{0} {1}".format(len(self.toInteger(line)),list(self.toInteger(line))))
+                    logging.getLogger(__name__).warning( "{0} {1}".format(len(result),list(result)))            
+                    #raise DACControllerException("Data read from memory does not match data written")
+                    logging.getLogger(__name__).info("Data written and read does NOT match")
+                else:
+                    logging.getLogger(__name__).info("Data written and read matches")
+            return result
+        return bytearray()
 
-        returndata = bytearray(len(data))
-        self.xem.ReadFromPipeOut( 0xa3, returndata )
-        matches = data == returndata
-        if not matches:
-            logging.getLogger(__name__).error("Data written and read does NOT match")
-        else:
-            logging.getLogger(__name__).info("Data written and read matches")
-        return returndata
+    def readVoltages(self, address, lineList):
+        if self.xem:
+            startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
+            # set the host write address
+            self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
+            check( self.xem.ActivateTriggerIn( 0x43, 7), 'HostSetWriteAddress' )
+            
+            data = bytearray()
+            for line in lineList:
+                if len(line)<self.channelCount:
+                    line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
+                data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
+    
+            returndata = bytearray(len(data))
+            self.xem.ReadFromPipeOut( 0xa3, returndata )
+            matches = data == returndata
+            if not matches:
+                logging.getLogger(__name__).error("Data written and read does NOT match")
+            else:
+                logging.getLogger(__name__).info("Data written and read matches")
+            return returndata
+        return bytearray()
         
     def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
-        data = bytearray()
-        for shuttleEdge in shuttleEdges:
-            data.extend( self.shuttleLookupCode(shuttleEdge, self.channelCount ) )
-        self.xem.SetWireInValue(0x3, startAddress<<3 )
-        self.xem.UpdateWireIns()
-        self.xem.ActivateTriggerIn( 0x40, 2)
-        written = self.xem.WriteToPipeIn( 0x85, data )
-        logging.getLogger(__name__).info("Wrote ShuttleLookup table {0} bytes, {1} entries".format(written,written/16))   
-        self.xem.SetWireInValue(0x3, startAddress<<3 )
-        self.xem.UpdateWireIns()
-        self.xem.ActivateTriggerIn( 0x40, 2)
-        mybuffer = bytearray( len(data) )
-        self.xem.ReadFromPipeOut( 0xa4, mybuffer )
-        if data==mybuffer:
-            logging.getLogger(__name__).info("Written and read lookup data matches")
-        else:
-            logging.getLogger(__name__).error("Written and read lookup data do NOT match")
+        if self.xem:
+            data = bytearray()
+            for shuttleEdge in shuttleEdges:
+                data.extend( self.shuttleLookupCode(shuttleEdge, self.channelCount ) )
+            self.xem.SetWireInValue(0x3, startAddress<<3 )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x40, 2)
+            written = self.xem.WriteToPipeIn( 0x85, data )
+            logging.getLogger(__name__).info("Wrote ShuttleLookup table {0} bytes, {1} entries".format(written,written/16))   
+            self.xem.SetWireInValue(0x3, startAddress<<3 )
+            self.xem.UpdateWireIns()
+            self.xem.ActivateTriggerIn( 0x40, 2)
+            mybuffer = bytearray( len(data) )
+            self.xem.ReadFromPipeOut( 0xa4, mybuffer )
+            if data==mybuffer:
+                logging.getLogger(__name__).info("Written and read lookup data matches")
+            else:
+                logging.getLogger(__name__).error("Written and read lookup data do NOT match")
                
     
     def shuttleDirect(self, startLine, beyondEndLine, idleCount=0, immediateTrigger=False ):
-        self.xem.WriteToPipeIn( 0x86, bytearray( struct.pack('=IIII', (0x01000000 | self.boolToCode(immediateTrigger)), 
-                                                  idleCount, startLine*2*self.channelCount, beyondEndLine*2*self.channelCount)))
+        if self.xem:
+            self.xem.WriteToPipeIn( 0x86, bytearray( struct.pack('=IIII', (0x01000000 | self.boolToCode(immediateTrigger)), 
+                                                      idleCount, startLine*2*self.channelCount, beyondEndLine*2*self.channelCount)))
         
     @staticmethod
     def boolToCode( b, bit=0 ):
         return 1<<bit if b else 0
         
     def shuttle(self, lookupIndex, reverseEdge=False, immediateTrigger=False):
-        self.xem.WriteToPipeIn( 0x86, bytearray(struct.pack('=IIII', 0x03000000,  0x0, 
+        if self.xem:
+            self.xem.WriteToPipeIn( 0x86, bytearray(struct.pack('=IIII', 0x03000000,  0x0, 
                                                   self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex)))
         
     def shuttlePath(self, path):
-        data = bytearray()
-        for lookupIndex, reverseEdge, immediateTrigger in path:
-            data.extend( struct.pack('=IIII', 0x03000000,  0x0, self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex))
-        self.xem.WriteToPipeIn( 0x86, data)        
+        if self.xem:
+            data = bytearray()
+            for lookupIndex, reverseEdge, immediateTrigger in path:
+                data.extend( struct.pack('=IIII', 0x03000000,  0x0, self.boolToCode(reverseEdge, 1)|self.boolToCode(immediateTrigger), lookupIndex))
+            self.xem.WriteToPipeIn( 0x86, data)        
     
     def triggerShuttling(self):
-        check( self.xem.ActivateTriggerIn( 0x40, 0), 'ActivateTrigger' )
+        if self.xem:
+            check( self.xem.ActivateTriggerIn( 0x40, 0), 'ActivateTrigger' )
 
