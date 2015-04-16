@@ -105,8 +105,8 @@ class ShuttlingGraph(list):
             
     def isValidEdge(self, edge):
         return (not self.shuttlingGraph.has_edge( edge.startName, edge.stopName)  
-                and edge.startLine not in self.nodeLookup 
-                and edge.stopLine not in self.nodeLookup )
+                and (edge.startLine not in self.nodeLookup or self.nodeLookup[edge.startLine]==edge.startName) 
+                and (edge.stopLine not in self.nodeLookup or self.nodeLookup[edge.stopLine]==edge.stopName ) )
         
     def getValidEdge(self):
         index = 0
@@ -131,8 +131,8 @@ class ShuttlingGraph(list):
         if self.shuttlingGraph.degree( edge.stopName )==0:
             self.shuttlingGraph.remove_node(edge.stopName)
         self.graphChangedObservable.firebare()
-        self.nodeLookup.pop(edge.startLine)
-        self.nodeLookup.pop(edge.stopLine)
+        #self.nodeLookup.pop(edge.startLine)
+        #self.nodeLookup.pop(edge.stopLine)
         self.setPosition(self.currentPosition)
     
     def setStartName(self, edgeno, startName):
@@ -176,7 +176,7 @@ class ShuttlingGraph(list):
     def setStartLine(self, edgeno, startLine):
         self._hasChanged = True
         edge = self[edgeno]
-        if startLine!=edge.startLine and startLine not in self.nodeLookup:
+        if startLine!=edge.startLine and (startLine not in self.nodeLookup or self.nodeLookup[startLine]==edge.startName):
             self.nodeLookup.pop(edge.startLine)
             edge.startLine = startLine
             self.shuttlingGraph.edge[edge.startName][edge.stopName]['weight']=abs(edge.stopLine-edge.startLine)
@@ -189,7 +189,7 @@ class ShuttlingGraph(list):
     def setStopLine(self, edgeno, stopLine):
         self._hasChanged = True
         edge = self[edgeno]
-        if stopLine!=edge.stopLine and stopLine not in self.nodeLookup:
+        if stopLine!=edge.stopLine and (stopLine not in self.nodeLookup or self.nodeLookup[stopLine]==edge.stopName):
             self.nodeLookup.pop(edge.stopLine)
             edge.stopLine = stopLine
             self.shuttlingGraph.edge[edge.startName][edge.stopName]['weight']=abs(edge.stopLine-edge.startLine)
