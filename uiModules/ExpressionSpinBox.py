@@ -41,6 +41,11 @@ class ExpressionSpinBox(MagnitudeSpinBox):
         self.setStyleSheet("ExpressionSpinBox { background-color: #bfffbf; }") if self.expressionValue.hasDependency and not self.hasFocus() else self.lineEdit().setStyleSheet("")
         
     def onEditingFinished(self):
+        if self.hasFocus():
+            cursorPosition = self.lineEdit().cursorPosition()
+            self.expressionValue.string = self.text()
+            self.expressionValue.value = self.value()     
+            self.lineEdit().setCursorPosition(cursorPosition)      
         self.expressionChanged.emit( self.expressionValue )
         self.updateStyleSheet()
 
