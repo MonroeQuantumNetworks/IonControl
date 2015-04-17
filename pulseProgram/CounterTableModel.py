@@ -9,7 +9,7 @@ from PyQt4 import QtCore, QtGui
 
 class CounterTableModel(QtCore.QAbstractTableModel):
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, counterdict, size=40, parent=None, *args): 
+    def __init__(self, counterdict, size=49, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
@@ -19,6 +19,8 @@ class CounterTableModel(QtCore.QAbstractTableModel):
         self.channelNames = ['Count {0}'.format(i) for i in range(24)]
         self.channelNames.extend( ['TS {0}'.format(i) for i in range(8)] )
         self.channelNames.extend( ['ADC {0}'.format(i) for i in range(8)] )
+        self.channelNames.extend( ['PI {0}'.format(i) for i in range(8)] )
+        self.channelNames.append( 'time Tick' )
         self.channelNames.append('id')
         
     def setCounterdict(self, counterdict):

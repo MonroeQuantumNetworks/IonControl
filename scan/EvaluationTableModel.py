@@ -7,7 +7,7 @@ from scan.AbszisseType import AbszisseType
 
 class EvaluationTableModel( QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal( object, object )
-    headerDataLookup = ['Type','Id','Channel','Evaluation','Name','Hist', 'Plot', 'Analysis' ]
+    headerDataLookup = ['Type','Id','Channel','Evaluation','Name','Hist', 'Plot', 'Abszisse' ]
     def __init__(self, updateSaveStatus, plotnames=None, evalList=None, parent=None, analysisNames=None):
         super(EvaluationTableModel, self).__init__(parent)
         if evalList:
