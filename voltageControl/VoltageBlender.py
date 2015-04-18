@@ -20,6 +20,7 @@ from modules.SequenceDict import SequenceDict
 from AdjustValue import AdjustValue
 from pulser.DACController import DACControllerException   
 from numpy import linspace
+from uiModules.SoftStart import StartTypes
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -263,10 +264,14 @@ class VoltageBlender(QtCore.QObject):
         lineGain = MagnitudeUtilit.value(self.lineGain)
         globalGain = MagnitudeUtilit.value(self.globalGain)
         for edge in shuttlingGraph:         
-            steps = edge.sampleCount
-            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in linspace(edge.startLine, edge.stopLine, steps)] )
+            # Start
+            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.start() ] )
+            # Constant velocity
+            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in linspace(edge.centralStartLine, edge.centralStopLine, edge.centralSteps ) ] )
+            # Stop
+            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.stop() ] )
             edge.interpolStartLine = currentline
-            currentline += steps
+            currentline += len(towrite)
             edge.interpolStopLine = currentline 
         self.dacController.writeVoltages(1, towrite )
         self.dacController.readVoltages(1, towrite )
