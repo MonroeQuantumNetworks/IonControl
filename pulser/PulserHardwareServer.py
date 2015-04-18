@@ -63,17 +63,17 @@ class Data(object):
 
 class DedicatedData:
     def __init__(self):
-        self.data = [None]*17
+        self.data = [None]*33
         self.externalStatus = None
         
     def count(self):
-        return self.data[0:8]
+        return self.data[0:15]
         
     def analog(self):
-        return self.data[8:16]
+        return self.data[16:32]
         
     def integration(self):
-        return self.data[16]
+        return self.data[33]
 
 class LogicAnalyzerData:
     def __init__(self):
