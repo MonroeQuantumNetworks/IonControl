@@ -40,11 +40,11 @@ class Data(object):
         
     @property
     def creationTime(self):
-        return (self.timeTick[0]*5e-9)+self.timeTickOffset if self.timeTick else self._creationTime
+        return (self.timeTick.values()[0]*5e-9)+self.timeTickOffset if self.timeTick else self._creationTime
     
     @property
     def timeinterval(self):
-        return ( ((self.timeTick[0]*5e-9)+self.timeTickOffset, (self.timeTick[-1]*5e-9)+self.timeTickOffset) if self.timeTick 
+        return ( ((self.timeTick.values()[0]*5e-9)+self.timeTickOffset, (self.timeTick.values()[-1]*5e-9)+self.timeTickOffset) if self.timeTick 
                  else (self._creationTime, self._creationTime) )
         
     def __str__(self):
@@ -54,12 +54,17 @@ class Data(object):
         return 0
     
     def dataString(self):
-        return json.dumps( [ self.scanvalue, self.count, self.result, self._creationTime, self.timeTickOffset, self.externalStatus, 
-                             self.dependentValues ] )  
+        return repr(self)
     
     def __repr__(self):
         return json.dumps( [ self.count, self.timestamp, self.timestampZero, self.scanvalue, self.final, self.other, self.overrun,
                              self.exitcode, self.dependentValues, self.result, self.externalStatus, self._creationTime, self.timeTickOffset ] )
+        
+    @staticmethod
+    def fromJson(string):
+        data = Data()
+        (data.count, data.timestamp, data.timestampZero, data.scanvalue, data.final, data.other, data.overrun,
+         data.exitcode, data.dependentValues, data.result, data.externalStatus, data._creationTime, data.timeTickOffset) = json.loads(string)
 
 class DedicatedData:
     def __init__(self):
