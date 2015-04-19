@@ -4,9 +4,8 @@ Created on Jan 17, 2015
 @author: pmaunz
 '''
 
-import struct 
-from networkx import Graph, shortest_path, simple_cycles, dfs_postorder_nodes, dfs_preorder_nodes
-from modules.pairs_iter import pairs_iter 
+from networkx import Graph, shortest_path
+from modules.pairs_iter import pairs_iter
 from modules.Observable import Observable
 from modules.firstNotNone import firstNotNone
 import xml.etree.ElementTree as ElementTree
@@ -15,7 +14,7 @@ from uiModules.SoftStart import StartTypes
 
 
 class ShuttleEdge(object):
-    stateFields = ['startLine', 'stopLine', 'idleCount', 'direction', 'wait', 'startName', 'stopName', 'steps' ]
+    stateFields = ['startLine', 'stopLine', 'idleCount', 'direction', 'wait', 'startName', 'stopName', 'steps', '_startType', '_stopType', 'startLength', 'stopLength' ]
     def __init__(self, startName="start", stopName="stop", startLine=0.0, stopLine=1.0, idleCount=0, direction=0, wait=0, soft_trigger=0 ):
         self.startLine = startLine
         self.stopLine = stopLine
@@ -302,7 +301,7 @@ class ShuttlingGraph(list):
     def setStartLength(self, edgeno, length):
         edge = self[edgeno]
         if length!=edge.startLength:
-            if edge.startLength+edge.stopLength<edge.sampleCount:
+            if length+edge.stopLength<edge.sampleCount:
                 self._hasChanged = True
                 edge.startLength = int(length)
             else:
@@ -312,7 +311,7 @@ class ShuttlingGraph(list):
     def setStopLength(self, edgeno, length):
         edge = self[edgeno]
         if length!=edge.stopLength:
-            if edge.startLength+edge.stopLength<edge.sampleCount:
+            if edge.startLength+length<edge.sampleCount:
                 self._hasChanged = True
                 edge.stopLength = int(length)
             else:

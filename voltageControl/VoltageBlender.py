@@ -20,7 +20,6 @@ from modules.SequenceDict import SequenceDict
 from AdjustValue import AdjustValue
 from pulser.DACController import DACControllerException   
 from numpy import linspace
-from uiModules.SoftStart import StartTypes
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -267,12 +266,14 @@ class VoltageBlender(QtCore.QObject):
             # Start
             towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.start() ] )
             # Constant velocity
-            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in linspace(edge.centralStartLine, edge.centralStopLine, edge.centralSteps ) ] )
+            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in linspace(edge.centralStartLine, edge.centralStopLine, round(edge.centralSteps) ) ] )
             # Stop
             towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.stop() ] )
             edge.interpolStartLine = currentline
             currentline += len(towrite)
             edge.interpolStopLine = currentline 
+            print edge.start() + list(linspace(edge.centralStartLine, edge.centralStopLine, round(edge.centralSteps) )) + edge.stop()
+            print edge.centralStartLine, edge.centralStopLine, edge.centralSteps
         self.dacController.writeVoltages(1, towrite )
         self.dacController.readVoltages(1, towrite )
         
