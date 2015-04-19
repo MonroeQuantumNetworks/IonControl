@@ -11,6 +11,8 @@ from modules.firstNotNone import firstNotNone
 import xml.etree.ElementTree as ElementTree
 from modules.magnitude import mg
 from uiModules.SoftStart import StartTypes
+from itertools import chain
+from numpy import linspace
 
 
 class ShuttleEdge(object):
@@ -30,8 +32,8 @@ class ShuttleEdge(object):
         self._stopType = ""
         self.startLength = 0
         self.stopLength = 0
-        self.startGenerator = StartTypes[self._startType]() if self._startType else None
-        self.stopGenerator = StartTypes[self._startType]() if self._stopType else None
+        self.startGenerator = StartTypes[self._startType]()
+        self.stopGenerator = StartTypes[self._startType]()
 
     def toXmlElement(self, root):
         mydict = dict( ( (key, str(getattr(self,key))) for key in self.stateFields ))
@@ -49,8 +51,8 @@ class ShuttleEdge(object):
         edge.startLength = int( a.get('startLength', 0) )
         edge.stopLength = int( a.get('stopLength', 0) )
         edge.steps = int(a.get('steps','0'))
-        edge.startGenerator = StartTypes[edge._startType]() if edge._startType else None
-        edge.stopGenerator = StartTypes[edge._startType]() if edge._stopType else None
+        edge.startGenerator = StartTypes[edge._startType]()
+        edge.stopGenerator = StartTypes[edge._startType]()
         return edge
     
     @property
@@ -60,7 +62,7 @@ class ShuttleEdge(object):
     @startType.setter
     def startType(self, val):
         self._startType = val
-        self.startGenerator = StartTypes[self._startType]() if self._startType else None
+        self.startGenerator = StartTypes[self._startType]()
         
     @property
     def stopType(self):
@@ -69,7 +71,7 @@ class ShuttleEdge(object):
     @stopType.setter
     def stopType(self, val):
         self._stopType = val
-        self.stopGenerator = StartTypes[self._stopType]() if self._stopType else None
+        self.stopGenerator = StartTypes[self._stopType]()
             
     @property
     def timePerSample(self):
@@ -107,12 +109,8 @@ class ShuttleEdge(object):
     def effectiveStopLength(self):
         return self.stopGenerator.effectiveLength(self.stopLength) if self.stopGenerator else 0 
     
-    def start(self):
-        return self.startGenerator.start( self ) if self.startGenerator else []
-    
-    def stop(self):
-        return self.stopGenerator.stop( self ) if self.stopGenerator else []
-
+    def iLines(self):
+        return chain( self.startGenerator.start(self), linspace(self.centralStartLine, self.centralStopLine, round(self.centralSteps) ), self.stopGenerator.stop(self) )
 
 class ShuttlingGraphException(Exception):
     pass
