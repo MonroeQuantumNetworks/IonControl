@@ -23,6 +23,7 @@ from modules.Expression import Expression
 from gui.ExpressionValue import ExpressionValue
 from modules.magnitude import mg
 import re
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
@@ -147,7 +148,10 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.addEdgeButton.clicked.connect( self.addShuttlingEdge )
         self.removeEdgeButton.clicked.connect( self.removeShuttlingEdge )
         self.shuttleEdgeTableModel = ShuttleEdgeTableModel(self.config, self.shuttlingGraph)
+        self.delegate = ComboBoxDelegate()
         self.edgeTableView.setModel(self.shuttleEdgeTableModel)
+        self.edgeTableView.setItemDelegateForColumn( 8, self.delegate )
+        self.edgeTableView.setItemDelegateForColumn(10, self.delegate )
         self.currentPositionLabel.setText( firstNotNone( self.shuttlingGraph.currentPositionName, "" ) )
         self.shuttlingGraph.currentPositionObservable.subscribe( self.onCurrentPositionEvent )
         self.shuttlingGraph.graphChangedObservable.subscribe( self.setupGraphDependent )

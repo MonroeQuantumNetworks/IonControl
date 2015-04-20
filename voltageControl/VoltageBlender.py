@@ -263,11 +263,11 @@ class VoltageBlender(QtCore.QObject):
         lineGain = MagnitudeUtilit.value(self.lineGain)
         globalGain = MagnitudeUtilit.value(self.globalGain)
         for edge in shuttlingGraph:         
-            steps = edge.sampleCount
-            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in linspace(edge.startLine, edge.stopLine, steps)] )
+            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.iLines() ] )
             edge.interpolStartLine = currentline
-            currentline += steps
+            currentline += len(towrite)
             edge.interpolStopLine = currentline 
+            print list( edge.iLines() )
         self.dacController.writeVoltages(1, towrite )
         self.dacController.readVoltages(1, towrite )
         

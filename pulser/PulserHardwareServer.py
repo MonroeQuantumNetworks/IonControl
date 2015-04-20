@@ -35,16 +35,16 @@ class Data(object):
         self.result = None                              # data received in the result channels dict with channel number as key
         self.externalStatus = None
         self._creationTime = time_time()
-        self.timeTick = self.count[48]
+        self.timeTick = defaultdict(list)
         self.timeTickOffset = 0.0
         
     @property
     def creationTime(self):
-        return (self.timeTick[0]*5e-9)+self.timeTickOffset if self.timeTick else self._creationTime
+        return (self.timeTick.values()[0]*5e-9)+self.timeTickOffset if self.timeTick else self._creationTime
     
     @property
     def timeinterval(self):
-        return ( ((self.timeTick[0]*5e-9)+self.timeTickOffset, (self.timeTick[-1]*5e-9)+self.timeTickOffset) if self.timeTick 
+        return ( ((self.timeTick.values()[0]*5e-9)+self.timeTickOffset, (self.timeTick.values()[-1]*5e-9)+self.timeTickOffset) if self.timeTick 
                  else (self._creationTime, self._creationTime) )
         
     def __str__(self):
@@ -54,12 +54,17 @@ class Data(object):
         return 0
     
     def dataString(self):
-        return json.dumps( [ self.scanvalue, self.count, self.result, self._creationTime, self.timeTickOffset, self.externalStatus, 
-                             self.dependentValues ] )  
+        return repr(self)
     
     def __repr__(self):
         return json.dumps( [ self.count, self.timestamp, self.timestampZero, self.scanvalue, self.final, self.other, self.overrun,
                              self.exitcode, self.dependentValues, self.result, self.externalStatus, self._creationTime, self.timeTickOffset ] )
+        
+    @staticmethod
+    def fromJson(string):
+        data = Data()
+        (data.count, data.timestamp, data.timestampZero, data.scanvalue, data.final, data.other, data.overrun,
+         data.exitcode, data.dependentValues, data.result, data.externalStatus, data._creationTime, data.timeTickOffset) = json.loads(string)
 
 class DedicatedData:
     def __init__(self):
@@ -173,6 +178,7 @@ class PulserHardwareServer(Process, OKBase):
             0x03ddnnxxxxxxxxxx timestamp gate start channel n id dd
             0x04nnxxxxxxxxxxxx other return
             0x05nnxxxxxxxxxxxx ADC return MSB 16 bits count, LSB 32 bits sum
+            0x06ddxxxxxxxxxxxx
             0xeennxxxxxxxxxxxx dedicated result
             0x50nn00000000xxxx result n return Hi 16 bits, only being sent if xxxx is not identical to zero
             0x51nnxxxxxxxxxxxx result n return Low 48 bits, guaranteed to come first
@@ -271,7 +277,7 @@ class PulserHardwareServer(Process, OKBase):
                         self.dataQueue.put( self.data )
                         self.data = Data()
                     elif token == 0xfffd000000000000:
-                        self.timestampOffset += 1<<49
+                        self.timestampOffset += 1<<40
                     elif token & 0xffff000000000000 == 0xfffc000000000000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
@@ -302,7 +308,7 @@ class PulserHardwareServer(Process, OKBase):
                         if count>0:
                             self.data.count[channel + 32].append( sumvalue/float(count)  )
                     elif key==6: # clock timestamp
-                        self.data.timeTick.append( self.timestampOffset + (token & 0xffffffffff) )
+                        self.data.timeTick[(token>>40) & 0xff].append( self.timestampOffset + (token & 0xffffffffff) )
                     elif key==0x51:
                         channel = (token >>48) & 0xff 
                         value = token & 0x0000ffffffffffff

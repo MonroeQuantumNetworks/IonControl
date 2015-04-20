@@ -39,4 +39,4 @@ chain.png
 *.ppc
 *.c~
 debug.bin
-*_shuttling.xml
+*shuttling.xml

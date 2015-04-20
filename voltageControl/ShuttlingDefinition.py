@@ -4,17 +4,19 @@ Created on Jan 17, 2015
 @author: pmaunz
 '''
 
-import struct 
-from networkx import Graph, shortest_path, simple_cycles, dfs_postorder_nodes, dfs_preorder_nodes
-from modules.pairs_iter import pairs_iter 
+from networkx import Graph, shortest_path
+from modules.pairs_iter import pairs_iter
 from modules.Observable import Observable
 from modules.firstNotNone import firstNotNone
 import xml.etree.ElementTree as ElementTree
 from modules.magnitude import mg
+from uiModules.SoftStart import StartTypes
+from itertools import chain
+from numpy import linspace
 
 
 class ShuttleEdge(object):
-    stateFields = ['startLine', 'stopLine', 'idleCount', 'direction', 'wait', 'startName', 'stopName', 'steps' ]
+    stateFields = ['startLine', 'stopLine', 'idleCount', 'direction', 'wait', 'startName', 'stopName', 'steps', '_startType', '_stopType', 'startLength', 'stopLength' ]
     def __init__(self, startName="start", stopName="stop", startLine=0.0, stopLine=1.0, idleCount=0, direction=0, wait=0, soft_trigger=0 ):
         self.startLine = startLine
         self.stopLine = stopLine
@@ -26,6 +28,12 @@ class ShuttleEdge(object):
         self.startName = startName
         self.stopName = stopName
         self.steps = 0
+        self._startType = ""
+        self._stopType = ""
+        self.startLength = 0
+        self.stopLength = 0
+        self.startGenerator = StartTypes[self._startType]()
+        self.stopGenerator = StartTypes[self._startType]()
 
     def toXmlElement(self, root):
         mydict = dict( ( (key, str(getattr(self,key))) for key in self.stateFields ))
@@ -38,9 +46,33 @@ class ShuttleEdge(object):
         edge = ShuttleEdge( startName=a.get('startName','start'),  stopName=a.get('stopName',"stop"), startLine=float(a.get('startLine','0.0')), 
                             stopLine=float(a.get('stopLine','1.0')), idleCount=float(a.get('idleCount','0.0')), direction=int(a.get('direction','0')), 
                             wait=int(a.get('wait','0')), soft_trigger=int(a.get('softTrigger','0')) )
+        edge._startType = a.get('_startType','')
+        edge._stopType = a.get('_stopType','')
+        edge.startLength = int( a.get('startLength', 0) )
+        edge.stopLength = int( a.get('stopLength', 0) )
         edge.steps = int(a.get('steps','0'))
+        edge.startGenerator = StartTypes[edge._startType]()
+        edge.stopGenerator = StartTypes[edge._startType]()
         return edge
     
+    @property
+    def startType(self):
+        return self._startType
+    
+    @startType.setter
+    def startType(self, val):
+        self._startType = val
+        self.startGenerator = StartTypes[self._startType]()
+        
+    @property
+    def stopType(self):
+        return self._stopType
+    
+    @stopType.setter
+    def stopType(self, val):
+        self._stopType = val
+        self.stopGenerator = StartTypes[self._stopType]()
+            
     @property
     def timePerSample(self):
         return mg(2.06,'us') + self.idleCount*mg(0.02,'us')
@@ -49,10 +81,36 @@ class ShuttleEdge(object):
     def sampleCount(self):
         return abs(self.stopLine - self.startLine)*max(self.steps,1) + 1
     
+    @property 
+    def totalSampleCount(self):
+        return self.centralSteps + self.effectiveStartLength + self.effectiveStopLength
+    
+    @property
+    def centralStartLine(self):
+        return self.startLine + (self.startLength if self._startType else 0) /(self.sampleCount-1)*(self.stopLine - self.startLine) if self.startType else self.startLine
+
+    @property
+    def centralStopLine(self):
+        return self.startLine + (self.sampleCount-1-(self.stopLength if self._stopType else 0))/(self.sampleCount-1)*(self.stopLine - self.startLine) if self.stopType else self.stopLine
+    
+    @property
+    def centralSteps(self):
+        return abs(self.centralStopLine - self.centralStartLine)*max(self.steps,1) + 1
+    
     @property
     def totalTime(self):
-        return self.sampleCount*self.timePerSample
+        return self.totalSampleCount*self.timePerSample
+    
+    @property
+    def effectiveStartLength(self):
+        return self.startGenerator.effectiveLength(self.startLength) if self.startGenerator else 0
 
+    @property
+    def effectiveStopLength(self):
+        return self.stopGenerator.effectiveLength(self.stopLength) if self.stopGenerator else 0 
+    
+    def iLines(self):
+        return chain( self.startGenerator.start(self), linspace(self.centralStartLine, self.centralStopLine, round(self.centralSteps) ), self.stopGenerator.stop(self) )
 
 class ShuttlingGraphException(Exception):
     pass
@@ -227,6 +285,36 @@ class ShuttlingGraph(list):
         for edge in self:
             edge.toXmlElement( myElement )
         return myElement
+    
+    def setStartType(self, edgeno, Type):
+        self._hasChanged = True
+        self[edgeno].startType = str(Type)
+        return True
+    
+    def setStopType(self, edgeno, Type):
+        self._hasChanged = True
+        self[edgeno].stopType = str(Type)
+        return True
+    
+    def setStartLength(self, edgeno, length):
+        edge = self[edgeno]
+        if length!=edge.startLength:
+            if length+edge.stopLength<edge.sampleCount:
+                self._hasChanged = True
+                edge.startLength = int(length)
+            else:
+                return False
+        return True
+    
+    def setStopLength(self, edgeno, length):
+        edge = self[edgeno]
+        if length!=edge.stopLength:
+            if edge.startLength+length<edge.sampleCount:
+                self._hasChanged = True
+                edge.stopLength = int(length)
+            else:
+                return False
+        return True
     
     @staticmethod
     def fromXmlElement( element ):
