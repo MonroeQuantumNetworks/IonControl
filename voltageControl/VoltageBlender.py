@@ -259,13 +259,14 @@ class VoltageBlender(QtCore.QObject):
     
     def writeData(self, shuttlingGraph):
         towrite = list()
-        currentline = 1
+        startline = 1
+        currentline = startline
         lineGain = MagnitudeUtilit.value(self.lineGain)
         globalGain = MagnitudeUtilit.value(self.globalGain)
         for edge in shuttlingGraph:         
             towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.iLines() ] )
             edge.interpolStartLine = currentline
-            currentline += len(towrite)
+            currentline = startline+len(towrite)
             edge.interpolStopLine = currentline 
             print list( edge.iLines() )
         self.dacController.writeVoltages(1, towrite )
