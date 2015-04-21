@@ -4,6 +4,7 @@
 #
 const ResultChannel = 4
 const DDSChannel = 0
+const serialChannel = 119
 
 # excitcodes
 exitcode IonLostExitcode = 0xfffe000000000001
@@ -25,6 +26,7 @@ parameter a
 parameter b
 var result
 parameter gap_time
+parameter serialData
 
 while not pipe_empty():
     apply_next_scan_point()
@@ -35,6 +37,8 @@ while not pipe_empty():
     write_result( ResultChannel, result )
     set_shutter( init_shutter )
     update(delay)
+
+    serial_write( serialChannel, serialData )
 
     if usePulses>0:
         set_shutter( pulse_shutter )
