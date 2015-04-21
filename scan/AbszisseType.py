@@ -6,12 +6,14 @@ Created on Feb 27, 2015
 from enum import Enum
 
 
-columnLookup = { 'time': 'timestamp', 'x': 'x', 'index': 'indexColumn'}
+columnLookup = { 'time': 'timestamp', 'x': 'x', 'index': 'indexColumn', 'first': 'timeTickFirst', 'last': 'timeTickLast' }
 
 class AbszisseType(str, Enum):
     x = 'x'
     time = 'time'
     index = 'index'
+    first = 'first'
+    last = 'last'
         
     @property
     def columnName(self):

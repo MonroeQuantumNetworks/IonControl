@@ -1,6 +1,0 @@
-<?xml version="1.0" ?>
-<VoltageAdjust>
-  <ShuttlingGraph currentPosition="2.0" currentPositionName="a">
-    <ShuttleEdge direction="0" idleCount="10.0" startLine="2.0" startName="a" steps="10" stopLine="5.0" stopName="b" wait="0"/>
-  </ShuttlingGraph>
-</VoltageAdjust>

@@ -403,7 +403,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         elif data.final and data.exitcode not in [0,0xffff]:
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
-            logger.info( "onData {0} {1} {2}".format( self.currentIndex, [len(data.count[i]) for i in range(16)], data.scanvalue ) )
+            logger.info( "onData {0} {1} {2}".format( self.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )
             x = self.generator.xValue(self.currentIndex, data)
             self.scanMethod.onData( data, queuesize, x )
             if self.rawDataFile is not None:
@@ -423,7 +423,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             evaluated.append( algo.evaluate( data, evaluation, expected=expected, globalDict=replacementDict) ) # returns mean, error, raw
         if len(evaluated)>0:
             self.displayUi.add(  [ e[0] for e in evaluated ] )
-            self.updateMainGraph(x, evaluated, queuesize  )
+            self.updateMainGraph(x, evaluated, data.timeinterval, data.timeTickOffset, queuesize  )
             self.showHistogram(data, self.evaluation.evalList, self.evaluation.evalAlgorithmList )
         if data.other:
             logger.info( "Other: {0}".format( data.other ) )
@@ -432,9 +432,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.showTimestamps(data)
         self.scanMethod.prepareNextPoint(data)
         
-    def updateMainGraph(self, x, evaluated, queuesize): # evaluated is list of mean, error, raw
+    def updateMainGraph(self, x, evaluated, timeinterval, timeTickOffset, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
             trace = Trace(record_timestamps=True)
+            trace.recordTimeinterval(timeTickOffset)
             self.plottedTraceList = list()
             for index, result in enumerate(evaluated):
                 if result is not None:  # result is None if there were no counter results
@@ -469,7 +470,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].trace.description["PulseProgram"] = self.pulseProgramUi.description() 
             self.plottedTraceList[0].trace.description["Scan"] = self.scan.description()
             self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
-            self.generator.appendData( self.plottedTraceList, x, evaluated )
+            self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
                 if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
                     self.traceui.addTrace( plottedTrace, pen=-1, parentTrace=self.averagePlottedTraceList[index])
@@ -477,7 +478,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     self.traceui.addTrace( plottedTrace, pen=-1)
             self.traceui.resizeColumnsToContents()
         else:
-            self.generator.appendData(self.plottedTraceList, x, evaluated)
+            self.generator.appendData(self.plottedTraceList, x, evaluated, timeinterval )
             if queuesize<2:
                 for plottedTrace in self.plottedTraceList:
                     plottedTrace.replot()

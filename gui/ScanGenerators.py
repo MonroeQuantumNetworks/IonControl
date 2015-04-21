@@ -76,9 +76,10 @@ class ParameterScanGenerator:
     def xRange(self):
         return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
                                      
-    def appendData(self,traceList,x,evaluated):
+    def appendData(self, traceList, x, evaluated, timeinterval):
         if evaluated and traceList:
             traceList[0].x = numpy.append(traceList[0].x, x)
+            traceList[0].timeintervalAppend(timeinterval)
         for trace, (y, error, raw) in zip(traceList, evaluated):                                  
             trace.y = numpy.append(trace.y, y)
             trace.raw = numpy.append(trace.raw, raw)
@@ -117,10 +118,11 @@ class StepInPlaceGenerator:
     def xRange(self):
         return []
 
-    def appendData(self,traceList,x,evaluated):
+    def appendData(self, traceList, x, evaluated, timeinterval):
         if evaluated and traceList:
             if len(traceList[0].x)<self.scan.steps or self.scan.steps==0:
                 traceList[0].x = numpy.append(traceList[0].x, x)
+                traceList[0].timeintervalAppend(timeinterval)
                 for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                     trace.y = numpy.append(trace.y, y)
                     trace.raw = numpy.append(trace.raw, raw)
@@ -130,6 +132,8 @@ class StepInPlaceGenerator:
             else:
                 steps = int(self.scan.steps)
                 traceList[0].x = numpy.append(traceList[0].x[-steps+1:], x)
+                traceList[0].timeinterval = ( numpy.append( (traceList[0].timeinteval)[0][-steps+1:], timeinterval[0]),
+                                              numpy.append( (traceList[0].timeinteval)[1][-steps+1:], timeinterval[1]) )
                 for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                     trace.y = numpy.append(trace.y[-steps+1:], y)
                     trace.raw = numpy.append(trace.raw[-steps+1:], raw)
@@ -168,9 +172,10 @@ class FreerunningGenerator:
     def xRange(self):
         return []
 
-    def appendData(self,traceList,x,evaluated):
+    def appendData(self, traceList, x, evaluated, timeinterval):
         if evaluated and traceList:
             traceList[0].x = numpy.append(traceList[0].x, x)
+            traceList[0].timeintervalAppend(timeinterval)
             for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                 trace.y = numpy.append(trace.y, y)
                 trace.raw = numpy.append(trace.raw, raw)
@@ -249,9 +254,10 @@ class GateSequenceScanGenerator:
     def xRange(self):
         return [0, len(self.scan.list)]
 
-    def appendData(self,traceList,x,evaluated):
+    def appendData(self, traceList, x, evaluated, timeinterval):
         if evaluated and traceList:
             traceList[0].x = numpy.append(traceList[0].x, x)
+            traceList[0].timeintervalAppend(timeinterval)
         for trace, (y, error, raw) in zip(traceList, evaluated):                                  
             trace.y = numpy.append(trace.y, y)
             trace.raw = numpy.append(trace.raw, raw)

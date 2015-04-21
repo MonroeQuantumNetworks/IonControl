@@ -20,7 +20,7 @@ import json
 class PulserHardwareException(Exception):
     pass
 
-class Data:
+class Data(object):
     def __init__(self):
         self.count = defaultdict(list)       # list of counts in the counter channel
         self.timestamp = None   
@@ -34,8 +34,18 @@ class Data:
         self.evaluated = dict()
         self.result = None                              # data received in the result channels dict with channel number as key
         self.externalStatus = None
-        self.creationTime = time_time()
-        self.timeTick = list()
+        self._creationTime = time_time()
+        self.timeTick = defaultdict(list)
+        self.timeTickOffset = 0.0
+        
+    @property
+    def creationTime(self):
+        return (self.timeTick.values()[0]*5e-9)+self.timeTickOffset if self.timeTick else self._creationTime
+    
+    @property
+    def timeinterval(self):
+        return ( ((self.timeTick.values()[0]*5e-9)+self.timeTickOffset, (self.timeTick.values()[-1]*5e-9)+self.timeTickOffset) if self.timeTick 
+                 else (self._creationTime, self._creationTime) )
         
     def __str__(self):
         return str(len(self.count))+" "+" ".join( [str(self.count[i]) for i in range(16) ])
@@ -44,11 +54,17 @@ class Data:
         return 0
     
     def dataString(self):
-        return json.dumps( [ self.scanvalue, self.count, self.result, self.creationTime, self.timeTick, self.externalStatus, self.dependentValues ] )  
+        return repr(self)
     
     def __repr__(self):
         return json.dumps( [ self.count, self.timestamp, self.timestampZero, self.scanvalue, self.final, self.other, self.overrun,
-                             self.exitcode, self.dependentValues, self.result, self.externalStatus, self.creationTime, self.timeTick ] )
+                             self.exitcode, self.dependentValues, self.result, self.externalStatus, self._creationTime, self.timeTickOffset ] )
+        
+    @staticmethod
+    def fromJson(string):
+        data = Data()
+        (data.count, data.timestamp, data.timestampZero, data.scanvalue, data.final, data.other, data.overrun,
+         data.exitcode, data.dependentValues, data.result, data.externalStatus, data._creationTime, data.timeTickOffset) = json.loads(string)
 
 class DedicatedData:
     def __init__(self):
@@ -122,6 +138,7 @@ class PulserHardwareServer(Process, OKBase):
     def run(self):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
+        self.syncTime()
         while (self.running):
             if self.commandPipe.poll(0.01):
                 try:
@@ -139,6 +156,11 @@ class PulserHardwareServer(Process, OKBase):
         self.loggingQueue.close()
 #         self.loggingQueue.join_thread()
             
+    def syncTime(self):
+        if self.xem:
+            self.xem.ActivateTriggerIn(0x40, 15)
+        self.timeTickOffset = time_time()        
+            
     def finish(self):
         self.running = False
         return True
@@ -155,6 +177,7 @@ class PulserHardwareServer(Process, OKBase):
             0x03ddnnxxxxxxxxxx timestamp gate start channel n id dd
             0x04nnxxxxxxxxxxxx other return
             0x05nnxxxxxxxxxxxx ADC return MSB 16 bits count, LSB 32 bits sum
+            0x06ddxxxxxxxxxxxx
             0xeennxxxxxxxxxxxx dedicated result
             0x50nn00000000xxxx result n return Hi 16 bits, only being sent if xxxx is not identical to zero
             0x51nnxxxxxxxxxxxx result n return Low 48 bits, guaranteed to come first
@@ -224,6 +247,7 @@ class PulserHardwareServer(Process, OKBase):
                     if self.data.scanvalue is None:
                         self.data.scanvalue = token
                     else:
+                        self.data.timeTickOffset = self.timeTickOffset
                         self.dataQueue.put( self.data )
                         self.data = Data()
                         self.data.scanvalue = token
@@ -240,6 +264,7 @@ class PulserHardwareServer(Process, OKBase):
                     if token == 0xffffffffffffffff:    # end of run
                         self.data.final = True
                         self.data.exitcode = 0x0000
+                        self.data.timeTickOffset = self.timeTickOffset
                         self.dataQueue.put( self.data )
                         logger.info( "End of Run marker received" )
                         self.data = Data()
@@ -247,10 +272,11 @@ class PulserHardwareServer(Process, OKBase):
                         self.data.final = True
                         self.data.exitcode = token & 0x0000ffffffffffff
                         logger.info( "Exitcode {0} received".format(self.data.exitcode) )
+                        self.data.timeTickOffset = self.timeTickOffset
                         self.dataQueue.put( self.data )
                         self.data = Data()
                     elif token == 0xfffd000000000000:
-                        self.timestampOffset += 1<<49
+                        self.timestampOffset += 1<<40
                     elif token & 0xffff000000000000 == 0xfffc000000000000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
@@ -281,7 +307,7 @@ class PulserHardwareServer(Process, OKBase):
                         if count>0:
                             self.data.count[channel + 32].append( sumvalue/float(count)  )
                     elif key==6: # clock timestamp
-                        self.data.timeTick.append( self.timestampOffset + (token & 0xffffffffff) )
+                        self.data.timeTick[(token>>40) & 0xff].append( self.timestampOffset + (token & 0xffffffffff) )
                     elif key==0x51:
                         channel = (token >>48) & 0xff 
                         value = token & 0x0000ffffffffffff
@@ -297,6 +323,7 @@ class PulserHardwareServer(Process, OKBase):
                         self.data.other.append(token)
             if self.data.overrun:
                 logger.info( "Overrun detected, triggered data queue" )
+                self.data.timeTickOffset = self.timeTickOffset
                 self.dataQueue.put( self.data )
                 self.data = Data()
                 self.clearOverrun()

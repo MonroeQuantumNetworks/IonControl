@@ -120,6 +120,7 @@ class Evaluation:
         """
         self.__dict__ = state
         self.__dict__.setdefault('evalList',list())
+        self.__dict__.setdefault('histogramBins',50)
 
     def __eq__(self,other):
         try:
@@ -336,7 +337,10 @@ class EvaluationControl(ControlForm, ControlBase ):
                 if currentText is None or currentText=="":
                     savable = False
                 elif self.settingsName and self.settingsName in self.settingsDict:
-                    savable = self.settingsDict[self.settingsName]!=self.settings or currentText!=self.settingsName
+                    try:
+                        savable = self.settingsDict[self.settingsName]!=self.settings or currentText!=self.settingsName
+                    except AttributeError:
+                        savable = True
                 else:
                     savable = True
                 if self.parameters.autoSave and savable:
