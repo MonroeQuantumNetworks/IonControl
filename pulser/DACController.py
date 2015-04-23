@@ -150,4 +150,3 @@ class DACController( OKBase ):
     def triggerShuttling(self):
         if self.xem:
             check( self.xem.ActivateTriggerIn( 0x40, 0), 'ActivateTrigger' )
-
