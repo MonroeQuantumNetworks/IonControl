@@ -201,6 +201,7 @@ class VoltageBlender(QtCore.QObject):
         try:
             self.hardware.applyLine(line)
             self.outputVoltage = line
+            self.lineno = lineno
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         except (HardwareException, DACControllerException) as e:
             logging.getLogger(__name__).exception("Exception")
@@ -212,7 +213,7 @@ class VoltageBlender(QtCore.QObject):
         line = self.blendLines(lineno,lineGain)
         self.lineGain = lineGain
         self.globalGain = globalGain
-        self.lineno = lineno
+        #self.lineno = lineno
         line = self.adjustLine( line )
         line *= self.globalGain
         return line
