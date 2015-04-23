@@ -49,14 +49,37 @@ class DACController( OKBase ):
             self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x4, startaddress)))  # write start address to extended wire 2
             check( self.xem.ActivateTriggerIn( 0x43, 6), 'HostSetWriteAddress' )
             
-            data = bytearray()
-            for line in lineList:
-                if len(line)<self.channelCount:
-                    line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
-                data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
-            logging.getLogger(__name__).info("uploading {0} bytes to DAC controller, {1} voltage samples".format(len(data),len(data)/self.channelCount/2))
-            return self.xem.WriteToPipeIn( 0x83, data )
-        return 0
+            odata = numpy.array( lineList ).reshape( (len(lineList),28,4) ).swapaxes(1,2).flatten()
+            maximum = numpy.amax(odata)
+            minimum = numpy.amin(odata)
+            if maximum>=10.0:
+                raise DACControllerException("voltage {0} out of range V >= 10V".format(maximum))
+            if minimum<-10:
+                raise DACControllerException("voltage {0} out of range V < -10V".format(maximum))
+            odata *= 0x7fff/10.0          
+            outdata = bytearray(odata.astype(numpy.int16).view(dtype=numpy.int8))
+            logging.getLogger(__name__).info("uploading {0} bytes to DAC controller, {1} voltage samples".format(len(outdata),len(outdata)/self.channelCount/2))
+            self.xem.WriteToPipeIn( 0x83, outdata )
+            return outdata
+        return bytearray()
+
+    def verifyVoltages(self, address, data ):
+        if self.xem:
+            startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
+            # set the host write address
+            self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
+            check( self.xem.ActivateTriggerIn( 0x43, 7), 'HostSetWriteAddress' )
+            
+            returndata = bytearray(len(data))
+            self.xem.ReadFromPipeOut( 0xa3, returndata )
+            matches = data == returndata
+            if not matches:
+                logging.getLogger(__name__).error("Data verification failure")
+            else:
+                logging.getLogger(__name__).info("Data verified")
+            return returndata
+        return bytearray()
+
     
     def readVoltage(self, address, line=None):
         if self.xem:
@@ -82,29 +105,6 @@ class DACController( OKBase ):
             return result
         return bytearray()
 
-    def readVoltages(self, address, lineList):
-        if self.xem:
-            startaddress = address * 2 * self.channelCount   # 2 bytes per channel, 96 channels
-            # set the host write address
-            self.xem.WriteToPipeIn( 0x84, bytearray( struct.pack('=HQ', 0x3, startaddress)))  # write start address to extended wire 2
-            check( self.xem.ActivateTriggerIn( 0x43, 7), 'HostSetWriteAddress' )
-            
-            data = bytearray()
-            for line in lineList:
-                if len(line)<self.channelCount:
-                    line = numpy.append( line, [0.0]*(self.channelCount-len(line) ))   # extend the line to the channel count
-                data.extend(numpy.array( self.toInteger(line), dtype=numpy.int16).view(dtype=numpy.int8))
-    
-            returndata = bytearray(len(data))
-            self.xem.ReadFromPipeOut( 0xa3, returndata )
-            matches = data == returndata
-            if not matches:
-                logging.getLogger(__name__).error("Data written and read does NOT match")
-            else:
-                logging.getLogger(__name__).info("Data written and read matches")
-            return returndata
-        return bytearray()
-        
     def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
         if self.xem:
             data = bytearray()

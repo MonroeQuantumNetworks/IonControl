@@ -271,9 +271,8 @@ class VoltageBlender(QtCore.QObject):
             edge.interpolStartLine = currentline
             currentline = startline+len(towrite)
             edge.interpolStopLine = currentline 
-            print list( edge.iLines() )
-        self.dacController.writeVoltages(1, towrite )
-        self.dacController.readVoltages(1, towrite )
+        data = self.dacController.writeVoltages(1, towrite )
+        self.dacController.verifyVoltages(1, data )
         
     def trigger(self):
         self.dacController.triggerShuttling()
