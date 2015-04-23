@@ -122,6 +122,9 @@ class FPGAHardware(object):
         
     def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
         self.dacController.writeShuttleLookup(shuttleEdges, startAddress)
+        
+    def triggerShuttling(self):
+        self.dacController.triggerShuttling()
  
 
 class VoltageBlender(QtCore.QObject):
@@ -269,8 +272,8 @@ class VoltageBlender(QtCore.QObject):
             edge.interpolStartLine = currentline
             currentline = startline+len(towrite)
             edge.interpolStopLine = currentline 
-            print list( edge.iLines() )
-        self.dacController.writeVoltages(1, towrite )
-        self.dacController.readVoltages(1, towrite )
+        data = self.dacController.writeVoltages(1, towrite )
+        self.dacController.verifyVoltages(1, data )
         
-        
+    def trigger(self):
+        self.dacController.triggerShuttling()
