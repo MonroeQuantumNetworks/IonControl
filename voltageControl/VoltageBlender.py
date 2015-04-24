@@ -122,6 +122,9 @@ class FPGAHardware(object):
         
     def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
         self.dacController.writeShuttleLookup(shuttleEdges, startAddress)
+        
+    def triggerShuttling(self):
+        self.dacController.triggerShuttling()
  
 
 class VoltageBlender(QtCore.QObject):
@@ -133,7 +136,12 @@ class VoltageBlender(QtCore.QObject):
         logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
         self.dacController = dacController
-        self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
+        try:
+            self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
+        except HardwareException as e:
+            self.hardware = NoneHardware()
+            logger.error(str(e))
+            logger.error("Loading Voltage driver failed. Running without available voltage output.")
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = SequenceDict()  # names of the lines presented as possible adjusts
@@ -201,6 +209,7 @@ class VoltageBlender(QtCore.QObject):
         try:
             self.hardware.applyLine(line)
             self.outputVoltage = line
+            self.lineno = lineno
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         except (HardwareException, DACControllerException) as e:
             logging.getLogger(__name__).exception("Exception")
@@ -212,7 +221,7 @@ class VoltageBlender(QtCore.QObject):
         line = self.blendLines(lineno,lineGain)
         self.lineGain = lineGain
         self.globalGain = globalGain
-        self.lineno = lineno
+        #self.lineno = lineno
         line = self.adjustLine( line )
         line *= self.globalGain
         return line
@@ -259,16 +268,17 @@ class VoltageBlender(QtCore.QObject):
     
     def writeData(self, shuttlingGraph):
         towrite = list()
-        currentline = 1
+        startline = 1
+        currentline = startline
         lineGain = MagnitudeUtilit.value(self.lineGain)
         globalGain = MagnitudeUtilit.value(self.globalGain)
         for edge in shuttlingGraph:         
             towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.iLines() ] )
             edge.interpolStartLine = currentline
-            currentline += len(towrite)
+            currentline = startline+len(towrite)
             edge.interpolStopLine = currentline 
-            print list( edge.iLines() )
-        self.dacController.writeVoltages(1, towrite )
-        self.dacController.readVoltages(1, towrite )
+        data = self.dacController.writeVoltages(1, towrite )
+        self.dacController.verifyVoltages(1, data )
         
-        
+    def trigger(self):
+        self.dacController.triggerShuttling()

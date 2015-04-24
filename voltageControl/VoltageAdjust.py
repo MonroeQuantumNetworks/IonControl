@@ -144,6 +144,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.lineBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_line") )
         self.lineGainBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_lineGain") )
         self.globalGainBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_globalGain") )
+        self.triggerButton.clicked.connect( self.onTrigger )
         # Shuttling
         self.addEdgeButton.clicked.connect( self.addShuttlingEdge )
         self.removeEdgeButton.clicked.connect( self.removeShuttlingEdge )
@@ -165,6 +166,9 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.shuttlingRouteButton.clicked.connect( self.onShuttlingRoute )
         self.repetitionBox.setValue(self.settings.shuttlingRepetitions)
         self.repetitionBox.valueChanged.connect( self.onShuttlingRepetitions )
+        
+    def onTrigger(self):
+        self.voltageBlender.trigger()
         
     def onShuttlingRepetitions(self, value):
         self.settings.shuttlingRepetitions = int(value)

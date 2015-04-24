@@ -124,6 +124,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="triggerButton">
+       <property name="text">
+        <string>Trigger</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="uploadDataButton">
        <property name="text">
         <string>Upload data</string>

@@ -67,14 +67,14 @@ class FitHistogramEvaluation(EvaluationBase):
     def loadReferenceData(self):
         for name in ['ZeroBright','OneBright', 'TwoBright']:
             filename = path.join(self.settings['Path'],self.settings[name])
-            if filename:
+            if filename and path.exists(filename):
                 t = Trace()
                 t.loadTrace(filename)
                 yColumnName = t.tracePlottingList[0].yColumn
                 setattr(self.fitFunction, name, self.normalizeHistogram( getattr(t, yColumnName )) )
         
     def setDefault(self):
-        self.settings.setdefault('Path',r'C:\Users\Public\Documents\experiments\QGA\2014\2014_10\2014_10_21')
+        self.settings.setdefault('Path',r'')
         self.settings.setdefault('ZeroBright','ZeroIonHistogram')
         self.settings.setdefault('OneBright','OneIonHistogram')
         self.settings.setdefault('TwoBright','TwoIonHistogram')

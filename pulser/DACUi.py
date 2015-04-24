@@ -27,7 +27,9 @@ class DACUi(dacForm, dacBase):
         dacForm.__init__(self)
         self.config = config
         self.dac = DAC(pulser)
-        self.dacChannels = self.config.get('dacUi.dacExpressionChannels', [DACChannelSetting(globalDict=globalDict) for _ in range(self.dac.numChannels) ] )
+        self.dacChannels = self.config.get('dacUi.dacExpressionChannels')
+        if not self.dacChannels or len(self.dacChannels)!=self.dac.numChannels:
+            self.dacChannels = [DACChannelSetting(globalDict=globalDict) for _ in range(self.dac.numChannels) ] 
         for index, channel in enumerate(self.dacChannels):
             channel.globalDict = globalDict
             channel.onChange = partial( self.onChange, index )
@@ -68,8 +70,7 @@ class DACUi(dacForm, dacBase):
         self.autoApply = self.autoApplyBox.isChecked()
 
     def onVoltage(self, channel, value):
-        self.dac.setVoltage(channel, self.dacChannels[channel].outputVoltage )
-        if self.autoApply: self.onApply()
+        self.dac.setVoltage(channel, self.dacChannels[channel].outputVoltage, autoApply=self.autoApply )
         self.decimation[(0,channel)].decimate( time.time(), value, partial(self.persistCallback, "Voltage:{0}".format(self.dacChannels[channel].name if self.dacChannels[channel].name else channel)) )
         
     def persistCallback(self, source, data):
@@ -80,10 +81,10 @@ class DACUi(dacForm, dacBase):
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
     
     def onWriteAll(self):
-        for channel, settings in enumerate( self.dacChannels ):
+        for channel, settings in enumerate( self.dacChannels[0:-1] ):
             self.dac.setVoltage(channel, settings.outputVoltage)
-        if self.autoApply: 
-            self.onApply()
+        channel, settings = len(self.dacChannels)-1, self.dacChannels[-1]
+        self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
         
     def saveConfig(self):
         self.config['dacUi.dacExpressionChannels'] = self.dacChannels
@@ -91,7 +92,7 @@ class DACUi(dacForm, dacBase):
         self.config['dacUi.guiState'] = saveGuiState( self )
         
     def onApply(self):
-        self.dac.update(0xff)
+        self.dac.setVoltage(0, self.dacChannels[0].outputVoltage, autoApply=True, applyAll=True )
         
     def onReset(self):
         self.dac.reset(0xff)
