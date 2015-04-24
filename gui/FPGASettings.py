@@ -91,7 +91,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
                 (self.configSettings.lastInstrument in self.deviceMap) and self.deviceMap[self.configSettings.lastInstrument].serial == self.settings.deviceSerial )            
             
     def initialize(self):
-        if self.resourcesAvailable():
+        if self.configSettings.enabled and self.resourcesAvailable():
             try:
                 if self.configSettings.autoUpload:
                     self.onUploadBitfile()
@@ -100,7 +100,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
                 return True
             except Exception as e:
                 return False
-        return False
+        return not self.configSettings.enabled
     
     def accept(self):
         if self.configSettings.enabled:
@@ -157,6 +157,8 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
             self.pulser.openBySerial( self.settings.deviceSerial )
             self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
+            if hasattr( self.pulser, 'getConfiguration'):
+                logger.info( "{0}".format( self.pulser.getConfiguration() ) )
 
 
 class FPGASettingsDialog(ListForm, ListBase):

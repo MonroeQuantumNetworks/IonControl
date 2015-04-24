@@ -123,8 +123,11 @@ class MeasurementLogUi(Form, Base ):
         # Context Menu for Measurements Table
         self.measurementTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.removeColumnAction = QtGui.QAction( "remove selected column" , self)
+        self.reAnalyzeAction = QtGui.QAction( "re analyze data", self )
         self.removeColumnAction.triggered.connect( self.onRemoveMeasurementColumn  )
+        self.reAnalyzeAction.triggered.connect( self.onReAnalyze )
         self.measurementTableView.addAction( self.removeColumnAction )
+        self.measurementTableView.addAction( self.reAnalyzeAction )
         # Context Menu for Parameters Table
         self.parameterTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.addManualParameterAction = QtGui.QAction( "add manual parameter" , self)
@@ -211,6 +214,10 @@ class MeasurementLogUi(Form, Base ):
         for index in sorted(unique([ i.column() for i in self.measurementTableView.selectedIndexes() if i.column()>=self.measurementModel.coreColumnCount])):
             self.measurementModel.removeColumn(index)
             self.updateComboBoxes()
+            
+    def onReAnalyze(self):
+        for index in sorted(unique([ i.row() for i in self.measurementTableView.selectedIndexes() ])):
+            self.container.measurements[index]
                         
     def onCommentFinished(self, document):
         if self.currentMeasurement is not None:

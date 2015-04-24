@@ -7,17 +7,20 @@ from pyqtgraph.python2_3 import asUnicode
 
 class MagnitudeWidgetParameterItem(WidgetParameterItem):
     def __init__(self, param, depth):
+        self.dimension = param.dimension
         WidgetParameterItem.__init__(self, param, depth)
 
     def makeWidget(self):
         w = MagnitudeSpinBox()
         w.sigChanged = w.valueChanged
+        w.dimension = self.dimension
         return w
 
 class MagnitudeParameter(Parameter):
     itemClass = MagnitudeWidgetParameterItem
     
     def __init__(self, *args, **kargs):
+        self.dimension = kargs.get('dimension')
         Parameter.__init__(self, *args, **kargs)
 
 class PasswordParameterItem(WidgetParameterItem):

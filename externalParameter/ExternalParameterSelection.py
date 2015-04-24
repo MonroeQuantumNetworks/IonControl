@@ -16,6 +16,7 @@ from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
 from modules.PyqtUtility import updateComboBoxItems
 import itertools
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
 SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
 
@@ -49,10 +50,13 @@ class SelectionUi(SelectionForm,SelectionBase):
     def setupUi(self,MainWindow):
         logger = logging.getLogger(__name__)
         SelectionForm.setupUi(self,MainWindow)
-        self.parameterTableModel = ExternalParameterTableModel( self.parameters )
+        self.parameterTableModel = ExternalParameterTableModel( self.parameters, self.classdict )
         self.parameterTableModel.enableChanged.connect( self.onEnableChanged )
         self.tableView.setModel( self.parameterTableModel )
         self.tableView.resizeColumnsToContents()
+        self.comboBoxDelegate = ComboBoxDelegate()
+        self.tableView.setItemDelegateForColumn(3, self.comboBoxDelegate)
+        self.tableView.setItemDelegateForColumn(2, self.comboBoxDelegate)
         self.tableView.horizontalHeader().setStretchLastSection(True)   
         self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown] )
         self.filter.keyPressed.connect( self.onReorder )

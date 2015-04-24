@@ -17,6 +17,20 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
+      <widget class="QToolButton" name="exportXmlButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/kde/icons/ExportToXMLFile-48.png</normaloff>:/kde/icons/ExportToXMLFile-48.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QToolButton" name="toolButtonDelete">
        <property name="text">
         <string>...</string>
@@ -118,6 +132,20 @@
          <width>16</width>
          <height>16</height>
         </size>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="stopImmediatelyButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="Experiment.qrc">
+         <normaloff>:/openicon/icons/road-sign-us-stop.png</normaloff>:/openicon/icons/road-sign-us-stop.png</iconset>
        </property>
        <property name="autoRaise">
         <bool>true</bool>

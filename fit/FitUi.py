@@ -78,6 +78,7 @@ class FitUi(fitForm, QtGui.QWidget):
             self.setFitfunction( fitfunction )
             self.fitSelectionComboBox.setCurrentIndex( self.fitSelectionComboBox.findText(self.fitfunction.name) )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStartValues )
+        self.useErrorBarsCheckBox.stateChanged.connect( self.onUseErrorBars )
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.autoSaveAction = QtGui.QAction( "auto save" , self)
@@ -107,6 +108,10 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction.useSmartStartValues = state==QtCore.Qt.Checked
         self.autoSave()
 
+    def onUseErrorBars(self, state):
+        self.fitfunction.useErrorBars = state==QtCore.Qt.Checked
+        self.autoSave()
+
     def onFitfunctionChanged(self, name):
         name = str(name)
         if self.fitfunction:
@@ -126,11 +131,12 @@ class FitUi(fitForm, QtGui.QWidget):
         self.fitfunction.useSmartStartValues = self.fitfunction.useSmartStartValues and self.fitfunction.hasSmartStart
         self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
         self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
+        self.useErrorBarsCheckBox.setChecked( self.fitfunction.useErrorBars )
         self.evaluate()
         
     def onGetSmartStart(self):
         for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
-            smartParameters = self.fitfunction.smartStartValues(plot.x,plot.y,self.fitfunction.parameters,self.fitfunction.parameterEnabled)
+            smartParameters = self.fitfunction.enabledSmartStartValues(plot.x,plot.y,self.fitfunction.parameters)
             self.fitfunction.startParameters = list(smartParameters)
             self.fitfunctionTableModel.startDataChanged()     
         

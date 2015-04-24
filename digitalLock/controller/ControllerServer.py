@@ -115,7 +115,7 @@ class AlignmentException( Exception):
         self.length = length
 
 class DigitalLockControllerServer(Process):
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
     def __init__(self, dataQueue, commandPipe, loggingQueue):
         super(DigitalLockControllerServer,self).__init__()
         self.dataQueue = dataQueue

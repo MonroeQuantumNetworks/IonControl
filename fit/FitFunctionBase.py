@@ -78,6 +78,7 @@ class FitFunctionBase(object):
         self.parametersUpdated = Observable()
         self.parameterBounds = [[None,None] for _ in range(numParameters) ]
         self.parameterBoundsExpressions = None
+        self.useErrorBars = True
         
     def __setstate__(self, state):
         state.pop( 'parameterNames', None )
@@ -86,6 +87,7 @@ class FitFunctionBase(object):
         self.__dict__.setdefault( 'startParameterExpressions', None )
         self.__dict__.setdefault( 'parameterBounds' , [[None,None] for _ in range(len(self.parameterNames)) ]  )
         self.__dict__.setdefault( 'parameterBoundsExpressions' , None)
+        self.__dict__.setdefault( 'useErrorBars' , True)
         self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' ) 
  
     def allFitParameters(self, p):
@@ -164,6 +166,10 @@ class FitFunctionBase(object):
     @native
     def smartStartValues(self, x, y, parameters, enabled):
         return None
+    
+    def enabledSmartStartValues(self, x, y, parameters):
+        smartParameters = self.smartStartValues(x,y,parameters,self.parameterEnabled)
+        return [ smartparam if enabled else param for enabled, param, smartparam in zip(self.parameterEnabled, parameters, smartParameters)] if smartParameters is not None else None
 
     def evaluate(self, globalDict ):
         myReplacementDict = self.replacementDict()
@@ -184,9 +190,11 @@ class FitFunctionBase(object):
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
         # Ensure all values of sigma or non zero by replacing with the minimum nonzero value
-        if sigma is not None:
+        if sigma is not None and self.useErrorBars:
             nonzerosigma = sigma[sigma>0]
-            sigma[sigma==0] = numpy.min(nonzerosigma) if len(nonzerosigma)>0 else 1.0 
+            sigma[sigma==0] = numpy.min(nonzerosigma) if len(nonzerosigma)>0 else 1.0
+        else:
+            sigma = None 
         if parameters is None:
             parameters = [value(param) for param in self.startParameters]
         if self.useSmartStartValues:
@@ -199,7 +207,8 @@ class FitFunctionBase(object):
             enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsqbound(self.residuals, self.enabledStartParameters(parameters, bounded=True), 
                                                                                                  args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True, bounds=myEnabledBounds)
         else:
-            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), 
+                                                                                            epsfcn=self.epsfcn, full_output=True)
         self.setEnabledFitParameters(enabledOnlyParameters)
         self.update(self.parameters)
         logger.info( "chisq {0}".format( sum(self.infodict["fvec"]*self.infodict["fvec"]) ) )        
@@ -207,7 +216,7 @@ class FitFunctionBase(object):
         # calculate final chi square
         self.chisq=sum(self.infodict["fvec"]*self.infodict["fvec"])
         
-        self.dof=len(x)-len(parameters)
+        self.dof = max( len(x)-len(parameters), 1)
         RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
         RMSres.significantDigits = 3
         self.results['RMSres'].value = RMSres
@@ -258,8 +267,9 @@ class FitFunctionBase(object):
     
     def toXmlElement(self, parent):
         myroot  = ElementTree.SubElement(parent, 'FitFunction', {'name': self.name, 'functionString': self.functionString})
-        for name, value, confidence, enabled in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence,self.parameterEnabled):
-            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': str(enabled)})
+        for name, value, confidence, enabled, startExpression, bounds, boundsexpression in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence,self.parameterEnabled,self.startParameterExpressions,self.parameterBounds,self.parameterBoundsExpressions):
+            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': str(enabled), 'startExpression': str(startExpression), 'bounds': ",".join(map(str,bounds)),
+                                                              'boundsExpression': ",".join(map(str,boundsexpression))})
             e.text = str(value)
         for result in self.results.values():
             e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition)})

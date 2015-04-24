@@ -17,11 +17,13 @@ from modules.Observable import Observable
 from modules.enum import enum 
 import logging
 from modules.Expression import Expression
+from modules import MagnitudeUtilit
 
 class EvaluationException(Exception):
     pass
 
 class EvaluationBase(Observable):
+    hasChannel = True
     def __init__(self,settings =  None):
         Observable.__init__(self)
         self.settings = settings if settings else dict()
@@ -65,8 +67,9 @@ class EvaluationBase(Observable):
     def __deepcopy__(self, memo=None):
         return type(self)( copy.deepcopy(self.settings,memo) )
   
-    def histogram(self, data, counter=0, histogramBins=50 ):
-        y, x = numpy.histogram( data.count[counter] , range=(0,histogramBins), bins=histogramBins)
+    def histogram(self, data, evaluation, histogramBins=50 ):
+        countarray = evaluation.getChannelData(data)
+        y, x = numpy.histogram( countarray , range=(0,histogramBins), bins=histogramBins)
         return y, x, None   # third parameter is optional function 
 
 class MeanEvaluation(EvaluationBase):
@@ -75,16 +78,14 @@ class MeanEvaluation(EvaluationBase):
     """
     name = 'Mean'
     tooltip = "Mean of observed counts" 
-    errorBarType = enum('shotnoise','statistical')
-    sourceType = enum('Counter','Result')
+    errorBarType = enum('shotnoise','statistical','min max')
     expression = Expression()
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
-        self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical ]
+        self.errorBarTypeLookup = [ self.evaluateShotnoise, self.evaluateStatistical, self.evaluateMinMax ]
         
     def setDefault(self):
         self.settings.setdefault('errorBarType',0)
-        self.settings.setdefault('source',0)
         self.settings.setdefault('transformation', "")
          
     def evaluateShotnoise(self, countarray ):
@@ -99,28 +100,29 @@ class MeanEvaluation(EvaluationBase):
         stderr = numpy.std( countarray, ddof=1 ) / math.sqrt( max( len(countarray)-1, 1) )
         return mean, (stderr/2.,stderr/2.), numpy.sum( countarray )
     
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None):
-        if self.settings['source']==self.sourceType.Counter:
-            countarray = data.count[counter]  
-        elif data.result is not None:
-            countarray = data.result[counter]
-        else:
-            countarray = []
+    def evaluateMinMax(self, countarray):
+        mean = numpy.mean( countarray )
+        return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
+    
+    def evaluate(self, data, evaluation, expected=None, globalDict=None):
+        countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, (0,0), 0
         mean, (minus, plus), raw =  self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
         if self.settings['transformation']!="":
-            meandict = { 'y': mean }
-            plusdict = { 'y': mean+plus }
-            minusdict = { 'y': mean-minus }
-            mean = self.expression.evaluate(self.settings['transformation'], meandict)
-            plus = self.expression.evaluate(self.settings['transformation'], plusdict)
-            minus = self.expression.evaluate(self.settings['transformation'], minusdict)
+            mydict = { 'y': mean }
+            if globalDict:
+                mydict.update( globalDict )
+            mean = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
+            mydict['y'] = mean+plus
+            plus = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
+            mydict['y'] = mean-minus
+            minus = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
+            return mean, (mean-minus, plus-mean), raw
         return mean, (minus, plus), raw
 
     def children(self):
-        return [{'name':'errorBarType', 'type': 'list', 'values':self.errorBarType.mapping, 'value': self.settings['errorBarType'] } ,
-                {'name':'source', 'type': 'list', 'values':self.sourceType.mapping, 'value': self.settings['source'] },
+        return [{'name':'errorBarType', 'type': 'list', 'values':self.errorBarType.mapping, 'value': self.settings['errorBarType'] },
                 {'name':'transformation', 'type': 'str', 'value': self.settings['transformation'], 'tip': "use y for the result in a mathematical expression" } ]     
 
 class NumberEvaluation(EvaluationBase):
@@ -134,21 +136,16 @@ class NumberEvaluation(EvaluationBase):
         EvaluationBase.__init__(self,settings)
         
     def setDefault(self):
-        self.settings.setdefault('source',0)
+        pass
     
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None):
-        if self.settings['source']==self.sourceType.Counter:
-            countarray = data.count[counter]  
-        elif data.result is not None:
-            countarray = data.result[counter]
-        else:
-            countarray = []
+    def evaluate(self, data, evaluation, expected=None, globalDict=None):
+        countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
         return len(countarray), None, len(countarray)
 
     def children(self):
-        return [{'name':'source', 'type': 'list', 'values':self.sourceType.mapping, 'value': self.settings['source'] } ]     
+        return []     
 
 
 class ThresholdEvaluation(EvaluationBase):
@@ -166,8 +163,8 @@ class ThresholdEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
-        countarray = data.count[counter]
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+        countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
         N = float(len(countarray))
@@ -175,8 +172,8 @@ class ThresholdEvaluation(EvaluationBase):
             descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
         else:
             descriminated = [ 1 if count > self.settings['threshold'] else 0 for count in countarray ]
-        if name:
-            data.evaluated[name] = descriminated
+        if evaluation.name:
+            data.evaluated[evaluation.name] = descriminated
         x = numpy.sum( descriminated )
         p = x/N
         # Wilson score interval with continuity correction
@@ -207,8 +204,8 @@ class RangeEvaluation(EvaluationBase):
         self.settings.setdefault('max',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
-        countarray = data.count[counter]
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+        countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
         N = float(len(countarray))
@@ -216,8 +213,8 @@ class RangeEvaluation(EvaluationBase):
             descriminated = [ 0 if self.settings['min'] <= count <= self.settings['max'] else 1 for count in countarray ]
         else:
             descriminated = [ 1 if self.settings['min'] <= count <= self.settings['max'] else 0 for count in countarray ]
-        if name:
-            data.evaluated[name] = descriminated
+        if evaluation.name:
+            data.evaluated[evaluation.name] = descriminated
         x = numpy.sum( descriminated )
         p = float(x)/N
         # Wilson score interval with continuity correction
@@ -252,8 +249,8 @@ class DoubleRangeEvaluation(EvaluationBase):
         self.settings.setdefault('max_2',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
-        countarray = data.count[counter]
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+        countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
         N = float(len(countarray))
@@ -263,8 +260,8 @@ class DoubleRangeEvaluation(EvaluationBase):
         else:
             descriminated = [ 1 if ( self.settings['min_1'] <= count <= self.settings['max_1'] ) or 
                              ( self.settings['min_2'] <= count <= self.settings['max_2'] )  else 0 for count in countarray ]
-        if name:
-            data.evaluated[name] = descriminated
+        if evaluation.name:
+            data.evaluated[evaluation.name] = descriminated
         x = numpy.sum( descriminated )
         p = float(x)/N
         # Wilson score interval with continuity correction
@@ -300,8 +297,8 @@ class FidelityEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
-        countarray = data.count[counter]
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+        countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
         N = float(len(countarray))
@@ -309,8 +306,8 @@ class FidelityEvaluation(EvaluationBase):
             descriminated = [ 0 if count > self.settings['threshold'] else 1 for count in countarray ]
         else:
             descriminated = [ 1 if count > self.settings['threshold'] else 0 for count in countarray ]
-        if name:
-            data.evaluated[name] = descriminated
+        if evaluation.name:
+            data.evaluated[evaluation.name] = descriminated
         x = numpy.sum( descriminated )
         p = x/N
         # Wilson score interval with continuity correction
@@ -339,6 +336,7 @@ class ParityEvaluation(EvaluationBase):
     """
     name = "Parity"
     tooltip = "Two ion parity evaluation"
+    hasChannel = False
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
         
@@ -346,7 +344,7 @@ class ParityEvaluation(EvaluationBase):
         self.settings.setdefault('Ion_1','')
         self.settings.setdefault('Ion_2','')
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         name1, name2 = self.settings['Ion_1'], self.settings['Ion_2']
         eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2) 
         if eval1 is None:
@@ -357,8 +355,8 @@ class ParityEvaluation(EvaluationBase):
             raise EvaluationException("Evaluated arrays have different length {0}, {1}".format(len(eval1),len(eval2)))
         N = float(len(eval1))
         descriminated = [ 1 if e1==e2 else -1 for e1, e2 in zip(eval1, eval2) ]
-        if name:
-            data.evaluated[name] = descriminated
+        if evaluation.name:
+            data.evaluated[evaluation.name] = descriminated
         x = numpy.sum( descriminated )
         p = x/N
         # Wilson score interval with continuity correction
@@ -386,6 +384,7 @@ class TwoIonEvaluation(EvaluationBase):
     """
     name = "TwoIon"
     tooltip = "Two ion parity evaluation"
+    hasChannel = False
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
         
@@ -397,7 +396,7 @@ class TwoIonEvaluation(EvaluationBase):
         self.settings.setdefault('bd',-1)
         self.settings.setdefault('bb',1)
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         name1, name2 = self.settings['Ion_1'], self.settings['Ion_2']
         eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2) 
         if eval1 is None:
@@ -409,8 +408,8 @@ class TwoIonEvaluation(EvaluationBase):
         N = float(len(eval1))
         lookup = {(0,0): self.settings['dd'], (0,1): self.settings['db'], (1,0): self.settings['bd'], (1,1):self.settings['bb'] }
         descriminated = [ lookup[pair] for pair in zip(eval1, eval2) ]
-        if name:
-            data.evaluated[name] = descriminated
+        if evaluation.name:
+            data.evaluated[evaluation.name] = descriminated
         x = numpy.sum( descriminated )
         p = x/N
         # Wilson score interval with continuity correction

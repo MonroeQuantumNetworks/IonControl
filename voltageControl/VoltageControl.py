@@ -14,6 +14,7 @@ import VoltageBlender
 from VoltageFiles import VoltageFiles
 from VoltageGlobalAdjust import VoltageGlobalAdjust
 import VoltageTableModel
+from modules import MagnitudeUtilit
 
 
 VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
@@ -39,7 +40,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageFilesUi = VoltageFiles(self.config)
         self.voltageFilesUi.setupUi( self.voltageFilesUi )
         self.voltageFilesDock.setWidget( self.voltageFilesUi )
-        self.adjustUi = VoltageAdjust(self.config)
+        self.adjustUi = VoltageAdjust(self.config, self.voltageBlender, self.globalDict)
         self.adjustUi.updateOutput.connect( self.onUpdate )
         self.adjustUi.setupUi( self.adjustUi )
         self.adjustDock.setWidget( self.adjustUi )
@@ -50,7 +51,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         if hasattr(self.settings,'state'):
             self.restoreState( self.settings.state )
         self.voltageFilesUi.loadMapping.connect( self.voltageBlender.loadMapping )
-        self.voltageFilesUi.loadDefinition.connect( self.voltageBlender.loadVoltage )
+        self.voltageFilesUi.loadDefinition.connect( self.onLoadVoltage )
         self.voltageFilesUi.loadGlobalAdjust.connect( self.onLoadGlobalAdjust )
         self.voltageTableModel = VoltageTableModel.VoltageTableModel(self.voltageBlender)
         self.tableView.setModel( self.voltageTableModel )
@@ -66,10 +67,15 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         except Exception:
             logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
-        self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.onShuttlingDone )
+        self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.shuttlingGraph.setPosition )
+    
+    def onLoadVoltage(self, path, shuttledefpath ):
+        self.voltageBlender.loadVoltage(path)
+        self.adjustUi.loadShuttleDef( shuttledefpath )
     
     def onUpdate(self, adjust):
-        self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
+        self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain) )
+        self.adjustUi.setLine( MagnitudeUtilit.value(adjust.line) )
                      
     def onLoadGlobalAdjust(self, path):
         self.voltageBlender.loadGlobalAdjust(str(path) )

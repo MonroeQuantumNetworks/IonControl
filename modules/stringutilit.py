@@ -7,3 +7,6 @@ Created on Mon Mar 25 21:44:31 2013
 
 def commentarize(text):
     return "# "+"\n# ".join(text.splitlines())
+
+def stringToBool(s):
+    return False if s in ['0','False','None'] else bool(s)

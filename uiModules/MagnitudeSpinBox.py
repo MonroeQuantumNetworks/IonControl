@@ -18,6 +18,7 @@ import sip
 from modules import Expression
 from modules import MagnitudeParser
 from modules import magnitude
+from math import copysign
 
 
 debug = False
@@ -28,6 +29,7 @@ class DimensionMismatch(Exception):
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
+    textValueChanged = QtCore.pyqtSignal(object)
     expression = Expression.Expression()
     
     def __init__(self, parent=None, globalDict=None, valueChangedOnEditingFinished=True, emptyStringValue=0):
@@ -123,15 +125,20 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         return value
         
     def text(self):
-        return str(self.lineEdit().text())
+        return str(self.lineEdit().text()).strip()
         
     def setText(self,string):
+        cursorpos = self.lineEdit().cursorPosition()
         self.lineEdit().setText( string )
+        self.lineEdit().setCursorPosition(cursorpos)
         
     def setValue(self,value):
+        cursorpos = self.lineEdit().cursorPosition()
         self.lineEdit().setText( str(value) )
+        self.lineEdit().setCursorPosition(cursorpos)
         
     def onEditingFinished(self):
+        self.textValueChanged.emit( self.text() )
         self.valueChanged.emit( self.value() )
         
     def sizeHint(self):
@@ -139,29 +146,10 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         size = fontMetrics.boundingRect(self.lineEdit().text()).size()
         size += QtCore.QSize( 8,0)
         return size
- 
-#    def makeDrag(self):
-#        dr = QtGui.QDrag(self)
-#        # The data to be transferred by the drag and drop operation is contained in a QMimeData object
-#        data = QtCore.QMimeData()
-#        data.setText("This is a test")
-#        # Assign ownership of the QMimeData object to the QDrag object.
-#        dr.setMimeData(data)
-#        # Start the drag and drop operation
-#        dr.start()
-# 
-#    def dragMoveEvent(self, de):
-#        # The event needs to be accepted here
-#        de.accept()
-#
-#    def dragEnterEvent(self, event):
-#        # Set the drop action to be the proposed action.
-#        event.acceptProposedAction()
-#
-#    def dropEvent(de):
-#        # Unpack dropped data and handle it the way you want
-       
-        
+    
+    def wheelEvent(self, wheelEvent):
+        self.stepBy( copysign(1,wheelEvent.delta()) )
+         
 if __name__ == "__main__":
     debug = True
     TestWidget, TestBase = PyQt4.uic.loadUiType(r'..\ui\MagnitudeSpinBoxTest.ui')

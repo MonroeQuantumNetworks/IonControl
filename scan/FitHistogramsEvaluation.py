@@ -67,14 +67,14 @@ class FitHistogramEvaluation(EvaluationBase):
     def loadReferenceData(self):
         for name in ['ZeroBright','OneBright', 'TwoBright']:
             filename = path.join(self.settings['Path'],self.settings[name])
-            if filename:
+            if filename and path.exists(filename):
                 t = Trace()
                 t.loadTrace(filename)
                 yColumnName = t.tracePlottingList[0].yColumn
                 setattr(self.fitFunction, name, self.normalizeHistogram( getattr(t, yColumnName )) )
         
     def setDefault(self):
-        self.settings.setdefault('Path',r'C:\Users\Public\Documents\experiments\QGA\2014\2014_10\2014_10_21')
+        self.settings.setdefault('Path',r'')
         self.settings.setdefault('ZeroBright','ZeroIonHistogram')
         self.settings.setdefault('OneBright','OneIonHistogram')
         self.settings.setdefault('TwoBright','TwoIonHistogram')
@@ -91,15 +91,16 @@ class FitHistogramEvaluation(EvaluationBase):
         histsum = numpy.sum( hist )
         return (hist / histsum, histsum) if longOutput else hist/histsum
         
-    def evaluate(self, data, counter=0, name=None, timestamps=None, expected=None ):
+    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
         params, confidence, reducedchisq = data.evaluated.get('FitHistogramsResult',(None,None,None))
         if params is None:
-            y, x = numpy.histogram( data.count[counter] , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
+            countarray = evaluation.getChannelData(data)
+            y, x = numpy.histogram( countarray , range=(0,self.settings['HistogramBins']), bins=self.settings['HistogramBins']) 
             y, self.fitFunction.totalCounts = self.normalizeHistogram(y, longOutput=True)
             params, confidence = self.leastsq(x[0:-1], y, [0.3,0.3])
             params = list(params) + [ 1-params[0]-params[1] ]     # fill in the constrained parameter
             confidence = list(confidence)
-            confidence.append( confidence[0]+confidence[1] )  # don't know what to do :(
+            confidence.append( (confidence[0]+confidence[1]) if confidence[0] is not None and confidence[1] is not None else None)  # don't know what to do :(
             data.evaluated['FitHistogramsResult'] = (params, confidence, self.chisq/self.dof)
         if self.settings['Mode']=='Parity':
             return params[0]+params[2]-params[1], None, params[0]+params[2]-params[1]

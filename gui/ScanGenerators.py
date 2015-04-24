@@ -49,7 +49,7 @@ class ParameterScanGenerator:
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
         
-    def xValue(self, index):
+    def xValue(self, index, data):
         value = self.scan.list[index]
         if self.scan.xExpression:
             value = self.expression.evaluate( self.scan.xExpression, {"x": value} )
@@ -76,9 +76,10 @@ class ParameterScanGenerator:
     def xRange(self):
         return self.scan.start.ounit(self.scan.xUnit).toval(), self.scan.stop.ounit(self.scan.xUnit).toval()
                                      
-    def appendData(self,traceList,x,evaluated):
+    def appendData(self, traceList, x, evaluated, timeinterval):
         if evaluated and traceList:
             traceList[0].x = numpy.append(traceList[0].x, x)
+            traceList[0].timeintervalAppend(timeinterval)
         for trace, (y, error, raw) in zip(traceList, evaluated):                                  
             trace.y = numpy.append(trace.y, y)
             trace.raw = numpy.append(trace.raw, raw)
@@ -111,16 +112,17 @@ class StepInPlaceGenerator:
     def dataNextCode(self, experiment):
         return self.scan.code
         
-    def xValue(self,index):
+    def xValue(self,index, data):
         return index
 
     def xRange(self):
         return []
 
-    def appendData(self,traceList,x,evaluated):
+    def appendData(self, traceList, x, evaluated, timeinterval):
         if evaluated and traceList:
             if len(traceList[0].x)<self.scan.steps or self.scan.steps==0:
                 traceList[0].x = numpy.append(traceList[0].x, x)
+                traceList[0].timeintervalAppend(timeinterval)
                 for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                     trace.y = numpy.append(trace.y, y)
                     trace.raw = numpy.append(trace.raw, raw)
@@ -130,12 +132,56 @@ class StepInPlaceGenerator:
             else:
                 steps = int(self.scan.steps)
                 traceList[0].x = numpy.append(traceList[0].x[-steps+1:], x)
+                traceList[0].timeinterval = ( numpy.append( (traceList[0].timeinteval)[0][-steps+1:], timeinterval[0]),
+                                              numpy.append( (traceList[0].timeinteval)[1][-steps+1:], timeinterval[1]) )
                 for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                     trace.y = numpy.append(trace.y[-steps+1:], y)
                     trace.raw = numpy.append(trace.raw[-steps+1:], raw)
                     if error is not None:
                         trace.bottom = numpy.append(trace.bottom[-steps+1:], error[0])
                         trace.top = numpy.append(trace.top[-steps+1:], error[1])
+
+    def dataOnFinal(self, experiment, currentState):
+        experiment.onStop()                   
+
+    def expected(self, index):
+        return None
+
+class FreerunningGenerator:
+    expression = Expression()
+    def __init__(self, scan):
+        self.scan = scan
+        
+    def prepare(self, pulseProgramUi, maxUpdatesToWrite=None ):
+        if self.scan.gateSequenceUi.settings.enabled:
+            _, data, self.gateSequenceSettings = self.scan.gateSequenceUi.gateSequenceScanData()    
+        else:
+            data = []
+        return ([], data) # write 5 points to the fifo queue at start,
+                        # this prevents the Step in Place from stopping in case the computer lags behind evaluating by up to 5 points
+
+    def restartCode(self,currentIndex):
+        return []
+        
+    def dataNextCode(self, experiment):
+        return None
+        
+    def xValue(self,index, data):
+        return self.expression.evaluate( self.scan.xExpression, { 'x': data.scanvalue if data.scanvalue else 0} )  if self.scan.xExpression else data.scanvalue
+
+    def xRange(self):
+        return []
+
+    def appendData(self, traceList, x, evaluated, timeinterval):
+        if evaluated and traceList:
+            traceList[0].x = numpy.append(traceList[0].x, x)
+            traceList[0].timeintervalAppend(timeinterval)
+            for trace, (y, error, raw) in zip(traceList, evaluated):                                  
+                trace.y = numpy.append(trace.y, y)
+                trace.raw = numpy.append(trace.raw, raw)
+                if error is not None:
+                    trace.bottom = numpy.append(trace.bottom, error[0])
+                    trace.top = numpy.append(trace.top, error[1])
 
     def dataOnFinal(self, experiment, currentState):
         experiment.onStop()                   
@@ -195,7 +241,7 @@ class GateSequenceScanGenerator:
         self.nextIndexToWrite = len(self.scan.code)
         return self.scan.code[currentWordCount:]
 
-    def xValue(self,index):
+    def xValue(self,index, data):
         return self.scan.index[index]
 
     def dataNextCode(self, experiment):
@@ -208,9 +254,10 @@ class GateSequenceScanGenerator:
     def xRange(self):
         return [0, len(self.scan.list)]
 
-    def appendData(self,traceList,x,evaluated):
+    def appendData(self, traceList, x, evaluated, timeinterval):
         if evaluated and traceList:
             traceList[0].x = numpy.append(traceList[0].x, x)
+            traceList[0].timeintervalAppend(timeinterval)
         for trace, (y, error, raw) in zip(traceList, evaluated):                                  
             trace.y = numpy.append(trace.y, y)
             trace.raw = numpy.append(trace.raw, raw)
@@ -233,4 +280,4 @@ class GateSequenceScanGenerator:
             return expected
         return None 
         
-GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSequenceScanGenerator]   
+GeneratorList = [ParameterScanGenerator, StepInPlaceGenerator, GateSequenceScanGenerator, FreerunningGenerator]   

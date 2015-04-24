@@ -13,7 +13,7 @@ import PyQt4.uic
 
 import ScanList
 from gateSequence import GateSequenceUi
-from modules import MagnitudeUtilit
+from modules import MagnitudeUtilit, DataDirectory
 from modules.PyqtUtility import BlockSignals
 from modules.PyqtUtility import updateComboBoxItems
 from modules.Utility import unique
@@ -28,14 +28,17 @@ import random
 from modules.concatenate_iter import interleave_iter
 from gateSequence.GateSequenceContainer import GateSequenceException
 from modules.firstNotNone import firstNotNone
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 
 ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
 
 
 class Scan:
-    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan')
+    ScanMode = enum('ParameterScan','StepInPlace','GateSequenceScan','Freerunning')
     ScanType = enum('LinearStartToStop','LinearStopToStart','Randomized','CenterOut')
     ScanRepeat = enum('SingleScan','RepeatedScan')
+    XMLTagName = "Scan"
     def __init__(self):
         # Scan
         self.scanParameter = None
@@ -58,6 +61,8 @@ class Scan:
         self.xExpression = ""
         self.loadPP = False
         self.loadPPName = ""
+        self.saveRawData = False
+        self.rawFilename = ""
         # GateSequence Settings
         self.gateSequenceSettings = GateSequenceUi.Settings()
         self.scanSegmentList = [ScanSegmentDefinition()]
@@ -81,6 +86,8 @@ class Scan:
         self.__dict__.setdefault('histogramFilename', "")
         self.__dict__.setdefault('histogramSave', False)
         self.__dict__.setdefault('scanTarget', None)
+        self.__dict__.setdefault('saveRawData', False)
+        self.__dict__.setdefault('rawFilename', "")
 
     def __eq__(self,other):
         try:
@@ -97,11 +104,28 @@ class Scan:
         
     stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
-                'scanSegmentList' ]
+                'scanSegmentList', 'saveRawData', 'rawFilename' ]
 
     documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
         
+    def exportXml(self, element, attrib=dict()):
+        myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        self.gateSequenceSettings.exportXml(myElement)
+        for segment in self.scanSegmentList:
+            segment.exportXml(myElement)
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        myElement = element if element.tag == Scan.XMLTagName else element.find(Scan.XMLTagName)
+        s = Scan()
+        s.__dict__.update( xmlParseAttributes(myElement) )
+        s.gateSequenceSettings = GateSequenceUi.Settings.fromXmlElement( myElement )
+        s.scanSegmentList = [ ScanSegmentDefinition.fromXmlElement(e) for e in myElement.findall(ScanSegmentDefinition.XMLTagName)]
+        return (myElement.attrib['name'],s)    
+
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
         r += self.gateSequenceSettings.documentationString()
@@ -191,9 +215,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.comboBoxParameter.currentIndexChanged[QtCore.QString].connect( self.onCurrentTextChanged )
         self.scanTypeCombo.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scantype') )
         self.autoSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'autoSave') )
+        self.saveRawCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData') )
         self.histogramSaveCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'histogramSave') )
         self.scanModeComboBox.currentIndexChanged[int].connect( self.onModeChanged )
         self.filenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.filenameEdit, 'filename') )
+        self.rawFilenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.rawFilenameEdit, 'rawFilename') )
         self.histogramFilenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.histogramFilenameEdit, 'histogramFilename') )
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
@@ -210,6 +236,33 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
         self.comboBoxScanTarget.currentIndexChanged[QtCore.QString].connect( self.onChangeScanTarget )
         self.currentScanChanged.emit( self.settingsName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('ScanList')
+        for name, setting in self.settingsDict.iteritems():
+            setting.exportXml(root,{'name':name})
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("ScanList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+        return root
+
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
+        tree = ElementTree.parse(filename)
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+        newSettingsDict = dict( Scan.fromXmlElement(e) for e in element.findall(Scan.XMLTagName) )
+        if mode=="replace":
+            self.settingsDict = newSettingsDict
+        elif mode=="update":
+            self.settingsDict.update( newSettingsDict )
+        elif mode=="addMissing":
+            newSettingsDict.update( self.settingsCache )
+            self.settingsDict = newSettingsDict
        
     def evaluate(self, name):
         if self.settings.evaluate( self.globalDict ):
@@ -237,13 +290,15 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanModeComboBox.setCurrentIndex( self.settings.scanMode )
         self.scanTypeCombo.setCurrentIndex(self.settings.scantype )
         self.autoSaveCheckBox.setChecked(self.settings.autoSave)
+        self.saveRawCheckBox.setChecked(self.settings.saveRawData)
         self.histogramSaveCheckBox.setChecked(self.settings.histogramSave)
         if self.settings.scanTarget:
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, self.settings.scanParameter)
         elif self.comboBoxScanTarget.count()>0:
-            self.settings.scanTarget = self.comboBoxScanTarget.currentText()
+            self.settings.scanTarget = str( self.comboBoxScanTarget.currentText() )
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, None)
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
+        self.rawFilenameEdit.setText( getattr(self.settings,'rawFilename','') )
         self.histogramFilenameEdit.setText( getattr(self.settings,'histogramFilename','') )
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )
@@ -295,11 +350,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         logger.debug( "ScanControl.setPulseProgramUi {0}".format(pulseProgramUi.configParams.recentFiles.keys()) )
         isStartup = self.pulseProgramUi is None
         self.pulseProgramUi = pulseProgramUi
-        with BlockSignals(self.loadPPComboBox):
-            self.loadPPComboBox.clear()
-            self.loadPPComboBox.addItems(pulseProgramUi.contextDict.keys())
-            if self.settings.loadPPName: 
-                self.loadPPComboBox.setCurrentIndex( self.loadPPComboBox.findText(self.settings.loadPPName))
+        updateComboBoxItems(self.loadPPComboBox, sorted(pulseProgramUi.contextDict.keys()), self.settings.loadPPName)
         try:
             self.pulseProgramUi.contextDictChanged.connect( self.onRecentPPFilesChanged, QtCore.Qt.UniqueConnection )
         except TypeError:
@@ -341,8 +392,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settings.scanMode = index
         self.scanTypeCombo.setEnabled(index in [0,2])
         self.scanRepeatComboBox.setEnabled( index in [0,2] )
-        self.xUnitEdit.setEnabled( index==0)
-        self.xExprEdit.setEnabled( index==0)
+        self.xUnitEdit.setEnabled( index in [0,3] )
+        self.xExprEdit.setEnabled( index in [0,3] )
         self.comboBoxParameter.setEnabled( index==0 )
         self.comboBoxScanTarget.setEnabled( index==0 )    
         self.tableView.setEnabled( index==0 )           
@@ -376,7 +427,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         updateComboBoxItems( self.comboBoxScanTarget, self.scanTargetDict.keys(), self.parameters.currentScanTarget )
         self.parameters.currentScanTarget = firstNotNone(self.parameters.currentScanTarget, target)
         if target==self.parameters.currentScanTarget:
-            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, scannames, self.settings.scanParameter ))
+            self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, sorted(scannames), self.settings.scanParameter ))
+        if not self.settings.scanTarget:
+            self.settings.scanTarget = self.parameters.currentScanTarget
 
     def onChangeScanTarget(self, name):
         """ called on currentIndexChanged[QString] signal of ComboBox"""
@@ -384,7 +437,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if name!=self.parameters.currentScanTarget:
             self.parameters.scanTargetCache[self.parameters.currentScanTarget] = self.settings.scanParameter
             cachedParam = self.parameters.scanTargetCache.get(name)
-            cachedParam = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], cachedParam )
+            cachedParam = updateComboBoxItems( self.comboBoxParameter, sorted(self.scanTargetDict[name]), cachedParam )
             self.settings.scanParameter = cachedParam
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
@@ -397,7 +450,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if name!=self.parameters.currentScanTarget:
             with BlockSignals(self.comboBoxScanTarget):
                 self.comboBoxScanTarget.setCurrentIndex( self.comboBoxScanTarget.findText(name) )
-            scanParameter = updateComboBoxItems( self.comboBoxParameter, self.scanTargetDict[name], scanParameter )
+            scanParameter = updateComboBoxItems( self.comboBoxParameter, sorted(self.scanTargetDict[name]), scanParameter )
             self.settings.scanTarget = name
             self.parameters.currentScanTarget = name
         else:
@@ -412,24 +465,27 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         scan.scanTarget = str(scan.scanTarget)
         scan.type = [ ScanList.ScanType.LinearUp, ScanList.ScanType.LinearDown, ScanList.ScanType.Randomized, ScanList.ScanType.CenterOut][self.settings.scantype]
         
-        scan.list = list( concatenate_iter( *[ linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ] ) )
-        if scan.type==0:
-            scan.list = sorted( scan.list )
-            scan.start = scan.list[0]
-            scan.stop = scan.list[-1]
-        elif scan.type==1:
-            scan.list = sorted( scan.list, reverse=True )
-            scan.start = scan.list[-1]
-            scan.stop = scan.list[0]
-        elif scan.type==2:
-            scan.list = sorted( scan.list )
-            scan.start = scan.list[0]
-            scan.stop = scan.list[-1]
-            random.shuffle( scan.list )
-        elif scan.type==3:        
-            scan.list = sorted( scan.list )
-            center = len(scan.list)/2
-            scan.list = list( interleave_iter(scan.list[center:],reversed(scan.list[:center])) )
+        if scan.scanMode==Scan.ScanMode.Freerunning:
+            scan.list = None
+        else:
+            scan.list = list( concatenate_iter( *[ linspace(segment.start, segment.stop, segment.steps) for segment in scan.scanSegmentList ] ) )
+            if scan.type==0:
+                scan.list = sorted( scan.list )
+                scan.start = scan.list[0]
+                scan.stop = scan.list[-1]
+            elif scan.type==1:
+                scan.list = sorted( scan.list, reverse=True )
+                scan.start = scan.list[-1]
+                scan.stop = scan.list[0]
+            elif scan.type==2:
+                scan.list = sorted( scan.list )
+                scan.start = scan.list[0]
+                scan.stop = scan.list[-1]
+                random.shuffle( scan.list )
+            elif scan.type==3:        
+                scan.list = sorted( scan.list )
+                center = len(scan.list)/2
+                scan.list = list( interleave_iter(scan.list[center:],reversed(scan.list[:center])) )
             
         scan.gateSequenceUi = self.gateSequenceUi
         scan.settingsName = self.settingsName

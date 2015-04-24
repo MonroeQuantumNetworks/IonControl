@@ -7,12 +7,13 @@ Created on Fri May 24 17:32:35 2013
 
 import functools
 
-from PyQt4 import uic, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 
 from pulseProgram.PPSyntaxHighlighter import PPHighlighter
 from pppCompiler.PPPSyntaxHighlighter import PPPHighlighter
-
-Form, Base = uic.loadUiType(r'ui\PulseProgramEdit.ui')
+from PulseProgramEditUi import Ui_Form as Form
+from _functools import partial
+Base = QtGui.QWidget
 
 class PulseProgramSourceEdit(Form, Base):
     def __init__(self,mode='pp',parent=None):
@@ -21,7 +22,8 @@ class PulseProgramSourceEdit(Form, Base):
         self.highlighted = QtGui.QTextCharFormat()
         self.highlighted.setBackground( QtGui.QBrush(QtCore.Qt.cyan))
         self.selections = list()
-        self.findFlags = QtGui.QTextDocument.FindFlag()
+        self.findWordOnly = False
+        self.findCaseSensitive = False
         self.findText = None
         self.errorFormat = QtGui.QTextCharFormat()
         self.errorFormat.setBackground(QtCore.Qt.red)
@@ -35,19 +37,20 @@ class PulseProgramSourceEdit(Form, Base):
         Form.setupUi(self,parent)
         self.findLineEdit.textChanged.connect( self.onFindTextChanged )
         self.findCloseButton.clicked.connect( self.onFindClose )
-        self.findMatchCaseCheckBox.stateChanged.connect( self.onFindFlagsChanged )
+        self.findMatchCaseCheckBox.stateChanged.connect( partial( self.onFindFlagsChanged, 'findCaseSensitive') )
+        self.findWholeWordsCheckBox.stateChanged.connect( partial(self.onFindFlagsChanged, 'findWordOnly') )
         self.findNextButton.clicked.connect( self.onFind )
         self.findPreviousButton.clicked.connect( functools.partial(self.onFind , True))
         self.highlighter = PPHighlighter( self.textEdit, "Classic" ) if self.mode=='pp' else PPPHighlighter( self.textEdit, "Classic" ) 
         self.errorDisplay.hide()
         self.closeErrorButton.clicked.connect( self.clearHighlightError )
         
+        
     def setReadOnly(self, enabled):
         self.textEdit.setReadOnly(enabled)
         
-    def onFindFlagsChanged(self):
-        self.findFlags = QtGui.QTextDocument.FindCaseSensitively if self.findMatchCaseCheckBox.isChecked() else QtGui.QTextDocument.FindFlag()
-        self.findFlags |= QtGui.QTextDocument.FindWholeWords if self.findWholeWordsCheckBox.isChecked() else QtGui.QTextDocument.FindFlag()
+    def onFindFlagsChanged(self, attr, state):
+        setattr( self, attr, state==QtCore.Qt.Checked)
         
     def onFindClose(self):
         self.findWidgetFrame.hide()
@@ -59,36 +62,19 @@ class PulseProgramSourceEdit(Form, Base):
     def toPlainText(self):
         return self.textEdit.toPlainText()
         
-    def onFind(self,backward=False):
-        if self.textEdit.find(self.findText,(self.findFlags | QtGui.QTextDocument.FindBackward) if backward else self.findFlags):
-            cursor = self.textEdit.textCursor()
-            selection = QtGui.QTextEdit.ExtraSelection()
-            selection.cursor = cursor
-            selection.format = self.highlighted
-            self.textEdit.setExtraSelections( [selection] )
-            self.findLineEdit.setStyleSheet('')
-            if backward:
-                cursor.setPosition( cursor.anchor() )
-            else:
-                cursor.clearSelection()
-            self.textEdit.setTextCursor( cursor )
+    def onFind(self,backward=False, inPlace=False):
+        if inPlace or backward:
+            line, index, _, _ = self.textEdit.getSelection()
+        else:
+            _, _, line, index = self.textEdit.getSelection()
+        if line<0:
+            line, index = self.textEdit.cursorPosition()
+        self.textEdit.findFirst(self.findText, False, self.findCaseSensitive, 
+                                self.findWordOnly, True, not backward, line, index)
         
     def onFindTextChanged(self, text):
         self.findText = str(text)
-        if self.textEdit.find(text,self.findFlags) or self.textEdit.find(text, self.findFlags | QtGui.QTextDocument.FindBackward):
-            cursor = self.textEdit.textCursor()
-            selection = QtGui.QTextEdit.ExtraSelection()
-            selection.cursor = cursor
-            selection.format = self.highlighted
-            self.textEdit.setExtraSelections( [selection] )
-            cursor.setPosition( cursor.anchor() )
-            self.textEdit.setTextCursor( cursor )
-            self.findLineEdit.setStyleSheet('')
-        else:
-            if len(self.findText)>0:
-                self.findLineEdit.setStyleSheet('QLineEdit{background: orange;}')
-            else:
-                self.findLineEdit.setStyleSheet('')
+        self.onFind(inPlace=True)
         
     def keyReleaseEvent(self, event):
         if event.matches(QtGui.QKeySequence.Find):
@@ -104,34 +90,11 @@ class PulseProgramSourceEdit(Form, Base):
     def highlightError(self, message, line, text=None, col=None):
         self.errorLabel.setText( message )
         self.errorDisplay.show()
-        self.errorCursor = self.textEdit.textCursor()
-        self.errorCursor.setPosition(0)
-        if line>0:
-            self.errorCursor.movePosition( QtGui.QTextCursor.NextBlock,  QtGui.QTextCursor.MoveAnchor, line-1 )
-        if col is not None:
-            self.errorCursor.movePosition( QtGui.QTextCursor.NextCharacter,  QtGui.QTextCursor.MoveAnchor, col-1 )
-        self.errorCursor.movePosition( QtGui.QTextCursor.EndOfBlock, QtGui.QTextCursor.KeepAnchor );
-        line = str(self.errorCursor.selectedText())
-        if text is not None:
-            errorcol = line.find(text)
-            charSpan = len(text)
-        else:
-            errorcol = col
-            charSpan = 3
-        if errorcol>=0:
-            self.errorCursor.movePosition( QtGui.QTextCursor.StartOfBlock, QtGui.QTextCursor.MoveAnchor)
-            self.errorCursor.movePosition( QtGui.QTextCursor.Right, QtGui.QTextCursor.MoveAnchor, errorcol)
-            self.errorCursor.movePosition( QtGui.QTextCursor.Right, QtGui.QTextCursor.KeepAnchor, charSpan )
-        self.errorCursor.setCharFormat( self.errorFormat );
-        self.textEdit.setTextCursor( self.errorCursor )
-        temp = self.textEdit.textCursor()
-        temp.clearSelection()
-        self.textEdit.setTextCursor( temp )
+        self.textEdit.highlightError(line, col, line, -1)
        
     def clearHighlightError(self):
         self.errorDisplay.hide()
-        if self.errorCursor:
-            self.errorCursor.setCharFormat( self.defaultFormat )
+        self.textEdit.clearError()
                     
          
 if __name__ == "__main__":

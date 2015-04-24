@@ -21,11 +21,16 @@ from fit.FitResultsTableModel import FitResultsTableModel
 from fit.FitFunctionBase import fitFunctionMap
 from fit.StoredFitFunction import StoredFitFunction                #@UnresolvedImport
 from modules.MagnitudeUtilit import value
-from modules.PyqtUtility import BlockSignals, Override
+from modules.PyqtUtility import BlockSignals, Override, updateComboBoxItems
+from modules import DataDirectory
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
+import xml.etree.ElementTree as ElementTree
+from fit.FitFunctions import fromXmlElement
 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
 
 class AnalysisDefinitionElement(object):
+    XMLTagName = "AnalysisDefinition"
     def __init__(self):
         self.name = ''
         self.enabled = True
@@ -49,6 +54,23 @@ class AnalysisDefinitionElement(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        for var in self.pushVariables.itervalues():
+            var.exportXml(myElement)
+        self.fitfunction.fitfunction().toXmlElement(myElement)
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag==AnalysisDefinitionElement.XMLTagName else element.find(AnalysisDefinitionElement.XMLTagName)
+        a = AnalysisDefinitionElement()
+        a.__dict__.update( xmlParseAttributes(myElement) )
+        a.pushVariables = [ PushVariable.fromXmlElement(e, flat=True) for e in myElement.findall(PushVariable.XMLTagName)]
+        a.fitfunction = StoredFitFunction.fromFitfunction( fromXmlElement( myElement.find("FitFunction")) )
+        return a
     
     def pushVariableValues(self):
         """get all push variable values that are within the bounds, no re-evaluation"""
@@ -117,6 +139,7 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.fitToStartButton.clicked.connect( self.onFitToStart )
         self.getSmartStartButton.clicked.connect( self.onSmartToStart )
         self.checkBoxUseSmartStartValues.stateChanged.connect( self.onUseSmartStart )
+        self.useErrorBarsCheckBox.stateChanged.connect( self.onUseErrorBars )
         self.analysisComboDelegate = ComboBoxDelegate()
         self.analysisTableModel = AnalysisTableModel(self.analysisDefinition, self.config, self.globalDict, self.evaluationNames )
         self.analysisTableModel.fitfunctionChanged.connect( self.onFitfunctionChanged )
@@ -136,7 +159,7 @@ class AnalysisControl(ControlForm, ControlBase ):
             self.pushTableView.setItemDelegateForColumn(column,self.pushItemDelegate)
         self.pushDestinations['Database'] = DatabasePushDestination('fit')
 
-        self.analysisConfigurationComboBox.addItems( [ key for key in self.analysisDefinitionDict.iterkeys() if key ] )
+        self.analysisConfigurationComboBox.addItems( sorted([ key for key in self.analysisDefinitionDict.iterkeys() if key ]) )
         if self.currentAnalysisName in self.analysisDefinitionDict:
             self.analysisConfigurationComboBox.setCurrentIndex( self.analysisConfigurationComboBox.findText(self.currentAnalysisName))
         else:
@@ -165,6 +188,44 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.addAction( self.autoSaveAction )
         self.autoSave()
         self.currentAnalysisChanged.emit( self.currentAnalysisName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('AnalysisListContainer')
+        for name, setting in self.analysisDefinitionDict.iteritems():
+            myElement = ElementTree.SubElement(root, "AnalysisList", attrib={'name':name} )
+            for item in setting:
+                item.exportXml(myElement)
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("AnalysisList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+            self.onImportXml(filename, mode="")
+        return root
+        
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
+        tree = ElementTree.parse(filename)
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+        newAnalysisDefinitionDict = dict()
+        for listElement in element.findall("AnalysisList"):
+            newAnalysisDefinitionDict[listElement.attrib['name']] = [ AnalysisDefinitionElement.fromXmlElement(e) for e in listElement.findall(AnalysisDefinitionElement.XMLTagName)]
+        if mode=="replace":
+            self.analysisDefinitionDict = newAnalysisDefinitionDict
+        elif mode=="update":
+            self.analysisDefinitionDict.update( newAnalysisDefinitionDict )
+        elif mode=="addMissing":
+            newAnalysisDefinitionDict.update( self.analysisDefinitionDict )
+            self.analysisDefinitionDict = newAnalysisDefinitionDict
+
+    def onUseErrorBars(self, state):
+        if self.fitfunction is not None:
+            self.fitfunction.useErrorBars = state==QtCore.Qt.Checked
+            self.currentEvaluation.fitfunction = StoredFitFunction.fromFitfunction(self.fitfunction)
+            self.autoSave()        
         
     def onConfigurationEditingFinished(self):
         self.currentAnalysisName = str(self.analysisConfigurationComboBox.currentText())
@@ -292,10 +353,9 @@ class AnalysisControl(ControlForm, ControlBase ):
         if self.currentAnalysisName != '':
             if self.currentAnalysisName not in self.analysisDefinitionDict or self.analysisDefinition != self.analysisDefinitionDict[self.currentAnalysisName]:
                 logging.getLogger(__name__).debug("Saving Analysis '{0}' '{1}'".format(self.currentAnalysisName, self.analysisDefinition[0].name if self.analysisDefinition else ""))
-                if self.currentAnalysisName not in self.analysisDefinitionDict:
-                    if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
-                        self.analysisConfigurationComboBox.addItem(self.currentAnalysisName)
                 self.analysisDefinitionDict[self.currentAnalysisName] = copy.deepcopy(self.analysisDefinition)
+                if self.analysisConfigurationComboBox.findText(self.currentAnalysisName)==-1:
+                    updateComboBoxItems(self.analysisConfigurationComboBox, sorted([ key for key in self.analysisDefinitionDict.iterkeys() if key ]))
                 self.saveButton.setEnabled( False )
                 self.analysisConfigurationChanged.emit( self.analysisDefinitionDict )
         
@@ -422,6 +482,8 @@ class AnalysisControl(ControlForm, ControlBase ):
             with BlockSignals(self.checkBoxUseSmartStartValues):
                 self.checkBoxUseSmartStartValues.setChecked( self.fitfunction.useSmartStartValues )
                 self.checkBoxUseSmartStartValues.setEnabled( self.fitfunction.hasSmartStart )
+            with BlockSignals(self.useErrorBarsCheckBox):
+                self.useErrorBarsCheckBox.setChecked(self.fitfunction.useErrorBars)
         self.evaluate()
 
     def setPlottedTraceDict(self, plottedTraceDict):
