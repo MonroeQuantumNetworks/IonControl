@@ -295,7 +295,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         if self.settings.scanTarget:
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, self.settings.scanParameter)
         elif self.comboBoxScanTarget.count()>0:
-            self.settings.scanTarget = self.comboBoxScanTarget.currentText()
+            self.settings.scanTarget = str( self.comboBoxScanTarget.currentText() )
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, None)
         self.filenameEdit.setText( getattr(self.settings,'filename','') )
         self.rawFilenameEdit.setText( getattr(self.settings,'rawFilename','') )
@@ -428,6 +428,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.parameters.currentScanTarget = firstNotNone(self.parameters.currentScanTarget, target)
         if target==self.parameters.currentScanTarget:
             self.settings.scanParameter = str(updateComboBoxItems( self.comboBoxParameter, sorted(scannames), self.settings.scanParameter ))
+        if not self.settings.scanTarget:
+            self.settings.scanTarget = self.parameters.currentScanTarget
 
     def onChangeScanTarget(self, name):
         """ called on currentIndexChanged[QString] signal of ComboBox"""
