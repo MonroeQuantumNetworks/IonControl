@@ -63,16 +63,18 @@ class DACChannelSetting(object):
 class DAC:
     def __init__(self,pulser):
         self.pulser = pulser
-        self.numChannels = self.pulser.getConfiguration().get('DACChannels',0)
         config = self.pulser.pulserConfiguration()
+        self.numChannels = config.dac.numChannels
         self.dacInfo = config.dac if config else DAADInfo() 
+        self.sendCommand(0, 7, 1) # enable internal reference
 
     def rawToMagnitude(self, raw):
         return decode( raw, self.dacInfo.encoding )
 
-    def setVoltage(self, channel, voltage):
+    def setVoltage(self, channel, voltage, autoApply=False, applyAll=False):
         intVoltage = encode( voltage, self.dacInfo.encoding )
-        self.sendCommand(channel, 0, intVoltage)
+        code =  (2 if applyAll else 3) if autoApply else 0
+        self.sendCommand(channel, code, intVoltage)
         return intVoltage
     
     def sendCommand(self, channel, cmd, data):

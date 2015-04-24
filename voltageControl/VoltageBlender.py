@@ -136,7 +136,12 @@ class VoltageBlender(QtCore.QObject):
         logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
         self.dacController = dacController
-        self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
+        try:
+            self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
+        except HardwareException as e:
+            self.hardware = NoneHardware()
+            logger.error(str(e))
+            logger.error("Loading Voltage driver failed. Running without available voltage output.")
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = SequenceDict()  # names of the lines presented as possible adjusts
