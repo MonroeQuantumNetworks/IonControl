@@ -300,6 +300,35 @@
             <Parameter address="0x3e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 delay Coefficient" encoding="TIME" enabled="True"/>
             <Parameter address="0x3f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
 
+			<Parameter address="0x50" default="0x00" bitmask="0xffff" shift="0" name="Scan 0 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x50" default="0x00" bitmask="0xffff" shift="16" name="Scan 0 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x50" default="0x00" bitmask="0xffff" shift="32" name="Scan 0 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x51" default="0x00" bitmask="0xffff" shift="0" name="Scan 1 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x51" default="0x00" bitmask="0xffff" shift="16" name="Scan 1 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x51" default="0x00" bitmask="0xffff" shift="32" name="Scan 1 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x52" default="0x00" bitmask="0xffff" shift="0" name="Scan 2 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x52" default="0x00" bitmask="0xffff" shift="16" name="Scan 2 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x52" default="0x00" bitmask="0xffff" shift="32" name="Scan 2 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x53" default="0x00" bitmask="0xffff" shift="0" name="Scan 3 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x53" default="0x00" bitmask="0xffff" shift="16" name="Scan 3 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x53" default="0x00" bitmask="0xffff" shift="32" name="Scan 3 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x54" default="0x00" bitmask="0xffff" shift="0" name="Scan 4 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x54" default="0x00" bitmask="0xffff" shift="16" name="Scan 4 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x54" default="0x00" bitmask="0xffff" shift="32" name="Scan 4 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x55" default="0x00" bitmask="0xffff" shift="0" name="Scan 5 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x55" default="0x00" bitmask="0xffff" shift="16" name="Scan 5 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x55" default="0x00" bitmask="0xffff" shift="32" name="Scan 5 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x56" default="0x00" bitmask="0xffff" shift="0" name="Scan 6 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x56" default="0x00" bitmask="0xffff" shift="16" name="Scan 6 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x56" default="0x00" bitmask="0xffff" shift="32" name="Scan 6 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x57" default="0x00" bitmask="0xffff" shift="0" name="Scan 7 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x57" default="0x00" bitmask="0xffff" shift="16" name="Scan 7 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x57" default="0x00" bitmask="0xffff" shift="32" name="Scan 7 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x58" default="0x00" bitmask="0xffff" shift="0" name="Autolock 0 threshold 1" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x58" default="0x00" bitmask="0xffff" shift="16" name="Autolock 0 threshold 2" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x58" default="0x00" bitmask="0x1" shift="17" name="Autolock 0 sign 1" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x58" default="0x00" bitmask="0x1" shift="18" name="Autolock 0 sign 2" encoding="DAC8568_VOLTAGE" enabled="True" />
+
 			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="0" name="DDS0 regulator input" encoding="None" enabled="True" />
 			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="8" name="DDS1 regulator input" encoding="None" enabled="True" />
 			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="16" name="DDS2 regulator input" encoding="None" enabled="True" />
