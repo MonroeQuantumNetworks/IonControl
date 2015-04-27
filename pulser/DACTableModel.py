@@ -35,6 +35,7 @@ class DACTableModel(QtCore.QAbstractTableModel):
         enabled = value==QtCore.Qt.Checked
         self.dacChannels[index.row()].enabled = enabled
         self.enableChanged.emit( index.row(), enabled )
+        self.voltageChanged.emit( index.row(), value)
         return True
     
     def setValue(self, index, value):
