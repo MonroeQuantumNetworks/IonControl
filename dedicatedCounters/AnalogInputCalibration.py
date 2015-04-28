@@ -61,10 +61,10 @@ class AnalogInputCalibrationAD7608(AnalogInputCalibration):
         if binary is None:
             return None
         if binary & 0x80000000:
-            numeric = -0x8000000 + (binary&0x7fffffff)
+            numeric = -0x80000000 + (binary&0x7fffffff)
         else:
             numeric = binary
-        converted = numeric * referenceVoltage / 0x80000000
+        converted = numeric * self.referenceVoltage / 0x800000
         return converted
         
     def convertMagnitude(self, binary):
