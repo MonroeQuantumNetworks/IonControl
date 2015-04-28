@@ -49,6 +49,11 @@ class NoneHardware(object):
 
     def close(self):
         pass
+    
+    @property
+    def channelCount(self):
+        return 0
+
 
 class NIHardware(object):
     name = "NI DAC"
@@ -95,6 +100,10 @@ class NIHardware(object):
 #         self.outputVoltage = self.shuttleTo
 #         self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
 
+    @property
+    def channelCount(self):
+        return self.chassis.getNumAoChannels()
+
 
 class FPGAHardware(object):
     name = "FPGA Hardware"
@@ -125,6 +134,10 @@ class FPGAHardware(object):
         
     def triggerShuttling(self):
         self.dacController.triggerShuttling()
+        
+    @property
+    def channelCount(self):
+        return self.dacController.channelCount
  
 
 class VoltageBlender(QtCore.QObject):
@@ -168,18 +181,21 @@ class VoltageBlender(QtCore.QObject):
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
     
     def loadVoltage(self,path):
+        channelCount = self.hardware.channelCount if self.hardware else 0
         self.itf.open(path)
         self.lines = list()
         for _ in range(self.itf.getNumLines()):
             line = self.itf.eMapReadLine() 
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
+            line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
             self.lines.append( line )
         self.tableHeader = self.itf.tableHeader
         self.itf.close()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
 
     def loadGlobalAdjust(self,path):
+        channelCount = self.hardware.channelCount if self.hardware else 0
         self.adjustLines = list()
         self.adjustDict = SequenceDict()
         itf = itfParser()
@@ -189,6 +205,7 @@ class VoltageBlender(QtCore.QObject):
             line = itf.eMapReadLine() 
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
+            line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
             self.adjustLines.append( line )
         for name, value in itf.meta.iteritems():
             try:

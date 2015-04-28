@@ -269,6 +269,10 @@ class ShuttlingGraph(list):
     
     def shuttlePath(self, fromName, toName ):
         fromName = firstNotNone(fromName, self.currentPositionName)
+        if fromName not in self.shuttlingGraph:
+            raise ShuttlingGraphException("Shuttling failed, origin '{0}' is not a valid shuttling node".format(fromName))
+        if toName not in self.shuttlingGraph:
+            raise ShuttlingGraphException("Shuttling failed, target '{0}' is not a valid shuttling node".format(toName))
         sp = shortest_path(self.shuttlingGraph, fromName, toName)
         path = list()
         for a,b in pairs_iter(sp):
