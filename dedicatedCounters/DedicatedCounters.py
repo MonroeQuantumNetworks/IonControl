@@ -200,7 +200,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.tick += 1
         self.displayUi.values = data.data[0:4]
         self.displayUi2.values = data.data[4:8]
-        self.displayUiADC.values = self.convertAnalog(data.data[8:12])
+        self.displayUiADC.values = self.convertAnalog(data.analog())
         data.analogValues = self.displayUiADC.values
         if data.data[16] is not None and data.data[16] in self.integrationTimeLookup:
             self.dataIntegrationTime = self.integrationTimeLookup[ data.data[16] ]

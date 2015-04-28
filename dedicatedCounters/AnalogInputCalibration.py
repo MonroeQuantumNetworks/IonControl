@@ -17,7 +17,7 @@ referenceVoltage = 3.33
 class Parameters:
     pass
 
-class AnalogInputCalibration:
+class AnalogInputCalibration(object):
     def __init__(self,name="default"):
         self.name = name
         self.parameters = Parameters()
@@ -49,6 +49,31 @@ class AnalogInputCalibration:
         """
         for param, _, data in changes:
             setattr( self.parameters, param.name(), data)
+
+class AnalogInputCalibrationAD7608(AnalogInputCalibration):
+    referenceVoltage = 5.0
+    def __init__(self,name="AD7608"):
+        super(AnalogInputCalibrationAD7608, self).__init__(name)
+    
+    def convert(self, binary):
+        """convert the binary representation from the ADC chip to voltage
+        """
+        if binary is None:
+            return None
+        if binary & 0x80000000:
+            numeric = -0x8000000 + (binary&0x7fffffff)
+        else:
+            numeric = binary
+        converted = numeric * referenceVoltage / 0x80000000
+        return converted
+        
+    def convertMagnitude(self, binary):
+        """convert the binary representation from the ADC chip to a magnitude object
+        """
+        if binary is None:
+            return None
+        return magnitude.mg( self.convert(binary), 'V')
+        
 
         
 class PowerDetectorCalibration(AnalogInputCalibration):
@@ -105,4 +130,5 @@ class PowerDetectorCalibrationTwo(PowerDetectorCalibration):
         
         
 AnalogInputCalibrationMap = { 'Voltage': AnalogInputCalibration,
-                              'Rf power detector': PowerDetectorCalibration }
+                              'Rf power detector': PowerDetectorCalibration,
+                              'AD7608 Voltage': AnalogInputCalibrationAD7608 }

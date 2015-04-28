@@ -430,6 +430,6 @@
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
 		</StatusBits>		
 		<DAC numChannels="8" encoding="DAC8568_VOLTAGE" />	
-		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" />
+		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" dedicatedfirstChannelNo="16" />
 	</Pulser> 
 </PulserList>
