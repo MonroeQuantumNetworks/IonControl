@@ -747,6 +747,10 @@ class PulserHardwareServer(Process, OKBase):
     def clearOverrun(self):
         if self.xem:
             self.xem.ActivateTriggerIn(0x41, 9)  # reset overrun
+            
+    def uploadBitfile(self, bitfile):
+        OKBase.uploadBitfile(self, bitfile)
+        self.syncTime()
        
         
 def sliceview(view,length):
