@@ -269,7 +269,10 @@ class PulserHardwareServer(Process, OKBase):
                         if self.dedicatedData.data[channel] is not None:
                             self.dataQueue.put( self.dedicatedData )
                             self.dedicatedData = self.dedicatedDataClass(self.timeTickOffset)
-                        self.dedicatedData.data[channel] = token & 0xffffffffffff
+                        if channel==33:
+                            self.dedicatedData.data[channel] = token & 0xffffffffffff + self.timestampOffset
+                        else:
+                            self.dedicatedData.data[channel] = token & 0xffffffffffff
                     except IndexError:
                         pass
                         #logger.debug("dedicated {0} {1}".format(channel, token & 0xffffffffffff))
