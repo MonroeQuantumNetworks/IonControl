@@ -66,19 +66,29 @@ class Data(object):
         (data.count, data.timestamp, data.timestampZero, data.scanvalue, data.final, data.other, data.overrun,
          data.exitcode, data.dependentValues, data.result, data.externalStatus, data._creationTime, data.timeTickOffset) = json.loads(string)
 
-class DedicatedData:
-    def __init__(self):
-        self.data = [None]*33
+class DedicatedData(object):
+    def __init__(self, timeTickOffset=0):
+        self.data = [None]*34
         self.externalStatus = None
+        self.timeTickOffset = timeTickOffset
+        self._timestamp = time_time()
         
     def count(self):
         return self.data[0:15]
         
     def analog(self):
-        return self.data[16:32]
+        return self.data[16:31]
         
     def integration(self):
-        return self.data[33]
+        return self.data[32]
+    
+    @property
+    def timestamp(self):
+        return self.data[33]*5e-9+self.timeTickOffset if self.data[33] else self._timestamp
+    
+    @timestamp.setter
+    def timestamp(self, ts):
+        self._timestamp = ts
 
 class LogicAnalyzerData:
     def __init__(self):
@@ -120,7 +130,7 @@ class PulserHardwareServer(Process, OKBase):
         # PipeReader stuff
         self.state = self.analyzingState.normal
         self.data = Data()
-        self.dedicatedData = self.dedicatedDataClass()
+        self.dedicatedData = self.dedicatedDataClass(time_time())
         self.timestampOffset = 0
 
         self._shutter = 0
@@ -254,13 +264,15 @@ class PulserHardwareServer(Process, OKBase):
                         self.data.scanvalue = token
                     self.state = self.analyzingState.normal
                 elif token & 0xff00000000000000 == 0xee00000000000000: # dedicated results
-                    channel = (token >>48) & 0xff
-                    if self.dedicatedData.data[channel] is not None:
-                        self.dataQueue.put( self.dedicatedData )
-                        self.dedicatedData = self.dedicatedDataClass()
-                    self.dedicatedData.data[channel] = token & 0xffffffffffff
-                    self.dedicatedData.timestamp = time_time()
-                    #logger.debug("dedicated {0} {1}".format(channel, token & 0xffffffffffff))
+                    try:
+                        channel = (token >>48) & 0xff
+                        if self.dedicatedData.data[channel] is not None:
+                            self.dataQueue.put( self.dedicatedData )
+                            self.dedicatedData = self.dedicatedDataClass(self.timeTickOffset)
+                        self.dedicatedData.data[channel] = token & 0xffffffffffff
+                    except IndexError:
+                        pass
+                        #logger.debug("dedicated {0} {1}".format(channel, token & 0xffffffffffff))
                 elif token & 0xff00000000000000 == 0xff00000000000000:
                     if token == 0xffffffffffffffff:    # end of run
                         self.data.final = True
