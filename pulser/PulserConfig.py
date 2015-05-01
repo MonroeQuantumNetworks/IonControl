@@ -33,6 +33,7 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
       <xs:extension base="xs:string">
         <xs:attribute type="xs:byte" name="numChannels" use="optional"/>
         <xs:attribute type="xs:string" name="encoding" use="optional"/>
+        <xs:attribute type="xs:string" name="dedicatedfirstChannelNo" use="optional"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
