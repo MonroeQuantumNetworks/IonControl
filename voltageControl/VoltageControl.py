@@ -6,7 +6,7 @@ Created on Sat Feb 16 16:56:57 2013
 """
 import logging
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 from VoltageAdjust import VoltageAdjust
@@ -15,6 +15,7 @@ from VoltageFiles import VoltageFiles
 from VoltageGlobalAdjust import VoltageGlobalAdjust
 import VoltageTableModel
 from modules import MagnitudeUtilit
+from voltageControl.VoltageLocalAdjust import VoltageLocalAdjust
 
 
 VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
@@ -48,6 +49,13 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.globalAdjustUi.setupUi( self.globalAdjustUi )
         self.globalAdjustUi.updateOutput.connect( self.voltageBlender.setAdjust )
         self.globalAdjustDock.setWidget( self.globalAdjustUi )
+        self.localAdjustUi = VoltageLocalAdjust(self.config, self.globalDict)
+        self.localAdjustUi.setupUi( self.localAdjustUi )
+        self.localAdjustUi.updateOutput.connect( self.voltageBlender.setLocalAdjust )
+        self.localAdjustDock = QtGui.QDockWidget("Local Adjust")
+        self.localAdjustDock.setObjectName("_LocalAdjustDock")
+        self.localAdjustDock.setWidget( self.localAdjustUi )
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.localAdjustDock)
         if hasattr(self.settings,'state'):
             self.restoreState( self.settings.state )
         self.voltageFilesUi.loadMapping.connect( self.voltageBlender.loadMapping )

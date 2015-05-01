@@ -92,7 +92,8 @@ class DACUi(dacForm, dacBase):
         self.config['dacUi.guiState'] = saveGuiState( self )
         
     def onApply(self):
-        self.dac.setVoltage(0, self.dacChannels[0].outputVoltage, autoApply=True, applyAll=True )
+        if self.dacChannels:
+            self.dac.setVoltage(0, self.dacChannels[0].outputVoltage, autoApply=True, applyAll=True )
         
     def onReset(self):
         self.dac.reset(0xff)

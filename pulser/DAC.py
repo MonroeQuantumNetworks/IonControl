@@ -64,7 +64,7 @@ class DAC:
     def __init__(self,pulser):
         self.pulser = pulser
         config = self.pulser.pulserConfiguration()
-        self.numChannels = config.dac.numChannels
+        self.numChannels = config.dac.numChannels if config else 0
         self.dacInfo = config.dac if config else DAADInfo() 
         self.sendCommand(0, 7, 1) # enable internal reference
 
