@@ -53,6 +53,7 @@ from mylogging.LoggingSetup import qtWarningButtonHandler
 from pulser.PulserParameterUi import PulserParameterUi
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify
+from AWG.AWGUi import AWGUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -190,6 +191,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setWidget(self.preferencesUi)
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
+        
+        self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.variables)
+        self.AWGUi.setupUi(self.AWGUi)
+        self.AWGUiDock = QtGui.QDockWidget("AWG")
+        self.AWGUiDock.setWidget(self.AWGUi)
+        self.AWGUiDock.setObjectName("_AWGUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
 
         self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.variables)
         self.pulserParameterUi.setupUi()
@@ -335,6 +343,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )
             logger.warning("Voltage subsystem disabled: {0}".format(str(e)))
+        except Exception as e:
+            self.voltageControlWindow = None
+            self.actionVoltageControl.setEnabled( False )
+            logging.getLogger(__name__).exception(e)  
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         
         self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
@@ -603,7 +615,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
 if __name__ == "__main__":
     import sys
-    from voltageControl.VoltageControl import VoltageControl
+    try:
+        from voltageControl.VoltageControl import VoltageControl
+    except Exception as e:
+        logging.getLogger(__name__).exception(e)  
 
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes

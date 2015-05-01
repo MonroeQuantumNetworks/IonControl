@@ -120,6 +120,30 @@ class Expression:
             self.exprStack.append( 'unary -' )
             #~ exprStack.append( '-1' )
             #~ exprStack.append( '*' )
+            
+    def findDependencies(self, s):
+        def helper(s, deps):
+            op = s.pop()
+            if op == 'unary -':
+                helper(s, deps)
+            if op in "+-*/^":
+                helper(s, deps)
+                helper(s, deps)
+            elif op == "PI" or op=='pi':
+                pass
+            elif op == "E" or op=="e":
+                pass
+            elif op in fn:
+                helper(s, deps)
+            elif op[0].isalpha():
+                deps.add(op)
+            elif op[0:2]=="0x":
+                pass
+            else:
+                pass
+        deps = set()
+        helper(s[:], deps)
+        return deps
 
     # map operator symbols to corresponding arithmetic operations
     def evaluateStack(self, s, dependencies, useFloat=True ):
@@ -156,6 +180,12 @@ class Expression:
             value = m.val
         else:
             value = m
+        return value
+    
+    def evaluateWithStack(self, stack, variabledict=dict(), useFloat=True):
+        self.variabledict = variabledict
+        dependencies = set()
+        value = self.evaluateStack( stack[:], dependencies, useFloat )
         return value
                     
     @lru_cache(maxsize=100)
