@@ -15,10 +15,11 @@ import numpy
 from Chassis import DAQmxUtility     
 from Chassis.itfParser import itfParser
 from gui import ProjectSelection
-from modules import MyException
+from modules import MyException, MagnitudeUtilit
 from modules.SequenceDict import SequenceDict
 from AdjustValue import AdjustValue
 from pulser.DACController import DACControllerException   
+from numpy import linspace
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -36,6 +37,7 @@ class HardwareException(Exception):
 
 class NoneHardware(object):
     name = "No DAC Hardware"
+    nativeShuttling = False
     def __init__(self):
         pass
     
@@ -47,6 +49,11 @@ class NoneHardware(object):
 
     def close(self):
         pass
+    
+    @property
+    def channelCount(self):
+        return 0
+
 
 class NIHardware(object):
     name = "NI DAC"
@@ -93,26 +100,45 @@ class NIHardware(object):
 #         self.outputVoltage = self.shuttleTo
 #         self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
 
+    @property
+    def channelCount(self):
+        return self.chassis.getNumAoChannels()
+
 
 class FPGAHardware(object):
     name = "FPGA Hardware"
+    nativeShuttling = True
     def __init__(self, dacController):
         self.dacController = dacController
         
     def applyLine(self, line):
         self.dacController.writeVoltage( 0, line )
         self.dacController.readVoltage(0, line)
-        self.dacController.shuttle( 0, 1, 0, 0 )
+        self.dacController.shuttleDirect( 0, 1, idleCount=0, immediateTrigger=True )
         self.dacController.triggerShuttling()
         
-    def shuttle(self, outputmatrix):
-        logging.getLogger(__name__).error( "FPGAHardware: Shuttling not implemented" )
-        self.dacController.writeVoltage( 0, (numpy.array(outputmatrix)).flatten('F') )
-        self.dacController.shuttle( 0, 0, 0, 0 )  # needs startline beyondendline gapcount direction
-        self.dacController.triggerShuttling()
+    def shuttle(self, lookupIndex, reverseEdge=False, immediateTrigger=False ):
+        self.dacController.shuttle( lookupIndex, reverseEdge, immediateTrigger  )  
+        
+    def shuttlePath(self, path):
+        self.dacController.shuttlePath(path)
         
     def close(self):
         pass
+    
+    def writeData(self, address, lineList):
+        self.dacController.writeVoltages(address,lineList)
+        
+    def writeShuttleLookup(self, shuttleEdges, startAddress=0 ):
+        self.dacController.writeShuttleLookup(shuttleEdges, startAddress)
+        
+    def triggerShuttling(self):
+        self.dacController.triggerShuttling()
+        
+    @property
+    def channelCount(self):
+        return self.dacController.channelCount
+ 
 
 class VoltageBlender(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(int,int,int,int)
@@ -123,7 +149,12 @@ class VoltageBlender(QtCore.QObject):
         logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
         self.dacController = dacController
-        self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
+        try:
+            self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
+        except HardwareException as e:
+            self.hardware = NoneHardware()
+            logger.error(str(e))
+            logger.error("Loading Voltage driver failed. Running without available voltage output.")
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = SequenceDict()  # names of the lines presented as possible adjusts
@@ -139,6 +170,7 @@ class VoltageBlender(QtCore.QObject):
         self.tableHeader = list()
         self.globalDict = globalDict
         self.adjustGain = 1.0
+        self.localAdjustSolutions = dict()
         
     def currentData(self):
         return self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
@@ -150,18 +182,21 @@ class VoltageBlender(QtCore.QObject):
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
     
     def loadVoltage(self,path):
+        channelCount = self.hardware.channelCount if self.hardware else 0
         self.itf.open(path)
         self.lines = list()
         for _ in range(self.itf.getNumLines()):
             line = self.itf.eMapReadLine() 
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
+            line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
             self.lines.append( line )
         self.tableHeader = self.itf.tableHeader
         self.itf.close()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
 
     def loadGlobalAdjust(self,path):
+        channelCount = self.hardware.channelCount if self.hardware else 0
         self.adjustLines = list()
         self.adjustDict = SequenceDict()
         itf = itfParser()
@@ -171,6 +206,7 @@ class VoltageBlender(QtCore.QObject):
             line = itf.eMapReadLine() 
             for index, value in enumerate(line):
                 if math.isnan(value): line[index]=0
+            line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
             self.adjustLines.append( line )
         for name, value in itf.meta.iteritems():
             try:
@@ -180,22 +216,43 @@ class VoltageBlender(QtCore.QObject):
                 pass   # if it's not an int we will ignore it here
         itf.close()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
+        
+    def loadLocalAdjust(self, localAdjustDict, forceupdate=list() ):
+        channelCount = self.hardware.channelCount if self.hardware else 0
+        self.localAdjust = dict()
+        for name, record in localAdjustDict.iteritems():
+            path = record.path
+            if name in forceupdate or name not in self.localAdjustCache or self.localAdjustCache[name]!=path:
+                linelist = list()
+                itf = itfParser()
+                itf.eMapFilePath = self.mappingpath
+                itf.open(path)
+                for _ in range(itf.getNumLines()):
+                    line = itf.eMapReadLine() 
+                    for index, value in enumerate(line):
+                        if math.isnan(value): line[index]=0
+                    line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
+                    linelist.append( line )
+                itf.close()
+                record.solution = linelist
+                self.localAdjustCache[name] = path
+        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
     
     def setAdjust(self, adjust, gain):
         self.adjustDict = adjust
         self.adjustGain = gain
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
+        
+    def setLocalAdjust(self, localAdjustDict ):
+        self.localAdjustSolutions = localAdjustDict
+        self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
-        line = self.blendLines(lineno,lineGain)
-        self.lineGain = lineGain
-        self.globalGain = globalGain
-        self.lineno = lineno
-        line = self.adjustLine( line )
-        line *= self.globalGain
+        line = self.calculateLine(lineno,lineGain,globalGain)
         try:
             self.hardware.applyLine(line)
             self.outputVoltage = line
+            self.lineno = lineno
             self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
         except (HardwareException, DACControllerException) as e:
             logging.getLogger(__name__).exception("Exception")
@@ -203,29 +260,35 @@ class VoltageBlender(QtCore.QObject):
             outOfRange |= line<-10
             self.dataError.emit(outOfRange.tolist())
             
+    def calculateLine(self, lineno, lineGain, globalGain):
+        line = self.blendLines(lineno,lineGain)
+        localadjustline = self.blendLocalAdjustLines(lineno)
+        self.lineGain = lineGain
+        self.globalGain = globalGain
+        #self.lineno = lineno
+        line = self.adjustLine( line )
+        line = numpy.add( line, localadjustline )
+        line *= self.globalGain
+        return line
+            
     def shuttle(self, definition, cont):
         logger = logging.getLogger(__name__)
-        if True:
-            for edge in definition:
-                for line in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
-                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
-                    self.applyLine(line,edge.lineGain,edge.globalGain)
+        if not self.hardware.nativeShuttling:
+            for start, _, edge, _ in definition:
+                fromLine, toLine = (edge.startLine, edge.stopLine) if start==edge.startName else (edge.stopLine, edge.startLine)
+                for line in numpy.linspace(fromLine, toLine, edge.steps+2, True):
+                    self.applyLine(line,self.lineGain,self.globalGain)
                     logger.debug( "shuttling applied line {0}".format( line ) )
             self.shuttlingOnLine.emit(line)
         else:  # this stuff does not work yet
-            logger.info( "Starting finite shuttling" )
-            outputmatrix = list()
-            globaladjust = [0]*len(self.lines[0])
-            self.adjustLine(globaladjust)
-            for edge in definition:
-                for lineno in numpy.linspace(edge.fromLine if not edge.reverse else edge.toLine,
-                                           edge.toLine if not edge.reverse else edge.fromLine, edge.steps,True):
-                    outputmatrix.append( (self.blendLines(lineno,edge.lineGain)+globaladjust)*self.globalGain )
-            try:
-                self.hardware.shuttle( outputmatrix )
-                self.shuttleTo = lineno
-            except (HardwareException, DACControllerException) as e:
-                logger.exception("")
+            if definition:
+                logger.info( "Starting finite shuttling" )
+                globaladjust = [0]*len(self.lines[0])
+                self.adjustLine(globaladjust)
+                self.hardware.shuttlePath( [(index, start!=edge.startName, True) for start, _, edge, index in definition] )
+                start, _, edge, _ = definition[-1]
+                self.shuttleTo = edge.startLine if start!=edge.startName else edge.stopLine
+                self.shuttlingOnLine.emit(self.shuttleTo)
                         
     def adjustLine(self, line):
         offset = numpy.array([0.0]*len(line))
@@ -241,8 +304,37 @@ class VoltageBlender(QtCore.QObject):
             convexc = lineno-left
             return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
         return None
+    
+    def blendLocalAdjustLines(self, lineno):
+        channelCount = self.hardware.channelCount if self.hardware else 0
+        left = int(math.floor(lineno))
+        right = int(math.ceil(lineno))
+        convexc = lineno-left
+        result = numpy.zeros(channelCount)
+        for record in self.localAdjustVoltages.itervalues():
+            if record.solution:
+                result = numpy.add(result, (record.solution[left]*(1-convexc) + record.solution[right]*convexc)*record.gain)
+        return result
             
     def close(self):
         self.hardware.close()
 
+    def writeShuttleLookup(self, edgeList, address=0):
+        self.dacController.writeShuttleLookup(edgeList,address)
     
+    def writeData(self, shuttlingGraph):
+        towrite = list()
+        startline = 1
+        currentline = startline
+        lineGain = MagnitudeUtilit.value(self.lineGain)
+        globalGain = MagnitudeUtilit.value(self.globalGain)
+        for edge in shuttlingGraph:         
+            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.iLines() ] )
+            edge.interpolStartLine = currentline
+            currentline = startline+len(towrite)
+            edge.interpolStopLine = currentline 
+        data = self.dacController.writeVoltages(1, towrite )
+        self.dacController.verifyVoltages(1, data )
+        
+    def trigger(self):
+        self.dacController.triggerShuttling()

@@ -14,6 +14,7 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from pulser import DDSUi
+from pulser.DACUi import DACUi
 from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
 from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
@@ -38,7 +39,7 @@ from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
 from functools import partial
-import externalParameter.ExternalParameter
+import externalParameter.ExternalParameter #@UnusedImport
 from gui.Preferences import PreferencesUi
 from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from gui.FPGASettings import FPGASettingsDialog
@@ -46,10 +47,12 @@ from pulser.OKBase import OKBase
 from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
 from pulser.DACController import DACController    #@UnresolvedImport
 from gui.ValueHistoryUi import ValueHistoryUi
-from modules.doProfile import doprofile
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from externalParameter.ExternalParameterBase import InstrumentDict
 from mylogging.LoggingSetup import qtWarningButtonHandler
+from pulser.PulserParameterUi import PulserParameterUi
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -129,7 +132,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.settingsDialog.addEntry( "DAC system", self.dac)
         self.settingsDialog.initialize()
 
-        self.settings = self.settingsDialog.settings        
+        self.settings = self.settingsDialog.settings("Pulse Programmer")   
+        logger.info("Pulser Configuration {0}".format(self.pulser.getConfiguration()))
 
         # Global Variables
         self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
@@ -141,10 +145,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         self.measurementLog = MeasurementLogUi(self.config, self.dbConnection)
         self.measurementLog.setupUi(self.measurementLog)
-        self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
-        self.measurementLogDock.setWidget( self.measurementLog )
-        self.measurementLogDock.setObjectName('_MeasurementLog')
-        self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
+        #self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
+        #self.measurementLogDock.setWidget( self.measurementLog )
+        #self.measurementLogDock.setObjectName('_MeasurementLog')
+        #self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
         
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, 
                                                             measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan"),
@@ -162,7 +166,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                     
         self.scanExperiment = self.tabDict["Scan"]
                     
-        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal) )
+        self.shutterUi = ShutterUi.ShutterUi(self.pulser, 'shutter', self.config, (self.shutterNameDict, self.shutterNameSignal), size=48 )
         self.shutterUi.setupUi(self.shutterUi, True)
         self.shutterDockWidget.setWidget( self.shutterUi )
         self.pulser.ppActiveChanged.connect( self.shutterUi.setDisabled )
@@ -181,6 +185,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
+        self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.variables)
+        self.pulserParameterUi.setupUi()
+        self.pulserParameterUiDock = QtGui.QDockWidget("Pulser Parameters")
+        self.pulserParameterUiDock.setWidget(self.pulserParameterUi)
+        self.pulserParameterUiDock.setObjectName("_pulserParameterUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.pulserParameterUiDock)
+
         self.DDSUi = DDSUi.DDSUi(self.config, self.pulser, self.globalVariablesUi.variables )
         self.DDSUi.setupUi(self.DDSUi)
         self.DDSDockWidget.setWidget( self.DDSUi )
@@ -188,6 +199,21 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulser.ppActiveChanged.connect( self.DDSUi.setDisabled )
         self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi.onWriteAll )
         
+        self.DACUi = DACUi(self.config, self.pulser, self.globalVariablesUi.variables )
+        self.DACUi.setupUi(self.DACUi)
+        self.DACDockWidget = QtGui.QDockWidget("DAC")
+        self.DACDockWidget.setObjectName("_DAC_")
+        self.DACDockWidget.setWidget( self.DACUi )
+        self.pulser.ppActiveChanged.connect( self.DACUi.setDisabled )
+        self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DACUi.onWriteAll )
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.DACDockWidget )
+
+#         self.DDSUi9910 = DDSUi9910.DDSUi(self.config, self.pulser )
+#         self.DDSUi9910.setupUi(self.DDSUi9910)
+#         self.DDS9910DockWidget.setWidget( self.DDSUi9910 )
+#        self.pulser.ppActiveChanged.connect( self.DDSUi9910.setDisabled )
+        #self.tabDict['Scan'].NeedsDDSRewrite.connect( self.DDSUi9910.onWriteAll )
+
         self.valueHistoryUi = ValueHistoryUi(self.config, self.dbConnection)
         self.valueHistoryUi.setupUi( self.valueHistoryUi )
         self.valueHistoryDock = QtGui.QDockWidget("Value History")
@@ -196,10 +222,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.valueHistoryDock )
         
         # tabify the dock widgets
+        self.tabifyDockWidget( self.pulserParameterUiDock, self.preferencesUiDock)
         self.tabifyDockWidget( self.preferencesUiDock, self.triggerDockWidget )
         self.tabifyDockWidget( self.triggerDockWidget, self.shutterDockWidget)
         self.tabifyDockWidget( self.shutterDockWidget, self.DDSDockWidget )
-        self.tabifyDockWidget( self.DDSDockWidget, self.globalVariablesDock )
+        self.tabifyDockWidget( self.DDSDockWidget, self.DACDockWidget )
+#        self.tabifyDockWidget( self.DDSDockWidget, self.DDS9910DockWidget )
+#        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
+        self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
         
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
@@ -251,8 +281,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionClear.triggered.connect(self.onClear)
         self.actionPause.triggered.connect(self.onPause)
         self.actionSave.triggered.connect(self.onSave)
+        self.actionExport_to_XML.triggered.connect(self.onXmlExport)
+        self.actionImport_from_XML_add.triggered.connect( partial(self.onXmlImport,'addMissing'))
+        self.actionImport_from_XML_replace.triggered.connect(partial(self.onXmlImport,'replace'))
+        self.actionImport_from_XML_update.triggered.connect(partial(self.onXmlImport,'update'))
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
+        self.actionAbort.triggered.connect(self.onAbort)
         self.actionSettings.triggered.connect(self.onSettings)
         self.actionExit.triggered.connect(self.onClose)
         self.actionContinue.triggered.connect(self.onContinue)
@@ -260,6 +295,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionReload.triggered.connect(self.onReload)
         self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
+        self.actionMeasurementLog.triggered.connect(self.onMeasurementLog)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
         self.actionLogging.triggered.connect(self.startLoggingProcess)
@@ -348,6 +384,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.setWindowState(QtCore.Qt.WindowActive)
         self.voltageControlWindow.raise_()
         
+    def onMeasurementLog(self):
+        self.measurementLog.show()
+        self.measurementLog.setWindowState(QtCore.Qt.WindowActive)
+        self.measurementLog.raise_()
+        
     def onClear(self):
         self.currentTab.onClear()
     
@@ -359,6 +400,24 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.saveConfig()
         self.config.saveConfig(filename)
         
+    def onXmlExport(self):
+        root = ElementTree.Element('IonControlSettings')
+        self.globalVariablesUi.onExportXml(root, writeToFile=False)
+        if hasattr(self.currentTab,'exportXml'):
+            self.currentTab.exportXml(root)   
+        filename = DataDirectory.DataDirectory().sequencefile("IonControlSettings.xml")[0]
+        with open(filename,'w') as f:
+            f.write(prettify(root))
+            
+    def onXmlImport(self, mode):
+        filename = QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filter="*.xml" )
+        if filename:
+            tree = ElementTree.parse(filename)
+            root = tree.getroot()
+            self.globalVariablesUi.importXml(root, mode=mode)
+            if hasattr(self.currentTab,'importXml'):
+                self.currentTab.importXml(root, mode)   
+         
     def onCommitConfig(self):
         logger = logging.getLogger(__name__)
         self.currentTab.onSave()
@@ -375,6 +434,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     
     def onStop(self):
         self.currentTab.onStop()
+        
+    def onAbort(self):
+        self.currentTab.onStop(reason='aborted')
         
     def onContinue(self):
         if hasattr(self.currentTab,'onContinue'):
@@ -409,9 +471,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, 
-                     self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock,
-                     self.loggerDock, self.todoListDock, self.measurementLogDock ]:
+        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, self.DACDockWidget,
+                     self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock, self.pulserParameterUiDock,
+                     #self.DDS9910DockWidget, 
+                     self.loggerDock, self.todoListDock, #self.measurementLogDock 
+                     ]:
             self.menuView.addAction(dock.toggleViewAction())
         # Print menu
         if self.printMenu is not None:
@@ -464,6 +528,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.dedicatedCountersWindow.close()
         self.pulseProgramDialog.onClose()
         self.logicAnalyzerWindow.close()
+        self.measurementLog.close()
         if self.instrumentLogger:
             self.instrumentLogger.shutdown()
 
@@ -482,6 +547,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.pulseProgramDialog.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
+        self.DACUi.saveConfig()
+        #self.DDSUi9910.saveConfig()
         self.shutterUi.saveConfig()
         self.triggerUi.saveConfig()
         self.dedicatedCountersWindow.saveConfig()
@@ -496,6 +563,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLog.saveConfig()
         self.valueHistoryUi.saveConfig()
         self.ExternalParametersUi.saveConfig()
+        self.pulserParameterUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
@@ -541,16 +609,17 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir, dbConnection = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
     
-    if project:
-        DataDirectory.DefaultProject = project
-        
-        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with ExperimentUi(config, dbConnection) as ui:
-                ui.setupUi(ui)
-                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                ui.show()
-                sys.exit(app.exec_())
-    else:
-        logger.warning( "No project selected. Nothing I can do about that ;)" )
+    if accepted:
+        if project:
+            DataDirectory.DefaultProject = project
+            
+            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+                with ExperimentUi(config, dbConnection) as ui:
+                    ui.setupUi(ui)
+                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                    ui.show()
+                    sys.exit(app.exec_())
+        else:
+            logger.warning( "No project selected. Nothing I can do about that ;)" )

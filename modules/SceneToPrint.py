@@ -15,6 +15,8 @@ class SceneToPrint:
     def __enter__(self):
         self.widget._graphicsView.hideAllButtons(True)
         self.pencache = dict()
+        if hasattr(self.widget, 'coordinateLabel'):
+            self.widget.coordinateLabel.hide()
         if self.gridLinewidth!=1 or self.curveLinewidth!=1:
             for item in self.widget._graphicsView.scene().items():
                 if hasattr(item, 'pen') and isinstance(item, AxisItem) and self.gridLinewidth!=1:
@@ -44,6 +46,8 @@ class SceneToPrint:
 
     def __exit__(self, exittype, value, traceback):
         self.widget._graphicsView.hideAllButtons(False)
+        if hasattr(self.widget, 'coordinateLabel'):
+            self.widget.coordinateLabel.show()
         for pen, (item, width) in self.pencache.iteritems():
             if item is not None:
                 pen = item.pen()

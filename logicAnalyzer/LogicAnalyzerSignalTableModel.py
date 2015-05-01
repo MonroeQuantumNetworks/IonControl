@@ -11,7 +11,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
         self.shutterChannelNames, self.shutterNamesSignal, self.triggerChannelNames, self.triggerNamesSignal = channelNameData
-        self.dataSignals = 32
+        self.dataSignals = 64
         self.auxSignals = 10
         self.gateSignals = 32
         self.triggerSignals = 7

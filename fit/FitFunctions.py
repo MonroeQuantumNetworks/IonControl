@@ -13,6 +13,7 @@ from fit.MotionalRabiFlopping import MotionalRabiFlopping, TwoModeMotionalRabiFl
 from modules import MagnitudeParser
 from modules.XmlUtilit import stringToStringOrNone
 import logging
+import SelectionAnalysis  #@UnusedImport
 
 class CosFit(FitFunctionBase):
     name = "Cos"
@@ -34,6 +35,33 @@ class CosFit(FitFunctionBase):
         A,k,theta, O = self.parameters if p is None else p
         return A*numpy.cos(2*numpy.pi*k*x+theta)+O
 
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        A,k,theta,O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        maximum = numpy.amax(y)
+        minimum = numpy.amin(y)
+        A=(maximum-minimum)/2
+        O=(maximum+minimum)/2
+        #minindex = numpy.argmin(y)
+        maxindex = numpy.argmax(y)
+        theta = x[maxindex]
+        threshold = (maximum+minimum)/2.0
+        NewZeroCrossing = x[0]
+        PreviousZeroCrossing = x[0]
+        maxZeroCrossingDelta = 0
+        for ind in range(len(y)-1):
+            if (y[ind] <= threshold <= y[ind+1]) or (y[ind+1] <= threshold <= y[ind]):
+                NewZeroCrossing = x[ind]
+                NewZeroCrossingDelta = NewZeroCrossing-PreviousZeroCrossing
+                if NewZeroCrossingDelta > maxZeroCrossingDelta:
+                    maxZeroCrossingDelta = NewZeroCrossingDelta 
+                PreviousZeroCrossing = NewZeroCrossing
+        k = 1.0/(2.0*maxZeroCrossingDelta)
+#        theta = numpy.remainder(x0,T)
+        logging.getLogger(__name__).info("smart start values A={0}, k={1}, theta={2}, O={3}".format(A,k,theta,O))
+        return (A,k,theta,O )
 
 class CosSqFit(FitFunctionBase):
     name = "Cos2"
@@ -207,6 +235,45 @@ class GaussianFit(FitFunctionBase):
         logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
         return (A, x0, s, O)
 
+class InvertedGaussianFit(FitFunctionBase):
+    name = "InvertedGaussian"
+    functionString =  'A*exp(-(x-x0)**2/s**2)+O'
+    parameterNames = [ 'A', 'x0', 's', 'O' ]
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.parameters = [0]*4
+        self.startParameters = [1,0,1,0]
+        
+    def functionEval(self, x, A, x0, s, O ):
+        return A*numpy.exp(-numpy.square((x-x0)/s))+O
+
+    def smartStartValues(self, xIn, yIn, parameters, enabled):
+        A, x0, s, O = parameters   #@UnusedVariable
+        x,y = zip(*sorted(zip(xIn, yIn)))
+        x = numpy.array(x)
+        y = numpy.array(y)
+        maxindex = numpy.argmax(y)
+        minindex = numpy.argmin(y)
+        minimum = y[minindex]
+        maximum = y[maxindex]
+        x0 = x[minindex]
+        A = minimum-maximum
+        O = maximum
+        threshold = (maximum+minimum)/2.
+        indexplus = -1 #If the threshold point is never found, indexplus is set to the index of the last element
+        for ind, val in enumerate(y[minindex:]):
+            if val > threshold:
+                indexplus = ind + minindex
+                break
+        indexminus = 0 #If the threshold point is never found, indexplus is set to the index of the first element
+        for ind, val in enumerate(y[minindex::-1]):
+            if val > threshold:
+                indexminus = minindex-ind
+                break
+        s = 0.60056*(x[indexplus]-x[indexminus])
+        logging.getLogger(__name__).info("smart start values A={0}, x0={1}, s={2}, O={3}".format(A, x0, s, O))
+        return (A, x0, s, O)
+
 class SquareRabiFit(FitFunctionBase):
     name = "Square Rabi"
     functionString =  'A/(1+(2*pi*(x-C)/R)**2) * sin**2(sqrt(1+(2*pi*(x-C)/R)**2)*R*t/2) + O where R=pi/T'
@@ -368,12 +435,18 @@ def fromXmlElement(element):
     function = fitFunctionMap[name]()
     function.parametersConfidence = [None]*len(function.parameters)
     function.parameterEnabled = [True]*len(function.parameters)
+    function.startParameterExpressions = [None]*len(function.parameters)
+    function.parameterBounds = [[None,None]]*len(function.parameters)
+    function.parameterBoundsExpressions = [[None,None]]*len(function.parameters)
     for index, parameter in enumerate(element.findall("Parameter")):
         value = float(parameter.text)
         function.parameters[index] = value
         #function.parameterNames[index] = parameter.attrib['name']
         function.parametersConfidence[index] = float(parameter.attrib['confidence']) if parameter.attrib['confidence'] != 'None' else None
         function.parameterEnabled[index] = parameter.attrib['enabled'] == "True"
+        function.startParameterExpressions[index] = stringToStringOrNone( parameter.attrib.get('startExpression','None') )
+        function.parameterBounds[index] = map( stringToStringOrNone, parameter.attrib.get('bounds','None,None').split(",") )
+        function.parameterBoundsExpressions[index] = map( stringToStringOrNone, parameter.attrib.get('boundsExpression','None,None').split(",") )
     for index, parameter in enumerate(element.findall("Result")):
         name= parameter.attrib['name']
         function.results[name] = ResultRecord( name=name,

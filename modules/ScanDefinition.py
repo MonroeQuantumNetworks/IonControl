@@ -6,9 +6,13 @@ Created on May 18, 2014
 import math
 from modules.magnitude import MagnitudeError
 from modules import Expression
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes
+from __builtin__ import staticmethod
 
 class ScanSegmentDefinition(object):
     expression = Expression.Expression()
+    XMLTagName = "ScanSegmentDefinition"
     def __init__(self):
         self._start = 0
         self._stop = 1
@@ -45,6 +49,18 @@ class ScanSegmentDefinition(object):
 
     def __hash__(self):
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement )
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        myElement = element if element.tag==ScanSegmentDefinition.XMLTagName else element.find( ScanSegmentDefinition.XMLTagName )
+        o = ScanSegmentDefinition()
+        o.__dict__.update( xmlParseAttributes(myElement) )
+        return o
         
     @property
     def startText(self):

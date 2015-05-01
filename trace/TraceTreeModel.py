@@ -270,3 +270,6 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         rightInd = self.createIndex(row, 4, trace)
         self.dataChanged.emit(leftInd, rightInd) #Update all 5 columns
         
+    def removeRows(self, row, count, parent):
+        print "removeRows"
+        return False

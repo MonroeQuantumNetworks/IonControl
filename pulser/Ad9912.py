@@ -7,6 +7,7 @@ Created on Tue Feb 19 14:53:26 2013
 
 import logging
 import math
+import struct
 
 from pulser.PulserHardwareClient import check
 from modules.magnitude import mg
@@ -25,16 +26,15 @@ class Ad9912:
     def rawToMagnitude(self, raw):
         return mg(1000,' MHz') * (raw / float(2**48))
 
-    def setFrequency(self, channel, frequency, even=False):
-        intFrequency = int(round(2**48 * frequency.toval('GHz')))
-        intFrequency = intFrequency &0xfffffffffffe if even else intFrequency
-        self.sendCommand(channel, 0, intFrequency >> 16 )
-        self.sendCommand(channel, 4, intFrequency & 0xffff )
+    def setFrequency(self, channel, frequency):
+        intFrequency = int(round(2**48 * frequency.toval('GHz'))) & 0xffffffffffff
+        self.sendCommand(channel, 0, intFrequency)
         return intFrequency
     
     def setFrequencyRaw(self, channel, intFrequency):
-        self.sendCommand(channel, 0, intFrequency >> 16 )
-        self.sendCommand(channel, 4, intFrequency & 0xffff )
+        self.sendCommand(channel, 0, intFrequency)
+        #self.sendCommand(channel, 0, intFrequency >> 16 )
+        #self.sendCommand(channel, 4, intFrequency & 0xffff ) # Frequency fine
         return intFrequency        
     
     def setPhase(self, channel, phase):
@@ -48,9 +48,8 @@ class Ad9912:
     def sendCommand(self, channel, cmd, data):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
-            check( self.pulser.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
-            check( self.pulser.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" )
+            check( self.pulser.SetWireInValue(0x03, (channel & 0xff)<<4 | (cmd & 0xf) ), "Ad9912" ) 
+            self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x12, data)) )
             self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
             self.pulser.UpdateWireIns()
@@ -60,8 +59,7 @@ class Ad9912:
     def update(self, channelmask):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x08, channelmask & 0xff), "Ad9912 apply" )
-            self.pulser.UpdateWireIns()
+            self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x11, channelmask)) )
             self.pulser.ActivateTriggerIn(0x41,2)
         else:
             logger.warning( "Pulser not available" )

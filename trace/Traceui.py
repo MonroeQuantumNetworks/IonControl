@@ -18,6 +18,7 @@ from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
 from TraceDescriptionTableModel import TraceDescriptionTableModel
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from uiModules.KeyboardFilter import KeyListFilter
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
 
@@ -90,6 +91,9 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceTreeView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
         self.traceTreeView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which pen to use in the plot
         self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
+        self.filter = KeyListFilter( [QtCore.Qt.Key_Delete] )
+        self.filter.keyPressed.connect( self.onKey )
+        self.traceTreeView.installEventFilter(self.filter)
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
         self.removeButton.clicked.connect(self.onRemove)
@@ -111,6 +115,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.descriptionTableView.setModel( self.descriptionModel )
         self.traceTreeView.clicked.connect( self.onActiveTraceChanged )
         self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
+
+    def onKey(self, key):
+        if key==QtCore.Qt.Key_Delete:
+            self.onRemove()
 
     def onActiveTraceChanged(self, modelIndex ):
         trace = self.model.getTrace(modelIndex)

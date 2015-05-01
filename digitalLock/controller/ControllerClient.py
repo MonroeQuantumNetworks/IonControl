@@ -23,7 +23,7 @@ voltageQuantum = mg(10,'V') / 0xffff
 voltageQuantumExternal = mg(2.5,'V') / 0xfff
 voltageQuantumExternal16 = mg(2.5,'V') / 0xffff
 voltageQuantumV = voltageQuantum.toval('V')
-clockTick = mg(20,'ns')
+clockTick = mg(5,'ns')
 sampleTime = mg(1,'us')
 
 def binToFreq( binvalue ):
@@ -112,7 +112,7 @@ class Controller(QtCore.QObject):
     scopeDataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject' )
     lockStatusChanged = QtCore.pyqtSignal( object )
     
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
 
     def __init__(self):
         super(Controller,self).__init__()

@@ -20,6 +20,7 @@ from modules import enum
 from trace.Trace import Trace, TracePlotting
 from modules.DataDirectory import DataDirectory
 from trace.pens import penList
+from dedicatedCounters.StatusDisplay import StatusDisplay
  
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
@@ -106,6 +107,13 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.autoLoadDock.setObjectName("Auto Loader")
         self.autoLoadDock.setWidget( self.autoLoad )
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.autoLoadDock)
+        # external Status display
+        self.statusDisplay = StatusDisplay(self.config)
+        self.statusDisplay.setupUi(self.statusDisplay)
+        self.statusDock = QtGui.QDockWidget("Status display")
+        self.statusDock.setObjectName("Status display")
+        self.statusDock.setWidget( self.statusDisplay )
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.statusDock)
         
         self.curves = [None]*8
         self._graphicsView = self.graphicsLayout._graphicsView
@@ -136,6 +144,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.autoLoad.saveConfig()
         self.calibrationUi.saveConfig()
         self.settingsUi.saveConfig()
+        self.statusDisplay.saveConfig()
 
     def onClose(self):
         self.autoLoad.onClose()
@@ -193,8 +202,8 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.displayUi2.values = data.data[4:8]
         self.displayUiADC.values = self.convertAnalog(data.data[8:12])
         data.analogValues = self.displayUiADC.values
-        if data.data[12] is not None and data.data[12] in self.integrationTimeLookup:
-            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
+        if data.data[16] is not None and data.data[16] in self.integrationTimeLookup:
+            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[16] ]
         else:
             self.dataIntegrationTime = self.settings.integrationTime
         data.integrationTime = self.dataIntegrationTime 
@@ -203,9 +212,10 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval())
                 Start = max( 1+len(self.xData[counter])-self.settings.pointsToKeep, 0)
                 self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
-                self.xData[counter] = numpy.append(self.xData[counter][Start:], self.tick )
+                self.xData[counter] = numpy.append(self.xData[counter][Start:], data.timestamp )
                 if self.curves[counter] is not None:
                     self.curves[counter].setData(self.xData[counter],self.yData[counter])
+        self.statusDisplay.setData(data)
         self.dataAvailable.emit(data)
  
     def convertAnalog(self,data):

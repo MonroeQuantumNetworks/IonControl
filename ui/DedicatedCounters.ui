@@ -20,7 +20,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="CoordinatePlotWidget" name="graphicsLayout"/>
+     <widget class="DateTimePlotWidget" name="graphicsLayout"/>
     </item>
    </layout>
   </widget>
@@ -87,9 +87,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>CoordinatePlotWidget</class>
+   <class>DateTimePlotWidget</class>
    <extends>QGraphicsView</extends>
-   <header>uiModules.CoordinatePlotWidget</header>
+   <header>uiModules.DateTimePlotWidget</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -14,6 +14,9 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.Observable import Observable
 from _collections import defaultdict
 from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
+from modules.XmlUtilit import xmlEncodeDictionary, xmlParseDictionary, prettify
+import xml.etree.ElementTree as ElementTree
+from modules import DataDirectory
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 
@@ -27,32 +30,13 @@ class GlobalVariables(SequenceDict):
         data = SequenceDict.__reduce__(self)
         data[2].pop('observables')
         return data
-     
-#         self.dependentDict = defaultdict( dict )  # dict of dicts outer key is globalVariable, inner key is (target, name) 
-# 
-#     def connect(self, globalName, target, name, weakMethodCallback ):
-#         self.dependentDict[globalName][(target,name)] = weakMethodCallback
-#         
-#     def disconnect(self, globalName, target, name):
-#         self.dependentDict[globalName].pop((target,name))
-#         
-#     def propagateChange(self, globalName):
-#         value = self[globalName]
-#         for key, callback in list(self.dependentDict[globalName].items()):
-#             if callback.bound:
-#                 callback( globalName, value )
-#             else:
-#                 self.dependentDict[globalName].pop(key)
-#                 
-#     def __setitem__(self, key, value):
-#         SequenceDict.__setitem__(self, key, value)
-#         self.propagateChange(key)
-#     
-#     def setAt(self, index, value):
-#         SequenceDict.setAt(self, index, value)
-#         self.propagateChange(self.keyAt(index))
-
-            
+    
+    def exportXml(self, element):
+        xmlEncodeDictionary(self, element, "Variable")
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        return GlobalVariables( xmlParseDictionary(element, "Variable") )
 
 class GlobalVariableUi(Form, Base ):
     def __init__(self,config,parent=None):
@@ -96,6 +80,34 @@ class GlobalVariableUi(Form, Base ):
         self.restoreCustomOrderAction.triggered.connect( self.model.restoreCustomOrder  )
         self.addAction( self.restoreCustomOrderAction )
         restoreGuiState( self, self.config.get(self.configname+".guiState") )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('GlobalVariables')
+        self._variables_.exportXml(root)
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("GlobalVariables.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+        return root
+            
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
+        tree = ElementTree.parse(filename)
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+        newGlobalDict = GlobalVariables.fromXmlElement(element) 
+        if mode=="replace":
+            self._variables_.clear()
+            self._variables_.update( newGlobalDict )
+        elif mode=="update":
+            self._variables_.update( newGlobalDict )
+        elif mode=="addMissing":
+            newGlobalDict.update( self._variables_ )
+            self._variables_.clear()
+            self._variables_.update( newGlobalDict )
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))

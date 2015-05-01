@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PulserList>
+	<Pulser configurationId="0x4203">
+		<Description>Boyan's box with wiggely lines</Description>
+		<ExtendedWireIns>
+            <Parameter address="0x20" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x21" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x22" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x23" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x24" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x25" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x26" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x27" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x28" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x29" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2a" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x2b" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x2c" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2d" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x2f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="0" name="Output delay channel 0" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="8" name="Output delay channel 1" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="16" name="Output delay channel 2" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="24" name="Output delay channel 3" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="32" name="Output delay channel 4" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="40" name="Output delay channel 5" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="48" name="Output delay channel 6" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="56" name="Output delay channel 7" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="0" name="Output delay channel 8" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="8" name="Output delay channel 9" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="16" name="Output delay channel 10" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="24" name="Output delay channel 11" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="32" name="Output delay channel 12" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="40" name="Output delay channel 13" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="48" name="Output delay channel 14" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="56" name="Output delay channel 15" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="0" name="Output delay channel 16" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="8" name="Output delay channel 17" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="16" name="Output delay channel 18" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="24" name="Output delay channel 19" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="32" name="Output delay channel 20" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="40" name="Output delay channel 21" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="48" name="Output delay channel 22" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="56" name="Output delay channel 23" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="0" name="Output delay channel 24" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="8" name="Output delay channel 25" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="16" name="Output delay channel 26" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="24" name="Output delay channel 27" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="32" name="Output delay channel 28" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="40" name="Output delay channel 29" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="48" name="Output delay channel 30" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="56" name="Output delay channel 31" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="0" name="Output delay channel 32" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="8" name="Output delay channel 33" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="16" name="Output delay channel 34" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="24" name="Output delay channel 35" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="32" name="Output delay channel 36" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="40" name="Output delay channel 37" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="48" name="Output delay channel 38" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="56" name="Output delay channel 39" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="0" name="Output delay channel 40" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="8" name="Output delay channel 41" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="16" name="Output delay channel 42" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="24" name="Output delay channel 43" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="32" name="Output delay channel 44" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="40" name="Output delay channel 45" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="48" name="Output delay channel 46" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="56" name="Output delay channel 47" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="0" name="Output delay channel 48" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="8" name="Output delay channel 49" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="16" name="Output delay channel 50" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="24" name="Output delay channel 51" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="32" name="Output delay channel 52" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="40" name="Output delay channel 53" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="48" name="Output delay channel 54" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="56" name="Output delay channel 55" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="0" name="Output delay channel 56" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="8" name="Output delay channel 57" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="16" name="Output delay channel 58" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="24" name="Output delay channel 59" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="32" name="Output delay channel 60" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="40" name="Output delay channel 61" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="48" name="Output delay channel 62" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="56" name="Output delay channel 63" encoding="TIME" enabled="True"/>
+		</ExtendedWireIns>
+		<StatusBits>
+			<StatusBit bitNo="0" active="error" name="PI 0 underflow"/>
+			<StatusBit bitNo="1" active="error" name="PI 0 overflow"/>
+			<StatusBit bitNo="2" active="error" name="PI 1 underflow"/>
+			<StatusBit bitNo="3" active="error" name="PI 1 overflow"/>
+			<StatusBit bitNo="4" active="error" name="PI 2 underflow"/>
+			<StatusBit bitNo="5" active="error" name="PI 2 overflow"/>
+			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
+			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
+		</StatusBits>
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
+	</Pulser> 
+	<Pulser configurationId="0x4202">
+		<Description>QGA Pulse Programmer with Sandia breakout v2</Description>
+		<ExtendedWireIns>
+            <Parameter address="0x20" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x21" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x22" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x23" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x24" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x25" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x26" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x27" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x28" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x29" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2a" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x2b" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x2c" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2d" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x2f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="0" name="Output delay channel 0" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="8" name="Output delay channel 1" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="16" name="Output delay channel 2" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="24" name="Output delay channel 3" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="32" name="Output delay channel 4" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="40" name="Output delay channel 5" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="48" name="Output delay channel 6" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="56" name="Output delay channel 7" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="0" name="Output delay channel 8" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="8" name="Output delay channel 9" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="16" name="Output delay channel 10" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="24" name="Output delay channel 11" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="32" name="Output delay channel 12" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="40" name="Output delay channel 13" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="48" name="Output delay channel 14" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="56" name="Output delay channel 15" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="0" name="Output delay channel 16" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="8" name="Output delay channel 17" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="16" name="Output delay channel 18" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="24" name="Output delay channel 19" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="32" name="Output delay channel 20" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="40" name="Output delay channel 21" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="48" name="Output delay channel 22" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="56" name="Output delay channel 23" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="0" name="Output delay channel 24" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="8" name="Output delay channel 25" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="16" name="Output delay channel 26" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="24" name="Output delay channel 27" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="32" name="Output delay channel 28" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="40" name="Output delay channel 29" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="48" name="Output delay channel 30" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="56" name="Output delay channel 31" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="0" name="Output delay channel 32" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="8" name="Output delay channel 33" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="16" name="Output delay channel 34" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="24" name="Output delay channel 35" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="32" name="Output delay channel 36" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="40" name="Output delay channel 37" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="48" name="Output delay channel 38" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="56" name="Output delay channel 39" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="0" name="Output delay channel 40" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="8" name="Output delay channel 41" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="16" name="Output delay channel 42" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="24" name="Output delay channel 43" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="32" name="Output delay channel 44" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="40" name="Output delay channel 45" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="48" name="Output delay channel 46" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="56" name="Output delay channel 47" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="0" name="Output delay channel 48" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="8" name="Output delay channel 49" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="16" name="Output delay channel 50" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="24" name="Output delay channel 51" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="32" name="Output delay channel 52" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="40" name="Output delay channel 53" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="48" name="Output delay channel 54" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="56" name="Output delay channel 55" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="0" name="Output delay channel 56" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="8" name="Output delay channel 57" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="16" name="Output delay channel 58" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="24" name="Output delay channel 59" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="32" name="Output delay channel 60" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="40" name="Output delay channel 61" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="48" name="Output delay channel 62" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="56" name="Output delay channel 63" encoding="TIME" enabled="True"/>
+		</ExtendedWireIns>
+		<StatusBits>
+			<StatusBit bitNo="0" active="error" name="PI 0 underflow"/>
+			<StatusBit bitNo="1" active="error" name="PI 0 overflow"/>
+			<StatusBit bitNo="2" active="error" name="PI 1 underflow"/>
+			<StatusBit bitNo="3" active="error" name="PI 1 overflow"/>
+			<StatusBit bitNo="4" active="error" name="PI 2 underflow"/>
+			<StatusBit bitNo="5" active="error" name="PI 2 overflow"/>
+			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
+			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
+		</StatusBits>		
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
+	</Pulser> 
+	<Pulser configurationId="0x4201">
+		<Description>Sandia breakout v1</Description>
+		<DAC numChannels="4" encoding="None" />	
+		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
+	</Pulser> 
+	<Pulser configurationId="0x7701">
+		<Description>Duke breakout</Description>
+		<ExtendedWireIns>
+            <Parameter address="0x20" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x21" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x22" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x23" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x24" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x25" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x26" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x27" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x28" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x29" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2a" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x2b" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x2c" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2d" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x2e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x2f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x30" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x31" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x32" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x33" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x34" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x35" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x36" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x37" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x38" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x39" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x3a" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x3b" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x3c" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x3d" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x3e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x3f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="0" name="DDS0 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="8" name="DDS1 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="16" name="DDS2 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="24" name="DDS3 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="32" name="DDS4 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="40" name="DDS5 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="48" name="DDS6 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="56" name="DDS7 regulator input" encoding="None" enabled="True" />
+
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="0" name="DAC0 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="8" name="DAC1 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="16" name="DAC2 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="24" name="DAC3 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="32" name="DAC4 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="40" name="DAC5 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="48" name="DAC6 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="56" name="DAC7 regulator input" encoding="None" enabled="True" />
+
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="0" name="Output delay channel 0" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="8" name="Output delay channel 1" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="16" name="Output delay channel 2" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="24" name="Output delay channel 3" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="32" name="Output delay channel 4" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="40" name="Output delay channel 5" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="48" name="Output delay channel 6" encoding="TIME" enabled="True"/>
+			<Parameter address="0x13" default="0" bitmask="0xff" shift="56" name="Output delay channel 7" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="0" name="Output delay channel 8" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="8" name="Output delay channel 9" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="16" name="Output delay channel 10" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="24" name="Output delay channel 11" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="32" name="Output delay channel 12" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="40" name="Output delay channel 13" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="48" name="Output delay channel 14" encoding="TIME" enabled="True"/>
+			<Parameter address="0x14" default="0" bitmask="0xff" shift="56" name="Output delay channel 15" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="0" name="Output delay channel 16" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="8" name="Output delay channel 17" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="16" name="Output delay channel 18" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="24" name="Output delay channel 19" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="32" name="Output delay channel 20" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="40" name="Output delay channel 21" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="48" name="Output delay channel 22" encoding="TIME" enabled="True"/>
+			<Parameter address="0x15" default="0" bitmask="0xff" shift="56" name="Output delay channel 23" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="0" name="Output delay channel 24" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="8" name="Output delay channel 25" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="16" name="Output delay channel 26" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="24" name="Output delay channel 27" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="32" name="Output delay channel 28" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="40" name="Output delay channel 29" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="48" name="Output delay channel 30" encoding="TIME" enabled="True"/>
+			<Parameter address="0x16" default="0" bitmask="0xff" shift="56" name="Output delay channel 31" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="0" name="Output delay channel 32" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="8" name="Output delay channel 33" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="16" name="Output delay channel 34" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="24" name="Output delay channel 35" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="32" name="Output delay channel 36" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="40" name="Output delay channel 37" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="48" name="Output delay channel 38" encoding="TIME" enabled="True"/>
+			<Parameter address="0x17" default="0" bitmask="0xff" shift="56" name="Output delay channel 39" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="0" name="Output delay channel 40" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="8" name="Output delay channel 41" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="16" name="Output delay channel 42" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="24" name="Output delay channel 43" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="32" name="Output delay channel 44" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="40" name="Output delay channel 45" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="48" name="Output delay channel 46" encoding="TIME" enabled="True"/>
+			<Parameter address="0x18" default="0" bitmask="0xff" shift="56" name="Output delay channel 47" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="0" name="Output delay channel 48" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="8" name="Output delay channel 49" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="16" name="Output delay channel 50" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="24" name="Output delay channel 51" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="32" name="Output delay channel 52" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="40" name="Output delay channel 53" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="48" name="Output delay channel 54" encoding="TIME" enabled="True"/>
+			<Parameter address="0x19" default="0" bitmask="0xff" shift="56" name="Output delay channel 55" encoding="TIME" enabled="True"/>
+
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="0" name="Output delay channel 56" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="8" name="Output delay channel 57" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="16" name="Output delay channel 58" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="24" name="Output delay channel 59" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="32" name="Output delay channel 60" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="40" name="Output delay channel 61" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="48" name="Output delay channel 62" encoding="TIME" enabled="True"/>
+			<Parameter address="0x1a" default="0" bitmask="0xff" shift="56" name="Output delay channel 63" encoding="TIME" enabled="True"/>
+		</ExtendedWireIns>
+		<StatusBits>
+			<StatusBit bitNo="0" active="error" name="PI 0 underflow"/>
+			<StatusBit bitNo="1" active="error" name="PI 0 overflow"/>
+			<StatusBit bitNo="2" active="error" name="PI 1 underflow"/>
+			<StatusBit bitNo="3" active="error" name="PI 1 overflow"/>
+			<StatusBit bitNo="4" active="error" name="PI 2 underflow"/>
+			<StatusBit bitNo="5" active="error" name="PI 2 overflow"/>
+			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
+			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
+		</StatusBits>		
+		<DAC numChannels="8" encoding="DAC8568_VOLTAGE" />	
+		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" />
+	</Pulser> 
+</PulserList>

@@ -1,6 +1,6 @@
 import logging 
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 from pyqtgraph.graphicsItems.TextItem import TextItem
@@ -9,17 +9,20 @@ from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from logicAnalyzer.LogicAnalyzerSignalTableModel import LogicAnalyzerSignalTableModel
 from logicAnalyzer.LogicAnalyzerTraceTableModel import LogicAnalyzerTraceTableModel
 from modules import dictutil
-from modules.Utility import flatten
+from modules.Utility import flatten, unique
 from modules.enum import enum
 from trace.pens import penList
 from uiModules.RotatedHeaderView import RotatedHeaderView
 from modules.concatenate_iter import concatenate_iter
+from _functools import partial
+from modules.doProfile import doprofile
+from modules.GuiAppearance import restoreGuiState, saveGuiState
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
 
 class Settings:
     def __init__(self):
-        self.numChannels = 32
+        self.numChannels = 64
         self.numTriggerChannels = 7
         self.numAuxChannels = 10
         self.numGateChannels = 32
@@ -88,7 +91,22 @@ class LogicAnalyzer(Form, Base ):
         self.traceTableView.resizeColumnsToContents()
         
         self.traceTableView.doubleClicked.connect( self.traceTableModel.setReferenceTimeCell )
-
+        # Context Menu for Table
+        self.signalTableView.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+        self.hideSelectedAction = QtGui.QAction( "hide selected" , self)
+        self.showSelectedAction = QtGui.QAction( "show selected" , self)
+        self.hideSelectedAction.triggered.connect( partial(self.onShow,  False) )
+        self.showSelectedAction.triggered.connect( partial(self.onShow,  True) )
+        self.signalTableView.addAction( self.hideSelectedAction )
+        self.signalTableView.addAction( self.showSelectedAction )
+        restoreGuiState( self, self.config.get('LogicAnalyzer.guiState') )
+        
+    def onShow(self, show, checked):
+        rows = sorted(unique([ i.row() for i in self.signalTableView.selectedIndexes() ]))
+        if rows:
+            for row in rows:
+                self.signalTableModel.setData( self.signalTableModel.createIndex(row,0), QtCore.Qt.Checked if show else QtCore.Qt.Unchecked, QtCore.Qt.CheckStateRole )
+            self.signalTableModel.dataChanged.emit( self.signalTableModel.createIndex(rows[0],0), self.signalTableModel.createIndex(rows[-1],0))
         
     def onData(self, logicData):
         logger = logging.getLogger(__name__)
@@ -324,7 +342,7 @@ class LogicAnalyzer(Form, Base ):
         self.config["LogicAnalyzerSettings"] = self.settings
         self.signalTableModel.saveConfig()
         self.config['LogicAnalyzer.State'] = self.saveState()
-
+        self.config['LogicAnalyzer.guiState'] = saveGuiState(self)
     
     def onClose(self):
         pass

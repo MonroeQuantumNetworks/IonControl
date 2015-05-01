@@ -85,7 +85,7 @@ class InstrumentLoggingDisplayTableModel( QtCore.QAbstractTableModel ):
  
     def updateHandler(self, event):
         #self.update( event.name, event.data )
-        if event.name in self.data:
+        if event.name in self.data and event.data is not None:
             self.data[event.name].raw = event.data[1]
             index = self.data.index(event.name)
             leftInd = self.createIndex(index, 1)

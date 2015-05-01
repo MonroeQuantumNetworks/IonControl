@@ -119,6 +119,17 @@ class PlottedTrace(object):
     def hasRawColumn(self):
         return self._rawColumn and hasattr(self.trace, self._rawColumn)
         
+    def timeintervalAppend(self, timeinterval):
+        self.trace.timeintervalAppend(timeinterval)
+        
+    @property
+    def timeinterval(self):
+        return self.trace.timeinterval
+        
+    @timeinterval.setter
+    def timeinterval(self, val):
+        self.trace.timeinterval = val
+        
     @property
     def x(self):
         return getattr(self.trace, self._xColumn)
@@ -207,10 +218,11 @@ class PlottedTrace(object):
         self.y = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
 
     def removePlots(self):
-        if self.curve is not None and self._graphicsView is not None:
-            self._graphicsView.removeItem(self.curve)
-            self.curve = None
-            self.penUsageDict[self.curvePen] -= 1
+        if self._graphicsView is not None:
+            if self.curve is not None:
+                self._graphicsView.removeItem(self.curve)
+                self.curve = None
+                self.penUsageDict[self.curvePen] -= 1
             if self.errorBarItem is not None:
                 self._graphicsView.removeItem(self.errorBarItem)  
                 self.errorBarItem = None
@@ -223,6 +235,8 @@ class PlottedTrace(object):
             self.fitFunctionPenIndex = penindex
             self.fitx = numpy.linspace(numpy.min(self.x), numpy.max(self.x) ,300)
             self.fity = self.fitFunction.value(self.fitx)
+            if self.fitcurve is not None:
+                self._graphicsView.removeItem(self.fitcurve)
             self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
  
     def replotFitFunction(self):
@@ -240,6 +254,8 @@ class PlottedTrace(object):
             self.fitFunctionPenIndex = penindex
             self.fitx = numpy.linspace(numpy.min(self.x)+0.5, numpy.max(self.x)-1.5 , len(self.x)-1 )
             self.fity = self.fitFunction.value(self.fitx)
+            if self.fitcurve is not None:
+                self._graphicsView.removeItem(self.fitcurve)
             self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[penindex][0])
             
     def replotStepsFitFunction(self):

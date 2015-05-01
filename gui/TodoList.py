@@ -21,12 +21,17 @@ from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.GuiAppearance import saveGuiState, restoreGuiState   #@UnresolvedImport
 from modules.firstNotNone import firstNotNone
+import xml.etree.ElementTree as ElementTree
+from modules import DataDirectory
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlEncodeDictionary,\
+    xmlParseAttributes, xmlParseDictionary
 
 Form, Base = uic.loadUiType(r'ui\TodoList.ui')
 
 
 
 class TodoListEntry(object):
+    XMLTagName = "TodoListItem"
     def __init__(self, scan=None, measurement=None, evaluation=None, analysis=None):
         self.parent = None
         self.children = list()
@@ -52,7 +57,7 @@ class TodoListEntry(object):
         self.__dict__.setdefault('analysis', None)
         self.scan = str(self.scan) if self.scan is not None else None
 
-    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'analysis', 'settings' ] 
+    stateFields = ['scan', 'measurement', 'scanParameter', 'evaluation', 'analysis', 'settings', 'enabled' ] 
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -66,7 +71,22 @@ class TodoListEntry(object):
             self.todoList = HashableList(self.todoList)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
     
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        xmlEncodeDictionary(self.settings, myElement, "GlobalSetting")
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag == TodoListEntry.XMLTagName else element.find(TodoListEntry.XMLTagName )
+        e = TodoListEntry()
+        e.__dict__.update( xmlParseAttributes(myElement) )
+        e.settings = xmlParseDictionary(myElement,"GlobalSetting")
+        return e
+    
 class Settings:
+    XMLTagName = "TodoList"
     def __init__(self):
         self.todoList = list()
         self.currentIndex = 0
@@ -90,6 +110,21 @@ class Settings:
             logging.getLogger(__name__).info("Replacing list with hashable list")
             self.todoList = HashableList(self.todoList)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+    def exportXml(self, element, attrib=dict()):
+        myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        for item in self.todoList:
+            item.exportXml(myElement)
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag == Settings.XMLTagName else element.find( Settings.XMLTagName)
+        s = Settings()
+        s.__dict__.update( xmlParseAttributes(myElement))
+        s.todoList = [ TodoListEntry.fromXmlElement(e) for e in myElement.findall(TodoListEntry.XMLTagName)]
+        return (myElement.attrib['name'],s)
     
 class MasterSettings:
     def __init__(self):
@@ -200,7 +235,28 @@ class TodoList(Form, Base):
         self.loadLineAction.triggered.connect( self.onLoadLine  )
         self.tableView.addAction( self.loadLineAction )
         # 
+        self.exportXmlButton.clicked.connect( self.onExportXml )
         restoreGuiState( self, self.config.get('Todolist.guiState'))
+       
+    def onExportXml(self):
+        root = ElementTree.Element('TodoListContainer')
+        for name, setting in self.settingsCache.iteritems():
+            setting.exportXml(root,{'name':name})
+        filename = DataDirectory.DataDirectory().sequencefile("TodoList.xml")[0]
+        with open(filename,'w') as f:
+            f.write(prettify(root))
+            
+    def onImportXml(self, filename, mode="add"):   # modes: replace, update, addMissing
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        newSettingsCache = dict( Settings.fromXmlElement(e) for e in root.findall(Settings.XMLTagName) )
+        if mode=="replace":
+            self.settingsCache = newSettingsCache
+        elif mode=="update":
+            self.settingsCache.update( newSettingsCache )
+        elif mode=="addMissing":
+            newSettingsCache.update( self.settingsCache )
+            self.settingsCache = newSettingsCache
        
     def onRevertChanged(self, state):
         self.masterSettings.revertGlobals = state==QtCore.Qt.Checked

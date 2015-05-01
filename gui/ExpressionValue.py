@@ -8,17 +8,37 @@ Created on Dec 22, 2014
 from modules.Expression import Expression
 from modules.magnitude import mg
 from modules.Observable import Observable
+from modules import WeakMethod
 
+class ExpressionValueException(Exception):
+    pass
 
 class ExpressionValue(object):
     expression = Expression()
-    def __init__(self, name=None, globalDict=None):
-        self.globalDict = globalDict
+    def __init__(self, name=None, globalDict=None, value=mg(0)):
+        self._globalDict = globalDict
         self.name = name
         self._string = None
-        self._value = mg(0)
+        self._value = value
         self.observable = Observable()
         self.registrations = list()        # subscriptions to global variable values
+        
+    def __getstate__(self):
+        return ( self.name, self._string, self._value )
+    
+    def __setstate__(self, state):
+        self.__init__( state[0] )
+        self._string = state[1]
+        self._value = state[2]
+        
+    @property
+    def globalDict(self):
+        return self._globalDict
+    
+    @globalDict.setter
+    def globalDict(self, d):
+        self._globalDict = d
+        self.string = self._string 
         
     @property
     def value(self):
@@ -35,19 +55,23 @@ class ExpressionValue(object):
     
     @string.setter
     def string(self, s):
+        if self._globalDict is None:
+            raise ExpressionValueException("Global dictionary is not set in {0}".format(self.name))
         self._string = s
-        for name in self.registrations:
-            self.globalDict.observables[name].unsubscribe(self.recalculate)
+        for name, reference in self.registrations:
+            self._globalDict.observables[name].unsubscribe(reference)
         self.registrations[:] = []
         if self._string:
-            self._value, dependencies = self.expression.evaluateAsMagnitude(self._string, self.globalDict, listDependencies=True)
+            self._value, dependencies = self.expression.evaluateAsMagnitude(self._string, self._globalDict, listDependencies=True)
             for dep in dependencies:
-                self.globalDict.observables[dep].subscribe(self.recalculate)
-                self.registrations.append(dep)
+                reference = WeakMethod.ref(self.recalculate)
+                self._globalDict.observables[dep].subscribe(reference)
+                self.registrations.append((dep, reference))
                        
     @property
     def hasDependency(self):
-        return self._string is not None
+        #return self._string is not None
+        return len(self.registrations)>0
     
     @property
     def data(self):
@@ -58,8 +82,10 @@ class ExpressionValue(object):
         self.name, self.value, self.string = val
     
     def recalculate(self, event=None):
+        if self._globalDict is None:
+            raise ExpressionValueException("Global dictionary is not set in {0}".format(self.name))
         if self._string:
-            newValue = self.expression.evaluateAsMagnitude(self._string, self.globalDict)
+            newValue = self.expression.evaluateAsMagnitude(self._string, self._globalDict)
         if newValue!=self._value:
             self._value = newValue
             self.observable.fire( name=self.name, value=self._value, string=self._string, origin='recalculate' )

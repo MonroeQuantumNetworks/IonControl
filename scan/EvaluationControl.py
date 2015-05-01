@@ -13,16 +13,26 @@ import PyQt4.uic
 
 from scan.EvaluationAlgorithms import EvaluationAlgorithms
 from EvaluationTableModel import EvaluationTableModel
-from modules import MagnitudeUtilit
+from modules import MagnitudeUtilit, DataDirectory
 from modules.HashableDict import HashableDict
 from modules.Utility import unique
 from modules.magnitude import mg, MagnitudeError
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules.enum import enum
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from cPickle import UnpicklingError
+from scan.AbszisseType import AbszisseType
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlEncodeDictionary,\
+    xmlParseAttributes, xmlParseDictionary
 
+ 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
-class EvaluationDefinition:
+
+class EvaluationDefinition(object):
+    AbszisseType = enum( 'x', 'time', 'index' )
+    XMLTagName = "EvaluationItem"
     def __init__(self):
         self.counter = None
         self.evaluation = None
@@ -32,14 +42,20 @@ class EvaluationDefinition:
         self.settingsCache = HashableDict()
         self.showHistogram = False
         self.analysis = None
+        self.counterId = 0
+        self.type = 'Counter'
+        self.abszisse = AbszisseType.x
         
     def __setstate__(self, state):
         self.__dict__ = state
         if 'errorBars' in self.settings:   # remove errorBars property in old unpickled instances
             self.settings.pop('errorBars')
         self.__dict__.setdefault( 'analysis', None )
+        self.__dict__.setdefault( 'counterId', 0 )
+        self.__dict__.setdefault( 'type', 'Counter' )
+        self.__dict__.setdefault( 'abszisse', AbszisseType.x )
         
-    stateFields = ['counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis'] 
+    stateFields = ['counterId', 'type', 'counter', 'evaluation', 'settings', 'settingsCache', 'name', 'plotname', 'showHistogram', 'analysis', 'abszisse'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -53,8 +69,36 @@ class EvaluationDefinition:
             self.settings = HashableDict(self.settings)
         return hash(tuple(getattr(self,field) for field in self.stateFields))
  
+    @property
+    def channelKey(self):
+        if self.type=='Counter':
+            return ((self.counterId&0xff)<<8) | (self.counter & 0xff)
+        else:
+            return (self.counter & 0xff)
+        
+    def getChannelData(self, data ):
+        if self.type=='Counter':
+            return data.count[self.channelKey]  
+        elif data.result is not None:
+            return data.result[self.channelKey]
+        return []
+
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement )
+        xmlEncodeDictionary( self.settings, myElement, "Parameter")
+        return myElement 
+    
+    @staticmethod
+    def fromXmlElement( element, flat=False ):
+        myElement = element if flat else element.find( EvaluationDefinition.XMLTagName )
+        e = EvaluationDefinition()
+        e.__dict__.update( xmlParseAttributes( myElement ))
+        e.settings = xmlParseDictionary( myElement, "Parameter")
+        return e   
 
 class Evaluation:
+    XMLTagName = "Evaluation"
     def __init__(self):
         # Evaluation
         self.histogramBins = 50
@@ -76,6 +120,7 @@ class Evaluation:
         """
         self.__dict__ = state
         self.__dict__.setdefault('evalList',list())
+        self.__dict__.setdefault('histogramBins',50)
 
     def __eq__(self,other):
         try:
@@ -92,7 +137,21 @@ class Evaluation:
         
     stateFields = [ 'histogramBins', 'integrateHistogram', 'enableTimestamps', 'binwidth', 'roiStart', 'roiWidth', 'integrateTimestamps', 'timestampsChannel', 
                     'saveRawData', 'evalList' , 'counterChannel']
-   
+    
+    def exportXml(self, element, attrib):
+        myElement = ElementTree.SubElement(element, Evaluation.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        for evaluation in self.evalList:
+            evaluation.exportXml(myElement)
+        return myElement     
+    
+    @staticmethod
+    def fromXmlElement( element ):
+        myElement = element if element.tag==Evaluation.XMLTagName else element.find(Evaluation.XMLTagName)
+        e = Evaluation()
+        e.__dict__.update( xmlParseAttributes(myElement) )
+        e.evalList = [ EvaluationDefinition.fromXmlElement(e, flat=True) for e in myElement.findall(EvaluationDefinition.XMLTagName)]
+        return (myElement.attrib['name'],e)
 
 class EvaluationControlParameters:
     def __init__(self):
@@ -113,7 +172,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())
-        except TypeError:
+        except (TypeError, UnpicklingError):
             logger.info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
             self.settingsDict = dict()
         self.evaluationConfigurationChanged.emit( self.settingsDict )
@@ -140,11 +199,14 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.evalTableModel.dataChanged.connect( self.checkSettingsSavable )
         self.evalTableModel.dataChanged.connect( self.onActiveEvalChanged )
         self.evalTableView.setModel( self.evalTableModel )
-        self.evalTableView.clicked.connect( self.editEvaluationTable )
         self.delegate = ComboBoxDelegate()
-        self.evalTableView.setItemDelegateForColumn(1, self.delegate )
-        self.evalTableView.setItemDelegateForColumn(4, self.delegate )
-        self.evalTableView.setItemDelegateForColumn(5, self.delegate )        
+        self.magnitudeDelegate = MagnitudeSpinBoxDelegate()
+        self.evalTableView.setItemDelegateForColumn(0, self.delegate)
+        self.evalTableView.setItemDelegateForColumn(1, self.magnitudeDelegate)
+        self.evalTableView.setItemDelegateForColumn(2, self.magnitudeDelegate)
+        self.evalTableView.setItemDelegateForColumn(3, self.delegate )
+        self.evalTableView.setItemDelegateForColumn(6, self.delegate )
+        self.evalTableView.setItemDelegateForColumn(7, self.delegate )
         self.addEvaluationButton.clicked.connect( self.onAddEvaluation )
         self.removeEvaluationButton.clicked.connect( self.onRemoveEvaluation )
         self.evalTableView.selectionModel().currentChanged.connect( self.onActiveEvalChanged )
@@ -178,7 +240,34 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
         self.currentEvaluationChanged.emit( self.settingsName )
+        self.exportXmlButton.clicked.connect( self.onExportXml )
+
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('EvaluationList')
+        for name, setting in self.settingsDict.iteritems():
+            setting.exportXml(root,{'name':name})
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("EvaluationList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+        return root
         
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
+        tree = ElementTree.parse(filename)
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+        newSettingsDict = dict( Evaluation.fromXmlElement(e) for e in element.findall(Evaluation.XMLTagName) )
+        if mode=="replace":
+            self.settingsDict = newSettingsDict
+        elif mode=="update":
+            self.settingsDict.update( newSettingsDict )
+        elif mode=="addMissing":
+            newSettingsDict.update( self.settingsCache )
+            self.settingsDict = newSettingsDict
+
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
         if self.parameters.autoSave:
@@ -248,7 +337,10 @@ class EvaluationControl(ControlForm, ControlBase ):
                 if currentText is None or currentText=="":
                     savable = False
                 elif self.settingsName and self.settingsName in self.settingsDict:
-                    savable = self.settingsDict[self.settingsName]!=self.settings or currentText!=self.settingsName
+                    try:
+                        savable = self.settingsDict[self.settingsName]!=self.settings or currentText!=self.settingsName
+                    except AttributeError:
+                        savable = True
                 else:
                     savable = True
                 if self.parameters.autoSave and savable:

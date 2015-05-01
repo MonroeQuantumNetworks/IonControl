@@ -150,6 +150,23 @@ class Trace(object):
         else:
             value = varFactory.get( mytype, str)( element.text )
             description[name] = value
+            
+    def recordTimeinterval(self, timeTickOffset):
+        self.description['timeTickOffset'] = timeTickOffset
+        self.addColumn('timeTickFirst')
+        self.addColumn('timeTickLast')
+    
+    def timeintervalAppend(self, timeinterval):
+        self.timeTickFirst = numpy.append(self.timeTickFirst, timeinterval[0])
+        self.timeTickLast = numpy.append(self.timeTickLast, timeinterval[1])
+    
+    @property
+    def timeinterval(self):
+        return (self.timeTickFirst, self.timeTickLast )
+    
+    @timeinterval.setter
+    def timeinterval(self, val):
+        self.timeTickFirst, self.timeTickLast = val
     
     @property
     def x(self):
@@ -416,6 +433,10 @@ class Trace(object):
     @property 
     def tracePlottingList(self):
         return self.description["tracePlottingList"]
+    
+    @property
+    def indexColumn(self):
+        return numpy.arange( 0, len(self.x), 1)
     
 #     def __del__(self):
 #         print "Deleting Trace"

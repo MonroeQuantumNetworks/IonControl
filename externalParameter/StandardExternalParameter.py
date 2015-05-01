@@ -191,6 +191,63 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
     def close(self):
         del self.synthesizer
 
+class E4422Synthesizer(ExternalParameterBase):
+    """
+    Scan the microwave frequency of microwave synthesizer 
+    """
+    className = "E4422 Synthesizer"
+    _dimension = magnitude.mg(1,'MHz')
+    def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
+        ExternalParameterBase.__init__(self,name,config)
+        self.synthesizer = visa.instrument(instrument) #open visa session
+        self.setDefaults()
+        self.settings.value[None] = self._getValue(None)
+        self.settings.value['Power'] = self._getValue('Power')
+        self.settings.amplitude_dBm = self.settings.value['Power']
+    
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('amplitude_dBm', magnitude.mg(-13) )
+
+    def _setValue(self, channel, v):
+        if channel is None or channel=='Frequency':
+            command = ":FREQ:CW {0:.5f}KHZ".format(v.toval('kHz'))
+        elif channel=='Power':
+            command = ":POWER {0:.3f}".format(v.toval())
+        self.synthesizer.write(command)
+        self.settings.value[channel] = v            
+        
+    def _getValue(self, channel):
+        if channel is None or channel=='Frequency':
+            answer = self.synthesizer.ask(":FREQ:CW?")
+            self.settings.value[channel] = magnitude.mg( float(answer), "Hz" )
+            return self.settings.value[channel]
+        elif channel=='Power':
+            answer = self.synthesizer.ask(":POWER?")
+            self.settings.value[channel] = magnitude.mg( float(answer), "" )
+            return self.settings.value[channel]
+        
+    def paramDef(self):
+        """
+        return the parameter definition used by pyqtgraph parametertree to show the gui
+        """
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
+        superior.append({'name': 'amplitude_dBm', 'type': 'magnitude', 'value': self.settings.amplitude_dBm})
+        return superior
+
+    def close(self):
+        del self.synthesizer
+
+    def update(self, param, changes):
+        """update the parameter. If the amplitude was changed, write the new value to the HP8672A."""
+        super(E4422Synthesizer, self).update(param, changes) #call parent method
+        logger = logging.getLogger(__name__)
+        for param, _, data in changes:
+            if param.name() == 'amplitude_dBm':
+                self._setValue('Power', self.settings.value['Power'])
+                logger.info("E4422B output amplitude set to {0} dBm".format(data))
     
 class AgilentPowerSupply(ExternalParameterBase):
     """
@@ -291,7 +348,6 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
         self.wavemeter = Wavemeter(instrument)
-        self.savedValue = None
         logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
         self.setDefaults()
 
@@ -333,12 +389,12 @@ class LaserWavemeterLockScan(ExternalParameterBase):
         superior.append({'name': 'maxAge', 'type': 'magnitude', 'value': self.settings.maxAge})
         return superior
 
-    def saveValue(self, channel, overwrite=True):
-        """
-        save current value
-        """
-        if not self.savedValue or overwrite:
-            self.savedValue = self.currentExternalValue()
+#     def saveValue(self, channel, overwrite=True):
+#         """
+#         save current value
+#         """
+#         if not self.savedValue or overwrite:
+#             self.savedValue[channel] = self.currentExternalValue(channel)
 
 class DummyParameter(ExternalParameterBase):
     """
