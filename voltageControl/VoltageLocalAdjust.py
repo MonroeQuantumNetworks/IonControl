@@ -92,6 +92,7 @@ class VoltageLocalAdjust(Form, Base ):
         for record in self.localAdjustList:
             record.globalDict = globalDict
             record.gain.observable.subscribe( partial( self.onValueChanged, record ), unique=True )
+        self.channelDict = dict( ((record.name, record) for record in self.localAdjustList) )
         self.historyCategory = 'VoltageLocalAdjust'
         self.adjustHistoryName = None
         self.globalDict = globalDict
@@ -100,7 +101,7 @@ class VoltageLocalAdjust(Form, Base ):
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
-        self.tableModel = VoltageLocalAdjustTableModel( self.localAdjustList, self.globalDict )
+        self.tableModel = VoltageLocalAdjustTableModel( self.localAdjustList, self.channelDict, self.globalDict )
         self.filesChanged = self.tableModel.filesChanged
         self.tableView.setModel( self.tableModel )
         self.tableView.setSortingEnabled(True)   # triggers sorting
@@ -128,28 +129,28 @@ class VoltageLocalAdjust(Form, Base ):
         self.config[self.configname+".local"] = self.localAdjustList
         
     def setValue(self, channel, value):
-        self.localAdjustList[channel].gain = value 
+        self.channelDict[channel].gain = value 
         return True
     
     def currentValue(self, channel):
-        return self.localAdjustList[channel].gain
+        return self.channelDict[channel].gain
     
     def saveValue(self, channel):
-        self.savedValue[channel] = self.localAdjustList[channel].gain
+        self.savedValue[channel] = self.channelDict[channel].gain
     
     def restoreValue(self, channel):
         if self.savedValue[channel] is not None:
-            self.localAdjustList[channel].gain = self.savedValue[channel]
+            self.channelDict[channel].gain = self.savedValue[channel]
         return True
     
     def strValue(self, channel):
-        adjust = self.localAdjustList[channel].gain
+        adjust = self.channelDict[channel].gain
         return adjust.string if adjust.hasDependency else None
     
     def setStrValue(self, channel, value):
         pass
     
     def outputChannels(self):
-        self._outputChannels = dict(( (index, VoltageOutputChannel(self, None, index)) for index in range(self.localAdjustList) ))      
+        self._outputChannels = dict(( (record.name, VoltageOutputChannel(self, None, record.name)) for record in self.localAdjustList ))      
         return self._outputChannels
         
