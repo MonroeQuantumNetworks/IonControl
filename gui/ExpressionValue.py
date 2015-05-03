@@ -89,3 +89,6 @@ class ExpressionValue(object):
         if newValue!=self._value:
             self._value = newValue
             self.observable.fire( name=self.name, value=self._value, string=self._string, origin='recalculate' )
+
+    def __hash__(self):
+        return hash(self._value)
