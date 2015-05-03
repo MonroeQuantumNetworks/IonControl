@@ -81,10 +81,11 @@ class DACUi(dacForm, dacBase):
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
     
     def onWriteAll(self):
-        for channel, settings in enumerate( self.dacChannels[0:-1] ):
-            self.dac.setVoltage(channel, settings.outputVoltage)
-        channel, settings = len(self.dacChannels)-1, self.dacChannels[-1]
-        self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
+        if len(self.dacChannels)>0:
+            for channel, settings in enumerate( self.dacChannels[0:-1] ):
+                self.dac.setVoltage(channel, settings.outputVoltage)
+            channel, settings = len(self.dacChannels)-1, self.dacChannels[-1]
+            self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
         
     def saveConfig(self):
         self.config['dacUi.dacExpressionChannels'] = self.dacChannels
