@@ -12,3 +12,6 @@ class AdjustValue(ExpressionValue):
         ExpressionValue.__init__(self, name, globalDict)
         self.line = line
         
+    def __hash__(self):
+        return hash(self.value)
+        

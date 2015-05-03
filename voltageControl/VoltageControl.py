@@ -65,6 +65,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.tableView.setModel( self.voltageTableModel )
         self.tableView.resizeColumnsToContents()
         self.tableView.resizeRowsToContents()
+        self.localAdjustUi.filesChanged.connect( self.voltageBlender.loadLocalAdjust )
         self.voltageBlender.dataChanged.connect( self.voltageTableModel.onDataChanged )
         self.voltageBlender.dataError.connect( self.voltageTableModel.onDataError )
         self.tableView.setSortingEnabled(True)
@@ -76,6 +77,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
             logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.shuttlingGraph.setPosition )
+        self.voltageBlender.loadLocalAdjust( self.localAdjustUi.localAdjustList, list() )
     
     def onLoadVoltage(self, path, shuttledefpath ):
         self.voltageBlender.loadVoltage(path)
@@ -95,6 +97,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.adjustUi.saveConfig()
         self.globalAdjustUi.saveConfig()
         self.voltageFilesUi.saveConfig()
+        self.localAdjustUi.saveConfig()
     
     def onClose(self):
         pass
