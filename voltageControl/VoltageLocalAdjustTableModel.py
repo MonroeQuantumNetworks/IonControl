@@ -85,8 +85,8 @@ class VoltageLocalAdjustTableModel(QtCore.QAbstractTableModel):
         self.localAdjustList = localAdjustList
         self.endResetModel()
 
-    def valueRecalcualted(self, name):
-        index = self.createIndex(self.globalAdjustDict.index(name),1)
+    def valueRecalcualted(self, record):
+        index = self.createIndex(self.localAdjustList.index(record),1)
         self.dataChanged.emit( index, index )
         
     def sort(self, column, order):

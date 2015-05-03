@@ -13,6 +13,7 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from externalParameter.VoltageOutputChannel import VoltageOutputChannel
 from _collections import defaultdict
 from modules.Observable import Observable
+from modules import MagnitudeUtilit
 
 
 VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')
@@ -81,6 +82,7 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     def onValueChanged(self, event):
         if event.origin=='recalculate':
             self.tableModel.valueRecalcualted(event.name)
+        self.globalAdjustDict[event.name]._value = MagnitudeUtilit.value( self.globalAdjustDict[event.name]._value )
         self.updateOutput.emit(self.globalAdjustDict, self.settings.gain)
     
     def saveConfig(self):

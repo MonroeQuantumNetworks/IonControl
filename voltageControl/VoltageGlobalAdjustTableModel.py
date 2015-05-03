@@ -5,6 +5,7 @@ Created on Dec 10, 2014
 '''
 
 from PyQt4 import QtCore, QtGui
+from modules import MagnitudeUtilit
 
 class VoltageGlobalAdjustTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Solution', 'Amplitude' ]
@@ -35,7 +36,7 @@ class VoltageGlobalAdjustTableModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role):
         if index.column()==1:
             if role==QtCore.Qt.EditRole:
-                self.globalAdjustDict.at(index.row()).value = value
+                self.globalAdjustDict.at(index.row()).value = MagnitudeUtilit.value( value )
                 return True
             if role==QtCore.Qt.UserRole:
                 self.globalAdjustDict.at(index.row()).string = value
