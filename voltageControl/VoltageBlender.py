@@ -253,7 +253,7 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
-        line = self.calculateLine(lineno,lineGain,globalGain)
+        line = self.calculateLine( MagnitudeUtilit.value(lineno), MagnitudeUtilit.value(lineGain), MagnitudeUtilit.value(globalGain) )
         try:
             self.hardware.applyLine(line)
             self.outputVoltage = line
@@ -266,9 +266,6 @@ class VoltageBlender(QtCore.QObject):
             self.dataError.emit(outOfRange.tolist())
             
     def calculateLine(self, lineno, lineGain, globalGain):
-        lineGain = MagnitudeUtilit.value(lineGain)
-        globalGain = MagnitudeUtilit.value( globalGain)
-        lineno = MagnitudeUtilit.value( lineno )
         line = self.blendLines(lineno,lineGain)
         localadjustline = self.blendLocalAdjustLines(lineno)
         self.lineGain = lineGain
@@ -299,7 +296,7 @@ class VoltageBlender(QtCore.QObject):
                 self.shuttlingOnLine.emit(self.shuttleTo)
                         
     def adjustLine(self, line):
-        offset = numpy.array([0.0]*len(line))
+        offset = numpy.zeros(len(line))
         for adjust in self.adjustDict.itervalues():
             offset = offset + self.adjustLines[adjust.line] * float(adjust.value)
         offset *= self.adjustGain
