@@ -11,10 +11,11 @@ class VoltageLocalAdjustTableModel(QtCore.QAbstractTableModel):
     filesChanged = QtCore.pyqtSignal( object, object )
     voltageChanged = QtCore.pyqtSignal(  )
     headerDataLookup = ['Solution', 'Amplitude' ,'Filepath']
-    def __init__(self, localAdjustList, globalDict, parent=None, *args): 
+    def __init__(self, localAdjustList, channelDict, globalDict, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.localAdjustList = localAdjustList  
         # scanNames are given as a SortedDict
+        self.channelDict = channelDict
         defaultBG = QtGui.QColor(QtCore.Qt.white)
         textBG = QtGui.QColor(QtCore.Qt.green).lighter(175)
         self.backgroundLookup = { True:textBG, False:defaultBG}
@@ -27,13 +28,19 @@ class VoltageLocalAdjustTableModel(QtCore.QAbstractTableModel):
                               }
 
     def add(self, record ):
+        offset = 0
+        while record.name in self.channelDict:
+            offset += 1
+            record.name = "Adjust_{0}".format(len(self.localAdjustList)+offset)
         self.beginInsertRows(QtCore.QModelIndex(),len(self.localAdjustList), len(self.localAdjustList))
         self.localAdjustList.append( record )
+        self.channelDict[record.name] = record
         self.endInsertRows()
         return record
         
     def drop(self, row):
         self.beginRemoveRows(QtCore.QModelIndex(), row, row)
+        del self.channelDict[self.localAdjustList[row].name]
         del self.localAdjustList[row]
         self.endRemoveRows()
 
@@ -58,7 +65,13 @@ class VoltageLocalAdjustTableModel(QtCore.QAbstractTableModel):
                 return True
         if index.column()==0:
             if role==QtCore.Qt.EditRole:
-                self.localAdjustList[index.row()].name = str(value.toPyObject())
+                newname = str(value.toPyObject())
+                oldname = self.localAdjustList[index.row()].name
+                if newname==oldname:
+                    return True
+                if newname not in self.channelDict:
+                    self.localAdjustList[index.row()].name = newname
+                    self.channelDict[newname] = self.localAdjustList[index.row()]
                 return True
         if index.column()==2:
             if role==QtCore.Qt.EditRole:

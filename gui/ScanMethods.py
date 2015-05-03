@@ -143,8 +143,14 @@ class VoltageScanMethod(ExternalScanMethod):
     def __init__(self, experiment):
         super( VoltageScanMethod, self).__init__(experiment)
 
+class VoltageLocalAdjustScanMethod(ExternalScanMethod):
+    name = 'Voltage Local Adjust'
+    def __init__(self, experiment):
+        super( VoltageLocalAdjustScanMethod, self).__init__(experiment)
+
 
 ScanMethodsDict = { InternalScanMethod.name: InternalScanMethod,
                     ExternalScanMethod.name: ExternalScanMethod,
                     GlobalScanMethod.name: GlobalScanMethod,
-                    VoltageScanMethod.name: VoltageScanMethod }
+                    VoltageScanMethod.name: VoltageScanMethod,
+                    VoltageLocalAdjustScanMethod.name: VoltageLocalAdjustScanMethod }

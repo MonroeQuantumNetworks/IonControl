@@ -71,13 +71,13 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.tableView.setSortingEnabled(True)
         self.voltageFilesUi.reloadAll()
         adjust = self.adjustUi.adjust
+        self.voltageBlender.loadLocalAdjust( self.localAdjustUi.localAdjustList, list() )
         try:
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
         except Exception:
             logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.shuttlingGraph.setPosition )
-        self.voltageBlender.loadLocalAdjust( self.localAdjustUi.localAdjustList, list() )
     
     def onLoadVoltage(self, path, shuttledefpath ):
         self.voltageBlender.loadVoltage(path)
