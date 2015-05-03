@@ -16,7 +16,8 @@ from modules.Observable import Observable
 from gui.ExpressionValue import ExpressionValue
 import os.path
 from modules.Utility import unique
-
+import hashlib
+import numpy
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\VoltageLocalAdjust.ui')
 
@@ -34,8 +35,9 @@ class LocalAdjustRecord(object):
         self.name = name
         self.path = path
         self.gain = gain if isinstance(gain, ExpressionValue) else ExpressionValue(name, globalDict, gain)
-        self.solution = None
+        self._solution = None
         self.solutionPath = None
+        self.solutionHash = hash(None)
         
     def __getstate__(self):
         return (self.name, self.path, self.gain)
@@ -44,6 +46,7 @@ class LocalAdjustRecord(object):
         self.name, self.path, self.gain = state
         self.solution = None
         self.solutionPath = None
+        self.solutionHash = hash(None)
         
     @property
     def filename(self):
@@ -58,8 +61,19 @@ class LocalAdjustRecord(object):
         self.gain.globalDict = globalDict
     
     def __hash__(self):
-        return hash( (self.solution, self.gain) )
-        
+        return hash( (self.solutionHash, self.gain) )
+    
+    @property
+    def solution(self):
+        return self._solution
+    
+    @solution.setter
+    def solution(self, sol):
+        self._solution = sol
+        if self._solution:
+            hash( tuple( (hashlib.sha256(a.view(numpy.uint8)).hexdigest() for a in self._solution) ) )
+        else:
+            self.solutionHash = hash(self._solution)
             
 class VoltageLocalAdjust(Form, Base ):
     updateOutput = QtCore.pyqtSignal(object, object)

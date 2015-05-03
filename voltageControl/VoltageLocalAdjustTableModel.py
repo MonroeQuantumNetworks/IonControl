@@ -5,6 +5,7 @@ Created on Dec 10, 2014
 '''
 
 from PyQt4 import QtCore, QtGui
+from modules import MagnitudeUtilit
 
 class VoltageLocalAdjustTableModel(QtCore.QAbstractTableModel):
     filesChanged = QtCore.pyqtSignal( object, object )
@@ -50,7 +51,7 @@ class VoltageLocalAdjustTableModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role):
         if index.column()==1:
             if role==QtCore.Qt.EditRole:
-                self.localAdjustList[index.row()].gain.value = value
+                self.localAdjustList[index.row()].gain.value = MagnitudeUtilit.value( value )
                 return True
             if role==QtCore.Qt.UserRole:
                 self.localAdjustList[index.row()].gain.string = value
