@@ -170,7 +170,8 @@ class VoltageBlender(QtCore.QObject):
         self.tableHeader = list()
         self.globalDict = globalDict
         self.adjustGain = 1.0
-        self.localAdjustSolutions = dict()
+        self.localAdjustVoltages = list()
+        self.uploadedDataHash = None
         
     def currentData(self):
         return self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
@@ -217,12 +218,11 @@ class VoltageBlender(QtCore.QObject):
         itf.close()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
         
-    def loadLocalAdjust(self, localAdjustDict, forceupdate=list() ):
-        channelCount = self.hardware.channelCount if self.hardware else 0
-        self.localAdjust = dict()
-        for name, record in localAdjustDict.iteritems():
+    def loadLocalAdjust(self, localAdjustList, forceupdate=list() ):
+        channelCount = self.hardware.channelCount if self.hardware else 0        
+        for index, record in enumerate(localAdjustList):
             path = record.path
-            if name in forceupdate or name not in self.localAdjustCache or self.localAdjustCache[name]!=path:
+            if index in forceupdate or record.solutionPath != record.path:
                 linelist = list()
                 itf = itfParser()
                 itf.eMapFilePath = self.mappingpath
@@ -235,8 +235,9 @@ class VoltageBlender(QtCore.QObject):
                     linelist.append( line )
                 itf.close()
                 record.solution = linelist
-                self.localAdjustCache[name] = path
+                record.solutionPath = path
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
+        self.localAdjustVoltages = localAdjustList
     
     def setAdjust(self, adjust, gain):
         self.adjustDict = adjust
@@ -244,7 +245,7 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
         
     def setLocalAdjust(self, localAdjustDict ):
-        self.localAdjustSolutions = localAdjustDict
+        self.localAdjustVoltages = localAdjustDict
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
@@ -313,9 +314,9 @@ class VoltageBlender(QtCore.QObject):
         right = int(math.ceil(lineno))
         convexc = lineno-left
         result = numpy.zeros(channelCount)
-        for record in self.localAdjustVoltages.itervalues():
+        for record in self.localAdjustVoltages:
             if record.solution:
-                result = numpy.add(result, (record.solution[left]*(1-convexc) + record.solution[right]*convexc)*record.gain)
+                result = numpy.add(result, (record.solution[left]*(1-convexc) + record.solution[right]*convexc)*record.gain.value)
         return result
             
     def close(self):
@@ -337,6 +338,15 @@ class VoltageBlender(QtCore.QObject):
             edge.interpolStopLine = currentline 
         data = self.dacController.writeVoltages(1, towrite )
         self.dacController.verifyVoltages(1, data )
+        self.uploadedDataHash = self.shuttlingDataHash()
+        
+    def shuttlingDataHash(self):
+        h =  hash( (self.lineGain, self.globalGain, self.adjustGain, self.adjustDict.values(), self.localAdjustVoltages ))
+        logging.getLogger(__name__).info("Shuttling Hash: {0}".format(h))
+        return h
+    
+    def shuttlingDataValid(self):
+        return self.shuttlingDataHash()==self.uploadedDataHash
         
     def trigger(self):
         self.dacController.triggerShuttling()

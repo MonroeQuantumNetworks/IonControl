@@ -268,7 +268,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
                 self.setupGraphDependent()
         
     def synchronize(self):
-        if self.shuttlingGraph.hasChanged:
+        if self.shuttlingGraph.hasChanged or not self.voltageBlender.shuttlingDataValid():
             logging.getLogger(__name__).info("Uploading Shuttling data")
             self.voltageBlender.writeData(self.shuttlingGraph)
             self.writeShuttleLookup()
