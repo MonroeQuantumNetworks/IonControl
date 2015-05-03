@@ -1,0 +1,437 @@
+from socket import socket, AF_INET, SOCK_STREAM
+from serial import Serial
+from time import sleep
+from ddsRioCmdStrings import ddsRioCmdStrings
+
+class ddsRioSocket(socket):
+    def __init__(self):
+        self.host = '192.138.33.101'
+        self.port = 6431
+        self._maxBufferSize = 1024
+        self.rtn ='\r\n'
+        self.verbosity = 0
+        super(ddsRioSocket, self).__init__(AF_INET, SOCK_STREAM)
+
+    def connect(self):
+        if self.verbosity > 0:
+            print self.host, self.port
+        super(ddsRioSocket, self).connect((self.host, self.port))
+        data = super(ddsRioSocket, self).recv(self._maxBufferSize).strip()
+        if self.verbosity > 0:
+            print 'Connection String: {}'.format(data)
+        connected = data.find('Welcome') == 0
+
+    def sendReceive(self, data):
+        self.send(data + self.rtn)
+        if self.verbosity > 0:
+            print 'Sent: {}'.format(data)
+        received = self.recv(self._maxBufferSize).strip()
+        if self.verbosity > 0:
+            print 'Received: {}'.format(received)
+        return received
+
+    def close(self):
+        received = self.sendReceive('exit')
+        if self.verbosity > 0:
+            print 'Close String: {}'.format(received)
+        super(ddsRioSocket, self).close()
+
+class ddsAD9959Client(object):
+    def readAllAD9959(self):
+        regDict = {}
+        for key in self.cmdString.registerNamesAD9959.keys():
+            data = self.readRegisterAD9959(key)
+            regDict[key] = data
+        return regDict
+
+    def readRegisterAD9959(self, register):
+        command = self.cmdString.readDDSRegAD9959(register)
+        data = self.sendReceive(command)
+        return int(data, 16)
+
+    def writeRegisterAD9959(self, register, value):
+        command = self.cmdString.writeDDSRegAD9959(register, value)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+class ddsRioClient(ddsAD9959Client):
+    def __init__(self, address=''):
+        self.cmdString = ddsRioCmdStrings()
+        self.ddsTypeTuple = ('AD9952', 'AD9959')
+
+    def _getTimeout(self):
+        return None
+
+    def _setTimeout(self):
+        pass
+
+    timeout = property(_getTimeout, _setTimeout)
+
+    def readAll(self):
+        regDict = {}
+        for key in self.cmdString.registerNames.keys():
+            data = self.readRegister(key)
+            regDict[key] = data
+        return regDict
+
+    def writePhaseAdj1(self, data):
+        self.writeRegister(0x00, data)
+
+    def writePhaseAdj2(self, data):
+        self.writeRegister(0x01, data)
+
+    def writeFreqTuning1(self, data):
+        self.writeRegister(0x02, data)
+
+    def writeFreqTuning2(self, data):
+        self.writeRegister(0x03, data)
+
+    def writeDeltaFreq(self, data):
+        self.writeRegister(0x04, data)
+
+    def writeUpdateClk(self, data):
+        self.writeRegister(0x05, data)
+
+    def writeRampRateClk(self, data):
+        self.writeRegister(0x06, data)
+
+    def writeCntrlReg(self, data):
+        self.writeRegister(0x07, data)
+
+    def writeOskMult(self, data):
+        self.writeRegister(0x08, data)
+
+    def _writeDCare(self, data):
+        self.writeRegister(0x09, data)
+
+    def writeOskRampRate(self, data):
+        self.writeRegister(0x0A, data)
+
+    def writeCntrlDac(self, data):
+        self.writeRegister(0x0B, data)
+
+    def readPhaseAdj1(self):
+        return self.readRegister(0x00)
+
+    def readPhaseAdj2(self):
+        return self.readRegister(0x01)
+
+    def readFreqTuning1(self):
+        return self.readRegister(0x02)
+
+    def readFreqTuning2(self):
+        return self.readRegister(0x03)
+
+    def readDeltaFreq(self):
+        return self.readRegister(0x04)
+
+    def readUpdateClk(self):
+        return self.readRegister(0x05)
+
+    def readRampRateClk(self):
+        return self.readRegister(0x06)
+
+    def readCntrlReg(self):
+        return self.readRegister(0x07)
+
+    def readOskMult(self):
+        return self.readRegister(0x08)
+
+    def _readDCare(self):
+        return self.readRegister(0x09)
+
+    def readOskRampRate(self):
+        return self.readRegister(0x0A)
+
+    def readCntrlDac(self):
+        return self.readRegister(0x0B)
+
+    def writeRegister(self, register, value):
+        command = self.cmdString.writeDDSReg(register, value)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def readRegister(self, register):
+        command = self.cmdString.readDDSReg(register)
+        data = self.sendReceive(command)
+        #print data
+        return int(data, 16)
+
+    def setBoardType(self, value):
+        if type(value) == int:
+            pass
+        elif type(value) == str:
+            valStr = value
+            try:
+                value = self.ddsTypeTuple.index(valStr)
+            except ValueError:
+                errorString = 'String {} not a valid Board Type'
+                errorString.format(valStr)
+                raise ValueError(errorString)
+        else:
+            errorString = 'Type {0} is not supported'
+            errorString.format(type(value))
+            raise TypeError(errorString)
+
+        command = self.cmdString.setDDSBoardType(value)
+        data = self.sendReceive(command)
+
+    def getBoardType(self):
+        command = self.cmdString.getDDSBoardType()
+        data = self.sendReceive(command)
+        ddsType = int(data)
+        return self.ddsTypeTuple[ddsType]
+
+    def setAutoUpdateClk(self, value):
+        command = self.cmdString.setDDSAutoUpdateClk(value)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def getAutoUpdateClk(self):
+        command = self.cmdString.getDDSAutoUpdateClk()
+        data = self.sendReceive(command)
+        return bool(int(data))
+
+    def masterReset(self):
+        command = self.cmdString.masterReset()
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def setActiveBoard(self, value):
+        command = self.cmdString.setDDSActiveBoard(value)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def getActiveBoard(self):
+        command = self.cmdString.getDDSActiveBoard()
+        data = self.sendReceive(command)
+        return int(data)
+
+    def writePulseConfig(self, index, delay, width):
+        command = self.cmdString.writePTGConfig(index, delay, width)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def readPulseConfig(self, index):
+        command = self.cmdString.readPTGConfig(index)
+        data = self.sendReceive(command)
+        return data
+
+    def writePulseCount(self, count):
+        command = self.cmdString.writePTGCount(count)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def readPulseCount(self):
+        command = self.cmdString.readPTGCount()
+        data = self.sendReceive(command)
+        return int(data)
+
+    def writePulseInvert(self, invert):
+        command = self.cmdString.writePTGInvert(invert)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def readPulseInvert(self):
+        command = self.cmdSiring.readPTGInvert()
+        data = self.sendReceive(command)
+        return int(data)
+
+    def sendPulseSWTrigger(self):
+        command = self.cmdString.writePTGSoftTrig()
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def sendDoSWTrigger(self):
+        command = self.cmdString.writeDoSoftTrig()
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def writeDoBuffer(self, buff):
+        command = self.cmdString.writeDoBuffer(buff)
+        #if self.clientType == 'serial':
+        #    tSleepTime = self._sleepTime
+        #    self._sleepTime = 0.25
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+        #if self.clientType == 'serial':
+        #    self._sleepTime = tSleepTime
+
+    def readDoSampleRate(self):
+        command = self.cmdString.readDoSampleRate()
+        data = self.sendReceive(command)
+        return float(data)
+
+    def writeDoSampleRate(self, sampleRate):
+        command = self.cmdString.writeDoSampleRate(sampleRate)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def readDoRepeats(self):
+        command = self.cmdString.readDoRepeats()
+        data = self.sendReceive(command)
+        return int(data)
+
+    def writeDoRepeats(self, repeats):
+        command = self.cmdString.writeDoRepeats(repeats)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def writeCntActiveChnl(self, channel):
+        command = self.cmdString.writeCntActiveChnl(channel)
+        data = self.sendReceive(command)
+        done = data.find('Done') == 0
+
+    def readCntActiveChnl(self):
+        command = self.cmdString.readCntActiveChnl()
+        data = self.sendReceive(command)
+        return int(data)
+
+    def readCntSamplesAvail(self):
+        command = self.cmdString.readCntSamplesAvail()
+        data = self.sendReceive(command)
+        return int(data)
+
+    def readCntBuffer(self):
+        command = self.cmdString.readCntBuffer()
+        data = self.sendReceive(command)
+        #print len(data)
+        #print data
+        #while len(data) <= 2:
+        #    data = self.sendReceive('test')
+        #    data = self.sendReceive(command)
+        dataStrList = data.split(',')
+        dataIntList = []
+        for dataStr in dataStrList:
+            dataIntList.append(int(dataStr))
+        return dataIntList
+
+    def clearCntBuffer(self):
+        command = self.cmdString.clearCntBuffer()
+        data = self.sendReceive(command)
+
+    def get20MHzState(self):
+        command = self.cmdString.get20MHzState()
+        data = self.sendReceive(command)
+        return bool(int(data))
+
+    def set20MHzState(self, state):
+        command = self.cmdString.set20MHzState(state)
+        data = self.sendReceive(command)
+
+class ddsRioClientFactory(object):
+    @staticmethod
+    def newClient(clientType, **kwargs):
+        if clientType == 0:
+            return ddsRioSerialClient(**kwargs)
+        else:
+            return ddsRioNetClient(**kwargs)
+
+class ddsRioSerialClient(ddsRioClient):
+    def __init__(self, **kwargs):
+        super(ddsRioSerialClient, self).__init__()
+        self._ser = None
+        self.clientType = 'serial'
+        self._sleepTime = 0.05
+        self.verbosity = kwargs.get('verbosity', 0)
+
+    def _getTimeout(self):
+        return self._ser.getTimeout()
+
+    def _setTimeout(self, timeout):
+        self._ser.setTimeout(timeout)
+
+    timeout = property(_getTimeout, _setTimeout)
+
+    def connect(self, **kwargs):
+        device = kwargs.get('device', '/dev/ttyUSB0')
+        baudrate = kwargs.get('baudrate', 115200)
+        timeout = kwargs.get('timeout', 0.25)
+        self._ser = Serial(device, baudrate, timeout=timeout)
+
+    def sendReceive(self, data):
+        self._ser.write(data)
+        self._ser.write('\r\n')
+        if self.verbosity > 0:
+            print 'Sent: {}'.format(data)
+
+        # Wait if characters are waiting to be sent
+        while True:
+            receiving = self._ser.inWaiting() > 0
+            sleep(self._sleepTime)
+            if receiving:
+                break
+            
+        numBytes = self._ser.inWaiting()
+        received = self._ser.read(numBytes)
+        if self.verbosity > 0:
+            print 'Received: {}'.format(received)
+        return received
+
+    def close(self):
+        if self._ser:
+            self._ser.close()
+
+class ddsRioNetClient(ddsRioClient):
+    def __init__(self, address='', **kwargs):
+        super(ddsRioNetClient, self).__init__()
+        self._socket = ddsRioSocket()
+        self._socket.host = address
+        self.clientType = 'TCP'
+        self.verbosity = kwargs.get('verbosity', 0)
+
+    def _getVerbosity(self):
+        return self._socket.verbosity
+
+    def _setVerbosity(self, value):
+        self._socket.verbosity = value
+
+    verbosity = property(_getVerbosity, _setVerbosity)
+
+    def _setAddress(self, value):
+        self._socket.host = value
+
+    def _getAddress(self):
+        return self._socket.host
+
+    address = property(_getAddress, _setAddress)
+
+    def connect(self, **kwargs):
+        if kwargs.has_key('address'):
+            self.address = kwargs['address']
+        if kwargs.has_key('port'):
+            self.port = kwargs['port']
+        self._socket.connect()
+
+    def sendReceive(self, data):
+        data = self._socket.sendReceive(data)
+        return data
+
+    def close(self):
+        self._socket.close()
+
+if __name__ == '__main__':
+    try:
+        import sys
+        clientType = sys.argv[1].lower() 
+        if clientType  == 'serial':
+            client = ddsRioClientFactory().newClient(0)
+            client.connect(device = '/dev/ttyUSB0', baudrate = 115200, timeout = 0.25)
+        elif clientType == 'tcp':
+            client = ddsRioClientFactory().newClient(1)
+            client.connect(address = '192.168.33.113', port = 6431)
+
+        #sock.verbosity = 1
+        print client.clientType
+        client.readAll()
+        client.writePulseConfig(0, 0, 100)
+        client.writePulseConfig(1, 50, 50)
+        client.writePulseConfig(2, 50, 25)
+        client.writePulseCount(3)
+        client.readPulseConfig(0)
+        client.readPulseCount()
+        client.readPulseInvert()
+        client.sendPulseSWTrigger()
+        
+    finally:
+        client.close()
