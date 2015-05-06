@@ -51,7 +51,6 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         self.loadMappingButton.clicked.connect( self.onLoadMapping )
         self.loadDefinitionButton.clicked.connect( self.onLoadDefinition )
         self.loadGlobalButton.clicked.connect( self.onLoadGlobal )
-        self.loadLocalButton.clicked.connect( self.onLoadLocal )
         if self.files.mappingFile is not None:
             _, filename = os.path.split(self.files.mappingFile)
             self.mappingCombo.setCurrentIndex( self.mappingCombo.findText(filename))
@@ -63,14 +62,9 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         if self.files.globalFile is not None:
             _, filename = os.path.split(self.files.globalFile)
             self.globalCombo.setCurrentIndex( self.globalCombo.findText(filename))
-        self.localCombo.addItems( self.files.localHistory.keys() )
-        if self.files.localFile is not None:
-            _, filename = os.path.split(self.files.localFile)
-            self.localCombo.setCurrentIndex( self.localCombo.findText(filename))
         self.mappingCombo.currentIndexChanged['QString'].connect( self.onMappingChanged )
         self.definitionCombo.currentIndexChanged['QString'].connect( self.onDefinitionChanged )
         self.globalCombo.currentIndexChanged['QString'].connect( self.onGlobalChanged )
-        self.localCombo.currentIndexChanged['QString'].connect( self.onLocalChanged )
         
     def reloadAll(self):
         if self.files.mappingFile:

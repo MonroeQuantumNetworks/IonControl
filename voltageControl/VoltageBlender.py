@@ -170,6 +170,7 @@ class VoltageBlender(QtCore.QObject):
         self.tableHeader = list()
         self.globalDict = globalDict
         self.adjustGain = 1.0
+        self.localAdjustSolutions = dict()
         
     def currentData(self):
         return self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
@@ -215,10 +216,35 @@ class VoltageBlender(QtCore.QObject):
                 pass   # if it's not an int we will ignore it here
         itf.close()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
+        
+    def loadLocalAdjust(self, localAdjustDict, forceupdate=list() ):
+        channelCount = self.hardware.channelCount if self.hardware else 0
+        self.localAdjust = dict()
+        for name, record in localAdjustDict.iteritems():
+            path = record.path
+            if name in forceupdate or name not in self.localAdjustCache or self.localAdjustCache[name]!=path:
+                linelist = list()
+                itf = itfParser()
+                itf.eMapFilePath = self.mappingpath
+                itf.open(path)
+                for _ in range(itf.getNumLines()):
+                    line = itf.eMapReadLine() 
+                    for index, value in enumerate(line):
+                        if math.isnan(value): line[index]=0
+                    line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
+                    linelist.append( line )
+                itf.close()
+                record.solution = linelist
+                self.localAdjustCache[name] = path
+        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
     
     def setAdjust(self, adjust, gain):
         self.adjustDict = adjust
-        self.adjustGain = gain
+        self.adjustGain = MagnitudeUtilit.value( gain )
+        self.applyLine(self.lineno,self.lineGain,self.globalGain)
+        
+    def setLocalAdjust(self, localAdjustDict ):
+        self.localAdjustSolutions = localAdjustDict
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
@@ -235,11 +261,15 @@ class VoltageBlender(QtCore.QObject):
             self.dataError.emit(outOfRange.tolist())
             
     def calculateLine(self, lineno, lineGain, globalGain):
+        lineGain = MagnitudeUtilit.value(lineGain)
+        globalGain + MagnitudeUtilit.value( globalGain)
         line = self.blendLines(lineno,lineGain)
+        localadjustline = self.blendLocalAdjustLines(lineno)
         self.lineGain = lineGain
         self.globalGain = globalGain
         #self.lineno = lineno
         line = self.adjustLine( line )
+        line = numpy.add( line, localadjustline )
         line *= self.globalGain
         return line
             
@@ -276,6 +306,17 @@ class VoltageBlender(QtCore.QObject):
             convexc = lineno-left
             return (self.lines[left]*(1-convexc) + self.lines[right]*convexc)*lineGain
         return None
+    
+    def blendLocalAdjustLines(self, lineno):
+        channelCount = self.hardware.channelCount if self.hardware else 0
+        left = int(math.floor(lineno))
+        right = int(math.ceil(lineno))
+        convexc = lineno-left
+        result = numpy.zeros(channelCount)
+        for record in self.localAdjustVoltages.itervalues():
+            if record.solution:
+                result = numpy.add(result, (record.solution[left]*(1-convexc) + record.solution[right]*convexc)*record.gain)
+        return result
             
     def close(self):
         self.hardware.close()
