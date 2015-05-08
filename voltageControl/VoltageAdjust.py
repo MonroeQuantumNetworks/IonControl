@@ -24,6 +24,7 @@ from gui.ExpressionValue import ExpressionValue
 from modules.magnitude import mg
 import re
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from modules import MagnitudeUtilit
 
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
@@ -45,17 +46,16 @@ class Adjust(object):
     @globalDict.setter
     def globalDict(self, globalDict):
         self._globalDict = globalDict
-        self._line.globalDict = globalDict
         self._lineGain.globalDict = globalDict
         self._globalGain.globalDict = globalDict        
         
     @property
     def line(self):
-        return self._line.value
+        return self._line
     
     @line.setter
     def line(self, value):
-        self._line.value = value
+        self._line = value
     
     @property
     def lineGain(self):
@@ -138,10 +138,10 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.lineBox.globalDict = self.settings.adjust.globalDict
         self.lineGainBox.globalDict = self.settings.adjust.globalDict
         self.globalGainBox.globalDict = self.settings.adjust.globalDict
-        self.lineBox.setExpression( self.adjust._line )
+        self.lineBox.setValue( self.adjust._line )
         self.lineGainBox.setExpression( self.adjust._lineGain )
         self.globalGainBox.setExpression( self.adjust._globalGain )
-        self.lineBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_line") )
+        self.lineBox.valueChanged.connect( functools.partial(self.onValueChanged,"_line") )
         self.lineGainBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_lineGain") )
         self.globalGainBox.expressionChanged.connect( functools.partial(self.onExpressionChanged,"_globalGain") )
         self.triggerButton.clicked.connect( self.onTrigger )
@@ -227,6 +227,10 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         
     def onExpressionChanged(self, attribute, value):
         setattr(self.adjust,attribute,value) 
+        self.updateOutput.emit(self.adjust)
+
+    def onValueChanged(self, attribute, value):
+        setattr(self.adjust,attribute, MagnitudeUtilit.value( value ) ) 
         self.updateOutput.emit(self.adjust)
     
     def setLine(self, line):
