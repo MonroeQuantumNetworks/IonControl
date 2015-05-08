@@ -76,7 +76,7 @@ class MeasurementLogUi(Form, Base ):
                            lambda now: (datetime.combine(now - timedelta(days=6), time()),  datetime.combine(now + timedelta(days=1), time())),  # one week
                            lambda now: (datetime.combine(now - timedelta(days=30), time()), datetime.combine(now + timedelta(days=1), time())),   # 30 days
                            lambda now: (datetime.combine(now - timedelta(days=90), time()), datetime.combine(now + timedelta(days=1), time())),   # 90 days
-                           lambda now: (datetime.combine(now - timedelta(years=1), time()), datetime.combine(now + timedelta(days=1), time())),   # 1 year
+                           lambda now: (datetime.combine(now - timedelta(days=365), time()), datetime.combine(now + timedelta(days=1), time())),   # 1 year
                            lambda now: (datetime(2014,11,1,0,0),  datetime.combine(now + timedelta(days=1), time())),  # all
                            lambda now: (self.settings.fromDateTimeEdit, self.settings.toDateTimeEdit)
                            ]

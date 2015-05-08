@@ -65,11 +65,13 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.tableView.setModel( self.voltageTableModel )
         self.tableView.resizeColumnsToContents()
         self.tableView.resizeRowsToContents()
+        self.localAdjustUi.filesChanged.connect( self.voltageBlender.loadLocalAdjust )
         self.voltageBlender.dataChanged.connect( self.voltageTableModel.onDataChanged )
         self.voltageBlender.dataError.connect( self.voltageTableModel.onDataError )
         self.tableView.setSortingEnabled(True)
         self.voltageFilesUi.reloadAll()
         adjust = self.adjustUi.adjust
+        self.voltageBlender.loadLocalAdjust( self.localAdjustUi.localAdjustList, list() )
         try:
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
         except Exception:
@@ -95,6 +97,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.adjustUi.saveConfig()
         self.globalAdjustUi.saveConfig()
         self.voltageFilesUi.saveConfig()
+        self.localAdjustUi.saveConfig()
     
     def onClose(self):
         pass

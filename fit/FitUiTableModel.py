@@ -59,7 +59,7 @@ class FitUiTableModel(QtCore.QAbstractTableModel):
             return None
         if not self.fitfunction.parametersConfidence[row]:
             return str(self.fitfunction.parameters[row])
-        return roundToStdDev(self.fitfunction.parameters[row],self.fitfunction.parametersConfidence[row],2) 
+        return repr(roundToStdDev(self.fitfunction.parameters[row],self.fitfunction.parametersConfidence[row],2)) 
                  
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.fitfunction.parameters) if self.fitfunction else 0

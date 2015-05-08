@@ -20,6 +20,7 @@ from modules.SequenceDict import SequenceDict
 from AdjustValue import AdjustValue
 from pulser.DACController import DACControllerException   
 from numpy import linspace
+from modules.doProfile import doprofile
 
 try:
     from Chassis.WaveformChassis import WaveformChassis
@@ -170,7 +171,8 @@ class VoltageBlender(QtCore.QObject):
         self.tableHeader = list()
         self.globalDict = globalDict
         self.adjustGain = 1.0
-        self.localAdjustSolutions = dict()
+        self.localAdjustVoltages = list()
+        self.uploadedDataHash = None
         
     def currentData(self):
         return self.electrodes, self.aoNums, self.dsubNums, self.outputVoltage
@@ -217,26 +219,30 @@ class VoltageBlender(QtCore.QObject):
         itf.close()
         self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
         
-    def loadLocalAdjust(self, localAdjustDict, forceupdate=list() ):
-        channelCount = self.hardware.channelCount if self.hardware else 0
-        self.localAdjust = dict()
-        for name, record in localAdjustDict.iteritems():
+    def loadLocalAdjust(self, localAdjustList, forceupdate=list() ):
+        channelCount = self.hardware.channelCount if self.hardware else 0        
+        for index, record in enumerate(localAdjustList):
             path = record.path
-            if name in forceupdate or name not in self.localAdjustCache or self.localAdjustCache[name]!=path:
-                linelist = list()
-                itf = itfParser()
-                itf.eMapFilePath = self.mappingpath
-                itf.open(path)
-                for _ in range(itf.getNumLines()):
-                    line = itf.eMapReadLine() 
-                    for index, value in enumerate(line):
-                        if math.isnan(value): line[index]=0
-                    line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
-                    linelist.append( line )
-                itf.close()
-                record.solution = linelist
-                self.localAdjustCache[name] = path
-        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
+            if index in forceupdate or record.solutionPath != record.path:
+                if os.path.exists(path):
+                    linelist = list()
+                    itf = itfParser()
+                    itf.eMapFilePath = self.mappingpath
+                    itf.open(path)
+                    for _ in range(itf.getNumLines()):
+                        line = itf.eMapReadLine() 
+                        for index, value in enumerate(line):
+                            if math.isnan(value): line[index]=0
+                        line = numpy.append( line, [0.0]*max(0,channelCount-len(line)))
+                        linelist.append( line )
+                    itf.close()
+                    record.solution = linelist
+                    record.solutionPath = path
+                else:
+                    logging.getLogger(__name__).warning("Local Adjust file '{0}' not found".format(path))
+        if self.electrodes:
+            self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
+        self.localAdjustVoltages = localAdjustList
     
     def setAdjust(self, adjust, gain):
         self.adjustDict = adjust
@@ -244,11 +250,11 @@ class VoltageBlender(QtCore.QObject):
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
         
     def setLocalAdjust(self, localAdjustDict ):
-        self.localAdjustSolutions = localAdjustDict
+        self.localAdjustVoltages = localAdjustDict
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
     def applyLine(self, lineno, lineGain, globalGain):
-        line = self.calculateLine(lineno,lineGain,globalGain)
+        line = self.calculateLine( MagnitudeUtilit.value(lineno), MagnitudeUtilit.value(lineGain), MagnitudeUtilit.value(globalGain) )
         try:
             self.hardware.applyLine(line)
             self.outputVoltage = line
@@ -261,8 +267,6 @@ class VoltageBlender(QtCore.QObject):
             self.dataError.emit(outOfRange.tolist())
             
     def calculateLine(self, lineno, lineGain, globalGain):
-        lineGain = MagnitudeUtilit.value(lineGain)
-        globalGain + MagnitudeUtilit.value( globalGain)
         line = self.blendLines(lineno,lineGain)
         localadjustline = self.blendLocalAdjustLines(lineno)
         self.lineGain = lineGain
@@ -291,10 +295,12 @@ class VoltageBlender(QtCore.QObject):
                 start, _, edge, _ = definition[-1]
                 self.shuttleTo = edge.startLine if start!=edge.startName else edge.stopLine
                 self.shuttlingOnLine.emit(self.shuttleTo)
+                self.outputVoltage = line = self.calculateLine( MagnitudeUtilit.value(self.shuttleTo), MagnitudeUtilit.value(self.lineGain), MagnitudeUtilit.value(self.globalGain) )
+                self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
                         
     def adjustLine(self, line):
-        offset = numpy.array([0.0]*len(line))
-        for _, adjust in self.adjustDict.iteritems():
+        offset = numpy.zeros(len(line))
+        for adjust in self.adjustDict.itervalues():
             offset = offset + self.adjustLines[adjust.line] * float(adjust.value)
         offset *= self.adjustGain
         return (line+offset)
@@ -313,9 +319,9 @@ class VoltageBlender(QtCore.QObject):
         right = int(math.ceil(lineno))
         convexc = lineno-left
         result = numpy.zeros(channelCount)
-        for record in self.localAdjustVoltages.itervalues():
+        for record in self.localAdjustVoltages:
             if record.solution:
-                result = numpy.add(result, (record.solution[left]*(1-convexc) + record.solution[right]*convexc)*record.gain)
+                result = numpy.add(result, (record.solution[left]*(1-convexc) + record.solution[right]*convexc)*record.gain.value)
         return result
             
     def close(self):
@@ -324,6 +330,7 @@ class VoltageBlender(QtCore.QObject):
     def writeShuttleLookup(self, edgeList, address=0):
         self.dacController.writeShuttleLookup(edgeList,address)
     
+    @doprofile
     def writeData(self, shuttlingGraph):
         towrite = list()
         startline = 1
@@ -337,6 +344,15 @@ class VoltageBlender(QtCore.QObject):
             edge.interpolStopLine = currentline 
         data = self.dacController.writeVoltages(1, towrite )
         self.dacController.verifyVoltages(1, data )
+        self.uploadedDataHash = self.shuttlingDataHash()
+        
+    def shuttlingDataHash(self):
+        h =  hash( (self.lineGain, self.globalGain, self.adjustGain, tuple(self.adjustDict.values()), tuple(self.localAdjustVoltages) ))
+        logging.getLogger(__name__).info("Shuttling Hash: {0:x}".format(h))
+        return h
+    
+    def shuttlingDataValid(self):
+        return self.shuttlingDataHash()==self.uploadedDataHash
         
     def trigger(self):
         self.dacController.triggerShuttling()

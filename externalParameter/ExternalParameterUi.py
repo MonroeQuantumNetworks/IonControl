@@ -17,6 +17,7 @@ from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
 from modules.Observable import Observable
 from modules.GuiAppearance import restoreGuiState, saveGuiState
+from modules.magnitude import MagnitudeError
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
 
@@ -168,7 +169,7 @@ class ControlUi(UiForm,UiBase):
         self.tableView.horizontalHeader().setStretchLastSection(True)   
         try:
             self.evaluate(None)
-        except KeyError as e:
+        except (KeyError, MagnitudeError) as e:
             logging.getLogger(__name__).warning(str(e))
         
     def keys(self):

@@ -44,7 +44,7 @@ class Data(object):
     
     @property
     def timeinterval(self):
-        return ( ((self.timeTick.values()[0]*5e-9)+self.timeTickOffset, (self.timeTick.values()[-1]*5e-9)+self.timeTickOffset) if self.timeTick 
+        return ( ((self.timeTick.values()[0][0]*5e-9)+self.timeTickOffset, (self.timeTick.values()[0][-1]*5e-9)+self.timeTickOffset) if self.timeTick 
                  else (self._creationTime, self._creationTime) )
         
     def __str__(self):
