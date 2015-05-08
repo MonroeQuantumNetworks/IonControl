@@ -89,7 +89,7 @@
     <widget class="QTableView" name="edgeTableView"/>
    </item>
    <item row="0" column="2" colspan="5">
-    <widget class="ExpressionSpinBox" name="lineBox">
+    <widget class="MagnitudeSpinBox" name="lineBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>1</horstretch>
@@ -228,6 +228,11 @@
    <class>ExpressionSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>uiModules.ExpressionSpinBox</header>
+  </customwidget>
+  <customwidget>
+   <class>MagnitudeSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>uiModules.MagnitudeSpinBox</header>
   </customwidget>
  </customwidgets>
  <tabstops>
