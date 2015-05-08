@@ -72,7 +72,7 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         return 4
  
     def onDataChanged(self,x1,y1,x2,y2):
-        #print "VoltageTableModel.onDataChanged" , x1,y1,x2,y2
+        print "VoltageTableModel.onDataChanged" , x1,y1,x2,y2
         newLength = len(self.blender.electrodes)
         if newLength>self.lastLength:
             self.beginInsertRows(QtCore.QModelIndex(),self.lastLength,newLength-1)
