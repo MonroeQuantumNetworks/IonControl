@@ -295,6 +295,8 @@ class VoltageBlender(QtCore.QObject):
                 start, _, edge, _ = definition[-1]
                 self.shuttleTo = edge.startLine if start!=edge.startName else edge.stopLine
                 self.shuttlingOnLine.emit(self.shuttleTo)
+                self.outputVoltage = line = self.calculateLine( MagnitudeUtilit.value(self.shuttleTo), MagnitudeUtilit.value(self.lineGain), MagnitudeUtilit.value(self.globalGain) )
+                self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
                         
     def adjustLine(self, line):
         offset = numpy.zeros(len(line))
