@@ -125,10 +125,13 @@ class TraceControl(Form, Base):
             else:
                 self.freqCurve.replot() 
         if self.state==self.StateOptions.running:
-            self.controller.armScope()
+            QtCore.QTimer.singleShot(10, self.delayedArm )   # wait 10ms before re-arming
         else:
-            self.setState(self.StateOptions.stopped)         
-
+            self.setState(self.StateOptions.stopped)    
+            
+    def delayedArm(self):     
+        self.controller.armScope()
+        
     def onAddTrace(self):
         if self.errorSigCurve:
             self.errorSigCurve = None
