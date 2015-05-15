@@ -64,7 +64,7 @@ class TriggerUi(ShutterUi):
         self.applyButton.clicked.connect( self.onApply )
         
     def onApply(self):
-        self.pulserHardware.xem.ActivateTriggerIn(0x41,2)
+        self.pulserHardware.ActivateTriggerIn(0x41,2)
         
 if __name__ == "__main__":
     import sys
