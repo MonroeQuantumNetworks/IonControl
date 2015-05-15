@@ -489,7 +489,15 @@
 			<TriggerBit bitNo="5" name="DDS update 5"/>
 			<TriggerBit bitNo="6" name="DDS update 6"/>
 			<TriggerBit bitNo="7" name="DDS update 7"/>
-			<TriggerBit bitNo="8" name="DAC update"/>
+			<TriggerBit bitNo="8" name="PI 0 reset"/>
+			<TriggerBit bitNo="9" name="PI 1 reset"/>
+			<TriggerBit bitNo="10" name="PI 2 reset"/>
+			<TriggerBit bitNo="11" name="PI 3 reset"/>
+			<TriggerBit bitNo="12" name="PI 4 reset"/>
+			<TriggerBit bitNo="13" name="PI 5 reset"/>
+			<TriggerBit bitNo="14" name="PI 6 reset"/>
+			<TriggerBit bitNo="15" name="PI 7 reset"/>
+			<TriggerBit bitNo="16" name="DAC update"/>
 		</TriggerBits>
 		<DAC numChannels="8" encoding="DAC8568_VOLTAGE" />	
 		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" dedicatedfirstChannelNo="16" />
@@ -563,8 +571,8 @@
 			<Parameter address="0x57" default="0x00" bitmask="0xffff" shift="32" name="Scan 7 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
 			<Parameter address="0x58" default="0x00" bitmask="0xffff" shift="0" name="Autolock 0 threshold 1" encoding="DAC8568_VOLTAGE" enabled="True" />
 			<Parameter address="0x58" default="0x00" bitmask="0xffff" shift="16" name="Autolock 0 threshold 2" encoding="DAC8568_VOLTAGE" enabled="True" />
-			<Parameter address="0x58" default="0x00" bitmask="0x1" shift="17" name="Autolock 0 sign 1" encoding="DAC8568_VOLTAGE" enabled="True" />
-			<Parameter address="0x58" default="0x00" bitmask="0x1" shift="18" name="Autolock 0 sign 2" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x58" default="0x00" bitmask="0x1" shift="32" name="Autolock 0 sign 1" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x58" default="0x00" bitmask="0x1" shift="48" name="Autolock 0 sign 2" encoding="DAC8568_VOLTAGE" enabled="True" />
 
 			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="0" name="DDS0 regulator input" encoding="None" enabled="True" />
 			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="8" name="DDS1 regulator input" encoding="None" enabled="True" />

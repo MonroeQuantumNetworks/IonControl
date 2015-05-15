@@ -109,8 +109,8 @@ class PulserConfig(object):
         self.description = None
         self.extendedWireIns = list()
         self.statusBits = list()
-        self.shutterBits = list()
-        self.triggerBits = list()
+        self.shutterBits = dict()
+        self.triggerBits = dict()
         self.dac = DAADInfo()
         self.adc = DAADInfo()
 
@@ -140,7 +140,7 @@ def endStatusbit(parent, elem):
     
 def endShutterbit(parent, elem):
     a = elem.attrib
-    parent.append( (a.get('name'), int(a.get('bitNo'),0)))
+    parent[int(a.get('bitNo'),0)] = a.get('name')
     
 def endDAC(parent, elem):
     a = elem.attrib
