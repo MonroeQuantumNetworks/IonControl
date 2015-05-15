@@ -15,6 +15,8 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
       <xs:element type="xs:string" name="Description"/>
       <xs:element type="ExtendedWireInsType" name="ExtendedWireIns" minOccurs="0"/>
       <xs:element type="StatusBitsType" name="StatusBits" minOccurs="0"/>
+      <xs:element type="ShutterBitsType" name="ShutterBits" minOccurs="0"/>
+      <xs:element type="TriggerBitsType" name="TriggerBits" minOccurs="0"/>
       <xs:element type="DACType" name="DAC" minOccurs="1"/>
       <xs:element type="ADCType" name="ADC" minOccurs="1"/>
     </xs:sequence>
@@ -64,6 +66,24 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
+  <xs:complexType name="ShutterBitType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="bitNo" use="required"/>
+        <xs:attribute type="xs:string" name="name" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ShutterBitsType">
+    <xs:sequence>
+      <xs:element type="ShutterBitType" name="ShutterBit" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="TriggerBitsType">
+    <xs:sequence>
+      <xs:element type="ShutterBitType" name="TriggerBit" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
   <xs:complexType name="StatusBitsType">
     <xs:sequence>
       <xs:element type="StatusBitType" name="StatusBit" maxOccurs="unbounded" minOccurs="0"/>
@@ -89,6 +109,8 @@ class PulserConfig(object):
         self.description = None
         self.extendedWireIns = list()
         self.statusBits = list()
+        self.shutterBits = list()
+        self.triggerBits = list()
         self.dac = DAADInfo()
         self.adc = DAADInfo()
 
@@ -116,6 +138,10 @@ def endStatusbit(parent, elem):
     a = elem.attrib
     parent.append( (a.get('name'), int(a.get('bitNo'),0), a.get('active')))
     
+def endShutterbit(parent, elem):
+    a = elem.attrib
+    parent.append( (a.get('name'), int(a.get('bitNo'),0)))
+    
 def endDAC(parent, elem):
     a = elem.attrib
     parent.dac = DAADInfo( int(a.get("numChannels","0")), a.get("encoding", "None") )
@@ -127,10 +153,14 @@ def endADC(parent, elem):
     
 starthandler = { 'Pulser': startPulseProgrammer, 
                  'ExtendedWireIns': lambda parent, elem: parent.extendedWireIns,
-                 'StatusBits': lambda parent, elem: parent.statusBits }
+                 'StatusBits': lambda parent, elem: parent.statusBits,
+                 'ShutterBits': lambda parent, elem: parent.shutterBits,
+                 'TriggerBits': lambda parent, elem: parent.triggerBits }
 endhandler = { 'Parameter': endParameter,
                'Description': endDescription,
                'StatusBit': endStatusbit,
+               'ShutterBit': endShutterbit,
+               'TriggerBit': endShutterbit,
                'DAC': endDAC,
                'ADC': endADC }
 
