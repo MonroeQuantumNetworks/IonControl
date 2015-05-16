@@ -198,7 +198,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-        self.counterTableModel = CounterTableModel.CounterTableModel( self.currentContext.counters )
+        self.counterTableModel = CounterTableModel.CounterTableModel( self.currentContext.counters, self.channelNameData[4] )
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)

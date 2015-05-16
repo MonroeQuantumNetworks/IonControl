@@ -10,7 +10,7 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
     def __init__(self, config, channelNameData, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.config = config 
-        self.shutterChannelNames, self.shutterNamesSignal, self.triggerChannelNames, self.triggerNamesSignal = channelNameData
+        self.shutterChannelNames, self.shutterNamesSignal, self.triggerChannelNames, self.triggerNamesSignal, _ = channelNameData
         self.dataSignals = 64
         self.auxSignals = 10
         self.gateSignals = 32
@@ -42,14 +42,14 @@ class LogicAnalyzerSignalTableModel(QtCore.QAbstractTableModel):
     def triggerChannelName(self, index):
         if index == 6:
             return "Ram set address"
-        elif index in self.triggerChannelNames.names:
-            return self.triggerChannelNames.names[index]
+        elif index in self.triggerChannelNames:
+            return self.triggerChannelNames[index]
         else:
             return "Trigger {0}".format(index)
 
     def primaryChannelName(self, index):
-        if index in self.shutterChannelNames.names:
-            return self.shutterChannelNames.names[index]
+        if index in self.shutterChannelNames:
+            return self.shutterChannelNames[index]
         else:
             return "Shutter {0}".format(index)
 

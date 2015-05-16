@@ -30,7 +30,7 @@ from externalParameter import ExternalParameterUi
 from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
 from modules import DataDirectory, MyException
 from modules.DataChanged import DataChanged
-from modules.bidict import ChannelNameMap
+from pulser.ChannelNameDict import ChannelNameDict  
 from persist import configshelve
 from pulseProgram import PulseProgramUi
 from pulser import ShutterUi
@@ -56,7 +56,6 @@ from modules.XmlUtilit import prettify
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
-
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
@@ -69,9 +68,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
         self.consoleMaximumLines = config.get('Settings.consoleMaximumLinesNew',100)
         self.consoleEnable = config.get('Settings.consoleEnable',False)
-        self.shutterNameDict = config.get('Settings.ShutterNameDict', ChannelNameMap())
+        self.shutterNameDict = config.get('Settings.ShutterNameDict', ChannelNameDict())
+        if self.shutterNameDict.__class__.__name__ == 'ChannelNameMap':
+            self.shutterNameDict = ChannelNameDict( self.shutterNameDict.names )
         self.shutterNameSignal = DataChanged()
-        self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameMap())
+        self.triggerNameDict = config.get('Settings.TriggerNameDict', ChannelNameDict())
+        if self.triggerNameDict.__class__.__name__ == 'ChannelNameMap':
+            self.triggerNameDict = ChannelNameDict( self.triggerNameDict.names )
         self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.printMenu = None
@@ -116,13 +119,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
         self.parent = parent
         self.tabDict = SequenceDict()
-        
-        
-        # initialize PulseProgramUi
-        self.channelNameData = (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal)
-        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
-        self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
-        
+               
         self.settingsDialog = FPGASettingsDialog( self.config, parent=self.parent)
         self.settingsDialog.setupUi()
         self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
@@ -135,6 +132,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.settings = self.settingsDialog.settings("Pulse Programmer")   
         logger.info("Pulser Configuration {0}".format(self.pulser.getConfiguration()))
 
+        # initialize PulseProgramUi
+        pulserConfig = self.pulser.pulserConfiguration()
+        self.shutterNameDict.defaultDict = pulserConfig.shutterBits
+        self.triggerNameDict.defaultDict = pulserConfig.triggerBits
+        self.counterNameDict = pulserConfig.counterBits
+        self.channelNameData = (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal, self.counterNameDict )
+        self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
+        self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
+        
         # Global Variables
         self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
         self.globalVariablesUi.setupUi(self.globalVariablesUi)

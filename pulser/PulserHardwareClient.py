@@ -136,7 +136,8 @@ class PulserHardware(QtCore.QObject):
         if HardwareConfigurationId in self.pulserConfigurationList:
             return self.pulserConfigurationList[config['HardwareConfigurationId']]
         else:
-            logging.getLogger(__name__).error("No information on configuration {0} in configuration file".format(HardwareConfigurationId))
+            #logging.getLogger(__name__).error("No information on configuration {0} in configuration file".format(HardwareConfigurationId))
+            raise PulserHardwareException("No information on configuration 0x{0:x} in configuration file 'PulserConfig.xml'".format(HardwareConfigurationId))
         return None
             
 

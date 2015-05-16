@@ -499,6 +499,57 @@
 			<TriggerBit bitNo="15" name="PI 7 reset"/>
 			<TriggerBit bitNo="16" name="DAC update"/>
 		</TriggerBits>
+		<CounterBits>
+			<CounterBit bitNo="0" name="Count 0"/>
+			<CounterBit bitNo="1" name="Count 1"/>
+			<CounterBit bitNo="2" name="Count 2"/>
+			<CounterBit bitNo="3" name="Count 3"/>
+			<CounterBit bitNo="4" name="Count 4"/>
+			<CounterBit bitNo="5" name="Count 5"/>
+			<CounterBit bitNo="6" name="Count 6"/>
+			<CounterBit bitNo="7" name="Count 7"/>
+			<CounterBit bitNo="8" name="Count 8"/>
+			<CounterBit bitNo="9" name="Count 9"/>
+			<CounterBit bitNo="10" name="Count 10"/>
+			<CounterBit bitNo="11" name="Count 11"/>
+			<CounterBit bitNo="12" name="Count 12"/>
+			<CounterBit bitNo="13" name="Count 13"/>
+			<CounterBit bitNo="14" name="Count 14"/>
+			<CounterBit bitNo="15" name="Count 15"/>
+			<CounterBit bitNo="16" name="Count 0"/>
+			<CounterBit bitNo="17" name="Count 1"/>
+			<CounterBit bitNo="18" name="Count 2"/>
+			<CounterBit bitNo="19" name="Count 3"/>
+			<CounterBit bitNo="20" name="Count 4"/>
+			<CounterBit bitNo="21" name="Count 5"/>
+			<CounterBit bitNo="22" name="Count 6"/>
+			<CounterBit bitNo="23" name="Count 7"/>
+			<CounterBit bitNo="24" name="Ts 0"/>
+			<CounterBit bitNo="25" name="Ts 1"/>
+			<CounterBit bitNo="26" name="Ts 2"/>
+			<CounterBit bitNo="27" name="Ts 3"/>
+			<CounterBit bitNo="28" name="Ts 4"/>
+			<CounterBit bitNo="29" name="Ts 5"/>
+			<CounterBit bitNo="30" name="Ts 6"/>
+			<CounterBit bitNo="31" name="Ts 7"/>
+			<CounterBit bitNo="32" name="ADC 0"/>
+			<CounterBit bitNo="33" name="ADC 1"/>
+			<CounterBit bitNo="34" name="ADC 2"/>
+			<CounterBit bitNo="35" name="ADC 3"/>
+			<CounterBit bitNo="36" name="ADC 4"/>
+			<CounterBit bitNo="37" name="ADC 5"/>
+			<CounterBit bitNo="38" name="ADC 6"/>
+			<CounterBit bitNo="39" name="ADC 7"/>
+			<CounterBit bitNo="40" name="PI 0"/>
+			<CounterBit bitNo="41" name="PI 1"/>
+			<CounterBit bitNo="42" name="PI 2"/>
+			<CounterBit bitNo="43" name="PI 3"/>
+			<CounterBit bitNo="44" name="PI 4"/>
+			<CounterBit bitNo="45" name="PI 5"/>
+			<CounterBit bitNo="46" name="PI 6"/>
+			<CounterBit bitNo="47" name="PI 7"/>
+			<CounterBit bitNo="48" name="timeTick"/>			
+		</CounterBits>
 		<DAC numChannels="8" encoding="DAC8568_VOLTAGE" />	
 		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" dedicatedfirstChannelNo="16" />
 	</Pulser> 

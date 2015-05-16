@@ -88,8 +88,8 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         index = self.size-1-section
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal):
-                if index in self.channelNames.names:
-                    return self.channelNames.names[index]
+                if index in self.channelNames:
+                    return self.channelNames[index]
                 return index
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.shutterdict.at(section)[0].name
