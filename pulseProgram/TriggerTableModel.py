@@ -69,8 +69,8 @@ class TriggerTableModel(QtCore.QAbstractTableModel):
         index = 31-section
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal):
-                if index in self.channelNames.names:
-                    return self.channelNames.names[index]
+                if index in self.channelNames:
+                    return self.channelNames[index]
                 return index
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.triggerdict.at(section).name

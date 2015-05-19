@@ -5,23 +5,25 @@ Created on Fri Feb 08 22:02:08 2013
 @author: pmaunz
 """
 from PyQt4 import QtCore, QtGui
+from pandas.compat.chainmap_impl import ChainMap
 
 
 class CounterTableModel(QtCore.QAbstractTableModel):
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, counterdict, size=49, parent=None, *args): 
+    def __init__(self, counterdict, namedict, size=49, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.counterdict = counterdict
         self.size = size
-        self.channelNames = ['Count {0}'.format(i) for i in range(24)]
-        self.channelNames.extend( ['TS {0}'.format(i) for i in range(8)] )
-        self.channelNames.extend( ['ADC {0}'.format(i) for i in range(8)] )
-        self.channelNames.extend( ['PI {0}'.format(i) for i in range(8)] )
-        self.channelNames.append( 'time Tick' )
-        self.channelNames.append('id')
+        defaultChannelNames = ['Count {0}'.format(i) for i in range(24)]
+        defaultChannelNames.extend( ['TS {0}'.format(i) for i in range(8)] )
+        defaultChannelNames.extend( ['ADC {0}'.format(i) for i in range(8)] )
+        defaultChannelNames.extend( ['PI {0}'.format(i) for i in range(8)] )
+        defaultChannelNames.append( 'time Tick' )
+        defaultChannelNames.append('id')
+        self.channelNames = ChainMap( namedict, dict( ((index,name) for index,name in enumerate(defaultChannelNames)) ) )
         
     def setCounterdict(self, counterdict):
         self.beginResetModel()
