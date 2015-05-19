@@ -425,6 +425,16 @@
 			<StatusBit bitNo="5" active="error" name="PI 2 overflow"/>
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
+			<StatusBit bitNo="8" active="error" name="PI 4 underflow"/>
+			<StatusBit bitNo="9" active="error" name="PI 4 overflow"/>
+			<StatusBit bitNo="10" active="error" name="PI 5 underflow"/>
+			<StatusBit bitNo="11" active="error" name="PI 5 overflow"/>
+			<StatusBit bitNo="12" active="error" name="PI 6 underflow"/>
+			<StatusBit bitNo="13" active="error" name="PI 6 overflow"/>
+			<StatusBit bitNo="14" active="error" name="PI 7 underflow"/>
+			<StatusBit bitNo="15" active="error" name="PI 7 overflow"/>
+			<StatusBit bitNo="16" active="error" name="Autolock lock enable"/>
+			<StatusBit bitNo="17" active="error" name="Autolock scan enable"/>
 		</StatusBits>
 		<ShutterBits>
 			<ShutterBit bitNo="0" name="External 1-0"/>
