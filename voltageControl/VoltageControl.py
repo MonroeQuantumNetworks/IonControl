@@ -74,6 +74,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.loadLocalAdjust( self.localAdjustUi.localAdjustList, list() )
         try:
             self.voltageBlender.applyLine(adjust.line, adjust.lineGain, adjust.globalGain )
+            self.adjustUi.setLine(adjust.line)
         except Exception:
             logger.error("cannot apply voltages. Ignored for now.")
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
@@ -83,8 +84,8 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.loadVoltage(path)
         self.adjustUi.loadShuttleDef( shuttledefpath )
     
-    def onUpdate(self, adjust):
-        self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain) )
+    def onUpdate(self, adjust, updateHardware=True ):
+        self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain), updateHardware )
         self.adjustUi.setLine( MagnitudeUtilit.value(adjust.line) )
                      
     def onLoadGlobalAdjust(self, path):
