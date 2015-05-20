@@ -252,18 +252,21 @@ class VoltageBlender(QtCore.QObject):
         self.localAdjustVoltages = localAdjustDict
         self.applyLine(self.lineno,self.lineGain,self.globalGain)
     
-    def applyLine(self, lineno, lineGain, globalGain):
-        line = self.calculateLine( MagnitudeUtilit.value(lineno), MagnitudeUtilit.value(lineGain), MagnitudeUtilit.value(globalGain) )
-        try:
-            self.hardware.applyLine(line)
-            self.outputVoltage = line
+    def applyLine(self, lineno, lineGain, globalGain, updateHardware=True ):
+        if updateHardware:
+            line = self.calculateLine( MagnitudeUtilit.value(lineno), MagnitudeUtilit.value(lineGain), MagnitudeUtilit.value(globalGain) )
+            try:
+                self.hardware.applyLine(line)
+                self.outputVoltage = line
+                self.lineno = lineno
+                self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
+            except (HardwareException, DACControllerException) as e:
+                logging.getLogger(__name__).exception("Exception")
+                outOfRange = line>10
+                outOfRange |= line<-10
+                self.dataError.emit(outOfRange.tolist())
+        else:
             self.lineno = lineno
-            self.dataChanged.emit(0,1,len(self.electrodes)-1,1)
-        except (HardwareException, DACControllerException) as e:
-            logging.getLogger(__name__).exception("Exception")
-            outOfRange = line>10
-            outOfRange |= line<-10
-            self.dataError.emit(outOfRange.tolist())
             
     def calculateLine(self, lineno, lineGain, globalGain):
         line = self.blendLines(lineno,lineGain)

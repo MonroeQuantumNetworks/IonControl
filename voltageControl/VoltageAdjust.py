@@ -118,7 +118,7 @@ def triplet_iterator(iterable):
         i += 2
     
 class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
-    updateOutput = QtCore.pyqtSignal(object)
+    updateOutput = QtCore.pyqtSignal(object, object)
     shuttleOutput = QtCore.pyqtSignal(object, object)
     
     def __init__(self, config, voltageBlender, globalDict, parent=None):
@@ -203,6 +203,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
             self.adjust.line = event.line
             self.lineBox.setValue( self.adjust.line )          
         self.currentPositionLabel.setText( firstNotNone(event.text, "") )           
+        self.updateOutput.emit(self.adjust, False)
 
     def onShuttleSequence(self, destination, cont=False):
         self.synchronize()
@@ -216,6 +217,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     def onShuttlingDone(self,currentline):
         self.lineBox.setValue(currentline)
         self.adjust.line = currentline
+        self.updateOutput.emit(self.adjust, False)
 
     def addShuttlingEdge(self):
         edge = self.shuttlingGraph.getValidEdge()
@@ -227,11 +229,11 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         
     def onExpressionChanged(self, attribute, value):
         setattr(self.adjust,attribute,value) 
-        self.updateOutput.emit(self.adjust)
+        self.updateOutput.emit(self.adjust, True)
 
     def onValueChanged(self, attribute, value):
         setattr(self.adjust,attribute, MagnitudeUtilit.value( value ) ) 
-        self.updateOutput.emit(self.adjust)
+        self.updateOutput.emit(self.adjust, True)
     
     def setLine(self, line):
         self.shuttlingGraph.setPosition( line )
