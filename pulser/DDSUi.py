@@ -13,6 +13,7 @@ from DDSTableModel import DDSTableModel
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.GuiAppearance import restoreGuiState, saveGuiState 
 import logging
+from modules.Utility import unique
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
@@ -32,10 +33,12 @@ class DDSChannelSettings(object):
         self.amplitudeText = None
         self.enabled = False
         self.name = ""
+        self.squareEnabled = False
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('name','')
+        self.__dict__.setdefault('squareEnabled',False)
         
     def evaluateFrequency(self, globalDict ):
         if self.frequencyText:
@@ -95,6 +98,7 @@ class DDSUi(DDSForm, DDSBase):
         self.ddsTableModel.phaseChanged.connect( self.onPhase )
         self.ddsTableModel.amplitudeChanged.connect( self.onAmplitude )
         self.ddsTableModel.enableChanged.connect( self.onEnableChanged )
+        self.ddsTableModel.squareChanged.connect( self.onSquareChanged )
         self.pulser.shutterChanged.connect( self.ddsTableModel.onShutterChanged )
         restoreGuiState( self, self.config.get('DDSUi.guiState') )
             
@@ -122,6 +126,9 @@ class DDSUi(DDSForm, DDSBase):
         if self.autoApply: self.onApply()
         self.decimation[(2,channel)].decimate( time.time(), value, partial(self.persistCallback, "Amplitude:{0}".format(self.ddsChannels[channel].name if self.ddsChannels[channel].name else channel)) )
  
+    def onSquareChanged(self, channel, enable):
+        self.ad9912.setSquareEnabled(channel, enable)
+ 
     def persistCallback(self, source, data):
         time, value, minval, maxval = data
         unit = None
@@ -146,7 +153,15 @@ class DDSUi(DDSForm, DDSBase):
         self.ad9912.update(0xff)
         
     def onReset(self):
-        self.ad9912.reset(0xff)
+        indexes = self.tableView.selectedIndexes()
+        channels = sorted(unique([ i.row() for i in indexes ]))
+        mask = 0
+        if channels:
+            for ch in channels:
+                mask |= 1 << ch
+        else:
+            mask = 0xff
+        self.ad9912.reset(mask)
         
     def evaluate(self, name):
         for channel, setting in enumerate(self.ddsChannels):

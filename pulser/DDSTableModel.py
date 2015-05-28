@@ -8,11 +8,12 @@ from modules.firstNotNone import firstNotNone
 from functools import partial
 
 class DDSTableModel(QtCore.QAbstractTableModel):
-    headerDataLookup = ['On', 'Name', 'Frequency', 'Phase', 'Amplitude' ]
+    headerDataLookup = ['On', 'Name', 'Frequency', 'Phase', 'Amplitude','Square' ]
     frequencyChanged = QtCore.pyqtSignal( object, object )
     phaseChanged = QtCore.pyqtSignal( object, object )
     amplitudeChanged = QtCore.pyqtSignal( object, object )
     enableChanged = QtCore.pyqtSignal( object, object )
+    squareChanged = QtCore.pyqtSignal( object, object )
     def __init__(self, ddsChannels, globalDict, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         # scanNames are given as a SortedDict
@@ -31,6 +32,7 @@ class DDSTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.BackgroundColorRole,2): lambda row: self.defaultBG if self.ddsChannels[row].frequencyText is None else self.textBG,
                              (QtCore.Qt.BackgroundColorRole,3): lambda row: self.defaultBG if self.ddsChannels[row].phaseText is None else self.textBG,
                              (QtCore.Qt.BackgroundColorRole,4): lambda row: self.defaultBG if self.ddsChannels[row].amplitudeText is None else self.textBG,
+                             (QtCore.Qt.CheckStateRole, 5): lambda row: QtCore.Qt.Checked if self.ddsChannels[row].squareEnabled else QtCore.Qt.Unchecked,
                               }
         self.setDataLookup =  {  (QtCore.Qt.CheckStateRole,0): self.setEnabled,
                                  (QtCore.Qt.EditRole,1): self.setName,
@@ -39,7 +41,8 @@ class DDSTableModel(QtCore.QAbstractTableModel):
                                  (QtCore.Qt.EditRole,4): self.setAmplitude,
                                  (QtCore.Qt.UserRole,2): partial( self.setFieldText, 'frequencyText'),
                                  (QtCore.Qt.UserRole,3): partial( self.setFieldText, 'phaseText'),
-                                 (QtCore.Qt.UserRole,4): partial( self.setFieldText, 'amplitudeText')
+                                 (QtCore.Qt.UserRole,4): partial( self.setFieldText, 'amplitudeText'),
+                                 (QtCore.Qt.CheckStateRole,5): self.setSquareEnabled,
                                  }
         self.globalDict = globalDict
 
@@ -52,6 +55,12 @@ class DDSTableModel(QtCore.QAbstractTableModel):
         enabled = value==QtCore.Qt.Checked
         self.ddsChannels[index.row()].enabled = enabled
         self.enableChanged.emit( index.row(), enabled)
+        return True
+ 
+    def setSquareEnabled(self, index, value):
+        enabled = value==QtCore.Qt.Checked
+        self.ddsChannels[index.row()].squareEnabled = enabled
+        self.squareChanged.emit( index.row(), enabled)
         return True
     
     def setValue(self, index, value):
@@ -84,7 +93,7 @@ class DDSTableModel(QtCore.QAbstractTableModel):
         return len(self.ddsChannels) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 5
+        return 6
  
     def data(self, index, role): 
         if index.isValid():
@@ -95,7 +104,7 @@ class DDSTableModel(QtCore.QAbstractTableModel):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
         
     def flags(self, index):
-        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column()==0 else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column() in [0,5] else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role):
         if (role == QtCore.Qt.DisplayRole):

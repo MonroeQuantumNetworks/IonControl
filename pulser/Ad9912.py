@@ -16,15 +16,14 @@ class Ad9912Exception(Exception):
     pass
 
 class Ad9912:
-    channels = 6
     def __init__(self,pulser):
         self.pulser = pulser
-        self.frequency = [None]*self.channels
-        self.phase = [None]*self.channels
-        self.amplitude = [None]*self.channels
 
     def rawToMagnitude(self, raw):
         return mg(1000,' MHz') * (raw / float(2**48))
+
+    def setSquareEnabled(self, channel, enable):
+        self.sendCommand(channel, 3, 1 if enable else 0)
 
     def setFrequency(self, channel, frequency):
         intFrequency = int(round(2**48 * frequency.toval('GHz'))) & 0xffffffffffff
@@ -67,9 +66,8 @@ class Ad9912:
     def reset(self, mask):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            if mask & 0x3: check( self.pulser.ActivateTriggerIn(0x42,0), "DDS Reset board 0" )
-            if mask & 0xc: check( self.pulser.ActivateTriggerIn(0x42,1), "DDS Reset board 1" )
-            if mask & 0x30: check( self.pulser.ActivateTriggerIn(0x42,2), "DDS Reset board 2" )
+            check(  self.pulser.SetWireInValue(0x04, mask&0xffff ) , "AD9912 reset mask" )
+            check( self.pulser.ActivateTriggerIn(0x42,0), "DDS Reset" )
         else:
             logger.warning( "Pulser not available" )
 
