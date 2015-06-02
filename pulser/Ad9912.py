@@ -67,6 +67,7 @@ class Ad9912:
         logger = logging.getLogger(__name__)
         if self.pulser:
             check(  self.pulser.SetWireInValue(0x04, mask&0xffff ) , "AD9912 reset mask" )
+            self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x42,0), "DDS Reset" )
         else:
             logger.warning( "Pulser not available" )
