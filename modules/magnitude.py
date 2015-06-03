@@ -850,8 +850,7 @@ class Magnitude():
         283.8219 Pm
         """
         if m.unit != self.unit:
-            raise MagnitudeError("Incompatible units: %s and %s" %
-                                 (m.unit, self.unit))
+            raise MagnitudeError("Incompatible units. Cannot add: {0} to {1}.".format(m, self))
         r = self.copy()
         r.val += m.val
         r.significantDigits = max( r.significantDigits, m.significantDigits )

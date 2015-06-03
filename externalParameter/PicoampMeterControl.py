@@ -180,7 +180,7 @@ class PicoampMeterControl(Base, Form):
         self.scanTypeCombo.setCurrentIndex( self.meterState.scanType )
         self.scanTypeCombo.currentIndexChanged[int].connect( partial(self.onValueChanged, 'scanType') )
         self.filenameEdit.setText( self.meterState.filename )
-        self.filenameEdit.textChanged.connect( partial(self.onValueChanged, 'filename'))
+        self.filenameEdit.textChanged.connect( partial(self.onStringValueChanged, 'filename'))
         self.logButton.clicked.connect( self.onLogging )
         
     def onLogging(self, checked):
@@ -336,6 +336,9 @@ class PicoampMeterControl(Base, Form):
         
     def onValueChanged(self, attr, value):
         setattr( self.meterState, attr, value )
+        
+    def onStringValueChanged(self, attr, value):
+        setattr( self.meterState, attr, str(value) )
         
     def onVoltage(self, value):
         raw = MagnitudeUtilit.value( value , "V")

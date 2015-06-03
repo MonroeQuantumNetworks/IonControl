@@ -125,6 +125,18 @@ class SinSqFit(FitFunctionBase):
         logging.getLogger(__name__).info("smart start values T={0}, x0={1}, maximum={2}, minimum={3}".format(T,x0,maximum,minimum))
         return (T, x0, maximum, minimum)
 
+class DualToneSinSqFit(FitFunctionBase):
+    name = "Dual Sin2"
+    functionString = '(max-min)*sin^2( pi*(x-x0)/(2*T) )+min'
+    parameterNames = [  'T', 'x0', 'max', 'min', 'dT' ]
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.parameters = [100,0,1,0]
+        self.startParameters = [100,0,1,0]
+        
+    def functionEval(self, x, T, x0, max_, min_, dT ):
+        return (max_-min_)*(numpy.square(numpy.sin(numpy.pi/2/(T-dT/2)*(x-x0)))+numpy.square(numpy.sin(numpy.pi/2/(T+dT/2)*(x-x0))) )/2+min_
+
 class ChripedSinSqFit(FitFunctionBase):
     name = "ChirpedSin2"
     functionString = '(max-min)*sin^2( pi*(x-x0)/(2*(T+dt*x) ))+min'
@@ -336,6 +348,19 @@ class LorentzianFit(FitFunctionBase):
     def functionEval(self, x, A, s, x0, O ):
         s2 = numpy.square(s)
         return A*s2/(s2+numpy.square(x-x0))+O
+
+class AsymLorentzianFit(FitFunctionBase):
+    name = "Asymmetric Lorentzian"
+    functionString =  'A*s**2*1/(s**2+(x-x0)**2)+O s=s1 for x<x0, s=s2 x>x0'
+    parameterNames = [ 'A', 's1', ' s2' , 'x0', 'O' ]
+    def __init__(self):
+        FitFunctionBase.__init__(self)
+        self.startParameters = [1,1,1,0,0]
+        
+    def functionEval(self, x, A, s1, s2, x0, O ):
+        s1sq = numpy.square(s1)
+        s2sq = numpy.square(s2)
+        return numpy.piecewise(x, [x<=x0, x>x0], [lambda x: A*s1sq/(s1sq+numpy.square(x-x0))+O, lambda x: A*s2sq/(s2sq+numpy.square(x-x0))+O] )
 
        
 class TruncatedLorentzianFit(FitFunctionBase):

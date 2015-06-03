@@ -240,7 +240,8 @@ class VoltageBlender(QtCore.QObject):
                     record.solutionPath = path
                 else:
                     logging.getLogger(__name__).warning("Local Adjust file '{0}' not found".format(path))
-        self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
+        if self.electrodes:
+            self.dataChanged.emit(0,0,len(self.electrodes)-1,3)
         self.localAdjustVoltages = localAdjustList
     
     def setAdjust(self, adjust, gain):
