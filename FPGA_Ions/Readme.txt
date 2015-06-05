@@ -35,6 +35,10 @@ IonControl-firmware-UMD
 	Serial Out:
 		Not implemented
 		
+IonControl-firmware-UMD-20MHz-DDS-SCLK
+	As IonControl-firmware-UMD
+	difference is that SCLK for DDS AD9912 is set to 20MHz instead of 40MHz
+		
 IonControl-firmware-Cavity
 	ConfigurationId: 0x4203
 	Breakout board: Duke v2
