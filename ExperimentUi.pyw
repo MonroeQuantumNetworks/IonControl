@@ -134,9 +134,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         # initialize PulseProgramUi
         pulserConfig = self.pulser.pulserConfiguration()
-        self.shutterNameDict.defaultDict = pulserConfig.shutterBits
-        self.triggerNameDict.defaultDict = pulserConfig.triggerBits
-        self.counterNameDict = pulserConfig.counterBits
+        self.shutterNameDict.defaultDict = pulserConfig.shutterBits if pulserConfig else dict()
+        self.triggerNameDict.defaultDict = pulserConfig.triggerBits if pulserConfig else dict()
+        self.counterNameDict = pulserConfig.counterBits if pulserConfig else dict()
         self.channelNameData = (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal, self.counterNameDict )
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
