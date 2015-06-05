@@ -71,7 +71,7 @@ class DACUi(dacForm, dacBase):
 
     def onVoltage(self, channel, value):
         self.dac.setVoltage(channel, self.dacChannels[channel].outputVoltage, autoApply=self.autoApply )
-        self.decimation[(0,channel)].decimate( time.time(), value, partial(self.persistCallback, "Voltage:{0}".format(self.dacChannels[channel].name if self.dacChannels[channel].name else channel)) )
+        self.decimation[(0,channel)].decimate( time.time(), self.dacChannels[channel].outputVoltage, partial(self.persistCallback, "Voltage:{0}".format(self.dacChannels[channel].name if self.dacChannels[channel].name else channel)) )
         
     def persistCallback(self, source, data):
         time, value, minval, maxval = data

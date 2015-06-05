@@ -458,5 +458,56 @@ class DummySingleParameter(ExternalParameterBase):
         superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
         return superior
 
+class HP6632B(ExternalParameterBase):
+    """
+    Set the HP6632B power supply
+    """
+    className = "N6632B Power Supply"
+    _dimension = magnitude.mg(1,'A')
+    _outputChannels = {"Curr": "A", "Volt": "V"}
+    _outputLookup = { "Curr": ("Curr","A"),
+                      "Volt": ("Volt","V")}
+    _inputChannels = dict({"Curr":"A", "Volt":"V"})
+    def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
+        logger = logging.getLogger(__name__)
+        ExternalParameterBase.__init__(self,name,config)
+        logger.info( "trying to open '{0}'".format(instrument) )
+        self.instrument = visa.instrument(instrument) #open visa session
+        logger.info( "opened {0}".format(instrument) )
+        self.setDefaults()
+        for channel in self._outputChannels:
+            self.settings.value[channel] = self._getValue(channel)
+
+    def setDefaults(self):
+        ExternalParameterBase.setDefaults(self)
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
+            
+    def _setValue(self, channel, v):
+        function, unit = self._outputLookup[channel]
+        command = "{0} {1}".format(function, v.toval(unit))
+        self.instrument.write(command)#set voltage
+        self.settings.value[channel] = v
+        
+    def _getValue(self, channel):
+        function, unit = self._outputLookup[channel]
+        command = "MEAS:{0}?".format(function)
+        self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit) #set voltage
+        return self.settings.value[channel]
+        
+    def currentValue(self, channel):
+        return self.settings.value[channel]
     
+    def currentExternalValue(self, channel):
+        function, unit = self._outputLookup[channel]
+        command = "MEAS:{0}?".format(function)
+        value = magnitude.mg( float( self.instrument.ask(command)), unit )
+        return value 
+
+    def paramDef(self):
+        superior = ExternalParameterBase.paramDef(self)
+        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
+        return superior
+    
+    def close(self):
+        del self.instrument
         

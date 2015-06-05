@@ -118,7 +118,7 @@ class VoltageLocalAdjust(Form, Base ):
 
     def onAdd(self):
         newrecord = self.tableModel.add( LocalAdjustRecord(globalDict=self.globalDict) )
-        newrecord.gain.observable.subscribe( self.onValueChanged, unique=True )
+        newrecord.gain.observable.subscribe( partial( self.onValueChanged, newrecord ), unique=True )
     
     def onRemove(self):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):

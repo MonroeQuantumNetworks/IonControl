@@ -83,9 +83,6 @@ class APTInstrument(object):
     
 
 class APTRotation(ExternalParameterBase):
-    """
-    Adjust the current on the N6700B current supply
-    """
     className = "APT Rotation"
     _dimension = magnitude.mg(1,'')
     def __init__(self,name,config,instrument="COM3"):
