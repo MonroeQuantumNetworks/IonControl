@@ -32,10 +32,11 @@ class InstrumentMeta(type):
         return instrclass
     
 def nextValue( current, target, stepsize, jump ):
-    if current is None:
+    if (current is None) or jump:
         return (target,True)
-    temp = target-current
-    return (target,True) if jump or abs(temp)<=stepsize else (current + stepsize.copysign(temp), False)  
+    else:
+        temp = target-current
+        return (target,True) if abs(temp)<=stepsize else (current + stepsize.copysign(temp), False)  
 
 class ExternalParameterBase(object):
     persistSpace = 'externalOutput'
