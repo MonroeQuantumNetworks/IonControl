@@ -35,7 +35,7 @@ def nextValue( current, target, stepsize, jump ):
     if current is None:
         return (target,True)
     temp = target-current
-    return (target,True) if abs(temp)<=stepsize or jump else (current + stepsize.copysign(temp), False)  
+    return (target,True) if jump or abs(temp)<=stepsize else (current + stepsize.copysign(temp), False)  
 
 class ExternalParameterBase(object):
     persistSpace = 'externalOutput'
