@@ -197,6 +197,12 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
     
     def setupGraphDependent(self):
         updateComboBoxItems( self.destinationComboBox, sorted(self.shuttlingGraph.nodes()) )
+        
+    def shuttlingNodes(self):
+        return sorted(self.shuttlingGraph.nodes()) 
+    
+    def currentShuttlingPosition(self):
+        return self.shuttlingGraph.currentPositionName
 
     def onCurrentPositionEvent(self, event):
         with BlockSignals(self.lineBox):
@@ -213,6 +219,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         path = self.shuttlingGraph.shuttlePath(None, destination)
         if path:
             self.shuttleOutput.emit( path, cont )
+        return bool(path)
 
     def onShuttlingDone(self,currentline):
         self.lineBox.setValue(currentline)

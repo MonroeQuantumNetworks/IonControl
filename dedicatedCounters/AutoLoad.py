@@ -70,6 +70,8 @@ class AutoLoadSettings(object):
         self.thresholdRunning = mg(5, 'kHz')
         self.globalsAdjustList = SequenceDict()
         self.historyLength = mg(7, 'day')
+        self.loadingVoltageNode = ""
+        self.shuttlingNodes = list()
 
     def paramDef(self):
         """
@@ -93,7 +95,8 @@ class AutoLoadSettings(object):
                 {'name': 'Ionization active low 2', 'type': 'bool', 'value': self.shutterChannelActiveLow2, 'tip': "Ionization 2 shutter is active low", 'field': 'shutterChannelActiveLow2'},
                 {'name': 'Counter channel', 'type': 'int', 'value': self.counterChannel, 'tip': "Counter channel", 'field': 'counterChannel'},
                 {'name': 'Wavemeter address', 'type': 'str', 'value': self.wavemeterAddress, 'tip': "Address of wavemeter interface (http://)", 'field': 'wavemeterAddress'},
-                {'name': 'History timespan', 'type': 'magnitude', 'value': self.historyLength, 'tip': "Time range to display loading history", 'field': 'historyLength'}]
+                {'name': 'History timespan', 'type': 'magnitude', 'value': self.historyLength, 'tip': "Time range to display loading history", 'field': 'historyLength'},
+                {'name': 'Loading Voltage node', 'type':'list', 'values': self.shuttlingNodes, 'value': self.loadingVoltageNode, 'tip': 'Shuttle to this node for loading', 'field':'loadingVoltageNode' }]
         
     def update(self, param, changes):
         """
@@ -129,6 +132,8 @@ class AutoLoadSettings(object):
         self.__dict__.setdefault( 'thresholdRunning', mg(5, 'kHz'))
         self.__dict__.setdefault( 'globalsAdjustList', SequenceDict() )
         self.__dict__.setdefault( 'historyLength', mg(7,'day') )
+        self.__dict__.setdefault( 'loadingVoltageNode', "" )
+        self.__dict__.setdefault( 'shuttlingNodes', list())
 
     stateFields = ['counterChannel', 'shutterChannel', 'shutterChannel2', 'ovenChannel', 'laserDelay', 'maxTime', 'thresholdBare', 'thresholdOven',
                    'checkTime', 'useInterlock', 'interlock', 'wavemeterAddress', 'ovenChannelActiveLow', 'shutterChannelActiveLow', 'shutterChannelActiveLow2',
@@ -182,6 +187,7 @@ class AutoLoad(UiForm,UiBase):
         self.preheatStartTime = now()
         self.globalVariablesUi = globalVariablesUi
         self.globalAdjustRevertList = list()
+        self.voltageNodeBeforeLoading = ""
         self.externalInstrumentObservable = externalInstrumentObservable
         
     def constructStatemachine(self):
@@ -449,6 +455,12 @@ class AutoLoad(UiForm,UiBase):
 
     def setVoltageControl(self, voltageControl ):
         self.voltageControl = voltageControl
+        self.voltageControl.shuttlingNodesObservable().subscribe( self.onShuttlingNodesChanged )
+        self.onShuttlingNodesChanged()
+
+    def onShuttlingNodesChanged(self):
+        self.settings.shuttlingNodes = [""] + self.voltageControl.shuttlingNodes()
+        self.parameterWidget.setParameters( self.parameter() )        
         
     def createAction(self, text, slot, target=None, checkable=False, checked=False ):
         action = QtGui.QAction( text, self )
@@ -624,11 +636,20 @@ class AutoLoad(UiForm,UiBase):
     def adjustFromLoading(self):
         self.globalVariablesUi.update( self.globalAdjustRevertList )
         self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
+        if self.voltageNodeBeforeLoading:
+            self.voltageControl.shuttleTo( self.voltageNodeBeforeLoading )
         
     def adjustToLoading(self):
         self.globalAdjustRevertList = [('Global', key, self.globalVariablesUi.variables[key]) for key in self.settings.globalsAdjustList]
         self.globalVariablesUi.update( ( ('Global', k, v) for k,v in self.settings.globalsAdjustList.iteritems() ))   
         self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
+        if self.settings.loadingVoltageNode:
+            self.voltageNodeBeforeLoading = self.voltageControl.currentShuttlingPosition()
+            if not self.voltageControl.shuttleTo( self.settings.loadingVoltageNode ):
+                self.voltageNodeBeforeLoading = None
+        else:
+            self.voltageNodeBeforeLoading = None 
+        
     
     def setCheck(self):
         """Execute when count rate goes over threshold."""

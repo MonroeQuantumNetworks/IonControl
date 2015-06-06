@@ -83,6 +83,18 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     def onLoadVoltage(self, path, shuttledefpath ):
         self.voltageBlender.loadVoltage(path)
         self.adjustUi.loadShuttleDef( shuttledefpath )
+        
+    def shuttleTo(self, destination):
+        return self.adjustUi.onShuttleSequence(destination)
+    
+    def shuttlingNodesObservable(self):
+        return self.adjustUi.shuttlingGraph.graphChangedObservable
+        
+    def currentShuttlingPosition(self):
+        return self.adjustUi.currentShuttlingPosition()
+        
+    def shuttlingNodes(self):
+        return self.adjustUi.shuttlingNodes()
     
     def onUpdate(self, adjust, updateHardware=True ):
         self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain), updateHardware )
