@@ -260,7 +260,7 @@
 			<ShutterBit bitNo="11" name="External 2-3"/>
 			<ShutterBit bitNo="12" name="External 2-4"/>
 			<ShutterBit bitNo="13" name="External 2-5"/>
-			<ShutterBit bitNo="14" name="External 2-6"/>
+			<ShutterBit bitNo="14" name="unused"/>
 			<ShutterBit bitNo="15" name="unused"/>
 			<ShutterBit bitNo="16" name="External 3-0"/>
 			<ShutterBit bitNo="17" name="External 3-1"/>
@@ -296,6 +296,7 @@
 			<TriggerBit bitNo="9" name="PI 1 reset"/>
 			<TriggerBit bitNo="10" name="PI 2 reset"/>
 			<TriggerBit bitNo="11" name="PI 3 reset"/>
+			<TriggerBit bitNo="17" name="External 2-6"/>
 		</TriggerBits>
 		<CounterBits>
 			<CounterBit bitNo="0" name="Count 0"/>
