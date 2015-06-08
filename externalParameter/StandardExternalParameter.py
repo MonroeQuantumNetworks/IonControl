@@ -464,10 +464,11 @@ class HP6632B(ExternalParameterBase):
     """
     className = "N6632B Power Supply"
     _dimension = magnitude.mg(1,'A')
-    _outputChannels = {"Curr": "A", "Volt": "V"}
+    _outputChannels = {"Curr": "A", "Volt": "V", "OnOff": ""}
     _outputLookup = { "Curr": ("Curr","A"),
-                      "Volt": ("Volt","V")}
-    _inputChannels = dict({"Curr":"A", "Volt":"V"})
+                      "Volt": ("Volt","V"),
+                      "OnOff":("OnOff","")}
+    _inputChannels = dict({"Curr":"A", "Volt":"V", "OnOff":""})
     def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -484,13 +485,22 @@ class HP6632B(ExternalParameterBase):
             
     def _setValue(self, channel, v):
         function, unit = self._outputLookup[channel]
-        command = "{0} {1}".format(function, v.toval(unit))
-        self.instrument.write(command)#set voltage
+        if channel=="OnOff":
+            if v > 0:
+                command = "OUTP ON"
+            else:
+                command = "OUTP OFF"
+        else:
+            command = "{0} {1}".format(function, v.toval(unit))
+        self.instrument.write(command)
         self.settings.value[channel] = v
         
     def _getValue(self, channel):
         function, unit = self._outputLookup[channel]
-        command = "MEAS:{0}?".format(function)
+        if channel=="OnOff":
+            command = "OUTP?"
+        else:
+            command = "MEAS:{0}?".format(function)
         self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit) #set voltage
         return self.settings.value[channel]
         
@@ -499,7 +509,10 @@ class HP6632B(ExternalParameterBase):
     
     def currentExternalValue(self, channel):
         function, unit = self._outputLookup[channel]
-        command = "MEAS:{0}?".format(function)
+        if channel=="OnOff":
+            command = "OUTP?"
+        else:
+            command = "MEAS:{0}?".format(function)
         value = magnitude.mg( float( self.instrument.ask(command)), unit )
         return value 
 
