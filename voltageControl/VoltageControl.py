@@ -96,6 +96,9 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     def shuttlingNodes(self):
         return self.adjustUi.shuttlingNodes()
     
+    def synchronize(self):
+        self.adjustUi.synchronize()
+    
     def onUpdate(self, adjust, updateHardware=True ):
         self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain), updateHardware )
         self.adjustUi.setLine( MagnitudeUtilit.value(adjust.line) )

@@ -335,7 +335,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )
             logger.warning("Voltage subsystem disabled: {0}".format(str(e)))
+            
         self.setWindowTitle("Experimental Control ({0})".format(project) )
+        self.tabDict["Scan"].ppStartSignal.connect( self.voltageControlWindow.synchronize )   # upload shuttling data before running pule program
         
         self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
         
