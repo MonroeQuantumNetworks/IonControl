@@ -189,7 +189,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                     self.valueChanged.emit(key)
                     index = self.variables.index(key)
                     self.dataChanged.emit(self.createIndex(index, 1), self.createIndex(index, 1))
-                    self.decimation[key].decimate(time.time(), value, partial(self.persistCallback, key))
+                    #self.decimation[key].decimate(time.time(), value, partial(self.persistCallback, key))
+                    self.persistCallback(key, (time.time(), value, None, None))
 
     def saveConfig(self):
         self.config['GlobalVariables.BoldSet'] = self.boldSet
