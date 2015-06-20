@@ -149,7 +149,6 @@ class PulserHardwareServer(Process, OKBase):
     def run(self):
         configureServerLogging(self.loggingQueue)
         logger = logging.getLogger(__name__)
-        self.syncTime()
         while (self.running):
             if self.commandPipe.poll(0.01):
                 try:
@@ -170,6 +169,9 @@ class PulserHardwareServer(Process, OKBase):
     def syncTime(self):
         if self.xem:
             self.xem.ActivateTriggerIn(0x40, 15)
+            logging.getLogger(__name__).info("Time synchonized at {0}".format(time_time()))
+        else:
+            logging.getLogger(__name__).error( "No time synchronization because FPGA is not available")
         self.timeTickOffset = time_time()        
             
     def finish(self):
@@ -356,6 +358,10 @@ class PulserHardwareServer(Process, OKBase):
             return None
         setattr(self, name, wrapper)
         return wrapper      
+     
+    def openBySerial(self, serial ):
+        super(PulserHardwareServer,self).openBySerial(serial)
+        self.syncTime()
      
     def getShutter(self):
         return self._shutter  #
