@@ -7,6 +7,7 @@ Created on Wed Mar 20 13:06:13 2013
 
 import operator
 import sys
+import logging
 
 from PyQt4 import QtCore, QtGui
 
@@ -72,7 +73,8 @@ class VoltageTableModel(QtCore.QAbstractTableModel):
         return 4
  
     def onDataChanged(self,x1,y1,x2,y2):
-        print "VoltageTableModel.onDataChanged" , x1,y1,x2,y2
+        logger = logging.getLogger(__name__)
+        logger.debug( "VoltageTableModel.onDataChanged {0} {1} {2} {3}".format(x1,y1,x2,y2) )
         newLength = len(self.blender.electrodes)
         if newLength>self.lastLength:
             self.beginInsertRows(QtCore.QModelIndex(),self.lastLength,newLength-1)

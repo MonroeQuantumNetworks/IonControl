@@ -20,6 +20,7 @@ import weakref
 from gui.ProjectSelection import getDatabaseConnection
 from modules.NamedTimespan import getRelativeDatetime, timespans
 import pytz
+from externalParameter.persistence import DBPersist
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -35,11 +36,13 @@ class Parameters:
         self.steps = False
         self.spaceParamCache = dict()
         self.updatePrevious = True
+        self.autoUpdate = False
         
     def __setstate__(self, s):
         self.__dict__ = s
         self.__dict__.setdefault('updatePrevious', True)
         self.__dict__.setdefault('useToTime', False)
+        self.__dict__.setdefault('autoUpdate',False)
         
 
 class InstrumentLoggerQueryUi(Form,Base):
@@ -87,6 +90,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.checkBoxUpdatePrevious.setChecked( self.parameters.updatePrevious )
         self.checkBoxUpdatePrevious.stateChanged.connect( partial( self.onStateChanged, 'updatePrevious') )
         self.onSpaceChanged(self.parameters.space)
+        DBPersist.newPersistData.subscribe(self.handleNewDBData)
 
     def onNamedTimespan(self, name):
         dt = getRelativeDatetime(str(name), None)
@@ -187,3 +191,5 @@ class InstrumentLoggerQueryUi(Form,Base):
                 self.doCreatePlot(*context, forceUpdate=True )
         self.cacheGarbageCollect()
             
+    def handleNewDBData(self, event ):
+        logging.getLogger(__name__).info( "New DB data")

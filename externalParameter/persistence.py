@@ -7,10 +7,12 @@ Created on Aug 30, 2014
 from persist.ValueHistory import ValueHistoryStore
 from datetime import datetime
 from gui.ProjectSelection import getDatabaseConnection
+from modules.Observable import Observable
 
 class DBPersist:
     store = None
     name = "DB Persist"
+    newPersistData = Observable()
     def __init__(self):
         self.initDB()
         
@@ -25,7 +27,9 @@ class DBPersist:
         
     def persist(self, space, source, time, value, minval=None, maxval=None, unit=None):
         if source:
-            DBPersist.store.add( space, source, value, unit, datetime.fromtimestamp(time), bottom=minval, top=maxval )
+            ts = datetime.fromtimestamp(time)
+            DBPersist.store.add( space, source, value, unit, ts, bottom=minval, top=maxval )
+            self.newPersistData.fire( space=space, parameter=source, value=value, unit=unit, timestamp=ts, bottom=minval, top=maxval )
         
     def paramDef(self):
         return []
