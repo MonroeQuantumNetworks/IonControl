@@ -454,9 +454,10 @@ class AutoLoad(UiForm,UiBase):
         self.autoSave()
 
     def setVoltageControl(self, voltageControl ):
-        self.voltageControl = voltageControl
-        self.voltageControl.shuttlingNodesObservable().subscribe( self.onShuttlingNodesChanged )
-        self.onShuttlingNodesChanged()
+        if voltageControl:
+            self.voltageControl = voltageControl
+            self.voltageControl.shuttlingNodesObservable().subscribe( self.onShuttlingNodesChanged )
+            self.onShuttlingNodesChanged()
 
     def onShuttlingNodesChanged(self):
         self.settings.shuttlingNodes = [""] + self.voltageControl.shuttlingNodes()

@@ -760,7 +760,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                                   scanPP = self.scan.loadPPName,
                                   evaluation=self.evaluation.settingsName, 
                                   startDate=self.plottedTraceList[0].trace.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc), 
-                                  duration=None, filename=self.plottedTraceList[0].trace.filename, comment=None, longComment=None, failedAnalysis=failedEntry)
+                                  duration=None, filename=self.plottedTraceList[0].trace.filename if self.plottedTraceList else "none", 
+                                  comment=None, longComment=None, failedAnalysis=failedEntry)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
         for var in  self.pulseProgramUi.variableTableModel.variabledict.values():
