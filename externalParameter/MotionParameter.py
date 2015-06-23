@@ -12,7 +12,7 @@ import logging
 
 class ConexLinear(ExternalParameterBase):
     """
-    Adjust the current on the N6700B current supply
+    Adjust the position of the Conex linear stage
     """
     className = "Conex Linear Motion"
     _dimension = magnitude.mg(1,'mm')
@@ -80,7 +80,7 @@ class ConexLinear(ExternalParameterBase):
         
 class ConexRotation(ExternalParameterBase):
     """
-    Adjust the current on the N6700B current supply
+    Adjust the position of the Conex rotation stage
     """
     className = "Conex Rotation"
     _dimension = magnitude.mg(1,'')
@@ -146,9 +146,6 @@ class ConexRotation(ExternalParameterBase):
     
     
 class PowerWaveplate(ExternalParameterBase):
-    """
-    Adjust the current on the N6700B current supply
-    """
     className = "Power Waveplate"
     _dimension = magnitude.mg(1,'W')
     def __init__(self,name,config,instrument="COM3"):
