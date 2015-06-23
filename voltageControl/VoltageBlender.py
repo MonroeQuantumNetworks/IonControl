@@ -58,6 +58,7 @@ class NoneHardware(object):
 
 class NIHardware(object):
     name = "NI DAC"
+    nativeShuttling = False
     def __init__(self):
         try:
             self.chassis = WaveformChassis()

@@ -476,8 +476,8 @@ class HP6632B(ExternalParameterBase):
         self.instrument = visa.instrument(instrument) #open visa session
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        for channel in self._outputChannels:
-            self.settings.value[channel] = self._getValue(channel)
+#        for channel in self._outputChannels:
+#            self.settings.value[channel] = self._getValue(channel)
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -501,20 +501,20 @@ class HP6632B(ExternalParameterBase):
             command = "OUTP?"
         else:
             command = "MEAS:{0}?".format(function)
-        self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit) #set voltage
+        self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
         return self.settings.value[channel]
         
     def currentValue(self, channel):
         return self.settings.value[channel]
     
-    def currentExternalValue(self, channel):
-        function, unit = self._outputLookup[channel]
-        if channel=="OnOff":
-            command = "OUTP?"
-        else:
-            command = "MEAS:{0}?".format(function)
-        value = magnitude.mg( float( self.instrument.ask(command)), unit )
-        return value 
+#     def currentExternalValue(self, channel):
+#         function, unit = self._outputLookup[channel]
+#         if channel=="OnOff":
+#             command = "OUTP?"
+#         else:
+#             command = "MEAS:{0}?".format(function)
+#         value = magnitude.mg( float( self.instrument.ask(command)), unit )
+#         return value 
 
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
@@ -523,4 +523,3 @@ class HP6632B(ExternalParameterBase):
     
     def close(self):
         del self.instrument
-        
