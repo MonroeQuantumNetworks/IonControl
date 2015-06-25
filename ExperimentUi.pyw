@@ -198,6 +198,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.AWGUiDock.setWidget(self.AWGUi)
         self.AWGUiDock.setObjectName("_AWGUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
+           
+        self.AWGUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )               
+        self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.outputChannels() )
 
         self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.variables)
         self.pulserParameterUi.setupUi()
@@ -245,6 +248,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 #        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
+        self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -584,6 +588,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.valueHistoryUi.saveConfig()
         self.ExternalParametersUi.saveConfig()
         self.pulserParameterUi.saveConfig()
+        self.AWGUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()

@@ -131,7 +131,11 @@ class ExternalScanMethod(InternalScanMethod):
                 logger.info( "{0} Value: {1}".format(self.name, self.experiment.scan.list[self.index]) )
             else:
                 QtCore.QTimer.singleShot(100,self.dataBottomHalf)
-
+   
+class AWGScanMethod(ExternalScanMethod):
+    name = 'AWG'
+    def __init__(self, experiment):
+        super( AWGScanMethod, self).__init__(experiment)
    
 class GlobalScanMethod(ExternalScanMethod):
     name = 'Global'
@@ -150,6 +154,7 @@ class VoltageLocalAdjustScanMethod(ExternalScanMethod):
 
 
 ScanMethodsDict = { InternalScanMethod.name: InternalScanMethod,
+                    AWGScanMethod.name: AWGScanMethod,
                     ExternalScanMethod.name: ExternalScanMethod,
                     GlobalScanMethod.name: GlobalScanMethod,
                     VoltageScanMethod.name: VoltageScanMethod,
