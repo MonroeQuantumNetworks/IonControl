@@ -1,19 +1,19 @@
+from cgitb import text
 import copy
-from ctypes import *
 import logging
 import math
 import time
 
 from PyQt4 import QtGui, QtCore
+from PyQt4.Qt import QString
 import PyQt4.uic
 from sympy.parsing.sympy_parser import parse_expr
 
-from externalParameter.ExternalParameterBase import ExternalParameterBase
+from AWG.AWGDevices import ChaseDA12000, AWGDeviceList
+from AWG.AWGTableModel import AWGTableModel
 from externalParameter.ExternalParameterSelection import Settings
 from externalParameter.persistence import DBPersist
-import magnitude as magnitude
 from modules.Expression import Expression
-from modules.Observable import Observable
 from modules.firstNotNone import firstNotNone
 from modules.magnitude import mg, MagnitudeError
 import numpy as np
@@ -23,18 +23,6 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
 
 AWGForm, AWGBase = PyQt4.uic.loadUiType(r'ui\AWGUi.ui')
-
-class SEGMENT(Structure):
-    _fields_ = [("SegmentNum", c_ulong),
-                ("SegmentPtr", POINTER(c_ulong)),
-                ("NumPoints", c_ulong),
-                ("NumLoops", c_ulong),
-                ("BeginPadVal ", c_ulong), # Not used
-                ("EndingPadVal", c_ulong), # Not used
-                ("TrigEn", c_ulong),
-                ("NextSegNum", c_ulong)]
-    
-da = WinDLL ("DA12000_DLL64.dll")
 
 class AWGWaveform(object):
     expression = Expression()
@@ -84,137 +72,12 @@ class AWGWaveform(object):
         wf = np.clip(f(np.arange(self.points)*step).astype(int), 0, 4095)
         wf = wf.tolist() + [2047]*(64+64*int(math.ceil(self.points/64.0)) - self.points)
         return wf
-        
-class AWGTableModel(QtCore.QAbstractTableModel):
-    headerDataLookup = ["Variable", "Value"]
-    valueChanged = QtCore.pyqtSignal( object, object )
-    
-    def __init__(self, waveform, globalDict, parent=None, *args):
-        QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        self.waveform = waveform
-        self.globalDict = globalDict
-        self.defaultBG = QtGui.QColor(QtCore.Qt.white)
-        self.textBG = QtGui.QColor(QtCore.Qt.green).lighter(175)
-        
-        self.dataLookup = {
-            (QtCore.Qt.DisplayRole, 0): lambda row: self.waveform.vars.keys()[row],
-            (QtCore.Qt.DisplayRole, 1): lambda row: str(self.waveform.vars.values()[row]['value']),
-            (QtCore.Qt.EditRole, 1): lambda row: firstNotNone( self.waveform.vars.values()[row]['text'], str(self.waveform.vars.values()[row]['value'])),
-            (QtCore.Qt.BackgroundColorRole,1): lambda row: self.defaultBG if self.waveform.vars.values()[row]['text'] is None else self.textBG,
-        }
-        self.setDataLookup =  { 
-            (QtCore.Qt.EditRole,1): self.setValue,
-            (QtCore.Qt.UserRole,1): self.setText
-        }
-        
-    def setValue(self, index, value):
-        self.waveform.vars[self.waveform.vars.keys()[index.row()]]['value'] = value
-        self.valueChanged.emit(self.waveform.vars.keys()[index.row()], value)
-        return True
-    
-    def setText(self, index, value):
-        self.waveform.vars[self.waveform.vars.keys()[index.row()]]['text'] = value
-        return True
-    
-    def rowCount(self, parent=QtCore.QModelIndex()): 
-        return len(self.waveform.vars) 
-        
-    def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 2
-    
-    def data(self, index, role): 
-        if index.isValid():
-            return self.dataLookup.get((role, index.column()), lambda row: None)(index.row())
-        return None
-    
-    def setWaveform(self, waveform):
-        self.beginResetModel()
-        self.waveform = waveform
-        self.endResetModel()
-        
-    def setData(self, index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
-        
-    def flags(self, index):
-        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled if index.column()==0 else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
-
-    def headerData(self, section, orientation, role):
-        if (role == QtCore.Qt.DisplayRole):
-            if (orientation == QtCore.Qt.Horizontal): 
-                return self.headerDataLookup[section]
-            elif (orientation == QtCore.Qt.Vertical):
-                return str(section)
-        return None  # QtCore.QVariant()
- 
-class ChaseDA12000(ExternalParameterBase):
-    """
-    The AWG does not fit into the external parameter framework,
-    but given a waveform, the variables can act as external
-    parameters. This class wraps a waveform into an external
-    parameter-based device.
-    """
-    className = "Microwave Synthesizer"
-    _outputChannels = {}
-    _waveform = None
-    
-    def __init__(self,name,config,waveform):
-        ExternalParameterBase.__init__(self,name,config)
-        da.da12000_Open(1)
-        self.setWaveform(waveform)
-        
-    def setWaveform(self, waveform):
-        self._waveform = waveform
-        self.setDefaults()
-        self.displayValueObservable = dict([(name,Observable()) for name in self._outputChannels])
-        vardict = {k: "" if v['value'].dimensionless() else str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
-        self._outputChannels = vardict
-        for (k, v) in vardict.iteritems():
-            self.settings.value[k] = self._waveform.vars[k]['value']
-    
-    def fullName(self, channel):
-        return "{0}".format(channel)
-
-    def setDefaults(self):
-        ExternalParameterBase.setDefaults(self)
-        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,''))
-                
-    def _setValue(self, channel, v, continuous):
-        self._waveform.vars[channel]['value'] = v
-        
-        pts = self._waveform.evaluate()
-        seg_pts = (c_ulong * len(pts))(*pts)
-        seg1 = SEGMENT(0, seg_pts, len(pts), 0, 2048, 2048, 1, 0)
-        seg = (SEGMENT*1)(seg1)
-        
-        da.da12000_CreateSegments(1, 1, 1, seg)
-        da.da12000_SetTriggerMode(1, 1 if continuous else 2, 0)
-        
-    def setValue(self, channel, value, continuous=False):
-        """
-        This function returns True if the value is reached. Otherwise
-        it should return False. The user should call repeatedly until the intended value is reached
-        and True is returned.
-        """
-        self._setValue(channel, value, continuous)
-        
-        #self.setWaveform(self._waveform)
-        
-        return True
-        
-    def paramDef(self):
-        """
-        return the parameter definition used by pyqtgraph parametertree to show the gui
-        """
-        superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-        return superior
-
-    def close(self):
-        da.da12000_Close(1)
 
 class Parameters(object):
     def __init__(self):
-        self.autoSave = False
+        self.autoSave = True
+        self.setScanParam = False
+        self.scanParam = ""
         
 class AWGUi(AWGForm, AWGBase):
     outputChannelsChanged = QtCore.pyqtSignal(object)
@@ -241,10 +104,8 @@ class AWGUi(AWGForm, AWGBase):
         try:
             self.waveform = self.config.get(self.configname+'waveform', AWGWaveform())
         except (TypeError, AttributeError):
-            logger.info( "Unable to read scan control settings. Setting to new scan." )
+            logger.warn( "Unable to read scan control settings. Setting to new scan." )
             self.waveform = AWGWaveform()
-        
-        self.device = ChaseDA12000(None, Settings(), self.waveform)
         
         self.settingsDict = self.config.get(self.configname+'dict',dict())
         self.settingsName = self.config.get(self.configname+'settingsName',None)
@@ -255,10 +116,20 @@ class AWGUi(AWGForm, AWGBase):
         self.comboBox.currentIndexChanged[QtCore.QString].connect( self.onLoad )
         self.comboBox.lineEdit().editingFinished.connect( self.checkSettingsSavable )
         
+        # Devices
+        self.deviceComboBox.clear()
+        self.deviceComboBox.addItems([device.className for device in AWGDeviceList])
+        self.deviceComboBox.currentIndexChanged['QString'].connect(self.setDevice)
+        
+        if not hasattr(self.parameters, 'device'): self.parameters.device = 'Dummy AWG'
+        self.setDevice()
+        self.deviceComboBox.setCurrentIndex([i for i,dev in enumerate(AWGDeviceList) \
+                                             if dev.className == self.parameters.device][0])
+        
         # Table
-        self.AWGTableModel = AWGTableModel(self.waveform, self.globalDict)
-        self.tableView.setModel( self.AWGTableModel )
-        self.AWGTableModel.valueChanged.connect( self.onValue )
+        self.tableModel = AWGTableModel(self.waveform, self.globalDict)
+        self.tableView.setModel( self.tableModel )
+        self.tableModel.valueChanged.connect( self.onValue )
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.tableView.setItemDelegateForColumn(1,self.delegate)
         
@@ -268,7 +139,13 @@ class AWGUi(AWGForm, AWGBase):
         self.infoLayout.addWidget(self.plot)
         
         # Buttons
-        self.evalButton.clicked.connect(self.onEval)
+        self.evalButton.clicked.connect(self.onEvalEqn)
+        self.programButton.clicked.connect(self.onProgram)
+        if not hasattr(self.parameters, 'enabled'):
+            self.parameters.enabled = False
+        self.enabledButton.toggled.connect(self.onEnable)
+        self.enabledButton.setChecked(self.parameters.enabled)
+        self.onEnable(self.parameters.enabled)
         
         # Context Menu
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -278,12 +155,35 @@ class AWGUi(AWGForm, AWGBase):
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
         
+        # continuous check box
+        if not hasattr(self.parameters, 'continuous'): self.parameters.continuous = False
+        self.continuousCheckBox.setChecked(self.parameters.continuous )
+        self.continuousCheckBox.stateChanged.connect( self.onContinuousCheckBox )
+        
+        # Set scan param
+        self.setScanParam.setChecked(self.parameters.setScanParam )
+        self.setScanParam.stateChanged.connect( self.onSetScanParamCheck )
+        self.scanParam.setEnabled(self.parameters.setScanParam)
+        self.scanParam.setText(self.parameters.scanParam)
+        self.scanParam.textChanged.connect(self.onScanParam)
+        
         try:
             self.setWaveform(self.waveform)
         except (TypeError, AttributeError):
             logger.info( "Improper waveform!" )
             self.waveform = AWGWaveform()
             self.setWaveform(self.waveform)
+            
+    def setDevice(self, devicestr=None):
+        logger = logging.getLogger(__name__)
+        if devicestr != None: self.parameters.device = str(devicestr) # in case devicestr is a QString, e.g. from the event listener
+        try:
+            self.device = (device(None, Settings(), self.waveform, parent=self) \
+                           for device in AWGDeviceList if device.className == self.parameters.device).next()
+        except StopIteration:
+            logger.warn("Could not find awg with string \"%s\", reverting to dummy AWG!", self.parameters.device)
+            self.parameters.device = 'Dummy AWG'
+            self.device = AWGDeviceList[self.parameters.device](None, Settings(), self.waveform, parent=self)
     
     def checkSettingsSavable(self, savable=None):
         if not isinstance(savable, bool):
@@ -308,7 +208,7 @@ class AWGUi(AWGForm, AWGBase):
     def setWaveform(self, waveform):
         self.waveform = waveform
         self.eqnbox.setText(self.waveform.equation)
-        self.AWGTableModel.setWaveform(waveform)
+        self.tableModel.setWaveform(waveform)
         self.replot()
 
     def saveConfig(self):
@@ -350,18 +250,42 @@ class AWGUi(AWGForm, AWGBase):
         if self.parameters.autoSave:
             self.onSave()
         
-    def onEval(self):
+    def onEvalEqn(self):
         self.waveform.equation = str(self.eqnbox.text())
-        del self.AWGTableModel
-        self.AWGTableModel = AWGTableModel(self.waveform, self.globalDict)
-        self.tableView.setModel( self.AWGTableModel )
-        self.AWGTableModel.valueChanged.connect( self.onValue )
+        self.tableModel.setWaveform(self.waveform)
         
         self.outputChannelsChanged.emit( self.outputChannels() )
         self.checkSettingsSavable()
         
     def onValue(self, var, value):
         self.refreshWF()
+        
+    def onSetScanParamCheck(self, state):
+        if state == QtCore.Qt.Checked:
+            self.scanParam.setEnabled(True)
+            self.parameters.setScanParam = True
+        else:
+            self.scanParam.setEnabled(False)
+            self.parameters.setScanParam = False
+        
+    def onScanParam(self, text):
+        self.parameters.scanParam = text
+        
+    def onEnable(self, checked):
+        if checked:
+            self.parameters.enabled = True
+            self.enabledButton.setText("Auto AWG program enabled")
+            self.enabledButton.setStyleSheet('QToolButton {color: green}')
+        else:
+            self.parameters.enabled = False
+            self.enabledButton.setText("Auto AWG program disabled")
+            self.enabledButton.setStyleSheet('QToolButton {color: red}')
+        
+    def onContinuousCheckBox(self, checked):
+        self.parameters.continuous = checked
+        
+    def onProgram(self):
+        self.device.program(self.continuousCheckBox.isChecked())
         
     def refreshWF(self):
         self.device.setWaveform(self.waveform)
@@ -375,6 +299,9 @@ class AWGUi(AWGForm, AWGBase):
         self.plot.getItem(0,0).clear()
         try:
             self.plot.getItem(0,0).plot(self.waveform.evaluate())
-        except MagnitudeError as e:
+        except (MagnitudeError, NameError) as e:
             logger.warn(e)
+            
+    def evaluate(self, name):
+        self.tableModel.evaluate(name)
             

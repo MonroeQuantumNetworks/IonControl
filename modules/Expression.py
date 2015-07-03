@@ -81,6 +81,7 @@ fn  = { "sin" : nounitgen(math.sin),
         "exp" : math.exp,
         "trunc" : lambda a: int(a),
         "round" : myround,
+        "sign": lambda a: abs(a)>epsilon and cmp(a,0) or 0,
         "sgn" : lambda a: abs(a)>epsilon and cmp(a,0) or 0,
         "sqrt" : sqrt }
 

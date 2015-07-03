@@ -311,8 +311,27 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
             self.pulserHardware.ppStop()
-            PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
-            self.generator = GeneratorList[self.scan.scanMode](self.scan)
+            
+            override = dict()
+            scanParam = None
+            
+            AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
+            if AWGdevice.parent.parameters.enabled and self.scan.scanMode == 0: # 0 = Parameter Scan
+                logging.getLogger(__name__).info("AWG active!")
+                (setScanParam, scanParam) = AWGdevice.scanParam() 
+                # don't scan over scanParam if not a duration scan. instead override scanParam if necessary and program the AWG
+                if not (self.scan.scanMode == 0 and self.scan.scanTarget == "AWG" and self.scan.scanParameter == "Duration"):
+                    if setScanParam:
+                        override = {scanParam: AWGdevice._waveform.vars['Duration']['value']}
+                        scanParam = None
+                    AWGdevice.program(False)
+            
+            PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary(override=override) # also overwrites the current variable values
+            if self.scan.scanMode == 0:
+                self.generator = GeneratorList[self.scan.scanMode](self.scan, scanParam=scanParam)
+            else:
+                self.generator = GeneratorList[self.scan.scanMode](self.scan)
+            
             (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
             if data:
                 logging.getLogger(__name__).info("Writing {0} bytes to RAM ({1}%)".format(len(data)*8, 100*len(data)/(2**24) ))

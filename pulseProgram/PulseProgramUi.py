@@ -511,11 +511,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname+'.currentContext'] = self.currentContext
         self.variableTableModel.saveConfig()
        
-    def getPulseProgramBinary(self,parameters=dict()):
+    def getPulseProgramBinary(self,parameters=dict(),override=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
         substitutes = dict( self.currentContext.parameters.valueView.iteritems() )
         for model in [self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
             substitutes.update( model.getVariables() )
+        substitutes.update(override)
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
     
