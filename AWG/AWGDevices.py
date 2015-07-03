@@ -10,6 +10,8 @@ it must inherit AWGDevice and implement open, program, and close.
 from ctypes import *
 import logging
 
+from magnitude import Magnitude
+
 from externalParameter.ExternalParameterBase import ExternalParameterBase
 import magnitude as magnitude
 from modules.Observable import Observable
@@ -37,7 +39,8 @@ class AWGDevice(ExternalParameterBase):
         self._waveform = waveform
         self.setDefaults()
         self.displayValueObservable = dict([(name,Observable()) for name in self._outputChannels])
-        vardict = {k: "" if v['value'].dimensionless() else str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
+        vardict = {k: "" if (not isinstance(v['value'], Magnitude)) or v['value'].dimensionless() else \
+                      str(v['value']).split(" ")[1] for (k, v) in self._waveform.vars.iteritems()}
         self._outputChannels = vardict
         for (k, v) in vardict.iteritems():
             self.settings.value[k] = self._waveform.vars[k]['value']

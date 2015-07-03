@@ -5,7 +5,8 @@ Created on Jul 2, 2015
 '''
 from PyQt4 import QtCore, QtGui
 
-from modules import firstNotNone
+from modules.Expression import Expression
+from modules.firstNotNone import firstNotNone
 
 
 class AWGTableModel(QtCore.QAbstractTableModel):
@@ -70,4 +71,11 @@ class AWGTableModel(QtCore.QAbstractTableModel):
         return None  # QtCore.QVariant()
     
     def evaluate(self, name):
-        pass
+        for (key,value) in self.waveform.vars.iteritems():
+            expr = value['text']
+            if expr is not None:
+                value = Expression().evaluateAsMagnitude(expr, self.globalDict)
+                self.waveform.vars[key]['value'] = value   # set saved value to make this new value the default
+                itemPos = self.createIndex(self.waveform.vars.keys().index(key),1)
+                self.dataChanged.emit(itemPos, itemPos)
+                self.valueChanged.emit(key, value)

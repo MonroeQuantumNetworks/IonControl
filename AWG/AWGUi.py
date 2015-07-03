@@ -56,9 +56,14 @@ class AWGWaveform(object):
         self.vars.pop('t')
         self.vars['Duration'] = {'value': oldvars['Duration']['value'] if oldvars.has_key('Duration') else mg(1, 'us'), 'text': None}
     
-    def evaluate(self):        
+    def evaluate(self):
         if not self.vars.has_key('Duration'): self.vars['Duration'] = {'value': mg(1, 'us'), 'text': None}
         self.points = int(self.vars['Duration']['value'].ounit('ns').toval())
+        
+        # first test expression with dummy variable to see if units match up, so user is warned otherwise
+        self.expression.variabledict = dict((k, v['value']) for k, v in self.vars.iteritems())
+        self.expression.variabledict.update({'t':mg(1, 'us')})
+        self.expression.evaluateWithStack(self.stack[:])
         
         vard = dict((k, v['value'].to_base_units().val) for k, v in self.vars.iteritems())
         vard.pop('Duration')
@@ -69,7 +74,12 @@ class AWGWaveform(object):
         
         step = mg(1, "ns").val
         if self.points > 4000000: self.points = 4000000
-        wf = np.clip(f(np.arange(self.points)*step).astype(int), 0, 4095)
+        res = f(np.arange(self.points)*step)
+        if isinstance(res, (int, long, float, complex)):
+            resArray = np.empty(self.points)
+            resArray.fill(res)
+            res = resArray
+        wf = np.clip(res.astype(int), 0, 4095)
         wf = wf.tolist() + [2047]*(64+64*int(math.ceil(self.points/64.0)) - self.points)
         return wf
 
@@ -172,6 +182,7 @@ class AWGUi(AWGForm, AWGBase):
         except (TypeError, AttributeError):
             logger.info( "Improper waveform!" )
             self.waveform = AWGWaveform()
+            self.eqnbox.setText(self.waveform.equation)
             self.setWaveform(self.waveform)
             
     def setDevice(self, devicestr=None):
@@ -252,7 +263,7 @@ class AWGUi(AWGForm, AWGBase):
         
     def onEvalEqn(self):
         self.waveform.equation = str(self.eqnbox.text())
-        self.tableModel.setWaveform(self.waveform)
+        self.refreshWF()
         
         self.outputChannelsChanged.emit( self.outputChannels() )
         self.checkSettingsSavable()
@@ -289,7 +300,6 @@ class AWGUi(AWGForm, AWGBase):
         
     def refreshWF(self):
         self.device.setWaveform(self.waveform)
-        self.outputChannelsChanged.emit( self.outputChannels() )
 
         self.replot()
         self.checkSettingsSavable()
@@ -301,7 +311,7 @@ class AWGUi(AWGForm, AWGBase):
             self.plot.getItem(0,0).plot(self.waveform.evaluate())
         except (MagnitudeError, NameError) as e:
             logger.warn(e)
-            
+           
+           
     def evaluate(self, name):
         self.tableModel.evaluate(name)
-            
