@@ -84,7 +84,6 @@ class DAC:
             self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x12, data)) )
             self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x40,4), "DAC trigger")
-            self.pulser.UpdateWireIns()
         else:
             logger.warning( "Pulser not available" )
             
