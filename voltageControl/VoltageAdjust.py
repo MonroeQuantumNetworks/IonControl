@@ -211,14 +211,20 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.currentPositionLabel.setText( firstNotNone(event.text, "") )           
         self.updateOutput.emit(self.adjust, False)
 
-    def onShuttleSequence(self, destination, cont=False):
+    def onShuttleSequence(self, destination, cont=False, instant=False):
         self.synchronize()
         destination = str(destination)
         logger = logging.getLogger(__name__)
         logger.info( "ShuttleSequence" )
         path = self.shuttlingGraph.shuttlePath(None, destination)
-        if path:
-            self.shuttleOutput.emit( path, cont )
+        if path:  
+            if instant:
+                edge = path[-1][2]
+                _, toLine = (edge.startLine, edge.stopLine) if path[-1][0]==edge.startName else (edge.stopLine, edge.startLine)
+                self.lineBox.setValue(toLine)
+                self.lineBox.valueChanged.emit(toLine)
+            else:
+                self.shuttleOutput.emit( path, cont )
         return bool(path)
 
     def onShuttlingDone(self,currentline):

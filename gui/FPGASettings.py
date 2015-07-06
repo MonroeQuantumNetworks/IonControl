@@ -139,7 +139,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
         self.config[self.configName+'.bitfileCache'] = self.bitfileCache
         
     def onLoadBitfile(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open bitfile'))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open bitfile',"","bitfiles (*.bit)"))
         if path!="":
             if path not in self.bitfileCache:
                 self.bitfileCache[path]=path
@@ -151,6 +151,7 @@ class FPGASettingsWidget(SettingsDialogForm, SettingsDialogBase):
         logger = logging.getLogger(__name__)
         bitfile = str(self.comboBoxBitfiles.currentText())
         logger.info( "Uploading file '{0}'".format(bitfile) )
+        self.configSettings.lastBitfile = bitfile
         if bitfile!="":
             if not os.path.exists(self.bitfileCache[bitfile]):
                 raise IOError( "bitfile '{0}' not found".format(self.bitfileCache[bitfile]))

@@ -108,6 +108,9 @@ OPS = {'NOP'    : 0x00,
        'SERIALWRITE': 0x55,
        'DIVW': 0x56,
        'SETPARAMETER': 0x57,
+       'PP_MP9910_RAMPDIR': 0x5a,
+       'DACOUT': 0x5b,
+       'LDACTIVE': 0x5c,
        'END'    : 0xFF }
 
 class Dimensions:

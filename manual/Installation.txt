@@ -1,0 +1,61 @@
+Installation instructions
+
+Install python:
+
+* Install python 64 bit version WinPython from https://winpython.github.io/  Version 2.7.9.4+ into C:\
+* Execute WinPython Control Panel  Select Advanced -> Register distribution
+
+Python Modules:
+
+* Install postgres module from http://www.stickpeople.com/projects/python/win-psycopg/ (Python 2.7, 64 bit)
+* Download and install newest version of Opal Kelly frontpanel (64 bit). This should install the ok module into C:\WinPython-64bit-2.7.9.4\python-2.7.9.amd64\Lib\site-packages if there is no ok directory at this path copy C:\Program Files\Opal Kelly\FrontPanelUSB\API\Python\2.7\x64 directory as ok directory at C:\WinPython-64bit-2.7.9.1\python-2.7.9.amd64\Lib\site-packages
+* Download pyqtgraph from https://github.com/pmaunz/pyqtgraph/tree/develop-pm (use "download zip" button at the far right and bottom of the page. Extract the archive at your favorite location (inside download folder is just fine), open a command terminal, change into the folder pyqtgraph-develop-pm and execute "\WinPython-64bit-2.7.9.4\python-2.7.9.amd64\python setup.py install"
+
+Install database server:
+
+* Download postgres 9.4.1+ windows 64bit from http://www.enterprisedb.com/products-services-training/pgdownload#windows
+* Install
+* open pgAdmin III
+* set postgres user password
+* double click PostgreSQL
+* right click Login roles, select New Login role
+  - role name "python"
+  - set password on second tab of window
+  - click OK
+* right click Databases
+  - select "New Database"
+  - Name "ioncontrol"
+  - Owner "python"
+  - click OK
+* Close pgAdmin III
+
+On first start of IonControl.py set database parameters
+  - User "python"
+  - password as above
+  Database "ioncontrol"
+  Host "localhost"
+  Port 5432
+  
+NI hardware:
+install NISync
+
+VISA instruments:
+install pyvisa 1.4
+
+Optional: Eclipse
+
+* Download Eclipse IDE for Java Developers (64 bit) from https://eclipse.org/downloads/
+* Extract the zip wherever you want to have it (no installation necessary) and make a shortcut to eclipse.exe (I put mine in C:\Program Files\eclipse
+* Open eclipse
+* Help -> Install New Software
+* Add
+  - Name PyDev
+  - Location http://pydev.org/updates
+* Select PyDev and install
+* Eclipse restarts then Window -> Preferences -> PyDev -> Interpreters -> Python interpreter
+* Quick Autoconfig
+* To import the project into the workspace do File -> Import -> General -> Existing Projects into workspace
+* Select IonControl directory as root directory and finish
+
+For a start:
+IonControl-firmware-Sandia-v2.bit should be fine. I am still working on a version better suited for your breakout board.
