@@ -83,7 +83,7 @@ class DACUi(dacForm, dacBase):
     def onWriteAll(self):
         if len(self.dacChannels)>0:
             for channel, settings in enumerate( self.dacChannels[0:-1] ):
-                self.dac.setVoltage(channel, settings.outputVoltage)
+                self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
             channel, settings = len(self.dacChannels)-1, self.dacChannels[-1]
             self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
         
