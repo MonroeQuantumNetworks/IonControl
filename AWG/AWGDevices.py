@@ -10,10 +10,10 @@ it must inherit AWGDevice and implement open, program, and close.
 from ctypes import *
 import logging
 
-#from magnitude import Magnitude
+from modules.magnitude import Magnitude
 
 from externalParameter.ExternalParameterBase import ExternalParameterBase
-#import magnitude as magnitude
+import modules.magnitude as magnitude
 from modules.Observable import Observable
 
 

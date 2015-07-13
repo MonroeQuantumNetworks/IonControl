@@ -309,7 +309,7 @@ class AWGUi(AWGForm, AWGBase):
         self.plot.getItem(0,0).clear()
         try:
             self.plot.getItem(0,0).plot(self.waveform.evaluate())
-        except (MagnitudeError, NameError) as e:
+        except (MagnitudeError, NameError, IndexError) as e:
             logger.warn(e)
            
            
