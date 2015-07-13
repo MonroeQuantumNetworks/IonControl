@@ -14,6 +14,9 @@ import ProjectSelection
 from _functools import partial
 from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+import logging
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ProjectSelection.ui')
 
@@ -110,19 +113,39 @@ class ProjectSelectionUi(Form, Base):
                                                databaseConnectionLookup=self.databaseConnectionLookup)
         self.project = str(self.projectList.currentItem().text()) if self.projectList.currentItem() else None
         Base.accept(self)
-        
+
 def GetProjectSelection(atProgramStart=False):
     accepted = True
     project, dbConnectionLookup = ProjectSelection.defaultProject(returnDatabaseLookup=True)
-    if (not project) or (not atProgramStart) or (not dbConnectionLookup):
+    success = attemptDatabaseConnection(project, dbConnectionLookup)
+    if (not project) or (not atProgramStart) or (not dbConnectionLookup) or (not success):
         selectionui = ProjectSelectionUi()
         selectionui.setupUi(selectionui, atProgramStart)
-        accepted = bool(selectionui.exec_())
-        project = selectionui.project
-        dbConnectionLookup = selectionui.databaseConnectionLookup
+        attemptedAtLeastOnce = False
+        while ((not success) and accepted) or not attemptedAtLeastOnce:
+            accepted = bool(selectionui.exec_())
+            project = selectionui.project
+            dbConnectionLookup = selectionui.databaseConnectionLookup
+            success = attemptDatabaseConnection(project, dbConnectionLookup)
+            attemptedAtLeastOnce = True
         ProjectSelection.setProjectBaseDir( str(selectionui.baseDirectoryEdit.text()), atProgramStart)
     ProjectSelection.setProject(project)
     return project, ProjectSelection.projectDir(), dbConnectionLookup.get(project, DatabaseConnectionSettings()), accepted
+
+def attemptDatabaseConnection(project, dbConnectionLookup):
+    """Attempt to connect to the database"""
+    logger = logging.getLogger(__name__)
+    try:
+        dbConnection = dbConnectionLookup.get(project, DatabaseConnectionSettings())
+        engine = create_engine(dbConnection.connectionString, echo=dbConnection.echo)
+        engine.connect()
+        engine.dispose()
+        success = True
+        logger.info("Database connection successful")
+    except Exception:
+        success = False
+        logger.info("Database connection failed - please check settings")
+    return success
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
