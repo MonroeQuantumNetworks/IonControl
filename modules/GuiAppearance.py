@@ -11,7 +11,7 @@ def saveColumnWidth( tableView ):
     return [tableView.columnWidth(i) for i in range(0, tableView.model().columnCount())]
 
 def restoreColumnWidth( tableView, widthData, autoscaleOnNone=True ):
-    if widthData:
+    if widthData and len(widthData)==tableView.model().columnCount():
         for column, width in zip( range(0, tableView.model().columnCount()), widthData ):
             tableView.setColumnWidth(column, width)
     else:
