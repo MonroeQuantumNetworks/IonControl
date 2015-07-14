@@ -127,27 +127,72 @@
 		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
 	</Pulser> 
 	<Pulser configurationId="0x4202">
-		<Description>QGA Pulse Programmer with Sandia breakout v2</Description>
+		<Description>QGA Pulse Programmer with Duke breakout v2</Description>
 		<ExtendedWireIns>
             <Parameter address="0x20" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 p Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x21" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 i Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x22" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 delay Coefficient" encoding="TIME" enabled="True"/>
-            <Parameter address="0x23" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+            <Parameter address="0x23" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 0 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
 
             <Parameter address="0x24" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 p Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x25" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 i Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x26" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 delay Coefficient" encoding="TIME" enabled="True"/>
-            <Parameter address="0x27" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+            <Parameter address="0x27" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 1 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
 
             <Parameter address="0x28" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 p Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x29" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 i Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x2a" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 delay Coefficient" encoding="TIME" enabled="True"/>
-            <Parameter address="0x2b" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+            <Parameter address="0x2b" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 2 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
 
             <Parameter address="0x2c" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 p Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x2d" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 i Coefficient" encoding="None" enabled="True"/>
             <Parameter address="0x2e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 delay Coefficient" encoding="TIME" enabled="True"/>
-            <Parameter address="0x2f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 offset Coefficient" encoding="ADCTI122S101_VOLTAGE" enabled="True"/>
+            <Parameter address="0x2f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 3 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x30" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x31" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x32" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x33" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 4 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x34" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x35" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x36" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x37" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 5 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x38" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x39" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x3a" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x3b" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 6 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+            <Parameter address="0x3c" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 p Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x3d" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 i Coefficient" encoding="None" enabled="True"/>
+            <Parameter address="0x3e" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 delay Coefficient" encoding="TIME" enabled="True"/>
+            <Parameter address="0x3f" default="0" bitmask="0xffffffffffffffff" shift="0" name="Ch 7 offset Coefficient" encoding="ADC7606_VOLTAGE" enabled="True"/>
+
+			<Parameter address="0x50" default="0x00" bitmask="0xffff" shift="0" name="Scan 0 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x50" default="0x00" bitmask="0xffff" shift="16" name="Scan 0 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x50" default="0x00" bitmask="0xffff" shift="32" name="Scan 0 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x51" default="0x00" bitmask="0xffff" shift="0" name="Scan 1 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x51" default="0x00" bitmask="0xffff" shift="16" name="Scan 1 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x51" default="0x00" bitmask="0xffff" shift="32" name="Scan 1 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x52" default="0x00" bitmask="0xffff" shift="0" name="Scan 2 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x52" default="0x00" bitmask="0xffff" shift="16" name="Scan 2 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x52" default="0x00" bitmask="0xffff" shift="32" name="Scan 2 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x53" default="0x00" bitmask="0xffff" shift="0" name="Scan 3 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x53" default="0x00" bitmask="0xffff" shift="16" name="Scan 3 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x53" default="0x00" bitmask="0xffff" shift="32" name="Scan 3 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x54" default="0x00" bitmask="0xffff" shift="0" name="Scan 4 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x54" default="0x00" bitmask="0xffff" shift="16" name="Scan 4 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x54" default="0x00" bitmask="0xffff" shift="32" name="Scan 4 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x55" default="0x00" bitmask="0xffff" shift="0" name="Scan 5 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x55" default="0x00" bitmask="0xffff" shift="16" name="Scan 5 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x55" default="0x00" bitmask="0xffff" shift="32" name="Scan 5 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x56" default="0x00" bitmask="0xffff" shift="0" name="Scan 6 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x56" default="0x00" bitmask="0xffff" shift="16" name="Scan 6 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x56" default="0x00" bitmask="0xffff" shift="32" name="Scan 6 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x57" default="0x00" bitmask="0xffff" shift="0" name="Scan 7 increment" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x57" default="0x00" bitmask="0xffff" shift="16" name="Scan 7 max voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
+			<Parameter address="0x57" default="0x00" bitmask="0xffff" shift="32" name="Scan 7 min voltage" encoding="DAC8568_VOLTAGE" enabled="True" />
 
 			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="0" name="DDS0 regulator input" encoding="None" enabled="True" />
 			<Parameter address="0x40" default="0xff" bitmask="0xff" shift="8" name="DDS1 regulator input" encoding="None" enabled="True" />
@@ -162,6 +207,10 @@
 			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="8" name="DAC1 regulator input" encoding="None" enabled="True" />
 			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="16" name="DAC2 regulator input" encoding="None" enabled="True" />
 			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="24" name="DAC3 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="32" name="DAC4 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="40" name="DAC5 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="48" name="DAC6 regulator input" encoding="None" enabled="True" />
+			<Parameter address="0x41" default="0xff" bitmask="0xff" shift="56" name="DAC7 regulator input" encoding="None" enabled="True" />
 
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="0" name="Output delay channel 0" encoding="TIME" enabled="True"/>
 			<Parameter address="0x13" default="0" bitmask="0xff" shift="8" name="Output delay channel 1" encoding="TIME" enabled="True"/>
@@ -244,6 +293,14 @@
 			<StatusBit bitNo="5" active="error" name="PI 2 overflow"/>
 			<StatusBit bitNo="6" active="error" name="PI 3 underflow"/>
 			<StatusBit bitNo="7" active="error" name="PI 3 overflow"/>
+			<StatusBit bitNo="8" active="error" name="PI 4 underflow"/>
+			<StatusBit bitNo="9" active="error" name="PI 4 overflow"/>
+			<StatusBit bitNo="10" active="error" name="PI 5 underflow"/>
+			<StatusBit bitNo="11" active="error" name="PI 5 overflow"/>
+			<StatusBit bitNo="12" active="error" name="PI 6 underflow"/>
+			<StatusBit bitNo="13" active="error" name="PI 6 overflow"/>
+			<StatusBit bitNo="14" active="error" name="PI 7 underflow"/>
+			<StatusBit bitNo="15" active="error" name="PI 7 overflow"/>
 		</StatusBits>
 		<ShutterBits>
 			<ShutterBit bitNo="0" name="External 1-0"/>
@@ -282,6 +339,18 @@
 			<ShutterBit bitNo="33" name="PI 1 enable"/>
 			<ShutterBit bitNo="34" name="PI 2 enable"/>
 			<ShutterBit bitNo="35" name="PI 3 enable"/>
+			<ShutterBit bitNo="36" name="PI 4 enable"/>
+			<ShutterBit bitNo="37" name="PI 5 enable"/>
+			<ShutterBit bitNo="38" name="PI 6 enable"/>
+			<ShutterBit bitNo="39" name="PI 7 enable"/>
+			<ShutterBit bitNo="40" name="Scan 0 enable"/>
+			<ShutterBit bitNo="41" name="Scan 1 enable"/>
+			<ShutterBit bitNo="42" name="Scan 2 enable"/>
+			<ShutterBit bitNo="43" name="Scan 3 enable"/>
+			<ShutterBit bitNo="44" name="Scan 4 enable"/>
+			<ShutterBit bitNo="45" name="Scan 5 enable"/>
+			<ShutterBit bitNo="46" name="Scan 6 enable"/>
+			<ShutterBit bitNo="47" name="Scan 7 enable"/>
 		</ShutterBits>
 		<TriggerBits>
 			<TriggerBit bitNo="0" name="DDS update 0"/>
@@ -296,6 +365,11 @@
 			<TriggerBit bitNo="9" name="PI 1 reset"/>
 			<TriggerBit bitNo="10" name="PI 2 reset"/>
 			<TriggerBit bitNo="11" name="PI 3 reset"/>
+			<TriggerBit bitNo="12" name="PI 4 reset"/>
+			<TriggerBit bitNo="13" name="PI 5 reset"/>
+			<TriggerBit bitNo="14" name="PI 6 reset"/>
+			<TriggerBit bitNo="15" name="PI 7 reset"/>
+			<TriggerBit bitNo="16" name="DAC update"/>
 			<TriggerBit bitNo="17" name="External 2-6"/>
 		</TriggerBits>
 		<CounterBits>
@@ -335,15 +409,23 @@
 			<CounterBit bitNo="33" name="ADC 1"/>
 			<CounterBit bitNo="34" name="ADC 2"/>
 			<CounterBit bitNo="35" name="ADC 3"/>
+			<CounterBit bitNo="36" name="ADC 4"/>
+			<CounterBit bitNo="37" name="ADC 5"/>
+			<CounterBit bitNo="38" name="ADC 6"/>
+			<CounterBit bitNo="39" name="ADC 7"/>
 			<CounterBit bitNo="40" name="PI 0"/>
 			<CounterBit bitNo="41" name="PI 1"/>
 			<CounterBit bitNo="42" name="PI 2"/>
 			<CounterBit bitNo="43" name="PI 3"/>
+			<CounterBit bitNo="44" name="PI 4"/>
+			<CounterBit bitNo="45" name="PI 5"/>
+			<CounterBit bitNo="46" name="PI 6"/>
+			<CounterBit bitNo="47" name="PI 7"/>
 			<CounterBit bitNo="48" name="timeTick"/>			
 		</CounterBits>
 				
-		<DAC numChannels="4" encoding="None" />	
-		<ADC numChannels="4" encoding="ADCTI122S101_VOLTAGE" />
+		<DAC numChannels="16" encoding="DAC8568_VOLTAGE" />	
+		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" dedicatedfirstChannelNo="16" />
 	</Pulser> 
 	<Pulser configurationId="0x4201">
 		<Description>Sandia breakout v1</Description>

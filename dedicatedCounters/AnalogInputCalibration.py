@@ -115,6 +115,50 @@ class PowerDetectorCalibration(AnalogInputCalibration):
                          {'name': 'c', 'type': 'float', 'value': self.parameters.c },
                          {'name': 'min', 'type': 'float', 'value': self.parameters.minimum},
                          {'name': 'max', 'type': 'float', 'value': self.parameters.maximum}]
+
+class PowerDetectorCalibrationAD7608(AnalogInputCalibration):
+    """
+        data is being fitted to p*x**2 + m*x + c 
+        is valid between minimum and maximum input voltage
+    """
+    def __init__(self, name="default"):
+        AnalogInputCalibration.__init__(self,name)
+        self.parameters = Parameters()
+        self.parameters.m = -36.47
+        self.parameters.c = 60.7152
+        self.parameters.p = -1.79545
+        self.parameters.minimum = 0.6
+        self.parameters.maximum = 2        
+        
+    def convert(self, binary):
+        if binary is None:
+            return None
+        if binary & 0x80000000:
+            numeric = -0x80000000 + (binary&0x7fffffff)
+        else:
+            numeric = binary
+        volt = numeric * self.referenceVoltage / 0x800000
+        if volt < self.parameters.minimum or volt > self.parameters.maximum:
+            return "oor"
+        dBm = self.parameters.p * volt**2 + self.parameters.m*volt + self.parameters.c
+        return dBm
+        
+    def convertMagnitude(self, binary):
+        if binary is None:
+            return None
+        volt = binary * referenceVoltage / 0x3fffff
+        if volt < self.parameters.minimum or volt > self.parameters.maximum:
+            return "oor"
+        dBm = self.parameters.p * volt**2 + self.parameters.m*volt + self.parameters.c
+        return magnitude.mg( 10**((dBm/10)-3), 'W' )
+        
+    def paramDef(self):
+        return [{'name': 'function', 'type': 'str', 'value': "dBm = p*V^2 + m*V + c",'readonly':True},
+                         {'name': 'p', 'type': 'float', 'value': self.parameters.p },
+                         {'name': 'm', 'type': 'float', 'value': self.parameters.m },
+                         {'name': 'c', 'type': 'float', 'value': self.parameters.c },
+                         {'name': 'min', 'type': 'float', 'value': self.parameters.minimum},
+                         {'name': 'max', 'type': 'float', 'value': self.parameters.maximum}]
          
 class PowerDetectorCalibrationTwo(PowerDetectorCalibration):
     """
@@ -131,4 +175,5 @@ class PowerDetectorCalibrationTwo(PowerDetectorCalibration):
         
 AnalogInputCalibrationMap = { 'Voltage': AnalogInputCalibration,
                               'Rf power detector': PowerDetectorCalibration,
-                              'AD7608 Voltage': AnalogInputCalibrationAD7608 }
+                              'AD7608 Voltage': AnalogInputCalibrationAD7608,
+                              'Rf power detector AD7608': PowerDetectorCalibrationAD7608 }
