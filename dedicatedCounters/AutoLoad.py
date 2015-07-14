@@ -748,6 +748,10 @@ class AutoLoad(UiForm,UiBase):
         self.timerNullTime = now()
     
     def setCoolingOven(self):
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
         self.statusLabel.setText("Cooling Oven")
         self.timerNullTime = now()
         self.numFailedAutoload += 1

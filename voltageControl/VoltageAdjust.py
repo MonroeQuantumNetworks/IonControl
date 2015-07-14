@@ -25,6 +25,7 @@ from modules.magnitude import mg
 import re
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules import MagnitudeUtilit
+from _functools import partial
 
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
@@ -241,13 +242,25 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
             self.shuttleEdgeTableModel.remove(index)
         
     def onExpressionChanged(self, attribute, value):
-        setattr(self.adjust,attribute,value) 
-        self.updateOutput.emit(self.adjust, True)
+        #setattr(self.adjust,attribute,value) 
+        #self.updateOutput.emit(self.adjust, True)
+        self.onExpressionChangedBottomHalf(attribute, value)
 
+    def onExpressionChangedBottomHalf( self, attribute, value ):
+        current = getattr(self.adjust, attribute)
+        delta = 0.01
+        if abs(value-current)<delta:
+            setattr(self.adjust,attribute,value) 
+            self.updateOutput.emit(self.adjust, True)
+        else:
+            setattr(self.adjust,attribute, ( current + delta if value>current else current - delta ) )
+            self.updateOutput.emit(self.adjust, True)
+            QtCore.QTimer.singleShot(10, partial( self.onExpressionChangedBottomHalf, attribute, value ) )
+    
     def onValueChanged(self, attribute, value):
         setattr(self.adjust,attribute, MagnitudeUtilit.value( value ) ) 
         self.updateOutput.emit(self.adjust, True)
-    
+
     def setLine(self, line):
         self.shuttlingGraph.setPosition( line )
         
