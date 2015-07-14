@@ -1549,7 +1549,7 @@
 			<CounterBit bitNo="47" name="PI 7"/>
 			<CounterBit bitNo="48" name="timeTick"/>			
 		</CounterBits>
-		<DAC numChannels="8" encoding="DAC8568_VOLTAGE" />	
+		<DAC numChannels="16" encoding="DAC8568_VOLTAGE" />	
 		<ADC numChannels="8" encoding="ADC7606_VOLTAGE" dedicatedfirstChannelNo="16" />
 	</Pulser> 
 </PulserList>

@@ -8,7 +8,7 @@ from modules.firstNotNone import firstNotNone
 from functools import partial
 
 class DACTableModel(QtCore.QAbstractTableModel):
-    headerDataLookup = ['On', 'Name', 'Voltage' ]
+    headerDataLookup = ['On', 'Name', 'Voltage' , 'Write All']
     voltageChanged = QtCore.pyqtSignal( object, object )
     enableChanged = QtCore.pyqtSignal( object, object )
     def __init__(self, dacChannels, globalDict, parent=None, *args): 
@@ -23,11 +23,13 @@ class DACTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.EditRole, 1): lambda row: self.dacChannels[row].name,
                              (QtCore.Qt.EditRole, 2): lambda row: firstNotNone( self.dacChannels[row].voltageText, str(self.dacChannels[row].voltage)),
                              (QtCore.Qt.BackgroundColorRole,2): lambda row: self.textBG if self.dacChannels[row]._voltage.hasDependency else self.defaultBG,
+                             (QtCore.Qt.CheckStateRole, 3): lambda row: QtCore.Qt.Checked if self.dacChannels[row].resetAfterPP else QtCore.Qt.Unchecked,
                               }
         self.setDataLookup =  {  (QtCore.Qt.CheckStateRole,0): self.setEnabled,
                                  (QtCore.Qt.EditRole,1): self.setName,
                                  (QtCore.Qt.EditRole,2): self.setVoltage,
                                  (QtCore.Qt.UserRole,2): partial( self.setFieldText, 'voltageText'),
+                                 (QtCore.Qt.CheckStateRole,3): self.setResetAfterPP,
                                  }
         self.globalDict = globalDict
 
@@ -36,6 +38,11 @@ class DACTableModel(QtCore.QAbstractTableModel):
         self.dacChannels[index.row()].enabled = enabled
         self.enableChanged.emit( index.row(), enabled )
         self.voltageChanged.emit( index.row(), value)
+        return True
+    
+    def setResetAfterPP(self, index, value):
+        enabled = value==QtCore.Qt.Checked
+        self.dacChannels[index.row()].resetAfterPP = enabled
         return True
     
     def setValue(self, index, value):
@@ -58,7 +65,7 @@ class DACTableModel(QtCore.QAbstractTableModel):
         return len(self.dacChannels) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 3
+        return 4
  
     def data(self, index, role): 
         if index.isValid():
@@ -69,7 +76,7 @@ class DACTableModel(QtCore.QAbstractTableModel):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
         
     def flags(self, index):
-        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column()==0 else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+        return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable if index.column() in [0,3] else QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role):
         if (role == QtCore.Qt.DisplayRole):

@@ -26,6 +26,11 @@ class DACChannelSetting(object):
         self._voltage = ExpressionValue(None, self._globalDict)
         self.enabled = False
         self.name = ""
+        self.resetAfterPP = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'resetAfterPP', True )
         
     @property
     def outputVoltage(self):
