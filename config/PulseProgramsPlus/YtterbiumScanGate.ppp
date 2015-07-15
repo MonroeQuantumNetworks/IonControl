@@ -121,7 +121,7 @@ parameter PresenceThresholdMulti = 6
 
 # excitcodes
 exitcode IonLostExitcode = 0xfffe000000000001
-exitcode endLabel = 0xffffffffffffffff
+exitcode endLabel = 0xfffe000000000000
 
 # Ramsey Calibration
 parameter<AD9912_PHASE> RamseyCalInitPhase

@@ -16,6 +16,7 @@ from VoltageGlobalAdjust import VoltageGlobalAdjust
 import VoltageTableModel
 from modules import MagnitudeUtilit
 from voltageControl.VoltageLocalAdjust import VoltageLocalAdjust
+from reportlab.pdfbase.pdfdoc import Destination
 
 
 VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
@@ -84,8 +85,8 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
         self.voltageBlender.loadVoltage(path)
         self.adjustUi.loadShuttleDef( shuttledefpath )
         
-    def shuttleTo(self, destination):
-        return self.adjustUi.onShuttleSequence(destination)
+    def shuttleTo(self, destination, onestep=False):
+        return self.adjustUi.onShuttleSequence(destination, instant=onestep)
     
     def shuttlingNodesObservable(self):
         return self.adjustUi.shuttlingGraph.graphChangedObservable
@@ -96,8 +97,14 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     def shuttlingNodes(self):
         return self.adjustUi.shuttlingNodes()
     
+    def synchronize(self):
+        self.adjustUi.synchronize()
+    
     def onUpdate(self, adjust, updateHardware=True ):
-        self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain), updateHardware )
+        try:
+            self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain), updateHardware )
+        except ValueError as e:
+            logging.getLogger(__name__).warning( str(e) )
         self.adjustUi.setLine( MagnitudeUtilit.value(adjust.line) )
                      
     def onLoadGlobalAdjust(self, path):

@@ -85,6 +85,13 @@ def set_dds( symboltable, arg=list(), kwarg=dict()):
         commandlist.append( "  NOP" )       
     return commandlist
 
+def set_dac( symboltable, arg=list(), kwarg=dict()):
+    if len(arg)!=3:
+        raise CompileException( "expected exactly two arguments in serial_write" )
+    channel = symboltable.getConst( arg[1] )
+    value = symboltable.getVar( arg[2] )
+    return [ "  DACOUT {0}, {1}".format(channel.name, value.name) ]
+
 def serial_write( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     if len(arg)!=3:
         raise CompileException( "expected exactly two arguments in serial_write" )

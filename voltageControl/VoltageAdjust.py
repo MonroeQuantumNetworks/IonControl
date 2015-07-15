@@ -25,6 +25,7 @@ from modules.magnitude import mg
 import re
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules import MagnitudeUtilit
+from _functools import partial
 
 
 VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
@@ -211,14 +212,20 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
         self.currentPositionLabel.setText( firstNotNone(event.text, "") )           
         self.updateOutput.emit(self.adjust, False)
 
-    def onShuttleSequence(self, destination, cont=False):
+    def onShuttleSequence(self, destination, cont=False, instant=False):
         self.synchronize()
         destination = str(destination)
         logger = logging.getLogger(__name__)
         logger.info( "ShuttleSequence" )
         path = self.shuttlingGraph.shuttlePath(None, destination)
-        if path:
-            self.shuttleOutput.emit( path, cont )
+        if path:  
+            if instant:
+                edge = path[-1][2]
+                _, toLine = (edge.startLine, edge.stopLine) if path[-1][0]==edge.startName else (edge.stopLine, edge.startLine)
+                self.lineBox.setValue(toLine)
+                self.lineBox.valueChanged.emit(toLine)
+            else:
+                self.shuttleOutput.emit( path, cont )
         return bool(path)
 
     def onShuttlingDone(self,currentline):
@@ -235,13 +242,25 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
             self.shuttleEdgeTableModel.remove(index)
         
     def onExpressionChanged(self, attribute, value):
-        setattr(self.adjust,attribute,value) 
-        self.updateOutput.emit(self.adjust, True)
+        #setattr(self.adjust,attribute,value) 
+        #self.updateOutput.emit(self.adjust, True)
+        self.onExpressionChangedBottomHalf(attribute, value)
 
+    def onExpressionChangedBottomHalf( self, attribute, value ):
+        current = getattr(self.adjust, attribute)
+        delta = 0.01
+        if abs(value-current)<delta:
+            setattr(self.adjust,attribute,value) 
+            self.updateOutput.emit(self.adjust, True)
+        else:
+            setattr(self.adjust,attribute, ( current + delta if value>current else current - delta ) )
+            self.updateOutput.emit(self.adjust, True)
+            QtCore.QTimer.singleShot(10, partial( self.onExpressionChangedBottomHalf, attribute, value ) )
+    
     def onValueChanged(self, attribute, value):
         setattr(self.adjust,attribute, MagnitudeUtilit.value( value ) ) 
         self.updateOutput.emit(self.adjust, True)
-    
+
     def setLine(self, line):
         self.shuttlingGraph.setPosition( line )
         
@@ -281,7 +300,7 @@ class VoltageAdjust(VoltageAdjustForm, VoltageAdjustBase ):
                 self.setupGraphDependent()
         
     def synchronize(self):
-        if self.shuttlingGraph.hasChanged or not self.voltageBlender.shuttlingDataValid():
+        if (self.shuttlingGraph.hasChanged or not self.voltageBlender.shuttlingDataValid()) and self.voltageBlender.dacController.isOpen:
             logging.getLogger(__name__).info("Uploading Shuttling data")
             self.voltageBlender.writeData(self.shuttlingGraph)
             self.writeShuttleLookup()

@@ -51,7 +51,7 @@ class DACUi(dacForm, dacBase):
         self.autoApplyBox.setChecked( self.autoApply )
         self.autoApplyBox.stateChanged.connect( self.onStateChanged )
         try:
-            self.onWriteAll()
+            self.onWriteAll( writeUnchecked=True )
         except Exception as e:
             logging.getLogger(__name__).warning( "Ignored error while setting dac: {0}".format(e) )
         self.onApply()
@@ -80,12 +80,11 @@ class DACUi(dacForm, dacBase):
             value, unit = value.toval(returnUnit=True)
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
     
-    def onWriteAll(self):
+    def onWriteAll(self, writeUnchecked=False):
         if len(self.dacChannels)>0:
-            for channel, settings in enumerate( self.dacChannels[0:-1] ):
-                self.dac.setVoltage(channel, settings.outputVoltage)
-            channel, settings = len(self.dacChannels)-1, self.dacChannels[-1]
-            self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
+            for channel, settings in enumerate( self.dacChannels ):
+                if writeUnchecked or settings.resetAfterPP:
+                    self.dac.setVoltage(channel, settings.outputVoltage, autoApply=self.autoApply, applyAll=True)
         
     def saveConfig(self):
         self.config['dacUi.dacExpressionChannels'] = self.dacChannels

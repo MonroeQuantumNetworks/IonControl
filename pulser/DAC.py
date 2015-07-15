@@ -26,6 +26,11 @@ class DACChannelSetting(object):
         self._voltage = ExpressionValue(None, self._globalDict)
         self.enabled = False
         self.name = ""
+        self.resetAfterPP = True
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'resetAfterPP', True )
         
     @property
     def outputVoltage(self):
@@ -84,7 +89,6 @@ class DAC:
             self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x12, data)) )
             self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x40,4), "DAC trigger")
-            self.pulser.UpdateWireIns()
         else:
             logger.warning( "Pulser not available" )
             

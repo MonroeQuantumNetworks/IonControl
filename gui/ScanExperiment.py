@@ -66,6 +66,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     ClearStatusMessage = QtCore.pyqtSignal()
     NeedsDDSRewrite = QtCore.pyqtSignal()
     plotsChanged = QtCore.pyqtSignal()
+    ppStartSignal = QtCore.pyqtSignal()
+    ppStopSignal = QtCore.pyqtSignal()
     OpStates = enum.enum('idle','running','paused','starting','stopping', 'interrupted')
     experimentName = 'Scan Sequence'
     statusChanged = QtCore.pyqtSignal( object )
@@ -283,6 +285,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.progressUi.setAveraged(None)
         self.scanMethod = ScanMethodsDict[self.scan.scanTarget](self)
         self.progressUi.setStarting()
+        self.ppStartSignal.emit()
         if self.callWhenDoneAdjusting is None:
             self.startScan()
         else:
@@ -377,6 +380,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             except Exception as e:
                 logging.getLogger(__name__).warning("Analysis failed: {0}".format(str(e)))
             self.scanMethod.onStop()
+            self.ppStopSignal.emit()
 
     def traceFilename(self, pattern):
         directory = DataDirectory.DataDirectory()
@@ -756,7 +760,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                                   scanPP = self.scan.loadPPName,
                                   evaluation=self.evaluation.settingsName, 
                                   startDate=self.plottedTraceList[0].trace.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc), 
-                                  duration=None, filename=self.plottedTraceList[0].trace.filename, comment=None, longComment=None, failedAnalysis=failedEntry)
+                                  duration=None, filename=self.plottedTraceList[0].trace.filename if self.plottedTraceList else "none", 
+                                  comment=None, longComment=None, failedAnalysis=failedEntry)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
         for var in  self.pulseProgramUi.variableTableModel.variabledict.values():

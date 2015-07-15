@@ -332,9 +332,9 @@ class VoltageBlender(QtCore.QObject):
         self.hardware.close()
 
     def writeShuttleLookup(self, edgeList, address=0):
-        self.dacController.writeShuttleLookup(edgeList,address)
+        if(self.dacController.isOpen):
+            self.dacController.writeShuttleLookup(edgeList,address)
     
-    @doprofile
     def writeData(self, shuttlingGraph):
         towrite = list()
         startline = 1

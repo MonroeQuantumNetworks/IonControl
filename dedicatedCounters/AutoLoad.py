@@ -72,6 +72,7 @@ class AutoLoadSettings(object):
         self.historyLength = mg(7, 'day')
         self.loadingVoltageNode = ""
         self.shuttlingNodes = list()
+        self.instantToLoading = False
 
     def paramDef(self):
         """
@@ -96,6 +97,7 @@ class AutoLoadSettings(object):
                 {'name': 'Counter channel', 'type': 'int', 'value': self.counterChannel, 'tip': "Counter channel", 'field': 'counterChannel'},
                 {'name': 'Wavemeter address', 'type': 'str', 'value': self.wavemeterAddress, 'tip': "Address of wavemeter interface (http://)", 'field': 'wavemeterAddress'},
                 {'name': 'History timespan', 'type': 'magnitude', 'value': self.historyLength, 'tip': "Time range to display loading history", 'field': 'historyLength'},
+                {'name': 'Loading shuttle instantly', 'type':'bool', 'value': self.instantToLoading, 'tip': 'When shuttling to loading, move there instantly instead of shuttling properly', 'field':'instantToLoading' },
                 {'name': 'Loading Voltage node', 'type':'list', 'values': self.shuttlingNodes, 'value': self.loadingVoltageNode, 'tip': 'Shuttle to this node for loading', 'field':'loadingVoltageNode' }]
         
     def update(self, param, changes):
@@ -134,11 +136,12 @@ class AutoLoadSettings(object):
         self.__dict__.setdefault( 'historyLength', mg(7,'day') )
         self.__dict__.setdefault( 'loadingVoltageNode', "" )
         self.__dict__.setdefault( 'shuttlingNodes', list())
+        self.__dict__.setdefault( 'instantToLoading', False )
 
     stateFields = ['counterChannel', 'shutterChannel', 'shutterChannel2', 'ovenChannel', 'laserDelay', 'maxTime', 'thresholdBare', 'thresholdOven',
                    'checkTime', 'useInterlock', 'interlock', 'wavemeterAddress', 'ovenChannelActiveLow', 'shutterChannelActiveLow', 'shutterChannelActiveLow2',
                    'autoReload', 'waitForComebackTime', 'minLaserScatter', 'maxFailedAutoload', 'postSequenceWaitTime', 'loadAlgorithm',
-                   'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList', 'historyLength' ] 
+                   'shuttleLoadTime', 'shuttleCheckTime', 'ovenCoolingTime', 'thresholdRunning', 'globalsAdjustList', 'historyLength', 'instantToLoading' ] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -454,9 +457,10 @@ class AutoLoad(UiForm,UiBase):
         self.autoSave()
 
     def setVoltageControl(self, voltageControl ):
-        self.voltageControl = voltageControl
-        self.voltageControl.shuttlingNodesObservable().subscribe( self.onShuttlingNodesChanged )
-        self.onShuttlingNodesChanged()
+        if voltageControl:
+            self.voltageControl = voltageControl
+            self.voltageControl.shuttlingNodesObservable().subscribe( self.onShuttlingNodesChanged )
+            self.onShuttlingNodesChanged()
 
     def onShuttlingNodesChanged(self):
         self.settings.shuttlingNodes = [""] + self.voltageControl.shuttlingNodes()
@@ -645,8 +649,10 @@ class AutoLoad(UiForm,UiBase):
         self.externalInstrumentObservable( lambda: self.statemachine.processEvent('doneAdjusting') )
         if self.settings.loadingVoltageNode:
             self.voltageNodeBeforeLoading = self.voltageControl.currentShuttlingPosition()
-            if not self.voltageControl.shuttleTo( self.settings.loadingVoltageNode ):
+            if not self.voltageControl.shuttleTo( self.settings.loadingVoltageNode, onestep=self.settings.instantToLoading):
                 self.voltageNodeBeforeLoading = None
+            #if not self.voltageControl.onUpdate( self.settings.shuttlingNodes(self.settings.loadingVoltageNode) ):
+            #    self.voltageNodeBeforeLoading = None
         else:
             self.voltageNodeBeforeLoading = None 
         
@@ -742,6 +748,10 @@ class AutoLoad(UiForm,UiBase):
         self.timerNullTime = now()
     
     def setCoolingOven(self):
+        self.pulser.setShutterBit( abs(self.settings.ovenChannel), invertIf(False,self.settings.ovenChannelActiveLow) )
+        self.pulser.setShutterBit( abs(self.settings.shutterChannel), invertIf(False,self.settings.shutterChannelActiveLow ))
+        if self.settings.shutterChannel2 >= 0:
+            self.pulser.setShutterBit( abs(self.settings.shutterChannel2), invertIf(False,self.settings.shutterChannelActiveLow2 ))
         self.statusLabel.setText("Cooling Oven")
         self.timerNullTime = now()
         self.numFailedAutoload += 1
