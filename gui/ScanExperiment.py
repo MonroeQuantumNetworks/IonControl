@@ -333,6 +333,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.generator = GeneratorList[self.scan.scanMode](self.scan)
             
             (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
+#            if self.pulseProgramUi.currentContext.writeRam:
+#                data = self.pulseProgramUi.getRamData()
             if data:
                 logging.getLogger(__name__).info("Writing {0} bytes to RAM ({1}%)".format(len(data)*8, 100*len(data)/(2**24) ))
                 self.pulserHardware.ppWriteRamWordList(data,0, check=True)

@@ -65,8 +65,10 @@ class PulseProgramContext:
         
     def __setstate__(self, state):
         self.__dict__ = state
+        self.ramFile = None
+        self.writeRam = False
         
-    stateFields = ['parameters', 'shutters', 'triggers', 'counters', 'pulseProgramFile', 'pulseProgramMode'] 
+    stateFields = ['parameters', 'shutters', 'triggers', 'counters', 'pulseProgramFile', 'pulseProgramMode', 'ramFile', 'writeRam'] 
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -160,6 +162,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
         self.contextComboBox.addItems( sorted(self.contextDict.keys()) )
+        self.writeRamCheckbox.setChecked(self.currentContext.writeRam)
 
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
@@ -167,6 +170,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.loadButton.setDefaultAction( self.actionOpen )
         self.saveButton.setDefaultAction( self.actionSave )
         self.resetButton.setDefaultAction( self.actionReset )
+        self.loadButtonRam.clicked.connect( self.onLoadRam )
+        self.writeRamCheckbox.clicked.connect( self.onWriteRamCheckbox )
         self.shutterTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal, self.shutterTableView) )
         self.triggerTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal,self.triggerTableView ) )
         self.counterTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal,self.counterTableView ) )
@@ -367,12 +372,27 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onOk(self):
         pass
     
+    def onLoadRam(self):
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file',ProjectSelection.configDir()))
+        if path!="":
+            self.currentContext.ramFile = path
+            self.fileNameRam.setText(path)
+            with open(path, "r") as f:
+                self.ramSource = f.read()
+        self.updateSaveStatus()
+
+    def onWriteRamCheckbox(self):
+        self.currentContext.writeRam = self.writeRamCheckbox.isChecked()
+        
+    def getRamData(self):
+        return []
+
     def onLoad(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
         if path!="":
             self.adaptiveLoadFile(path)
         self.updateSaveStatus()
-           
+        
     def adaptiveLoadFile(self, path):
         if path:
             _, ext = os.path.splitext(path)

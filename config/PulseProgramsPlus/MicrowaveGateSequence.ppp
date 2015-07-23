@@ -9,7 +9,7 @@ const PMTChannel = 8
 const CalibrationCounterNo = 16
 const ResultChannel = 1
 const ShiftResultChannel = 2
-
+parameter gateTime
 # DDS frequencies and amplitudes
 parameter<AD9912_FRQ> DetectFreq = 100 MHz
 parameter DetectAmp = 1023
