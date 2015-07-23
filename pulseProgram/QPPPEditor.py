@@ -11,7 +11,7 @@ from PyQt4.QtGui import QFont, QFontMetrics, QColor
 class MyPythonLexer(QsciLexerPython):
     def keywords(self, keyset):
         if keyset == 1:
-            return 'counter var shutter parameter masked_shutter exitcode const ' + QsciLexerPython.keywords(self, keyset)
+            return 'counter var shutter parameter masked_shutter trigger address exitcode const ' + QsciLexerPython.keywords(self, keyset)
         return QsciLexerPython.keywords(self, keyset)
 
 
