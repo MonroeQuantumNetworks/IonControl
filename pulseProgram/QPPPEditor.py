@@ -12,6 +12,11 @@ class MyPythonLexer(QsciLexerPython):
     def keywords(self, keyset):
         if keyset == 1:
             return 'counter var shutter parameter masked_shutter trigger address exitcode const ' + QsciLexerPython.keywords(self, keyset)
+        elif keyset == 2:
+            return ("set_shutter set_inv_shutter set_counter clear_counter update load_count "
+                    "set_trigger set_dds read_pipe write_pipe exit pipe_empty apply_next_scan_point "
+                    "set_ram_address read_ram wait_dds wait_trigger write_result serial_write set_parameter set_dac"
+                    )
         return QsciLexerPython.keywords(self, keyset)
 
 
@@ -60,8 +65,10 @@ class QPPPEditor(QsciScintilla):
         #
         lexer = MyPythonLexer()
         lexer.setDefaultFont(font)
-        lexer.setColor( QColor('red'), 4 )
-        lexer.setFont( boldfont, 5)
+        lexer.setColor( QColor('red'), lexer.SingleQuotedString )
+        lexer.setFont( boldfont, lexer.Keyword)
+        lexer.setFont( boldfont, lexer.HighlightedIdentifier )
+        lexer.setColor( QColor('blue'), lexer.HighlightedIdentifier )
         self.setLexer(lexer)
         self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'Courier')
 
