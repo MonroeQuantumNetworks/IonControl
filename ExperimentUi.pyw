@@ -563,6 +563,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.close()
         self.dedicatedCountersWindow.close()
         self.pulseProgramDialog.onClose()
+        self.scriptingWindow.onClose()
         self.logicAnalyzerWindow.close()
         self.measurementLog.close()
         if self.instrumentLogger:
@@ -581,6 +582,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config['SettingsTriggerNameDict'] = self.triggerNameDict 
         self.config['Settings.consoleEnable'] = self.consoleEnable 
         self.pulseProgramDialog.saveConfig()
+        self.scriptingWindow.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
         self.DACUi.saveConfig()
