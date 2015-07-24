@@ -54,6 +54,7 @@ from pulser.PulserParameterUi import PulserParameterUi
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify
 from AWG.AWGUi import AWGUi
+from scripting.ScriptingUi import ScriptingUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -141,7 +142,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.channelNameData = (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal, self.counterNameDict )
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
-        
+
         # Global Variables
         self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
         self.globalVariablesUi.setupUi(self.globalVariablesUi)
@@ -149,6 +150,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setObjectName("Global Variables")
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
+
+        # initialize ScriptingUi
+        self.scriptingWindow = ScriptingUi(self.config, self.pulser, self.globalVariablesUi.variables )
+        self.scriptingWindow.setupUi(self.scriptingWindow)
 
         self.measurementLog = MeasurementLogUi(self.config, self.dbConnection)
         self.measurementLog.setupUi(self.measurementLog)
@@ -314,6 +319,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionReload.triggered.connect(self.onReload)
         self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
+        self.actionScripting.triggered.connect(self.onScripting)
         self.actionMeasurementLog.triggered.connect(self.onMeasurementLog)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
@@ -408,6 +414,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.show()
         self.voltageControlWindow.setWindowState(QtCore.Qt.WindowActive)
         self.voltageControlWindow.raise_()
+
+    def onScripting(self):
+        self.scriptingWindow.show()
+        self.scriptingWindow.setWindowState(QtCore.Qt.WindowActive)
+        self.scriptingWindow.raise_()
         
     def onMeasurementLog(self):
         self.measurementLog.show()

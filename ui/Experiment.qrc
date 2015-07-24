@@ -45,6 +45,7 @@
     <file>icons/cos.png</file>
   </qresource>
   <qresource prefix="other">
+    <file>icons/Terminal-icon.png</file>
     <file>icons/ions.jpg</file>
   </qresource>
   <qresource prefix="openicon">
