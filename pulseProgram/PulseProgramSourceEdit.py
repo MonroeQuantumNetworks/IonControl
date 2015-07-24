@@ -9,8 +9,6 @@ import functools
 
 from PyQt4 import QtCore, QtGui
 
-from pulseProgram.PPSyntaxHighlighter import PPHighlighter
-from pppCompiler.PPPSyntaxHighlighter import PPPHighlighter
 from PulseProgramEditUi import Ui_Form as Form
 from _functools import partial
 Base = QtGui.QWidget
@@ -41,7 +39,6 @@ class PulseProgramSourceEdit(Form, Base):
         self.findWholeWordsCheckBox.stateChanged.connect( partial(self.onFindFlagsChanged, 'findWordOnly') )
         self.findNextButton.clicked.connect( self.onFind )
         self.findPreviousButton.clicked.connect( functools.partial(self.onFind , True))
-        self.highlighter = PPHighlighter( self.textEdit, "Classic" ) if self.mode=='pp' else PPPHighlighter( self.textEdit, "Classic" ) 
         self.errorDisplay.hide()
         self.closeErrorButton.clicked.connect( self.clearHighlightError )
         
