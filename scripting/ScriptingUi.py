@@ -84,6 +84,9 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
         self.actionReset.triggered.connect(self.onReset)
+        self.actionStart.triggered.connect( self.onStart )
+        self.actionStop.triggered.connect( self.onStop )
+        self.actionStopImmediately.triggered.connect(self.onStopImmediately )
         self.loadButton.setDefaultAction( self.actionOpen )
         self.saveButton.setDefaultAction( self.actionSave )
         self.resetButton.setDefaultAction( self.actionReset )
@@ -111,7 +114,17 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.autoSaveAction.setChecked( self.configParams.autoSaveContext )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
-       
+
+    def onStart(self):
+        self.onSave()
+        exec(self.scriptingSource)
+    
+    def onStop(self):
+        pass
+    
+    def onStopImmediately(self):
+        pass
+    
     def onAutoSave(self, checked):
         self.configParams.autoSaveContext = checked
         if checked:
