@@ -51,7 +51,6 @@ class PulseProgramSourceEdit(Form, Base):
         
     def onFindClose(self):
         self.findWidgetFrame.hide()
-        self.textEdit.setExtraSelections([])
 
     def setPlainText(self, text):
         self.textEdit.setPlainText(text)
