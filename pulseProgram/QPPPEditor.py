@@ -27,19 +27,19 @@ class QPPPEditor(QsciScintilla):
         super(QPPPEditor, self).__init__(parent)
 
         # Set the default font
-        font = QFont()
-        font.setFamily('Courier')
-        font.setFixedPitch(True)
-        font.setPointSize(10)
-        self.setFont(font)
-        self.setMarginsFont(font)
+        self.myfont = QFont()
+        self.myfont.setFamily('Courier')
+        self.myfont.setFixedPitch(True)
+        self.myfont.setPointSize(10)
+        self.setFont(self.myfont)
+        self.setMarginsFont(self.myfont)
         
-        boldfont = QFont(font)
-        boldfont.setBold(True)
+        self.myboldfont = QFont(self.myfont)
+        self.myboldfont.setBold(True)
 
         # Margin 0 is used for line numbers
-        fontmetrics = QFontMetrics(font)
-        self.setMarginsFont(font)
+        fontmetrics = QFontMetrics(self.myfont)
+        self.setMarginsFont(self.myfont)
         self.setMarginWidth(0, fontmetrics.width("00000") + 6)
         self.setMarginLineNumbers(0, True)
         self.setMarginsBackgroundColor(QColor("#cccccc"))
@@ -64,10 +64,10 @@ class QPPPEditor(QsciScintilla):
         # courier.
         #
         lexer = MyPythonLexer()
-        lexer.setDefaultFont(font)
+        lexer.setDefaultFont(self.myfont)
         lexer.setColor( QColor('red'), lexer.SingleQuotedString )
-        lexer.setFont( boldfont, lexer.Keyword)
-        lexer.setFont( boldfont, lexer.HighlightedIdentifier )
+        lexer.setFont( self.myboldfont, lexer.Keyword)
+        lexer.setFont( self.myboldfont, lexer.HighlightedIdentifier )
         lexer.setColor( QColor('blue'), lexer.HighlightedIdentifier )
         self.setLexer(lexer)
         self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'Courier')
