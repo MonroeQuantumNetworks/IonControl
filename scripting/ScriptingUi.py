@@ -15,18 +15,41 @@ from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 from modules.PyqtUtility import BlockSignals
 import copy
 
-from PyQt4.Qsci import QsciScintilla, QsciLexerPython
-from PyQt4.QtGui import QFont, QFontMetrics, QColor
+from PyQt4.Qsci import QsciLexerPython
+from PyQt4.QtGui import QFont, QColor
 
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
 class ScriptingLexer(QsciLexerPython):
     """Lexer used for scripts. Standard Python lexer, with additional keywords associated with scripting."""
+    def __init__(self, parent=None, scriptingFunctions=dict()):
+        """Initialize lexer with scriptingFunctions set."""
+        super(ScriptingLexer,self).__init__(parent)
+        self.scriptingFunctions = scriptingFunctions #ScriptingFunctions is a dictionary. The key is the function name, the value is the docstring
+         
     def keywords(self, keyset):
+        """Set scriptingFunctions to be keyset 2, so they will have unique highlighting."""
         if keyset == 2:
-            return ("runScan"
-                    )
+            return ' '.join([func for func in self.scriptingFunctions]) #This is a space separated list of all the scripting functions
         return QsciLexerPython.keywords(self, keyset)
+
+class ScriptingSourceEdit(PulseProgramSourceEdit):
+    """Editor used for scripts. Same as inherits PulseProgramSourceEdit, with different lexer."""
+    def __init__(self, parent=None, scriptingFunctions=dict()):
+        """Initialize editor with scripting functions set"""
+        super(ScriptingSourceEdit,self).__init__(parent)
+        self.scriptingFunctions = scriptingFunctions
+        
+    def setupUi(self, parent=None):
+        """setup editor with custom scripting lexer"""
+        super(ScriptingSourceEdit,self).setupUi(parent)
+        lexer = ScriptingLexer(scriptingFunctions=self.scriptingFunctions) #Use a different lexer from that used for pulse program files
+        lexer.setDefaultFont(self.textEdit.myfont)
+        lexer.setColor( QColor('red'), lexer.SingleQuotedString )
+        lexer.setFont( self.textEdit.myboldfont, lexer.Keyword)
+        lexer.setFont( self.textEdit.myboldfont, lexer.HighlightedIdentifier )
+        lexer.setColor( QColor('blue'), lexer.HighlightedIdentifier )
+        self.textEdit.setLexer(lexer)
 
 class ScriptingContext:
     def __init__(self, globaldict):
@@ -179,28 +202,13 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                 w.setCurrentIndex( w.findText( name ))
       
     def updateScriptingDisplay(self):
-        font = QFont()
-        font.setFamily('Courier')
-        font.setFixedPitch(True)
-        font.setPointSize(10)
-        boldfont = QFont(font)
-        boldfont.setBold(True)
-
         for scriptingTab in self.scriptingCodeEdits.values():
             self.sourceTabs.removeTab( self.sourceTabs.indexOf(scriptingTab) )
         self.scriptingCodeEdits = dict()
         for name, text in [(self.scriptingSourceFile,self.scriptingSource)]:
-            textEdit = PulseProgramSourceEdit()
+            textEdit = ScriptingSourceEdit(scriptingFunctions=dict())
             textEdit.setupUi(textEdit)
             textEdit.setPlainText(text)
-            lexer = ScriptingLexer() #Use a different lexer from that used for pulse program files
-            lexer.setDefaultFont(font)
-            lexer.setColor( QColor('red'), lexer.SingleQuotedString )
-            lexer.setFont( boldfont, lexer.Keyword)
-            lexer.setFont( boldfont, lexer.HighlightedIdentifier )
-            lexer.setColor( QColor('blue'), lexer.HighlightedIdentifier )
-            textEdit.textEdit.setLexer(lexer)
-
             self.scriptingCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
                 
