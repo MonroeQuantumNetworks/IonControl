@@ -13,10 +13,12 @@ import logging
 from gui import ProjectSelection
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 from modules.PyqtUtility import BlockSignals
+from Script import Script, checkScripting
 import copy
+import inspect
 
 from PyQt4.Qsci import QsciLexerPython
-from PyQt4.QtGui import QFont, QColor
+from PyQt4.QtGui import QColor
 
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
@@ -91,6 +93,13 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.channelNameData = channelNameData
         self.scriptingException = None
         self.globaldict = parameterdict
+        
+        self.script = Script() #encapsulates the script
+        self.scriptingFunctions = dict()
+        scriptingFunctionNames = [a[0] for a in inspect.getmembers(self.script, checkScripting)] #Get the names of the scripting functions
+        for name in scriptingFunctionNames:
+            #scriptingFunctions is a dictionary of the form name:docstring, for each scripting function
+            self.scriptingFunctions[name] = getattr(self.script, name).__doc__
    
     def setupUi(self,parent):
         super(ScriptingUi,self).setupUi(parent)
@@ -206,7 +215,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.sourceTabs.removeTab( self.sourceTabs.indexOf(scriptingTab) )
         self.scriptingCodeEdits = dict()
         for name, text in [(self.scriptingSourceFile,self.scriptingSource)]:
-            textEdit = ScriptingSourceEdit(scriptingFunctions=dict())
+            textEdit = ScriptingSourceEdit(scriptingFunctions=self.scriptingFunctions)
             textEdit.setupUi(textEdit)
             textEdit.setPlainText(text)
             self.scriptingCodeEdits[name] = textEdit
