@@ -28,7 +28,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
    
     def setupUi(self,parent):
         super(ScriptingUi,self).setupUi(parent)
-        logger = logging.getLogger(__name__)
+        #logger = logging.getLogger(__name__)
         self.configname = 'Scripting'
         self.recentFiles = self.config.get( self.configname+'.recentFiles' , dict() )
         self.script = self.config.get( self.configname+'.script' , Script() )

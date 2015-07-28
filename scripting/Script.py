@@ -48,6 +48,13 @@ class Script:
         """set the analysis interface to "name." This is equivalent to selecting "name" from the analysis dropdown."""
         pass
     
+    @scriptingFunction
+    def setAll(self, scanName, evaluationName, analysisName):
+        """convenience function, equivalent to sequential evaluation of setScan, setEvaluation, and setAnalysis."""
+        self.setScan(scanName)
+        self.setEvaluation(evaluationName)
+        self.setAnalysis(analysisName)
+    
 import inspect
 scriptingFunctionNames = [a[0] for a in inspect.getmembers(Script, checkScripting)] #Get the names of the scripting functions
 scriptingFunctionDocs = [getattr(Script, name).__doc__ for name in scriptingFunctionNames] #docstrings of the scripting functions
