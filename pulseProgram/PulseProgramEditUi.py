@@ -5,7 +5,7 @@
 # Created: Fri Feb 20 20:17:34 2015
 #      by: PyQt4 UI code generator 4.11.3
 #
-# WARNING! All changes made in this file will be lost!
+# WARNING! All changes made in this file will be lost if the file is regenerated!
 
 from PyQt4 import QtCore, QtGui
 from QPPPEditor import QPPPEditor
@@ -25,12 +25,12 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 class Ui_Form(object):
-    def setupUi(self, Form):
+    def setupUi(self, Form, extraKeywords1=[], extraKeywords2=[]):
         Form.setObjectName(_fromUtf8("Form"))
         Form.resize(605, 423)
         self.verticalLayout = QtGui.QVBoxLayout(Form)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.textEdit = QPPPEditor(Form)
+        self.textEdit = QPPPEditor(Form, extraKeywords1=extraKeywords1, extraKeywords2=extraKeywords2)
         self.textEdit.setToolTip(_fromUtf8(""))
         self.textEdit.setWhatsThis(_fromUtf8(""))
         self.textEdit.setObjectName(_fromUtf8("textEdit"))

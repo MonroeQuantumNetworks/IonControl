@@ -9,21 +9,25 @@ from PyQt4.QtGui import QFont, QFontMetrics, QColor
 
 
 class MyPythonLexer(QsciLexerPython):
+    def __init__(self, parent=None, extraKeywords1=[], extraKeywords2=[]):
+        """Initialize lexer with extra keywords set."""
+        super(MyPythonLexer,self).__init__(parent)
+        self.extraKeywords1 = extraKeywords1 #keywords to join to keyset 1
+        self.extraKeywords2 = extraKeywords2 #keywords for keyset 2
+        
     def keywords(self, keyset):
+        """return standard keywords and extra keywords."""
         if keyset == 1:
-            return 'counter var shutter parameter masked_shutter trigger address exitcode const ' + QsciLexerPython.keywords(self, keyset)
+            return ' '.join(self.extraKeywords1) + ' ' + QsciLexerPython.keywords(self, keyset)
         elif keyset == 2:
-            return ("set_shutter set_inv_shutter set_counter clear_counter update load_count "
-                    "set_trigger set_dds read_pipe write_pipe exit pipe_empty apply_next_scan_point "
-                    "set_ram_address read_ram wait_dds wait_trigger write_result serial_write set_parameter set_dac"
-                    )
+            return ' '.join(self.extraKeywords2)
         return QsciLexerPython.keywords(self, keyset)
 
 
 class QPPPEditor(QsciScintilla):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, extraKeywords1=[], extraKeywords2=[]):
         super(QPPPEditor, self).__init__(parent)
 
         # Set the default font
@@ -63,7 +67,7 @@ class QPPPEditor(QsciScintilla):
         # Set style for Python comments (style number 1) to a fixed-width
         # courier.
         #
-        lexer = MyPythonLexer()
+        lexer = MyPythonLexer(extraKeywords1=extraKeywords1, extraKeywords2=extraKeywords2)
         lexer.setDefaultFont(self.myfont)
         lexer.setColor( QColor('red'), lexer.SingleQuotedString )
         lexer.setFont( self.myboldfont, lexer.Keyword)

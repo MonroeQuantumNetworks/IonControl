@@ -22,6 +22,7 @@ from uiModules.RotatedHeaderView import RotatedHeaderView
 from modules.enum import enum
 from pppCompiler.pppCompiler import pppCompiler
 from pppCompiler.CompileException import CompileException
+from pppCompiler.Symbol import SymbolTable
 from modules.PyqtUtility import BlockSignals
 from pyparsing import ParseException
 import copy
@@ -33,7 +34,7 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 from modules import DataDirectory
-from PulseProgram import Variable
+from PulseProgram import Variable, OPS
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -132,6 +133,12 @@ class ConfiguredParams:
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
     contextDictChanged = QtCore.pyqtSignal(object)
+    definitionWords = ['counter', 'var', 'shutter', 'parameter', 'masked_shutter', 'trigger', 'address', 'exitcode', 'const']
+    builtinWords = []
+    for key, val in SymbolTable().iteritems(): #Extract the builtin words which should be highlighted
+        if type(val).__name__ == 'Builtin':
+            builtinWords.append(key)
+
     SourceMode = enum('pp','ppp') 
     def __init__(self, config, parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
@@ -320,7 +327,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.currentContext.pulseProgramMode == 'ppp':
             for name, text in [(self.pppSourceFile,self.pppSource)]:
                 textEdit = PulseProgramSourceEdit(mode='ppp')
-                textEdit.setupUi(textEdit)
+                textEdit.setupUi(textEdit, extraKeywords1=self.definitionWords, extraKeywords2=self.builtinWords)
                 textEdit.setPlainText(text)
                 self.pppCodeEdits[name] = textEdit
                 self.sourceTabs.addTab( textEdit, name )
@@ -331,7 +338,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
             textEdit = PulseProgramSourceEdit()
-            textEdit.setupUi(textEdit)
+            textEdit.setupUi(textEdit, extraKeywords1=self.definitionWords, extraKeywords2=[key for key in OPS])
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )

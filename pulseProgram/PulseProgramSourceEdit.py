@@ -31,8 +31,8 @@ class PulseProgramSourceEdit(Form, Base):
         self.cursorStack = list()
         self.mode = mode
         
-    def setupUi(self,parent):
-        Form.setupUi(self,parent)
+    def setupUi(self,parent,extraKeywords1=[], extraKeywords2=[]):
+        Form.setupUi(self,parent,extraKeywords1=extraKeywords1,extraKeywords2=extraKeywords2)
         self.findLineEdit.textChanged.connect( self.onFindTextChanged )
         self.findCloseButton.clicked.connect( self.onFindClose )
         self.findMatchCaseCheckBox.stateChanged.connect( partial( self.onFindFlagsChanged, 'findCaseSensitive') )
