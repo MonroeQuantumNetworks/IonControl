@@ -54,6 +54,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
     def onStart(self):
         self.onSave()
+        for name in scriptingFunctionNames:
+            locals()[name] = getattr(self.script, name)
         execfile(self.script.fullname)
     
     def onStop(self):
