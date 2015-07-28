@@ -152,7 +152,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
         # initialize ScriptingUi
-        self.scriptingWindow = ScriptingUi(self.config, self.pulser, self.globalVariablesUi.variables )
+        self.scriptingWindow = ScriptingUi(self.config)
         self.scriptingWindow.setupUi(self.scriptingWindow)
 
         self.measurementLog = MeasurementLogUi(self.config, self.dbConnection)

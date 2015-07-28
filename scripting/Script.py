@@ -15,9 +15,9 @@ def checkScripting(func):
 
 class Script:
     """Encapsulates a script together with all the scripting functions."""
-    def __init__(self, name='', code=''):
-        self.name = name
-        self.code = code
+    def __init__(self, fullname='', code=''):
+        self.fullname = fullname #Full name, with path
+        self.code = code #The code in the script
         
     @scriptingFunction
     def startScan(self):
@@ -45,3 +45,8 @@ class Script:
     def setAnalysis(self, name):
         """set the analysis interface to "name." This is equivalent to selecting "name" from the analysis dropdown."""
         pass
+    
+import inspect
+scriptingFunctionNames = [a[0] for a in inspect.getmembers(Script, checkScripting)] #Get the names of the scripting functions
+scriptingFunctionDocs = [getattr(Script, name).__doc__ for name in scriptingFunctionNames] #docstrings of the scripting functions
+scriptingFunctions = zip(scriptingFunctionNames, scriptingFunctionDocs) #dict of the form name:docstring, for each scripting function

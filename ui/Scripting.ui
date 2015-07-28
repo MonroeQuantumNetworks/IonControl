@@ -16,62 +16,6 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QToolButton" name="deleteContextButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/edit-clear-locationbar-ltr.png</normaloff>:/openicon/icons/edit-clear-locationbar-ltr.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="contextComboBox">
-        <property name="editable">
-         <bool>true</bool>
-        </property>
-        <property name="maxVisibleItems">
-         <number>2147483647</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="saveContextButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="reloadContextButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/document-revert-5.png</normaloff>:/openicon/icons/document-revert-5.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <widget class="QToolButton" name="repeatButton">
