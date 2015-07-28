@@ -54,7 +54,7 @@ class ScriptingSourceEdit(PulseProgramSourceEdit):
         self.textEdit.setLexer(lexer)
 
 class ScriptingContext:
-    def __init__(self, globaldict):
+    def __init__(self):
         self.scriptingFile = None
         
     def __setstate__(self, state):
@@ -106,7 +106,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         logger = logging.getLogger(__name__)
         self.configname = 'Scripting'
         self.contextDict = self.config.get( self.configname+'.contextdict', dict() )
-        self.currentContext = self.config.get( self.configname+'.currentContext' , ScriptingContext(self.globaldict) )
+        self.currentContext = self.config.get( self.configname+'.currentContext' , ScriptingContext() )
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
         self.currentContextName = self.configParams.lastContextName
         
