@@ -22,37 +22,6 @@ from PyQt4.QtGui import QColor
 
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
-class ScriptingLexer(QsciLexerPython):
-    """Lexer used for scripts. Standard Python lexer, with additional keywords associated with scripting."""
-    def __init__(self, parent=None, scriptingFunctions=dict()):
-        """Initialize lexer with scriptingFunctions set."""
-        super(ScriptingLexer,self).__init__(parent)
-        self.scriptingFunctions = scriptingFunctions #ScriptingFunctions is a dictionary. The key is the function name, the value is the docstring
-         
-    def keywords(self, keyset):
-        """Set scriptingFunctions to be keyset 2, so they will have unique highlighting."""
-        if keyset == 2:
-            return ' '.join([func for func in self.scriptingFunctions]) #This is a space separated list of all the scripting functions
-        return QsciLexerPython.keywords(self, keyset)
-
-class ScriptingSourceEdit(PulseProgramSourceEdit):
-    """Editor used for scripts. Same as inherits PulseProgramSourceEdit, with different lexer."""
-    def __init__(self, parent=None, scriptingFunctions=dict()):
-        """Initialize editor with scripting functions set"""
-        super(ScriptingSourceEdit,self).__init__(parent)
-        self.scriptingFunctions = scriptingFunctions
-        
-    def setupUi(self, parent=None):
-        """setup editor with custom scripting lexer"""
-        super(ScriptingSourceEdit,self).setupUi(parent)
-        lexer = ScriptingLexer(scriptingFunctions=self.scriptingFunctions) #Use a different lexer from that used for pulse program files
-        lexer.setDefaultFont(self.textEdit.myfont)
-        lexer.setColor( QColor('red'), lexer.SingleQuotedString )
-        lexer.setFont( self.textEdit.myboldfont, lexer.Keyword)
-        lexer.setFont( self.textEdit.myboldfont, lexer.HighlightedIdentifier )
-        lexer.setColor( QColor('blue'), lexer.HighlightedIdentifier )
-        self.textEdit.setLexer(lexer)
-
 class ScriptingContext:
     def __init__(self):
         self.scriptingFile = None
@@ -96,8 +65,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
         self.script = Script() #encapsulates the script
         self.scriptingFunctions = dict()
-        scriptingFunctionNames = [a[0] for a in inspect.getmembers(self.script, checkScripting)] #Get the names of the scripting functions
-        for name in scriptingFunctionNames:
+        self.scriptingFunctionNames = [a[0] for a in inspect.getmembers(self.script, checkScripting)] #Get the names of the scripting functions
+        for name in self.scriptingFunctionNames:
             #scriptingFunctions is a dictionary of the form name:docstring, for each scripting function
             self.scriptingFunctions[name] = getattr(self.script, name).__doc__
    
@@ -215,8 +184,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.sourceTabs.removeTab( self.sourceTabs.indexOf(scriptingTab) )
         self.scriptingCodeEdits = dict()
         for name, text in [(self.scriptingSourceFile,self.scriptingSource)]:
-            textEdit = ScriptingSourceEdit(scriptingFunctions=self.scriptingFunctions)
-            textEdit.setupUi(textEdit)
+            textEdit = PulseProgramSourceEdit()
+            textEdit.setupUi(textEdit,extraKeywords1=[], extraKeywords2=self.scriptingFunctionNames)
             textEdit.setPlainText(text)
             self.scriptingCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
