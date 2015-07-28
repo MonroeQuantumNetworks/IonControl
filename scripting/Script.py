@@ -3,6 +3,7 @@ Created on Jul 27, 2015
 
 @author: jmizrahi
 '''
+import os
 
 def scriptingFunction(func):
     """Mark a function as a scripting function"""
@@ -17,6 +18,7 @@ class Script:
     """Encapsulates a script together with all the scripting functions."""
     def __init__(self, fullname='', code=''):
         self.fullname = fullname #Full name, with path
+        self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
         
     @scriptingFunction

@@ -11,7 +11,6 @@ import PyQt4.uic
 import logging
 
 from gui import ProjectSelection
-from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 from modules.PyqtUtility import BlockSignals
 from Script import Script, scriptingFunctionNames
 
@@ -22,8 +21,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def __init__(self, config):
         ScriptingWidget.__init__(self)
         ScriptingBase.__init__(self)
-        self.scriptingCodeEdits = dict()
         self.config = config
+        self.textEdit = None
         self.recentFiles = dict() #dict of form {shortname: fullname}, where fullname has path and shortname doesn't 
         self.script = Script() #encapsulates the script
    
@@ -33,6 +32,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.configname = 'Scripting'
         self.recentFiles = self.config.get( self.configname+'.recentFiles' , dict() )
         self.script = self.config.get( self.configname+'.script' , Script() )
+        self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptingFunctionNames)
+        self.textEdit.setPlainText(self.script.code)
         #Add only the filename (without the full path) to the combo box
         self.filenameComboBox.addItems( [shortname for shortname, fullname in self.recentFiles.iteritems() if os.path.exists(fullname)] )
 
@@ -53,7 +54,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
     def onStart(self):
         self.onSave()
-        exec(self.scriptingSource)
+        execfile(self.script.fullname)
     
     def onStop(self):
         pass
@@ -61,17 +62,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def onStopImmediately(self):
         pass
     
-    def updateScriptingDisplay(self):
-        for scriptingTab in self.scriptingCodeEdits.values():
-            self.sourceTabs.removeTab( self.sourceTabs.indexOf(scriptingTab) )
-        self.scriptingCodeEdits = dict()
-        textEdit = PulseProgramSourceEdit()
-        textEdit.setupUi(textEdit,extraKeywords1=[], extraKeywords2=scriptingFunctionNames)
-        textEdit.setPlainText(self.script.code)
-        shortname = os.path.basename(self.script.fullname)
-        self.scriptingCodeEdits[shortname] = textEdit
-        self.sourceTabs.addTab( textEdit, shortname)
-               
     def onFilenameChange(self, shortname ):
         shortname = str(shortname)
         if shortname in self.recentFiles:
@@ -91,15 +81,15 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         logger = logging.getLogger(__name__)
         if fullname:
             self.script.fullname = fullname
-            shortname = os.path.basename(fullname) 
+            self.script.shortname = os.path.basename(fullname) 
             with open(fullname,"r") as f:
                 self.script.code = f.read()
-            self.updateScriptingDisplay()
-            if shortname not in self.recentFiles:
-                self.filenameComboBox.addItem(shortname)
-            self.recentFiles[shortname] = fullname
+            self.textEdit.setPlainText(self.script.code)
+            if self.script.shortname not in self.recentFiles:
+                self.filenameComboBox.addItem(self.script.shortname)
+            self.recentFiles[self.script.shortname] = fullname
             with BlockSignals(self.filenameComboBox) as w:
-                w.setCurrentIndex( self.filenameComboBox.findText(shortname))
+                w.setCurrentIndex( self.filenameComboBox.findText(self.script.shortname))
             logger.info('{0} loaded'.format(self.script.fullname))
             
     def onReset(self):
@@ -114,12 +104,11 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
 
     def onSave(self):
         logger = logging.getLogger(__name__)
-        for _, textEdit in self.scriptingCodeEdits.iteritems():
-            self.script.code = str(textEdit.toPlainText())
+        self.script.code = str(self.textEdit.toPlainText())
 
         if self.script.code and self.script.fullname:
             with open(self.script.fullname, 'w') as f:
-                f.write( self.script.code)
+                f.write(self.script.code)
                 logger.info('{0} saved'.format(self.script.fullname))
     
     def saveConfig(self):

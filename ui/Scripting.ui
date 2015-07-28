@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>774</width>
-    <height>517</height>
+    <height>522</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -119,18 +119,12 @@
      </layout>
     </item>
     <item>
-     <widget class="QTabWidget" name="sourceTabs">
+     <widget class="PulseProgramSourceEdit" name="textEdit" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>50</height>
-       </size>
       </property>
      </widget>
     </item>
@@ -243,6 +237,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PulseProgramSourceEdit</class>
+   <extends>QWidget</extends>
+   <header>pulseProgram.PulseProgramSourceEdit</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>
