@@ -6,32 +6,38 @@ Created on Jul 24, 2015
 
 import os.path
 
-from PyQt4 import QtCore, QtGui
+#from PyQt4 import QtCore, QtGui
+from PyQt4.QtGui import QFileDialog, QDialog
+from PyQt4.QtCore import pyqtSlot
 import PyQt4.uic
 import logging
 
 from gui import ProjectSelection
 from modules.PyqtUtility import BlockSignals
-from Script import Script, scriptingFunctionNames
+from Script import Script, ScriptException, scriptingFunctionNames
 
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
 class ScriptingUi(ScriptingWidget,ScriptingBase):
-    ScriptingContextDictChanged = QtCore.pyqtSignal(object)
-    def __init__(self, config):
+    def __init__(self, config, globalVariablesUi):
         ScriptingWidget.__init__(self)
         ScriptingBase.__init__(self)
         self.config = config
         self.textEdit = None
-        self.recentFiles = dict() #dict of form {shortname: fullname}, where fullname has path and shortname doesn't 
-        self.script = Script() #encapsulates the script
+        self.recentFiles = dict() #dict of form {shortname: fullname}, where fullname has path and shortname doesn't
+        self.globalVariablesUi = globalVariablesUi 
+        self.script = Script(self.globalVariablesUi) #encapsulates the script
    
     def setupUi(self,parent):
         super(ScriptingUi,self).setupUi(parent)
         #logger = logging.getLogger(__name__)
         self.configname = 'Scripting'
         self.recentFiles = self.config.get( self.configname+'.recentFiles' , dict() )
-        self.script = self.config.get( self.configname+'.script' , Script() )
+        self.script = Script(self.globalVariablesUi)
+        self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
+        self.script.shortname = os.path.basename(self.script.fullname)
+        self.script.code = self.config.get( self.configname+'.script.code' , '' )
+        self.script.scriptLocationSignal.connect( self.onLocation )
         self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptingFunctionNames)
         self.textEdit.setPlainText(self.script.code)
         #Add only the filename (without the full path) to the combo box
@@ -51,12 +57,21 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
         self.loadFile(self.script.fullname)
+
+    @pyqtSlot(int)        
+    def onLocation(self, scriptLoc):
+        #highlight line that we're on
         
     def onStart(self):
+        logger = logging.getLogger(__name__)
         self.onSave()
         for name in scriptingFunctionNames:
             locals()[name] = getattr(self.script, name)
-        execfile(self.script.fullname)
+        try:
+            execfile(self.script.fullname)
+        except ScriptException as e:
+            logger.error("script failed: {0}".format(e))
+            #show on script console
     
     def onStop(self):
         pass
@@ -75,7 +90,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                         w.setCurrentIndex( self.filenameComboBox.findText( shortname ))
     
     def onLoad(self):
-        fullname = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Scripting file',ProjectSelection.configDir()+'\\Scripts','Python scripts (*.py *.pyw)'))
+        fullname = str(QFileDialog.getOpenFileName(self, 'Open Scripting file',ProjectSelection.configDir()+'\\Scripts','Python scripts (*.py *.pyw)'))
         if fullname!="":
             self.loadFile(fullname)
            
@@ -115,7 +130,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     
     def saveConfig(self):
         self.config[self.configname+'.recentFiles'] = self.recentFiles
-        self.config[self.configname+'.script'] = self.script
+        self.config[self.configname+'.script.fullname'] = self.script.fullname
+        self.config[self.configname+'.script.code'] = self.script.code
        
     def show(self):
         pos = self.config.get(self.configname+'.ScriptingUi.pos')
@@ -124,7 +140,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.move(pos)
         if size:
             self.resize(size)
-        QtGui.QDialog.show(self)
+        QDialog.show(self)
         self.isShown = True
 
     def onClose(self):
