@@ -6,7 +6,7 @@ Created on Jul 27, 2015
 import os
 import logging
 import modules.magnitude as magnitude
-from PyQt4.QtCore import pyqtSignal, QThread, pyqtSlot, QEventLoop
+from PyQt4 import QtCore
 import inspect
 import traceback
 import time
@@ -26,16 +26,18 @@ def checkScripting(func):
     """Check whether a function has been marked"""
     return hasattr(func, 'isScriptFunction')
 
-class Script(QThread):
+class Script(QtCore.QThread):
     """Encapsulates a running script together with all the scripting functions. Script executes in separate thread."""
-    locationSignal = pyqtSignal(int)
-    consoleSignal = pyqtSignal(str, bool)
-    completed = pyqtSignal()
+    locationSignal = QtCore.pyqtSignal(int)
+    consoleSignal = QtCore.pyqtSignal(str, bool)
+    completed = QtCore.pyqtSignal()
+    paused = QtCore.pyqtSignal()
     def __init__(self, globalVariablesUi, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
         self.fullname = fullname #Full name, with path
         self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
+        self.pauseLoop = QtCore.QEventLoop()
         self.scriptFunctions = []
         self.globalVariablesUi = globalVariablesUi
 
@@ -69,6 +71,14 @@ class Script(QThread):
     def startScan(self):
         """Start the scan. This is equivalent to clicking the "start" button on the GUI."""
         pass
+    
+    @scriptFunction
+    def pauseScript(self):
+        """pause the script"""
+        print 'here'
+        self.paused.emit()
+        self.pauseLoop.exec_()
+        print 'and here'
     
     @scriptFunction
     def setGlobal(self, name, value, unit):
@@ -114,10 +124,6 @@ class Script(QThread):
     def setAnalysis(self, name):
         """set the analysis interface to "name." This is equivalent to selecting "name" from the analysis dropdown."""
         pass
-    
-    @scriptFunction
-    def pause(self):
-        """Pause the script."""
     
 scriptFunctions = [a[0] for a in inspect.getmembers(Script, checkScripting)] #Get the names of the scripting functions
 scriptFunctionDocs = dict(zip(scriptFunctions,[getattr(Script, name).__doc__ for name in scriptFunctions])) #docstrings of the scripting functions

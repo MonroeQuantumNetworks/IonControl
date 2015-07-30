@@ -22,6 +22,10 @@ from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
 class ScriptingUi(ScriptingWidget,ScriptingBase):
+    pauseSignal = QtCore.pyqtSignal()
+    unPauseSignal = QtCore.pyqtSignal()
+    stopSignal = QtCore.pyqtSignal()
+    stopImmediatelySignal = QtCore.pyqtSignal()
     def __init__(self, config, globalVariablesUi):
         ScriptingWidget.__init__(self)
         ScriptingBase.__init__(self)
@@ -41,7 +45,11 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.script = Script(self.globalVariablesUi)
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
         self.script.shortname = os.path.basename(self.script.fullname)
-        self.script.code = self.config.get( self.configname+'.script.code' , '' )
+        if self.script.fullname != '' and os.path.exists(self.script.fullname):
+            with open(self.script.fullname,"r") as f:
+                self.script.code = f.read()
+        else:
+            self.script.code = '' 
         self.script.scriptFunctions = scriptFunctions
         self.script.locationSignal.connect( self.onLocation )
         self.script.completed.connect( self.onCompleted )
@@ -65,7 +73,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionReset.triggered.connect(self.onReset)
         self.actionStart.triggered.connect( self.onStart )
         self.actionNew.triggered.connect( self.onNew )
+        
         self.actionPause.triggered.connect( self.onPause )
+        self.pauseSignal.connect(self.script.pauseScript)
+        self.unPauseSignal.connect(self.script.pauseLoop.quit)
+        self.script.paused.connect(self.scriptPaused )
+        
         self.actionStop.triggered.connect( self.onStop )
         self.actionStopImmediately.triggered.connect(self.onStopImmediately )
                 
@@ -88,12 +101,11 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
     @QtCore.pyqtSlot()
     def onStart(self):
-        logger = logging.getLogger(__name__)
-        self.statusLabel.setText("Script running")
-        self.onSave()
-        self.enableScriptChange(False)
-        runningScript = self.script.fullname #@UnusedVariable
-        self.script.start()
+        if not self.script.isRunning():
+            self.statusLabel.setText("Script running")
+            self.onSave()
+            self.enableScriptChange(False)
+            self.script.start()
         
     def enableScriptChange(self, enabled):
         """Enable or disable any changes to script"""
@@ -113,7 +125,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def onCompleted(self):
         self.statusLabel.setText("Idle")
         self.textEdit.textEdit.markerDeleteAll()
-        runningScript = '' #@UnusedVariable
         self.enableScriptChange(True)
         
     @QtCore.pyqtSlot(str, bool)
@@ -122,17 +133,23 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         textColor = "black" if noError else "red"
         self.console.insertHtml(QtCore.QString('<font color='+textColor+'>'+message+'</font><br>'))
 
-    @QtCore.pyqtSlot()
-    def onPause(self):
-        pass
+    @QtCore.pyqtSlot(bool)
+    def onPause(self, checked):
+        if checked:
+            self.pauseSignal.emit()
+        else:
+            self.unPauseSignal.emit()
+
+    def scriptPaused(self):
+        self.actionPause.setChecked(True)
     
     @QtCore.pyqtSlot()
     def onStop(self):
-        pass
+        self.stopSignal.emit()
     
     @QtCore.pyqtSlot()
     def onStopImmediately(self):
-        pass
+        self.stopImmediatelySignal.emit()
     
     @QtCore.pyqtSlot()
     def onNew(self):
@@ -209,7 +226,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def saveConfig(self):
         self.config[self.configname+'.recentFiles'] = self.recentFiles
         self.config[self.configname+'.script.fullname'] = self.script.fullname
-        self.config[self.configname+'.script.code'] = self.script.code
        
     def show(self):
         pos = self.config.get(self.configname+'.ScriptingUi.pos')
