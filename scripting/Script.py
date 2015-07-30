@@ -100,7 +100,6 @@ class Script(QThread):
             self.consoleSignal.emit(message, True)
         self.setGlobal(name, value, unit)
 
-
     @scriptFunction
     def setScan(self, name):
         """set the scan interface to "name." This is equivalent to selecting "name" from the scan dropdown menu."""

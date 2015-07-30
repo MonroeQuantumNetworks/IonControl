@@ -12,6 +12,7 @@ from PyQt4 import QtCore
 import PyQt4.uic
 import logging
 from PyQt4.Qsci import QsciScintilla
+from datetime import datetime
 
 from gui import ProjectSelection
 from modules.PyqtUtility import BlockSignals
@@ -30,6 +31,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.recentFiles = dict() #dict of form {shortname: fullname}, where fullname has path and shortname doesn't
         self.globalVariablesUi = globalVariablesUi 
         self.script = Script(self.globalVariablesUi) #encapsulates the script
+        self.defaultDir = ProjectSelection.configDir()+'\\Scripts'
    
     def setupUi(self,parent):
         super(ScriptingUi,self).setupUi(parent)
@@ -62,6 +64,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionSave.triggered.connect( self.onSave )
         self.actionReset.triggered.connect(self.onReset)
         self.actionStart.triggered.connect( self.onStart )
+        self.actionNew.triggered.connect( self.onNew )
         self.actionPause.triggered.connect( self.onPause )
         self.actionStop.triggered.connect( self.onStop )
         self.actionStopImmediately.triggered.connect(self.onStopImmediately )
@@ -91,7 +94,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.enableScriptChange(False)
         runningScript = self.script.fullname #@UnusedVariable
         self.script.start()
-    
+        
     def enableScriptChange(self, enabled):
         """Enable or disable any changes to script"""
         color = QtGui.QColor("#ffe4e4") if enabled else QtGui.QColor(0xd0, 0xff, 0xd0)
@@ -123,11 +126,36 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def onPause(self):
         pass
     
+    @QtCore.pyqtSlot()
     def onStop(self):
         pass
     
+    @QtCore.pyqtSlot()
     def onStopImmediately(self):
         pass
+    
+    @QtCore.pyqtSlot()
+    def onNew(self):
+        logger = logging.getLogger(__name__)
+        shortname, ok = QtGui.QInputDialog.getText(self, 'New script name', 'Please enter a new script name: ')
+        if ok:
+            shortname = str(shortname)
+            shortname = shortname.replace(' ', '_') #Replace spaces with underscores
+            shortname = shortname.split('.')[0] + '.py' #Take only what's before the '.', and add the .py extension
+            fullname = self.defaultDir + '\\' + shortname
+            if not os.path.exists(fullname):
+                try:
+                    with open(fullname, 'w') as f:
+                        newFileText = '#' + shortname + ' created ' + str(datetime.now()) + '\n'
+                        f.write(newFileText)
+                except Exception as e:
+                    message = "Unable to create new file {0}: {1}".format(shortname, e)
+                    logger.error(message)
+                    self.onConsoleSignal(message, False)
+                    return
+            self.loadFile(fullname)
+             
+
     
     def onFilenameChange(self, shortname ):
         shortname = str(shortname)
@@ -140,7 +168,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                         w.setCurrentIndex( self.filenameComboBox.findText( shortname ))
     
     def onLoad(self):
-        fullname = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Scripting file',ProjectSelection.configDir()+'\\Scripts','Python scripts (*.py *.pyw)'))
+        fullname = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Scripting file',self.defaultDir,'Python scripts (*.py *.pyw)'))
         if fullname!="":
             self.loadFile(fullname)
            
