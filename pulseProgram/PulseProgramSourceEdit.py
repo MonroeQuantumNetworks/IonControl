@@ -22,7 +22,7 @@ class PulseProgramSourceEdit(Form, Base):
         self.selections = list()
         self.findWordOnly = False
         self.findCaseSensitive = False
-        self.findText = None
+        self.findText = ''
         self.errorFormat = QtGui.QTextCharFormat()
         self.errorFormat.setBackground(QtCore.Qt.red)
         self.defaultFormat = QtGui.QTextCharFormat()
