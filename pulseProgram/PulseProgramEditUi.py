@@ -114,9 +114,13 @@ class Ui_Form(object):
         self.verticalLayout.addWidget(self.findWidgetFrame)
         self.actionFind = QtGui.QAction(Form)
         self.actionFind.setObjectName(_fromUtf8("actionFind"))
+        self.actionFindNext = QtGui.QAction(Form)
+        self.actionFindNext.setObjectName(_fromUtf8("actionFindNext"))
+
 
         self.retranslateUi(Form)
         QtCore.QObject.connect(self.actionFind, QtCore.SIGNAL(_fromUtf8("triggered()")), self.findWidgetFrame.show)
+        QtCore.QObject.connect(self.actionFindNext, QtCore.SIGNAL(_fromUtf8("triggered()")), self.findNextButton.click)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
@@ -131,5 +135,8 @@ class Ui_Form(object):
         self.findWholeWordsCheckBox.setText(_translate("Form", "Whole words", None))
         self.actionFind.setText(_translate("Form", "find", None))
         self.actionFind.setShortcut(_translate("Form", "Ctrl+F", None))
+        self.actionFindNext.setText(_translate("Form", "findNext", None))
+        self.actionFindNext.setShortcut(_translate("Form", "Ctrl+G", None))
+
 
 import Experiment_rc #@UnusedImport

@@ -42,6 +42,8 @@ class PulseProgramSourceEdit(Form, Base):
         self.errorDisplay.hide()
         self.findWidgetFrame.hide()
         self.closeErrorButton.clicked.connect( self.clearHighlightError )
+        self.addAction(self.actionFind)
+        self.addAction(self.actionFindNext)
         
     def setReadOnly(self, enabled):
         self.textEdit.setReadOnly(enabled)
