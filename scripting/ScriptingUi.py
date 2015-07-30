@@ -22,7 +22,6 @@ from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
 class ScriptingUi(ScriptingWidget,ScriptingBase):
-    pauseSignal = QtCore.pyqtSignal()
     unPauseSignal = QtCore.pyqtSignal()
     stopSignal = QtCore.pyqtSignal()
     stopImmediatelySignal = QtCore.pyqtSignal()
@@ -75,9 +74,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionNew.triggered.connect( self.onNew )
         
         self.actionPause.triggered.connect( self.onPause )
-        self.pauseSignal.connect(self.script.pauseScript)
-        self.unPauseSignal.connect(self.script.pauseLoop.quit)
-        self.script.paused.connect(self.scriptPaused )
+        self.script.pausedSignal.connect(self.pausedFromScript, QtCore.Qt.QueuedConnection)
+        self.unPauseSignal.connect(self.script.quit, QtCore.Qt.QueuedConnection)
         
         self.actionStop.triggered.connect( self.onStop )
         self.actionStopImmediately.triggered.connect(self.onStopImmediately )
@@ -134,14 +132,14 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.console.insertHtml(QtCore.QString('<font color='+textColor+'>'+message+'</font><br>'))
 
     @QtCore.pyqtSlot(bool)
-    def onPause(self, checked):
-        if checked:
-            self.pauseSignal.emit()
-        else:
+    def onPause(self, paused):
+        self.script.paused = paused
+        if not paused:
             self.unPauseSignal.emit()
-
-    def scriptPaused(self):
-        self.actionPause.setChecked(True)
+        
+    @QtCore.pyqtSlot()
+    def pausedFromScript(self):
+        self.actionPause.setChecked(self.script.paused)
     
     @QtCore.pyqtSlot()
     def onStop(self):

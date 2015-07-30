@@ -31,13 +31,13 @@ class Script(QtCore.QThread):
     locationSignal = QtCore.pyqtSignal(int)
     consoleSignal = QtCore.pyqtSignal(str, bool)
     completed = QtCore.pyqtSignal()
-    paused = QtCore.pyqtSignal()
+    pausedSignal = QtCore.pyqtSignal()
     def __init__(self, globalVariablesUi, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
         self.fullname = fullname #Full name, with path
         self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
-        self.pauseLoop = QtCore.QEventLoop()
+        self.paused = False
         self.scriptFunctions = []
         self.globalVariablesUi = globalVariablesUi
 
@@ -75,14 +75,15 @@ class Script(QtCore.QThread):
     @scriptFunction
     def pauseScript(self):
         """pause the script"""
-        print 'here'
-        self.paused.emit()
-        self.pauseLoop.exec_()
-        print 'and here'
-    
+        self.emitLocation()
+        self.pausedSignal.emit()
+        self.paused = True
+
     @scriptFunction
     def setGlobal(self, name, value, unit):
         """set the global "name" to "value" with the given unit. This is equivalent to typing in a value+unit in the globals GUI."""
+        if self.paused:
+            self.exec_()
         logger = logging.getLogger(__name__)
         self.emitLocation()
         longWait()
@@ -100,6 +101,8 @@ class Script(QtCore.QThread):
     @scriptFunction
     def addGlobal(self, name, value, unit):
         """add the global "name" to the list of globals, and set its value to "value" with the given unit."""
+        if self.paused:
+            self.exec_()
         logger = logging.getLogger(__name__)
         self.emitLocation()
         doesNotExist = name not in self.globalVariablesUi.keys()
