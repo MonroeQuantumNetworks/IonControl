@@ -7,7 +7,7 @@ Created on Jul 24, 2015
 import os.path
 
 #from PyQt4 import QtCore, QtGui
-from PyQt4.QtGui import QFileDialog, QDialog
+from PyQt4.QtGui import QFileDialog, QDialog, QIcon
 from PyQt4.QtCore import pyqtSlot
 import PyQt4.uic
 import logging
@@ -58,12 +58,15 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
         self.loadFile(self.script.fullname)
+        
+        self.setWindowTitle(self.configname)
+        self.setWindowIcon(QIcon(":/other/icons/Terminal-icon.png"))
+
 
     @pyqtSlot(int)        
     def onLocation(self, currentLine):
         """Mark where the script currently is"""
         #highlight line that we're on
-        print currentLine
         self.textEdit.textEdit.markerDeleteAll()
         self.textEdit.textEdit.markerAdd(currentLine-1, self.textEdit.textEdit.ARROW_MARKER_NUM)
         
