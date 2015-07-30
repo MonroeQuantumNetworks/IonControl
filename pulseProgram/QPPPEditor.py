@@ -69,7 +69,7 @@ class QPPPEditor(QsciScintilla):
         #
         lexer = MyPythonLexer(extraKeywords1=extraKeywords1, extraKeywords2=extraKeywords2)
         lexer.setDefaultFont(self.myfont)
-        lexer.setColor( QColor('red'), lexer.SingleQuotedString )
+        #lexer.setColor( QColor('red'), lexer.SingleQuotedString )
         lexer.setFont( self.myboldfont, lexer.Keyword)
         lexer.setFont( self.myboldfont, lexer.HighlightedIdentifier )
         lexer.setColor( QColor('blue'), lexer.HighlightedIdentifier )
