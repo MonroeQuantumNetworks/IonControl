@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>774</width>
-    <height>522</height>
+    <width>610</width>
+    <height>469</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,30 +17,6 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QToolButton" name="repeatButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/petersIcons/icons/Repeat-disabled-01.png</normaloff>
-          <normalon>:/petersIcons/icons/Repeat-enabled-01.png</normalon>:/petersIcons/icons/Repeat-disabled-01.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item>
        <widget class="QComboBox" name="filenameComboBox">
         <property name="sizePolicy">
@@ -74,57 +50,19 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QToolButton" name="loadButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="saveButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="resetButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset resource="Experiment.qrc">
-          <normaloff>:/openicon/icons/document-revert-5.png</normaloff>:/openicon/icons/document-revert-5.png</iconset>
-        </property>
-        <property name="autoRaise">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
-     <widget class="PulseProgramSourceEdit" name="textEdit" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+     <widget class="QLabel" name="statusLabel">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
       </property>
      </widget>
     </item>
@@ -135,10 +73,30 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>774</width>
+     <width>610</width>
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionReset"/>
+    <addaction name="actionNew"/>
+   </widget>
+   <widget class="QMenu" name="menuScript">
+    <property name="title">
+     <string>Script</string>
+    </property>
+    <addaction name="actionStart"/>
+    <addaction name="actionPause"/>
+    <addaction name="actionStop"/>
+    <addaction name="actionStopImmediately"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuScript"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -152,8 +110,13 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionStart"/>
+   <addaction name="actionPause"/>
    <addaction name="actionStop"/>
    <addaction name="actionStopImmediately"/>
+   <addaction name="separator"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionNew"/>
   </widget>
   <action name="actionStart">
    <property name="icon">
@@ -161,7 +124,7 @@
      <normaloff>:/kde/icons/media-playback-start-7.png</normaloff>:/kde/icons/media-playback-start-7.png</iconset>
    </property>
    <property name="text">
-    <string>start</string>
+    <string>Start script (ctrl+R)</string>
    </property>
    <property name="toolTip">
     <string>start</string>
@@ -176,7 +139,7 @@
      <normaloff>:/kde/icons/media-playback-stop-7.png</normaloff>:/kde/icons/media-playback-stop-7.png</iconset>
    </property>
    <property name="text">
-    <string>stop</string>
+    <string>Stop script (ctrl+X)</string>
    </property>
    <property name="toolTip">
     <string>stop</string>
@@ -191,7 +154,7 @@
      <normaloff>:/openicon/icons/road-sign-us-stop.png</normaloff>:/openicon/icons/road-sign-us-stop.png</iconset>
    </property>
    <property name="text">
-    <string>stopImmediately</string>
+    <string>Stop script immediately (Ctrl+Alt+X)</string>
    </property>
    <property name="toolTip">
     <string>Stop immediately</string>
@@ -206,7 +169,7 @@
      <normaloff>:/openicon/icons/document-open-5.png</normaloff>:/openicon/icons/document-open-5.png</iconset>
    </property>
    <property name="text">
-    <string>open</string>
+    <string>Open file (Ctrl+O)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -218,7 +181,7 @@
      <normaloff>:/kde/icons/filesave.png</normaloff>:/kde/icons/filesave.png</iconset>
    </property>
    <property name="text">
-    <string>save</string>
+    <string>Save file (Ctrl+S)</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -230,21 +193,40 @@
      <normaloff>:/openicon/icons/document-revert-5.png</normaloff>:/openicon/icons/document-revert-5.png</iconset>
    </property>
    <property name="text">
-    <string>reset</string>
+    <string>Reset editor to file (F5)</string>
    </property>
    <property name="shortcut">
     <string>F5</string>
    </property>
   </action>
+  <action name="actionNew">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/other/icons/document-new-icon.png</normaloff>:/other/icons/document-new-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>New file</string>
+   </property>
+   <property name="toolTip">
+    <string>create new file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionPause">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/media-playback-pause-7.png</normaloff>:/openicon/icons/media-playback-pause-7.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause script</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause the script</string>
+   </property>
+  </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>PulseProgramSourceEdit</class>
-   <extends>QWidget</extends>
-   <header>pulseProgram.PulseProgramSourceEdit</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>
