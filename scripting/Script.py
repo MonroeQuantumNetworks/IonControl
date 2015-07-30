@@ -24,7 +24,8 @@ def checkScripting(func):
 
 class Script(QThread):
     """Encapsulates a running script together with all the scripting functions. Script executes in separate thread."""
-    scriptLocationSignal = pyqtSignal(int)
+    locationSignal = pyqtSignal(int)
+    completed = pyqtSignal()
     def __init__(self, globalVariablesUi, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
         self.fullname = fullname #Full name, with path
@@ -39,7 +40,8 @@ class Script(QThread):
         for name in self.scriptingFunctionNames:
             locals()[name] = getattr(self, name)
         execfile(self.fullname) #run the script
-        self.quit() #quit the thread
+        self.completed.emit()
+        
         
     def emitLocation(self):
         """Emits a signal containing the current script location"""
@@ -53,7 +55,7 @@ class Script(QThread):
             logger.info("Executing {0} in {1} at line {2}".format( scriptLoc[3], os.path.basename(scriptLoc[0]), scriptLoc[1] ))
         else:
             logger.warning("Not executing script")
-        self.scriptLocationSignal.emit(scriptLoc[1]) #Emit a signal containing the script location 
+        self.locationSignal.emit(scriptLoc[1]) #Emit a signal containing the script location 
         
     @scriptingFunction
     def startScan(self):

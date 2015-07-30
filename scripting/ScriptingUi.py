@@ -7,10 +7,11 @@ Created on Jul 24, 2015
 import os.path
 
 #from PyQt4 import QtCore, QtGui
-from PyQt4.QtGui import QFileDialog, QDialog, QIcon
+from PyQt4.QtGui import QFileDialog, QDialog, QIcon, QColor
 from PyQt4.QtCore import pyqtSlot
 import PyQt4.uic
 import logging
+from PyQt4.Qsci import QsciScintilla
 
 from gui import ProjectSelection
 from modules.PyqtUtility import BlockSignals
@@ -38,8 +39,10 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.script.shortname = os.path.basename(self.script.fullname)
         self.script.code = self.config.get( self.configname+'.script.code' , '' )
         self.script.scriptingFunctionNames = scriptingFunctionNames
-        self.script.scriptLocationSignal.connect( self.onLocation )
+        self.script.locationSignal.connect( self.onLocation )
+        self.script.completed.connect( self.onCompleted )
         self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptingFunctionNames)
+        self.textEdit.textEdit.SendScintilla(QsciScintilla.SCI_SETCARETLINEVISIBLEALWAYS, True)
         self.textEdit.setPlainText(self.script.code)
         #Add only the filename (without the full path) to the combo box
         self.filenameComboBox.addItems( [shortname for shortname, fullname in self.recentFiles.iteritems() if os.path.exists(fullname)] )
@@ -69,9 +72,15 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         #highlight line that we're on
         self.textEdit.textEdit.markerDeleteAll()
         self.textEdit.textEdit.markerAdd(currentLine-1, self.textEdit.textEdit.ARROW_MARKER_NUM)
+        self.textEdit.textEdit.setCaretWidth(0)
+        self.textEdit.textEdit.setCaretLineBackgroundColor(QColor(0xd0, 0xff, 0xd0))
+        self.textEdit.textEdit.setCursorPosition(currentLine-1, 0)
         
+    @pyqtSlot()
     def onStart(self):
         logger = logging.getLogger(__name__)
+        self.textEdit.setDisabled(True)
+        self.filenameComboBox.setDisabled(True)
         self.onSave()
         self.script.start()
 #         try:
@@ -80,6 +89,14 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
 #             logger.error("script failed: {0}".format(e))
             #show on script console
     
+    @pyqtSlot()
+    def onCompleted(self):
+        self.textEdit.textEdit.setCaretWidth(1)
+        self.textEdit.textEdit.setCaretLineBackgroundColor(QColor("#ffe4e4"))
+        self.textEdit.textEdit.markerDeleteAll()
+        self.textEdit.setDisabled(False)
+        self.filenameComboBox.setDisabled(False)
+   
     def onStop(self):
         pass
     
