@@ -237,7 +237,33 @@ class TodoList(Form, Base):
         # 
         self.exportXmlButton.clicked.connect( self.onExportXml )
         restoreGuiState( self, self.config.get('Todolist.guiState'))
-       
+        
+        # Copy rows
+        QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.Copy), self, self.copy_to_clipboard)
+        QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.Paste), self, self.paste_from_clipboard)
+        #QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.Delete), self, self.delete_row)
+
+    def copy_to_clipboard(self):
+        """ Copy the list of selected rows to the clipboard as a string. """
+        clip = QtGui.QApplication.clipboard()
+        rows = [ i.row() for i in self.tableView.selectedIndexes()]
+        clip.setText(str(rows))
+        
+    def paste_from_clipboard(self):
+        """ Append the string of rows from the clipboard to the end of the TODO list. """
+        clip = QtGui.QApplication.clipboard()
+        
+        row_string = str(clip.text())
+        try:
+            row_list = map(int, row_string.strip('[]').split(','))
+        except ValueError:
+            raise ValueError("Invalid data on clipboard. Cannot paste into TODO list")
+    
+        # Stuff
+        self.tableModel.copy_rows(row_list)
+
+
+
     def onExportXml(self):
         root = ElementTree.Element('TodoListContainer')
         for name, setting in self.settingsCache.iteritems():
