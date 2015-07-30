@@ -332,10 +332,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
-        #if 'MainWindow.pos' in self.config:
-        #    self.move(self.config['MainWindow.pos'])
+        if 'MainWindow.pos' in self.config:
+            self.move(self.config['MainWindow.pos'])
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
+        if 'MainWindow.isMaximized' in self.config:
+            if self.config['MainWindow.isMaximized']:
+                self.showMaximized()
             
         self.dedicatedCountersWindow = DedicatedCounters(self.config, self.dbConnection, self.pulser, self.globalVariablesUi, self.ExternalParametersUi.callWhenDoneAdjusting )
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
@@ -576,6 +579,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
+        self.config['MainWindow.isMaximized'] = self.isMaximized()
         self.config['Settings.loggingLevel'] = self.loggingLevel
         self.config['Settings.consoleMaximumLinesNew'] = self.consoleMaximumLines
         self.config['Settings.ShutterNameDict'] = self.shutterNameDict 
