@@ -6,7 +6,7 @@ Created on Jul 27, 2015
 import os
 import logging
 import modules.magnitude as magnitude
-from PyQt4.QtCore import QObject, pyqtSignal 
+from PyQt4.QtCore import pyqtSignal, QThread, pyqtSlot, QEventLoop
 import inspect
 import traceback
 
@@ -22,15 +22,24 @@ def checkScripting(func):
     """Check whether a function has been marked"""
     return hasattr(func, 'isScriptingFunction')
 
-class Script(QObject):
-    """Encapsulates a script together with all the scripting functions."""
+class Script(QThread):
+    """Encapsulates a running script together with all the scripting functions. Script executes in separate thread."""
     scriptLocationSignal = pyqtSignal(int)
     def __init__(self, globalVariablesUi, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
         self.fullname = fullname #Full name, with path
         self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
+        self.scriptingFunctionNames = []
         self.globalVariablesUi = globalVariablesUi
+        
+    def run(self):
+        """run the script"""
+        #Name local functions with the same names as the class functions, so that the script can call them by name directly
+        for name in self.scriptingFunctionNames:
+            locals()[name] = getattr(self, name)
+        execfile(self.fullname) #run the script
+        self.quit() #quit the thread
         
     def emitLocation(self):
         """Emits a signal containing the current script location"""
@@ -59,8 +68,10 @@ class Script(QObject):
         logger = logging.getLogger(__name__)
         self.emitLocation()
         doesNotExist = (name not in self.globalVariablesUi.keys())
+        import time #DELETE THIS
+        time.sleep(1) #DELETE THIS
         if not create and doesNotExist:
-            errorMessage = "Global variable {0} does not exist. Use create=True to create a new global variable.".format(name) 
+            errorMessage = "Global variable {0} does not exist.".format(name)
             logger.error(errorMessage)
             raise ScriptException(errorMessage)
         elif doesNotExist:
@@ -85,13 +96,9 @@ class Script(QObject):
         pass
     
     @scriptingFunction
-    def setAll(self, scanName, evaluationName, analysisName):
-        """convenience function, equivalent to sequential evaluation of setScan, setEvaluation, and setAnalysis."""
-        self.setScan(scanName)
-        self.setEvaluation(evaluationName)
-        self.setAnalysis(analysisName)
+    def pause(self):
+        """Pause the script."""
     
-import inspect
 scriptingFunctionNames = [a[0] for a in inspect.getmembers(Script, checkScripting)] #Get the names of the scripting functions
 scriptingFunctionDocs = [getattr(Script, name).__doc__ for name in scriptingFunctionNames] #docstrings of the scripting functions
 scriptingFunctions = zip(scriptingFunctionNames, scriptingFunctionDocs) #dict of the form name:docstring, for each scripting function

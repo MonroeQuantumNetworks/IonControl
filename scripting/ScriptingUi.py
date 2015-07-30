@@ -37,6 +37,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
         self.script.shortname = os.path.basename(self.script.fullname)
         self.script.code = self.config.get( self.configname+'.script.code' , '' )
+        self.script.scriptingFunctionNames = scriptingFunctionNames
         self.script.scriptLocationSignal.connect( self.onLocation )
         self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptingFunctionNames)
         self.textEdit.setPlainText(self.script.code)
@@ -59,18 +60,21 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.loadFile(self.script.fullname)
 
     @pyqtSlot(int)        
-    def onLocation(self, scriptLoc):
+    def onLocation(self, currentLine):
+        """Mark where the script currently is"""
         #highlight line that we're on
+        print currentLine
+        self.textEdit.textEdit.markerDeleteAll()
+        self.textEdit.textEdit.markerAdd(currentLine-1, self.textEdit.textEdit.ARROW_MARKER_NUM)
         
     def onStart(self):
         logger = logging.getLogger(__name__)
         self.onSave()
-        for name in scriptingFunctionNames:
-            locals()[name] = getattr(self.script, name)
-        try:
-            execfile(self.script.fullname)
-        except ScriptException as e:
-            logger.error("script failed: {0}".format(e))
+        self.script.start()
+#         try:
+#             execfile(self.script.fullname)
+#         except ScriptException as e:
+#             logger.error("script failed: {0}".format(e))
             #show on script console
     
     def onStop(self):
