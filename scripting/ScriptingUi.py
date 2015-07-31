@@ -133,20 +133,29 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
 
     @QtCore.pyqtSlot(bool)
     def onPause(self, paused):
+        print "paused = "+str(paused) 
+        self.script.mutex.lock()
         self.script.paused = paused
+        self.script.mutex.unlock()
         if not paused:
             self.unPauseSignal.emit()
         
     @QtCore.pyqtSlot()
     def pausedFromScript(self):
-        self.actionPause.setChecked(self.script.paused)
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.actionPause.setChecked(self.script.paused)
     
     @QtCore.pyqtSlot()
     def onStop(self):
-        self.stopSignal.emit()
+        self.script.mutex.lock()
+        self.script.stopped = True
+        self.script.mutex.unlock()
+        self.textEdit.textEdit.markerDeleteAll()
+        self.enableScriptChange(True)
     
     @QtCore.pyqtSlot()
     def onStopImmediately(self):
+        self.script.terminate()
         self.stopImmediatelySignal.emit()
     
     @QtCore.pyqtSlot()

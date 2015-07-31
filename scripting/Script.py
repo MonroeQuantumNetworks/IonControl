@@ -17,11 +17,11 @@ def longWait(): #DELETE THIS FUNCTION
 class ScriptException(Exception):
     pass
 
-def scriptFunction(func):
-    """Mark a function as a scripting function"""
-    func.isScriptFunction = True
-    return func
-
+# def scriptFunction(func):
+#     """Mark a function as a scripting function"""
+#     func.isScriptFunction = True
+#     return func
+# 
 def checkScripting(func):
     """Check whether a function has been marked"""
     return hasattr(func, 'isScriptFunction')
@@ -37,7 +37,9 @@ class Script(QtCore.QThread):
         self.fullname = fullname #Full name, with path
         self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
+        self.mutex = QtCore.QMutex()
         self.paused = False
+        self.stopped = False
         self.scriptFunctions = []
         self.globalVariablesUi = globalVariablesUi
 
@@ -48,6 +50,14 @@ class Script(QtCore.QThread):
             locals()[name] = getattr(self, name)
         execfile(self.fullname) #run the script
         self.completed.emit()
+
+    def scriptFunction(func):
+        def magic(self, *args, **kwds):
+            print 'magic'
+            func(self, *args, **kwds)
+        magic.isScriptFunction = True
+        magic.__name__ = func.__name__
+        return magic
         
     def emitLocation(self):
         """Emits a signal containing the current script location"""
@@ -78,12 +88,21 @@ class Script(QtCore.QThread):
         self.emitLocation()
         self.pausedSignal.emit()
         self.paused = True
+        
+    def waitAMin(self):
+        self.exec_()
 
     @scriptFunction
     def setGlobal(self, name, value, unit):
         """set the global "name" to "value" with the given unit. This is equivalent to typing in a value+unit in the globals GUI."""
-        if self.paused:
-            self.exec_()
+        self.mutex.lock()
+        if self.stopped:
+            self.mutex.unlock()
+            self.terminate()  
+        elif self.paused:
+            self.mutex.unlock()
+            self.waitAMin()
+        self.mutex.unlock()
         logger = logging.getLogger(__name__)
         self.emitLocation()
         longWait()
@@ -101,8 +120,14 @@ class Script(QtCore.QThread):
     @scriptFunction
     def addGlobal(self, name, value, unit):
         """add the global "name" to the list of globals, and set its value to "value" with the given unit."""
-        if self.paused:
-            self.exec_()
+        self.mutex.lock()
+        if self.stopped:
+            self.mutex.unlock()
+            self.terminate()  
+        elif self.paused:
+            self.mutex.unlock()
+            self.waitAMin()
+        self.mutex.unlock()
         logger = logging.getLogger(__name__)
         self.emitLocation()
         doesNotExist = name not in self.globalVariablesUi.keys()
