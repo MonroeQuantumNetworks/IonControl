@@ -6,9 +6,7 @@ Created on Jul 24, 2015
 
 import os.path
 
-#from PyQt4 import QtCore, QtGui
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 import logging
 from PyQt4.Qsci import QsciScintilla
@@ -16,15 +14,13 @@ from datetime import datetime
 
 from gui import ProjectSelection
 from modules.PyqtUtility import BlockSignals
+from modules import magnitude
 from Script import Script, ScriptException, scriptFunctions
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
 class ScriptingUi(ScriptingWidget,ScriptingBase):
-    unPauseSignal = QtCore.pyqtSignal()
-    stopSignal = QtCore.pyqtSignal()
-    stopImmediatelySignal = QtCore.pyqtSignal()
     def __init__(self, config, globalVariablesUi):
         ScriptingWidget.__init__(self)
         ScriptingBase.__init__(self)
@@ -33,7 +29,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.console = None
         self.recentFiles = dict() #dict of form {shortname: fullname}, where fullname has path and shortname doesn't
         self.globalVariablesUi = globalVariablesUi 
-        self.script = Script(self.globalVariablesUi) #encapsulates the script
+        self.script = Script() #encapsulates the script
         self.defaultDir = ProjectSelection.configDir()+'\\Scripts'
    
     def setupUi(self,parent):
@@ -41,7 +37,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         #logger = logging.getLogger(__name__)
         self.configname = 'Scripting'
         self.recentFiles = self.config.get( self.configname+'.recentFiles' , dict() )
-        self.script = Script(self.globalVariablesUi)
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
         self.script.shortname = os.path.basename(self.script.fullname)
         if self.script.fullname != '' and os.path.exists(self.script.fullname):
@@ -49,10 +44,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                 self.script.code = f.read()
         else:
             self.script.code = '' 
-        self.script.scriptFunctions = scriptFunctions
         self.script.locationSignal.connect( self.onLocation )
-        self.script.completed.connect( self.onCompleted )
-        
+        self.script.finished.connect( self.onFinished )
+        self.script.consoleSignal.connect(self.onConsoleSignal)
+        self.script.setGlobalSignal.connect(self.onSetGlobal)
+        self.script.addGlobalSignal.connect(self.onAddGlobal)
+
         self.textEdit = PulseProgramSourceEdit()
         self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptFunctions)
         self.textEdit.textEdit.SendScintilla(QsciScintilla.SCI_SETCARETLINEVISIBLEALWAYS, True)
@@ -62,8 +59,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.console = QtGui.QTextEdit()
         self.console.setReadOnly(True)
         self.splitter.addWidget(self.console)
-        self.script.consoleSignal.connect(self.onConsoleSignal)
-        
+
         #Add only the filename (without the full path) to the combo box
         self.filenameComboBox.addItems( [shortname for shortname, fullname in self.recentFiles.iteritems() if os.path.exists(fullname)] )
 
@@ -72,14 +68,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionReset.triggered.connect(self.onReset)
         self.actionStart.triggered.connect( self.onStart )
         self.actionNew.triggered.connect( self.onNew )
+        self.repeatButton.clicked.connect( self.onRepeat )
         
-        self.actionPause.triggered.connect( self.onPause )
-        self.script.pausedSignal.connect(self.pausedFromScript, QtCore.Qt.QueuedConnection)
-        self.unPauseSignal.connect(self.script.quit, QtCore.Qt.QueuedConnection)
-        
-        self.actionStop.triggered.connect( self.onStop )
-        self.actionStopImmediately.triggered.connect(self.onStopImmediately )
-                
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
@@ -88,7 +78,66 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.setWindowTitle(self.configname)
         self.setWindowIcon(QtGui.QIcon(":/other/icons/Terminal-icon.png"))
         self.statusLabel.setText("Idle")
-
+    
+    def scriptCommand(func):#@NoSelf
+        """Decorator for script commands. 
+        
+        Catches exceptions, sets the script exception variables, and wakes the script after the
+        specified action has been completed.
+        """
+        def baseScriptCommand(self, *args, **kwds):
+            try:
+                func(self, *args, **kwds)
+            except Exception as e:
+                with QtCore.QMutexLocker(self.script.mutex):
+                    self.script.exceptionOccurred = True
+                    self.script.exception = e
+            finally:
+                self.script.waitCondition.wakeAll()
+        baseScriptCommand.func_name = func.func_name
+        baseScriptCommand.func_doc = func.func_doc
+        return baseScriptCommand
+     
+    @QtCore.pyqtSlot(str, float, str)
+    @scriptCommand
+    def onAddGlobal(self, name, value, unit):
+        """Add a global 'name' and set it to 'value, unit'"""
+        name = str(name) #signal is passed as a QString
+        value = float(value)
+        unit = str(unit)
+        logger = logging.getLogger(__name__)
+        magValue = magnitude.mg(value, unit)
+        doesNotExist = name not in self.globalVariablesUi.keys()
+        if doesNotExist:
+            self.globalVariablesUi.model.addVariable(name)
+            message = "Global variable {0} created".format(name)
+            logger.debug(message)
+            self.writeToConsole(message, True)
+        self.globalVariablesUi.model.update([('Global', name, magValue)])
+        message = "Global variable {0} set to {1} {2}".format(name, value, unit)
+        logger.debug(message)
+        self.writeToConsole(message, True)
+ 
+    @QtCore.pyqtSlot(str, float, str)
+    @scriptCommand
+    def onSetGlobal(self, name, value, unit):
+        """Set global 'name' to 'value, unit'"""
+        name = str(name) #signal is passed as a QString
+        value = float(value)
+        unit = str(unit)
+        logger = logging.getLogger(__name__)
+        magValue = magnitude.mg(value, unit)
+        doesNotExist = (name not in self.globalVariablesUi.keys())
+        if doesNotExist:
+            message = "Global variable {0} does not exist.".format(name)
+            logger.error(message)
+            self.writeToConsole(message, False)
+            raise ScriptException(message)
+        self.globalVariablesUi.model.update([('Global', name, magValue)])
+        message = "Global variable {0} set to {1} {2}".format(name, value, unit)
+        logger.debug(message)
+        self.writeToConsole(message, True)
+        
     @QtCore.pyqtSlot(int)        
     def onLocation(self, currentLine):
         """Mark where the script currently is"""
@@ -99,10 +148,17 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
     @QtCore.pyqtSlot()
     def onStart(self):
+        """Starts the script and disables some aspects of the script GUI"""
         if not self.script.isRunning():
             self.statusLabel.setText("Script running")
             self.onSave()
             self.enableScriptChange(False)
+            self.actionPause.setChecked(False)
+            with QtCore.QMutexLocker(self.script.mutex):
+                self.script.paused = False
+                self.script.stopped = False
+                self.script.exceptionOccurred = False
+                self.script.exception = None
             self.script.start()
         
     def enableScriptChange(self, enabled):
@@ -120,44 +176,47 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionNew.setEnabled(enabled)
     
     @QtCore.pyqtSlot()
-    def onCompleted(self):
+    def onFinished(self):
         self.statusLabel.setText("Idle")
         self.textEdit.textEdit.markerDeleteAll()
         self.enableScriptChange(True)
         
     @QtCore.pyqtSlot(str, bool)
     def onConsoleSignal(self, message, noError):
+        self.writeToConsole(message, noError)
+    
+    def writeToConsole(self, message, noError):
         self.console.moveCursor(QtGui.QTextCursor.End)
         textColor = "black" if noError else "red"
         self.console.insertHtml(QtCore.QString('<font color='+textColor+'>'+message+'</font><br>'))
 
-    @QtCore.pyqtSlot(bool)
-    def onPause(self, paused):
-        print "paused = "+str(paused) 
-        self.script.mutex.lock()
-        self.script.paused = paused
-        self.script.mutex.unlock()
-        if not paused:
-            self.unPauseSignal.emit()
-        
-    @QtCore.pyqtSlot()
-    def pausedFromScript(self):
-        with QtCore.QMutexLocker(self.script.mutex):
-            self.actionPause.setChecked(self.script.paused)
-    
-    @QtCore.pyqtSlot()
-    def onStop(self):
-        self.script.mutex.lock()
-        self.script.stopped = True
-        self.script.mutex.unlock()
-        self.textEdit.textEdit.markerDeleteAll()
-        self.enableScriptChange(True)
-    
-    @QtCore.pyqtSlot()
-    def onStopImmediately(self):
-        self.script.terminate()
-        self.stopImmediatelySignal.emit()
-    
+#     @QtCore.pyqtSlot(bool)
+#     def onPause(self, paused):
+#         print "paused = "+str(paused) 
+#         self.script.mutex.lock()
+#         self.script.paused = paused
+#         self.script.mutex.unlock()
+#         if not paused:
+#             self.unPauseSignal.emit()
+#         
+#     @QtCore.pyqtSlot()
+#     def pausedFromScript(self):
+#         with QtCore.QMutexLocker(self.script.mutex):
+#             self.actionPause.setChecked(self.script.paused)
+#     
+#     @QtCore.pyqtSlot()
+#     def onStop(self):
+#         self.script.mutex.lock()
+#         self.script.stopped = True
+#         self.script.mutex.unlock()
+#         self.textEdit.textEdit.markerDeleteAll()
+#         self.enableScriptChange(True)
+#     
+#     @QtCore.pyqtSlot()
+#     def onStopImmediately(self):
+#         self.script.terminate()
+#         self.stopImmediatelySignal.emit()
+#     
     @QtCore.pyqtSlot()
     def onNew(self):
         logger = logging.getLogger(__name__)
@@ -178,9 +237,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                     self.onConsoleSignal(message, False)
                     return
             self.loadFile(fullname)
+            
+    @QtCore.pyqtSlot()
+    def onRepeat(self):
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.repeat = self.repeatButton.isChecked()
              
-
-    
     def onFilenameChange(self, shortname ):
         shortname = str(shortname)
         if shortname in self.recentFiles:
