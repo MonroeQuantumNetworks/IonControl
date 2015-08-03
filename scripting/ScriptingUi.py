@@ -148,9 +148,13 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
     @QtCore.pyqtSlot()
     def onStart(self):
-        """Starts the script and disables some aspects of the script GUI"""
+        """Runs when start button clicked. Starts the script and disables some aspects of the script GUI"""
         if not self.script.isRunning():
+            logger = logging.getLogger(__name__)
             self.statusLabel.setText("Script running")
+            message = "script {0} started".format(self.script.fullname)
+            logger.debug(message)
+            self.writeToConsole(message, True)
             self.onSave()
             self.enableScriptChange(False)
             self.actionPause.setChecked(False)
@@ -177,7 +181,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     
     @QtCore.pyqtSlot()
     def onFinished(self):
+        """Runs when script thread finishes. re-enables script GUI."""
+        logger = logging.getLogger(__name__)
         self.statusLabel.setText("Idle")
+        message = "script {0} finished".format(self.script.fullname)
+        logger.debug(message)
+        self.writeToConsole(message, True)
         self.textEdit.textEdit.markerDeleteAll()
         self.enableScriptChange(True)
         
@@ -240,12 +249,19 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             
     @QtCore.pyqtSlot()
     def onRepeat(self):
+        logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.script.mutex):
-            self.script.repeat = self.repeatButton.isChecked()
+            repeat = self.repeatButton.isChecked()
+            self.script.repeat = repeat
+            message = "Repeat is on" if repeat else "Repeat is off"
+            logger.debug(message)
+            self.writeToConsole(message, True)
              
     def onFilenameChange(self, shortname ):
         shortname = str(shortname)
-        if shortname in self.recentFiles:
+        if shortname not in self.recentFiles:
+            self.loadFile(self.recentFiles[self.script.shortname])
+        else:
             fullname = self.recentFiles[shortname]
             if os.path.isfile(fullname) and fullname != self.script.fullname:
                 self.loadFile(fullname)

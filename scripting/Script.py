@@ -16,15 +16,6 @@ def longWait(): #DELETE THIS FUNCTION
 class ScriptException(Exception):
     pass
 
-# def scriptFunction(func):
-#     """Mark a function as a scripting function"""
-#     func.isScriptFunction = True
-#     return func
-# 
-def checkScripting(func):
-    """Check whether a function has been marked"""
-    return hasattr(func, 'isScriptFunction')
-
 class Script(QtCore.QThread):
     """Encapsulates a running script together with all the scripting functions. Script executes in separate thread.
     
@@ -55,9 +46,8 @@ class Script(QtCore.QThread):
         
     def run(self):
         """run the script"""
-        #Define the script functions
-        setGlobal = self.setGlobal #@UnusedVariable
-        addGlobal = self.addGlobal #@UnusedVariable
+        for name in scriptFunctions: #Define the script functions to be the corresponding class functions
+            locals()[name] = getattr(self, name)
         logger = logging.getLogger(__name__)
         try:
             while True:
@@ -68,14 +58,6 @@ class Script(QtCore.QThread):
             message = traceback.format_exc()
             logger.error(message)
             self.consoleSignal.emit(message, False)
-
-#     def scriptFunction(func):
-#         def magic(self, *args, **kwds):
-#             print 'magic'
-#             func(self, *args, **kwds)
-#         magic.isScriptFunction = True
-#         magic.__name__ = func.__name__
-#         return magic
 
     def emitLocation(self):
         """Emits a signal containing the current script location"""
@@ -89,13 +71,19 @@ class Script(QtCore.QThread):
             message = "Executing {0} in {1} at line {2}".format( scriptLoc[3], os.path.basename(scriptLoc[0]), scriptLoc[1] )
             logger.debug(message)
             self.consoleSignal.emit(message, True)
-        else:
-            message = "Not executing script"
+        else: #This should never execute
+            message = "Emit location called while not executing script"
             logger.warning(message)
             self.consoleSignal.emit(message, False)
         self.locationSignal.emit(scriptLoc[1]) #Emit a signal containing the script location
 
     def scriptFunction(func): #@NoSelf
+        """Decorator for script functions.
+        
+        This decorator performs all the functions that are common to all the script functions. It checks
+        whether the script has been stopped or paused, and emits the current location in the script. Once
+        the function has executed, it waits to be told to continue by the main GUI. Exceptions that occur
+        during execution are sent back to the script thread and raised here."""
         def baseScriptFunction(self, *args):
             if not self.stopped: #if stopped, don't do anything
                 if self.paused: #if paused, wait on waitCondition
@@ -150,5 +138,9 @@ class Script(QtCore.QThread):
 #         """set the analysis interface to "name." This is equivalent to selecting "name" from the analysis dropdown."""
 #         pass
       
+def checkScripting(func):
+    """Check whether a function has been marked"""
+    return hasattr(func, 'isScriptFunction')
+
 scriptFunctions = [a[0] for a in inspect.getmembers(Script, checkScripting)] #Get the names of the scripting functions
 # scriptFunctionDocs = dict(zip(scriptFunctions,[getattr(Script, name).__doc__ for name in scriptFunctions])) #docstrings of the scripting functions
