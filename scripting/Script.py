@@ -29,6 +29,9 @@ class Script(QtCore.QThread):
     
     setGlobalSignal = QtCore.pyqtSignal(str, float, str)
     addGlobalSignal = QtCore.pyqtSignal(str, float, str)
+    pauseScriptSignal = QtCore.pyqtSignal()
+    stopScriptSignal = QtCore.pyqtSignal()
+    startScanSignal = QtCore.pyqtSignal(bool)
     
     def __init__(self, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
@@ -41,6 +44,8 @@ class Script(QtCore.QThread):
         self.repeat = False
         self.paused = False
         self.stopped = False
+        self.scanRunning = False
+        self.waitForScan = False
         self.exceptionOccurred = False
         self.exception = None
         
@@ -84,14 +89,14 @@ class Script(QtCore.QThread):
         whether the script has been stopped or paused, and emits the current location in the script. Once
         the function has executed, it waits to be told to continue by the main GUI. Exceptions that occur
         during execution are sent back to the script thread and raised here."""
-        def baseScriptFunction(self, *args):
+        def baseScriptFunction(self, *args, **kwds):
             if not self.stopped: #if stopped, don't do anything
-                if self.paused: #if paused, wait on waitCondition
+                if self.paused or (self.scanRunning and self.waitForScan): #if paused or waiting on scan, wait on waitCondition
                     with QtCore.QMutexLocker(self.mutex):
                         self.waitCondition.wait(self.mutex)
                 self.emitLocation()
                 longWait()
-                func(self, *args)
+                func(self, *args, **kwds)
                 with QtCore.QMutexLocker(self.mutex):
                     self.waitCondition.wait(self.mutex)
                     if self.exceptionOccurred:
@@ -110,11 +115,23 @@ class Script(QtCore.QThread):
     def addGlobal(self, name, value, unit):
         """add the global "name" to the list of globals, and set its value to "value" with the given unit."""
         self.addGlobalSignal.emit(name, value, unit)
-          
-#     @scriptFunction
-#     def startScan(self):
-#         """Start the scan. This is equivalent to clicking the "start" button on the GUI."""
-#         pass
+        
+    @scriptFunction
+    def pauseScript(self):
+        """Pause the script. This is equivalent to clicking the "pause script" button."""
+        self.pauseScriptSignal.emit()
+        
+    @scriptFunction
+    def stopScript(self):
+        """Stop the script. This is equivalent to clicking the "stop script" button."""
+        self.stopScriptSignal.emit()
+
+    @scriptFunction
+    def startScan(self, wait=True):
+        """Start the scan. This is equivalent to clicking the "start" button on the experiment GUI.
+        
+        If wait=True, script will not continue until scan has finished."""
+        self.startScanSignal.emit(wait)
 #     
 #     @scriptFunction
 #     def pauseScript(self):

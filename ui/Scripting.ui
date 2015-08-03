@@ -114,10 +114,11 @@
     <property name="title">
      <string>Script</string>
     </property>
-    <addaction name="actionStart"/>
-    <addaction name="actionPause"/>
-    <addaction name="actionStop"/>
-    <addaction name="actionStopImmediately"/>
+    <addaction name="actionStartScript"/>
+    <addaction name="actionPauseScript"/>
+    <addaction name="actionStopScript"/>
+    <addaction name="actionPauseScriptAndScan"/>
+    <addaction name="actionStopScriptAndScan"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuScript"/>
@@ -133,22 +134,24 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionStart"/>
-   <addaction name="actionPause"/>
-   <addaction name="actionStop"/>
-   <addaction name="actionStopImmediately"/>
+   <addaction name="actionStartScript"/>
+   <addaction name="actionPauseScript"/>
+   <addaction name="actionStopScript"/>
+   <addaction name="separator"/>
+   <addaction name="actionPauseScriptAndScan"/>
+   <addaction name="actionStopScriptAndScan"/>
    <addaction name="separator"/>
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="actionNew"/>
   </widget>
-  <action name="actionStart">
+  <action name="actionStartScript">
    <property name="icon">
     <iconset resource="Experiment.qrc">
      <normaloff>:/kde/icons/media-playback-start-7.png</normaloff>:/kde/icons/media-playback-start-7.png</iconset>
    </property>
    <property name="text">
-    <string>Start</string>
+    <string>Start Script</string>
    </property>
    <property name="toolTip">
     <string>Start the script</string>
@@ -157,13 +160,13 @@
     <string>Ctrl+R</string>
    </property>
   </action>
-  <action name="actionStop">
+  <action name="actionStopScript">
    <property name="icon">
     <iconset resource="Experiment.qrc">
      <normaloff>:/kde/icons/media-playback-stop-7.png</normaloff>:/kde/icons/media-playback-stop-7.png</iconset>
    </property>
    <property name="text">
-    <string>Stop</string>
+    <string>Stop Script</string>
    </property>
    <property name="toolTip">
     <string>Stop the script</string>
@@ -172,16 +175,16 @@
     <string>Ctrl+X</string>
    </property>
   </action>
-  <action name="actionStopImmediately">
+  <action name="actionStopScriptAndScan">
    <property name="icon">
     <iconset resource="Experiment.qrc">
      <normaloff>:/openicon/icons/road-sign-us-stop.png</normaloff>:/openicon/icons/road-sign-us-stop.png</iconset>
    </property>
    <property name="text">
-    <string>Stop immediately</string>
+    <string>Stop Script and Scan</string>
    </property>
    <property name="toolTip">
-    <string>Stop the script immediately</string>
+    <string>Stop the script and scan</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+X</string>
@@ -244,7 +247,7 @@
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="actionPause">
+  <action name="actionPauseScript">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -253,10 +256,25 @@
      <normaloff>:/openicon/icons/media-playback-pause-7.png</normaloff>:/openicon/icons/media-playback-pause-7.png</iconset>
    </property>
    <property name="text">
-    <string>Pause</string>
+    <string>Pause Script</string>
    </property>
    <property name="toolTip">
     <string>Pause the script</string>
+   </property>
+  </action>
+  <action name="actionPauseScriptAndScan">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/media-playback-pause-3.png</normaloff>:/openicon/icons/media-playback-pause-3.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause Script and Scan</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause the script and scan</string>
    </property>
   </action>
  </widget>
