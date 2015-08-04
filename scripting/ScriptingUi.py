@@ -56,7 +56,11 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
 
         self.textEdit = PulseProgramSourceEdit()
         self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptFunctions)
-        self.textEdit.textEdit.SendScintilla(QsciScintilla.SCI_SETCARETLINEVISIBLEALWAYS, True)
+        self.textEdit.textEdit.currentLineMarkerNum = 9
+        self.textEdit.textEdit.markerDefine(QsciScintilla.Background, self.textEdit.textEdit.currentLineMarkerNum)
+        self.textEdit.textEdit.setMarkerBackgroundColor(QtGui.QColor(0xd0, 0xff, 0xd0), self.textEdit.textEdit.currentLineMarkerNum)
+        
+        #self.textEdit.textEdit.SendScintilla(QsciScintilla.SCI_SETCARETLINEVISIBLEALWAYS, True)
         self.textEdit.setPlainText(self.script.code)
         self.splitter.addWidget(self.textEdit)
         
@@ -160,13 +164,14 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         message = "Scan started with scan = {0}, evaluation = {1}".format()
         logger.debug()
         
-    @QtCore.pyqtSlot(int)        
-    def onLocation(self, currentLine):
+    @QtCore.pyqtSlot(list)        
+    def onLocation(self, currentLines):
         """Mark where the script currently is"""
-        if currentLine >= 0:
+        if currentLines != []:
             self.textEdit.textEdit.markerDeleteAll()
-            self.textEdit.textEdit.markerAdd(currentLine-1, self.textEdit.textEdit.ARROW_MARKER_NUM)
-            self.textEdit.textEdit.setCursorPosition(currentLine-1, 0)
+            for line in currentLines:
+                self.textEdit.textEdit.markerAdd(line-1, self.textEdit.textEdit.ARROW_MARKER_NUM)
+                self.textEdit.textEdit.markerAdd(line-1, self.textEdit.textEdit.currentLineMarkerNum)
         
     @QtCore.pyqtSlot()
     def onStartScript(self):
@@ -219,7 +224,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
     def enableScriptChange(self, enabled):
         """Enable or disable any changes to script"""
-        color = QtGui.QColor("#ffe4e4") if enabled else QtGui.QColor(0xd0, 0xff, 0xd0)
+        color = QtGui.QColor("#ffe4e4") if enabled else QtGui.QColor('white')
         width = 1 if enabled else 0
         self.textEdit.textEdit.setCaretWidth(width)
         self.textEdit.textEdit.setCaretLineBackgroundColor(color)
@@ -247,8 +252,10 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.writeToConsole(message, noError, color)
     
     @QtCore.pyqtSlot(int, str)
-    def onException(self, lineNumber, message):
-        self.textEdit.highlightError(message, lineNumber)
+    def onException(self, currentLines, message):
+        if currentLines != []:
+            for line in currentLines:
+                self.textEdit.highlightError(message, line)
     
     def writeToConsole(self, message, noError, color=''):
         self.console.moveCursor(QtGui.QTextCursor.End)

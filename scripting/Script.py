@@ -21,9 +21,9 @@ class Script(QtCore.QThread):
     change, and then enters a QWaitCondition. The ScriptingUi responds to the signal, and tells the script to exit
     the wait condition once the action has been done. 
     """
-    locationSignal = QtCore.pyqtSignal(int) #arg: line number
+    locationSignal = QtCore.pyqtSignal(list)  # arg: line numbers
     consoleSignal = QtCore.pyqtSignal(str, bool, str) #args: String to write, whether an error occurred, color to use
-    exceptionSignal = QtCore.pyqtSignal(int, str) #arg: line number, exception message
+    exceptionSignal = QtCore.pyqtSignal(list, str) #arg: line numbers, exception message
     
     setGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
     addGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
@@ -36,7 +36,7 @@ class Script(QtCore.QThread):
         self.fullname = fullname #Full name, with path
         self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
-        self.currentLine = -1
+        self.currentLines = []
         
         self.mutex = QtCore.QMutex()
         self.waitCondition = QtCore.QWaitCondition()
@@ -61,7 +61,7 @@ class Script(QtCore.QThread):
         except Exception as e:
             message = traceback.format_exc()
             logger.error(message)
-            self.exceptionSignal.emit(self.currentLine, e.message)
+            self.exceptionSignal.emit(self.currentLines, e.message)
             self.consoleSignal.emit(message, False, '')
 
     def emitLocation(self):
@@ -71,17 +71,17 @@ class Script(QtCore.QThread):
         stack_trace = traceback.extract_stack(frame) #Gets the full stack trace
         del frame #Getting rid of captured frames is recommended
         locs = [loc for loc in stack_trace if loc[0] == self.fullname] #Find the locations that match the script name
-        scriptLoc = locs[0] if locs != [] else (None, -1, None, None)
-        self.currentLine = scriptLoc[1]
-        if self.currentLine >= 0:
-            message = "Executing {0} in {1} at line {2}".format( scriptLoc[3], os.path.basename(scriptLoc[0]), self.currentLine )
-            logger.debug(message)
-            self.consoleSignal.emit(message, True, '')
+        if locs != []:
+            self.currentLines= [loc[1] for loc in locs]
+            for loc in locs:
+                message = "Executing {0} in {1} at line {2}".format( loc[3], os.path.basename(loc[0]), loc[1] )
+                logger.debug(message)
+                self.consoleSignal.emit(message, True, '')
+                self.locationSignal.emit(self.currentLines) #Emit a signal containing the script location
         else: #This should never execute
             message = "Emit location called while not executing script"
             logger.warning(message)
             self.consoleSignal.emit(message, False, '')
-        self.locationSignal.emit(self.currentLine) #Emit a signal containing the script location
 
     def scriptFunction(func): #@NoSelf
         """Decorator for script functions.
