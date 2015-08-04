@@ -45,6 +45,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         else:
             self.script.code = '' 
         self.script.locationSignal.connect( self.onLocation )
+        self.script.exceptionSignal.connect( self.onException )
         self.script.finished.connect( self.onFinished )
         self.script.consoleSignal.connect(self.onConsoleSignal)
         self.script.setGlobalSignal.connect(self.onSetGlobal)
@@ -67,6 +68,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.filenameComboBox.addItems( [shortname for shortname, fullname in self.recentFiles.iteritems() if os.path.exists(fullname)] )
 
         self.repeatButton.clicked.connect( self.onRepeat )
+        self.slowButton.clicked.connect( self.onSlow )
         #File control actions
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
@@ -99,7 +101,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                 func(self, *args, **kwds)
             except Exception as e:
                 with QtCore.QMutexLocker(self.script.mutex):
-                    self.script.exceptionOccurred = True
                     self.script.exception = e
             finally:
                 self.script.waitCondition.wakeAll()
@@ -183,7 +184,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             with QtCore.QMutexLocker(self.script.mutex):
                 self.script.paused = False
                 self.script.stopped = False
-                self.script.exceptionOccurred = False
+                self.script.exceptionLine = -1
                 self.script.exception = None
             self.script.start()
             
@@ -241,13 +242,17 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.textEdit.textEdit.markerDeleteAll()
         self.enableScriptChange(True)
         
-    @QtCore.pyqtSlot(str, bool)
-    def onConsoleSignal(self, message, noError):
-        self.writeToConsole(message, noError)
+    @QtCore.pyqtSlot(str, bool, str)
+    def onConsoleSignal(self, message, noError, color):
+        self.writeToConsole(message, noError, color)
     
-    def writeToConsole(self, message, noError):
+    @QtCore.pyqtSlot(int, str)
+    def onException(self, lineNumber, message):
+        self.textEdit.highlightError(message, lineNumber)
+    
+    def writeToConsole(self, message, noError, color=''):
         self.console.moveCursor(QtGui.QTextCursor.End)
-        textColor = "black" if noError else "red"
+        textColor = ("black" if noError else "red") if color=='' else color
         self.console.insertHtml(QtCore.QString('<font color='+textColor+'>'+message+'</font><br>'))
 
     @QtCore.pyqtSlot()
@@ -278,6 +283,16 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             repeat = self.repeatButton.isChecked()
             self.script.repeat = repeat
             message = "Repeat is on" if repeat else "Repeat is off"
+            logger.debug(message)
+            self.writeToConsole(message, True)
+
+    @QtCore.pyqtSlot()
+    def onSlow(self):
+        logger = logging.getLogger(__name__)
+        with QtCore.QMutexLocker(self.script.mutex):
+            slow = self.slowButton.isChecked()
+            self.script.slow = slow
+            message = "Slow is on" if slow else "Slow is off"
             logger.debug(message)
             self.writeToConsole(message, True)
              
@@ -328,7 +343,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def onSave(self):
         logger = logging.getLogger(__name__)
         self.script.code = str(self.textEdit.toPlainText())
-
+        self.textEdit.clearHighlightError()
         if self.script.code and self.script.fullname:
             with open(self.script.fullname, 'w') as f:
                 f.write(self.script.code)

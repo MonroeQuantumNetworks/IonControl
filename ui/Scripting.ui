@@ -18,7 +18,31 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
+       <widget class="QToolButton" name="slowButton">
+        <property name="toolTip">
+         <string>Slow script - Add 400 ms delay to each script command</string>
+        </property>
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="Experiment.qrc">
+          <normaloff>:/other/icons/slow-disabled-icon.png</normaloff>
+          <normalon>:/other/icons/slow-enabled-icon.png</normalon>:/other/icons/slow-disabled-icon.png</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QToolButton" name="repeatButton">
+        <property name="toolTip">
+         <string>Run script continuously</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>

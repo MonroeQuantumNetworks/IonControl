@@ -10,9 +10,6 @@ import inspect
 import traceback
 import time
 
-def longWait(): #DELETE THIS FUNCTION
-    time.sleep(1)
-
 class ScriptException(Exception):
     pass
 
@@ -24,45 +21,48 @@ class Script(QtCore.QThread):
     change, and then enters a QWaitCondition. The ScriptingUi responds to the signal, and tells the script to exit
     the wait condition once the action has been done. 
     """
-    locationSignal = QtCore.pyqtSignal(int)
-    consoleSignal = QtCore.pyqtSignal(str, bool)
+    locationSignal = QtCore.pyqtSignal(int) #arg: line number
+    consoleSignal = QtCore.pyqtSignal(str, bool, str) #args: String to write, whether an error occurred, color to use
+    exceptionSignal = QtCore.pyqtSignal(int, str) #arg: line number, exception message
     
-    setGlobalSignal = QtCore.pyqtSignal(str, float, str)
-    addGlobalSignal = QtCore.pyqtSignal(str, float, str)
+    setGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
+    addGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
     pauseScriptSignal = QtCore.pyqtSignal()
     stopScriptSignal = QtCore.pyqtSignal()
-    startScanSignal = QtCore.pyqtSignal(bool)
+    startScanSignal = QtCore.pyqtSignal(bool) #arg: wait or don't wait for scan to finish before continuing script
     
     def __init__(self, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
         self.fullname = fullname #Full name, with path
         self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
-
+        self.currentLine = -1
+        
         self.mutex = QtCore.QMutex()
         self.waitCondition = QtCore.QWaitCondition()
         self.repeat = False
         self.paused = False
         self.stopped = False
+        self.slow = False
         self.scanRunning = False
         self.waitForScan = False
-        self.exceptionOccurred = False
         self.exception = None
         
     def run(self):
         """run the script"""
         for name in scriptFunctions: #Define the script functions to be the corresponding class functions
-            locals()[name] = getattr(self, name)
+            globals()[name] = getattr(self, name)
         logger = logging.getLogger(__name__)
         try:
             while True:
                 execfile(self.fullname) #run the script
                 if not self.repeat:
                     break
-        except Exception:
+        except Exception as e:
             message = traceback.format_exc()
             logger.error(message)
-            self.consoleSignal.emit(message, False)
+            self.exceptionSignal.emit(self.currentLine, e.message)
+            self.consoleSignal.emit(message, False, '')
 
     def emitLocation(self):
         """Emits a signal containing the current script location"""
@@ -72,15 +72,16 @@ class Script(QtCore.QThread):
         del frame #Getting rid of captured frames is recommended
         locs = [loc for loc in stack_trace if loc[0] == self.fullname] #Find the locations that match the script name
         scriptLoc = locs[0] if locs != [] else (None, -1, None, None)
-        if scriptLoc[1] >= 0:
-            message = "Executing {0} in {1} at line {2}".format( scriptLoc[3], os.path.basename(scriptLoc[0]), scriptLoc[1] )
+        self.currentLine = scriptLoc[1]
+        if self.currentLine >= 0:
+            message = "Executing {0} in {1} at line {2}".format( scriptLoc[3], os.path.basename(scriptLoc[0]), self.currentLine )
             logger.debug(message)
-            self.consoleSignal.emit(message, True)
+            self.consoleSignal.emit(message, True, '')
         else: #This should never execute
             message = "Emit location called while not executing script"
             logger.warning(message)
-            self.consoleSignal.emit(message, False)
-        self.locationSignal.emit(scriptLoc[1]) #Emit a signal containing the script location
+            self.consoleSignal.emit(message, False, '')
+        self.locationSignal.emit(self.currentLine) #Emit a signal containing the script location
 
     def scriptFunction(func): #@NoSelf
         """Decorator for script functions.
@@ -90,16 +91,18 @@ class Script(QtCore.QThread):
         the function has executed, it waits to be told to continue by the main GUI. Exceptions that occur
         during execution are sent back to the script thread and raised here."""
         def baseScriptFunction(self, *args, **kwds):
-            if not self.stopped: #if stopped, don't do anything
-                if self.paused or (self.scanRunning and self.waitForScan): #if paused or waiting on scan, wait on waitCondition
-                    with QtCore.QMutexLocker(self.mutex):
-                        self.waitCondition.wait(self.mutex)
-                self.emitLocation()
-                longWait()
-                func(self, *args, **kwds)
-                with QtCore.QMutexLocker(self.mutex):
+            with QtCore.QMutexLocker(self.mutex): #Acquire mutex before inspecting any variables
+                if not self.stopped: #if stopped, don't do anything
+                    if self.paused or (self.scanRunning and self.waitForScan): #if paused or waiting on scan, wait on waitCondition
+                        self.waitCondition.wait(self.mutex) #This releases the mutex and waits until the waitCondition is woken
+                    self.emitLocation()
+                    if self.slow:
+                        self.mutex.unlock()
+                        time.sleep(0.4)
+                        self.mutex.lock() 
+                    func(self, *args, **kwds)
                     self.waitCondition.wait(self.mutex)
-                    if self.exceptionOccurred:
+                    if self.exception:
                         raise self.exception
         baseScriptFunction.isScriptFunction = True
         baseScriptFunction.func_name = func.func_name
