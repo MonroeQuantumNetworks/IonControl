@@ -11,12 +11,13 @@ import PyQt4.uic
 import logging
 from PyQt4.Qsci import QsciScintilla
 from datetime import datetime
-
+import inspect
 from gui import ProjectSelection
 from modules.PyqtUtility import BlockSignals
 from modules import magnitude
-from Script import Script, ScriptException, scriptFunctions
+from Script import Script, ScriptException, scriptFunctions, scriptFunctionDocs
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
+import traceback
 
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
@@ -44,15 +45,28 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                 self.script.code = f.read()
         else:
             self.script.code = '' 
+            
         self.script.locationSignal.connect( self.onLocation )
         self.script.exceptionSignal.connect( self.onException )
         self.script.finished.connect( self.onFinished )
         self.script.consoleSignal.connect(self.onConsoleSignal)
+
         self.script.setGlobalSignal.connect(self.onSetGlobal)
         self.script.addGlobalSignal.connect(self.onAddGlobal)
         self.script.pauseScriptSignal.connect(self.actionPauseScript.trigger)
         self.script.stopScriptSignal.connect(self.actionStopScript.trigger)
+        self.script.pauseScanAndScriptSignal.connect(self.actionPauseScanAndScript.trigger)
+        self.script.stopScanAndScriptSignal.connect(self.actionStopScanAndScript.trigger)
         self.script.startScanSignal.connect(self.onStartScan)
+        self.script.setScanSignal.connect(self.onSetScan)
+        self.script.setEvaluationSignal.connect(self.onSetEvaluation)
+        self.script.setAnalysisSignal.connect(self.onSetAnalysis)
+        self.script.plotPointSignal.connect(self.onPlotPoint)
+        self.script.addPlotSignal.connect(self.onAddPlot)
+        self.script.pauseScanSignal.connect(self.onPauseScan)
+        self.script.stopScanSignal.connect(self.onStopScan)
+        self.script.abortScanSignal.connect(self.onAbortScan)
+        self.script.helpSignal.connect(self.onHelp)
 
         self.textEdit = PulseProgramSourceEdit()
         self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptFunctions)
@@ -60,7 +74,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.textEdit.textEdit.markerDefine(QsciScintilla.Background, self.textEdit.textEdit.currentLineMarkerNum)
         self.textEdit.textEdit.setMarkerBackgroundColor(QtGui.QColor(0xd0, 0xff, 0xd0), self.textEdit.textEdit.currentLineMarkerNum)
         
-        #self.textEdit.textEdit.SendScintilla(QsciScintilla.SCI_SETCARETLINEVISIBLEALWAYS, True)
         self.textEdit.setPlainText(self.script.code)
         self.splitter.addWidget(self.textEdit)
         
@@ -101,13 +114,18 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         specified action has been completed.
         """
         def baseScriptCommand(self, *args, **kwds):
+            logger = logging.getLogger(__name__)
             try:
-                func(self, *args, **kwds)
+                message = func(self, *args, **kwds)
+                if message:
+                    logger.debug(message)
+                    self.writeToConsole(message)
             except Exception as e:
                 with QtCore.QMutexLocker(self.script.mutex):
                     self.script.exception = e
+                    print traceback.print_exc()
             finally:
-                self.script.waitCondition.wakeAll()
+                self.script.commandWait.wakeAll()
         baseScriptCommand.func_name = func.func_name
         baseScriptCommand.func_doc = func.func_doc
         return baseScriptCommand
@@ -119,18 +137,15 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         name = str(name) #signal is passed as a QString
         value = float(value)
         unit = str(unit)
-        logger = logging.getLogger(__name__)
         magValue = magnitude.mg(value, unit)
         doesNotExist = name not in self.experimentUi.globalVariablesUi.keys()
+        message1 = ''
         if doesNotExist:
             self.experimentUi.globalVariablesUi.model.addVariable(name)
-            message = "Global variable {0} created".format(name)
-            logger.debug(message)
-            self.writeToConsole(message, True)
+            message1 = "Global variable {0} created\n".format(name)
         self.experimentUi.globalVariablesUi.model.update([('Global', name, magValue)])
-        message = "Global variable {0} set to {1} {2}".format(name, value, unit)
-        logger.debug(message)
-        self.writeToConsole(message, True)
+        message2 =  "Global variable {0} set to {1} {2}".format(name, value, unit)
+        return message1+message2
  
     @QtCore.pyqtSlot(str, float, str)
     @scriptCommand
@@ -145,24 +160,74 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         if doesNotExist:
             message = "Global variable {0} does not exist.".format(name)
             logger.error(message)
-            self.writeToConsole(message, False)
+            self.writeToConsole(message, noError=False)
             raise ScriptException(message)
         self.experimentUi.globalVariablesUi.model.update([('Global', name, magValue)])
-        message = "Global variable {0} set to {1} {2}".format(name, value, unit)
-        logger.debug(message)
-        self.writeToConsole(message, True)
-
-    @QtCore.pyqtSlot(bool)
+        return "Global variable {0} set to {1} {2}".format(name, value, unit)
+    
+    @QtCore.pyqtSlot()
     @scriptCommand
-    def onStartScan(self, wait):
+    def onStartScan(self):
         """Start the scan"""
-        logger = logging.getLogger(__name__)
-        self.experimentUi.actionStart.trigger()
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = True
-            self.script.waitForScan = wait
-        message = "Scan started with scan = {0}, evaluation = {1}".format()
-        logger.debug()
+        self.experimentUi.actionStart.trigger()
+        return "Scan started with scan = {0}, evaluation = {1}".format()
+
+    @QtCore.pyqtSlot()
+    @scriptCommand
+    def onPauseScan(self):
+        self.experimentUi.actionPause.trigger()
+        return "Scan paused"
+        
+    @QtCore.pyqtSlot()
+    @scriptCommand
+    def onStopScan(self):
+        self.experimentUi.actionStop.trigger()
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.scanRunning = False
+        return "Scan stopped"
+        
+    @QtCore.pyqtSlot()
+    @scriptCommand
+    def onAbortScan(self):
+        self.experimentUi.actionAbort.trigger()
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.scanRunning = False
+        return "Scan aborted"
+
+    @QtCore.pyqtSlot(str)
+    @scriptCommand
+    def onSetScan(self, name):
+        pass
+    
+    @QtCore.pyqtSlot(str)
+    @scriptCommand
+    def onSetEvaluation(self, name):
+        pass
+    
+    @QtCore.pyqtSlot(str)
+    @scriptCommand
+    def onSetAnalysis(self, name):
+        pass
+    
+    @QtCore.pyqtSlot(float, float, str, str, bool)
+    @scriptCommand
+    def onPlotPoint(self, x, y, plotName, traceName, save):
+        pass
+    
+    @QtCore.pyqtSlot(str)
+    @scriptCommand
+    def onAddPlot(self, name):
+        pass
+    
+    @QtCore.pyqtSlot()
+    @scriptCommand
+    def onHelp(self):
+        for _, doc in scriptFunctionDocs.iteritems():
+            for n, line in enumerate(doc.splitlines()):
+                self.writeToConsole(line, color='blue', bold=(n==0))
+            self.writeToConsole('====================')
         
     @QtCore.pyqtSlot(list)        
     def onLocation(self, currentLines):
@@ -181,7 +246,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.statusLabel.setText("Script running")
             message = "script {0} started".format(self.script.fullname)
             logger.debug(message)
-            self.writeToConsole(message, True)
+            self.clearConsole()
+            self.writeToConsole(message)
             self.onSave()
             self.enableScriptChange(False)
             self.actionPauseScript.setChecked(False)
@@ -198,11 +264,11 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.paused = paused
-            if not paused and not (self.script.scanRunning and self.script.waitForScan):
-                self.script.waitCondition.wakeAll()
+            if not paused:
+                self.script.pauseWait.wakeAll()
         message = "Script is paused" if paused else "Script is unpaused"
         logger.debug(message)
-        self.writeToConsole(message, True)
+        self.writeToConsole(message)
 
     @QtCore.pyqtSlot()
     def onStopScript(self):
@@ -212,15 +278,20 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.script.repeat = False
             self.actionPauseScript.setChecked(False)
             self.repeatButton.setChecked(False)
-            self.script.waitCondition.wakeAll()
+            self.script.commandWait.wakeAll()
+            self.script.pauseWait.wakeAll()
+            self.script.scanWait.wakeAll()
+            self.script.dataWait.wakeAll()
         
     @QtCore.pyqtSlot()
-    def onPauseScriptAndScan(self):
-        pass
+    def onPauseScriptAndScan(self, paused):
+        self.onPauseScript(paused)
+        self.experimentUi.actionPause.trigger()
         
     @QtCore.pyqtSlot()
     def onStopScriptAndScan(self):
-        pass
+        self.onStopScript()
+        self.experimentUi.actionStop.trigger()
         
     def enableScriptChange(self, enabled):
         """Enable or disable any changes to script"""
@@ -243,13 +314,13 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.statusLabel.setText("Idle")
         message = "script {0} finished".format(self.script.fullname)
         logger.debug(message)
-        self.writeToConsole(message, True)
+        self.writeToConsole(message)
         self.textEdit.textEdit.markerDeleteAll()
         self.enableScriptChange(True)
         
     @QtCore.pyqtSlot(str, bool, str)
     def onConsoleSignal(self, message, noError, color):
-        self.writeToConsole(message, noError, color)
+        self.writeToConsole(message, noError=noError, color=color)
     
     @QtCore.pyqtSlot(int, str)
     def onException(self, currentLines, message):
@@ -257,10 +328,17 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             for line in currentLines:
                 self.textEdit.highlightError(message, line)
     
-    def writeToConsole(self, message, noError, color=''):
+    def writeToConsole(self, message, noError=True, color='', bold=False):
+        message = str(message)
         self.console.moveCursor(QtGui.QTextCursor.End)
         textColor = ("black" if noError else "red") if color=='' else color
-        self.console.insertHtml(QtCore.QString('<font color='+textColor+'>'+message+'</font><br>'))
+        boldOn = '<b>' if bold else ''
+        boldOff = '</b>' if bold else '' 
+        for line in message.splitlines():
+            self.console.insertHtml(QtCore.QString('<p><font color='+textColor+'>'+boldOn+line+boldOff+'</font><br></p>'))
+        
+    def clearConsole(self):
+        self.console.setText('')
 
     @QtCore.pyqtSlot()
     def onNew(self):
@@ -291,7 +369,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.script.repeat = repeat
             message = "Repeat is on" if repeat else "Repeat is off"
             logger.debug(message)
-            self.writeToConsole(message, True)
+            self.writeToConsole(message)
 
     @QtCore.pyqtSlot()
     def onSlow(self):
@@ -301,7 +379,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.script.slow = slow
             message = "Slow is on" if slow else "Slow is off"
             logger.debug(message)
-            self.writeToConsole(message, True)
+            self.writeToConsole(message)
              
     def onFilenameChange(self, shortname ):
         shortname = str(shortname)

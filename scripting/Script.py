@@ -9,6 +9,7 @@ from PyQt4 import QtCore
 import inspect
 import traceback
 import time
+from collections import OrderedDict
 
 class ScriptException(Exception):
     pass
@@ -21,15 +22,28 @@ class Script(QtCore.QThread):
     change, and then enters a QWaitCondition. The ScriptingUi responds to the signal, and tells the script to exit
     the wait condition once the action has been done. 
     """
+    #Signals to send information to the main thread
     locationSignal = QtCore.pyqtSignal(list)  # arg: line numbers
-    consoleSignal = QtCore.pyqtSignal(str, bool, str) #args: String to write, whether an error occurred, color to use
+    consoleSignal = QtCore.pyqtSignal(str, bool, str) #args: String to write, True if no error occurred, color to use
     exceptionSignal = QtCore.pyqtSignal(list, str) #arg: line numbers, exception message
     
+    #Signals to send instructions to the main thread
     setGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
     addGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
     pauseScriptSignal = QtCore.pyqtSignal()
     stopScriptSignal = QtCore.pyqtSignal()
-    startScanSignal = QtCore.pyqtSignal(bool) #arg: wait or don't wait for scan to finish before continuing script
+    startScanSignal = QtCore.pyqtSignal()
+    setScanSignal = QtCore.pyqtSignal(str) #arg: scan name
+    setEvaluationSignal = QtCore.pyqtSignal(str) #arg: evaluation name
+    setAnalysisSignal = QtCore.pyqtSignal(str) #arg: analysis name
+    plotPointSignal = QtCore.pyqtSignal(float, float, str, str, bool) #args: x, y, plotname, tracename, save if True
+    addPlotSignal = QtCore.pyqtSignal(str) #arg: plot name
+    pauseScanAndScriptSignal = QtCore.pyqtSignal()
+    stopScanAndScriptSignal = QtCore.pyqtSignal()
+    pauseScanSignal = QtCore.pyqtSignal()
+    stopScanSignal = QtCore.pyqtSignal()
+    abortScanSignal = QtCore.pyqtSignal()
+    helpSignal = QtCore.pyqtSignal()
     
     def __init__(self, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
@@ -38,20 +52,26 @@ class Script(QtCore.QThread):
         self.code = code #The code in the script
         self.currentLines = []
         
-        self.mutex = QtCore.QMutex()
-        self.waitCondition = QtCore.QWaitCondition()
+        self.mutex = QtCore.QMutex() #used to control access to class variables that are accessed by ScriptingUi
+        self.pauseWait = QtCore.QWaitCondition() #Used to wait while script is paused
+        self.scanWait = QtCore.QWaitCondition() #Used to wait for end of scan
+        self.dataWait = QtCore.QWaitCondition() #Used to wait for data
+        self.commandWait = QtCore.QWaitCondition() #Used to wait for command to be completed
+        #These are all class elements that are modified directly during operation by ScriptingUi
         self.repeat = False
         self.paused = False
         self.stopped = False
         self.slow = False
         self.scanRunning = False
-        self.waitForScan = False
+        self.waitOnScan = False
+        self.waitOnData = False
         self.exception = None
+        self.data = None
+        for name in scriptFunctions: #Define the script functions to be the corresponding class functions
+            globals()[name] = getattr(self, name)
         
     def run(self):
         """run the script"""
-        for name in scriptFunctions: #Define the script functions to be the corresponding class functions
-            globals()[name] = getattr(self, name)
         logger = logging.getLogger(__name__)
         try:
             while True:
@@ -93,15 +113,20 @@ class Script(QtCore.QThread):
         def baseScriptFunction(self, *args, **kwds):
             with QtCore.QMutexLocker(self.mutex): #Acquire mutex before inspecting any variables
                 if not self.stopped: #if stopped, don't do anything
-                    if self.paused or (self.scanRunning and self.waitForScan): #if paused or waiting on scan, wait on waitCondition
-                        self.waitCondition.wait(self.mutex) #This releases the mutex and waits until the waitCondition is woken
+                    if self.scanRunning:
+                        if self.waitOnScan:
+                            self.scanWait.wait(self.mutex)
+                        elif self.waitOnData:
+                            self.dataWait.wait(self.mutex)
+                    if self.paused:
+                        self.pauseWait.wait(self.mutex)
                     self.emitLocation()
                     if self.slow:
                         self.mutex.unlock()
                         time.sleep(0.4)
                         self.mutex.lock() 
                     func(self, *args, **kwds)
-                    self.waitCondition.wait(self.mutex)
+                    self.commandWait.wait(self.mutex)
                     if self.exception:
                         raise self.exception
         baseScriptFunction.isScriptFunction = True
@@ -111,56 +136,216 @@ class Script(QtCore.QThread):
 
     @scriptFunction
     def setGlobal(self, name, value, unit):
-        """set the global "name" to "value" with the given unit. This is equivalent to typing in a value+unit in the globals GUI."""
+        """setGlobal(name, value, unit):
+        set a global to a given value.
+        
+        This is equivalent to typing in a value in the globals table.
+        
+        Parameters
+        ----------
+        name : str
+               The name of the global to set
+        value : float
+                The value to set the global to
+        unit : str
+                The unit to associate with the specified value"""
         self.setGlobalSignal.emit(name, value, unit)
          
     @scriptFunction
     def addGlobal(self, name, value, unit):
-        """add the global "name" to the list of globals, and set its value to "value" with the given unit."""
+        """addGlobal(name, value, unit):
+        add a global with a specified value.
+        
+        This is equivalent to adding a global via the globals UI, and then setting its value in the globals table.
+        
+        Parameters
+        ----------
+        name : str
+               The name of the global to set
+        value : float
+                The value to set the global to
+        unit : str
+               The unit to associate with the specified value"""
         self.addGlobalSignal.emit(name, value, unit)
         
     @scriptFunction
     def pauseScript(self):
-        """Pause the script. This is equivalent to clicking the "pause script" button."""
+        """pauseScript():
+        Pause the script.
+        
+        This is equivalent to clicking the "pause script" button."""
         self.pauseScriptSignal.emit()
         
     @scriptFunction
     def stopScript(self):
-        """Stop the script. This is equivalent to clicking the "stop script" button."""
+        """stopScript():
+        Stop the script.
+        
+        This is equivalent to clicking the "stop script" button."""
         self.stopScriptSignal.emit()
 
     @scriptFunction
-    def startScan(self, wait=True):
-        """Start the scan. This is equivalent to clicking the "start" button on the experiment GUI.
+    def startScan(self, waitOnScan=True, waitOnData=True):
+        """startScan(waitOnScan=True, waitOnData=True):
+        Start the scan.
         
-        If wait=True, script will not continue until scan has finished."""
-        self.startScanSignal.emit(wait)
-#     
-#     @scriptFunction
-#     def pauseScript(self):
-#         """pause the script"""
-#         self.emitLocation()
-#         self.pausedSignal.emit()
-#         self.paused = True
-#         
-#     @scriptFunction
-#     def setScan(self, name):
-#         """set the scan interface to "name." This is equivalent to selecting "name" from the scan dropdown menu."""
-#         pass
-#     
-#     @scriptFunction
-#     def setEvaluation(self, name):
-#         """set the evaluation interface to "name." This is equivalent to selecting "name" from the evaluation dropdown menu."""
-#         pass
-#     
-#     @scriptFunction
-#     def setAnalysis(self, name):
-#         """set the analysis interface to "name." This is equivalent to selecting "name" from the analysis dropdown."""
-#         pass
-      
+        This is equivalent to clicking "start" on the experiment GUI.
+        
+        Parameters
+        ----------        
+        waitOnScan : bool, optional
+                      If True, the script will not continue until scan has finished.
+        waitOnData : bool, optional
+                      If True, the script will not continue until the first data point arrives."""
+        self.waitOnScan = waitOnScan
+        self.waitOnData = waitOnData
+        self.startScanSignal.emit()
+        
+    @scriptFunction
+    def setScan(self, name):
+        """setScan(name):
+        set the scan interface to "name."
+        
+        This is equivalent to selecting "name" from the scan drop down menu.
+        
+        Parameters
+        ----------
+        name : str
+               The name of the scan from the scan context menu"""
+        self.setScanSignal.emit(name)
+     
+    @scriptFunction
+    def setEvaluation(self, name):
+        """setEvaluation(name):
+        set the evaluation interface to "name."
+        
+        This is equivalent to selecting "name" from the evaluation drop down menu.
+        
+        Parameters
+        ----------
+        name : str
+               The name of the evaluation from the scan context menu"""
+        self.setEvaluationSignal.emit(name)
+     
+    @scriptFunction
+    def setAnalysis(self, name):
+        """setAnalysis(name):
+        set the analysis interface to "name."
+        
+        This is equivalent to selecting "name" from the analysis drop down menu.
+        
+        Parameters
+        ----------
+        name : str
+               The name of the analysis from the analysis context menu"""
+        self.setAnalysisSignal.emit(name)
+
+    def waitForScan(self):
+        """waitForScan():
+        Wait for scan to finish before continuing script.
+        
+        If startScan is run with waitOnScan=True, this function is unnecessary"""
+        with QtCore.QMutexLocker(self.mutex):
+            self.waitOnScan = True
+    waitForScan.isScriptFunction = True
+    
+    def waitForData(self):
+        """waitForData():
+        Wait for data to arrive before continuing script."""
+        with QtCore.QMutexLocker(self.mutex):
+            self.waitOnData = True
+    waitForData.isScriptFunction = True
+ 
+    def getData(self):
+        """getData():
+        Get the data from a running scan"""
+        return self.data
+    getData.isScriptFunction = True
+    
+    @scriptFunction
+    def plotPoint(self, x, y, plotName, traceName='', save=True):
+        """plotPoint(x, y, plotName, traceName='', save=True):
+        Plot a point.
+        
+        Plot a given point to a specified plot.
+        
+        Parameters
+        ----------
+        x : float
+            the x coordinate of the point to plot
+        y : float
+            the y coordinate of the point to plot
+        plotName : str
+            the name of the plot to use
+        traceName: str, optional
+            the name of the trace to add to the tracelist. The default is plotName
+        save: bool, optional
+            If true, save the resulting trace to a file. The default is True."""
+        traceName = plotName if traceName == '' else traceName
+        self.plotPointSignal.emit(x, y, plotName, traceName, save)
+        
+    @scriptFunction
+    def addPlot(self, name):
+        """addPlot(name):
+        Add a plot. 
+        
+        This is equivalent to clicking "add plot" on the experiment GUI.
+        
+        Parameters
+        ----------
+        name : str
+               The name of the plot to add"""
+        self.addPlotSignal.emit(name)
+
+    @scriptFunction
+    def pauseScanAndScript(self):
+        """pauseScanAndScript():
+           Pause the scan and script.
+           
+           This is equivalent to clicking "pause scan and script" on the scripting GUI."""
+        self.pauseScanAndScriptSignal.emit()
+        
+    @scriptFunction
+    def stopScanAndScript(self):
+        """stopScanAndScript():
+           Stop the scan and script.
+           
+           This is equivalent to clicking "stop scan and script" on the scripting GUI."""
+        self.stopScanAndScriptSignal.emit()
+        
+    @scriptFunction
+    def pauseScan(self):
+        """pauseScan():
+        Pause the scan.
+        
+        This is equivalent to clicking "pause" on the experiment GUI."""
+        self.pauseScanSignal.emit()
+        
+    @scriptFunction
+    def stopScan(self):
+        """stopScan():
+        Stop the scan.
+        
+        This is equivalent to clicking "stop" on the experiment GUI."""
+        self.stopScanSignal.emit()
+    
+    @scriptFunction    
+    def abortScan(self):
+        """abortScan():
+        Abort the scan.
+        
+        This is equivalent to clicking "abort" on the experiment GUI."""
+        self.abortScanSignal.emit()
+        
+    @scriptFunction
+    def help(self):
+        """help():
+        Get a list of all script commands and their documentation."""
+        self.helpSignal.emit()
+
 def checkScripting(func):
     """Check whether a function has been marked"""
     return hasattr(func, 'isScriptFunction')
 
 scriptFunctions = [a[0] for a in inspect.getmembers(Script, checkScripting)] #Get the names of the scripting functions
-# scriptFunctionDocs = dict(zip(scriptFunctions,[getattr(Script, name).__doc__ for name in scriptFunctions])) #docstrings of the scripting functions
+scriptFunctionDocs = OrderedDict(zip(scriptFunctions, [getattr(Script, name).__doc__ for name in scriptFunctions])) #docstrings of the scripting functions
