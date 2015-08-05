@@ -72,7 +72,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.script.pauseScanSignal.connect(self.onPauseScan)
         self.script.stopScanSignal.connect(self.onStopScan)
         self.script.abortScanSignal.connect(self.onAbortScan)
-        self.script.helpSignal.connect(self.onHelp)
 
         self.textEdit = PulseProgramSourceEdit()
         self.textEdit.setupUi(self.textEdit,extraKeywords1=[], extraKeywords2=scriptFunctions)
@@ -99,7 +98,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionStopScript.triggered.connect( self.onStopScript )
         self.actionPauseScriptAndScan.triggered.connect( self.onPauseScriptAndScan )
         self.actionStopScriptAndScan.triggered.connect( self.onStopScriptAndScan )
-        self.terminateButton.clicked.connect( self.onTerminate )
         
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
@@ -236,14 +234,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.onStopScript()
         return 'script stopped'        
     
-    @QtCore.pyqtSlot()
-    @scriptCommand
-    def onHelp(self):
-        for _, doc in scriptFunctionDocs.iteritems():
-            for n, line in enumerate(doc.splitlines()):
-                self.writeToConsole(line, color='blue')
-            self.writeToConsole('====================')
-        
     @QtCore.pyqtSlot(list)        
     def onLocation(self, currentLines):
         """Mark where the script currently is"""
@@ -306,20 +296,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def onStopScriptAndScan(self):
         self.onStopScript()
         self.experimentUi.actionStop.trigger()
-        
-    @QtCore.pyqtSlot()
-    def onTerminate(self):
-        warningResponse = self.warningMessage("Are you sure you want to terminate the script?", "This is probably a bad idea.")        
-        if warningResponse == QtGui.QMessageBox.Ok:
-            self.script.terminate()
- 
-    def warningMessage(self, warningText, informativeText):
-        """Pop up a warning message. Return the response."""
-        warningMessage = QtGui.QMessageBox()
-        warningMessage.setText(warningText)
-        warningMessage.setInformativeText(informativeText)
-        warningMessage.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
-        return warningMessage.exec_() 
 
     def enableScriptChange(self, enabled):
         """Enable or disable any changes to script"""
