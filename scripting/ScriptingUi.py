@@ -53,10 +53,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
 
         self.script.setGlobalSignal.connect(self.onSetGlobal)
         self.script.addGlobalSignal.connect(self.onAddGlobal)
-        self.script.pauseScriptSignal.connect(self.actionPauseScript.trigger)
-        self.script.stopScriptSignal.connect(self.actionStopScript.trigger)
-        self.script.pauseScanAndScriptSignal.connect(self.actionPauseScanAndScript.trigger)
-        self.script.stopScanAndScriptSignal.connect(self.actionStopScanAndScript.trigger)
+        self.script.pauseScriptSignal.connect(self.onPauseScriptFromScript)
+        self.script.stopScriptSignal.connect(self.onStopScriptFromScript)
         self.script.startScanSignal.connect(self.onStartScan)
         self.script.setScanSignal.connect(self.onSetScan)
         self.script.setEvaluationSignal.connect(self.onSetEvaluation)
@@ -223,6 +221,15 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     
     @QtCore.pyqtSlot()
     @scriptCommand
+    def onPauseScriptFromScript(self):
+
+
+    @QtCore.pyqtSlot()
+    @scriptCommand
+    def onStopScriptFromScript(self):        
+    
+    @QtCore.pyqtSlot()
+    @scriptCommand
     def onHelp(self):
         for _, doc in scriptFunctionDocs.iteritems():
             for n, line in enumerate(doc.splitlines()):
@@ -237,7 +244,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             for line in currentLines:
                 self.textEdit.textEdit.markerAdd(line-1, self.textEdit.textEdit.ARROW_MARKER_NUM)
                 self.textEdit.textEdit.markerAdd(line-1, self.textEdit.textEdit.currentLineMarkerNum)
-        
+                
     @QtCore.pyqtSlot()
     def onStartScript(self):
         """Runs when start button clicked. Starts the script and disables some aspects of the script GUI"""
@@ -251,7 +258,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.onSave()
             self.enableScriptChange(False)
             self.actionPauseScript.setChecked(False)
-            self.actionPauseScriptAndScan.setChecked(False)
             with QtCore.QMutexLocker(self.script.mutex):
                 self.script.paused = False
                 self.script.stopped = False
@@ -284,8 +290,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             self.script.dataWait.wakeAll()
         
     @QtCore.pyqtSlot()
-    def onPauseScriptAndScan(self, paused):
-        self.onPauseScript(paused)
+    def onPauseScriptAndScan(self):
+        self.onPauseScript(True)
         self.experimentUi.actionPause.trigger()
         
     @QtCore.pyqtSlot()

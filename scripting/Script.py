@@ -28,20 +28,19 @@ class Script(QtCore.QThread):
     exceptionSignal = QtCore.pyqtSignal(list, str) #arg: line numbers, exception message
     
     #Signals to send instructions to the main thread
-    setGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
-    addGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
     pauseScriptSignal = QtCore.pyqtSignal()
     stopScriptSignal = QtCore.pyqtSignal()
+    pauseScanSignal = QtCore.pyqtSignal()
+    stopScanSignal = QtCore.pyqtSignal()
+    
+    setGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
+    addGlobalSignal = QtCore.pyqtSignal(str, float, str) #args: name, value, unit
     startScanSignal = QtCore.pyqtSignal()
     setScanSignal = QtCore.pyqtSignal(str) #arg: scan name
     setEvaluationSignal = QtCore.pyqtSignal(str) #arg: evaluation name
     setAnalysisSignal = QtCore.pyqtSignal(str) #arg: analysis name
     plotPointSignal = QtCore.pyqtSignal(float, float, str, str, bool) #args: x, y, plotname, tracename, save if True
     addPlotSignal = QtCore.pyqtSignal(str) #arg: plot name
-    pauseScanAndScriptSignal = QtCore.pyqtSignal()
-    stopScanAndScriptSignal = QtCore.pyqtSignal()
-    pauseScanSignal = QtCore.pyqtSignal()
-    stopScanSignal = QtCore.pyqtSignal()
     abortScanSignal = QtCore.pyqtSignal()
     helpSignal = QtCore.pyqtSignal()
     
@@ -133,7 +132,12 @@ class Script(QtCore.QThread):
         baseScriptFunction.func_name = func.func_name
         baseScriptFunction.func_doc = func.func_doc
         return baseScriptFunction
-
+    
+    def scriptInternalFunction(func): #@NoSelf
+        """Decorator for script internal functions. These are functions which do not interface with the GUI."""
+        func.isScriptFunction = True
+        return func
+        
     @scriptFunction
     def setGlobal(self, name, value, unit):
         """setGlobal(name, value, unit):
@@ -240,6 +244,7 @@ class Script(QtCore.QThread):
                The name of the analysis from the analysis context menu"""
         self.setAnalysisSignal.emit(name)
 
+    @scriptInternalFunction
     def waitForScan(self):
         """waitForScan():
         Wait for scan to finish before continuing script.
@@ -247,20 +252,20 @@ class Script(QtCore.QThread):
         If startScan is run with waitOnScan=True, this function is unnecessary"""
         with QtCore.QMutexLocker(self.mutex):
             self.waitOnScan = True
-    waitForScan.isScriptFunction = True
     
+    @scriptInternalFunction
     def waitForData(self):
         """waitForData():
         Wait for data to arrive before continuing script."""
         with QtCore.QMutexLocker(self.mutex):
             self.waitOnData = True
-    waitForData.isScriptFunction = True
  
+    @scriptInternalFunction
     def getData(self):
         """getData():
         Get the data from a running scan"""
-        return self.data
-    getData.isScriptFunction = True
+        with QtCore.QMutexLocker(self.mutex):
+            return self.data
     
     @scriptFunction
     def plotPoint(self, x, y, plotName, traceName='', save=True):
@@ -297,22 +302,6 @@ class Script(QtCore.QThread):
                The name of the plot to add"""
         self.addPlotSignal.emit(name)
 
-    @scriptFunction
-    def pauseScanAndScript(self):
-        """pauseScanAndScript():
-           Pause the scan and script.
-           
-           This is equivalent to clicking "pause scan and script" on the scripting GUI."""
-        self.pauseScanAndScriptSignal.emit()
-        
-    @scriptFunction
-    def stopScanAndScript(self):
-        """stopScanAndScript():
-           Stop the scan and script.
-           
-           This is equivalent to clicking "stop scan and script" on the scripting GUI."""
-        self.stopScanAndScriptSignal.emit()
-        
     @scriptFunction
     def pauseScan(self):
         """pauseScan():
