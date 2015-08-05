@@ -244,29 +244,6 @@ class Script(QtCore.QThread):
                The name of the analysis from the analysis context menu"""
         self.setAnalysisSignal.emit(name)
 
-    @scriptInternalFunction
-    def waitForScan(self):
-        """waitForScan():
-        Wait for scan to finish before continuing script.
-        
-        If startScan is run with waitOnScan=True, this function is unnecessary"""
-        with QtCore.QMutexLocker(self.mutex):
-            self.waitOnScan = True
-    
-    @scriptInternalFunction
-    def waitForData(self):
-        """waitForData():
-        Wait for data to arrive before continuing script."""
-        with QtCore.QMutexLocker(self.mutex):
-            self.waitOnData = True
- 
-    @scriptInternalFunction
-    def getData(self):
-        """getData():
-        Get the data from a running scan"""
-        with QtCore.QMutexLocker(self.mutex):
-            return self.data
-    
     @scriptFunction
     def plotPoint(self, x, y, plotName, traceName='', save=True):
         """plotPoint(x, y, plotName, traceName='', save=True):
@@ -331,6 +308,34 @@ class Script(QtCore.QThread):
         """help():
         Get a list of all script commands and their documentation."""
         self.helpSignal.emit()
+
+    @scriptInternalFunction
+    def waitForScan(self):
+        """waitForScan():
+        Wait for scan to finish before continuing script.
+        
+        If startScan is run with waitOnScan=True, this function is unnecessary"""
+        with QtCore.QMutexLocker(self.mutex):
+            self.waitOnScan = True
+    
+    @scriptInternalFunction
+    def waitForData(self):
+        """waitForData():
+        Wait for data to arrive before continuing script."""
+        with QtCore.QMutexLocker(self.mutex):
+            self.waitOnData = True
+ 
+    @scriptInternalFunction
+    def getData(self):
+        """getData():
+        Get the data from a running scan"""
+        with QtCore.QMutexLocker(self.mutex):
+            return self.data
+
+    @scriptInternalFunction
+    def scanIsRunning(self):
+        with QtCore.QMutexLocker(self.mutex):
+            return self.scanRunning
 
 def checkScripting(func):
     """Check whether a function has been marked"""

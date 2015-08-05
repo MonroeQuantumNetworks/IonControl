@@ -8,10 +8,10 @@ import os.path
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
-import logging
 from PyQt4.Qsci import QsciScintilla
+from PyQt4.QtCore import Qt
+import logging
 from datetime import datetime
-import inspect
 from gui import ProjectSelection
 from modules.PyqtUtility import BlockSignals
 from modules import magnitude
@@ -27,8 +27,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         ScriptingBase.__init__(self)
         self.experimentUi = experimentUi
         self.config = experimentUi.config
-        self.textEdit = None
-        self.console = None
         self.recentFiles = dict() #dict of form {shortname: fullname}, where fullname has path and shortname doesn't
         self.script = Script() #encapsulates the script
         self.defaultDir = ProjectSelection.configDir()+'\\Scripts'
@@ -37,6 +35,16 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         super(ScriptingUi,self).setupUi(parent)
         #logger = logging.getLogger(__name__)
         self.configname = 'Scripting'
+        
+        #setup console
+        self.consoleMaximumLines = self.config.get(self.configname+'.consoleMaximumLinesNew',100)
+        self.consoleEnable = self.config.get(self.configname+'.consoleEnable',False)
+        self.consoleClearButton.clicked.connect( self.onClearConsole )
+        self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
+        self.linesSpinBox.setValue( self.consoleMaximumLines )
+        self.checkBoxEnableConsole.stateChanged.connect( self.onEnableConsole )
+        self.checkBoxEnableConsole.setChecked( self.consoleEnable )
+        
         self.recentFiles = self.config.get( self.configname+'.recentFiles' , dict() )
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
         self.script.shortname = os.path.basename(self.script.fullname)
@@ -73,12 +81,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.textEdit.textEdit.setMarkerBackgroundColor(QtGui.QColor(0xd0, 0xff, 0xd0), self.textEdit.textEdit.currentLineMarkerNum)
         
         self.textEdit.setPlainText(self.script.code)
-        self.splitter.addWidget(self.textEdit)
+        self.splitter.insertWidget(0,self.textEdit)
         
-        self.console = QtGui.QTextEdit()
-        self.console.setReadOnly(True)
-        self.splitter.addWidget(self.console)
-
         #Add only the filename (without the full path) to the combo box
         self.filenameComboBox.addItems( [shortname for shortname, fullname in self.recentFiles.iteritems() if os.path.exists(fullname)] )
 
@@ -95,6 +99,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.actionStopScript.triggered.connect( self.onStopScript )
         self.actionPauseScriptAndScan.triggered.connect( self.onPauseScriptAndScan )
         self.actionStopScriptAndScan.triggered.connect( self.onStopScriptAndScan )
+        self.terminateButton.clicked.connect( self.onTerminate )
         
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
@@ -170,7 +175,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = True
         self.experimentUi.actionStart.trigger()
-        return "Scan started with scan = {0}, evaluation = {1}".format()
+#        return "Scan started with scan = {0}, evaluation = {1}".format()
 
     @QtCore.pyqtSlot()
     @scriptCommand
@@ -222,18 +227,21 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     @QtCore.pyqtSlot()
     @scriptCommand
     def onPauseScriptFromScript(self):
-
+        self.onPauseScript(True)
+        return 'script paused'
 
     @QtCore.pyqtSlot()
     @scriptCommand
-    def onStopScriptFromScript(self):        
+    def onStopScriptFromScript(self):
+        self.onStopScript()
+        return 'script stopped'        
     
     @QtCore.pyqtSlot()
     @scriptCommand
     def onHelp(self):
         for _, doc in scriptFunctionDocs.iteritems():
             for n, line in enumerate(doc.splitlines()):
-                self.writeToConsole(line, color='blue', bold=(n==0))
+                self.writeToConsole(line, color='blue')
             self.writeToConsole('====================')
         
     @QtCore.pyqtSlot(list)        
@@ -251,10 +259,9 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         if not self.script.isRunning():
             logger = logging.getLogger(__name__)
             self.statusLabel.setText("Script running")
-            message = "script {0} started".format(self.script.fullname)
+            message = "script {0} started at {1}".format(self.script.fullname, str(datetime.now()))
             logger.debug(message)
-            self.clearConsole()
-            self.writeToConsole(message)
+            self.writeToConsole(message, color='blue')
             self.onSave()
             self.enableScriptChange(False)
             self.actionPauseScript.setChecked(False)
@@ -270,11 +277,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.paused = paused
+            self.actionPauseScript.setChecked(paused)
             if not paused:
                 self.script.pauseWait.wakeAll()
         message = "Script is paused" if paused else "Script is unpaused"
         logger.debug(message)
-        self.writeToConsole(message)
+        self.writeToConsole(message, color='blue')
 
     @QtCore.pyqtSlot()
     def onStopScript(self):
@@ -299,6 +307,20 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.onStopScript()
         self.experimentUi.actionStop.trigger()
         
+    @QtCore.pyqtSlot()
+    def onTerminate(self):
+        warningResponse = self.warningMessage("Are you sure you want to terminate the script?", "This is probably a bad idea.")        
+        if warningResponse == QtGui.QMessageBox.Ok:
+            self.script.terminate()
+ 
+    def warningMessage(self, warningText, informativeText):
+        """Pop up a warning message. Return the response."""
+        warningMessage = QtGui.QMessageBox()
+        warningMessage.setText(warningText)
+        warningMessage.setInformativeText(informativeText)
+        warningMessage.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+        return warningMessage.exec_() 
+
     def enableScriptChange(self, enabled):
         """Enable or disable any changes to script"""
         color = QtGui.QColor("#ffe4e4") if enabled else QtGui.QColor('white')
@@ -318,9 +340,9 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         """Runs when script thread finishes. re-enables script GUI."""
         logger = logging.getLogger(__name__)
         self.statusLabel.setText("Idle")
-        message = "script {0} finished".format(self.script.fullname)
+        message = "script {0} finished at {1}".format(self.script.fullname, str(datetime.now()))
         logger.debug(message)
-        self.writeToConsole(message)
+        self.writeToConsole(message, color='blue')
         self.textEdit.textEdit.markerDeleteAll()
         self.enableScriptChange(True)
         
@@ -334,18 +356,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             for line in currentLines:
                 self.textEdit.highlightError(message, line)
     
-    def writeToConsole(self, message, noError=True, color='', bold=False):
-        message = str(message)
-        self.console.moveCursor(QtGui.QTextCursor.End)
-        textColor = ("black" if noError else "red") if color=='' else color
-        boldOn = '<b>' if bold else ''
-        boldOff = '</b>' if bold else '' 
-        for line in message.splitlines():
-            self.console.insertHtml(QtCore.QString('<p><font color='+textColor+'>'+boldOn+line+boldOff+'</font><br></p>'))
-        
-    def clearConsole(self):
-        self.console.setText('')
-
     @QtCore.pyqtSlot()
     def onNew(self):
         logger = logging.getLogger(__name__)
@@ -457,5 +467,30 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def onClose(self):
         self.config[self.configname+'.ScriptingUi.pos'] = self.pos()
         self.config[self.configname+'.ScriptingUi.size'] = self.size()
+        self.config[self.configname+'.consoleMaximumLinesNew'] = self.consoleMaximumLines
+        self.config[self.configname+'.consoleEnable'] = self.consoleEnable 
         self.hide()
+    def onClearConsole(self):
+        self.textEditConsole.clear()
 
+    def onConsoleMaximumLinesChanged(self, maxlines):
+        self.consoleMaximumLines = maxlines
+        self.textEditConsole.document().setMaximumBlockCount(maxlines)
+
+    def onEnableConsole(self, state):
+        self.consoleEnable = state==QtCore.Qt.Checked
+
+    def writeToConsole(self, message, noError=True, color=''):
+        if self.consoleEnable:
+            message = str(message)
+            cursor = self.textEditConsole.textCursor()
+            self.textEditConsole.moveCursor(QtGui.QTextCursor.End)
+            textColor = ('black' if noError else 'red') if color=='' else color
+            self.textEditConsole.setUpdatesEnabled(False)
+            for line in message.splitlines():
+                if textColor == 'black':
+                    self.textEditConsole.insertPlainText(line+'\n')
+                else:
+                    self.textEditConsole.insertHtml(QtCore.QString('<p><font color='+textColor+'>'+line+'</font><br></p>'))
+            self.textEditConsole.setUpdatesEnabled(True)
+            self.textEditConsole.ensureCursorVisible()
