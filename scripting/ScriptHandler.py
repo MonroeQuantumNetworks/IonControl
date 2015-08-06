@@ -15,10 +15,12 @@ class ScriptHandler:
         self.experimentUi = experimentUi
         self.script = script
         
+        #status signals
         self.script.locationSignal.connect( self.onLocation )
         self.script.exceptionSignal.connect( self.onException )
         self.script.consoleSignal.connect(self.onConsoleSignal)
 
+        #action signals
         self.script.setGlobalSignal.connect(self.onSetGlobal)
         self.script.addGlobalSignal.connect(self.onAddGlobal)
         self.script.pauseScriptSignal.connect(self.onPauseScriptFromScript)

@@ -14,9 +14,9 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
-     <widget class="QSplitter" name="splitter_2">
+     <widget class="QSplitter" name="splitterHorizontal">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -115,7 +115,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QSplitter" name="splitter">
+         <widget class="QSplitter" name="splitterVertical">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -200,7 +200,40 @@
         </item>
        </layout>
       </widget>
-      <widget class="QListWidget" name="DocsListWidget"/>
+      <widget class="QWidget" name="verticalLayoutWidget_2">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Available script functions</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Hold over for more information</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="DocListWidget">
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::NoSelection</enum>
+          </property>
+          <property name="viewMode">
+           <enum>QListView::ListMode</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -394,6 +427,14 @@
   <action name="actionShowConsole">
    <property name="text">
     <string>Show console</string>
+   </property>
+  </action>
+  <action name="actionShowHelp">
+   <property name="text">
+    <string>showHelp</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
    </property>
   </action>
  </widget>

@@ -13,9 +13,10 @@ import logging
 from datetime import datetime
 from gui import ProjectSelection
 from modules.PyqtUtility import BlockSignals
-from Script import Script, scriptFunctions, scriptFunctionDocs
+from Script import Script, scriptFunctions, scriptDocs
 from ScriptHandler import ScriptHandler
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
+from collections import OrderedDict
 
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
@@ -31,7 +32,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
    
     def setupUi(self,parent):
         super(ScriptingUi,self).setupUi(parent)
-        #logger = logging.getLogger(__name__)
         self.configname = 'Scripting'
         
         #setup console
@@ -50,7 +50,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.textEdit.textEdit.markerDefine(QsciScintilla.Background, self.textEdit.textEdit.currentLineMarkerNum) #This is a marker that highlights the background
         self.textEdit.textEdit.setMarkerBackgroundColor(QtGui.QColor(0xd0, 0xff, 0xd0), self.textEdit.textEdit.currentLineMarkerNum)
         self.textEdit.setPlainText(self.script.code)
-        self.splitter.insertWidget(0,self.textEdit)
+        self.splitterVertical.insertWidget(0,self.textEdit)
+        
+        #setup documentation list
+        self.getDocs()
+        for funcDef, funcDesc in self.docDict.iteritems():
+            QtGui.QListWidgetItem(funcDef, self.DocListWidget).setToolTip(funcDesc)
 
         #load file
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
@@ -277,16 +282,24 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def show(self):
         pos = self.config.get(self.configname+'.ScriptingUi.pos')
         size = self.config.get(self.configname+'.ScriptingUi.size')
+        splitterHorizontalState = self.config.get(self.configname+".splitterHorizontal")
+        splitterVerticalState = self.config.get(self.configname+".splitterVertical")
         if pos:
             self.move(pos)
         if size:
             self.resize(size)
+        if splitterHorizontalState:
+            self.splitterHorizontal.restoreState(splitterHorizontalState)
+        if splitterVerticalState:
+            self.splitterVertical.restoreState(splitterVerticalState)
         QtGui.QDialog.show(self)
         self.isShown = True
 
     def onClose(self):
         self.config[self.configname+'.ScriptingUi.pos'] = self.pos()
         self.config[self.configname+'.ScriptingUi.size'] = self.size()
+        self.config[self.configname+".splitterHorizontal"] = self.splitterHorizontal.saveState()
+        self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
         self.config[self.configname+'.consoleMaximumLinesNew'] = self.consoleMaximumLines
         self.config[self.configname+'.consoleEnable'] = self.consoleEnable 
         self.hide()
@@ -329,3 +342,13 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
                     self.textEditConsole.insertHtml(QtCore.QString('<p><font color='+textColor+'>'+line+'</font><br></p>'))
             self.textEditConsole.setUpdatesEnabled(True)
             self.textEditConsole.ensureCursorVisible()
+
+    def getDocs(self):
+        """Assemble the script function documentation into a dictionary"""
+        self.docDict = OrderedDict()
+        for doc in scriptDocs:
+            docsplit = doc.splitlines() 
+            defLine = docsplit.pop(0)
+            docsplit = [line.strip() for line in docsplit]
+            docsplit = '\n'.join(docsplit)
+            self.docDict[defLine] = docsplit
