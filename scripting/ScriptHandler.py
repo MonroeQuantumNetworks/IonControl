@@ -88,7 +88,7 @@ class ScriptHandler:
         if doesNotExist:
             message = "Global variable {0} does not exist.".format(name)
             logger.error(message)
-            self.writeToConsole(message, noError=False)
+            self.writeToConsole(message, error=True)
             raise ScriptException(message)
         self.experimentUi.globalVariablesUi.model.update([('Global', name, magValue)])
         return "Global variable {0} set to {1} {2}".format(name, value, unit)
@@ -127,7 +127,16 @@ class ScriptHandler:
     @QtCore.pyqtSlot(str)
     @scriptCommand
     def onSetScan(self, name):
-        pass
+        name = str(name)
+        logger = logging.getLogger(__name__)
+        doesNotExist = self.experimentUi.tabDict['Scan'].scanControlWidget.comboBox.findText(name)==-1
+        if doesNotExist:
+            message = "Scan settings {0} does not exist.".format(name)
+            logger.error(message)
+            self.writeToConsole(message, error=True)
+            raise ScriptException(message)
+        self.experimentUi.tabDict['Scan'].scanControlWidget.loadSetting(name)
+        return "Scan settings set to {0}".format(name)
     
     @QtCore.pyqtSlot(str)
     @scriptCommand
@@ -205,9 +214,9 @@ class ScriptHandler:
         self.experimentUi.actionStop.trigger()
 
     @QtCore.pyqtSlot(str, bool, str)
-    def onConsoleSignal(self, message, noError, color):
+    def onConsoleSignal(self, message, error, color):
         """Runs when script emits a console signal. Writes message to console."""
-        self.writeToConsole(message, noError=noError, color=color)
+        self.writeToConsole(message, error=error, color=color)
     
     @QtCore.pyqtSlot(int, str)
     def onException(self, currentLines, message):
@@ -224,6 +233,6 @@ class ScriptHandler:
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.slow = slow
 
-    def writeToConsole(self, message, noError=True, color=''):
+    def writeToConsole(self, message, error=False, color=''):
         """write a message to the console."""
-        self.experimentUi.scriptingWindow.writeToConsole(message, noError, color)
+        self.experimentUi.scriptingWindow.writeToConsole(message, error, color)

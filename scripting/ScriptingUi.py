@@ -333,12 +333,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             for line in lines:
                 self.textEdit.highlightError(message, line)
 
-    def writeToConsole(self, message, noError=True, color=''):
+    def writeToConsole(self, message, error=False, color=''):
         if self.consoleEnable:
             message = str(message)
             #cursor = self.textEditConsole.textCursor()
             self.textEditConsole.moveCursor(QtGui.QTextCursor.End)
-            textColor = ('black' if noError else 'red') if color=='' else color
+            textColor = ('red' if error else 'black') if color=='' else color
             self.textEditConsole.setUpdatesEnabled(False)
             for line in message.splitlines():
                 if textColor == 'black':
