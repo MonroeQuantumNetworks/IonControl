@@ -54,8 +54,11 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         
         #setup documentation list
         self.getDocs()
+        self.docTreeWidget.setHeaderLabels(['Available Script Functions'])
         for funcDef, funcDesc in self.docDict.iteritems():
-            QtGui.QListWidgetItem(funcDef, self.DocListWidget).setToolTip(funcDesc)
+            itemDef  = QtGui.QTreeWidgetItem(self.docTreeWidget, [funcDef])
+            self.docTreeWidget.addTopLevelItem(itemDef)
+            QtGui.QTreeWidgetItem(itemDef, [funcDesc])
 
         #load file
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
@@ -114,6 +117,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         """Pause script button is clicked"""
         logger = logging.getLogger(__name__)
         message = "Script is paused" if paused else "Script is unpaused"
+        markerColor = QtGui.QColor("#c0c0ff") if paused else QtGui.QColor(0xd0, 0xff, 0xd0)
+        self.textEdit.textEdit.setMarkerBackgroundColor(markerColor, self.textEdit.textEdit.currentLineMarkerNum)
         logger.debug(message)
         self.writeToConsole(message, color='blue')
         self.actionPauseScript.setChecked(paused)
