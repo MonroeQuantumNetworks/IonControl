@@ -321,7 +321,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
 
     def markLocation(self, lines):
         """mark a specified location""" 
-        if lines != []:
+        if lines:
             self.textEdit.textEdit.markerDeleteAll()
             for line in lines:
                 self.textEdit.textEdit.markerAdd(line-1, self.textEdit.textEdit.ARROW_MARKER_NUM)
@@ -336,16 +336,16 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def writeToConsole(self, message, error=False, color=''):
         if self.consoleEnable:
             message = str(message)
-            #cursor = self.textEditConsole.textCursor()
-            self.textEditConsole.moveCursor(QtGui.QTextCursor.End)
+            cursor = self.textEditConsole.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.End)
             textColor = ('red' if error else 'black') if color=='' else color
             self.textEditConsole.setUpdatesEnabled(False)
-            for line in message.splitlines():
-                if textColor == 'black':
-                    self.textEditConsole.insertPlainText(line+'\n')
-                else:
-                    self.textEditConsole.insertHtml(QtCore.QString('<p><font color='+textColor+'>'+line+'</font><br></p>'))
+            if textColor == 'black':
+                self.textEditConsole.insertPlainText(message+'\n')
+            else:
+                self.textEditConsole.insertHtml(QtCore.QString('<p><font color='+textColor+'>'+message+'</font><br></p>'))
             self.textEditConsole.setUpdatesEnabled(True)
+            self.textEditConsole.setTextCursor(cursor)
             self.textEditConsole.ensureCursorVisible()
 
     def getDocs(self):
