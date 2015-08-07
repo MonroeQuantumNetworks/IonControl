@@ -5,6 +5,7 @@ Created on Aug 6, 2015
 '''
 
 from PyQt4 import QtCore
+import os
 import logging
 import traceback
 from modules import magnitude
@@ -12,7 +13,13 @@ from Script import ScriptException
 
 class ScriptHandler:
     def __init__(self, script, experimentUi):
+        #self.experimentUi = experimentUi
         self.experimentUi = experimentUi
+        self.globalVariablesUi = experimentUi.globalVariablesUi
+        self.scanControlWidget = experimentUi.tabDict['Scan'].scanControlWidget
+        self.evaluationControlWidget = experimentUi.tabDict['Scan'].evaluationControlWidget
+        self.analysisControlWidget = experimentUi.tabDict['Scan'].analysisControlWidget
+        
         self.script = script
         
         #status signals
@@ -44,14 +51,24 @@ class ScriptHandler:
         def baseScriptCommand(self, *args, **kwds):
             logger = logging.getLogger(__name__)
             try:
-                message = func(self, *args, **kwds)
-                if message:
+                error, message = func(self, *args, **kwds)
+                
+                if error and message:
+                    logger.error(message)
+                    self.writeToConsole(message, error=True)
+                    raise ScriptException(message)
+                
+                elif error and (not message):
+                    raise ScriptException('')
+                
+                elif (not error) and message:
                     logger.debug(message)
                     self.writeToConsole(message)
+                    
             except Exception as e:
                 with QtCore.QMutexLocker(self.script.mutex):
                     self.script.exception = e
-                    print traceback.print_exc()
+                    logger.error(traceback.print_exc())
             finally:
                 self.script.commandWait.wakeAll()
         baseScriptCommand.func_name = func.func_name
@@ -66,14 +83,16 @@ class ScriptHandler:
         value = float(value)
         unit = str(unit)
         magValue = magnitude.mg(value, unit)
-        doesNotExist = name not in self.experimentUi.globalVariablesUi.keys()
-        message1 = ''
+        doesNotExist = name not in self.globalVariablesUi.keys()
         if doesNotExist:
-            self.experimentUi.globalVariablesUi.model.addVariable(name)
-            message1 = "Global variable {0} created\n".format(name)
-        self.experimentUi.globalVariablesUi.model.update([('Global', name, magValue)])
-        message2 =  "Global variable {0} set to {1} {2}".format(name, value, unit)
-        return message1+message2
+            self.globalVariablesUi.model.addVariable(name)
+            message = "Global variable {0} created\n".format(name)
+        else:
+            message = "Global variable {0} already exists\n".format(name)
+        self.globalVariablesUi.model.update([('Global', name, magValue)])
+        message +=  "Global variable {0} set to {1} {2}".format(name, value, unit)
+        error = False
+        return (error, message)
 
     @QtCore.pyqtSlot(str, float, str)
     @scriptCommand
@@ -82,16 +101,16 @@ class ScriptHandler:
         name = str(name) #signal is passed as a QString
         value = float(value)
         unit = str(unit)
-        logger = logging.getLogger(__name__)
         magValue = magnitude.mg(value, unit)
-        doesNotExist = (name not in self.experimentUi.globalVariablesUi.keys())
+        doesNotExist = name not in self.globalVariablesUi.keys()
         if doesNotExist:
             message = "Global variable {0} does not exist.".format(name)
-            logger.error(message)
-            self.writeToConsole(message, error=True)
-            raise ScriptException(message)
-        self.experimentUi.globalVariablesUi.model.update([('Global', name, magValue)])
-        return "Global variable {0} set to {1} {2}".format(name, value, unit)
+            error = True
+        else:
+            self.globalVariablesUi.model.update([('Global', name, magValue)])
+            message = "Global variable {0} set to {1} {2}".format(name, value, unit)
+            error = False
+        return (error, message)
     
     @QtCore.pyqtSlot()
     @scriptCommand
@@ -100,13 +119,15 @@ class ScriptHandler:
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = True
         self.experimentUi.actionStart.trigger()
-#        return "Scan started with scan = {0}, evaluation = {1}".format()
+        #return "Scan started with scan = {0}, evaluation = {1}".format()
 
     @QtCore.pyqtSlot()
     @scriptCommand
     def onPauseScan(self):
         self.experimentUi.actionPause.trigger()
-        return "Scan paused"
+        error = False
+        message = "Scan paused"
+        return (error, message)
         
     @QtCore.pyqtSlot()
     @scriptCommand
@@ -114,7 +135,9 @@ class ScriptHandler:
         self.experimentUi.actionStop.trigger()
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = False
-        return "Scan stopped"
+        error = False
+        message = "Scan stopped"
+        return (error, message)
         
     @QtCore.pyqtSlot()
     @scriptCommand
@@ -122,31 +145,51 @@ class ScriptHandler:
         self.experimentUi.actionAbort.trigger()
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = False
-        return "Scan aborted"
+        error = False
+        message = "Scan aborted"
+        return (error, message)
 
     @QtCore.pyqtSlot(str)
     @scriptCommand
     def onSetScan(self, name):
         name = str(name)
-        logger = logging.getLogger(__name__)
-        doesNotExist = self.experimentUi.tabDict['Scan'].scanControlWidget.comboBox.findText(name)==-1
+        doesNotExist = self.scanControlWidget.comboBox.findText(name)==-1
         if doesNotExist:
-            message = "Scan settings {0} does not exist.".format(name)
-            logger.error(message)
-            self.writeToConsole(message, error=True)
-            raise ScriptException(message)
-        self.experimentUi.tabDict['Scan'].scanControlWidget.loadSetting(name)
-        return "Scan settings set to {0}".format(name)
+            message = "Scan {0} does not exist.".format(name)
+            error = True
+        else:
+            self.scanControlWidget.loadSetting(name)
+            message = "Scan set to {0}".format(name)
+            error = False
+        return (error, message)
     
     @QtCore.pyqtSlot(str)
     @scriptCommand
     def onSetEvaluation(self, name):
-        pass
+        name = str(name)
+        doesNotExist = self.evaluationControlWidget.comboBox.findText(name)==-1
+        if doesNotExist:
+            message = "Evaluation {0} does not exist.".format(name)
+            error = True
+        else:
+            self.evaluationControlWidget.loadSetting(name)
+            message = "Evaluation set to {0}".format(name)
+            error = False
+        return (error, message)
     
     @QtCore.pyqtSlot(str)
     @scriptCommand
     def onSetAnalysis(self, name):
-        pass
+        name = str(name)
+        doesNotExist = name not in self.analysisControlWidget.analysisDefinitionDict
+        if doesNotExist:
+            message = "Analysis {0} does not exist.".format(name)
+            error = True
+        else:
+            self.analysisControlWidget.onLoadAnalysisConfiguration(name)
+            message = "Analysis set to {0}".format(name)
+            error = False
+        return (error, message)
     
     @QtCore.pyqtSlot(float, float, str, str, bool)
     @scriptCommand
@@ -162,19 +205,18 @@ class ScriptHandler:
     @scriptCommand
     def onPauseScriptFromScript(self):
         self.onPauseScript(True)
-        return 'script paused'
+        message = 'script paused'
+        error = False
+        return (error, message)
 
     @QtCore.pyqtSlot()
     @scriptCommand
     def onStopScriptFromScript(self):
         self.onStopScript()
-        return 'script stopped'        
+        message = 'script stopped'
+        error = False
+        return (error, message)        
     
-    @QtCore.pyqtSlot(list)        
-    def onLocation(self, currentLines):
-        """Mark where the script currently is"""
-        self.experimentUi.scriptingWindow.markLocation(currentLines)
-
     def onStartScript(self):
         """Runs when start script button clicked. Starts the script and disables some aspects of the script GUI"""
         if not self.script.isRunning():
@@ -213,16 +255,6 @@ class ScriptHandler:
         self.onStopScript()
         self.experimentUi.actionStop.trigger()
 
-    @QtCore.pyqtSlot(str, bool, str)
-    def onConsoleSignal(self, message, error, color):
-        """Runs when script emits a console signal. Writes message to console."""
-        self.writeToConsole(message, error=error, color=color)
-    
-    @QtCore.pyqtSlot(int, str)
-    def onException(self, currentLines, message):
-        """Runs when script emits exception signal. Highlights error."""
-        self.experimentUi.scriptingWindow.markError(currentLines, message)
-                
     def onRepeat(self, repeat):
         """Runs when repeat button is clicked. Set repeat variable."""
         with QtCore.QMutexLocker(self.script.mutex):
@@ -233,6 +265,38 @@ class ScriptHandler:
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.slow = slow
 
+    @QtCore.pyqtSlot(str, bool, str)
+    def onConsoleSignal(self, message, error, color):
+        """Runs when script emits a console signal. Writes message to console."""
+        self.writeToConsole(message, error=error, color=color)
+    
+    @QtCore.pyqtSlot(str, str)
+    def onException(self, message, trace):
+        """Runs when script emits exception signal. Highlights error."""
+        logger = logging.getLogger(__name__)
+        message = str(message)
+        trace = str(trace)
+        logger.error(trace)
+        self.writeToConsole(trace, error=True)
+        self.experimentUi.scriptingWindow.markError(self.currentLines, message)
+    
+    @QtCore.pyqtSlot(list)        
+    def onLocation(self, locs):
+        """Mark where the script currently is"""
+        logger = logging.getLogger(__name__)
+        self.currentLines = []
+        if locs:
+            self.currentLines = [loc[1] for loc in locs]
+            for loc in locs:
+                message = "Executing {0} in {1} at line {2}".format( loc[3], os.path.basename(loc[0]), loc[1] )
+                logger.debug(message)
+                self.writeToConsole(message, False)
+        else: #This should never execute
+            message = "onLocation called while not executing script"
+            logger.warning(message)
+            self.writeToConsole(message, True)
+        self.experimentUi.scriptingWindow.markLocation(self.currentLines)
+        
     def writeToConsole(self, message, error=False, color=''):
         """write a message to the console."""
         self.experimentUi.scriptingWindow.writeToConsole(message, error, color)
