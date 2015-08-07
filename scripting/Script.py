@@ -47,12 +47,14 @@ class Script(QtCore.QThread):
         self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
         
-        self.mutex = QtCore.QMutex() #used to control access to class variables that are accessed by ScriptingUi
+        self.mutex = QtCore.QMutex() #used to control access to class variables that are accessed by ScriptHandler
+        
         self.pauseWait = QtCore.QWaitCondition() #Used to wait while script is paused
         self.scanWait = QtCore.QWaitCondition() #Used to wait for end of scan
         self.dataWait = QtCore.QWaitCondition() #Used to wait for data
         self.commandWait = QtCore.QWaitCondition() #Used to wait for command to be completed
-        #These are all class elements that are modified directly during operation by ScriptingUi
+        
+        #These are all class elements that are modified directly during operation by ScriptHandler
         self.repeat = False
         self.paused = False
         self.stopped = False
@@ -61,6 +63,7 @@ class Script(QtCore.QThread):
         self.waitOnScan = False
         self.exception = None
         self.data = None
+        self.analysisResults = None
         for name in scriptFunctions: #Define the script functions to be the corresponding class functions
             globals()[name] = getattr(self, name)
         

@@ -104,7 +104,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         if not self.script.isRunning():
             logger = logging.getLogger(__name__)
             message = "script {0} started at {1}".format(self.script.fullname, str(datetime.now()))
-            logger.debug(message)
+            logger.info(message)
             self.writeToConsole(message, color='blue')
             self.onSave()
             self.enableScriptChange(False)
@@ -154,7 +154,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         logger = logging.getLogger(__name__)
         self.statusLabel.setText("Idle")
         message = "script {0} finished at {1}".format(self.script.fullname, str(datetime.now()))
-        logger.debug(message)
+        logger.info(message)
         self.writeToConsole(message, color='blue')
         self.textEdit.textEdit.markerDeleteAll()
         self.enableScriptChange(True)

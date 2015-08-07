@@ -13,14 +13,16 @@ from Script import ScriptException
 
 class ScriptHandler:
     def __init__(self, script, experimentUi):
-        #self.experimentUi = experimentUi
         self.experimentUi = experimentUi
         self.globalVariablesUi = experimentUi.globalVariablesUi
         self.scanControlWidget = experimentUi.tabDict['Scan'].scanControlWidget
         self.evaluationControlWidget = experimentUi.tabDict['Scan'].evaluationControlWidget
         self.analysisControlWidget = experimentUi.tabDict['Scan'].analysisControlWidget
-        
+        self.pulser = self.experimentUi.pulser
         self.script = script
+        
+        #scan status signal
+        self.experimentUi.tabDict['Scan'].progressUi.stateChanged.connect(self.onScanStateChanged)
         
         #status signals
         self.script.locationSignal.connect( self.onLocation )
@@ -52,19 +54,15 @@ class ScriptHandler:
             logger = logging.getLogger(__name__)
             try:
                 error, message = func(self, *args, **kwds)
-                
                 if error and message:
                     logger.error(message)
                     self.writeToConsole(message, error=True)
                     raise ScriptException(message)
-                
                 elif error and (not message):
                     raise ScriptException('')
-                
                 elif (not error) and message:
                     logger.debug(message)
                     self.writeToConsole(message)
-                    
             except Exception as e:
                 with QtCore.QMutexLocker(self.script.mutex):
                     self.script.exception = e
@@ -269,6 +267,14 @@ class ScriptHandler:
         """Runs when slow button is clicked. Set slow variable."""
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.slow = slow
+            
+    @QtCore.pyqtSlot(str)
+    def onScanStateChanged(self, state):
+        """Runs when the scan state changes"""
+        if state == 'idle':
+            with QtCore.QMutexLocker(self.script.mutex):
+                self.script.scanRunning = False
+                self.script.scanWait.wakeAll()
 
     @QtCore.pyqtSlot(str, bool, str)
     def onConsoleSignal(self, message, error, color):
