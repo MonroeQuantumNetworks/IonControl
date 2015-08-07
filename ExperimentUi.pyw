@@ -151,10 +151,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.globalVariablesDock.setWidget( self.globalVariablesUi )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea , self.globalVariablesDock)
 
-        # initialize ScriptingUi
-        self.scriptingWindow = ScriptingUi(self)
-        self.scriptingWindow.setupUi(self.scriptingWindow)
-
         self.measurementLog = MeasurementLogUi(self.config, self.dbConnection)
         self.measurementLog.setupUi(self.measurementLog)
         #self.measurementLogDock = QtGui.QDockWidget("Measurement Log")
@@ -380,6 +376,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for widget in self.tabDict.values():
             if hasattr(widget, 'addPushDestination'):
                 widget.addPushDestination( 'External', self.ExternalParametersUi )
+                
+        # initialize ScriptingUi
+        self.scriptingWindow = ScriptingUi(self)
+        self.scriptingWindow.setupUi(self.scriptingWindow)
 
     def callWhenDoneAdjusting(self, callback):
         self.ExternalParametersUi.callWhenDoneAdjusting(callback)
