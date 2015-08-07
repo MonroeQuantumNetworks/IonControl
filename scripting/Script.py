@@ -4,12 +4,10 @@ Created on Jul 27, 2015
 @author: jmizrahi
 '''
 import os
-import logging
 from PyQt4 import QtCore
 import inspect
 import traceback
 import time
-from collections import OrderedDict
 
 class ScriptException(Exception):
     pass
@@ -61,7 +59,6 @@ class Script(QtCore.QThread):
         self.slow = False
         self.scanRunning = False
         self.waitOnScan = False
-        self.waitOnData = False
         self.exception = None
         self.data = None
         for name in scriptFunctions: #Define the script functions to be the corresponding class functions
@@ -97,11 +94,8 @@ class Script(QtCore.QThread):
         def baseScriptFunction(self, *args, **kwds):
             with QtCore.QMutexLocker(self.mutex): #Acquire mutex before inspecting any variables
                 if not self.stopped: #if stopped, don't do anything
-                    if self.scanRunning:
-                        if self.waitOnScan:
-                            self.scanWait.wait(self.mutex)
-                        elif self.waitOnData:
-                            self.dataWait.wait(self.mutex)
+                    if self.scanRunning and self.waitOnScan:
+                        self.scanWait.wait(self.mutex)
                     if self.paused:
                         self.pauseWait.wait(self.mutex)
                     self.emitLocation()
@@ -152,12 +146,14 @@ class Script(QtCore.QThread):
         self.stopScriptSignal.emit()
 
     @scriptFunction
-    def startScan(self, waitOnScan=True, waitOnData=True):
-        """startScan(waitOnScan=True, waitOnData=True)
+    def startScan(self, wait=True):
+        """startScan(wait=True)
         Start the scan.
-        This is equivalent to clicking "start" on the experiment GUI."""
-        self.waitOnScan = waitOnScan
-        self.waitOnData = waitOnData
+        This is equivalent to clicking "start" on the experiment GUI.
+        
+        If wait=True, the script will not continue until the scan is finished.
+        """
+        self.waitOnScan = wait
         self.startScanSignal.emit()
         
     @scriptFunction

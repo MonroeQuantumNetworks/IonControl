@@ -119,7 +119,12 @@ class ScriptHandler:
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = True
         self.experimentUi.actionStart.trigger()
-        #return "Scan started with scan = {0}, evaluation = {1}".format()
+        scan = self.scanControlWidget.settingsName
+        evaluation = self.evaluationControlWidget.settingsName
+        analysis = self.analysisControlWidget.currentAnalysisName
+        error = False
+        message = "Scan started with scan = {0}, evaluation = {1}, analysis = {2}".format(scan, evaluation, analysis)
+        return (error, message)
 
     @QtCore.pyqtSlot()
     @scriptCommand
