@@ -199,10 +199,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.saveHistogram.triggered.connect( self.onSaveHistogram )
         self.actionList.append( self.saveHistogram )
 
-        self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
-        self.addPlot.setToolTip("Add new plot")
-        self.addPlot.triggered.connect(self.onAddPlot)
-        self.actionList.append(self.addPlot)
+        self.actionAddPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
+        self.actionAddPlot.setToolTip("Add new plot")
+        self.actionAddPlot.triggered.connect(self.onAddPlot)
+        self.actionList.append(self.actionAddPlot)
         
         self.removePlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/remove-plot.png"), "Remove a plot", self)
         self.removePlot.setToolTip("Remove a plot")
@@ -629,16 +629,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onAddPlot(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Plot Name', 'Please enter a plot name: ')
         if ok:
-            name = str(name)
-            dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
-            view = widget._graphicsView
-            self.area.addDock(dock, "bottom")
-            dock.addWidget(widget)
-            self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
-            self.evaluationControlWidget.plotnames.append(name)
-            self.saveConfig() #In case the program suddenly shuts down
-            self.plotsChanged.emit()
+            self.addPlot(name)
+            
+    def addPlot(self, name):
+        name = str(name)
+        dock = Dock(name)
+        widget = CoordinatePlotWidget(self)
+        view = widget._graphicsView
+        self.area.addDock(dock, "bottom")
+        dock.addWidget(widget)
+        self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
+        self.evaluationControlWidget.plotnames.append(name)
+        self.saveConfig() #In case the program suddenly shuts down
+        self.plotsChanged.emit()
+        
             
     def onRemovePlot(self):
         logger = logging.getLogger(__name__)
