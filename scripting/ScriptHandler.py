@@ -22,8 +22,9 @@ class ScriptHandler:
         self.pulser = self.experimentUi.pulser
         self.script = script
         
-        #scan status signal
+        #Experiment information signals
         self.experimentUi.tabDict['Scan'].progressUi.stateChanged.connect(self.onScanStateChanged)
+        self.analysisControlWidget.analysisResultSignal.connect(self.onAnalysisResult)
         
         #status signals
         self.script.locationSignal.connect( self.onLocation )
@@ -279,6 +280,11 @@ class ScriptHandler:
             with QtCore.QMutexLocker(self.script.mutex):
                 self.script.scanRunning = False
                 self.script.scanWait.wakeAll()
+
+    @QtCore.pyqtSlot(object)
+    def onAnalysisResult(self, allResults):
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.analysisResults = allResults
 
     @QtCore.pyqtSlot(str, bool, str)
     def onConsoleSignal(self, message, error, color):

@@ -224,18 +224,18 @@ class Script(QtCore.QThread):
             self.waitOnScan = True
     
     @scriptInternalFunction
-    def waitForData(self):
-        """waitForData()
-        Wait for data to arrive before continuing script."""
-        with QtCore.QMutexLocker(self.mutex):
-            self.waitOnData = True
- 
-    @scriptInternalFunction
     def getData(self):
         """getData()
         Get the data from a running scan."""
         with QtCore.QMutexLocker(self.mutex):
             return self.data
+
+    @scriptInternalFunction
+    def getAnalysis(self):
+        """getAnalysis()
+        Get the analysis results for the most recent scan."""
+        with QtCore.QMutexLocker(self.mutex):
+            return self.analysisResults
 
     @scriptInternalFunction
     def scanIsRunning(self):
