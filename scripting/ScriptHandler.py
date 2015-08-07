@@ -8,6 +8,7 @@ from PyQt4 import QtCore
 import os
 import logging
 import traceback
+from datetime import datetime
 from modules import magnitude
 from Script import ScriptException
 
@@ -114,15 +115,17 @@ class ScriptHandler:
     @scriptCommand
     def onStartScan(self):
         """Start the scan"""
+        logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = True
         self.experimentUi.actionStart.trigger()
         scan = self.scanControlWidget.settingsName
         evaluation = self.evaluationControlWidget.settingsName
         analysis = self.analysisControlWidget.currentAnalysisName
-        error = False
-        message = "Scan started with scan = {0}, evaluation = {1}, analysis = {2}".format(scan, evaluation, analysis)
-        return (error, message)
+        message = "Scan started at {0} with scan = {1}, evaluation = {2}, analysis = {3}".format(str(datetime.now()), scan, evaluation, analysis)
+        logger.info(message)
+        self.writeToConsole(message, color='green')
+        return (False, None)
 
     @QtCore.pyqtSlot()
     @scriptCommand
@@ -272,6 +275,7 @@ class ScriptHandler:
     def onScanStateChanged(self, state):
         """Runs when the scan state changes"""
         if state == 'idle':
+            self.writeToConsole("scan finished at {0}".format(str(datetime.now())), False, 'green')
             with QtCore.QMutexLocker(self.script.mutex):
                 self.script.scanRunning = False
                 self.script.scanWait.wakeAll()

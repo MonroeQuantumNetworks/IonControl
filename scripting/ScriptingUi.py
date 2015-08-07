@@ -119,7 +119,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         message = "Script is paused" if paused else "Script is unpaused"
         markerColor = QtGui.QColor("#c0c0ff") if paused else QtGui.QColor(0xd0, 0xff, 0xd0)
         self.textEdit.textEdit.setMarkerBackgroundColor(markerColor, self.textEdit.textEdit.currentLineMarkerNum)
-        logger.debug(message)
+        logger.info(message)
         self.writeToConsole(message, color='blue')
         self.actionPauseScript.setChecked(paused)
         self.scriptHandler.onPauseScript(paused)
@@ -136,7 +136,9 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         """Pause script and scan button is clicked"""
         logger = logging.getLogger(__name__)
         message = "Script is paused"
-        logger.debug(message)
+        markerColor = QtGui.QColor("#c0c0ff")
+        self.textEdit.textEdit.setMarkerBackgroundColor(markerColor, self.textEdit.textEdit.currentLineMarkerNum)
+        logger.info(message)
         self.writeToConsole(message, color='blue')
         self.actionPauseScript.setChecked(True)
         self.scriptHandler.onPauseScriptAndScan()
@@ -204,8 +206,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def enableScriptChange(self, enabled):
         """Enable or disable any changes to script editor"""
         color = QtGui.QColor("#ffe4e4") if enabled else QtGui.QColor('white')
-        width = 1 if enabled else 0
-        self.textEdit.textEdit.setCaretWidth(width)
+        self.textEdit.textEdit.setCaretLineVisible(enabled)
         self.textEdit.textEdit.setCaretLineBackgroundColor(color)
         self.textEdit.setDisabled(not enabled)
         self.filenameComboBox.setDisabled(not enabled)
