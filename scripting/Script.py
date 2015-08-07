@@ -37,9 +37,11 @@ class Script(QtCore.QThread):
     setScanSignal = QtCore.pyqtSignal(str) #arg: scan name
     setEvaluationSignal = QtCore.pyqtSignal(str) #arg: evaluation name
     setAnalysisSignal = QtCore.pyqtSignal(str) #arg: analysis name
-    plotPointSignal = QtCore.pyqtSignal(float, float, str, str, bool) #args: x, y, plotname, tracename, save if True
+    plotPointSignal = QtCore.pyqtSignal(float, float, str) #args: x, y, tracename
+    plotListSignal = QtCore.pyqtSignal(list, list, str) #args: xList, yList, tracename
     addPlotSignal = QtCore.pyqtSignal(str) #arg: plot name
     abortScanSignal = QtCore.pyqtSignal()
+    createTraceSignal = QtCore.pyqtSignal(list)
     
     def __init__(self, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
@@ -52,6 +54,7 @@ class Script(QtCore.QThread):
         self.pauseWait = QtCore.QWaitCondition() #Used to wait while script is paused
         self.scanWait = QtCore.QWaitCondition() #Used to wait for end of scan
         self.dataWait = QtCore.QWaitCondition() #Used to wait for data
+        self.analysisWait = QtCore.QWaitCondition() #Used to wait for analysis results
         self.commandWait = QtCore.QWaitCondition() #Used to wait for command to be completed
         
         #These are all class elements that are modified directly during operation by ScriptHandler
@@ -63,7 +66,8 @@ class Script(QtCore.QThread):
         self.waitOnScan = False
         self.exception = None
         self.data = None
-        self.analysisResults = None
+        self.analysisReady = False
+        self.analysisResults = dict()
         for name in scriptFunctions: #Define the script functions to be the corresponding class functions
             globals()[name] = getattr(self, name)
         
@@ -181,11 +185,16 @@ class Script(QtCore.QThread):
         self.setAnalysisSignal.emit(name)
 
     @scriptFunction
-    def plotPoint(self, x, y, plotName, traceName='', save=True):
-        """plotPoint(x, y, plotName, traceName='', save=True)
-        Plot a point (x, y) to plot "plotName", save trace/file under "traceName", and save to file if save=True"""
-        traceName = plotName if traceName == '' else traceName
-        self.plotPointSignal.emit(x, y, plotName, traceName, save)
+    def plotPoint(self, x, y, traceName):
+        """plotPoint(x, y, traceName)
+        Plot a point (x, y) to trace traceName"""
+        self.plotPointSignal.emit(x, y, traceName)
+
+    @scriptFunction
+    def plotList(self, xList, yList, traceName):
+        """plotList(xList, yList, traceName)
+        Plot a set of points given in xList, yList to trace traceName"""
+        self.plotPointSignal.emit(xList, yList, traceName)
         
     @scriptFunction
     def addPlot(self, name):
@@ -215,6 +224,13 @@ class Script(QtCore.QThread):
         This is equivalent to clicking "abort" on the experiment GUI."""
         self.abortScanSignal.emit()
         
+    @scriptFunction
+    def createTrace(self, traceName, plotName, xUnit='', xLabel='', comment=''):
+        """createTrace(traceName, plotName, xUnit='', xLabel='', comment='')
+        create a new trace with name traceName to be plotted on plot plotName with unit xUnit, label xLabel, and the specified comment."""
+        traceCreationData = [traceName, plotName, xUnit, xLabel, comment]
+        self.createTraceSignal.emit(traceCreationData)
+        
     @scriptInternalFunction
     def waitForScan(self):
         """waitForScan()
@@ -235,7 +251,9 @@ class Script(QtCore.QThread):
         """getAnalysis()
         Get the analysis results for the most recent scan."""
         with QtCore.QMutexLocker(self.mutex):
-            return self.analysisResults
+            if not self.analysisReady:
+                self.analysisWait.wait(self.mutex)
+                return self.analysisResults
 
     @scriptInternalFunction
     def scanIsRunning(self):
