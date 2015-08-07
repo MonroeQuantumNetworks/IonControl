@@ -104,13 +104,13 @@ class AnalysisControl(ControlForm, ControlBase ):
         try:
             self.analysisDefinitionDict = self.config.get(self.configname+'.dict',dict())
         except TypeError:
-            logging.getLogger(__name__).info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
+            logging.getLogger(__name__).info( "Unable to read analysis control settings dictionary. Setting to empty dictionary." )
             self.analysisDefinitionDict = dict()
         self.analysisDefinitionDict.setdefault('', list() )  # add empty analysis
         try:
             self.analysisDefinition = self.config.get(self.configname,list())
         except Exception:
-            logging.getLogger(__name__).info( "Unable to read scan control settings. Setting to new scan." )
+            logging.getLogger(__name__).info( "Unable to read analysis control settings. Setting to new analysis." )
             self.analysisDefinition = list()
         self.pushDestinations = dict()
         self.currentAnalysisName =  self.config.get(self.configname+'.settingsName',None)
