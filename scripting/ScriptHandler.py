@@ -34,6 +34,7 @@ class ScriptHandler:
         #Experiment information signals
         self.scanExperiment.progressUi.stateChanged.connect(self.onScanStateChanged)
         self.analysisControlWidget.analysisResultSignal.connect(self.onAnalysisResult)
+        self.scanExperiment.evaluatedDataSignal.connect(self.onData)
         
         #status signals
         self.script.locationSignal.connect( self.onLocation )
@@ -359,16 +360,17 @@ class ScriptHandler:
 
     @QtCore.pyqtSlot(object)
     def onAnalysisResult(self, allResults):
-        strAllResults = dict()
-        for key, subdict in allResults.iteritems():
-            j = dict()
-            for subkey, val in subdict.iteritems():
-                j[str(subkey)] = val
-            strAllResults[str(key)] = j
         with QtCore.QMutexLocker(self.script.mutex):
-            self.script.analysisResults = strAllResults
+            self.script.analysisResults = allResults
             self.script.analysisReady = True
             self.script.analysisWait.wakeAll()
+
+    @QtCore.pyqtSlot(float, dict)
+    def onData(self, x, allData):
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.data = allData
+            self.script.dataReady = True
+            self.script.dataWait.wakeAll()
 
     @QtCore.pyqtSlot()
     def onFinished(self):
