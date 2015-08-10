@@ -83,7 +83,7 @@ class ScriptHandler:
                     self.script.exception = e
                     logger.error(traceback.print_exc())
             finally:
-                self.script.commandWait.wakeAll()
+                self.script.guiWait.wakeAll()
         baseScriptCommand.func_name = func.func_name
         baseScriptCommand.func_doc = func.func_doc
         return baseScriptCommand
@@ -132,11 +132,12 @@ class ScriptHandler:
         logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.scanRunning = True
+            self.script.analysisReady = False
+            self.script.dataReady = False
         self.experimentUi.actionStart.trigger()
         scan = self.scanControlWidget.settingsName
         evaluation = self.evaluationControlWidget.settingsName
         analysis = self.analysisControlWidget.currentAnalysisName
-        self.script.analysisReady = False
         message = "Scan started at {0} with scan = {1}, evaluation = {2}, analysis = {3}".format(str(datetime.now()), scan, evaluation, analysis)
         logger.info(message)
         self.writeToConsole(message, color='green')
@@ -174,7 +175,7 @@ class ScriptHandler:
     @scriptCommand
     def onSetScan(self, name):
         name = str(name)
-        doesNotExist = self.scanControlWidget.comboBox.findText(name)==-1
+        doesNotExist = (self.scanControlWidget.comboBox.findText(name)==-1)
         if doesNotExist:
             message = "Scan {0} does not exist.".format(name)
             error = True
@@ -188,7 +189,7 @@ class ScriptHandler:
     @scriptCommand
     def onSetEvaluation(self, name):
         name = str(name)
-        doesNotExist = self.evaluationControlWidget.comboBox.findText(name)==-1
+        doesNotExist = (self.evaluationControlWidget.comboBox.findText(name)==-1)
         if doesNotExist:
             message = "Evaluation {0} does not exist.".format(name)
             error = True
@@ -202,7 +203,7 @@ class ScriptHandler:
     @scriptCommand
     def onSetAnalysis(self, name):
         name = str(name)
-        doesNotExist = name not in self.analysisControlWidget.analysisDefinitionDict
+        doesNotExist = (name not in self.analysisControlWidget.analysisDefinitionDict)
         if doesNotExist:
             message = "Analysis {0} does not exist.".format(name)
             error = True
@@ -236,13 +237,9 @@ class ScriptHandler:
         self.scanExperiment.plotDict[plotName]["view"].enableAutoRange(axis=ViewBox.XAxis)
         plottedTrace.trace.name = self.script.shortname
         plottedTrace.trace.description["comment"] = comment
-        #plottedTrace.x = numpy.array([1,2,3])
-        #plottedTrace.y = numpy.array([1,2,5])
         plottedTrace.trace.filenameCallback = functools.partial( plottedTrace.traceFilename, traceName)
-        #self.scanExperiment.traceui.addTrace(plottedTrace, pen=-1)
         self.scriptTraces[traceName] = plottedTrace
         self.traceAlreadyCreated[traceName] = False #Keep track of whether the trace has already been added
-        #self.traceAlreadyCreated[traceName] = True #Keep track of whether the trace has already been added
         error = False
         message = "Added trace {0}\n plot: {1}\n xUnit: {2}\n xLabel: {3}\n comment: {4}".format(traceName, plotName, xUnit, xLabel, comment)
         return (error, message)
@@ -306,7 +303,6 @@ class ScriptHandler:
             with QtCore.QMutexLocker(self.script.mutex):
                 self.script.paused = False
                 self.script.stopped = False
-                self.script.exceptionLine = -1
                 self.script.exception = None
                 self.script.start()
 
@@ -323,10 +319,11 @@ class ScriptHandler:
             self.script.stopped = True
             self.script.paused = False
             self.script.repeat = False
-            self.script.commandWait.wakeAll()
+            self.script.guiWait.wakeAll()
             self.script.pauseWait.wakeAll()
             self.script.scanWait.wakeAll()
             self.script.dataWait.wakeAll()
+            self.script.analysisWait.wakeAll()
             
     def onPauseScriptAndScan(self):
         """Runs when pause script and scan button is clicked."""
@@ -351,11 +348,14 @@ class ScriptHandler:
     @QtCore.pyqtSlot(str)
     def onScanStateChanged(self, state):
         """Runs when the scan state changes"""
-        if state == 'idle':
-            self.writeToConsole("scan finished at {0}".format(str(datetime.now())), False, 'green')
-            with QtCore.QMutexLocker(self.script.mutex):
-                self.script.scanRunning = False
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.scanStatus = state
+            if state == 'idle':
+                self.writeToConsole("scan finished at {0}".format(str(datetime.now())), False, 'green')
+                self.script.scanIsRunning = False
                 self.script.scanWait.wakeAll()
+            else:
+                self.script.scanIsRunning = True
 
     @QtCore.pyqtSlot(object)
     def onAnalysisResult(self, allResults):
