@@ -72,6 +72,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     scanConfigurationListChanged = None
     evaluationConfigurationChanged = None
     analysisConfigurationChanged = None
+    evaluatedDataSignal = QtCore.pyqtSignal( float, dict )
     def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -450,6 +451,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.evaluation.enableTimestamps: 
             self.showTimestamps(data)
         self.scanMethod.prepareNextPoint(data)
+        names = [self.evaluation.ev.name for self.evaluation.ev in self.evaluation.evalList]
+        results = [res[0] for res in evaluated]
+        self.evaluatedDataSignal.emit(x, dict(zip(names, results)))
         
     def updateMainGraph(self, x, evaluated, timeinterval, timeTickOffset, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
