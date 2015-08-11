@@ -21,6 +21,7 @@ from collections import OrderedDict
 ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
 
 class ScriptingUi(ScriptingWidget,ScriptingBase):
+    """Ui for the scripting interface."""
     def __init__(self, experimentUi):
         ScriptingWidget.__init__(self)
         ScriptingBase.__init__(self)
@@ -29,6 +30,8 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.script = Script() #encapsulates the script
         self.scriptHandler = ScriptHandler(self.script, experimentUi) #handles interface to the script
         self.defaultDir = ProjectSelection.configDir()+'\\Scripts'
+        if not os.path.exists(self.defaultDir):
+            os.makedirs(self.defaultDir)
    
     def setupUi(self,parent):
         super(ScriptingUi,self).setupUi(parent)
