@@ -72,7 +72,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     scanConfigurationListChanged = None
     evaluationConfigurationChanged = None
     analysisConfigurationChanged = None
-    evaluatedDataSignal = QtCore.pyqtSignal( float, dict )
+    evaluatedDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (x, y)
+    allDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (xlist, ylist)
     def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -452,8 +453,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.showTimestamps(data)
         self.scanMethod.prepareNextPoint(data)
         names = [self.evaluation.ev.name for self.evaluation.ev in self.evaluation.evalList]
-        results = [res[0] for res in evaluated]
-        self.evaluatedDataSignal.emit(x, dict(zip(names, results)))
+        results = [(x,res[0]) for res in evaluated]
+        self.evaluatedDataSignal.emit(dict(zip(names, results)))
         
     def updateMainGraph(self, x, evaluated, timeinterval, timeTickOffset, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
@@ -537,6 +538,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.histogramSave:
                 self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
             self.dataFinalized = reason
+            allData = {self.p.name:(self.p.x, self.p.y) for self.p in self.plottedTraceList}
+            self.allDataSignal.emit(allData)
         
     def dataAnalysis(self):
         return self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
