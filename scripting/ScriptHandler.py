@@ -17,8 +17,12 @@ from trace.Trace import Trace
 from trace import pens
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 import functools
+import pytz
 
 class ScriptHandler:
+    """The ScriptHandler is what handles all the interfacing between the Script and the GUI. The Script
+    emits signals, which are picked up by the ScriptHandler, which executes the necessary changes on the
+    GUI."""
     def __init__(self, script, experimentUi):
         self.experimentUi = experimentUi
         self.scanExperiment = experimentUi.tabDict['Scan']
@@ -35,6 +39,7 @@ class ScriptHandler:
         self.scanExperiment.progressUi.stateChanged.connect(self.onScanStateChanged)
         self.analysisControlWidget.analysisResultSignal.connect(self.onAnalysisResult)
         self.scanExperiment.evaluatedDataSignal.connect(self.onData)
+        self.scanExperiment.allDataSignal.connect(self.onAllData)
         
         #status signals
         self.script.locationSignal.connect( self.onLocation )
@@ -51,6 +56,7 @@ class ScriptHandler:
         self.script.setEvaluationSignal.connect(self.onSetEvaluation)
         self.script.setAnalysisSignal.connect(self.onSetAnalysis)
         self.script.plotPointSignal.connect(self.onPlotPoint)
+        self.script.plotListSignal.connect(self.onPlotList)
         self.script.addPlotSignal.connect(self.onAddPlot)
         self.script.pauseScanSignal.connect(self.onPauseScan)
         self.script.stopScanSignal.connect(self.onStopScan)
@@ -132,9 +138,10 @@ class ScriptHandler:
         """Start the scan"""
         logger = logging.getLogger(__name__)
         with QtCore.QMutexLocker(self.script.mutex):
-            self.script.scanRunning = True
+            self.script.scanIsRunning = True
             self.script.analysisReady = False
             self.script.dataReady = False
+            self.script.allDataReady = False
         self.experimentUi.actionStart.trigger()
         scan = self.scanControlWidget.settingsName
         evaluation = self.evaluationControlWidget.settingsName
@@ -157,7 +164,7 @@ class ScriptHandler:
     def onStopScan(self):
         self.experimentUi.actionStop.trigger()
         with QtCore.QMutexLocker(self.script.mutex):
-            self.script.scanRunning = False
+            self.script.scanIsRunning = False
         error = False
         message = "Scan stopped"
         return (error, message)
@@ -167,7 +174,7 @@ class ScriptHandler:
     def onAbortScan(self):
         self.experimentUi.actionAbort.trigger()
         with QtCore.QMutexLocker(self.script.mutex):
-            self.script.scanRunning = False
+            self.script.scanIsRunning = False
         error = False
         message = "Scan aborted"
         return (error, message)
@@ -319,7 +326,11 @@ class ScriptHandler:
         with QtCore.QMutexLocker(self.script.mutex):
             self.script.stopped = True
             self.script.paused = False
+            self.script.waitOnScan = False
             self.script.repeat = False
+            self.script.analysisReady = True
+            self.script.dataReady = True
+            self.script.allDataReady = True
             self.script.guiWait.wakeAll()
             self.script.pauseWait.wakeAll()
             self.script.scanWait.wakeAll()
@@ -365,17 +376,25 @@ class ScriptHandler:
             self.script.analysisReady = True
             self.script.analysisWait.wakeAll()
 
-    @QtCore.pyqtSlot(float, dict)
-    def onData(self, x, allData):
+    @QtCore.pyqtSlot(dict)
+    def onData(self, data):
         with QtCore.QMutexLocker(self.script.mutex):
-            self.script.data = allData
+            self.script.data = data
             self.script.dataReady = True
             self.script.dataWait.wakeAll()
 
+    @QtCore.pyqtSlot(dict)
+    def onAllData(self, allData):
+        with QtCore.QMutexLocker(self.script.mutex):
+            self.script.allData = allData
+            self.script.allDataReady = True
+            self.script.allDataWait.wakeAll()
+
     @QtCore.pyqtSlot()
     def onFinished(self):
-        for _, plottedTrace in self.scriptTraces.iteritems():
+        for plottedTrace in self.scriptTraces.values():
             plottedTrace.trace.resave()
+            plottedTrace.trace.description["traceFinalized"] = datetime.now(pytz.utc)
 
     @QtCore.pyqtSlot(str, bool, str)
     def onConsoleSignal(self, message, error, color):
