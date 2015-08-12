@@ -19,11 +19,11 @@ from externalParameter import InterProcessParameters  #@UnusedImport
 try:
     import MotionParameter  #@UnusedImport
 except Exception as ex:
-    logging.getLogger(__name__).info("Motion control devices are not available: {0}".format(ex))
+    logging.getLogger(__name__).info("Motion control devices are not available")
     
 
 try:
     import APTInstruments #@UnusedImport
 except Exception as ex:
-    logging.getLogger(__name__).info("Thorlabs APT devices are not available: {0}".format(ex))
+    logging.getLogger(__name__).info("Thorlabs APT devices are not available")
     
