@@ -15,12 +15,13 @@ import logging
 
 import StandardExternalParameter     #@UnusedImport
 from externalParameter import InterProcessParameters  #@UnusedImport
-        
+
 try:
     import MotionParameter  #@UnusedImport
+except ImportError as ex:
+    logging.getLogger(__name__).info("Newport motion control devices are not available: {0}".format(ex))
 except Exception as ex:
-    logging.getLogger(__name__).info("Motion control devices are not available")
-    
+    logging.getLogger(__name__).info("Newport motion control devices are not available")
 
 try:
     import APTInstruments #@UnusedImport

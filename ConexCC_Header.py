@@ -20,8 +20,13 @@ sys.path.append(r'C:\Program Files (x86)\Newport\MotionControl\CONEX-CC\Bin')
 # .NET runtime
 import clr   #@UnresolvedImport
 # Add reference to assembly and import names from namespace
-clr.AddReference("Newport.CONEXCC.CommandInterface")
+assembly = "Newport.CONEXCC.CommandInterface"
+available = clr.FindAssembly(assembly) #Check whether assembly is available
+if available:
+    clr.AddReference(assembly) #Only try and add it as a reference if it is available
+else:
+    raise ImportError('Unable to load {0} DLL'.format(assembly))
 from CommandInterfaceConexCC import *
 
-import System  #@UnresolvedImport
+import System  #@UnresolvedImport @UnusedImport
 #==========================================================================
