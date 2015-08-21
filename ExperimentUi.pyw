@@ -571,6 +571,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.measurementLog.close()
         if self.instrumentLogger:
             self.instrumentLogger.shutdown()
+        for tempArea in self.scanExperiment.area.tempAreas:
+            tempArea.win.close()
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
