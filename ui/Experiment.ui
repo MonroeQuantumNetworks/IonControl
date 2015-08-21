@@ -121,6 +121,7 @@
     <addaction name="actionDedicatedCounters"/>
     <addaction name="actionPulses"/>
     <addaction name="actionMeasurementLog"/>
+    <addaction name="actionScripting"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuOperation"/>
