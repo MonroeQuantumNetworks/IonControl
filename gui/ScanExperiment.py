@@ -127,7 +127,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self, name=name)
-            widget.setTimeAxis(axesType[name])
+            if hasattr(axesType, name):
+                widget.setTimeAxis(axesType[name])
             view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -141,6 +142,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
         except Exception as e:
             logger.warning("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+
         # Traceui
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
