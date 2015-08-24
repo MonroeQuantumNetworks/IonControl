@@ -272,7 +272,7 @@ class PulserHardwareServer(Process, OKBase):
                             self.dataQueue.put( self.dedicatedData )
                             self.dedicatedData = self.dedicatedDataClass(self.timeTickOffset)
                         if channel==33:
-                            self.dedicatedData.data[channel] = token & 0xffffffffffff + self.timestampOffset
+                            self.dedicatedData.data[channel] = (token & 0xffffffffff) + self.timestampOffset
                         else:
                             self.dedicatedData.data[channel] = token & 0xffffffffffff
                     except IndexError:
@@ -294,7 +294,7 @@ class PulserHardwareServer(Process, OKBase):
                         self.dataQueue.put( self.data )
                         self.data = Data()
                     elif token == 0xfffd000000000000:
-                        self.timestampOffset += 1<<40
+                        self.timestampOffset += (1<<40)
                     elif token & 0xffff000000000000 == 0xfffc000000000000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
                 else:
