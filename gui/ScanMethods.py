@@ -55,6 +55,9 @@ class InternalScanMethod(object):
 class ExternalScanMethod(InternalScanMethod):
     name = 'External'
     def __init__(self, experiment):
+        """ Initialize with a given experiment.
+        experiment :: ScanExperiment
+        """
         super( ExternalScanMethod, self).__init__(experiment)
         self.maxUpdatesToWrite = 1
         self.parameter = None
