@@ -16,6 +16,7 @@ from gui.ExpressionValue import ExpressionValue
 from _functools import partial
 from _collections import defaultdict
 from pulseProgram import PulseProgram
+import logging
 
 UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\PulserParameterUi.ui')
 
@@ -73,11 +74,11 @@ class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
                               }
         self.dataLookup = {
                            ('parameter', QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
-                           ('parameter', QtCore.Qt.DisplayRole, 1): lambda node: node.content.value,
+                           ('parameter', QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
                            ('parameter', QtCore.Qt.EditRole,1): lambda node: node.content.string,
                            ('parameter', QtCore.Qt.BackgroundRole,1): lambda node: self.backgroundLookup[node.content.hasDependency],
+                           ('parameter', QtCore.Qt.ToolTipRole,1): lambda node: node.content.string if node.content.hasDependency else None,
                            ('category', QtCore.Qt.DisplayRole, 0): lambda node: node.content
-
                             }
         self.flagsLookup = {
                             ('parameter', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
@@ -201,12 +202,22 @@ class PulserParameterUi(UiForm,UiBase):
         self.treeView.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.treeView.setItemDelegateForColumn(1,self.delegate)
+        self.restoreColumnWidths()
         restoreGuiState( self, self.config.get('PulserParameterUi.guiState'))
         self.isSetup = True
-        
+
+    def restoreColumnWidths(self):
+        widths = self.config.get('PulserParameterUi.columnWidths')
+        if widths:
+            try:
+                self.treeView.header().restoreState(widths)
+            except Exception as e:
+                logging.getLogger(__name__).error("unable to restore state in PulserParameterUi: {0}".format(e))
+
     def saveConfig(self):
         self.config['PulserParameterValues'] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
         self.config['PulserParameterUi.guiState'] = saveGuiState(self)
+        self.config['PulserParameterUi.columnWidths'] = self.treeView.header().saveState()
     
     def onChange(self, index, event ):
         parameter = self.parameterList[index]
