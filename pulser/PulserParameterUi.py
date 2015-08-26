@@ -17,10 +17,11 @@ from _functools import partial
 from _collections import defaultdict
 from pulseProgram import PulseProgram
 
-UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
+UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\PulserParameterUi.ui')
 
 class PulserParameter(ExpressionValue):
-    def __init__(self, name=None, address=0, string=None, onChange=None, bitmask=0xffffffffffffffff, shift=0, encoding=None, globalDict=None):
+    def __init__(self, name=None, address=0, string=None, onChange=None, bitmask=0xffffffffffffffff,
+                 shift=0, encoding=None, globalDict=None, categories=None):
         super(PulserParameter, self).__init__(name=name, globalDict=globalDict)
         self.address = address
         if onChange is not None:
@@ -30,6 +31,8 @@ class PulserParameter(ExpressionValue):
         self.shift = shift
         self.encoding = encoding
         self._magnitude = None
+        self.categories = categories
+        self.name = name
 
     @property
     def encodedValue(self):
@@ -38,55 +41,128 @@ class PulserParameter(ExpressionValue):
     def setBits(self, inputMask):
         shiftedMask = self.bitmask << self.shift
         return inputMask & (~shiftedMask) | self.encodedValue
-        
 
-class PulserParameterTableModel( QtCore.QAbstractTableModel ):
-    expression = Expression()
+
+class PulserParameterTreeNode:
     backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
+    def __init__(self, type, content, parent, row):
+        self.type = type
+        self.content = content
+        self.parent = parent
+        self.row = row
+        self.children = []
+        self.childNames = []
+        if self.type == 'parameter':
+            self.dataLookup = { (QtCore.Qt.DisplayRole,0): self.content.name,
+                                (QtCore.Qt.DisplayRole,1): self.content.value,
+                                (QtCore.Qt.EditRole,1): self.content.string,
+                                (QtCore.Qt.BackgroundRole,1): self.backgroundLookup[self.content.hasDependency]
+                                }
+            self.flagsLookup = { 0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
+                                 1: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
+                                }
+        elif self.type == 'category':
+            self.dataLookup = {(QtCore.Qt.DisplayRole,0): self.content}
+            self.flagsLookup = {0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable}
+
+    def childCount(self):
+        return len(self.children)
+
+    def child(self, row):
+        if 0 <= row < self.childCount():
+            return self.children[row]
+
+
+class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
+    expression = Expression()
     def __init__(self, parameterList, parent=None):
-        super(PulserParameterTableModel, self).__init__(parent)
+        super(PulserParameterTreeModel, self).__init__(parent)
         self.parameterList = parameterList
         self.headerLookup = ['Name', 'Value']
-        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.parameterList[row].name,
-                             (QtCore.Qt.DisplayRole,1): lambda row: str(self.parameterList[row].value),
-                             (QtCore.Qt.EditRole,1): lambda row: self.parameterList[row].string,
-                             (QtCore.Qt.BackgroundRole,1): lambda row: self.backgroundLookup[self.parameterList[row].hasDependency]
-                     }
         self.setDataLookup = {
                              (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
                              (QtCore.Qt.UserRole,1): lambda index, value: self.setStrValue( index, value ),
                               }
+        self.root = PulserParameterTreeNode('root', None, None, 0)
+        self.nodes = {'root': self.root}
+        for parameter in parameterList: #make the tree
+            if parameter.categories:
+                for ind, category in enumerate(parameter.categories):
+                    parent = self.nodes[parameter.categories[ind-1]] if ind!=0 else self.root
+                    if category not in parent.childNames:
+                        row = parent.childCount()
+                        node = PulserParameterTreeNode('category', category, parent, row)
+                        parent.children.append(node)
+                        parent.childNames.append(category)
+                        self.nodes[category] = node
+                parent = self.nodes[parameter.categories[-1]]
+            else:
+                parent = self.root
+            row = parent.childCount()
+            node = PulserParameterTreeNode('parameter', parameter, parent, row)
+            parent.children.append(node)
+            parent.childNames.append(parameter.name)
+            self.nodes[parameter.name] = node
 
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        return len(self.parameterList)
-    
-    def columnCount(self,  parent=QtCore.QModelIndex()):
+    def rowCount(self, index):
+        node = self.nodeFromIndex(index)
+        return node.childCount()
+
+    def columnCount(self, index):
         return 2
-    
-    def data(self, index, role): 
-        if index.isValid():
-            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
-        return None
+
+    def data(self, index, role):
+        node = self.nodeFromIndex(index)
+        return node.dataLookup.get(role, index.column())
 
     def setData(self,index, value, role):
-        return self.setDataLookup.get( (role,index.column() ), lambda index, value: False)(index, value)
-                      
+        node = self.nodeFromIndex(index)
+        if node.type == 'parameter':
+            return self.setDataLookup.get( (role,index.column() ), lambda index, value: False)(index, value)
+
+    def nodeFromIndex(self, index):
+        return index.internalPointer() if index.isValid() else self.root
+
+    def index(self, row, column, parentIndex):
+        if not self.hasIndex(row, column, parentIndex):
+            ind = QtCore.QModelIndex()
+        else:
+            parentNode = self.nodeFromIndex(parentIndex)
+            node = parentNode.child(row)
+            if node == None:
+                ind = QtCore.QModelIndex()
+            else:
+                ind = self.createIndex(row, column, node)
+        return ind
+
+    def parent(self, index):
+        node = self.nodeFromIndex(index)
+        if node == self.root:
+            ind = QtCore.QModelIndex()
+        else:
+            parentNode = node.parent
+            ind = QtCore.QModelIndex() if parentNode == self.root else self.createIndex(parentNode.row, 0, parentNode)
+        return ind
+
     def flags(self, index ):
-        return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable if index.column()==1 else QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        node = self.nodeFromIndex(index)
+        return node.flagsLookup.get(index.column())
 
     def headerData(self, section, orientation, role ):
-        if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
+        if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal):
             return self.headerLookup[section]
-        return None #QtCore.QVariant()
- 
+
     def setValue(self, index, value):
-        param = self.parameterList[index.row()]
-        param.value = value
-        return True
+        node = self.nodeFromIndex(index)
+        if node.type == 'parameter':
+            node.content.value = value
+            return True
          
     def setStrValue(self, index, strValue):
-        self.parameterList[index.row()].string = strValue
-        return True
+        node = self.nodeFromIndex(index)
+        if node.type == 'parameter':
+            node.content.string = strValue
+            return True
         
 
 class PulserParameterUi(UiForm,UiBase):
@@ -106,16 +182,16 @@ class PulserParameterUi(UiForm,UiBase):
                 value, string = oldValues.get(extendedWireIn.name,(extendedWireIn.default,None))
                 parameter = PulserParameter(name=extendedWireIn.name, address=extendedWireIn.address, string=string,
                                             bitmask=extendedWireIn.bitmask, shift=extendedWireIn.shift, encoding=extendedWireIn.encoding,
-                                            onChange=partial(self.onChange,index), globalDict=self.globalDict)
+                                            categories=extendedWireIn.categories, onChange=partial(self.onChange,index), globalDict=self.globalDict)
                 self.parameterList.append( parameter )
                 parameter.value = value
         
     def setupUi(self):
         UiForm.setupUi(self, self)
-        self.tableModel = PulserParameterTableModel(self.parameterList)
-        self.tableView.setModel( self.tableModel )
+        self.model = PulserParameterTreeModel(self.parameterList)
+        self.treeView.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
-        self.tableView.setItemDelegateForColumn(1,self.delegate) 
+        self.treeView.setItemDelegateForColumn(1,self.delegate)
         restoreGuiState( self, self.config.get('PulserParameterUi.guiState'))
         self.isSetup = True
         
@@ -128,5 +204,6 @@ class PulserParameterUi(UiForm,UiBase):
         self.currentWireValues[parameter.address] = parameter.setBits(self.currentWireValues[parameter.address])
         self.pulser.setExtendedWireIn( parameter.address, self.currentWireValues[parameter.address] )
         if self.isSetup and event.origin!='value':
-            self.tableModel.dataChanged.emit( self.tableModel.createIndex(index,1), self.tableModel.createIndex(index,1))
-        
+            node = self.nodes[parameter.name]
+            ind = self.model.createIndex(node.row, 1, node)
+            self.model.dataChanged.emit(ind, ind)
