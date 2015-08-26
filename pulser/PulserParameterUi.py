@@ -52,18 +52,6 @@ class PulserParameterTreeNode:
         self.row = row
         self.children = []
         self.childNames = []
-        if self.type == 'parameter':
-            self.dataLookup = { (QtCore.Qt.DisplayRole,0): self.content.name,
-                                (QtCore.Qt.DisplayRole,1): self.content.value,
-                                (QtCore.Qt.EditRole,1): self.content.string,
-                                (QtCore.Qt.BackgroundRole,1): self.backgroundLookup[self.content.hasDependency]
-                                }
-            self.flagsLookup = { 0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
-                                 1: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
-                                }
-        elif self.type == 'category':
-            self.dataLookup = {(QtCore.Qt.DisplayRole,0): self.content}
-            self.flagsLookup = {0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable}
 
     def childCount(self):
         return len(self.children)
@@ -83,6 +71,17 @@ class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
                              (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
                              (QtCore.Qt.UserRole,1): lambda index, value: self.setStrValue( index, value ),
                               }
+        self.dataLookup = {
+                           ('parameter', QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
+                           ('parameter', QtCore.Qt.DisplayRole, 1): lambda node: node.content.value,
+                           ('category', QtCore.Qt.DisplayRole, 0): lambda node: node.content
+                            }
+        self.flagsLookup = {
+                            ('parameter', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
+                            ('parameter', 1): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable,
+                            ('category', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+                            }
+
         self.root = PulserParameterTreeNode('root', None, None, 0)
         self.nodes = {'root': self.root}
         for parameter in parameterList: #make the tree
@@ -113,7 +112,8 @@ class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
 
     def data(self, index, role):
         node = self.nodeFromIndex(index)
-        return node.dataLookup.get(role, index.column())
+        col = index.column()
+        return self.dataLookup.get((node.type, role, col), lambda node: None)(node)
 
     def setData(self,index, value, role):
         node = self.nodeFromIndex(index)
@@ -146,7 +146,8 @@ class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
 
     def flags(self, index ):
         node = self.nodeFromIndex(index)
-        return node.flagsLookup.get(index.column())
+        col = index.column()
+        return self.flagsLookup.get((node.type, col), QtCore.Qt.NoItemFlags)
 
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal):
