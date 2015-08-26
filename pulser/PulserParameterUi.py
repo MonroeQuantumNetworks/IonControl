@@ -115,10 +115,11 @@ class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
         col = index.column()
         return self.dataLookup.get((node.type, role, col), lambda node: None)(node)
 
-    def setData(self,index, value, role):
+    def setData(self, index, value, role):
         node = self.nodeFromIndex(index)
+        col = index.column()
         if node.type == 'parameter':
-            return self.setDataLookup.get( (role,index.column() ), lambda index, value: False)(index, value)
+            return self.setDataLookup.get( (role,col), lambda index, value: False)(index, value)
 
     def nodeFromIndex(self, index):
         return index.internalPointer() if index.isValid() else self.root
@@ -155,15 +156,19 @@ class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
 
     def setValue(self, index, value):
         node = self.nodeFromIndex(index)
+        result = False
         if node.type == 'parameter':
             node.content.value = value
-            return True
+            result = True
+        return result
          
     def setStrValue(self, index, strValue):
         node = self.nodeFromIndex(index)
+        result = False
         if node.type == 'parameter':
             node.content.string = strValue
-            return True
+            result = True
+        return result
         
 
 class PulserParameterUi(UiForm,UiBase):
