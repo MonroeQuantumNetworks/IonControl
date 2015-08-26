@@ -44,7 +44,6 @@ class PulserParameter(ExpressionValue):
 
 
 class PulserParameterTreeNode:
-    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
     def __init__(self, type, content, parent, row):
         self.type = type
         self.content = content
@@ -63,6 +62,7 @@ class PulserParameterTreeNode:
 
 class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
     expression = Expression()
+    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
     def __init__(self, parameterList, parent=None):
         super(PulserParameterTreeModel, self).__init__(parent)
         self.parameterList = parameterList
@@ -74,7 +74,10 @@ class PulserParameterTreeModel( QtCore.QAbstractItemModel ):
         self.dataLookup = {
                            ('parameter', QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
                            ('parameter', QtCore.Qt.DisplayRole, 1): lambda node: node.content.value,
+                           ('parameter', QtCore.Qt.EditRole,1): lambda node: node.content.string,
+                           ('parameter', QtCore.Qt.BackgroundRole,1): lambda node: self.backgroundLookup[node.content.hasDependency],
                            ('category', QtCore.Qt.DisplayRole, 0): lambda node: node.content
+
                             }
         self.flagsLookup = {
                             ('parameter', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
