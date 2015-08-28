@@ -40,3 +40,4 @@ chain.png
 *.c~
 debug.bin
 *shuttling.xml
+.idea/
