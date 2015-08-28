@@ -71,11 +71,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.numColumns = 1 #Overwrite with number of columns
         self.root = CategoryNode(None, 0, 'root')
         self.categoryNodes = {(): self.root} #dictionary of category nodes, with tuple indicating hierarchy to that item
-        for content in contentList: #loop through the list to make the tree
-            categories = getattr(content, 'categories', None)
-            parent = self.makeCategoryNodes(map(str, categories)) if categories else self.root
-            node = DataNode(parent, parent.childCount(), content)
-            parent.children.append(node)
+        self.addNodeList(self.contentList)
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
@@ -131,6 +127,18 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
     def headerData(self, section, orientation, role):
         return self.headerLookup.get((orientation, role, section))
+
+    def addNode(self, content):
+        """Add a node to the tree containing 'content' """
+        categories = getattr(content, 'categories', None)
+        parent = self.makeCategoryNodes(map(str, categories)) if categories else self.root
+        node = DataNode(parent, parent.childCount(), content)
+        parent.children.append(node)
+
+    def addNodeList(self, contentList):
+        """Add a list of nodes to the tree"""
+        for content in contentList:
+            self.addNode(content)
 
 
 if __name__ == "__main__":
