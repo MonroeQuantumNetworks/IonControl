@@ -218,11 +218,34 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="fileNameRam">
-           <property name="toolTip">
-            <string>Filename to write to RAM</string>
+          <widget class="QComboBox" name="ramFilenameComboBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-           <property name="readOnly">
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+           <property name="maxVisibleItems">
+            <number>100</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="removeCurrentRamFile">
+           <property name="toolTip">
+            <string>remove Current entry from Combo Box</string>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="Experiment.qrc">
+             <normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</normaloff>:/openicon/icons/edit-clear-locationbar-rtl.png</iconset>
+           </property>
+           <property name="autoRaise">
             <bool>true</bool>
            </property>
           </widget>
