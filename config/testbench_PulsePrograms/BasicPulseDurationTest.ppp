@@ -22,12 +22,12 @@ while not pipe_empty():
      #set_dds( channel=DDSDetect, freq=DetectFreq, phase=DetectPhase, amp=DetectAmp )
     #wait_dds()
     set_shutter(first)
-    update( timeOne )
-    set_inv_shutter(first)
-    update( waitTime)
-    set_shutter(first)
     update( timeOne, pulse_mode=True )
     set_inv_shutter(first)
+    update( waitTime )
+    set_shutter(second)
+    update( timeOne, pulse_mode=True )
+    set_inv_shutter(second)
     update( waitTime)
     
 
