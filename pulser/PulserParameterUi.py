@@ -107,23 +107,42 @@ class PulserParameterUi(UiForm,UiBase):
         self.treeView.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.treeView.setItemDelegateForColumn(1,self.delegate)
-        self.restoreColumnWidths()
+        self.restoreTreeAppearance()
         restoreGuiState( self, self.config.get('PulserParameterUi.guiState'))
         self.isSetup = True
 
-    def restoreColumnWidths(self):
+    def restoreTreeAppearance(self):
         widths = self.config.get('PulserParameterUi.columnWidths')
+        expandedNodeKeys = self.config.get('PulserParameterUi.expandedNodeKeys')
         if widths:
             try:
                 self.treeView.header().restoreState(widths)
             except Exception as e:
-                logging.getLogger(__name__).error("unable to restore state in PulserParameterUi: {0}".format(e))
+                logging.getLogger(__name__).error("unable to restore widths in PulserParameterUi: {0}".format(e))
+        if expandedNodeKeys:
+            try:
+                for key in expandedNodeKeys:
+                    if key in self.model.categoryNodes:
+                        node = self.model.categoryNodes[key]
+                        index = self.model.createIndex(node.row, 0, node)
+                        self.treeView.expand(index)
+            except Exception as e:
+                logging.getLogger(__name__).error("unable to restore tree expansion state in PulserParameterUi: {0}".format(e))
 
     def saveConfig(self):
         self.config['PulserParameterValues'] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
         self.config['PulserParameterUi.guiState'] = saveGuiState(self)
         self.config['PulserParameterUi.columnWidths'] = self.treeView.header().saveState()
-    
+        expandedNodeKeys = []
+        try:
+            for key, node in self.model.categoryNodes.iteritems():
+                index = self.model.createIndex(node.row, 0, node)
+                if self.treeView.isExpanded(index):
+                    expandedNodeKeys.append(key)
+        except Exception as e:
+            logging.getLogger(__name__).error("unable to save tree expansion state in PulserParameterUi: {0}".format(e))
+        self.config['PulserParameterUi.expandedNodeKeys'] = expandedNodeKeys
+
     def onChange(self, index, event ):
         parameter = self.parameterList[index]
         self.currentWireValues[parameter.address] = parameter.setBits(self.currentWireValues[parameter.address])
