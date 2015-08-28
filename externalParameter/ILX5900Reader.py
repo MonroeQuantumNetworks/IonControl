@@ -23,6 +23,8 @@ class ILX5900Reader(object):
         self.settings = settings if settings is not None else Settings()
         self.timeout = mg(timeout,'s')
         self.setDefaults()
+
+    def initialize(self):
         if self.settings.Write:
             self.setPID()
             self.ILimHigh = self.settings.ILimHigh
@@ -32,6 +34,7 @@ class ILX5900Reader(object):
             self.readPID()
             self.readLimits()
             self.readSetpoint()
+
                
     def setDefaults(self):
         self.settings.__dict__.setdefault('waitTime', mg(0.1, 's') )
@@ -165,7 +168,7 @@ class ILX5900Reader(object):
     def open(self):
         self.rm = visa.ResourceManager()
         self.conn = self.rm.open_resource( self.instrument, timeout=self.settings.timeout.toval('s'))
-        self.readPID()
+        self.initialize()
            
     def close(self):
         self.conn.close()
