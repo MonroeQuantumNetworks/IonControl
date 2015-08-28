@@ -34,7 +34,6 @@ from pulser.ChannelNameDict import ChannelNameDict
 from persist import configshelve
 from pulseProgram import PulseProgramUi
 from pulser import ShutterUi
-from gui import testExperiment
 from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
@@ -159,8 +158,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         #self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
         
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, 
-                                                            measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan"),
-                             (testExperiment.test(self.globalVariablesUi, measurementLog=self.measurementLog),"test"),
+                                                            measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan")
                              ]:
             widget.setupUi( widget, self.config )
             if hasattr(widget,'setPulseProgramUi'):
