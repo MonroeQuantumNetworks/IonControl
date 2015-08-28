@@ -6,15 +6,35 @@ from modules.SequenceDict import SequenceDict
 class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
     enableChanged = QtCore.pyqtSignal( object )
     headerDataLookup = [ 'E', 'Name', 'Class', 'Instrument' ]
-    def __init__(self, parameterDict=None, parent=None):
+    def __init__(self, parameterDict=None, classdict=None, parent=None):
         super(ExternalParameterTableModel, self).__init__(parent)
         self.parameterDict = parameterDict if parameterDict else SequenceDict()
+        self.classdict = classdict
         self.dataLookup = {  (QtCore.Qt.DisplayRole,2):    lambda row: self.parameterDict.at(row).className,
                              (QtCore.Qt.DisplayRole,3):    lambda row: self.parameterDict.at(row).instrument,
                              (QtCore.Qt.DisplayRole,1):    lambda row: self.parameterDict.at(row).name,
+                             (QtCore.Qt.EditRole,2):    lambda row: self.parameterDict.at(row).className,
+                             (QtCore.Qt.EditRole,3):    lambda row: self.parameterDict.at(row).instrument,
+                             (QtCore.Qt.EditRole,1):    lambda row: self.parameterDict.at(row).name,
                              (QtCore.Qt.CheckStateRole,0): lambda row: QtCore.Qt.Checked if self.parameterDict.at(row).enabled else QtCore.Qt.Unchecked }
-        self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setEnabled  }
+        self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setEnabled,
+                               (QtCore.Qt.EditRole,3): self.setInstrument,
+                               (QtCore.Qt.EditRole,1): self.setName,
+                               (QtCore.Qt.EditRole,2): self.setClassName  }
         
+    def choice(self, index):
+        if index.column()==2:
+            return self.classdict.keys()
+        elif index.column()==3:
+            className = str(self.parameterDict.at(index.row()).className)
+            myclass = self.classdict[className]
+            if hasattr( myclass, 'connectedInstruments'):
+                return sorted(myclass.connectedInstruments()) 
+        return None
+    
+    def comboBoxEditable(self, index):
+        return index.column()==3
+    
     def setParameterDict(self, parameterDict):
         self.beginResetModel()
         self.parameterDict = parameterDict
@@ -34,15 +54,38 @@ class ExternalParameterTableModel( QtCore.QAbstractTableModel ):
     def setData(self, index, value, role):
         return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
                 
+    def setValue(self, index, value):
+        return self.setData(index, value, QtCore.Qt.EditRole)
+                
     def setEnabled(self, index, value):
         self.parameterDict.at(index.row()).enabled = value==QtCore.Qt.Checked
         self.enableChanged.emit( str(self.parameterDict.at(index.row()).name) )
         return True
         
+    def setInstrument(self, index, value):
+        if not self.parameterDict.at(index.row()).enabled:
+            self.parameterDict.at(index.row()).instrument = str(value)
+            return True
+        return False
+        
+    def setName(self, index, value):
+        if not self.parameterDict.at(index.row()).enabled:
+            newname = str(value.toPyObject())
+            self.parameterDict.renameAt(index.row(), newname)
+            self.parameterDict.at(index.row()).name = newname
+            return True
+        return False
+        
+    def setClassName(self, index, value):
+        if not self.parameterDict.at(index.row()).enabled:
+            self.parameterDict.at(index.row()).className = str(value)
+            return True
+        return False
+        
     def flags(self, index ):
         if index.column()==0:
             return QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
-        return QtCore.Qt.ItemIsSelectable |   QtCore.Qt.ItemIsEnabled
+        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled if self.parameterDict.at(index.row()).enabled else QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
     
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):

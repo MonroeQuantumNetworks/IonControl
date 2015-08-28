@@ -40,10 +40,14 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         
     def __enter__(self):
         self.meter = PicoampMeter()
+        self.meter_2 = PicoampMeter()
+        self.meter_3 = PicoampMeter()
         return self
     
     def __exit__(self, excepttype, value, traceback):
         self.meter.close()
+        self.meter_2.close()
+        self.meter_3.close()
         return False
     
     def setupUi(self, parent):
@@ -63,12 +67,12 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         self.setupPlots()       
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict[self.plotDict.keys()[0]]["view"])
+        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict)
         self.traceui.setupUi(self.traceui)
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
         # PicoampMeter Control
-        self.meterControl = PicoampMeterControl(self.config, self.traceui, self.plotDict, self.parent, self.meter)
+        self.meterControl = PicoampMeterControl(self.config, self.traceui, self.plotDict, self.parent, self.meter, self.meter_2, self.meter_3)
         self.meterControl.setupUi(self.meterControl)
         self.setupAsDockWidget(self.meterControl, "Control", QtCore.Qt.RightDockWidgetArea)
     
@@ -117,7 +121,7 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -140,7 +144,7 @@ class PicoampMeterUi(WidgetContainerBase,WidgetContainerForm):
             name = str(name)
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -235,16 +239,17 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
     
-    if project:
-        DataDirectory.DefaultProject = project
-        
-        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with PicoampMeterUi(config) as ui:
-                ui.setupUi(ui)
-                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                ui.show()
-                sys.exit(app.exec_())
-    else:
-        logger.warning( "No project selected. Nothing I can do about that ;)" )
+    if accepted:
+        if project:
+            DataDirectory.DefaultProject = project
+            
+            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+                with PicoampMeterUi(config) as ui:
+                    ui.setupUi(ui)
+                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                    ui.show()
+                    sys.exit(app.exec_())
+        else:
+            logger.warning( "No project selected. Nothing I can do about that ;)" )

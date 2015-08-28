@@ -16,13 +16,20 @@ from GateDefinition import GateDefinition
 from GateSequenceCompiler import GateSequenceCompiler
 from GateSequenceContainer import GateSequenceContainer
 from modules.enum import enum
+from modules.PyqtUtility import updateComboBoxItems
+from modules.HashableDict import HashableDict
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
+    xmlEncodeDictionary, xmlParseDictionary
+from string import split
 
 
 Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
 
 
 class Settings:
-    stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' ]
+    stateFields = [ 'enabled', 'gate', 'gateDefinition', 'gateSequence', 'active', 'startAddressParam', 'thisSequenceRepetition', 'debug' , 'gateSequenceCache', 'gateDefinitionCache' ]
+    XMLTagName = "GateSequence"
     def __init__(self):
         self.enabled = False
         self.gate = []
@@ -31,8 +38,8 @@ class Settings:
         self.active = 0
         self.lastDir = ""
         self.startAddressParam = ""
-        self.gateSequenceCache = dict()
-        self.gateDefinitionCache = dict()
+        self.gateSequenceCache = HashableDict()
+        self.gateDefinitionCache = HashableDict()
         self.thisSequenceRepetition = 10
         self.debug = False
         
@@ -42,6 +49,10 @@ class Settings:
             for key, value in list(cache.iteritems()):
                 if not os.path.exists(value):
                     cache.pop(key)
+        if not isinstance(self.gateSequenceCache, HashableDict):
+            self.gateSequenceCache = HashableDict(self.gateSequenceCache)
+        if not isinstance(self.gateDefinitionCache, HashableDict):
+            self.gateDefinitionCache =  HashableDict( self.gateDefinitionCache )
 
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -65,6 +76,26 @@ class Settings:
 
     documentationList = [ 'gateDefinition', 'gateSequence', 'startAddressParam' ]
     
+    def exportXml(self, element):
+        myElement = ElementTree.SubElement(element, self.XMLTagName )
+        xmlEncodeAttributes( self.__dict__, myElement)
+        xmlEncodeDictionary(self.gateDefinitionCache, ElementTree.SubElement(myElement, "GateDefinitionCache" ), "Item")
+        xmlEncodeDictionary(self.gateSequenceCache, ElementTree.SubElement(myElement, "GateSequenceCache" ), "Item")
+        gateElement = ElementTree.SubElement(myElement, "Gate" )
+        gateElement.text = ",".join( self.gate )
+        return myElement
+    
+    @staticmethod
+    def fromXmlElement(element):
+        myElement = element.find( Settings.XMLTagName )
+        s = Settings()
+        s.__dict__.update( xmlParseAttributes(myElement) )
+        s.gateDefinitionCache = xmlParseDictionary(myElement.find("GateDefinitionCache"), "Item")
+        s.gateSequenceCache = xmlParseDictionary(myElement.find("GateSequenceCache"), "Item")
+        gateText = myElement.find("Gate").text
+        s.gate = gateText.split(",") if gateText else list()
+        return s    
+    
     def documentationString(self):
         r = "\r\n".join( [ "{0}\t{1}".format(field,getattr(self,field)) for field in self.documentationList] )
         return r
@@ -86,15 +117,8 @@ class GateSequenceUi(Form,Base):
         self.config = config
         self.configname = "GateSequenceUi."+name
         self.settings = self.config.get(self.configname,Settings())
-
         self.gatedef = GateDefinition()
-#        if self.settings.gateDefinition:
-#            self.loadGateDefinition( self.settings.gateDefinition )
-    
         self.gateSequenceContainer = GateSequenceContainer(self.gatedef)
-#        if self.settings.gateSequence:
-#            self.loadGateSequenceList(self.settings.gateSequence)
-            
         self.gateSequenceCompiler = GateSequenceCompiler(pulseProgram)
 
     
@@ -124,7 +148,6 @@ class GateSequenceUi(Form,Base):
         self.settings = settings
         self.GateSequenceEnableCheckBox.setChecked( self.settings.enabled )
         self.GateSequenceFrame.setEnabled( self.settings.enabled )
-        self.GateSequenceFrame.setEnabled( self.settings.enabled )
         self.GateEdit.setText( ", ".join(self.settings.gate ))
         self.repetitionSpinBox.setValue( self.settings.thisSequenceRepetition )
         if self.settings.startAddressParam:
@@ -133,22 +156,23 @@ class GateSequenceUi(Form,Base):
             self.settings.startAddressParam = str(self.StartAddressBox.currentText())
         self.settings.startAddressParam = str(self.settings.startAddressParam)
         try:
-            oldState = self.GateDefinitionBox.blockSignals(True);
-            self.GateDefinitionBox.clear()
-            self.GateDefinitionBox.addItems( self.settings.gateDefinitionCache.keys() )
-            self.GateDefinitionBox.blockSignals(oldState);
-            oldState = self.GateSequenceBox.blockSignals(True);
-            self.GateSequenceBox.clear()
-            self.GateSequenceBox.addItems( self.settings.gateSequenceCache.keys() )
-            self.GateSequenceBox.blockSignals(oldState);
+            updateComboBoxItems(self.GateDefinitionBox, self.settings.gateDefinitionCache.keys())
+            updateComboBoxItems(self.GateSequenceBox, self.settings.gateSequenceCache.keys())
+            self.updateDatastructures()
+        except IOError as err:
+            logger.warning( "{0} during loading of GateSequence Files, ignored.".format(err) )
+
+    def updateDatastructures(self):
+        if self.settings.enabled:
             if self.settings.gateDefinition and self.settings.gateDefinition in self.settings.gateDefinitionCache:
                 self.loadGateDefinition( self.settings.gateDefinitionCache[self.settings.gateDefinition] )
                 self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(self.settings.gateDefinition))
             if self.settings.gateSequence and self.settings.gateSequence in self.settings.gateSequenceCache:
                 self.loadGateSequenceList( self.settings.gateSequenceCache[self.settings.gateSequence] )
                 self.GateSequenceBox.setCurrentIndex(self.GateSequenceBox.findText(self.settings.gateSequence))
-        except IOError as err:
-            logger.error( "{0} during loading of GateSequence Files, ignored.".format(err) )
+        else:
+            self.clearGateDefinition()
+            self.clearGateSequenceList()
 
     def documentationString(self):
         return repr(self.settings)   
@@ -179,6 +203,7 @@ class GateSequenceUi(Form,Base):
     def onEnableChanged(self, state):
         self.settings.enabled = state == QtCore.Qt.Checked
         self.GateSequenceFrame.setEnabled( self.settings.enabled )
+        self.updateDatastructures()
         self.valueChanged.emit()          
         
     def onDebugChanged(self, state):
@@ -206,7 +231,12 @@ class GateSequenceUi(Form,Base):
         self.settings.gateDefinition = filename
         self.GateDefinitionBox.setCurrentIndex(self.GateDefinitionBox.findText(filename))
         self.gatedef.printGates()
-        self.valueChanged.emit()          
+        self.valueChanged.emit()      
+        
+    def clearGateDefinition(self):    
+        self.gatedef.loadGateDefinition(None)    
+        self.GateDefinitionBox.setCurrentIndex(-1)
+        self.valueChanged.emit()      
     
     def onLoadGateSequenceList(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, "Open Gate Set file:", self.settings.lastDir))
@@ -227,6 +257,10 @@ class GateSequenceUi(Form,Base):
         _, filename = os.path.split(path)
         self.settings.gateSequence = filename
         self.GateSequenceBox.setCurrentIndex(self.GateSequenceBox.findText(filename))
+        
+    def clearGateSequenceList(self):
+        self.gateSequenceContainer.loadXml(None)
+        self.GateSequenceBox.setCurrentIndex(-1)
     
     def onGateEditChanged(self):
         self.settings.gate = map(operator.methodcaller('strip'),str(self.GateEdit.text()).split(','))

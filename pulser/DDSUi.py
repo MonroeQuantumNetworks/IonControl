@@ -1,126 +1,180 @@
-import functools
-
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 import PyQt4.uic
 
 from pulser import Ad9912
-from modules.magnitude import mg
-
+from externalParameter.persistence import DBPersist
+from externalParameter.decimation import StaticDecimation
+from modules.magnitude import is_magnitude, mg
+from functools import partial
+import time
+from collections import defaultdict
+from modules.Expression import Expression
+from DDSTableModel import DDSTableModel
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from modules.GuiAppearance import restoreGuiState, saveGuiState 
+import logging
+from modules.Utility import unique
 
 DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
 
 def extendTo(array, length, defaulttype):
     for _ in range( len(array), length ):
         array.append(defaulttype())
+        
+        
+class DDSChannelSettings(object):
+    expression = Expression()
+    def __init__(self):
+        self.frequency = mg(0,'MHz')
+        self.phase = mg(0)
+        self.amplitude = mg(0)
+        self.frequencyText = None
+        self.phaseText = None
+        self.amplitudeText = None
+        self.enabled = False
+        self.name = ""
+        self.squareEnabled = False
+        
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault('name','')
+        self.__dict__.setdefault('squareEnabled',False)
+        
+    def evaluateFrequency(self, globalDict ):
+        if self.frequencyText:
+            oldfreq = self.frequency
+            self.frequency = self.expression.evaluateAsMagnitude(self.frequencyText, globalDict)
+            return self.frequency!=oldfreq
+        return False
+            
+    def evaluateAmplitude(self, globalDict ):
+        if self.amplitudeText:
+            oldamp = self.amplitude
+            self.amplitude = self.expression.evaluateAsMagnitude(self.amplitudeText, globalDict)
+            return oldamp!=self.amplitude
+        return False
+    
+    def evaluatePhase(self, globalDict ):
+        if self.phaseText:
+            oldphase= self.phase
+            self.phase = self.expression.evaluateAsMagnitude(self.phaseText, globalDict)
+            return oldphase!=self.phase
+        return False
 
 class DDSUi(DDSForm, DDSBase):
-    def __init__(self,config,pulser,parent=None):
+    persistSpace = 'DDS'
+    def __init__(self,config,pulser,globalDict,parent=None):
         DDSBase.__init__(self,parent)
         DDSForm.__init__(self)
         self.numChannels = 8
         self.config = config
-        self.frequency = self.config.get('DDSUi.Frequency',[mg(0,'MHz')]*6)
-        extendTo(self.frequency, self.numChannels, lambda: mg(0,'MHz') )
-        self.phase = self.config.get('DDSUi.Phase',[mg(0,'rad')]*6)
-        extendTo(self.phase, self.numChannels, lambda: mg(0,'rad') )
-        self.amplitude = self.config.get('DDSUi.Amplitude',[0]*6)
-        extendTo(self.amplitude, self.numChannels, lambda: 0 )
-        self.names = self.config.get('DDSUi.Names',['']*6)
-        extendTo(self.names, self.numChannels, lambda: '' )
         self.ad9912 = Ad9912.Ad9912(pulser)
+        self.ddsChannels = self.config.get('DDSUi.ddsChannels', [DDSChannelSettings() for _ in range(self.numChannels) ] )
         self.autoApply = self.config.get('DDSUi.autoApply',False)
-        self.frequencyEven = self.config.get('DDSUi.FrequencyEven',[False]*8)
-        self.intFrequency = [0]*8
+        self.decimation = defaultdict( lambda: StaticDecimation(mg(30,'s')) )
+        self.persistence = DBPersist()
+        self.globalDict = globalDict
+        self.pulser = pulser
         
     def setupUi(self,parent):
         DDSForm.setupUi(self,parent)
-        self.frequencyUis = [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7]
-        for channel, box  in enumerate(self.frequencyUis[:7]):  # omit the hardcoded math for channel 7
-            box.setValue( self.frequency[channel] )
-            box.valueChanged.connect( functools.partial(self.onFrequency, box,channel))
-        for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
-            box.setValue( self.phase[channel] )
-            box.valueChanged.connect( functools.partial(self.onPhase, box,channel))
-        for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5, self.amplitudeBox6, self.amplitudeBox7]):
-            box.setValue( self.amplitude[channel] )
-            box.editingFinished.connect( functools.partial(self.onAmplitude, box,channel))
-        for channel, box in enumerate([self.channelEdit0, self.channelEdit1, self.channelEdit2, self.channelEdit3, self.channelEdit4, self.channelEdit5, self.channelEdit6, self.channelEdit7]):
-            box.setText(self.names[channel])
-            box.textChanged.connect( functools.partial(self.onName, box,channel) )
-        for channel, box in enumerate([self.evenBox0, self.evenBox1, self.evenBox2, self.evenBox3, self.evenBox4, self.evenBox5, self.evenBox6, self.evenBox7]):
-            box.setChecked( self.frequencyEven[channel])
-            box.stateChanged.connect( functools.partial(self.onEvenChanged, box, channel) )
+        self.ddsTableModel = DDSTableModel(self.ddsChannels, self.globalDict)
+        self.tableView.setModel( self.ddsTableModel )
+        self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
+        self.tableView.setItemDelegateForColumn(2,self.delegate)
+        self.tableView.setItemDelegateForColumn(3,self.delegate)
+        self.tableView.setItemDelegateForColumn(4,self.delegate)
         self.applyButton.clicked.connect( self.onApply )
         self.resetButton.clicked.connect( self.onReset )
         self.writeAllButton.clicked.connect( self.onWriteAll )
         self.autoApplyBox.setChecked( self.autoApply )
         self.autoApplyBox.stateChanged.connect( self.onStateChanged )
-        self.onWriteAll()
+        try:
+            self.onWriteAll()
+        except Exception as e:
+            logging.getLogger(__name__).warning( "Ignored error while setting DDS: {0}".format(e) )
         self.onApply()
+        self.ddsTableModel.frequencyChanged.connect( self.onFrequency )
+        self.ddsTableModel.phaseChanged.connect( self.onPhase )
+        self.ddsTableModel.amplitudeChanged.connect( self.onAmplitude )
+        self.ddsTableModel.enableChanged.connect( self.onEnableChanged )
+        self.ddsTableModel.squareChanged.connect( self.onSquareChanged )
+        self.pulser.shutterChanged.connect( self.ddsTableModel.onShutterChanged )
+        restoreGuiState( self, self.config.get('DDSUi.guiState') )
+            
+    def onEnableChanged(self, index, value):
+        self.pulser.setShutterBit( 24+index, value )
             
     def setDisabled(self, disabled):
-        for widget  in [self.frequencyBox0, self.frequencyBox1, self.frequencyBox2, self.frequencyBox3, self.frequencyBox4, self.frequencyBox5, self.frequencyBox6, self.frequencyBox7,
-                        self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7,
-                        self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5, self.amplitudeBox6, self.amplitudeBox7]:
-            widget.setEnabled( not disabled )        
+        pass
             
     def onStateChanged(self, state ):
         self.autoApply = self.autoApplyBox.isChecked()
 
-    def onEvenChanged(self, box, channel, state):
-        even = state == QtCore.Qt.Checked
-        self.frequencyEven[channel] = even
-        self.onFrequency(self.frequencyUis[channel], channel, self.frequency[channel])
+    def onFrequency(self, channel, value):
+        self.ad9912.setFrequency(channel, value )
+        if self.autoApply: self.onApply()
+        self.decimation[(0,channel)].decimate( time.time(), value, partial(self.persistCallback, "Frequency:{0}".format(self.ddsChannels[channel].name if self.ddsChannels[channel].name else channel)) )
+        
+    def onPhase(self, channel, value):
+        self.ad9912.setPhase(channel, value)
+        if self.autoApply: self.onApply()
+        self.decimation[(1,channel)].decimate( time.time(), value, partial(self.persistCallback, "Phase:{0}".format(self.ddsChannels[channel].name if self.ddsChannels[channel].name else channel)) )
 
-    def onFrequency(self, box, channel, value):
-        intFreq = self.ad9912.setFrequency(channel, box.value(), even=self.frequencyEven[channel] )
-        self.intFrequency[channel] = intFreq
-        box.setToolTip( hex(intFreq) )
-        self.frequency[channel] = box.value()
-        if channel in [0,4]:
-            intFreq7 = int( (self.intFrequency[4]+self.intFrequency[0])/2 )
-            box.setToolTip( hex(intFreq7) )
-            value = self.ad9912.rawToMagnitude(intFreq7)
-            self.frequencyBox7.setValue(  value )
-            self.frequency[7] = value
-            self.ad9912.setFrequencyRaw(7, intFreq7)
+    def onAmplitude(self, channel, value):
+        self.ad9912.setAmplitude(channel, value)
         if self.autoApply: self.onApply()
-        
-    def onPhase(self, box, channel, value):
-        self.ad9912.setPhase(channel, box.value())
-        self.phase[channel] = box.value()
-        if self.autoApply: self.onApply()
-    
-    def onAmplitude(self, box, channel):
-        self.ad9912.setAmplitude(channel, box.value())
-        self.amplitude[channel] = box.value()
-        if self.autoApply: self.onApply()
-    
-    def onName(self, box, channel, text):
-        self.names[channel] = str(text)
-        
+        self.decimation[(2,channel)].decimate( time.time(), value, partial(self.persistCallback, "Amplitude:{0}".format(self.ddsChannels[channel].name if self.ddsChannels[channel].name else channel)) )
+ 
+    def onSquareChanged(self, channel, enable):
+        self.ad9912.setSquareEnabled(channel, enable)
+ 
+    def persistCallback(self, source, data):
+        time, value, minval, maxval = data
+        unit = None
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
+   
     def onWriteAll(self):
-        for channel, box  in enumerate(self.frequencyUis[:7]):
-            self.onFrequency( box, channel, box.value() )
-        for channel, box  in enumerate([self.phaseBox0, self.phaseBox1, self.phaseBox2, self.phaseBox3, self.phaseBox4, self.phaseBox5, self.phaseBox6, self.phaseBox7]):
-            self.onPhase( box, channel, box.value() )
-        for channel, box  in enumerate([self.amplitudeBox0, self.amplitudeBox1, self.amplitudeBox2, self.amplitudeBox3, self.amplitudeBox4, self.amplitudeBox5, self.amplitudeBox6, self.amplitudeBox7]):
-            self.onAmplitude( box, channel )
-        if self.autoApply: self.onApply
+        for channel, settings in enumerate( self.ddsChannels ):
+            self.ad9912.setFrequency(channel, settings.frequency)
+            self.ad9912.setPhase(channel, settings.phase)
+            self.ad9912.setAmplitude(channel, settings.amplitude)
+            self.ad9912.setSquareEnabled(channel, settings.squareEnabled)
+        if self.autoApply: 
+            self.onApply()
         
     def saveConfig(self):
-        self.config['DDSUi.Frequency'] = self.frequency
-        self.config['DDSUi.Phase'] = self.phase
-        self.config['DDSUi.Amplitude'] = self.amplitude
-        self.config['DDSUi.Names'] = self.names
+        self.config['DDSUi.ddsChannels'] = self.ddsChannels
         self.config['DDSUi.autoApply'] = self.autoApply
-        self.config['DDSUi.FrequencyEven'] = self.frequencyEven
+        self.config['DDSUi.guiState'] = saveGuiState( self )
         
     def onApply(self):
         self.ad9912.update(0xff)
         
     def onReset(self):
-        self.ad9912.reset(0xff)
+        indexes = self.tableView.selectedIndexes()
+        channels = sorted(unique([ i.row() for i in indexes ]))
+        mask = 0
+        if channels:
+            for ch in channels:
+                mask |= 1 << ch
+        else:
+            mask = 0xff
+        self.ad9912.reset(mask)
+        
+    def evaluate(self, name):
+        for channel, setting in enumerate(self.ddsChannels):
+            if setting.evaluateFrequency( self.globalDict ):
+                self.ad9912.setFrequency(channel, setting.frequency)
+            if setting.evaluatePhase( self.globalDict ):
+                self.ad9912.setPhase(channel, setting.phase)
+            if setting.evaluateAmplitude( self.globalDict ):
+                self.ad9912.setAmplitude(channel, setting.amplitude)
+        if self.autoApply: 
+            self.onApply()
+        self.tableView.viewport().repaint() 
              
 if __name__ == "__main__":
     import sys

@@ -28,6 +28,7 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
     getWavemeterData = QtCore.pyqtSignal( object )
     headerDataLookup = [ 'Enable', 'Channel', 'Current','Minimum', 'Maximum']
     attributeLookup = ['enable', 'channel', 'current', 'min', 'max']
+    edited = QtCore.pyqtSignal()
     def __init__(self, channeldict, parent=None, *args): 
         """ datain: a list where each item is a row
         
@@ -50,6 +51,11 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
                              (QtCore.Qt.UserRole,3):       lambda row: mg(1,'GHz'), 
                              (QtCore.Qt.UserRole,4):       lambda row: mg(1,'GHz'),  }
  
+    def setChannelDict(self, channelDict):
+        self.beginResetModel()
+        self.channelDict = channelDict
+        self.endResetModel()
+ 
     def data(self, index, role): 
         if index.isValid():
             return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
@@ -62,7 +68,10 @@ class WavemeterInterlockTableModel(QtCore.QAbstractTableModel):
         return None 
 
     def setData(self, index, value, role):
-        return self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
+        result = self.setDataLookup.get((role,index.column()), lambda index, value: False )(index, value)
+        if result:
+            self.edited.emit()
+        return result
 
     def setValue(self, index, value):
         pass

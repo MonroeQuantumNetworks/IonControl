@@ -11,7 +11,7 @@ from PyQt4 import QtCore, QtGui
 
 class ShutterTableModel(QtCore.QAbstractTableModel):
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, shutterdict, channelNameData, parent=None, *args): 
+    def __init__(self, shutterdict, channelNameData, size=32, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
@@ -19,6 +19,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         self.shutterdict = shutterdict
         self.channelNames, self.channelSignal = channelNameData
         self.channelSignal.dataChanged.connect( self.onHeaderChanged )
+        self.size = size
         
     def setShutterdict(self, shutterdict):
         self.beginResetModel()
@@ -29,13 +30,13 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         return len(self.shutterdict) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 32
+        return self.size
  
     def currentState(self,index):
         var, mask = self.shutterdict.at(index.row())
-        mask = mask.data if mask else 0xffffffff
+        mask = mask.data if mask else 0xffffffffffffffff
         value = var.data
-        bit = 0x80000000>>index.column()
+        bit = 0x1<<(self.size-index.column()-1)
         if mask & bit:
             if value & bit:
                 return 1
@@ -45,7 +46,7 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
             return 0
         
     def setState(self,index,state):
-        bit = 0x80000000>>index.column()
+        bit = 0x1<<(self.size-index.column()-1)
         var, mask = self.shutterdict.at(index.row())
         if mask is not None:
             if state == 0:
@@ -84,11 +85,11 @@ class ShutterTableModel(QtCore.QAbstractTableModel):
         self.headerDataChanged.emit( QtCore.Qt.Horizontal, first, last )
 
     def headerData(self, section, orientation, role ):
-        index = 31-section
+        index = self.size-1-section
         if (role == QtCore.Qt.DisplayRole):
             if (orientation == QtCore.Qt.Horizontal):
-                if index in self.channelNames.names:
-                    return self.channelNames.names[index]
+                if index in self.channelNames:
+                    return self.channelNames[index]
                 return index
             elif (orientation == QtCore.Qt.Vertical): 
                 return self.shutterdict.at(section)[0].name

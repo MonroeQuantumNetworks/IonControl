@@ -397,6 +397,9 @@ class Magnitude():
         self.oformat = None
         self.significantDigits = None
         self.strFormat = self.Format.significantDigits
+        
+    def __hash__(self):
+        return hash( (self.val, tuple(self.unit)) )
 
     def copy_format(self, other):
         """ copy the formatting options form other to self
@@ -512,7 +515,7 @@ class Magnitude():
         cp.significantDigits = self.significantDigits
         return cp
 
-    def toval(self, ounit=''):
+    def toval(self, ounit='', returnUnit=False):
         """Returns the numeric value of a magnitude.
 
         The value is given in ounit or in the Magnitude's default
@@ -527,10 +530,21 @@ class Magnitude():
         m = self.copy()
         if not ounit:
             ounit = self.out_unit
+        unitTuple = tuple(self.unit)
         if ounit:
             out_factor = self.sunit2mag(ounit)
             m._div_by(out_factor)
-        return m.val
+        elif unitTuple in _outputDimensions:
+            outmag = _mags[_outputDimensions[unitTuple]]
+            m = self.copy(True)
+            m._div_by(outmag)
+            prefix = m._bestPrefix_()
+            if prefix != '':
+                m = self.copy(True)
+                outmag = self.sunit2mag( prefix+_outputDimensions[unitTuple] )
+                m._div_by(outmag)
+            ounit = (prefix + _outputDimensions[unitTuple]).strip() 
+        return (m.val, ounit) if returnUnit else m.val
 
     def _unitRepr_(self):
         u = self.unit
@@ -556,6 +570,8 @@ class Magnitude():
         return st
 
     def _formatNumber_(self, strFormat ):
+        if strFormat=="__repr__":
+            return repr(self.val)
         strFormat = self.strFormat if strFormat is None else strFormat
         if self.significantDigits and strFormat==self.Format.significantDigits:
             #st = repr( roundToNDigits(self.val,self.significantDigits) )
@@ -581,13 +597,31 @@ class Magnitude():
             return " ".join( self.toStringTuple() )
         return self.toStringTuple()[0]  
     
+    def __repr__(self):
+        return " ".join( self.toStringTuple("__repr__") )
+    
     def toString(self, strFormat=None ):
         if _prn_units:
             return " ".join( self.toStringTuple(strFormat) )
         return self.toStringTuple( strFormat )[0]  
               
+    def suggestedUnit(self):
+        if self.out_unit:
+            return self.out_unit
+        if self.dimensionless():
+            return ""
+        outmag = _mags[_outputDimensions[tuple(self.unit)]] 
+        m = self.copy(True)
+        m._div_by(outmag)
+        prefix = m._bestPrefix_()
+        return prefix+_outputDimensions[tuple(self.unit)]      
+    
+    def base_unit(self):
+        return _outputDimensions[tuple(self.unit)]
     
     def toStringTuple(self, strFormat=None ):
+        if self.val is None:
+            return ""
         unitTuple = tuple(self.unit)
         if math.isinf(self.val) or math.isnan(self.val):
             return (str(self.val),"")
@@ -816,8 +850,7 @@ class Magnitude():
         283.8219 Pm
         """
         if m.unit != self.unit:
-            raise MagnitudeError("Incompatible units: %s and %s" %
-                                 (m.unit, self.unit))
+            raise MagnitudeError("Incompatible units. Cannot add: {0} to {1}.".format(m, self))
         r = self.copy()
         r.val += m.val
         r.significantDigits = max( r.significantDigits, m.significantDigits )
@@ -1004,7 +1037,9 @@ class Magnitude():
             n = n.val
         r.val = pow(r.val, n, modulo)
         for i in range(len(r.unit)):
-            r.unit[i] *= n
+            r.unit[i] *= int(n)
+        r.out_unit = None
+        r.significantDigits = r.significantDigits * int(n) if r.significantDigits else None
         return r
 
     def __ipow__(self, n):
@@ -1037,20 +1072,67 @@ class Magnitude():
         r = self.copy()
         r.val = abs(r.val)
         return r
+    
+    def isnan(self):
+        return math.isnan(self.val)
+    
+    def isinf(self):
+        return math.isinf(self.val)
 
-    def __cmp__(self, m):
-        """Compare two Magnitude instances with the same dimensions.
-
-        >>> print mg(10, 'm/s') > (11, 'km/h')
-        True
-        >>> print mg(1, 'km') == (1000, 'm')
-        True
-        """
+#     def __cmp__(self, m):
+#         """Compare two Magnitude instances with the same dimensions.
+# 
+#         >>> print mg(10, 'm/s') > (11, 'km/h')
+#         True
+#         >>> print mg(1, 'km') == (1000, 'm')
+#         True
+#         """
+#         if m.unit != self.unit:
+#             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
+#                                  (m.unit, self.unit))
+#         return cmp(self.val, m.val)
+    
+    def __eq__(self, m):
+        if not is_magnitude(m):
+            if self.dimensionless():
+                return self.val == m
+            else:
+                return False
+                #raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
+        return self.unit==m.unit and self.val==m.val
+    
+    def __ne__(self, m):
+        return not (self==m)
+    
+    def __lt__(self, m):
+        if not is_magnitude(m):
+            if self.dimensionless():
+                return self.val < m
+            else:
+                raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
         if m.unit != self.unit:
             raise MagnitudeError("Incompatible units in comparison: %s and %s" %
                                  (m.unit, self.unit))
-        return cmp(self.val, m.val)
-
+        return self.val < m.val
+    
+    def __gt__(self, m):
+        if not is_magnitude(m):
+            if self.dimensionless():
+                return self.val > m
+            else:
+                return False
+                #raise MagnitudeError("Cannot compare dimensioned '{0}' quantity to non-magnitude".format(self.unit))
+        if m.unit != self.unit:
+            raise MagnitudeError("Incompatible units in comparison: %s and %s" %
+                                 (m.unit, self.unit))
+        return self.val > m.val
+    
+    def __le__(self, m):
+        return not m<self
+    
+    def __ge__(self, m):
+        return not self<m
+    
     def isIdenticalTo(self, other):
         """compare the magnitudes with all the metadata"""
         return ((self.val, self.unit, self.out_unit, self.out_factor, self.oprec, self.oformat, self.significantDigits)

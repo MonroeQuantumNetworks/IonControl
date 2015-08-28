@@ -6,14 +6,20 @@ from Queue import Queue
 import logging
 import multiprocessing
 from multiprocessing.sharedctypes import Array
+from ctypes import c_longlong
 import numpy
 
 from PyQt4 import QtCore 
 
-from PulserHardwareServer import FinishException, ErrorMessages, FPGAException
+from PulserHardwareServer import FinishException
+from pulser.OKBase import ErrorMessages, FPGAException
 from PulserHardwareServer import PulserHardwareServer
 import modules.magnitude as magnitude
-
+from pulser.PulserHardwareServer import PulserHardwareException
+from pulser.PulserConfig import getPulserConfiguration
+from gui import ProjectSelection
+import os.path
+import shutil
 
 def check(number, command):
     if number is not None and number<0:
@@ -79,6 +85,7 @@ class LoggingReader(QtCore.QThread):
                 
 
 class PulserHardware(QtCore.QObject):
+    serverClass = PulserHardwareServer
     sleepQueue = Queue()   # used to be able to interrupt the sleeping procedure
 
     dataAvailable = QtCore.pyqtSignal( 'PyQt_PyObject', object )
@@ -87,7 +94,7 @@ class PulserHardware(QtCore.QObject):
     shutterChanged = QtCore.pyqtSignal( 'PyQt_PyObject' )
     ppActiveChanged = QtCore.pyqtSignal( object )
     
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
 
     sharedMemorySize = 256*1024
     def __init__(self):
@@ -102,9 +109,9 @@ class PulserHardware(QtCore.QObject):
         self.dataQueue = multiprocessing.Queue()
         self.clientPipe, self.serverPipe = multiprocessing.Pipe()
         self.loggingQueue = multiprocessing.Queue()
-        self.sharedMemoryArray = Array( 'L', self.sharedMemorySize , lock=True )
+        self.sharedMemoryArray = Array( c_longlong, self.sharedMemorySize , lock=True )
                 
-        self.serverProcess = PulserHardwareServer(self.dataQueue, self.serverPipe, self.loggingQueue, self.sharedMemoryArray )
+        self.serverProcess = self.serverClass(self.dataQueue, self.serverPipe, self.loggingQueue, self.sharedMemoryArray )
         self.serverProcess.start()
 
         self.queueReader = QueueReader(self, self.dataQueue)
@@ -113,7 +120,26 @@ class PulserHardware(QtCore.QObject):
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
         self.ppActive = False
+        
+        configpath = os.path.join( ProjectSelection.configDir(), 'PulserConfig.xml' )
+        if not os.path.exists(configpath):
+            skeletonpath = os.path.join( os.path.dirname(os.path.realpath(__file__)), '..', 'config', 'PulserConfig.xml' )
+            shutil.copy( skeletonpath, configpath )
+        self.pulserConfigurationList = getPulserConfiguration( configpath )
 
+    def pulserConfiguration(self):
+        config = self.getConfiguration()
+        if not config:
+            logging.getLogger(__name__).error("No configuration information returned from FPGA")
+            return None
+        HardwareConfigurationId = config['HardwareConfigurationId']
+        if HardwareConfigurationId in self.pulserConfigurationList:
+            return self.pulserConfigurationList[config['HardwareConfigurationId']]
+        else:
+            #logging.getLogger(__name__).error("No information on configuration {0} in configuration file".format(HardwareConfigurationId))
+            raise PulserHardwareException("No information on configuration 0x{0:x} in configuration file 'PulserConfig.xml'".format(HardwareConfigurationId))
+        return None
+            
 
     def shutdown(self):
         self.clientPipe.send( ('finish', () ) )
@@ -205,28 +231,29 @@ class PulserHardware(QtCore.QObject):
     def wordListToBytearray(self, wordlist):
         """ convert list of words to binary bytearray
         """
-        return bytearray(numpy.array(wordlist, dtype=numpy.int32).view(dtype=numpy.int8))
+        return bytearray(numpy.array(wordlist, dtype=numpy.int64).view(dtype=numpy.int8))
 
     def bytearrayToWordList(self, barray):
-        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int32 ))
+        return list(numpy.array( barray, dtype=numpy.int8).view(dtype=numpy.int64 ))
             
     
     def ppWriteRamWordList(self, wordlist, address, check=True):
+        if address+len(wordlist)>2**24:
+            raise PulserHardwareException("Wordlist of length {0} exceeds memory depth ({1} words)".format(address+len(wordlist),2**24))
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
             self.sharedMemoryArray[0:length] = wordlist[start:start+length]
-            self.clientPipe.send( ('ppWriteRamWordListShared', (length, address+4*start, check) ) )
+            self.clientPipe.send( ('ppWriteRamWordListShared', (length, address+8*start, check) ) )
             processReturn( self.clientPipe.recv() )
         return True
             
     def ppReadRamWordList(self, wordlist, address):
-        readlist = list()
         for start in range(0, len(wordlist), self.sharedMemorySize ):
             length = min( self.sharedMemorySize, len(wordlist)-start )
-            self.clientPipe.send( ('ppReadRamWordListShared', (length, address+4*start) ) )
+            self.clientPipe.send( ('ppReadRamWordListShared', (length, address+8*start) ) )
             processReturn( self.clientPipe.recv() )
-            readlist.extend( self.sharedMemoryArray[0:length] )
-        return readlist
+            wordlist[start:start+length] =  self.sharedMemoryArray[0:length] 
+        return wordlist
 
 def processReturn( returnvalue ):
     if isinstance( returnvalue, Exception ):

@@ -9,6 +9,7 @@ from pyparsing import Optional, Forward, indentedBlock, Group, delimitedList, on
 import logging
 import sys
 from CompileException import CompileException
+
 """
 BNF of grammar
 
@@ -43,7 +44,7 @@ hexvalue = Regex("0x[0-9a-f]+").setWhitespaceChars(" \t")
 value = hexvalue | decvalue
 assign = Literal("=").suppress()
 type_ = Keyword("parameter") | Keyword("shutter") | Keyword("masked_shutter") | Keyword("trigger") | Keyword("var") | Keyword("counter") | Keyword("exitcode") | Keyword("address")
-comparison = ( Literal("==") | Literal("!=") | Literal("<") | Literal(">") | Literal("<=") | Literal(">=") )
+comparison = ( Literal("==") | Literal("!=") | Literal("<=") | Literal(">=") | Literal("<") | Literal(">")  )
 addOperator = oneOf("+ -")
 not_ = Keyword("not")
 
@@ -63,12 +64,78 @@ comparisonCommands = { "==": "CMPEQUAL",
                        "<=": "CMPLE",
                        ">=": "CMPGE" }
 
+shiftLookup = { "<<": "SHL", ">>": "SHR", "+": "ADDW", "-": "SUBW", "*": "MULTW", "/": 'DIVW' }
+
 jmpNullCommands = { "==" : { True: "JMPZ", False: "JMPNZ"} ,
                     "!=" : { True: "JMPNZ", False: "JMPZ"},
                     ">" : {True: "JMPNZ", False: "JMPZ" } }
 
+opassignmentLookup = { '+=': 'ADDW', '-=': 'SUBW', '*=': 'MULTW', '&=': 'ANDW', '|=': 'ORW', '>>=': "SHR", "<<=": "SHL", '/=': 'DIVW' }
+
+#from pppCompiler.Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 from Symbol import SymbolTable, FunctionSymbol, ConstSymbol, VarSymbol
 
+class CodeGenerator(object):
+    def __call__(self):
+        return "# CodeGenerator"
+
+class WhileGenerator(CodeGenerator):
+    def __init__(self, symbols, JMPCMD, block0, block1, block2 ):
+        self.JMPCMD = JMPCMD
+        self.block0 = block0
+        self.block1 = block1
+        self.block2 = block2
+        self.symbols = symbols
+        
+    def __call__(self):
+        labelNumber = self.symbols.getLabelNumber()
+        topLabel = "while_label_{0}".format(labelNumber)
+        endLabel = "end_while_label_{0}".format(labelNumber)
+        code = list(self.block0)
+        code.append("{0}: NOP".format(topLabel))
+        code.extend( self.block1 )
+        code.append("  {1} {0}".format(endLabel, self.JMPCMD))
+        code.extend( self.block2 )
+        code.extend([ "  JMP {0}".format(topLabel) , "{0}: NOP".format(endLabel), "# end while" ])
+        return code
+
+class IfGenerator(CodeGenerator):
+    def __init__(self, symbols, JMPCMD, block0, block1, block2 ):
+        self.JMPCMD = JMPCMD
+        self.block0 = block0
+        self.block1 = block1
+        self.block2 = block2
+        self.symbols = symbols
+        
+    def __call__(self):
+        labelNumber = self.symbols.getLabelNumber()
+        elseLabel = "else_label_{0}".format( labelNumber )
+        endifLabel = "end_if_label_{0}".format( labelNumber )
+        code = list(self.block0)
+        if self.block2 is None:
+            code.append("  {1} {0}".format(endifLabel, self.JMPCMD))
+            code.append( "# IF block")
+            code.extend( self.block1 )
+            code.append( "{0}: NOP".format(endifLabel))
+        else:
+            code.append("  {1} {0}".format(elseLabel, self.JMPCMD))
+            code.append( "# IF block")
+            code.extend( self.block1 )
+            code += ["  JMP {0}".format(endifLabel),
+                     "{0}: NOP".format(elseLabel),
+                     "# ELSE block" ]
+            code.extend( self.block2 )
+            code.append( "{0}: NOP".format(endifLabel) )
+        code.append( "# end if" )
+        return code
+
+def generate(l):
+    for el in l:
+        if isinstance(el, CodeGenerator):
+            for sub in generate( el() ):
+                yield sub
+        else:
+            yield el
 
 def list_rtrim( l, trimvalue=None ):
     """in place list right trim"""
@@ -86,6 +153,11 @@ def find_and_get( parse_result, key ):
         if key in result:
             return result[key]
     return None
+
+
+def is_power2(num):
+    return ((num & (num - 1)) == 0) and num > 0
+
 
 class pppCompiler:
     def __init__(self):
@@ -107,16 +179,17 @@ class pppCompiler:
         rExp = Forward()
         #numexpression = Forward()
         
-        rExp << ( procedurecall | identifier("identifier") | value.setParseAction(self.value_action) |
+        opexpression = (identifier("operand") + ( Literal(">>") | Literal("<<") | Literal("+") | Literal("*") | Literal("/") | Literal("-"))("op") + Group(rExp)("argument")).setParseAction(self.opexpression_action)
+        rExp << ( procedurecall | opexpression | identifier("identifier") | value.setParseAction(self.value_action) | 
                   #Group( Suppress("(") + rExp + Suppress(")") ) |
                   #Group( "+" + rExp) |
                   #Group( "-" + rExp) |
-                  Group( Literal("not") + rExp))
+                  Group( Literal("not") + rExp) )
         rExpCondition =  Group((Optional(not_)("not_")+rExp("rExp"))).setParseAction(self.rExp_condition_action)("condition")
         rExp.setParseAction(self.rExp_action)
         
         assignment = ((identifier | pointer)("lval") + assign + rExp("rval")).setParseAction(self.assignment_action)
-        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") )("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
+        addassignment = (( identifier | pointer )("lval") + ( Literal("+=") | Literal("-=") | Literal("*=") | Literal("&=") | Literal("|=") | Literal(">>=") | Literal("/=") | Literal("<<="))("op") + Group(rExp)("rval")).setParseAction(self.addassignement_action)
         
         statement = Forward()
         statementBlock = indentedBlock(statement, indentStack).setParseAction(self.statementBlock_action)
@@ -124,7 +197,7 @@ class pppCompiler:
                                 + statementBlock).setParseAction(self.def_action) )
         while_statement = Group((Keyword("while").suppress() + (condition | rExpCondition)("condition")  + colon.suppress() + statementBlock("statementBlock") ).setParseAction(self.while_action))
         if_statement = (Keyword("if") + condition + colon + statementBlock("ifblock") + 
-                        Optional(Keyword("else:").suppress()+ statementBlock("elseblock")) ).setParseAction(self.if_action)
+                        Optional(Keyword("else").suppress()+ colon +statementBlock("elseblock")) ).setParseAction(self.if_action)
         statement << (procedure_statement | while_statement | if_statement | procedurecall | assignment | addassignment)
         
         decl = constdecl | vardecl | insertdecl  | Group(statement) 
@@ -149,7 +222,10 @@ class pppCompiler:
             elif arg.lval!="W":
                 symbol = self.symbols.getVar(arg.lval)
                 code.append( "  STWR {0}".format(symbol.name))
-            arg['code'] = code
+            if 'code' in arg:
+                arg['code'].extend( code )
+            else:
+                arg['code'] = code
         except Exception as e:
             raise CompileException(text,loc,str(e),self)            
         return arg
@@ -158,7 +234,7 @@ class pppCompiler:
         logger.debug( "addassignement_action {0} {1}".format( lineno(loc, text), arg ))
         try:
             code = [ "# line {0}: add_assignment: {1}".format(lineno(loc, text),line(loc,text)) ]
-            if arg.rval=='1' or arg.rval[0]=='1':
+            if arg.rval[0]=='1' and arg.op in ['+=','-=']:
                 self.symbols.getVar(arg.lval)
                 if arg.op=="+=":
                     code.append("  INC {0}".format(arg.lval))
@@ -167,23 +243,21 @@ class pppCompiler:
             else:
                 if 'code'in arg.rval:
                     code += arg.rval.code
+                    self.symbols.getVar(arg.lval)
+                    if arg.op=="-=":
+                        raise CompileException("-= with expression needs to be fixed in the compiler")
+                    code.append( "  {0} {1}".format(opassignmentLookup[arg.op], arg.lval))
                 elif 'identifier' in  arg.rval:
                     self.symbols.getVar(arg.rval.identifier)
-                    code.append("  LDWR {0}".format(arg.rval.identifier))
-                if arg.op=="+=":
+                    code.append("  LDWR {0}".format(arg.lval))
                     self.symbols.getVar(arg.lval)
-                    code.append( "  ADDW {0}".format(arg.lval))
-                else:
-                    self.symbols.getVar(arg.lval)
-                    code.append( "  SUBW {0}".format(arg.lval))
+                    code.append( "  {0} {1}".format(opassignmentLookup[arg.op], arg.rval.identifier))
             code.append("  STWR {0}".format(arg.lval))
             arg['code'] = code
         except Exception as e:
             raise CompileException(text,loc,str(e),self)            
         return arg
-
-            
-    
+   
     def condition_action(self, text, loc, arg):
         logger.debug( "condition_action {0} {1}".format( lineno(loc, text), arg ))
         try:
@@ -233,6 +307,17 @@ class pppCompiler:
         arg["identifier"] = self.symbols.getInlineParameter("inlinevar", value)
         return arg
         
+    def opexpression_action(self, text, loc, arg):
+        try:
+            logger.debug( "opexpression_action {0} {1}".format( lineno(loc, text), arg ))
+            code = [  "# line {0}: shiftexpression {1}".format(lineno(loc, text), line(loc,text)),
+                      "  LDWR {0}".format(arg.operand), "  {0} {1}".format(shiftLookup[arg.op], arg.argument.identifier)]
+            arg['code'] = code
+            logger.debug( "shiftexpression generated code {0}".format(code))
+        except Exception as e:
+            raise CompileException(text,loc,str(e),self)
+        return arg
+        
     def procedurecall_action(self, text, loc, arg):
         try:
             logger.debug( "procedurecall_action {0} {1}".format( lineno(loc, text), arg ))
@@ -256,31 +341,20 @@ class pppCompiler:
     def if_action(self, text, loc, arg):
         logger.debug( "if_action {0} {1}".format( lineno(loc, text), arg ))
         try:
-            code = ["# line {0} if statement {1}".format(lineno(loc,text), line(loc,text)) ]
+            block0 = ["# line {0} if statement {1}".format(lineno(loc,text), line(loc,text)) ]
             if isinstance(arg.condition.code,list):
-                code += arg.condition.code
+                block0 += arg.condition.code
                 JMPCMD = arg.condition.get( 'jmpcmd', {False: "JMPNCMP"} )[False]
             else:
                 JMPCMD = arg.condition.code[True]            
-            labelNumber = self.symbols.getLabelNumber()
-            elseLabel = "else_label_{0}".format( labelNumber )
-            endifLabel = "end_if_label_{0}".format( labelNumber )
+
             if 'elseblock' in arg:
-                code.append("  {1} {0}".format(elseLabel, JMPCMD))
-                code.append( "# IF block")
-                code += arg.ifblock.code
-                code += ["  JMP {0}".format(endifLabel),
-                         "{0}: NOP".format(elseLabel) ]
-                code.append( "# ELSE block")
-                code += arg.elseblock['code']
-                code += "{0}: NOP".format(endifLabel)
+                block1 =  arg.ifblock.ifblock.code
+                block2 = arg.elseblock.elseblock['code'] if 'elseblock' in arg.elseblock else arg.elseblock['code']
             else: 
-                code.append("  {1} {0}".format(endifLabel, JMPCMD))
-                code.append( "# IF block")
-                code += arg.ifblock.ifblock['code']
-                code.append( "{0}: NOP".format(endifLabel))
-            code.append( "# end if" )
-            arg['code'] = code
+                block1 = arg.ifblock.ifblock['code']
+                block2 = None
+            arg['code'] = [ IfGenerator( self.symbols, JMPCMD, block0, block1, block2 ) ]
         except Exception as e:
             raise CompileException(text,loc,str(e),self)                        
         return arg
@@ -288,30 +362,25 @@ class pppCompiler:
     def while_action(self, text, loc, arg):
         logger.debug( "while_action {0} {1}".format( lineno(loc, text),  arg ))
         try:
-            labelNumber = self.symbols.getLabelNumber()
-            topLabel = "while_label_{0}".format(labelNumber)
-            endLabel = "end_while_label_{0}".format(labelNumber)
-            code = [ "# line {0} while_statement {1}".format(lineno(loc,text),line(loc,text)),
-                     "{0}: NOP".format(topLabel) ]
+            block0 = [ "# line {0} while_statement {1}".format(lineno(loc,text),line(loc,text))]
             if 'code' in arg.condition:
                 if isinstance(arg.condition.code,list):
-                    code += arg.condition.code
+                    block1 = arg.condition.code
                     JMPCMD = arg.condition.get('jmpcmd', {False: "JMPNCMP"} )[False]
                 else:
-                    JMPCMD = arg.condition.code[True]            
+                    JMPCMD = arg.condition.code[True]  
+                    block1 = []          
             elif 'rExp' in arg.condition and 'code' in arg.condition.rExp:
                 if isinstance(arg.condition.rExp.code,list):
-                    code += arg.condition.rExp.code
+                    block1 = arg.condition.rExp.code
                     JMPCMD = arg.condition.rExp.get('jmpcmd', "JMPNCMP" )
                 else:
-                    JMPCMD = arg.condition.rExp.code[True]            
-            code += [ "  {1} {0}".format(endLabel, JMPCMD)]
-            code += arg.statementBlock.statementBlock['code']
-            code += [ "  JMP {0}".format(topLabel) ]
-            code += [ "{0}: NOP".format(endLabel) ]
-            code.append("# end while")
-            arg['code'] = code
-            logger.debug( "while_action generated code {0}".format(code))
+                    JMPCMD = arg.condition.rExp.code[True]     
+                    block1 = []       
+            block2 = arg.statementBlock.statementBlock['code']
+                        
+            arg['code'] =  [ WhileGenerator(self.symbols, JMPCMD, block0, block1, block2) ]
+            logger.debug( "while_action generated code ")
         except Exception as e:
             raise CompileException(text,loc,str(e),self)                        
         return arg
@@ -395,7 +464,7 @@ class pppCompiler:
                 allcode += element[0]['code']
         header = self.createHeader()        
 
-        codetext = "\n".join(header + allcode)
+        codetext = "\n".join(header + list(generate(allcode)))
         return codetext
     
     def createHeader(self):
@@ -420,34 +489,35 @@ class pppCompiler:
         header.append( "" )        
         return header
 
-class compilertest:
-    def __init__(self):
-        with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
-            self.sourcecode = f.read()
-           
-    def test(self):
+def pppcompile( sourcefile, targetfile, referencefile ):
+    import difflib
+    import os.path
+    try:
+        with open(sourcefile,"r") as f: 
+            sourcecode = f.read()
         compiler = pppCompiler()
-        assemblercode = compiler.compileString(self.sourcecode )
-        return assemblercode
+        assemblercode = compiler.compileString(sourcecode )
+        with open(targetfile,"w") as f:
+            f.write(assemblercode)
+    except CompileException as e:
+        print str(e)
+        print e.line()
+    # compare result to reference
+    comppass = None
+    if os.path.exists( referencefile ):
+        with open(referencefile, "r") as f:
+            referencecode = f.read()
+        comppass = True
+        for line in difflib.unified_diff(referencecode.splitlines(), assemblercode.splitlines()):
+            print line
+            comppass = False
+    return comppass
         
 
 
 if __name__=="__main__":
-#     import timeit
-#     number = 30
-#     t = timeit.timeit(stmt='c.test()', setup='from __main__ import compilertest; c = compilertest()', number=number)
-#     print t/number
-    with open(r"..\config\PulsePrograms\YtterbiumScan2.ppp","r") as f:
-        sourcecode = f.read()
-     
-    compiler = pppCompiler()
-    try:
-        assemblercode = compiler.compileString(sourcecode )
- 
-        with open("YtterbiumScan.auto.pp","w") as f:
-            f.write(assemblercode)
-         
-        from pulseProgram.PulseProgram import PulseProgram    
+    def ppCompile( assemblerfile ):
+        from pulseProgram.PulseProgram import PulseProgram
         pp = PulseProgram()
         pp.debug = True
         pp.loadSource(r"YtterbiumScan.auto.pp")
@@ -459,8 +529,15 @@ if __name__=="__main__":
             print hex(op), hex(val)
              
         pp.toBinary()
+    
+    import os.path
+    resultMessage = { None: 'no comparison', False: 'failed', True: 'passed' }
+    folder = "test"
+    testfiles =  [ "Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld" , "ProcedureCalls" ]
+    result = list()
+    for name in testfiles:    
+        result.append( pppcompile( os.path.join(folder,name+".ppp"), os.path.join(folder,name+".ppc"), os.path.join(folder,name+".ppc.reference") ) )
         
-    except CompileException as e:
-        print str(e)
-        print e.line()
-
+    print "Summary:"
+    for name , result in zip(testfiles,result):
+        print name, resultMessage[result]

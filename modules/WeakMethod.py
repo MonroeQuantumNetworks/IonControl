@@ -28,6 +28,10 @@ class ref(object):
             obj = self._obj()
             return self._func.__get__( obj, self._class )(*args, **kwargs) if obj is not None else None
         
+    @property
+    def bound(self):
+        return self._obj is None or self._obj() is not None
+        
 if __name__=="__main__":
     from functools import partial
     class C(object):
@@ -39,11 +43,14 @@ if __name__=="__main__":
             
     c = C()
     r = ref(c.f)
-    r()()
+    r()
     
     r2 = ref(c.f)
     r2(test="Hallo")
     r3 = partial( ref(c.f), test="Welt")
     r3()
+    print( r2.bound )
     del c
-    raw_input('Press enter\n')
+    
+    print( r2.bound )
+    r3()

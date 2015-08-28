@@ -13,18 +13,20 @@ class Settings:
         self.pointSize = 12
 
 class AverageViewTableModel(QtCore.QAbstractTableModel):
-    headerDataLookup = [ 'Sample Mean', 'Standard error', 'Name']
+    headerDataLookup = [ 'Current Value', 'Sample Mean', 'Standard error', 'Name']
     def __init__(self, stats, config, parent=None, *args): 
         """ datain: a list where each item is a row
         
         """
         QtCore.QAbstractTableModel.__init__(self, parent, *args) 
         self.stats = stats
-        self.dataLookup = { (QtCore.Qt.DisplayRole,0): lambda row: str(roundToStdDev(self.stats[row].mean,self.stats[row].stderr)),
-                         (QtCore.Qt.DisplayRole,1): lambda row: str(roundToNDigits(self.stats[row].stderr,2)),
-                         (QtCore.Qt.DisplayRole,2): lambda row: self.names[row] if self.names and len(self.names)>row else None,
+        self.dataLookup = { (QtCore.Qt.DisplayRole,0): lambda row: str(roundToNDigits(self.stats[row].currentValue,3)),
+                         (QtCore.Qt.DisplayRole,1): lambda row: str(roundToStdDev(self.stats[row].mean,self.stats[row].stderr)),
+                         (QtCore.Qt.DisplayRole,2): lambda row: str(roundToNDigits(self.stats[row].stderr,2)),
+                         (QtCore.Qt.DisplayRole,3): lambda row: self.names[row] if self.names and len(self.names)>row else None,
                          (QtCore.Qt.FontRole,0):    lambda row: self.dataFont(row),
                          (QtCore.Qt.FontRole,1):    lambda row: self.dataFont(row),
+                         (QtCore.Qt.FontRole,2):    lambda row: self.dataFont(row)
                          #(QtCore.Qt.SizeHintRole,0): lambda row: 
                          }
         self.names = None
@@ -43,7 +45,7 @@ class AverageViewTableModel(QtCore.QAbstractTableModel):
     
     def changeSize(self, amount):
         self.settings.pointSize = min( max(self.settings.pointSize+amount, 6), 48 )
-        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(len(self.stats)-1,1) )
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(len(self.stats)-1,2) )
     
     def headerData(self, section, orientation, role ):
         if (role == QtCore.Qt.DisplayRole):
@@ -58,7 +60,7 @@ class AverageViewTableModel(QtCore.QAbstractTableModel):
         return len(self.stats) 
         
     def columnCount(self, parent=QtCore.QModelIndex()): 
-        return 3
+        return 4
  
     def resize(self, length):
         self.beginResetModel()
@@ -71,7 +73,7 @@ class AverageViewTableModel(QtCore.QAbstractTableModel):
             self.resize( len(stats) )
         for index, element in enumerate(stats):
             self.stats[index].add(element)
-        self.dataChanged.emit(self.index(0,0),self.index(len(stats)-1,2))
+        self.dataChanged.emit(self.index(0,0),self.index(len(stats)-1,3))
                 
     def setNames(self, names):
         self.names = names if names else None
@@ -82,7 +84,7 @@ class AverageViewTableModel(QtCore.QAbstractTableModel):
     def clear(self):
         for stat in self.stats:
             stat.clear()
-        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(1,len(self.stats)-1))
+        self.dataChanged.emit( self.createIndex(0,0), self.createIndex(2,len(self.stats)-1))
 
 
 class AverageViewTable(Form,Base):

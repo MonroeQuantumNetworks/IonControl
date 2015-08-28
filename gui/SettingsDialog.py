@@ -68,7 +68,7 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
                     else:
                         self.pulser.openBySerial(self.deviceMap[ self.configSettings.lastInstrument].serial )
                 except IOError as e:
-                    logging.getLogger(__name__).error( e.strerror )
+                    logging.getLogger(__name__).warning( e.strerror )
                     self.exec_()
             else:
                 self.exec_()
@@ -146,6 +146,8 @@ class SettingsDialog(SettingsDialogForm, SettingsDialogBase):
             self.pulser.openBySerial( self.settings.deviceSerial )
             self.pulser.uploadBitfile(self.bitfileCache[bitfile])
             self.configSettings.lastInstrument = self.settings.deviceDescription
+            if hasattr(self.pulser, "getConfiguration") and False:
+                logging.getLogger(__name__).info( "{0}".format( self.pulser.getConfiguration() ) )
 
             
 if __name__ == "__main__":

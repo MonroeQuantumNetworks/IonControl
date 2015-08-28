@@ -4,13 +4,16 @@ Created on Sat Feb 16 16:56:57 2013
 
 @author: pmaunz
 """
-import functools
-
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import PyQt4.uic
 
-import modules.magnitude as magnitude
-from uiModules.MagnitudeSpinBox import MagnitudeSpinBox
+from modules.SequenceDict import SequenceDict
+from VoltageGlobalAdjustTableModel import VoltageGlobalAdjustTableModel   #@UnresolvedImport
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+from externalParameter.VoltageOutputChannel import VoltageOutputChannel
+from _collections import defaultdict
+from modules.Observable import Observable
+from modules import MagnitudeUtilit
 
 
 VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')
@@ -18,79 +21,98 @@ VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\Vol
 class Settings:
     def __init__(self):
         self.gain = 1.0
-        self.adjust = dict()
-        
+        self.gainCache = dict()
+    
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__dict__.setdefault( 'gainCache', dict() )
     
 class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
-    updateOutput = QtCore.pyqtSignal(object)
+    updateOutput = QtCore.pyqtSignal(object, object)
+    outputChannelsChanged = QtCore.pyqtSignal(object)
     
-    def __init__(self,config,parent=None):
+    def __init__(self, config, globalDict, parent=None):
         VoltageGlobalAdjustForm.__init__(self)
         VoltageGlobalAdjustBase.__init__(self,parent)
         self.config = config
         self.configname = 'VoltageGlobalAdjust.Settings'
         self.settings = self.config.get(self.configname,Settings())
-        self.globalAdjustDict = dict()
-        self.adjust = dict()
-        self.adjust["__GAIN__"] = 1.0
+        self.globalAdjustDict = SequenceDict()
         self.myLabelList = list()
         self.myBoxList = list()
         self.historyCategory = 'VoltageGlobalAdjust'
         self.adjustHistoryName = None
-        self.spacerItem = None
+        self.globalDict = globalDict
+        self.adjustCache = self.config.get(self.configname+".cache",dict()) 
+        self.savedValue = defaultdict( lambda: None )
+        self.displayValueObservable = defaultdict( lambda: Observable() )
 
     def setupUi(self, parent):
         VoltageGlobalAdjustForm.setupUi(self,parent)
         self.gainBox.setValue(self.settings.gain)
-        self.gainBox.valueChanged.connect( functools.partial(self.onValueChanged, "__GAIN__") )
-        self.setupGlobalAdjust('none',dict())
+        self.gainBox.valueChanged.connect( self.onGainChanged )
+        self.tableModel = VoltageGlobalAdjustTableModel( self.globalAdjustDict, self.globalDict )
+        self.tableView.setModel( self.tableModel )
+        self.tableView.setSortingEnabled(True)   # triggers sorting
+        self.delegate =  MagnitudeSpinBoxDelegate(self.globalDict)
+        self.tableView.setItemDelegateForColumn(1,self.delegate)
+        
+    def onGainChanged(self, gain):
+        self.settings.gain = gain
+        self.updateOutput.emit(self.globalAdjustDict, self.settings.gain)        
         
     def setupGlobalAdjust(self, name, adjustDict):
-        if self.spacerItem:
-            self.gridLayout.removeItem( self.spacerItem )
-        else:
-            self.spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        if self.adjustHistoryName:
-            self.config[(self.historyCategory,self.adjustHistoryName)] = self.adjust
-        oldadjust = self.config.get((self.historyCategory,name),dict())
-        self.adjustHistoryName = name
+        if name!=self.adjustHistoryName:
+            self.adjustCache[self.adjustHistoryName] = [v.data for v in self.globalAdjustDict.values()]
+            self.settings.gainCache[self.adjustHistoryName] = self.settings.gain
+            self.settings.gain = self.settings.gainCache.get( name, self.settings.gain )
+            if name in self.adjustCache:
+                for data in self.adjustCache[name]:
+                    if data[0] in adjustDict:
+                        adjustDict[data[0]].data = data
+            self.adjustHistoryName = name
         self.globalAdjustDict = adjustDict
-        #print self.globalAdjustDict
-        self.adjust = dict()
-        for index, name in enumerate(self.globalAdjustDict.keys()):
-            if index<len(self.myLabelList):
-                self.myLabelList[index].setText(name)
-                self.myLabelList[index].show()
-            else:
-                label = QtGui.QLabel(self)
-                label.setText(name)
-                self.myLabelList.append(label)
-                self.gridLayout.addWidget( label, 2+index, 1, 1, 1 )
-            if index<len(self.myBoxList):
-                self.myBoxList[index].valueChanged.disconnect()
-                self.myBoxList[index].setValue( oldadjust.get(name,0) )
-                self.myBoxList[index].valueChanged.connect( functools.partial(self.onValueChanged, name) )
-                self.myBoxList[index].show()
-                self.adjust[name] = self.myBoxList[index].value()
-            else:
-                Box = MagnitudeSpinBox(self)
-                Box.setValue( oldadjust.get(name,0) )
-                Box.valueChanged.connect( functools.partial(self.onValueChanged, name) )
-                self.gridLayout.addWidget( Box, 2+index, 2, 1, 1 )
-                self.myBoxList.append( Box )
-                self.adjust[name] = Box.value()
-        for index in range( len(self.globalAdjustDict.keys()), len(self.myLabelList)):
-            self.myLabelList[index].hide()
-            self.myBoxList[index].hide()
-        self.gridLayout.addItem(self.spacerItem, len(self.globalAdjustDict)+2, 1, 1, 1)
-        self.updateOutput.emit(self.adjust)
+        for name, adjust in self.globalAdjustDict.iteritems():
+            adjust.observable.subscribe( self.onValueChanged, unique=True )
+        self.tableModel.setGlobalAdjust( adjustDict )
+        self.outputChannelsChanged.emit( self.outputChannels() )
+        self.gainBox.setValue(self.settings.gain)
+        #self.updateOutput.emit(self.globalAdjustDict, self.settings.gain)        
         
-    def onValueChanged(self, attribute, value):
-        self.adjust[attribute]=value.toval() if isinstance(value, magnitude.Magnitude) else value
-        self.updateOutput.emit(self.adjust)
+    def onValueChanged(self, event):
+        if event.origin=='recalculate':
+            self.tableModel.valueRecalcualted(event.name)
+        self.globalAdjustDict[event.name]._value = MagnitudeUtilit.value( self.globalAdjustDict[event.name]._value )
+        self.updateOutput.emit(self.globalAdjustDict, self.settings.gain)
     
     def saveConfig(self):
         self.config[self.configname] = self.settings
-        if self.adjustHistoryName:
-            self.config[(self.historyCategory,self.adjustHistoryName)] = self.adjust
+        self.adjustCache[self.adjustHistoryName] = [v.data for v in self.globalAdjustDict.values()]
+        self.config[self.configname+".cache"] = self.adjustCache
+        
+    def setValue(self, channel, value):
+        self.globalAdjustDict[channel].value = value 
+        return True
+    
+    def currentValue(self, channel):
+        return self.globalAdjustDict[channel].value
+    
+    def saveValue(self, channel):
+        self.savedValue[channel] = self.globalAdjustDict[channel].value
+    
+    def restoreValue(self, channel):
+        if self.savedValue[channel] is not None:
+            self.globalAdjustDict[channel].value = self.savedValue[channel]
+        return True
+    
+    def strValue(self, channel):
+        adjust = self.globalAdjustDict[channel]
+        return adjust.string if adjust.hasDependency else None
+    
+    def setStrValue(self, channel, value):
+        pass
+    
+    def outputChannels(self):
+        self._outputChannels = dict(( (channelName, VoltageOutputChannel(self, None, channelName)) for channelName in self.globalAdjustDict.iterkeys() ))      
+        return self._outputChannels
         

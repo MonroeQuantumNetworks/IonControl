@@ -30,9 +30,11 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     ClearStatusMessage = QtCore.pyqtSignal()
     experimentName = 'Test Scan'
 
-    def __init__(self,parent=None):
+    def __init__(self,globalVariablesUi, parent=None, measurementLog=None):
         MainWindowWidget.MainWindowWidget.__init__(self,parent)
         testForm.__init__(self)
+        self.globalVariablesUi = globalVariablesUi
+        self.measurementLog = measurementLog 
 #        pyqtgraph.setConfigOption('background', 'w')
 #        pyqtgraph.setConfigOption('foreground', 'k')
 
@@ -40,13 +42,13 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         testForm.setupUi(self,MainWindow)
         self.config = config
         self.plottedTrace = None
-        self.graphicsView = self.graphicsLayout.graphicsView
+        self._graphicsView = self.graphicsLayout._graphicsView
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui(self.penicons,self.config,"testExperiment",self.graphicsView)
+        self.traceui = Traceui(self.penicons,self.config,"testExperiment",{ "Plot Window": {'view': self._graphicsView}})
         self.traceui.setupUi(self.traceui)
         self.dockWidget.setWidget( self.traceui )
         self.dockWidgetList.append(self.dockWidget)
-        self.fitWidget = FitUi(self.traceui,self.config,"testExperiment")
+        self.fitWidget = FitUi(self.traceui,self.config,"testExperiment", globalDict = self.globalVariablesUi.variables )
         self.fitWidget.setupUi(self.fitWidget)
         self.dockWidgetFitUi.setWidget( self.fitWidget )
         self.dockWidgetList.append(self.dockWidgetFitUi )
@@ -60,13 +62,17 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         if 'testWidget.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['testWidget.MainWindow.State'])
 #start added
-        self.scanControlWidget = ScanControl(config,self.experimentName)
+        self.scanControlWidget = ScanControl(config, self.globalVariablesUi, self.experimentName)
         self.scanControlWidget.setupUi(self.scanControlWidget)
         self.scanControlUi.setWidget(self.scanControlWidget )
         self.dockWidgetList.append(self.scanControlUi)
 #end added
         self.tabifyDockWidget( self.dockWidgetFitUi, self.scanControlUi )
 
+    def addPushDestination(self, name, destination):
+#        self.fitWidget.addPushDestination(name, destination)
+        pass
+        
     def setPulseProgramUi(self,pulseProgramUi):
         self.pulseProgramUi = pulseProgramUi
         self.pulseProgramUi.addExperiment('Sequence')
@@ -95,7 +101,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
 
 #start added
     def createAverageScan(self):
-        self.averagePlottedTrace = PlottedTrace(Trace(), self.graphicsView, pens.penList)
+        self.averagePlottedTrace = PlottedTrace(Trace(), self._graphicsView, pens.penList)
         self.averagePlottedTrace.trace.name = "test average trace"
         self.averagePlottedTrace.trace.description["comment"] = "average trace comment"
         self.averagePlottedTrace.trace.filenameCallback = functools.partial(self.traceFilename, '')
@@ -105,7 +111,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def startScan(self):
         if self.plottedTrace is not None and self.traceui.unplotLastTrace():
             self.plottedTrace.plot(0)
-        self.plottedTrace = PlottedTrace(Trace(),self.graphicsView,pens.penList)
+        self.plottedTrace = PlottedTrace(Trace(),self._graphicsView,pens.penList)
         self.xvalue = 0
         self.phase = 0 #random.uniform(0,2*numpy.pi)
         self.plottedTrace.trace.x = numpy.array([self.xvalue])
@@ -174,4 +180,4 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
         self.globalVariables = globalVariablesUi.variables
         self.globalVariablesChanged = globalVariablesUi.valueChanged
         self.globalVariablesUi = globalVariablesUi
-        self.fitWidget.setGlobalVariablesUi( globalVariablesUi )
+        #self.fitWidget.addPushDestination('Global', globalVariablesUi )

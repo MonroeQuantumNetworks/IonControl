@@ -8,33 +8,49 @@ Parser for magnitude expressions. Can parse arithmetic expressions with values i
 """
 
 from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
-    nums,alphas,ParseException
+    nums,alphas, ParseException
 
 import modules.magnitude as magnitude
 from modules.lru_cache import lru_cache
+import logging
 
 point = Literal( "." )
 e     = CaselessLiteral( "E" )
 plus  = Literal( "+" )
 minus = Literal( "-" )
+none = Literal("None")
+nan = Literal("nan")
+inf = Literal("inf")
+ninf = Literal("-inf")
 dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
                    Optional( e + Word( "+-"+nums, nums ) ) )
-numfnumber = Combine( Word( "+-"+nums, nums ) + 
+numfnumber = Combine( Optional(plus | minus) + Word( nums ) + 
                    Optional( point + Optional( Word( nums ) ) ) +
                    Optional( e + Word( "+-"+nums, nums ) ) )
 fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 
-valueexpr = ( fnumber + Optional(ident)  )
+valueexpr = ( nan | ninf | inf | none | fnumber + Optional(ident)  )
 precisionexpr = (  Word( "+-"+nums, nums ) + Optional(point + Optional(Word( nums, nums ))) )
+
+specialValues = { "None": None,
+                  "nan" : float('nan'),
+                  "inf" : float('inf'),
+                  "-inf" : float('-inf')}
 
 @lru_cache(maxsize=100)
 def parse( string ):
-    val = valueexpr.parseString( string )
-    precres = precisionexpr.parseString( string )
-    prec = len(precres[2]) if len(precres)==3 else 0
-    retval = magnitude.mg(float(val[0]),val[1] if len(val)>1 else None)
-    retval.output_prec( prec )
+    try:
+        val = valueexpr.parseString( string )
+        if val[0] in specialValues:
+            return specialValues[val[0]]
+        precres = precisionexpr.parseString( string )
+        prec = len(precres[2]) if len(precres)==3 else 0
+        retval = magnitude.mg(float(val[0]),val[1] if len(val)>1 else None)
+        retval.output_prec( prec )
+    except ParseException as e:
+        logging.getLogger(__name__).error("Error parsing '{0}' using MagnitudeParser".format(string))
+        raise
     return retval
 
 @lru_cache(maxsize=100)
@@ -52,6 +68,24 @@ def parseDelta( string, deltapos=0, parseAll=True ):
     delta = decimalpos-mydeltapos
     return retval, magnitude.mg(pow(10,delta),unit), deltapos, decimalpos
     
+@lru_cache(maxsize=100)
+def isValueExpression( text ):
+    try:
+        valueexpr.parseString( text , parseAll=True )
+        return True
+    except Exception:
+        pass
+    return False
+
+@lru_cache(maxsize=100)
+def isIdentifier( text ):
+    try:
+        ident.parseString( text , parseAll=True )
+        return True
+    except Exception:
+        pass
+    return False
+    
 def positionawareTrim( string, position ):
     oldlen = len(string)
     string = string.lstrip()
@@ -60,13 +94,17 @@ def positionawareTrim( string, position ):
 
 
 if __name__=="__main__":
-    print positionawareTrim('   1234',10)
-    for line in ['12MHz', '12.123456789 MHz','-200.234e3 us','   12.000 MHz','40']:
-        try:
-            print line, "->"
-            for elem in parseDelta(line, 4):
-                print elem
-            print
-        except ParseException as e:
-            print "not a full match", e
-     
+    print isValueExpression('2kHz')
+    print parse("None")
+    print parse("inf")
+    print parse("nan")
+#     print positionawareTrim('   1234',10)
+#     for line in ['12MHz', '12.123456789 MHz','-200.234e3 us','   12.000 MHz','40']:
+#         try:
+#             print line, "->"
+#             for elem in parseDelta(line, 4):
+#                 print elem
+#             print
+#         except ParseException as e:
+#             print "not a full match", e
+#      

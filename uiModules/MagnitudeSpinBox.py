@@ -18,6 +18,7 @@ import sip
 from modules import Expression
 from modules import MagnitudeParser
 from modules import magnitude
+from math import copysign
 
 
 debug = False
@@ -28,14 +29,14 @@ class DimensionMismatch(Exception):
 
 class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
     valueChanged = QtCore.pyqtSignal(object)
+    textValueChanged = QtCore.pyqtSignal(object)
     expression = Expression.Expression()
     
-    def __init__(self,parent=None):
+    def __init__(self, parent=None, globalDict=None, valueChangedOnEditingFinished=True, emptyStringValue=0):
         super(MagnitudeSpinBox,self).__init__(parent)
         self.setButtonSymbols( QtGui.QAbstractSpinBox.NoButtons )
-        self.editingFinished.connect( self.onEditingFinished )
-        self.lineEdit().setDragEnabled(True)
-        self.lineEdit().setAcceptDrops(True)
+        if valueChangedOnEditingFinished:
+            self.editingFinished.connect( self.onEditingFinished )
         self.redTextPalette = QtGui.QPalette()
         self.redTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.red )
         self.orangeTextPalette = QtGui.QPalette()
@@ -43,6 +44,8 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.blackTextPalette = QtGui.QPalette()
         self.blackTextPalette.setColor( QtGui.QPalette.Text, QtCore.Qt.black )
         self._dimension = None   # if not None enforces the dimension
+        self.globalDict = globalDict if globalDict is not None else dict()
+        self.emptyStringValue = emptyStringValue
 
     @property
     def dimension(self):
@@ -58,7 +61,7 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def validate(self, inputstring, pos):
         try:
-            value = self.expression.evaluateAsMagnitude(str(inputstring))
+            value = self.expression.evaluateAsMagnitude(str(inputstring), self.globalDict)
             if api2:
                 if self._dimension is not None and value.unit != self._dimension.unit:
                     self.lineEdit().setPalette( self.orangeTextPalette )
@@ -92,8 +95,8 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
             value, delta, _, newdecimalpos = MagnitudeParser.parseDelta( str(lineEdit.text()), lineEdit.cursorPosition())
             lineEdit.setCursorPosition( pos + newdecimalpos - decimalpos )
             self.valueChanged.emit( newvalue )
-        except Exception as e:
-            logging.getLogger(__name__).exception(e)
+        except Exception:
+            pass # logging.getLogger(__name__).exception(e)
             
         
     def interpretText(self):
@@ -107,13 +110,13 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         
     def value(self):
         try:
-            text = str( self.lineEdit().text() )
+            text = str( self.lineEdit().text() ).strip()
             if len(text)>0:
-                value = self.expression.evaluateAsMagnitude(text )
+                value = self.expression.evaluateAsMagnitude(text, self.globalDict )
                 if self._dimension is not None and value.unit != self._dimension.unit:
                     raise DimensionMismatch("Got unit {0} expected {1}".format(value.unit,self._dimension.unit))
             else:
-                value = 0
+                value = self.emptyStringValue
         except Exception as e:
             self.lineEdit().setPalette( self.redTextPalette )
             logging.getLogger(__name__).exception("value")
@@ -121,13 +124,21 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         self.lineEdit().setPalette( self.blackTextPalette )
         return value
         
+    def text(self):
+        return str(self.lineEdit().text()).strip()
+        
     def setText(self,string):
+        cursorpos = self.lineEdit().cursorPosition()
         self.lineEdit().setText( string )
+        self.lineEdit().setCursorPosition(cursorpos)
         
     def setValue(self,value):
+        cursorpos = self.lineEdit().cursorPosition()
         self.lineEdit().setText( str(value) )
+        self.lineEdit().setCursorPosition(cursorpos)
         
     def onEditingFinished(self):
+        self.textValueChanged.emit( self.text() )
         self.valueChanged.emit( self.value() )
         
     def sizeHint(self):
@@ -135,29 +146,10 @@ class MagnitudeSpinBox(QtGui.QAbstractSpinBox):
         size = fontMetrics.boundingRect(self.lineEdit().text()).size()
         size += QtCore.QSize( 8,0)
         return size
- 
-#    def makeDrag(self):
-#        dr = QtGui.QDrag(self)
-#        # The data to be transferred by the drag and drop operation is contained in a QMimeData object
-#        data = QtCore.QMimeData()
-#        data.setText("This is a test")
-#        # Assign ownership of the QMimeData object to the QDrag object.
-#        dr.setMimeData(data)
-#        # Start the drag and drop operation
-#        dr.start()
-# 
-#    def dragMoveEvent(self, de):
-#        # The event needs to be accepted here
-#        de.accept()
-#
-#    def dragEnterEvent(self, event):
-#        # Set the drop action to be the proposed action.
-#        event.acceptProposedAction()
-#
-#    def dropEvent(de):
-#        # Unpack dropped data and handle it the way you want
-       
-        
+    
+    def wheelEvent(self, wheelEvent):
+        self.stepBy( copysign(1,wheelEvent.delta()) )
+         
 if __name__ == "__main__":
     debug = True
     TestWidget, TestBase = PyQt4.uic.loadUiType(r'..\ui\MagnitudeSpinBoxTest.ui')

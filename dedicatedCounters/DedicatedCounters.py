@@ -19,10 +19,12 @@ from dedicatedCounters import InputCalibrationUi
 from modules import enum
 from trace.Trace import Trace, TracePlotting
 from modules.DataDirectory import DataDirectory
-
+from trace.pens import penList
+from dedicatedCounters.StatusDisplay import StatusDisplay
+ 
 DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
 
-curvecolors = [ 'b', 'g', 'r', 'b', 'c', 'm', 'y', 'g' ]
+#curvecolors = [ 'b', 'g', 'r', 'b', 'c', 'm', 'y', 'g' ]
 
 class Settings:
     pass
@@ -30,7 +32,7 @@ class Settings:
 class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
     dataAvailable = QtCore.pyqtSignal( object )
     OpStates = enum.enum('idle','running','paused')
-    def __init__(self,config,pulserHardware,parent=None):
+    def __init__(self,config,dbConnection,pulserHardware,globalVariablesUi,externalInstrumentObservable, parent=None):
         DedicatedCountersForm.__init__(self)
         DedicatedCountersBase.__init__(self,parent)
         self.dataSlotConnected = False
@@ -44,6 +46,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.integrationTimeLookup = dict()
         self.tick = 0
         self.analogCalbrations = None
+        self.globalVariablesUi = globalVariablesUi
+        self.externalInstrumentObservable = externalInstrumentObservable
+        self.dbConnection = dbConnection
 #        [
 #            AnalogInputCalibration.PowerDetectorCalibration(),
 #            AnalogInputCalibration.PowerDetectorCalibrationTwo(),
@@ -96,15 +101,22 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.tabifyDockWidget( self.calibrationDock, self.settingsDock )
         self.calibrationDock.hide()        
         # AutoLoad
-        self.autoLoad = AutoLoad.AutoLoad(self.config, self.pulserHardware, self.dataAvailable)
+        self.autoLoad = AutoLoad.AutoLoad(self.config, self.dbConnection, self.pulserHardware, self.dataAvailable, self.globalVariablesUi, self.externalInstrumentObservable)
         self.autoLoad.setupUi(self.autoLoad)
         self.autoLoadDock = QtGui.QDockWidget("Auto Loader")
         self.autoLoadDock.setObjectName("Auto Loader")
         self.autoLoadDock.setWidget( self.autoLoad )
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.autoLoadDock)
+        # external Status display
+        self.statusDisplay = StatusDisplay(self.config)
+        self.statusDisplay.setupUi(self.statusDisplay)
+        self.statusDock = QtGui.QDockWidget("Status display")
+        self.statusDock.setObjectName("Status display")
+        self.statusDock.setWidget( self.statusDisplay )
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.statusDock)
         
         self.curves = [None]*8
-        self.graphicsView = self.graphicsLayout.graphicsView
+        self._graphicsView = self.graphicsLayout._graphicsView
         if 'DedicatedCounter.MainWindow.State' in self.config:
             QtGui.QMainWindow.restoreState(self,self.config['DedicatedCounter.MainWindow.State'])
         self.onSettingsChanged()
@@ -119,9 +131,9 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         for index in range(8): 
             show = self.settings.counterMask & (1<<index)
             if  show and self.curves[index] is None:
-                self.curves[index] = self.graphicsView.plot(pen=curvecolors[index])
+                self.curves[index] = self._graphicsView.plot(pen=penList[index+1][0])
             elif (not show) and (self.curves[index] is not None):
-                self.graphicsView.removeItem( self.curves[index] )
+                self._graphicsView.removeItem( self.curves[index] )
                 self.curves[index] = None
                 
     def saveConfig(self):
@@ -132,6 +144,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.autoLoad.saveConfig()
         self.calibrationUi.saveConfig()
         self.settingsUi.saveConfig()
+        self.statusDisplay.saveConfig()
 
     def onClose(self):
         self.autoLoad.onClose()
@@ -187,10 +200,10 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         self.tick += 1
         self.displayUi.values = data.data[0:4]
         self.displayUi2.values = data.data[4:8]
-        self.displayUiADC.values = self.convertAnalog(data.data[8:12])
+        self.displayUiADC.values = self.convertAnalog(data.analog())
         data.analogValues = self.displayUiADC.values
-        if data.data[12] is not None and data.data[12] in self.integrationTimeLookup:
-            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[12] ]
+        if data.data[16] is not None and data.data[16] in self.integrationTimeLookup:
+            self.dataIntegrationTime = self.integrationTimeLookup[ data.data[16] ]
         else:
             self.dataIntegrationTime = self.settings.integrationTime
         data.integrationTime = self.dataIntegrationTime 
@@ -199,9 +212,10 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
                 y = self.settings.displayUnit.convert(data.data[counter],self.dataIntegrationTime.ounit('ms').toval())
                 Start = max( 1+len(self.xData[counter])-self.settings.pointsToKeep, 0)
                 self.yData[counter] = numpy.append(self.yData[counter][Start:], y)
-                self.xData[counter] = numpy.append(self.xData[counter][Start:], self.tick )
+                self.xData[counter] = numpy.append(self.xData[counter][Start:], data.timestamp )
                 if self.curves[counter] is not None:
                     self.curves[counter].setData(self.xData[counter],self.yData[counter])
+        self.statusDisplay.setData(data)
         self.dataAvailable.emit(data)
  
     def convertAnalog(self,data):

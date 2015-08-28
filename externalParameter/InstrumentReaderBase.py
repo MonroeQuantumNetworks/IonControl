@@ -4,21 +4,42 @@ Created on Jun 21, 2014
 @author: pmaunz
 '''
 from ExternalParameterBase import ExternalParameterBase
-from modules import magnitude
+from Queue import Queue
+from externalParameter.InstrumentLoggingReader import InstrumentLoggingReader, processReturn
+from externalParameter.ExternalParameterBase import InstrumentMeta
+
+class ReaderMeta(InstrumentMeta):
+    def __new__(self, name, bases, dct):
+        instrclass = type.__new__(self, name, bases, dct)
+#         if name!='InstrumentReaderBase':
+#             if 'className' not in dct:
+#                 raise InstrumentException("Instrument class needs to have class attribute 'className'")
+#             InstrumentDict[dct['className']] = instrclass
+        return instrclass
 
 class InstrumentReaderBase( ExternalParameterBase ):
-    """test """
-    className = "MKS Vacuum Gauge"
-    def __init__(self, name, settings):
+    __metaclass__ = ReaderMeta
+    def __init__(self, name, settings, childobject, newDataSlot=None ):
+        self.settings = settings
+        self.commandQueue = Queue()
+        self.responseQueue = Queue()
+        self.reader = InstrumentLoggingReader(name, childobject, self.commandQueue, self.responseQueue )
+        self.reader.start()
         ExternalParameterBase.__init__(self, name, settings)
+        if newDataSlot is not None:
+            self.reader.newData.connect( newDataSlot )
          
     def setDefaults(self):
-        self.settings.__dict__.setdefault('timeout', magnitude.mg(100,'ms') )      # s delay between subsequent updates
-        self.settings.__dict__.setdefault('readWait', magnitude.mg(100,'ms') )      # s delay between subsequent updates
-        
+        pass
+            
+    def update(self, param, changes):
+        for param, _, data in changes:
+            self.commandQueue.put( ("directUpdate", (param.opts['field'], data)) )
+            setattr( self.settings, param.opts['field'], data )
+            processReturn( self.responseQueue.get() )
+                
     def paramDef(self):
-        """
-        return the parameter definition used by pyqtgraph parametertree to show the gui
-        """
-        return [{'name': 'timeout', 'type': 'magnitude', 'value': self.settings.timeout, 'tip': "wait time for result"},
-                {'name': 'readWait', 'type': 'magnitude', 'value': self.settings.readWait, 'tip': "time to wait between readings"}]
+        self.commandQueue.put( ("paramDef", tuple()) )
+        param = processReturn( self.responseQueue.get() )
+        return param
+

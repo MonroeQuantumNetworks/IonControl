@@ -4,19 +4,24 @@ Created on May 16, 2014
 @author: wolverine
 '''
 
-import serial   #@UnresolvedImport
+import serial   #@UnresolvedImport @UnusedImport
+import serial.tools.list_ports
 import re
 
 class MKSReader:
-    def __init__(self, port=0, baud=9600, deviceaddr=253, timeout=1):
-        self.port = port
+    @staticmethod
+    def connectedInstruments():
+        return [name for name,_,_ in serial.tools.list_ports.comports() ]
+
+    def __init__(self, instrument='COM1', baud=9600, deviceaddr=253, timeout=1, settings=None):
+        self.instrument = instrument
         self.baud = baud
         self.timeout = timeout
         self.conn = None
         self.deviceaddr = deviceaddr
         
     def open(self):
-        self.conn = serial.Serial( self.port, self.baud, timeout=self.timeout)
+        self.conn = serial.Serial( self.instrument, self.baud, timeout=self.timeout)
         
     def close(self):
         self.conn.close()
@@ -46,7 +51,7 @@ class MKSReader:
     def pr3(self):
         devicestr = "@{0}".format(self.deviceaddr)
         reply = self.query("{0}PR3?;FF".format(devicestr))  
-        m = re.match(devicestr+'ACK([0-9.E-]+);FF', reply)
+        m = re.match(devicestr+'ACK([0-9.E+-]+);FF', reply)
         return float(m.group(1))
         
     def value(self):

@@ -47,10 +47,12 @@
    </attribute>
    <addaction name="actionStart"/>
    <addaction name="actionPause"/>
+   <addaction name="actionAbort"/>
    <addaction name="actionStop"/>
    <addaction name="actionContinue"/>
    <addaction name="actionSave"/>
    <addaction name="actionClear"/>
+   <addaction name="actionExport_to_XML"/>
    <addaction name="separator"/>
    <addaction name="actionDedicatedCounters"/>
    <addaction name="actionPulses"/>
@@ -58,8 +60,8 @@
    <addaction name="actionReload"/>
    <addaction name="actionSettings"/>
    <addaction name="actionLogic"/>
-   <addaction name="separator"/>
-   <addaction name="actionExit"/>
+   <addaction name="actionLogging"/>
+   <addaction name="actionMeasurementLog"/>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -74,10 +76,25 @@
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menuImport_from_XML">
+     <property name="title">
+      <string>Import from XML</string>
+     </property>
+     <addaction name="actionImport_from_XML_add"/>
+     <addaction name="actionImport_from_XML_replace"/>
+     <addaction name="actionImport_from_XML_update"/>
+    </widget>
+    <widget class="QMenu" name="menu">
+     <property name="title">
+      <string/>
+     </property>
+    </widget>
     <addaction name="actionSettings"/>
     <addaction name="actionExit"/>
     <addaction name="actionClear"/>
     <addaction name="actionSave"/>
+    <addaction name="actionExport_to_XML"/>
+    <addaction name="menuImport_from_XML"/>
     <addaction name="separator"/>
     <addaction name="actionProject"/>
    </widget>
@@ -99,9 +116,20 @@
      <string>Print</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+    <addaction name="actionLogic"/>
+    <addaction name="actionVoltageControl"/>
+    <addaction name="actionDedicatedCounters"/>
+    <addaction name="actionPulses"/>
+    <addaction name="actionMeasurementLog"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuOperation"/>
    <addaction name="menuView"/>
+   <addaction name="menuWindows"/>
    <addaction name="menuPrint"/>
   </widget>
   <widget class="QDockWidget" name="dockWidgetConsole">
@@ -115,6 +143,13 @@
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QCheckBox" name="checkBoxEnableConsole">
+         <property name="text">
+          <string>Enable</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
@@ -361,7 +396,7 @@
      <normaloff>:/openicon/icons/gnome-power-statistics.png</normaloff>:/openicon/icons/gnome-power-statistics.png</iconset>
    </property>
    <property name="text">
-    <string>DedicatedCounters</string>
+    <string>Dedicated Counters</string>
    </property>
    <property name="toolTip">
     <string>Dedicated Counters</string>
@@ -373,7 +408,7 @@
      <normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</normaloff>:/openicon/icons/pictogram-din-w008-electricisty.png</iconset>
    </property>
    <property name="text">
-    <string>VoltageControl</string>
+    <string>Voltage Control</string>
    </property>
    <property name="toolTip">
     <string>Voltage Control</string>
@@ -394,6 +429,87 @@
    </property>
    <property name="text">
     <string>Logic</string>
+   </property>
+  </action>
+  <action name="actionLogging">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/measure.png</normaloff>:/openicon/icons/measure.png</iconset>
+   </property>
+   <property name="text">
+    <string>Logging</string>
+   </property>
+  </action>
+  <action name="actionAbort">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/openicon/icons/edit-delete-6.png</normaloff>:/openicon/icons/edit-delete-6.png</iconset>
+   </property>
+   <property name="text">
+    <string>Abort</string>
+   </property>
+   <property name="toolTip">
+    <string>Abort scan, do NOT save data</string>
+   </property>
+  </action>
+  <action name="actionMeasurementLog">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/petersIcons/icons/Owwnotebook_icon.png</normaloff>:/petersIcons/icons/Owwnotebook_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Measurement Log</string>
+   </property>
+   <property name="toolTip">
+    <string>Measurement Log</string>
+   </property>
+  </action>
+  <action name="actionExport_to_XML">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ExportToXMLFile-48.png</normaloff>:/kde/icons/ExportToXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export to XML</string>
+   </property>
+   <property name="toolTip">
+    <string>Export settings to XML (subset)</string>
+   </property>
+  </action>
+  <action name="actionImport_from_XML_add">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ImportXMLFile-48.png</normaloff>:/kde/icons/ImportXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import from XML (Add)</string>
+   </property>
+   <property name="toolTip">
+    <string>Import XML</string>
+   </property>
+  </action>
+  <action name="actionImport_from_XML_replace">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ImportXMLFile-48.png</normaloff>:/kde/icons/ImportXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import from XML (Replace)</string>
+   </property>
+   <property name="toolTip">
+    <string>Import XML</string>
+   </property>
+  </action>
+  <action name="actionImport_from_XML_update">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/kde/icons/ImportXMLFile-48.png</normaloff>:/kde/icons/ImportXMLFile-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import from XML (Update)</string>
+   </property>
+   <property name="toolTip">
+    <string>Import XML</string>
    </property>
   </action>
  </widget>

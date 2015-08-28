@@ -33,25 +33,32 @@ class GateDefinition(object):
     def __init__(self):
         self.PulseDefinition = OrderedDict()
         self.Gates = dict()
+    
+    @classmethod
+    def from_file(cls, filename):
+        g = cls()
+        g.loadGateDefinition(filename)
+        return g
         
     def loadGateDefinition(self, filename):
-        logger = logging.getLogger(__name__)
-        tree = etree.parse(filename)
-        root = tree.getroot()
-        
-        # load pulse definition
         self.PulseDefinition = OrderedDict()
-        PulseDefinitionElement = root.find("PulseDefinition")
-        for pulse in PulseDefinitionElement:
-            self.PulseDefinition.update( {pulse.attrib['name']: Pulse(pulse.attrib['name'],pulse.attrib['type'],pulse.text)} )
-            
-        logger.info( self.PulseDefinition ) 
-        
-        #load gate definitions
         self.Gates = dict()
-        GateDefinitionElement = root.find("GateDictionary")
-        for gate in GateDefinitionElement:
-            self.addGate( gate )
+        if filename is not None:
+            logger = logging.getLogger(__name__)
+            tree = etree.parse(filename)
+            root = tree.getroot()
+            
+            # load pulse definition
+            PulseDefinitionElement = root.find("PulseDefinition")
+            for pulse in PulseDefinitionElement:
+                self.PulseDefinition.update( {pulse.attrib['name']: Pulse(pulse.attrib['name'],pulse.attrib['type'],pulse.text)} )
+                
+            logger.info( self.PulseDefinition ) 
+            
+            #load gate definitions
+            GateDefinitionElement = root.find("GateDictionary")
+            for gate in GateDefinitionElement:
+                self.addGate( gate )
                         
     def addGate(self, element):
         pulsedict = list()

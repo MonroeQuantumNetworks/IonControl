@@ -81,7 +81,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.setupPlots()       
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict[self.plotDict.keys()[0]]["view"])
+        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict)
         self.traceui.setupUi(self.traceui)
         self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea)
 
@@ -135,7 +135,13 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
                 self.area.restoreState(self.config['pyqtgraph-dockareastate'])
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+        QtCore.QTimer.singleShot(300000, self.onCommitConfig )      
        
+    def onCommitConfig(self):
+        self.saveConfig()
+        self.config.saveConfig() 
+        QtCore.QTimer.singleShot(300000, self.onCommitConfig )      
+            
         
     def setupPlots(self):
         self.area = DockArea()
@@ -148,7 +154,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -171,7 +177,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
             name = str(name)
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -238,6 +244,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         logger.debug( "Saving Configuration" )
         self.saveConfig()
         self.settingsDialog.done(0)
+        self.lockControl.closeEvent(e)
 
     def initMenu(self):
         self.menuView.clear()
@@ -272,16 +279,17 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
     
-    if project:
-        DataDirectory.DefaultProject = project
-        
-        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with DigitalLockUi(config) as ui:
-                ui.setupUi(ui)
-                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                ui.show()
-                sys.exit(app.exec_())
-    else:
-        logger.warning( "No project selected. Nothing I can do about that ;)" )
+    if accepted:
+        if project:
+            DataDirectory.DefaultProject = project
+            
+            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+                with DigitalLockUi(config) as ui:
+                    ui.setupUi(ui)
+                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                    ui.show()
+                    sys.exit(app.exec_())
+        else:
+            logger.warning( "No project selected. Nothing I can do about that ;)" )

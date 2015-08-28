@@ -36,7 +36,7 @@ def value( obj, tounit=None ):
     if not isinstance(obj, magnitude.Magnitude ):
         return obj
     if tounit:
-        return obj.ounit(tounit).toval()
+        return obj.toval(tounit)
     return obj.toval()
     
 def haveSameDimension( first, second ):

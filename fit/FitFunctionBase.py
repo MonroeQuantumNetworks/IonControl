@@ -17,7 +17,12 @@ from modules.MagnitudeUtilit import value
 from modules.SequenceDict import SequenceDict
 import xml.etree.ElementTree as ElementTree
 from modules.Expression import Expression
+from modules.Observable import Observable
+from packages.leastsqbound.leastsqbound import leastsqbound
 
+
+class FitFunctionException(Exception):
+    pass
 
 class ResultRecord(object):
     def __init__(self, name=None, definition=None, value=None):
@@ -25,46 +30,66 @@ class ResultRecord(object):
         self.definition = definition
         self.value = value
 
-class PushVariable(object):
-    expression = Expression()
-    def __init__(self):
-        self.push = False
-        self.globalName = None
-        self.definition = ""
-        self.value = None
-        self.minimum = ""
-        self.maximum = ""
+    stateFields = ['name', 'definition', 'value'] 
         
-    def evaluate(self, variables=dict(), useFloat=False):
-        self.value = self.expression.evaluate( self.definition, variables, useFloat=useFloat )
-        
-    def pushRecord(self, variables=None):
-        if variables is not None:
-            self.evaluate(variables)
-        if (self.push and self.globalName is not None and self.globalName != 'None'and self.value is not None and 
-            (not self.minimum or self.value >= self.minimum) and 
-            (not self.maximum or self.value <= self.maximum)):
-            return [(self.globalName, self.value)]
-        return []
+    def __eq__(self,other):
+        return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
 
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(tuple(getattr(self,field) for field in self.stateFields))
+    
+fitFunctionMap = dict()    
+   
+class FitFunctionMeta(type):
+    def __new__(self, name, bases, dct):
+        if 'name' not in dct:
+            raise FitFunctionException("Fitfunction class needs to have class attribute 'name'")
+        instrclass = super(FitFunctionMeta, self).__new__(self, name, bases, dct)
+        if name!='FitFunctionBase':
+            fitFunctionMap[dct['name']] = instrclass
+        return instrclass
+    
+def native(method):
+    """Tag a method native to detect function overwrites in derived classes.
+    Used to detect whether smartStartValues are implemented"""
+    method.isNative = True
+    return method    
 
 class FitFunctionBase(object):
+    __metaclass__ = FitFunctionMeta
+    expression = Expression()
     name = 'None'
+    parameterNames = list()
     def __init__(self):
+        numParameters = len(self.parameterNames)
         self.epsfcn=0.0
-        self.parameterNames = []
-        self.parameters = []
-        self.startParameters = []
-        self.parameterEnabled = []
-        self.parametersConfidence = []
-        self.pushVariables = SequenceDict()
+        self.parameters = [0] * numParameters
+        self.startParameters = [1] * numParameters 
+        self.startParameterExpressions = None   # will be initialized by FitUiTableModel if values are available
+        self.parameterEnabled = [True] * numParameters
+        self.parametersConfidence = [None] * numParameters
         self.units = None
         self.results = SequenceDict({'RMSres': ResultRecord(name='RMSres')})
+        self.useSmartStartValues = False
+        self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' )
+        self.parametersUpdated = Observable()
+        self.parameterBounds = [[None,None] for _ in range(numParameters) ]
+        self.parameterBoundsExpressions = None
+        self.useErrorBars = True
         
     def __setstate__(self, state):
+        state.pop( 'parameterNames', None )
         self.__dict__ = state
-        self.__dict__.setdefault( 'pushVariables', SequenceDict() )
-
+        self.__dict__.setdefault( 'useSmartStartValues', False )
+        self.__dict__.setdefault( 'startParameterExpressions', None )
+        self.__dict__.setdefault( 'parameterBounds' , [[None,None] for _ in range(len(self.parameterNames)) ]  )
+        self.__dict__.setdefault( 'parameterBoundsExpressions' , None)
+        self.__dict__.setdefault( 'useErrorBars' , True)
+        self.hasSmartStart = not hasattr(self.smartStartValues, 'isNative' ) 
+ 
     def allFitParameters(self, p):
         """return a list where the disabled parameters are added to the enabled parameters given in p"""
         pindex = 0
@@ -77,14 +102,27 @@ class FitFunctionBase(object):
                 params.append(value(self.startParameters[index]))
         return params
     
-    def enabledStartParameters(self, parameters=None):
+    @staticmethod
+    def coercedValue( val, bounds ):
+        if bounds[1] is not None and val>=bounds[1]:
+            val = value(0.95*bounds[1]+0.05*bounds[0] if bounds[0] is not None else bounds[1]-0.01) 
+        if bounds[0] is not None and val<=bounds[0]:
+            val = value(0.95*bounds[0]+0.05*bounds[1] if bounds[1] is not None else bounds[0]+0.01)
+        return val
+    
+    def enabledStartParameters(self, parameters=None, bounded=False):
         """return a list of only the enabled start parameters"""
         if parameters is None:
             parameters = self.startParameters
         params = list()
-        for enabled, param in zip(self.parameterEnabled, parameters):
-            if enabled:
-                params.append(value(param))
+        if bounded:
+            for enabled, param, bounds in zip(self.parameterEnabled, parameters, self.parameterBounds):
+                if enabled:
+                    params.append(self.coercedValue(value(param), bounds))
+        else:
+            for enabled, param in zip(self.parameterEnabled, parameters):
+                if enabled:
+                    params.append(value(param))
         return params
 
     def enabledFitParameters(self, parameters=None):
@@ -125,12 +163,52 @@ class FitFunctionBase(object):
             else:
                 self.parametersConfidence[index] = None        
 
+    @native
+    def smartStartValues(self, x, y, parameters, enabled):
+        return None
+    
+    def enabledSmartStartValues(self, x, y, parameters):
+        smartParameters = self.smartStartValues(x,y,parameters,self.parameterEnabled)
+        return [ smartparam if enabled else param for enabled, param, smartparam in zip(self.parameterEnabled, parameters, smartParameters)] if smartParameters is not None else None
+
+    def evaluate(self, globalDict ):
+        myReplacementDict = self.replacementDict()
+        if globalDict is not None:
+            myReplacementDict.update( globalDict )
+        if self.startParameterExpressions is not None:
+            self.startParameters = [param if expr is None else self.expression.evaluateAsMagnitude(expr, myReplacementDict ) for param, expr in zip(self.startParameters, self.startParameterExpressions)]
+        if self.parameterBoundsExpressions is not None:
+            self.parameterBounds = [[bound[0] if expr[0] is None else self.expression.evaluateAsMagnitude(expr[0], myReplacementDict),
+                                     bound[1] if expr[1] is None else self.expression.evaluateAsMagnitude(expr[0], myReplacementDict)]
+                                     for bound, expr in zip(self.parameterBounds, self.parameterBoundsExpressions)]
+
+    def enabledBounds(self):
+        result = [[value(bounds[0]), value(bounds[1])] for enabled, bounds in zip(self.parameterEnabled, self.parameterBounds) if enabled]
+        enabled = any( (any(bounds) for bounds in result) )
+        return result if enabled else None
+
     def leastsq(self, x, y, parameters=None, sigma=None):
         logger = logging.getLogger(__name__)
+        # Ensure all values of sigma or non zero by replacing with the minimum nonzero value
+        if sigma is not None and self.useErrorBars:
+            nonzerosigma = sigma[sigma>0]
+            sigma[sigma==0] = numpy.min(nonzerosigma) if len(nonzerosigma)>0 else 1.0
+        else:
+            sigma = None 
         if parameters is None:
             parameters = [value(param) for param in self.startParameters]
+        if self.useSmartStartValues:
+            smartParameters = self.smartStartValues(x,y,parameters,self.parameterEnabled)
+            if smartParameters is not None:
+                parameters = [ smartparam if enabled else param for enabled, param, smartparam in zip(self.parameterEnabled, parameters, smartParameters)]
         
-        enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True)
+        myEnabledBounds = self.enabledBounds()
+        if myEnabledBounds:
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsqbound(self.residuals, self.enabledStartParameters(parameters, bounded=True), 
+                                                                                                 args=(y,x,sigma), epsfcn=self.epsfcn, full_output=True, bounds=myEnabledBounds)
+        else:
+            enabledOnlyParameters, self.cov_x, self.infodict, self.mesg, self.ier = leastsq(self.residuals, self.enabledStartParameters(parameters), args=(y,x,sigma), 
+                                                                                            epsfcn=self.epsfcn, full_output=True)
         self.setEnabledFitParameters(enabledOnlyParameters)
         self.update(self.parameters)
         logger.info( "chisq {0}".format( sum(self.infodict["fvec"]*self.infodict["fvec"]) ) )        
@@ -138,7 +216,7 @@ class FitFunctionBase(object):
         # calculate final chi square
         self.chisq=sum(self.infodict["fvec"]*self.infodict["fvec"])
         
-        self.dof=len(x)-len(parameters)
+        self.dof = max( len(x)-len(parameters), 1)
         RMSres = magnitude.mg(sqrt(self.chisq/self.dof),'')
         RMSres.significantDigits = 3
         self.results['RMSres'].value = RMSres
@@ -169,7 +247,7 @@ class FitFunctionBase(object):
             for i in range(len(enabledOnlyParameters)):
                 messagelist.append( "%10s"%enabledParameterNames[i] )
                 for j in range(i+1):
-                    messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(self.cov_x[i,i]*self.cov_x[j,j]),) )
+                    messagelist.append(  "%10f"%(self.cov_x[i,j]/sqrt(abs(self.cov_x[i,i]*self.cov_x[j,j])),) )
                 logger.info( " ".join(messagelist))
     
                 #-----------------------------------------------
@@ -185,18 +263,17 @@ class FitFunctionBase(object):
         setattr(self,name,value)
         
     def update(self,parameters=None):
-        pass
+        self.parametersUpdated.fire( values=self.replacementDict() )
     
     def toXmlElement(self, parent):
         myroot  = ElementTree.SubElement(parent, 'FitFunction', {'name': self.name, 'functionString': self.functionString})
-        for name, value, confidence, enabled in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence,self.parameterEnabled):
-            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': str(enabled)})
+        for name, value, confidence, enabled, startExpression, bounds, boundsexpression in izip_longest(self.parameterNames,self.parameters,self.parametersConfidence,self.parameterEnabled,self.startParameterExpressions,self.parameterBounds,self.parameterBoundsExpressions):
+            e = ElementTree.SubElement( myroot, 'Parameter', {'name':name, 'confidence':repr(confidence), 'enabled': str(enabled), 'startExpression': str(startExpression), 'bounds': ",".join(map(str,bounds)),
+                                                              'boundsExpression': ",".join(map(str,boundsexpression))})
             e.text = str(value)
         for result in self.results.values():
             e = ElementTree.SubElement( myroot, 'Result', {'name':result.name, 'definition':str(result.definition)})
             e.text = str(result.value)
-        for push in self.pushVariables.values():
-            e = ElementTree.SubElement( myroot, 'PushVariable', {'globalName':push.globalName, 'definition': push.definition, 'value': str(push.value), 'minimum': str(push.minimum), 'maximum': str(push.maximum)})
         return myroot
    
     def residuals(self,p, y, x, sigma):
@@ -210,18 +287,10 @@ class FitFunctionBase(object):
         p = self.parameters if p is None else p
         return self.functionEval(x, *p )
 
-    def pushVariableValues(self):
+    def replacementDict(self):
         replacement = dict(zip(self.parameterNames,self.parameters))
-        pushVarValues = list()
-        for pushvar in self.pushVariables.values():
-            pushVarValues.extend( pushvar.pushRecord(replacement) )
-        return pushVarValues
-            
-    def updatePushVariables(self):
-        replacement = dict(zip(self.parameterNames,self.parameters))
-        for pushvar in self.pushVariables.values():
-            pushvar.evaluate(replacement)
-
+        replacement.update( dict( ( (v.name, v.value) for v in self.results.values() ) ) )
+        return replacement
+    
         
         
-fitFunctionMap = dict()    

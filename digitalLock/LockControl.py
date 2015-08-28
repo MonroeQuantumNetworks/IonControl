@@ -5,6 +5,9 @@ import logging
 from modules.magnitude import mg
 from modules.enum import enum
 
+# server.py
+from multiprocessing.connection import Listener
+
 from controller.ControllerClient import freqToBin, voltageToBin, voltageToBinExternal
 
 Form, Base = PyQt4.uic.loadUiType(r'digitalLock\ui\LockControl.ui')
@@ -18,6 +21,60 @@ def setBit( var, index, val ):
         var |= mask
     return var    
 
+
+class ClientHandler( QtCore.QThread ):
+    setOutputFrequencySignal = QtCore.pyqtSignal( object )
+    def __init__(self, client_c, lockSettingsInstance, clientaddress):
+        QtCore.QThread.__init__(self)
+        self.client_c = client_c
+        self.lockSettingsInstance = lockSettingsInstance
+        self.clientAddress = clientaddress
+        
+    def run(self):
+        try:
+            logging.getLogger(__name__).info("New connection to client '{0}'".format(self.clientAddress))  
+            while True:
+                command, arguments = self.client_c.recv()
+                function = getattr( self, command )
+                try:
+                    retval = function( *arguments )
+                    self.client_c.send( retval )
+                except Exception as e:
+                    self.client_c.send(e) 
+        except EOFError:
+            logging.getLogger(__name__).info("Client '{0}' disconnect".format(self.clientAddress))  
+        except Exception as e:
+            logging.getLogger(__name__).exception(e)  
+            
+                
+    def setOutputFrequency(self, frequency ):
+        self.setOutputFrequencySignal.emit( frequency )
+        return True   
+    
+    def getOutputFrequency(self):
+        with QtCore.QMutexLocker(self.lockSettingsInstance.mutex):
+            currentFreq = self.lockSettingsInstance.lockSettings.outputFrequency
+        return currentFreq
+
+class LockServer( QtCore.QThread ):
+    def __init__(self, address, authkey, locksettingsInstance):
+        QtCore.QThread.__init__(self)
+        self.address = address
+        self.authkey = authkey
+        self.lockSettingsInstance = locksettingsInstance
+        
+    def run(self):
+        try:
+            server_c = Listener(self.address, authkey=self.authkey)
+            while True:
+                client_c = server_c.accept()
+                clientaddress = server_c.last_accepted
+                handler = ClientHandler(client_c, self.lockSettingsInstance, clientaddress)
+                handler.setOutputFrequencySignal.connect( self.lockSettingsInstance.setOutputFrequencyGui )
+                handler.start()
+        except Exception as e:
+            logging.getLogger(__name__).exception(e)  
+
 class LockSettings(object):
     def __init__(self):
         self.referenceFrequency = mg(0,'MHz')
@@ -25,9 +82,11 @@ class LockSettings(object):
         self.outputFrequency = mg(0,'MHz')
         self.outputAmplitude = mg(0)
         self.harmonic = mg(107)
+        self.errorsigHarmonic = mg(1)
         self.offset = mg(0,'V')
         self.pCoefficient = mg(0)
         self.iCoefficient = mg(0)
+        self.harmonicReferenceFrequency = mg(0,'Hz')
         self.resonanceFrequency = mg(12642.817,'MHz')
         self.filter = LockControl.FilterOptions.NoFilter
         self.harmonicOutput = LockControl.HarmonicOutputOptions.Off
@@ -43,9 +102,11 @@ class LockSettings(object):
         self.__dict__.setdefault( 'filter', LockControl.FilterOptions.NoFilter )
         self.__dict__.setdefault( 'harmonicOutput', LockControl.HarmonicOutputOptions.Off )
         self.__dict__.setdefault( 'resonanceFrequency', mg(12642.817,'MHz') )
+        self.__dict__.setdefault( 'harmonicReferenceFrequency', mg(0,'MHz') )
         self.__dict__.setdefault( 'dcThreshold', mg(0,'V') )
         self.__dict__.setdefault( 'enableDCThreshold', False )
         self.__dict__.setdefault( 'coreMode', 0 )
+        self.__dict__.setdefault( 'errorsigHarmonic', mg(1) )
         self.mode = self.mode & (~1)  # clear the lock enable bit
         
 
@@ -61,7 +122,11 @@ class LockControl(Form, Base):
         self.config = config
         self.lockSettings = self.config.get("LockSettings",LockSettings())
         self.autoState = self.AutoStates.idle
+        self.mutex = QtCore.QMutex()
     
+    def closeEvent(self, e):
+        self.lockServer.quit()
+        
     def setupSpinBox(self, localname, settingsname, updatefunc, unit ):
         box = getattr(self, localname)
         value = getattr(self.lockSettings, settingsname)
@@ -77,11 +142,14 @@ class LockControl(Form, Base):
         self.setupSpinBox('magOutputFreq', 'outputFrequency', self.setOutputFrequency, 'MHz')
         self.setupSpinBox('magOutputAmpl', 'outputAmplitude', self.setOutputAmplitude, '')
         self.setupSpinBox('magHarmonic', 'harmonic', self.setHarmonic, '')
+        self.setupSpinBox('magErrorsigHarmonic', 'errorsigHarmonic', self.setErrorsigHarmonic, '')
+        self.setupSpinBox('magHarmonicReference', 'harmonicReferenceFrequency', self.setharmonicReferenceFrequency, 'MHz')
         self.setupSpinBox('magOffset', 'offset', self.setOffset, 'V')
         self.setupSpinBox('magPCoeff', 'pCoefficient', self.setpCoefficient, '')
         self.setupSpinBox('magICoeff', 'iCoefficient', self.setiCoefficient, '')
         self.setupSpinBox('magResonanceFreq', 'resonanceFrequency', self.setResonanceFreq, 'MHz')
         self.setupSpinBox('magDCThreshold', 'dcThreshold', self.onDCThreshold, 'V')
+        
         self.filterCombo.addItems( self.FilterOptions.mapping.keys() )
         self.filterCombo.setCurrentIndex( self.lockSettings.filter )
         self.filterCombo.currentIndexChanged[int].connect( self.onFilterChange )
@@ -94,14 +162,14 @@ class LockControl(Form, Base):
         self.dataChanged.emit( self.lockSettings )
         self.dcThresholdBox.setChecked( self.lockSettings.enableDCThreshold )
         self.dcThresholdBox.stateChanged.connect( self.onDCThresholdEnable )
-        self.coreModeBox.setCurrentIndex( self.lockSettings.coreMode )
-        self.coreModeBox.currentIndexChanged[int].connect( self.onCoreMode )
-        self.onCoreMode( self.lockSettings.coreMode )
-        
-    def onCoreMode(self, value):
-        self.lockSettings.coreMode = value
-        self.controller.setCoreMode( self.lockSettings.coreMode )
-        
+        self._setHarmonics()
+        self.lockServer = LockServer(("",16888), "yb171", self)
+        self.lockServer.start()
+                
+    def setharmonicReferenceFrequency(self, value):
+        self.lockSettings.harmonicReferenceFrequency = value
+        self.calculateOffset()
+                      
     def onDCThresholdEnable(self, state):
         self.lockSettings.enableDCThreshold = state == QtCore.Qt.Checked
         self.onDCThreshold(self.lockSettings.dcThreshold)
@@ -149,7 +217,9 @@ class LockControl(Form, Base):
         self.calculateOffset()
         
     def calculateOffset(self):
-        offsetFrequency = abs( self.lockSettings.resonanceFrequency - abs( self.lockSettings.harmonic ) * self.lockSettings.referenceFrequency + 
+        offsetFrequency = abs( self.lockSettings.resonanceFrequency - abs( self.lockSettings.harmonic ) * 
+                               (self.lockSettings.referenceFrequency+self.lockSettings.harmonicReferenceFrequency) / 
+                               self.lockSettings.errorsigHarmonic + 
                                (-1 if self.lockSettings.harmonic<0 else 1) * self.lockSettings.outputFrequency )
         self.magOffsetFreq.setValue(offsetFrequency)
 
@@ -158,6 +228,10 @@ class LockControl(Form, Base):
         self.controller.setReferenceAmplitude(binvalue)
         self.lockSettings.referenceAmplitude = value
         self.dataChanged.emit( self.lockSettings )
+        
+    def setOutputFrequencyGui(self, value):
+        self.magOutputFreq.setValue(value)
+        self.setOutputFrequency(value)
         
     def setOutputFrequency(self, value):
         binvalue = freqToBin(value)
@@ -173,10 +247,19 @@ class LockControl(Form, Base):
         self.dataChanged.emit( self.lockSettings )
 
     def setHarmonic(self, value):
-        binvalue = int(value.toval(''))
-        self.controller.setHarmonic(binvalue)
         self.lockSettings.harmonic = value
-        self.controller.setFixedPointHarmonic( int(value.toval('')*(1<<56)) )
+        self._setHarmonics()
+        
+    def setErrorsigHarmonic(self, value):
+        self.lockSettings.errorsigHarmonic = value
+        self._setHarmonics()
+        
+    def _setHarmonics(self):
+        errorsigHarmonic = int ( self.lockSettings.errorsigHarmonic.toval() )
+        self.controller.setHarmonic( int(self.lockSettings.harmonic) )
+        self.controller.setFixedPointHarmonic( int( self.lockSettings.harmonic*( (1<<56)/float(errorsigHarmonic)))  )
+        self.lockSettings.coreMode = 0 if errorsigHarmonic==1 else 1
+        self.controller.setCoreMode( self.lockSettings.coreMode )
         self.dataChanged.emit( self.lockSettings )
         self.calculateOffset()
         

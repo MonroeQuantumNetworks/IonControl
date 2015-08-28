@@ -7,6 +7,7 @@ Created on Tue Feb 19 14:53:26 2013
 
 import logging
 import math
+import struct
 
 from pulser.PulserHardwareClient import check
 from modules.magnitude import mg
@@ -15,30 +16,28 @@ class Ad9912Exception(Exception):
     pass
 
 class Ad9912:
-    channels = 6
     def __init__(self,pulser):
         self.pulser = pulser
-        self.frequency = [None]*self.channels
-        self.phase = [None]*self.channels
-        self.amplitude = [None]*self.channels
 
     def rawToMagnitude(self, raw):
         return mg(1000,' MHz') * (raw / float(2**48))
 
-    def setFrequency(self, channel, frequency, even=False):
-        intFrequency = int(round(2**48 * frequency.ounit('GHz').toval()))
-        intFrequency = intFrequency &0xfffffffffffe if even else intFrequency
-        self.sendCommand(channel, 0, intFrequency >> 16 )
-        self.sendCommand(channel, 4, intFrequency & 0xffff )
+    def setSquareEnabled(self, channel, enable):
+        self.sendCommand(channel, 3, 1 if enable else 0)
+
+    def setFrequency(self, channel, frequency):
+        intFrequency = int(round(2**48 * frequency.toval('GHz'))) & 0xffffffffffff
+        self.sendCommand(channel, 0, intFrequency)
         return intFrequency
     
     def setFrequencyRaw(self, channel, intFrequency):
-        self.sendCommand(channel, 0, intFrequency >> 16 )
-        self.sendCommand(channel, 4, intFrequency & 0xffff )
+        self.sendCommand(channel, 0, intFrequency)
+        #self.sendCommand(channel, 0, intFrequency >> 16 )
+        #self.sendCommand(channel, 4, intFrequency & 0xffff ) # Frequency fine
         return intFrequency        
     
     def setPhase(self, channel, phase):
-        intPhase = int(round(2**14 * phase.ounit('rad').toval()/(2*math.pi)))
+        intPhase = int(round(2**14 * phase.toval()/(2*math.pi)))
         self.sendCommand(channel, 1, intPhase & 0x3fff )
     
     def setAmplitude(self, channel, amplitude):
@@ -48,32 +47,30 @@ class Ad9912:
     def sendCommand(self, channel, cmd, data):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x03, (channel & 0xf)<<4 | (cmd & 0xf) ), "Ad9912" )
-            check( self.pulser.SetWireInValue(0x01, data & 0xffff ), "Ad9912" )
-            check( self.pulser.SetWireInValue(0x02, (data >> 16) &0xffff ), "Ad9912" )
+            check( self.pulser.SetWireInValue(0x03, (channel & 0xff)<<4 | (cmd & 0xf) ), "Ad9912" ) 
+            self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x12, data)) )
             self.pulser.UpdateWireIns()
             check( self.pulser.ActivateTriggerIn(0x40,1), "Ad9912 trigger")
             self.pulser.UpdateWireIns()
         else:
-            logger.error( "Pulser not available" )
+            logger.warning( "Pulser not available" )
         
     def update(self, channelmask):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            check( self.pulser.SetWireInValue(0x08, channelmask & 0xff), "Ad9912 apply" )
-            self.pulser.UpdateWireIns()
+            self.pulser.WriteToPipeIn(0x84, bytearray(struct.pack('=HQ', 0x11, channelmask)) )
             self.pulser.ActivateTriggerIn(0x41,2)
         else:
-            logger.error( "Pulser not available" )
+            logger.warning( "Pulser not available" )
         
     def reset(self, mask):
         logger = logging.getLogger(__name__)
         if self.pulser:
-            if mask & 0x3: check( self.pulser.ActivateTriggerIn(0x42,0), "DDS Reset board 0" )
-            if mask & 0xc: check( self.pulser.ActivateTriggerIn(0x42,1), "DDS Reset board 1" )
-            if mask & 0x30: check( self.pulser.ActivateTriggerIn(0x42,2), "DDS Reset board 2" )
+            check(  self.pulser.SetWireInValue(0x04, mask&0xffff ) , "AD9912 reset mask" )
+            self.pulser.UpdateWireIns()
+            check( self.pulser.ActivateTriggerIn(0x42,0), "DDS Reset" )
         else:
-            logger.error( "Pulser not available" )
+            logger.warning( "Pulser not available" )
 
         
 if __name__ == "__main__":

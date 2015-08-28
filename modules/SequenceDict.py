@@ -181,13 +181,18 @@ class SequenceDict(dict, MutableMapping):
         SequenceDict([(4, 4), (1, 1), (2, 2), (3, 3)])
         """
         reverse = dict([ (value,index) for index,value in enumerate(keylist) ])
-        self._keys = sorted( self._keys, key=lambda x: reverse[x])
+        self._keys = sorted( self._keys, key=lambda x: reverse.get(x,1000000))
             
     def __deepcopy__(self, mode):
         new = type(self)()
         for key, value in self.iteritems():
             new[key] = copy.deepcopy(value, mode)
         return new
+    
+    def __setdefault__(self, key, value):
+        if key not in self:
+            self._keys.append(key)
+            dict.__setitem__(self, key, value)
         
     
 if __name__ == '__main__':

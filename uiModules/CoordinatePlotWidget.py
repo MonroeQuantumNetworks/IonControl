@@ -21,6 +21,9 @@ from PyQt4 import QtGui, QtCore
 import math
 from modules.round import roundToNDigits
 import logging
+from pyqtgraphAddons.DateAxisItem import DateAxisItem
+from datetime import datetime
+from pyqtgraph.graphicsItems.AxisItem import AxisItem
 
 grid_opacity = 0.3
 icons_dir = '.\\ui\\icons\\'
@@ -111,12 +114,12 @@ class CustomPlotItem(PlotItem):
         -A hold zero button which keeps the y minimum at zero while autoranging.
     resizeEvent is extended to set the position of the two new buttons correctly.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, **kargs):
         """
         Create a new CustomPlotItem. In addition to the ordinary PlotItem, adds buttons and uses the custom ViewBox.
         """
         cvb = CustomViewBox()
-        super(CustomPlotItem,self).__init__(parent, viewBox = cvb)
+        super(CustomPlotItem,self).__init__(parent, viewBox = cvb, **kargs)
         self.unityRangeBtn = ButtonItem(imageFile=range_icon_file, width=14, parentItem=self)
         self.unityRangeBtn.setToolTip("Set y range to (0,1)")
         self.unityRangeBtn.clicked.connect(self.onUnityRange)
@@ -186,21 +189,54 @@ class CustomPlotItem(PlotItem):
 class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     """This is the main widget for plotting data. It consists of a plot, a
        coordinate display, and custom buttons."""
-    def __init__(self,parent=None):
+    def __init__(self, parent=None, axisItems=None, name=None):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         super(CoordinatePlotWidget,self).__init__(parent)
         self.coordinateLabel = LabelItem(justify='right')
-        self.graphicsView = self.addCustomPlot(row=0,col=0,colspan=2)
+        self._graphicsView = self.addCustomPlot(row=0,col=0,colspan=2,axisItems=axisItems,name=name)
         self.addItem(self.coordinateLabel,row=1,col=1)
-        self.graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
+        self._graphicsView.scene().sigMouseMoved.connect(self.onMouseMoved)
         self.template = "<span style='font-size: 10pt'>x={0}, <span style='color: red'>y={1}</span></span>"
         self.mousePoint = None
         self.mousePointList = list()
-        self.graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        self._graphicsView.showGrid(x = True, y = True, alpha = grid_opacity) #grid defaults to on
+        action = QtGui.QAction("toggle time axis", self._graphicsView.ctrlMenu)
+        action.triggered.connect( self.onToggleTimeAxis )
+        self._graphicsView.ctrlMenu.addAction(action)
+        self.timeAxis = False
+        
+    def onToggleTimeAxis(self):
+        self.setTimeAxis( not self.timeAxis )
+        
+    def setTimeAxis(self, timeAxis=False):
+        if timeAxis:
+            dateAxisItem = DateAxisItem(orientation='bottom') 
+            originalAxis = self._graphicsView.getAxis('bottom')
+            dateAxisItem.linkToView(self._graphicsView.vb)
+            self._graphicsView.axes['bottom']['item'] = dateAxisItem
+            self._graphicsView.layout.removeItem(originalAxis)
+            del originalAxis
+            self._graphicsView.layout.addItem(dateAxisItem,3,1)
+            self.timeAxis = True
+            dateAxisItem.setZValue(-1000)
+            dateAxisItem.setFlag(dateAxisItem.ItemNegativeZStacksBehindParent)
+            dateAxisItem.linkedViewChanged(self._graphicsView.vb)
+        else:
+            axisItem = AxisItem(orientation='bottom') 
+            originalAxis = self._graphicsView.getAxis('bottom')
+            axisItem.linkToView(self._graphicsView.vb)
+            self._graphicsView.axes['bottom']['item'] = axisItem
+            self._graphicsView.layout.removeItem(originalAxis)
+            del originalAxis
+            self._graphicsView.layout.addItem(axisItem,3,1)
+            self.timeAxis = False
+            axisItem.setZValue(-1000)
+            axisItem.setFlag(axisItem.ItemNegativeZStacksBehindParent)
+            axisItem.linkedViewChanged(self._graphicsView.vb)
         
     def setPrintView(self, printview=True):
-        self.graphicsView.hideAllButtons(printview)
+        self._graphicsView.hideAllButtons(printview)
         if printview:
             self.coordinateLabel.hide()
         else:
@@ -208,7 +244,7 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
         
     def autoRange(self):
         """Set the display to autorange."""
-        self.graphicsView.vb.enableAutoRange(axis=None, enable=True)
+        self._graphicsView.vb.enableAutoRange(axis=None, enable=True)
         
     def addCustomPlot(self, row=None, col=None, rowspan=1, colspan=1, **kargs):
         """This is a duplicate of addPlot from GraphicsLayout.py. The only change
@@ -220,14 +256,33 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
     def onMouseMoved(self,pos):
         """Execute when mouse is moved. If mouse is over plot, show cursor
            coordinates on coordinateLabel."""
-        if self.graphicsView.sceneBoundingRect().contains(pos):
-            self.mousePoint = self.graphicsView.vb.mapSceneToView(pos)
-            vR = self.graphicsView.vb.viewRange()
-            deltaX, deltaY = vR[0][1]-vR[0][0], vR[1][1]-vR[1][0] #Calculate x and y display ranges
-            precx = int( math.ceil( math.log10(abs(self.mousePoint.x()/deltaX)) ) + 3 ) if self.mousePoint.x()!=0 and deltaX>0 else 1
-            precy = int( math.ceil( math.log10(abs(self.mousePoint.y()/deltaY)) ) + 3 ) if self.mousePoint.y()!=0 and deltaY>0 else 1
-            roundedx, roundedy = roundToNDigits( self.mousePoint.x(),precx), roundToNDigits(self.mousePoint.y(), precy )
-            self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
+        if self._graphicsView.sceneBoundingRect().contains(pos):
+            if self.timeAxis:
+                try:
+                    self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+                    logY = self._graphicsView.ctrl.logYCheck.isChecked()
+                    y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
+                    vR = self._graphicsView.vb.viewRange()
+                    deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+                    precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+                    roundedy = roundToNDigits(y, precy )
+                    currentDateTime = datetime.fromtimestamp(self.mousePoint.x()) 
+                    self.coordinateLabel.setText( self.template.format( str(currentDateTime), repr(roundedy) ))
+                except ValueError:
+                    pass
+            else:
+                self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+                logY = self._graphicsView.ctrl.logYCheck.isChecked()
+                logX = self._graphicsView.ctrl.logXCheck.isChecked()
+                y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
+                x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
+                vR = self._graphicsView.vb.viewRange()
+                deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+                deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
+                precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1
+                precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+                roundedx, roundedy = roundToNDigits( x,precx), roundToNDigits(y, precy )
+                self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
             
     def onCopyLocation(self,which):
         text = {'x': ("{0}".format(self.mousePoint.x())),
@@ -263,6 +318,9 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
             self.mousePointList = [self.mousePoint]
 
 if __name__ == '__main__':
+    icons_dir = '.\\..\\ui\\icons\\'
+    range_icon_file = icons_dir + 'unity-range'
+    holdZero_icon_file = icons_dir + 'hold-zero'
     import sys    
     app = QtGui.QApplication(sys.argv)
     pg.setConfigOption('background', 'w') #set background to white

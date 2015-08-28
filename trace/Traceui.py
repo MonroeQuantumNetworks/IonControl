@@ -17,6 +17,8 @@ from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
 from TraceDescriptionTableModel import TraceDescriptionTableModel
+from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from uiModules.KeyboardFilter import KeyListFilter
 
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
 
@@ -68,7 +70,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     onCLose(self): Execute when UI is closed
     """
 
-    def __init__(self, penicons, config, parentname, graphicsView, parent=None, lastDir=None):
+    def __init__(self, penicons, config, parentname, graphicsViewDict, parent=None, lastDir=None):
         """Construct the trace user interface, and set instance variables. Inherits from Qt Designer file."""
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
@@ -76,17 +78,22 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.config = config
         self.configname = "Traceui."+parentname
         self.settings = self.config.get(self.configname+".settings",Settings(lastDir=lastDir, plotstyle=0))
-        self.graphicsView = graphicsView
+        self.graphicsViewDict = graphicsViewDict
 
     def setupUi(self,MainWindow):
         """Setup the UI. Create the model and the view. Connect all the buttons."""
         TraceuiForm.setupUi(self,MainWindow)
-        self.model = TraceTreeModel([], self.penicons)
+        self.model = TraceTreeModel([], self.penicons, self.graphicsViewDict)
         self.tracePersistentIndexes = []
         self.traceTreeView.setModel(self.model)
         self.delegate = TraceComboDelegate(self.penicons)
+        self.graphicsViewDelegate = ComboBoxDelegate()
         self.traceTreeView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
+        self.traceTreeView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which pen to use in the plot
         self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
+        self.filter = KeyListFilter( [QtCore.Qt.Key_Delete] )
+        self.filter.keyPressed.connect( self.onKey )
+        self.traceTreeView.installEventFilter(self.filter)
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
         self.removeButton.clicked.connect(self.onRemove)
@@ -96,7 +103,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.plotButton.clicked.connect(self.onPlot)
-        self.shredderButton.clicked.connect(self.onShredder)
+        self.showOnlyLastButton.clicked.connect(self.onShowOnlyLast)
         self.selectAllButton.clicked.connect(self.traceTreeView.selectAll)
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.unplotSettingsAction = QtGui.QAction( "Unplot last trace", self )
@@ -109,6 +116,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceTreeView.clicked.connect( self.onActiveTraceChanged )
         self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
 
+    def onKey(self, key):
+        if key==QtCore.Qt.Key_Delete:
+            self.onRemove()
+
     def onActiveTraceChanged(self, modelIndex ):
         trace = self.model.getTrace(modelIndex)
         self.descriptionModel.setDescription(trace.trace.description)
@@ -119,15 +130,20 @@ class Traceui(TraceuiForm, TraceuiBase):
     def unplotLastTrace(self):
         return self.settings.unplotLastTrace
 
-    def uniqueSelectedIndexes(self, useLastIfNoSelection=True):
+    def uniqueSelectedIndexes(self, useLastIfNoSelection=True, allowUnplotted=True):
         """From the selected elements, return one index from each row.
         
         Using one index from each row prevents executing an action multiple times on the same row.
         If useLastifNoSelection is true, then an index to the last trace added is used if there is
         no selection.
         """
+        uniqueIndexes = []
         selectedIndexes = self.traceTreeView.selectedIndexes()
-        if (len(selectedIndexes) == 0) and useLastIfNoSelection:
+        if (len(selectedIndexes) != 0):
+            for traceIndex in selectedIndexes:
+                if traceIndex.column() == 0 and (allowUnplotted or self.model.getTrace(traceIndex).isPlotted):
+                    uniqueIndexes.append(traceIndex)
+        if (len(uniqueIndexes) == 0) and useLastIfNoSelection:
             if len(self.tracePersistentIndexes) != 0:
                 #Find and return the most recently added trace that still has a valid index (i.e. has not been removed).
                 for ind in range(-1, -len(self.tracePersistentIndexes)-1, -1): 
@@ -136,12 +152,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                 return None #If the for loop failed to find a valid index, return None. This happens if all traces have been deleted.
             else:
                 return None #If there were no traces added, return None. This happens if no trace was ever added.
-        else:
-            uniqueIndexes = []
-            for traceIndex in selectedIndexes:
-                if traceIndex.column() == 0:
-                    uniqueIndexes.append(traceIndex)
-            return uniqueIndexes
+        return uniqueIndexes
 
     def addTrace(self, trace, pen, parentTrace=None):
         """Add a trace to the model, plot it, and resize the view appropriately."""
@@ -226,7 +237,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                             pass   # we ignore if the file cannot be found
                         self.model.dropTrace(parentIndex, row)
                     else:
-                        logger.error( "trace has children, please delete them first." )
+                        logger.warning( "trace has children, please delete them first." )
 
     def warningMessage(self, warningText, informativeText):
         """Pop up a warning message. Return the response."""
@@ -268,26 +279,37 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
         fnames = QtGui.QFileDialog.getOpenFileNames(self, 'Open files', self.settings.lastDir)
         for fname in fnames:
-            trace = Trace.Trace()
-            trace.filename = str(fname)
-            self.settings.lastDir, trace.name = os.path.split(str(fname))
-            trace.loadTrace(str(fname))
-            for plotting in trace.tracePlottingList:
-                self.addTrace(PlottedTrace(trace,self.graphicsView,pens.penList,-1,tracePlotting=plotting),-1)
+            self.openFile(fname)
+
+    def openFile(self, fname):
+        trace = Trace.Trace()
+        trace.filename = str(fname)
+        self.settings.lastDir, trace.name = os.path.split(str(fname))
+        trace.loadTrace(str(fname))
+        plottedTraceList = list()
+        for plotting in trace.tracePlottingList:
+            name = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
+            plottedTrace = PlottedTrace(trace,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name)
+            plottedTraceList.append(plottedTrace)
+            self.addTrace(plottedTrace,-1)
+        return plottedTraceList
 
     def saveConfig(self):
         """Execute when the UI is closed. Save the settings to the config file."""
         self.config[self.configname+".settings"] = self.settings
         
-    def selectedPlottedTraces(self, defaultToLastLine=False):
+    def selectedPlottedTraces(self, defaultToLastLine=False, allowUnplotted=True):
         """Return a list of the selected traces."""
-        selectedIndexes = self.uniqueSelectedIndexes()
+        selectedIndexes = self.uniqueSelectedIndexes(allowUnplotted=allowUnplotted)
         traceList = []
         if selectedIndexes:
             for traceIndex in selectedIndexes:
                 trace = self.model.getTrace(traceIndex)
                 traceList.append(trace)
         return traceList
+    
+    def onShowOnlyLast(self):
+        pass
         
 #if __name__ == '__main__':
 #    import sys

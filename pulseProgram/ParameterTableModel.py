@@ -40,7 +40,7 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
             return { (QtCore.Qt.DisplayRole,0): par.name,
                      (QtCore.Qt.DisplayRole,1): str(par.strvalue if par.strvalue is not None else par.value),
                      (QtCore.Qt.DisplayRole,2): str(par.value),
-                     (QtCore.Qt.EditRole,1): str(par.strvalue if par.strvalue is not None else par.value),
+                     (QtCore.Qt.EditRole,1): str(par.strvalue if par.strvalue is not None else par.value)
                      }.get((role,index.column()))
         return None
         
@@ -68,7 +68,7 @@ class ParameterTableModel(QtCore.QAbstractTableModel):
     def flags(self, index ):
         return { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
                  1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
+                 2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled
                  }.get(index.column(),QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
     def headerData(self, section, orientation, role ):

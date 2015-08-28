@@ -4,6 +4,7 @@ import re
 from PyQt4 import QtGui, QtCore
 
 from MagnitudeSpinBox import MagnitudeSpinBox
+from modules.MagnitudeParser import isValueExpression
 
 
 class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
@@ -15,16 +16,27 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
     is constructed.
     """    
     
-    def __init__(self):
+    def __init__(self, globalDict=None, emptyStringValue=0):
         """Construct the TraceComboDelegate object, and set the penicons array."""
         QtGui.QItemDelegate.__init__(self)
+        self.globalDict = globalDict if globalDict is not None else dict()
+        self.emptyStringValue = emptyStringValue
         
     def createEditor(self, parent, option, index ):
         """Create the combo box editor used to select which pen icon to use.
            The for loop adds each pen icon into the combo box."""
-        editor = MagnitudeSpinBox(parent)
+        if hasattr( index.model(), 'localReplacementDict' ):
+            localDict = dict( self.globalDict )
+            localDict.update( index.model().localReplacementDict() )
+        else:
+            localDict = self.globalDict
+        editor = MagnitudeSpinBox(parent, globalDict = localDict, valueChangedOnEditingFinished=False, emptyStringValue=self.emptyStringValue)
         editor.dimension = index.model().data(index,QtCore.Qt.UserRole)
         editor.valueChanged.connect( partial( index.model().setValue, index ))
+        completer = QtGui.QCompleter( localDict.keys(), self )
+        completer.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        completer.setCompletionMode(QtGui.QCompleter.InlineCompletion)
+        editor.lineEdit().setCompleter( completer )
         return editor
         
     def setEditorData(self, editor, index):
@@ -39,7 +51,12 @@ class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
          
     def setModelData(self, editor, model, index):
         value = editor.value()
-        model.setData(index, value, QtCore.Qt.EditRole)
+        text = str(editor.text())
+        model.setData(index, text if not isValueExpression(text) else None , QtCore.Qt.UserRole )  # is parsable thus must be a magnitude without math
+        model.setData(index, value, QtCore.Qt.EditRole )    # DisplayRole would be better, for backwards compatibility we leave it at EditRole and distinguish there by type
          
     def updateEditorGeometry(self, editor, option, index ):
         editor.setGeometry(option.rect)
+        
+    def setGlobalVariables(self, variables):
+        self.globalDict = variables

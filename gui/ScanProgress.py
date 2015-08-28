@@ -5,6 +5,7 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from modules.enum import enum
+from modules.firstNotNone import firstNotNone
 
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ScanProgress.ui')
@@ -27,7 +28,19 @@ class ScanProgress(Form,Base):
         super(ScanProgress,self).setupUi(self)
         self.scansAveraged.hide()
         self.statusLabel.setText("Idle")
-        self.progressBar.setFormat("%p%")            
+        self.progressBar.setFormat("%p%")
+        self.scanLabel.setText("")
+        self.evaluationLabel.setText("")
+        self.analysisLabel.setText("")
+        
+    def setScanLabel(self, scanName):        
+        self.scanLabel.setText( firstNotNone(scanName,"") )
+        
+    def setEvaluationLabel(self, scanName):        
+        self.evaluationLabel.setText(firstNotNone(scanName,""))
+        
+    def setAnalysisLabel(self, scanName):        
+        self.analysisLabel.setText(firstNotNone(scanName,""))
         
     def setAveraged(self, num):
         if num is None:

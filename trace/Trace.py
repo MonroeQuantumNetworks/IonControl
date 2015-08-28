@@ -9,6 +9,7 @@ This is the class in which the data associated with a single trace is stored.
 """
 
 from datetime import datetime
+from dateutil import parser
 import io
 from itertools import izip_longest
 import math
@@ -21,6 +22,8 @@ from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
 import time
 from modules.SequenceDictSignal import SequenceDictSignal as SequenceDict
+from modules.Observable import Observable
+import pytz
 
 try:
     from fit import FitFunctions
@@ -44,7 +47,7 @@ class ColumnSpec(list):
 class TracePlotting(object):
     Types = enum('default','steps')
     def __init__(self, xColumn='x',yColumn='y',topColumn=None,bottomColumn=None,heightColumn=None,
-                 rawColumn=None,name="",type_ =None, xAxisUnit=None, xAxisLabel=None ):       
+                 rawColumn=None,name="",type_ =None, xAxisUnit=None, xAxisLabel=None, windowName=None ):       
         self.xColumn = xColumn
         self.yColumn = yColumn
         self.topColumn = topColumn
@@ -56,13 +59,15 @@ class TracePlotting(object):
         self.xAxisUnit = xAxisUnit
         self.xAxisLabel = xAxisLabel
         self.type = TracePlotting.Types.default if type_ is None else type_
+        self.windowName = windowName
         
     def __setstate__(self, d):
         self.__dict__ = d
         self.__dict__.setdefault( 'xAxisUnit', None )
         self.__dict__.setdefault( 'xAxisLabel', None )
+        self.__dict__.setdefault( 'windowName', None)
         
-    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name', 'type', 'xAxisUnit', 'xAxisLabel']
+    attrFields = ['xColumn','yColumn','topColumn', 'bottomColumn','heightColumn', 'name', 'type', 'xAxisUnit', 'xAxisLabel', 'windowName']
 
 class TracePlottingList(list):        
     def toXmlElement(self, root):
@@ -89,7 +94,7 @@ class TracePlottingList(list):
         return "TracePlotting length {0}".format(len(self))        
 
 varFactory = { 'str': str,
-               'datetime': lambda s: datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f'),
+               'datetime': lambda s: parser.parse(s), #datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f'),
                'float': float,
                'int': int }
     
@@ -120,16 +125,17 @@ class Trace(object):
         self.name = "noname" #name to display in table of traces
         self.description = SequenceDict()
         self.description["comment"] = ""
-        self.description["traceCreation"] = datetime.now()
+        self.description["traceCreation"] = datetime.now(pytz.utc)
         self.header = None
         self.headerDict = dict()
         self._filename = None
         self.filenameCallback = None   # function to result in filename for save
-        self.dataChangedCallback = None # used to update the gui table
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
         self.description["tracePlottingList"] = TracePlottingList()
         self.record_timestamps = record_timestamps
+        self.commentChanged = Observable()
+        self.filenameChanged = Observable()
         if record_timestamps:
             self.addColumn('timestamp')
         
@@ -144,6 +150,23 @@ class Trace(object):
         else:
             value = varFactory.get( mytype, str)( element.text )
             description[name] = value
+            
+    def recordTimeinterval(self, timeTickOffset):
+        self.description['timeTickOffset'] = timeTickOffset
+        self.addColumn('timeTickFirst')
+        self.addColumn('timeTickLast')
+    
+    def timeintervalAppend(self, timeinterval):
+        self.timeTickFirst = numpy.append(self.timeTickFirst, timeinterval[0])
+        self.timeTickLast = numpy.append(self.timeTickLast, timeinterval[1])
+    
+    @property
+    def timeinterval(self):
+        return (self.timeTickFirst, self.timeTickLast )
+    
+    @timeinterval.setter
+    def timeinterval(self, val):
+        self.timeTickFirst, self.timeTickLast = val
     
     @property
     def x(self):
@@ -176,6 +199,15 @@ class Trace(object):
         return self._filename
           
     @property
+    def comment(self):
+        return self.description['comment']
+    
+    @comment.setter
+    def comment(self, comment):
+        self.description['comment'] = comment
+        self.commentChanged.fire(comment=comment)       
+          
+    @property
     def filename(self):
         """Get the full pathname of the file."""
         return self._filename
@@ -190,8 +222,25 @@ class Trace(object):
             self.filepath, self.fileleaf = os.path.split(filename)
         else:
             self.filepath, self.fileleaf = None, None
-        if self.dataChangedCallback:
-            self.dataChangedCallback()                            
+        self.filenameChanged.fire(filename=filename,path=self.filepath,leaf=self.fileleaf)
+        
+    @property
+    def xUnit(self):
+        return self.description.get('xUnit')
+    
+    @xUnit.setter
+    def xUnit(self, magnitude):
+        self.description['xUnit'] = magnitude
+        
+    @property
+    def yUnit(self):
+        return self.description.get('yUnit')
+    
+    @yUnit.setter
+    def yUnit(self, magnitude):
+        self.description['yUnit'] = magnitude
+        
+        
         
     def resave(self, saveIfUnsaved=True):
         """ save the data to the filename set previously by writing to filename
@@ -384,6 +433,10 @@ class Trace(object):
     @property 
     def tracePlottingList(self):
         return self.description["tracePlottingList"]
+    
+    @property
+    def indexColumn(self):
+        return numpy.arange( 0, len(self.x), 1)
     
 #     def __del__(self):
 #         print "Deleting Trace"

@@ -15,6 +15,7 @@ from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
     ZeroOrMore,Forward,nums,alphas
 
 import magnitude as magnitude
+from itertools import dropwhile
 
 
 point = Literal( "." )
@@ -26,6 +27,7 @@ dotNumber = Combine( Optional(plus | minus) + point + Word(nums)+
 numfnumber = Combine( Word( "+-"+nums, nums ) + 
                    Optional( point + Optional( Word( nums ) ) ) +
                    Optional( e + Word( "+-"+nums, nums ) ) )
+hexNumber = Combine( Literal("0x") + Word("0123456789abcdef") )
 fnumber = numfnumber | dotNumber
 ident = Word(alphas, alphas+nums+"_$")
 funit = Combine( fnumber + Optional(Word(" "," ")) + ident )
@@ -92,7 +94,7 @@ class Expression:
         expr    :: term [ addop term ]*
         """
         expr = Forward()
-        atom = (Optional("-") + ( funit | fnumber | ident + lpar + expr + rpar | ident ).setParseAction( self.pushFirst ) | ( lpar + expr.suppress() + rpar )).setParseAction(self.pushUMinus) 
+        atom = (Optional("-") + ( hexNumber | funit | fnumber |  ident + lpar + expr + rpar | ident ).setParseAction( self.pushFirst ) | ( lpar + expr.suppress() + rpar )).setParseAction(self.pushUMinus) 
         
         # by defining exponentiation as "atom [ ^ factor ]..." instead of "atom [ ^ atom ]...", we get right-to-left exponents, instead of left-to-righ
         # that is, 2^3^2 = 2^(3^2), not (2^3)^2.
@@ -139,6 +141,8 @@ class Expression:
             return self.variabledict[op]
         elif op[0].isalpha():
             raise KeyError("operand '{0}' not found in dictionary.".format(op))
+        elif op[0:2]=="0x":
+            return int(op,0)
         else:
             return self._evaluate_literal(op, useFloat)
         return 0
@@ -147,7 +151,7 @@ class Expression:
     def _evaluate_literal(self, literal, useFloat):
         l = self.fmag.parseString(literal)
         m = magnitude.mg( float(l.get('num',1)), l.get('unit', '') )
-        m.significantDigits = len(list(filter( lambda s: s.isdigit(), l.get('num','1') )))
+        m.significantDigits = len(list(dropwhile(lambda s: s=='0', filter( lambda s: s.isdigit(), l.get('num','1') ))))
         if useFloat and m.dimensionless():
             value = m.val
         else:
@@ -169,8 +173,9 @@ class Expression:
             return value, dependencies
         return value
         
-    def evaluateAsMagnitude(self, expression, variabledict=dict()):
-        res = self.evaluate(expression, variabledict, useFloat=False)
+    def evaluateAsMagnitude(self, expression, variabledict=dict(), listDependencies=False):
+        variabledict = variabledict if variabledict is not None else dict()
+        res = self.evaluate(expression, variabledict, listDependencies=listDependencies, useFloat=False)
         return res
 
 if __name__ == "__main__":
@@ -264,6 +269,9 @@ if __name__ == "__main__":
     test( "2 * sqrt ( 4s / 1 s)",4 )
     test( "sqrt( 4s*4s )",magnitude.mg(4,'s'))
     test( "piTime * 1  ms",magnitude.mg(10,'ms'),{'piTime':magnitude.mg(10)} )
+    test( "0xff" , magnitude.mg(255,''))
+    test( "(4s)^2", magnitude.mg(16,'s2'))
+    test( "x0+sqrt(s^2*(A/(12-O)-1)" , 0.816496580928, {'x0': magnitude.mg(0), 's':1, 'A':magnitude.mg(20), 'O':magnitude.mg(0)})
 
     print ExprEval.evaluate( "4 MHz" )
     print ExprEval._evaluate_literal.cache_info()

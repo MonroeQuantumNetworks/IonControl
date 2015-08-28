@@ -270,7 +270,7 @@ class LockStatus(Form, Base):
                     self.trace.top = numpy.append( self.trace.top, top )
                 
             if self.errorSigCurve is None:
-                self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal")  #@UndefinedVariable 
+                self.errorSigCurve = PlottedTrace(self.trace, self.plotDict[self.settings.errorSigPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Error Signal", windowName=self.settings.errorSigPlot)  #@UndefinedVariable 
                 self.trace.filenameCallback =  functools.partial( self.errorSigCurve.traceFilename, "LockHistory.txt" )
                 self.errorSigCurve.plot()
                 self.traceui.addTrace( self.errorSigCurve, pen=-1 )
@@ -293,7 +293,7 @@ class LockStatus(Form, Base):
                 
             if self.freqCurve is None:
                 self.freqCurve = PlottedTrace(self.trace, self.plotDict[self.settings.frequencyPlot]['view'], pen=-1, style=PlottedTrace.Styles.points, name="Repetition rate", #@UndefinedVariable
-                                              xColumn='x', yColumn='freq', topColumn='freqTop', bottomColumn='freqBottom')  
+                                              xColumn='x', yColumn='freq', topColumn='freqTop', bottomColumn='freqBottom', windowName=self.settings.frequencyPlot)  
                 self.freqCurve.plot()
                 self.traceui.addTrace( self.freqCurve, pen=-1 )
             else:

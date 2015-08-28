@@ -21,6 +21,7 @@ class RunningStat(object):
         self._max = None
         self._min = None
         self.count = 0
+        self.currentValue = None
         
     @property
     def mean(self):
@@ -48,6 +49,7 @@ class RunningStat(object):
         
     def add(self, value):
         if not( value is None or math.isnan(value) or math.isinf(value) ):
+            self.currentValue = value
             self.count += 1
             if self.count == 1:
                 self.mOld = value

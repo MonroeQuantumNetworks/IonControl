@@ -8,6 +8,7 @@ import logging
 
 from PyQt4 import QtCore, QtGui
 import sip
+from modules.dictReverseLookup import dictValueFind
 
 
 api2 = sip.getapi("QVariant")==2
@@ -16,6 +17,8 @@ api2 = sip.getapi("QVariant")==2
 class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
     onColor =  QtGui.QColor(QtCore.Qt.green)
     offColor =  QtGui.QColor(QtCore.Qt.red)
+    customColor = QtGui.QColor(QtCore.Qt.black)
+    defaultColor = QtGui.QColor(QtCore.Qt.gray)
     def __init__(self, pulserHardware, outputname, data, size=32, parent=None, *args): 
         """ datain: a list where each item is a row
         
@@ -26,9 +29,11 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         self.size = size
         self._shutter = getattr(self.pulserHardware,self.outputname)
         self.data, self.dataChangedSignal = data 
-        self.dataLookup = { (QtCore.Qt.DisplayRole,0):          lambda row: self.data.names.get(row,None),
+        self.dataLookup = { (QtCore.Qt.DisplayRole,0):          lambda row: self.data.get(row,None),
                             (QtCore.Qt.BackgroundColorRole,1):  lambda row: self.onColor if self._shutter & (1<<row) else self.offColor,
-                            (QtCore.Qt.EditRole,0):             lambda row: self.data.names.get(row,''),
+                            (QtCore.Qt.TextColorRole,0):        lambda row: self.customColor if row in self.data.customDict else self.defaultColor,
+                            (QtCore.Qt.EditRole,0):             lambda row: self.data.get(row,''),
+                            (QtCore.Qt.ToolTipRole,0):          lambda row: self.data.defaultDict.get(row,None)
                            }
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -41,18 +46,19 @@ class ShutterHardwareTableModel(QtCore.QAbstractTableModel):
         logger = logging.getLogger(__name__)
         value = str(value if api2 else str(value.toString()))
         if index.column()==0 and role==QtCore.Qt.EditRole:
-            if value in self.data.channels and index.column()==self.data.channels[value]: # no change
+            key = dictValueFind( self.data.customDict, value )
+            if key and key==index.row(): # no change
                 return True
-            elif value in self.data.channels: # duplicate
-                logger.error( "cannot have the same name twice" )
+            elif key: # duplicate
+                logger.warning( "cannot have the same name '{0}' twice".format(value) )
                 return False
             else:
-                if value != '':
-                    self.data.channels[value] = index.row()
+                if value.strip() != '':
+                    self.data[index.row()] = value
                     self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
                 else:
-                    if index.row() in self.data.names:
-                        self.data.names.pop(index.row())
+                    if index.row() in self.data.customDict:
+                        self.data.pop(index.row())
                         self.dataChangedSignal.dataChanged.emit( index.row(), index.row() )
         return False
         

@@ -115,7 +115,7 @@ class AlignmentException( Exception):
         self.length = length
 
 class DigitalLockControllerServer(Process):
-    timestep = magnitude.mg(20,'ns')
+    timestep = magnitude.mg(5,'ns')
     def __init__(self, dataQueue, commandPipe, loggingQueue):
         super(DigitalLockControllerServer,self).__init__()
         self.dataQueue = dataQueue
@@ -318,11 +318,11 @@ class DigitalLockControllerServer(Process):
     def setFixedPointHarmonic(self, binvalue):
         if self.xem:
             self.xem.SetWireInValue(0x06, binvalue & 0xffff )
-            binvalue >> 16
+            binvalue = binvalue >> 16
             self.xem.SetWireInValue(0x07, binvalue & 0xffff )
-            binvalue >> 16
+            binvalue = binvalue >> 16
             self.xem.SetWireInValue(0x08, binvalue & 0xffff )
-            binvalue >> 16
+            binvalue = binvalue >> 16
             self.xem.SetWireInValue(0x09, binvalue & 0xffff )
             self.xem.UpdateWireIns()
             

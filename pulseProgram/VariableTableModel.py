@@ -18,28 +18,39 @@ class VariableTableModel(QtCore.QAbstractTableModel):
     flagsLookup = [ QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable |  QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                    QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                     QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled ]
     headerDataLookup = ['use','variable','value','evaluated']
     contentsChanged = QtCore.pyqtSignal()
-    def __init__(self, variabledict=None, parent=None, *args): 
+    def __init__(self, variabledict=None, config=dict(), contextName=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.variabledict = variabledict if variabledict is not None else dict()
+        self.normalFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Normal )
+        self.boldFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Bold )
+        self.contextName = contextName
+        self.config = config
+        self.contextBoldSets = self.config.get("VariableTableModel.BoldContext", dict() )
+        self.contextBoldSets.setdefault( contextName, set() )
+        self.boldSet = self.contextBoldSets[self.contextName]
         self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda var: QtCore.Qt.Checked if var.enabled else QtCore.Qt.Unchecked,
                              (QtCore.Qt.DisplayRole,1):    lambda var: var.name,
                              (QtCore.Qt.DisplayRole,2):    lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
-                             (QtCore.Qt.BackgroundColorRole,2): lambda var: QtGui.QColor( 255, 200, 200)  if hasattr(var,'strerror') and var.strerror else QtCore.Qt.white,
+                             (QtCore.Qt.BackgroundColorRole,2): lambda var: QtGui.QColor( 255, 200, 200)  if hasattr(var,'strerror') and var.strerror else 
+                                                                            QtCore.Qt.white if hasattr(var,'strvalue') else QtGui.QColor(200, 200, 255),
                              (QtCore.Qt.ToolTipRole,2):    lambda var: var.strerror if hasattr(var,'strerror') and var.strerror else None,
                              (QtCore.Qt.DisplayRole,3):    lambda var: str(var.outValue()),
                              (QtCore.Qt.EditRole,2):       lambda var: str(var.strvalue if hasattr(var,'strvalue') else var.value),
+                             (QtCore.Qt.FontRole,1): lambda var: self.boldFont if var.name in self.boldSet else self.normalFont,
                              }
         self.setDataLookup ={    (QtCore.Qt.CheckStateRole,0): self.setVarEnabled,
                                  (QtCore.Qt.EditRole,2):       self.setDataValue,
                                 }
         
-    def setVariables(self, variabledict ):
+    def setVariables(self, variabledict, contextName ):
         self.beginResetModel()
         self.variabledict = variabledict
+        self.contextName = contextName
+        self.contextBoldSets.setdefault( contextName, set() )
+        self.boldSet = self.contextBoldSets[self.contextName]       
         self.endResetModel()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -71,9 +82,9 @@ class VariableTableModel(QtCore.QAbstractTableModel):
             logger = logging.getLogger(__name__)
             logger.error( "Expression '{0}' cannot be evaluated {1}".format(value.toString(),e.message) )
             return False
-        except Exception:
+        except Exception as e:
             logger = logging.getLogger(__name__)
-            logger.error( "No match for {0}".format(value.toString()) )
+            logger.error( "No match for '{0}' error '{1}'".format(value.toString(), e.message) )
             return False
         
     def recalculateDependent(self, name):
@@ -89,9 +100,9 @@ class VariableTableModel(QtCore.QAbstractTableModel):
         
     def setVarEnabled(self,index,value):
         self.variabledict.setEnabledIndex(index.row(), value == QtCore.Qt.Checked)
-        self.contentsChanged.emit()
         self.dataChanged.emit( self.createIndex(index.row(),0), self.createIndex(index.row(),4) )
         self.recalculateDependent(self.variabledict.keyAt(index.row()))
+        self.contentsChanged.emit()
         return True      
 
     def setData(self,index, value, role):
@@ -106,3 +117,15 @@ class VariableTableModel(QtCore.QAbstractTableModel):
                 return self.headerDataLookup[section]
         return None #QtCore.QVariant()
         
+    def saveConfig(self):
+        self.config["VariableTableModel.BoldContext"] = self.contextBoldSets
+        
+    def toggleBold(self, index):
+        key = self.variabledict.keyAt(index.row())
+        if key in self.boldSet:
+            self.boldSet.remove(key)
+        else:
+            self.boldSet.add(key)
+        self.dataChanged.emit( self.createIndex(index.row(), 1), self.createIndex(index.row(), 1) )
+    
+

@@ -6,6 +6,8 @@ debug/
 
 # Compiled files
 *.pyc
+*.py~ 
+*.tlog
 
 # Configuration files
 *.swp
@@ -28,3 +30,13 @@ config/PulsePrograms/YbGateSequence.pp
 config/PulsePrograms/generated_pp/
 config/testbench_PulsePrograms/generated_pp/
 manual/Manual.toc
+AutoLoad.dot
+AutoLoad.png
+Statemachine.dot
+Statemachine.png
+config/PulseProgramsPlus/generated_pp/MicrowaveGateSequence.ppc
+chain.png
+*.ppc
+*.c~
+debug.bin
+*shuttling.xml

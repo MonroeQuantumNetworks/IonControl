@@ -11,7 +11,6 @@ from gui import ProjectSelectionUi
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
-from readInstrument import ReadInstrumentControl
 from fit.FitUi import FitUi
 
 from trace import Traceui
@@ -63,7 +62,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
         self.setupPlots()       
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict[self.plotDict.keys()[0]]["view"])
+        self.traceui = Traceui.Traceui(self.penicons,self.config,"Main",self.plotDict)
         self.traceui.setupUi(self.traceui)
 
         # new fit widget
@@ -122,7 +121,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -145,7 +144,7 @@ class InstrumentReaderUi(WidgetContainerBase,WidgetContainerForm):
             name = str(name)
             dock = Dock(name)
             widget = CoordinatePlotWidget(self)
-            view = widget.graphicsView
+            view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
@@ -241,16 +240,17 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("")
 
-    project, projectDir = ProjectSelectionUi.GetProjectSelection(True)
+    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
     
-    if project:
-        DataDirectory.DefaultProject = project
-        
-        with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-            with InstrumentReaderUi(config) as ui:
-                ui.setupUi(ui)
-                LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                ui.show()
-                sys.exit(app.exec_())
-    else:
-        logger.warning( "No project selected. Nothing I can do about that ;)" )
+    if accepted:
+        if project:
+            DataDirectory.DefaultProject = project
+            
+            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+                with InstrumentReaderUi(config) as ui:
+                    ui.setupUi(ui)
+                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                    ui.show()
+                    sys.exit(app.exec_())
+        else:
+            logger.warning( "No project selected. Nothing I can do about that ;)" )

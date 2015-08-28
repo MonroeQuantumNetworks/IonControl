@@ -20,7 +20,7 @@ class Wavemeter(QtCore.QObject):
     
     def __init__(self, address):
         super(Wavemeter, self).__init__()
-        self.address = address if address else "http://132.175.165.36:8082"
+        self.address = address if address else "http://132.175.165.24:8082"
         self.nAttempts = 0
         self.nMaxAttempts = 10
         #self.connection.set_debuglevel(5)
@@ -33,7 +33,7 @@ class Wavemeter(QtCore.QObject):
     def onWavemeterError(self, channel, reply, error):
         """Print out received error"""
         self.queryRunning[channel] = False
-        logging.getLogger(__name__).error( "Error {0} accessing wavemeter query '{1}'".format(error, self.query) )
+        logging.getLogger(__name__).warning( "Error {0} accessing wavemeter query '{1}'".format(error, self.query) )
         reply.finished.disconnect()  # necessary to make reply garbage collectable
         reply.error.disconnect()
 

@@ -28,6 +28,12 @@ import copy
 from ShutterDictionary import ShutterDictionary
 from TriggerDictionary import TriggerDictionary
 from CounterDictionary import CounterDictionary
+from uiModules.KeyboardFilter import KeyListFilter
+from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
+import xml.etree.ElementTree as ElementTree
+from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
+from modules import DataDirectory
+from PulseProgram import Variable
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -47,6 +53,7 @@ def getPpFileName( filename ):
 
 
 class PulseProgramContext:
+    XMLTagName = "PulseProgramContext"
     def __init__(self, globaldict):
         self.parameters = VariableDictionary()
         self.parameters.setGlobaldict(globaldict)
@@ -79,6 +86,38 @@ class PulseProgramContext:
     def setGlobaldict(self, globaldict):
         self.parameters.setGlobaldict(globaldict)
         
+    def exportXml(self, element, attrib=dict()):
+        myElement = ElementTree.SubElement(element, self.XMLTagName, attrib=attrib )
+        xmlEncodeAttributes(self.__dict__, myElement)
+        for parameter in self.parameters.itervalues():
+            parameter.exportXml(myElement, "PPVariable")
+        for name, parameter in self.shutters.iteritems():
+            shutterItemElement = ElementTree.SubElement(myElement, "Shutter", attrib={'name':name} )
+            for item in parameter:
+                if item is not None:
+                    item.exportXml(shutterItemElement, "PPShutter")
+        for parameter in self.counters.itervalues():
+            parameter.exportXml(myElement, "PPCounter")
+        for parameter in self.triggers.itervalues():
+            parameter.exportXml(myElement, "PPTrigger")
+        return myElement   
+    
+    @staticmethod
+    def fromXmlElement( element, globaldict ):
+        myElement = element if element.tag==PulseProgramContext.XMLTagName else element.find(PulseProgramContext.XMLTagName)
+        c = PulseProgramContext(globaldict)
+        c.__dict__.update( xmlParseAttributes(myElement))
+        c.parameters = VariableDictionary( (Variable.fromXMLElement(e, returnTuple=True) for e in myElement.findall("PPVariable") ) )
+        c.counters = CounterDictionary( (Variable.fromXMLElement(e, returnTuple=True) for e in myElement.findall("PPCounter") ) )
+        c.triggers = TriggerDictionary( (Variable.fromXMLElement(e, returnTuple=True) for e in myElement.findall("PPTrigger") ) )
+        c.shutters = ShutterDictionary()
+        for e in myElement.findall("Shutter"):
+            c.shutters[e.attrib['name']] = tuple((Variable.fromXMLElement(e) for e in myElement.findall("PPShutter") ))
+        return (myElement.attrib['name'], c)
+            
+        
+        
+        
 class ConfiguredParams:
     def __init__(self):
         self.recentFiles = dict()
@@ -94,7 +133,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
     contextDictChanged = QtCore.pyqtSignal(object)
     SourceMode = enum('pp','ppp') 
-    def __init__(self,config,parameterdict, channelNameData):
+    def __init__(self, config, parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
         PulseProgramBase.__init__(self)
         self.pulseProgram = PulseProgram.PulseProgram()
@@ -117,6 +156,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.currentContext = self.config.get( self.configname+'.currentContext' , PulseProgramContext(self.globaldict) )
         self.currentContext.setGlobaldict(self.globaldict)
         self.configParams =  self.config.get(self.configname, ConfiguredParams())
+        self.currentContextName = self.configParams.lastContextName
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
         self.contextComboBox.addItems( sorted(self.contextDict.keys()) )
@@ -142,12 +182,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         
-        self.variableTableModel = VariableTableModel( self.currentContext.parameters )
+        self.variableTableModel = VariableTableModel( self.currentContext.parameters, self.config, self.currentContextName )
         if self.parameterChangedSignal:
             self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
         self.variableView.setModel(self.variableTableModel)
         self.variableView.resizeColumnToContents(0)
-        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.currentContext.shutters, self.channelNameData[0:2] )
+        self.filter = KeyListFilter( [], [QtCore.Qt.Key_B] )
+        self.filter.controlKeyPressed.connect( self.onBold )
+        self.variableView.installEventFilter(self.filter)
+        self.shutterTableModel = ShutterTableModel.ShutterTableModel( self.currentContext.shutters, self.channelNameData[0:2], size=48 )
         self.shutterTableView.setModel(self.shutterTableModel)
         self.shutterTableView.resizeColumnsToContents()
         self.shutterTableView.clicked.connect(self.shutterTableModel.onClicked)
@@ -155,10 +198,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.triggerTableView.setModel(self.triggerTableModel)
         self.triggerTableView.resizeColumnsToContents()
         self.triggerTableView.clicked.connect(self.triggerTableModel.onClicked)
-        self.counterTableModel = CounterTableModel.CounterTableModel( self.currentContext.counters )
+        self.counterTableModel = CounterTableModel.CounterTableModel( self.currentContext.counters, self.channelNameData[4] )
         self.counterTableView.setModel(self.counterTableModel)
         self.counterTableView.resizeColumnsToContents()
         self.counterTableView.clicked.connect(self.counterTableModel.onClicked)
+        self.counterIdDelegate = MagnitudeSpinBoxDelegate()
+        self.counterTableView.setItemDelegateForColumn(0, self.counterIdDelegate)
         try:
             self.loadContext(self.currentContext)
             if self.configParams.lastContextName:
@@ -179,7 +224,40 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.autoSaveAction.setChecked( self.configParams.autoSaveContext )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
+        if self.configname+".splitterHorizontal" in self.config:
+            self.splitterHorizontal.restoreState( self.config[self.configname+".splitterHorizontal"] )
+        if self.configname+".splitterVertical" in self.config:
+            self.splitterVertical.restoreState( self.config[self.configname+".splitterVertical"] )
+        self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
+        self.exportXmlButton.clicked.connect( self.onExportXml )
 
+    def onExportXml(self, element=None, writeToFile=True):
+        root = element if element is not None else ElementTree.Element('PulseProgramList')
+        for name, context in self.contextDict.iteritems():
+            context.exportXml(root,{'name':name})
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("PulseProgramList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
+            self.onImportXml(filename, mode="")
+        return root
+
+    def onImportXml(self, filename=None, mode="addMissing"):
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
+        tree = ElementTree.parse(filename)
+        element = tree.getroot()
+        self.importXml(element, mode=mode)
+            
+    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+        newDict = dict( PulseProgramContext.fromXmlElement(e, self.globaldict) for e in element.findall(PulseProgramContext.XMLTagName) )
+        if mode=="replace":
+            self.contextDict = newDict
+        elif mode=="update":
+            self.contextDict.update( newDict )
+        elif mode=="addMissing":
+            newDict.update( self.contextDict )
+            self.contextDict = newDict
+       
     def onAutoSave(self, checked):
         self.configParams.autoSaveContext = checked
         if checked:
@@ -201,12 +279,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
     def onSaveContext(self):
         name = str(self.contextComboBox.currentText())
+        isNewContext = not name in self.contextDict
         self.contextDict[ name ] = copy.deepcopy(self.currentContext)
         if self.contextComboBox.findText(name)<0:
             with BlockSignals(self.contextComboBox) as w:
                 w.addItem(name)
+        if isNewContext:
             self.contextDictChanged.emit(self.contextDict.keys())
-        self.updateSaveStatus()
+        self.updateSaveStatus(isSaved=True)
+        self.currentContextName = name
     
     def onDeleteContext(self):
         name = str(self.contextComboBox.currentText())
@@ -216,9 +297,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.contextComboBox.removeItem( index )
             self.contextDictChanged.emit(self.contextDict.keys())
             self.updateSaveStatus()
+            self.currentContextName = None
 
     def onLoadContext(self):
         name = str(self.contextComboBox.currentText())
+        self.currentContextName = name
         if name in self.contextDict:
             self.loadContext( self.contextDict[name] )
         else:
@@ -255,7 +338,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             textEdit.setReadOnly( self.currentContext.pulseProgramMode!='pp' )
 
     def updateDisplayContext(self):
-        self.variableTableModel.setVariables( self.currentContext.parameters )
+        self.variableTableModel.setVariables( self.currentContext.parameters, self.currentContextName )
         self.variableView.resizeColumnsToContents()
         self.shutterTableModel.setShutterdict( self.currentContext.shutters )
         self.triggerTableModel.setTriggerdict(self.currentContext.triggers)
@@ -384,36 +467,33 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 positionCache = dict()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
                     self.pulseProgram.source[name] = str(textEdit.toPlainText())
-                    positionCache[name] = ( textEdit.textEdit.textCursor().position(),
-                                            textEdit.textEdit.verticalScrollBar().value() )
+                    positionCache[name] = ( textEdit.textEdit.cursorPosition(),
+                                            textEdit.textEdit.scrollPosition() )
                 self.pulseProgram.loadFromMemory()
                 self.updateppDisplay()
                 for name, textEdit in self.sourceCodeEdits.iteritems():
                     textEdit.clearHighlightError()
-                    cursor = textEdit.textEdit.textCursor()
-                    cursorpos, scrollpos = positionCache[name]
-                    cursor.setPosition( cursorpos )
-                    textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                    textEdit.textEdit.setTextCursor( cursor )
+                    if name in positionCache:
+                        cursorpos, scrollpos = positionCache[name]
+                        textEdit.textEdit.setCursorPosition( *cursorpos )
+                        textEdit.textEdit.setScrollPosition( scrollpos )
             except PulseProgram.ppexception as ppex:
                 textEdit = self.sourceCodeEdits[ ppex.file ].highlightError(str(ppex), ppex.line, ppex.context )
         else:
             positionCache = dict()
             for name, textEdit in self.pppCodeEdits.iteritems():
                 self.pppSource = str(textEdit.toPlainText())
-                positionCache[name] = ( textEdit.textEdit.textCursor().position(),
-                                        textEdit.textEdit.verticalScrollBar().value() )
+                positionCache[name] = ( textEdit.textEdit.cursorPosition(),
+                                        textEdit.textEdit.scrollPosition() )
             ppFilename = getPpFileName( self.pppSourcePath )
             if self.compileppp(ppFilename):
                 self.loadppFile(ppFilename, cache=False)
                 for name, textEdit in self.pppCodeEdits.iteritems():
                     textEdit.clearHighlightError()
-                    cursor = textEdit.textEdit.textCursor()
                     if name in positionCache:
                         cursorpos, scrollpos = positionCache[name]
-                        cursor.setPosition( cursorpos )
-                        textEdit.textEdit.verticalScrollBar().setValue( scrollpos )
-                        textEdit.textEdit.setTextCursor( cursor )
+                        textEdit.textEdit.setCursorPosition( *cursorpos )
+                        textEdit.textEdit.setScrollPosition( scrollpos )
             
                     
     def onAccept(self):
@@ -429,6 +509,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname] = self.configParams
         self.config[self.configname+'.contextdict'] = self.contextDict 
         self.config[self.configname+'.currentContext'] = self.currentContext
+        self.variableTableModel.saveConfig()
        
     def getPulseProgramBinary(self,parameters=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
@@ -444,14 +525,19 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def getVariableValue(self,name):
         return self.variableTableModel.getVariableValue(name)
     
-    def variableScanCode(self, variablename, values):
+    def variableScanCode(self, variablename, values, extendedReturn=False):
         tempparameters = copy.deepcopy( self.currentContext.parameters )
         updatecode = list()
+        numVariablesPerUpdate = 0
         for currentval in values:
             upd_names, upd_values = tempparameters.setValue(variablename, currentval)
+            numVariablesPerUpdate = len(upd_names)
             upd_names.append( variablename )
             upd_values.append( currentval )
             updatecode.extend( self.pulseProgram.multiVariableUpdateCode( upd_names, upd_values ) )
+            logging.getLogger(__name__).info("{0}: {1}".format(upd_names, upd_values))
+        if extendedReturn:
+            return updatecode, numVariablesPerUpdate
         return updatecode
 
     def updateSaveStatus(self, isSaved=None):
@@ -472,6 +558,13 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.saveContextButton.setEnabled( not self.contextSaveStatus )
         except Exception:
             pass
+        
+    def onBold(self, key):
+        indexes = self.variableView.selectedIndexes()
+        for index in indexes:
+            self.variableTableModel.toggleBold( index )
+                    
+
 
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:

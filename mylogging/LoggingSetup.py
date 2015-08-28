@@ -12,6 +12,15 @@ class QtLoggingHandler(logging.Handler, QtCore.QObject):
 
     def emit(self, record):
         self.textWritten.emit(self.format(record).rstrip()+"\n", record.levelno)
+        
+class QtWarningButtonHandler(logging.Handler, QtCore.QObject):  
+    textWritten = QtCore.pyqtSignal(object)
+    def __init__(self):
+        logging.Handler.__init__(self)
+        QtCore.QObject.__init__(self)
+
+    def emit(self, record):
+        self.textWritten.emit(self.format(record).rstrip()+"\n")
 
 class LevelThresholdFilter(logging.Filter):
     def __init__(self, passlevel, reject):
@@ -24,6 +33,13 @@ class LevelThresholdFilter(logging.Filter):
         else:
             return (record.levelno < self.passlevel)
         
+class LevelListFilter(logging.Filter):
+    def __init__(self, passlevellist):
+        self.passlevellist = passlevellist
+        
+    def filter(self, record):
+        return record.levelno in self.passlevellist
+        
 class LevelFilter(logging.Filter):
     def __init__(self, passlevel):
         self.passlevel = passlevel
@@ -32,6 +48,7 @@ class LevelFilter(logging.Filter):
         return record.levelno == self.passlevel
 
 traceHandler = None
+errorHandler = None
 def setTraceFilename(filename):
     global traceHandler
     if traceHandler is not None:
@@ -40,6 +57,15 @@ def setTraceFilename(filename):
     traceHandler.setFormatter(fileformatter)
     traceHandler.addFilter( LevelFilter(logging.TRACE))  # @UndefinedVariable
     logger.addHandler( traceHandler )
+
+def setErrorFilename(filename):
+    global errorHandler
+    if errorHandler is not None:
+        logger.removeHandler(errorHandler)
+    errorHandler = logging.FileHandler(filename)
+    errorHandler.setFormatter(fileformatter)
+    errorHandler.addFilter( LevelThresholdFilter(logging.ERROR,True) )  # @UndefinedVariable
+    logger.addHandler( errorHandler )
 
 
 TRACE_LEVEL_NUM = 25 
@@ -58,25 +84,30 @@ formatter = logging.Formatter('%(levelname)s %(name)s(%(filename)s:%(lineno)d %(
 
 stdoutHandler = logging.StreamHandler(sys.stdout)
 stdoutHandler.setFormatter(formatter)
-stdoutHandler.addFilter(LevelThresholdFilter(logging.ERROR,False))
+stdoutHandler.addFilter(LevelThresholdFilter(logging.WARNING,False))
 
 stderrHandler = logging.StreamHandler(sys.stderr)
 stderrHandler.setFormatter(formatter)
-stderrHandler.addFilter(LevelThresholdFilter(logging.ERROR,True))
+stderrHandler.addFilter(LevelThresholdFilter(logging.WARNING,True))
 
 fileformatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
-fileHandler = logging.FileHandler("messages")
-fileHandler.setFormatter(fileformatter)
-fileHandler.setLevel(logging.INFO) 
+# fileHandler = logging.FileHandler("messages")
+# fileHandler.setFormatter(fileformatter)
+# fileHandler.setLevel(logging.INFO) 
 
 qtHandler = QtLoggingHandler()
 qtHandler.setFormatter(formatter)
 
+qtWarningButtonHandler = QtWarningButtonHandler()
+qtWarningButtonHandler.setFormatter(formatter)
+qtWarningButtonHandler.addFilter(LevelListFilter( (logging.WARNING,) ) )
+
 logger.addHandler(stdoutHandler)
 logger.addHandler(stderrHandler)
 logger.addHandler(qtHandler)
-logger.addHandler(fileHandler)
+logger.addHandler(qtWarningButtonHandler)
+# logger.addHandler(fileHandler)
 
 pyqtlogger = logging.getLogger("PyQt4")
 pyqtlogger.setLevel(logging.ERROR)

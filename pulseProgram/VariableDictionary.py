@@ -5,7 +5,7 @@ from networkx import DiGraph, simple_cycles, dfs_postorder_nodes, dfs_preorder_n
 
 from modules.Expression import Expression
 from modules.SequenceDict import SequenceDict
-from modules.magnitude import Magnitude
+from modules.magnitude import Magnitude, MagnitudeError
 import copy
 
 class CyclicDependencyException(Exception):
@@ -52,14 +52,15 @@ class VariableDictionary(SequenceDict):
         self.globaldict = globaldict 
                 
     def calculateDependencies(self):
+        self.dependencyGraph = DiGraph()   # clear the old dependency graph in case parameters got removed
         for name, var in self.iteritems():
             if hasattr(var,'strvalue'):
                 try:
                     var.value, dependencies = self.expression.evaluate(var.strvalue, self.valueView, listDependencies=True)
                     self.addDependencies(self.dependencyGraph, dependencies, name)
                     var.strerror = None
-                except KeyError as e:
-                    logging.getLogger(__name__).error( str(e) )
+                except (KeyError, MagnitudeError) as e:
+                    logging.getLogger(__name__).warning( str(e) )
                     var.strerror = str(e)
             else:
                 var.strerror = None
@@ -156,12 +157,12 @@ class VariableDictionary(SequenceDict):
             var = self[node]
             if hasattr(var,'strvalue'):
                 try:
-                    var.value = self.expression.evaluate(var.strvalue, self.valueView)
+                    var.value = self.expression.evaluate(var.strvalue, self.valueView) if var.enabled else 0
                     var.strerror = None
-                except KeyError as e:
+                except (KeyError, MagnitudeError) as e:
                     var.strerror = str(e)
             else:
-                logging.getLogger(__name__).warning("variable {0} does not have strvalue.".format(var))
+                logging.getLogger(__name__).warning("variable {0} does not have strvalue. Value is {1}".format(var, var.value))
             return var.value
         return None
             

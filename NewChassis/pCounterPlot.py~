@@ -1,0 +1,6 @@
+from PyQwtPlotDlg import AutoUpdatePlot
+
+class pCounterPlotDlg(AutoUpdatePlot):
+    def __init__(self, **kwargs):
+        super(pCounterPlot, self).__init(**kwargs)
+        self.cntr = pCounter(**kwargs)
