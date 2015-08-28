@@ -27,7 +27,11 @@ class AnalogInputCalibration(object):
         """
         if binary is None:
             return None
-        converted = binary * referenceVoltage / 0x3fffff
+        count = binary >> 32             # extract Number fo samples in FPGA code after 8/28/2015
+        binary = binary & 0xffffffff     # remove the counter bits 
+        converted = float(binary * referenceVoltage / 0x3fffff)
+        if count>0:
+            converted /= count
         return converted
         
     def convertMagnitude(self, binary):
@@ -35,6 +39,10 @@ class AnalogInputCalibration(object):
         """
         if binary is None:
             return None
+        count = binary >> 32             # extract Number fo samples in FPGA code after 8/28/2015
+        binary = binary & 0xffffffff     # remove the counter bits 
+        if count>0:
+            return magnitude.mg( binary * referenceVoltage / 0x3fffff / count, 'V')
         return magnitude.mg( binary * referenceVoltage / 0x3fffff, 'V')
         
     def paramDef(self):
@@ -60,11 +68,15 @@ class AnalogInputCalibrationAD7608(AnalogInputCalibration):
         """
         if binary is None:
             return None
+        count = binary >> 32             # extract Number fo samples in FPGA code after 8/28/2015
+        binary = binary & 0xffffffff     # remove the counter bits 
         if binary & 0x80000000:
             numeric = -0x80000000 + (binary&0x7fffffff)
         else:
             numeric = binary
-        converted = numeric * self.referenceVoltage / 0x800000
+        converted = numeric * self.referenceVoltage / 0x8000
+        if count>0:
+            converted /= count
         return converted
         
     def convertMagnitude(self, binary):
@@ -93,7 +105,11 @@ class PowerDetectorCalibration(AnalogInputCalibration):
     def convert(self, binary):
         if binary is None:
             return None
-        volt = binary * referenceVoltage / 0x3fffff
+        count = binary >> 32             # extract Number fo samples in FPGA code after 8/28/2015
+        binary = binary & 0xffffffff     # remove the counter bits 
+        volt = binary * referenceVoltage / 0x3fff
+        if count>0:
+            volt /= count
         if volt < self.parameters.minimum or volt > self.parameters.maximum:
             return "oor"
         dBm = self.parameters.p * volt**2 + self.parameters.m*volt + self.parameters.c
@@ -102,7 +118,11 @@ class PowerDetectorCalibration(AnalogInputCalibration):
     def convertMagnitude(self, binary):
         if binary is None:
             return None
-        volt = binary * referenceVoltage / 0x3fffff
+        count = binary >> 32             # extract Number fo samples in FPGA code after 8/28/2015
+        binary = binary & 0xffffffff     # remove the counter bits 
+        volt = binary * referenceVoltage / 0x3fff
+        if count>0:
+            volt /= count
         if volt < self.parameters.minimum or volt > self.parameters.maximum:
             return "oor"
         dBm = self.parameters.p * volt**2 + self.parameters.m*volt + self.parameters.c
@@ -134,11 +154,15 @@ class PowerDetectorCalibrationAD7608(AnalogInputCalibration):
     def convert(self, binary):
         if binary is None:
             return None
+        count = binary >> 32             # extract Number fo samples in FPGA code after 8/28/2015
+        binary = binary & 0xffffffff     # remove the counter bits 
         if binary & 0x80000000:
             numeric = -0x80000000 + (binary&0x7fffffff)
         else:
             numeric = binary
-        volt = numeric * self.referenceVoltage / 0x800000
+        volt = numeric * self.referenceVoltage / 0x8000
+        if count>0:
+            volt /= count
         if volt < self.parameters.minimum or volt > self.parameters.maximum:
             return "oor"
         dBm = self.parameters.p * volt**2 + self.parameters.m*volt + self.parameters.c
@@ -147,11 +171,15 @@ class PowerDetectorCalibrationAD7608(AnalogInputCalibration):
     def convertMagnitude(self, binary):
         if binary is None:
             return None
+        count = binary >> 32             # extract Number fo samples in FPGA code after 8/28/2015
+        binary = binary & 0xffffffff     # remove the counter bits 
         if binary & 0x80000000:
             numeric = -0x80000000 + (binary&0x7fffffff)
         else:
             numeric = binary
-        volt = numeric * self.referenceVoltage / 0x800000
+        volt = numeric * self.referenceVoltage / 0x8000
+        if count>0:
+            volt /= count
         if volt < self.parameters.minimum or volt > self.parameters.maximum:
             return "oor"
         dBm = self.parameters.p * volt**2 + self.parameters.m*volt + self.parameters.c
