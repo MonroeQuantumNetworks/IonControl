@@ -16,6 +16,7 @@ var inlinevar_2 1
 var inlinevar_3 2
 var inlinevar_4 8
 var inlinevar_5 16
+var gateTime 0, parameter
 var DetectFreq 100, parameter, MHz, AD9912_FRQ
 var DetectAmp 1023, parameter
 var MicrowaveFreq 40, parameter, MHz, AD9912_FRQ
