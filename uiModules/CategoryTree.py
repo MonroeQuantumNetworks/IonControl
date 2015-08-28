@@ -3,6 +3,7 @@ __author__ = 'jmizrahi'
 from PyQt4 import QtCore, QtGui
 
 class TreeNode(object):
+    """Base class for tree nodes"""
     def __init__(self, parent, row):
         self.parent = parent
         self.row = row
@@ -18,6 +19,7 @@ class TreeNode(object):
 
 
 class CategoryNode(TreeNode):
+    """Class for category nodes"""
     def __init__(self, parent, row, name):
         super(CategoryNode, self).__init__(parent, row)
         self.name = name
@@ -35,6 +37,7 @@ class CategoryNode(TreeNode):
 
 
 class DataNode(TreeNode):
+    """Class for data nodes"""
     def __init__(self, parent, row, content):
         super(DataNode, self).__init__(parent, row)
         self.content = content #content is the actual data in the tree, it can be anything
@@ -43,7 +46,7 @@ class DataNode(TreeNode):
         return 'data'
 
 
-class CategoryTreeModelBase( QtCore.QAbstractItemModel ):
+class CategoryTreeModel( QtCore.QAbstractItemModel ):
     """Base class for category trees.
 
     A category tree is a simplified tree structure in which a flat list of data is broken down by categories. It
@@ -53,13 +56,13 @@ class CategoryTreeModelBase( QtCore.QAbstractItemModel ):
     beneath those categories. "categories" is a list of strings, with the most general category first.
     """
     def __init__(self, contentList, parent=None):
-        super(CategoryTreeModelBase, self).__init__(parent)
+        super(CategoryTreeModel, self).__init__(parent)
         self.contentList = contentList #list of objects. Can be anything. If the objects have a category attribute, a tree will result.
         self.dataLookup = {
                            ('category', QtCore.Qt.DisplayRole, 0): lambda node: node.name,
                            ('data', QtCore.Qt.DisplayRole, 0): lambda node: str(node.content) #default, normally overwritten
                            }
-        self.setDataLookup = {} #overwrite to be able to set data. dict key: (type, role, col). val: function that takes (index, value)
+        self.setDataLookup = {} #overwrite to set data. key: (type, role, col). val: function that takes (node, value)
         self.flagsLookup = {
                             ('category', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
                             ('data', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
@@ -68,25 +71,26 @@ class CategoryTreeModelBase( QtCore.QAbstractItemModel ):
         self.categoryNodes = {(): self.root} #dictionary of category nodes, with tuple indicating hierarchy to that item
         for content in contentList: #loop through the list to make the tree
             categories = getattr(content, 'categories', None)
-            parent = self.makeCategoryNodes(categories) if categories else self.root
+            parent = self.makeCategoryNodes(map(str, categories)) if categories else self.root
             node = DataNode(parent, parent.childCount(), content)
             parent.children.append(node)
 
-    def makeCategoryNodes(self, categoryList):
+    def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
-        categoryList = map(str, categoryList) #force all categories to be strings
-        key = tuple(categoryList)
-        if key not in self.categoryNodes:
-            parent = self.makeCategoryNodes(categoryList[:-1]) #This is the recursive step
-            node = CategoryNode(parent, parent.childCount(), categoryList[-1])
+        key = tuple(categories)
+        if key not in self.categoryNodes: #the empty tuple will always be in the dictionary, so the recursion will end
+            parent = self.makeCategoryNodes(categories[:-1]) #This is the recursive step
+            node = CategoryNode(parent, parent.childCount(), categories[-1])
             parent.children.append(node)
             self.categoryNodes[key] = node
         return self.categoryNodes[key]
 
     def nodeFromIndex(self, index):
+        """Return the node at the given index"""
         return index.internalPointer() if index.isValid() else self.root
 
     def getLocation(self, index):
+        """Return the node, column at the given index"""
         node = self.nodeFromIndex(index)
         return node, index.column()
 
@@ -112,7 +116,7 @@ class CategoryTreeModelBase( QtCore.QAbstractItemModel ):
 
     def setData(self, index, value, role):
         node, col = self.getLocation(index)
-        return self.setDataLookup.get( (node.nodeType(), role, col), lambda index, value: False)(index, value)
+        return self.setDataLookup.get( (node.nodeType(), role, col), lambda node, value: False)(node, value)
 
     def parent(self, index):
         node = self.nodeFromIndex(index)
@@ -124,43 +128,25 @@ class CategoryTreeModelBase( QtCore.QAbstractItemModel ):
         return self.flagsLookup.get((node.nodeType(), col), QtCore.Qt.NoItemFlags)
 
 if __name__ == "__main__":
-    import sys
-    import PyQt4.uic
-    UiForm, UiBase = PyQt4.uic.loadUiType(r'C:\Users\jmizrahi\IonControl\ui\PulserParameterUi.ui')
-    class testUi(UiForm,UiBase):
-        def __init__(self, contentList, parent=None):
-            UiBase.__init__(self,parent)
-            UiForm.__init__(self)
-            self.contentList = contentList
-
-        def setupUi(self):
-            UiForm.setupUi(self, self)
-            self.model = CategoryTreeModelBase(self.contentList)
-            self.treeView.setModel( self.model )
-
     class myContent(object):
         def __init__(self, data, categories=None):
             self.data = data
             self.categories = categories
-
         def __str__(self):
             return str(self.data)
-
+    model = CategoryTreeModel([myContent('hot dog', ['Foods', 'Red']),
+                               myContent('strawberry', ['Foods', 'Red']),
+                               myContent('blueberry', ['Foods', 'Blue']),
+                               myContent('golf',['Games', 'ball based']),
+                               myContent('baseball',['Games', 'ball based']),
+                               myContent('hockey', ['Games','puck based']),
+                               myContent('Huey', ['People']),
+                               myContent('Dewey', ['People']),
+                               myContent('Louie', ['People'])
+                               ])
+    import sys
     app = QtGui.QApplication(sys.argv)
-    MainWindow = QtGui.QMainWindow()
-    content = [
-        myContent('hot dog', ['Foods', 'Red']),
-        myContent('strawberry', ['Foods', 'Red']),
-        myContent('blueberry', ['Foods', 'Blue']),
-        myContent('golf',['Games', 'ball based']),
-        myContent('baseball',['Games', 'ball based']),
-        myContent('hockey', ['Games','puck based']),
-        myContent('Huey', ['People']),
-        myContent('Dewey', ['People']),
-        myContent('Louie', ['People'])
-    ]
-    ui = testUi(content)
-    ui.setupUi()
-    MainWindow.setCentralWidget(ui)
-    MainWindow.show()
+    view = QtGui.QTreeView()
+    view.setModel(model)
+    view.show()
     sys.exit(app.exec_())
