@@ -34,6 +34,7 @@ import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 from modules import DataDirectory
 from PulseProgram import Variable
+import modules.magnitude as magnitude
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -375,17 +376,24 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     def onLoadRam(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file',ProjectSelection.configDir()))
         if path!="":
-            self.currentContext.ramFile = path
-            self.fileNameRam.setText(path)
-            with open(path, "r") as f:
-                self.ramSource = f.read()
-        self.updateSaveStatus()
+            try:
+                self.ramData = []
+                tree = ElementTree.parse(path)
+                root = tree.getroot()
+                for child in root:
+                    val = magnitude.mg( float(child.attrib['value']), child.attrib['unit'] )
+                    encoding = child.attrib['encoding']
+                    data = self.pulseProgram.convertParameter(val, encoding)
+                    self.ramData.append(data)
+                self.currentContext.ramFile = path
+                self.fileNameRam.setText(path)
+                self.updateSaveStatus()
+            except Exception as e:
+                self.ramData = []
+                logging.getLogger("__name__").error("Unable to read in ram file {0}: {1}".format(path, e))
 
     def onWriteRamCheckbox(self):
         self.currentContext.writeRam = self.writeRamCheckbox.isChecked()
-        
-    def getRamData(self):
-        return []
 
     def onLoad(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
