@@ -35,6 +35,7 @@ import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 from modules import DataDirectory
 from PulseProgram import Variable, OPS
+import modules.magnitude as magnitude
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
