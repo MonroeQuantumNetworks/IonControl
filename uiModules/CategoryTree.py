@@ -46,7 +46,7 @@ class DataNode(TreeNode):
         return 'data'
 
 
-class CategoryTreeModel( QtCore.QAbstractItemModel ):
+class CategoryTreeModel(QtCore.QAbstractItemModel):
     """Base class for category trees.
 
     A category tree is a simplified tree structure in which a flat list of data is broken down by categories. It
@@ -55,9 +55,10 @@ class CategoryTreeModel( QtCore.QAbstractItemModel ):
     flat list. If a given element of the list has an attribute "categories," then that element will be displayed
     beneath those categories. "categories" is a list of strings, with the most general category first.
     """
-    def __init__(self, contentList, parent=None):
+    def __init__(self, contentList=[], parent=None):
         super(CategoryTreeModel, self).__init__(parent)
         self.contentList = contentList #list of objects. Can be anything. If the objects have a category attribute, a tree will result.
+        self.headerLookup = {} #overwrite to set headers. key: (orientation, role, section) val: str
         self.dataLookup = {
                            ('category', QtCore.Qt.DisplayRole, 0): lambda node: node.name,
                            ('data', QtCore.Qt.DisplayRole, 0): lambda node: str(node.content) #default, normally overwritten
@@ -67,6 +68,7 @@ class CategoryTreeModel( QtCore.QAbstractItemModel ):
                             ('category', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
                             ('data', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
                             }
+        self.numColumns = 1 #Overwrite with number of columns
         self.root = CategoryNode(None, 0, 'root')
         self.categoryNodes = {(): self.root} #dictionary of category nodes, with tuple indicating hierarchy to that item
         for content in contentList: #loop through the list to make the tree
@@ -108,7 +110,7 @@ class CategoryTreeModel( QtCore.QAbstractItemModel ):
         return node.childCount()
 
     def columnCount(self, index):
-        return 1 #Normally overwritten
+        return self.numColumns
 
     def data(self, index, role):
         node, col = self.getLocation(index)
@@ -126,6 +128,10 @@ class CategoryTreeModel( QtCore.QAbstractItemModel ):
     def flags(self, index ):
         node, col = self.getLocation(index)
         return self.flagsLookup.get((node.nodeType(), col), QtCore.Qt.NoItemFlags)
+
+    def headerData(self, section, orientation, role):
+        return self.headerLookup.get((orientation, role, section))
+
 
 if __name__ == "__main__":
     class myContent(object):
