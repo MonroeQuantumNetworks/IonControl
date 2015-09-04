@@ -404,6 +404,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.overrun:
             logger.warning( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
+        if data.timingViolations:
+            logger.warning( "PP Timing violation at address {0:X}".format(data.timingViolations[0]))
         elif data.final and data.exitcode not in [0,0xffff]:
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
