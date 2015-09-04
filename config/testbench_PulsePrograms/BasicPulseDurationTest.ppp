@@ -17,6 +17,7 @@ parameter timeThree
 parameter initTime = 1 ms
 parameter waitTime
 parameter DetectTime
+parameter Dummy
 var dummy
 var VOut
 

@@ -104,6 +104,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.callWhenDoneAdjusting = callWhenDoneAdjusting
         self.rawDataFile = None
         self.dataFinalized = False
+        self.accumulatedTimingViolations = set()
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -275,6 +276,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                                                  timedelta(seconds=round(expected)))) 
  
     def onStart(self):
+        self.accumulatedTimingViolations = set()
+        self.pulseProgramUi.setTimingViolations( [] )
         self.scan = self.scanControlWidget.getScan()
         self.evaluation = self.evaluationControlWidget.getEvaluation()
         self.displayUi.setNames( [evaluation.name for evaluation in self.evaluation.evalList ])
@@ -405,8 +408,13 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             logger.warning( "Read Pipe Overrun" )
             self.onInterrupt("Read Pipe Overrun")
         if data.timingViolations:
-            logger.warning( "PP Timing violation at address {0:X}".format(data.timingViolations[0]))
-        elif data.final and data.exitcode not in [0,0xffff]:
+            oldlength = len(self.accumulatedTimingViolations)
+            self.accumulatedTimingViolations.update(data.timingViolations)
+            if len(self.accumulatedTimingViolations)>oldlength:
+                self.pulseProgramUi.setTimingViolations( [self.pulseProgramUi.lineOfInstruction(l) for l in self.accumulatedTimingViolations])
+                lineInPP = self.pulseProgramUi.lineOfInstruction(data.timingViolations[0])
+                logger.warning( "PP Timing violation at address {0}".format(lineInPP))
+        if data.final and data.exitcode not in [0,0xffff]:
             self.onInterrupt( self.pulseProgramUi.exitcode(data.exitcode) )
         else:
             logger.info( "onData {0} {1} {2}".format( self.currentIndex, dict((i,len(data.count[i])) for i in sorted(data.count.keys())), data.scanvalue ) )

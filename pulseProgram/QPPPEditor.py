@@ -5,7 +5,7 @@ Created on Feb 20, 2015
 '''
 
 from PyQt4.Qsci import QsciScintilla, QsciLexerPython
-from PyQt4.QtGui import QFont, QFontMetrics, QColor
+from PyQt4.QtGui import QFont, QFontMetrics, QColor, QPixmap
 
 
 class MyPythonLexer(QsciLexerPython):
@@ -80,6 +80,8 @@ class QPPPEditor(QsciScintilla):
         # not too small
         self.setMinimumSize(200, 100)
         self.errorIndicators = list()
+        pixmap = QPixmap('ui/icons/hg-16.png')
+        self.timingMarker = self.markerDefine(pixmap)
 
     def on_margin_clicked(self, nmargin, nline, modifiers):
         # Toggle marker for the line the margin was clicked on
@@ -116,3 +118,12 @@ class QPPPEditor(QsciScintilla):
         col = self.lineLength(toline-1)
         self.clearIndicatorRange(0, 0, toline, col, 2 )
         self.errorIndicators = list()
+        
+    def highlightTimingViolation(self, linelist):
+        if linelist:
+            for line in linelist:
+                self.markerAdd(line, self.timingMarker)
+        else:    
+            self.markerDeleteAll(self.timingMarker)
+            
+        
