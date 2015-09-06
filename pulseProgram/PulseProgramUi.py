@@ -69,10 +69,11 @@ class PulseProgramContext:
         self.writeRam = False
 
     def __setstate__(self, state):
-        self.__dict__ = state
-        self.ramFile = None
+        self.ramFile = ''
         self.ramData = []
         self.writeRam = False
+        state.update({'ramFile':'', 'ramData':[], 'writeRam':False})
+        self.__dict__ = state
         
     stateFields = ['parameters', 'shutters', 'triggers', 'counters', 'pulseProgramFile', 'pulseProgramMode', 'ramFile', 'ramData', 'writeRam']
         
@@ -133,7 +134,7 @@ class ConfiguredParams:
         
     def __setstate__(self,d):
         self.recentFiles = d['recentFiles']
-        self.recentRamFiles = dict()
+        self.recentRamFiles =getattr(self, 'recentRamFiles', dict())
         self.lastContextName = d.get('lastContextName', None )
         self.autoSaveContext = d.get('autoSaveContext', False)
 
@@ -289,6 +290,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         #changeMode = self.currentContext.pulseProgramMode != previousContext.pulseProgramMode
         if self.currentContext.pulseProgramFile != previousContext.pulseProgramFile or len(self.sourceCodeEdits)==0:
             self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
+        if self.currentContext.ramFile != previousContext.ramFile:
+            self.loadRamFile(self.currentContext.ramFile)
         self.currentContext.merge( self.pulseProgram.variabledict )
         self.updateDisplayContext()
         self.updateSaveStatus(isSaved=True)
@@ -398,7 +401,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     
     def onLoadRamFile(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file',ProjectSelection.configDir()))
-        if path != "":
+        if path:
             self.loadRamFile(path)
 
     def loadRamFile(self, path):
