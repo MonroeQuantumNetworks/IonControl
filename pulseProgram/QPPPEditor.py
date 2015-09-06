@@ -9,32 +9,41 @@ from PyQt4.QtGui import QFont, QFontMetrics, QColor, QPixmap
 
 
 class MyPythonLexer(QsciLexerPython):
+    def __init__(self, parent=None, extraKeywords1=[], extraKeywords2=[]):
+        """Initialize lexer with extra keywords set."""
+        super(MyPythonLexer,self).__init__(parent)
+        self.extraKeywords1 = extraKeywords1 #keywords to join to keyset 1
+        self.extraKeywords2 = extraKeywords2 #keywords for keyset 2
+        
     def keywords(self, keyset):
+        """return standard keywords and extra keywords."""
         if keyset == 1:
-            return 'counter var shutter parameter masked_shutter exitcode const ' + QsciLexerPython.keywords(self, keyset)
+            return ' '.join(self.extraKeywords1) + ' ' + QsciLexerPython.keywords(self, keyset)
+        elif keyset == 2:
+            return ' '.join(self.extraKeywords2)
         return QsciLexerPython.keywords(self, keyset)
 
 
 class QPPPEditor(QsciScintilla):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, extraKeywords1=[], extraKeywords2=[]):
         super(QPPPEditor, self).__init__(parent)
 
         # Set the default font
-        font = QFont()
-        font.setFamily('Courier')
-        font.setFixedPitch(True)
-        font.setPointSize(10)
-        self.setFont(font)
-        self.setMarginsFont(font)
+        self.myfont = QFont()
+        self.myfont.setFamily('Courier')
+        self.myfont.setFixedPitch(True)
+        self.myfont.setPointSize(10)
+        self.setFont(self.myfont)
+        self.setMarginsFont(self.myfont)
         
-        boldfont = QFont(font)
-        boldfont.setBold(True)
+        self.myboldfont = QFont(self.myfont)
+        self.myboldfont.setBold(True)
 
         # Margin 0 is used for line numbers
-        fontmetrics = QFontMetrics(font)
-        self.setMarginsFont(font)
+        fontmetrics = QFontMetrics(self.myfont)
+        self.setMarginsFont(self.myfont)
         self.setMarginWidth(0, fontmetrics.width("00000") + 6)
         self.setMarginLineNumbers(0, True)
         self.setMarginsBackgroundColor(QColor("#cccccc"))
@@ -58,10 +67,12 @@ class QPPPEditor(QsciScintilla):
         # Set style for Python comments (style number 1) to a fixed-width
         # courier.
         #
-        lexer = MyPythonLexer()
-        lexer.setDefaultFont(font)
-        lexer.setColor( QColor('red'), 4 )
-        lexer.setFont( boldfont, 5)
+        lexer = MyPythonLexer(extraKeywords1=extraKeywords1, extraKeywords2=extraKeywords2)
+        lexer.setDefaultFont(self.myfont)
+        #lexer.setColor( QColor('red'), lexer.SingleQuotedString )
+        lexer.setFont( self.myboldfont, lexer.Keyword)
+        lexer.setFont( self.myboldfont, lexer.HighlightedIdentifier )
+        lexer.setColor( QColor('blue'), lexer.HighlightedIdentifier )
         self.setLexer(lexer)
         self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'Courier')
 

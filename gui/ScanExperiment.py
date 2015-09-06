@@ -74,6 +74,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     scanConfigurationListChanged = None
     evaluationConfigurationChanged = None
     analysisConfigurationChanged = None
+    evaluatedDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (x, y)
+    allDataSignal = QtCore.pyqtSignal( dict ) #key is the eval name, val is (xlist, ylist)
     def __init__(self,settings,pulserHardware,globalVariablesUi, experimentName,toolBar=None,parent=None, measurementLog=None, callWhenDoneAdjusting=None):
         MainWindowWidget.MainWindowWidget.__init__(self,toolBar=toolBar,parent=parent)
         ScanExperimentForm.__init__(self)
@@ -128,7 +130,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         for name in plotNames:
             dock = Dock(name)
             widget = CoordinatePlotWidget(self, name=name)
-            widget.setTimeAxis(axesType[name])
+            if hasattr(axesType, name):
+                widget.setTimeAxis(axesType[name])
             view = widget._graphicsView
             self.area.addDock(dock, "bottom")
             dock.addWidget(widget)
@@ -142,6 +145,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
         except Exception as e:
             logger.warning("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+
         # Traceui
         self.penicons = pens.penicons().penicons()
         self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
@@ -202,10 +206,10 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.saveHistogram.triggered.connect( self.onSaveHistogram )
         self.actionList.append( self.saveHistogram )
 
-        self.addPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
-        self.addPlot.setToolTip("Add new plot")
-        self.addPlot.triggered.connect(self.onAddPlot)
-        self.actionList.append(self.addPlot)
+        self.actionAddPlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/add-plot.png"), "Add new plot", self)
+        self.actionAddPlot.setToolTip("Add new plot")
+        self.actionAddPlot.triggered.connect(self.onAddPlot)
+        self.actionList.append(self.actionAddPlot)
         
         self.removePlot = QtGui.QAction( QtGui.QIcon(":/openicon/icons/remove-plot.png"), "Remove a plot", self)
         self.removePlot.setToolTip("Remove a plot")
@@ -317,9 +321,30 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
             self.startTime = time.time()
             self.pulserHardware.ppStop()
-            PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary() # also overwrites the current variable values            
-            self.generator = GeneratorList[self.scan.scanMode](self.scan)
+            
+            override = dict()
+            scanParam = None
+            
+            AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
+            if AWGdevice.parent.parameters.enabled and self.scan.scanMode == 0: # 0 = Parameter Scan
+                logging.getLogger(__name__).info("AWG active!")
+                (setScanParam, scanParam) = AWGdevice.scanParam() 
+                # don't scan over scanParam if not a duration scan. instead override scanParam if necessary and program the AWG
+                if not (self.scan.scanMode == 0 and self.scan.scanTarget == "AWG" and self.scan.scanParameter == "Duration"):
+                    if setScanParam:
+                        override = {scanParam: AWGdevice._waveform.vars['Duration']['value']}
+                        scanParam = None
+                    AWGdevice.program(False)
+            
+            PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary(override=override) # also overwrites the current variable values
+            if self.scan.scanMode == 0:
+                self.generator = GeneratorList[self.scan.scanMode](self.scan, scanParam=scanParam)
+            else:
+                self.generator = GeneratorList[self.scan.scanMode](self.scan)
+            
             (mycode, data) = self.generator.prepare(self.pulseProgramUi, self.scanMethod.maxUpdatesToWrite )
+            if self.pulseProgramUi.currentContext.writeRam:
+                data = self.pulseProgramUi.ramData #Overwrites anything set above by the gate sequence ui
             if data:
                 logging.getLogger(__name__).info("Writing {0} bytes to RAM ({1}%)".format(len(data)*8, 100*len(data)/(2**24) ))
                 self.pulserHardware.ppWriteRamWordList(data,0, check=True)
@@ -445,6 +470,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.evaluation.enableTimestamps: 
             self.showTimestamps(data)
         self.scanMethod.prepareNextPoint(data)
+        names = [self.evaluation.ev.name for self.evaluation.ev in self.evaluation.evalList]
+        results = [(x,res[0]) for res in evaluated]
+        self.evaluatedDataSignal.emit(dict(zip(names, results)))
         
     def updateMainGraph(self, x, evaluated, timeinterval, timeTickOffset, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
@@ -528,6 +556,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.scan.histogramSave:
                 self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
             self.dataFinalized = reason
+            allData = {self.p.name:(self.p.x, self.p.y) for self.p in self.plottedTraceList}
+            self.allDataSignal.emit(allData)
         
     def dataAnalysis(self):
         return self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )
@@ -624,16 +654,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onAddPlot(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Plot Name', 'Please enter a plot name: ')
         if ok:
-            name = str(name)
-            dock = Dock(name)
-            widget = CoordinatePlotWidget(self)
-            view = widget._graphicsView
-            self.area.addDock(dock, "bottom")
-            dock.addWidget(widget)
-            self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
-            self.evaluationControlWidget.plotnames.append(name)
-            self.saveConfig() #In case the program suddenly shuts down
-            self.plotsChanged.emit()
+            self.addPlot(name)
+            
+    def addPlot(self, name):
+        name = str(name)
+        dock = Dock(name)
+        widget = CoordinatePlotWidget(self)
+        view = widget._graphicsView
+        self.area.addDock(dock, "bottom")
+        dock.addWidget(widget)
+        self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
+        self.evaluationControlWidget.plotnames.append(name)
+        self.saveConfig() #In case the program suddenly shuts down
+        self.plotsChanged.emit()
+        
             
     def onRemovePlot(self):
         logger = logging.getLogger(__name__)

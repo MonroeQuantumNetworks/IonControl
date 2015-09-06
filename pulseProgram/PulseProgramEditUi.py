@@ -5,7 +5,7 @@
 # Created: Fri Feb 20 20:17:34 2015
 #      by: PyQt4 UI code generator 4.11.3
 #
-# WARNING! All changes made in this file will be lost!
+# WARNING! All changes made in this file will be lost if the file is regenerated!
 
 from PyQt4 import QtCore, QtGui
 from QPPPEditor import QPPPEditor
@@ -25,12 +25,12 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 class Ui_Form(object):
-    def setupUi(self, Form):
+    def setupUi(self, Form, extraKeywords1=[], extraKeywords2=[]):
         Form.setObjectName(_fromUtf8("Form"))
         Form.resize(605, 423)
         self.verticalLayout = QtGui.QVBoxLayout(Form)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.textEdit = QPPPEditor(Form)
+        self.textEdit = QPPPEditor(Form, extraKeywords1=extraKeywords1, extraKeywords2=extraKeywords2)
         self.textEdit.setToolTip(_fromUtf8(""))
         self.textEdit.setWhatsThis(_fromUtf8(""))
         self.textEdit.setObjectName(_fromUtf8("textEdit"))
@@ -114,9 +114,13 @@ class Ui_Form(object):
         self.verticalLayout.addWidget(self.findWidgetFrame)
         self.actionFind = QtGui.QAction(Form)
         self.actionFind.setObjectName(_fromUtf8("actionFind"))
+        self.actionFindNext = QtGui.QAction(Form)
+        self.actionFindNext.setObjectName(_fromUtf8("actionFindNext"))
+
 
         self.retranslateUi(Form)
         QtCore.QObject.connect(self.actionFind, QtCore.SIGNAL(_fromUtf8("triggered()")), self.findWidgetFrame.show)
+        QtCore.QObject.connect(self.actionFindNext, QtCore.SIGNAL(_fromUtf8("triggered()")), self.findNextButton.click)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
@@ -131,5 +135,8 @@ class Ui_Form(object):
         self.findWholeWordsCheckBox.setText(_translate("Form", "Whole words", None))
         self.actionFind.setText(_translate("Form", "find", None))
         self.actionFind.setShortcut(_translate("Form", "Ctrl+F", None))
+        self.actionFindNext.setText(_translate("Form", "findNext", None))
+        self.actionFindNext.setShortcut(_translate("Form", "Ctrl+G", None))
+
 
 import Experiment_rc #@UnusedImport

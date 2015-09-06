@@ -34,7 +34,6 @@ from pulser.ChannelNameDict import ChannelNameDict
 from persist import configshelve
 from pulseProgram import PulseProgramUi
 from pulser import ShutterUi
-from gui import testExperiment
 from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
 from modules.SequenceDict import SequenceDict
@@ -53,6 +52,8 @@ from mylogging.LoggingSetup import qtWarningButtonHandler
 from pulser.PulserParameterUi import PulserParameterUi
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify
+from AWG.AWGUi import AWGUi
+from scripting.ScriptingUi import ScriptingUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -140,7 +141,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.channelNameData = (self.shutterNameDict, self.shutterNameSignal, self.triggerNameDict, self.triggerNameSignal, self.counterNameDict )
         self.pulseProgramDialog = PulseProgramUi.PulseProgramSetUi(self.config,  self.channelNameData )
         self.pulseProgramDialog.setupUi(self.pulseProgramDialog)
-        
+
         # Global Variables
         self.globalVariablesUi = GlobalVariables.GlobalVariableUi(self.config)
         self.globalVariablesUi.setupUi(self.globalVariablesUi)
@@ -157,8 +158,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         #self.addDockWidget( QtCore.Qt.BottomDockWidgetArea, self.measurementLogDock )
         
         for widget,name in [ (ScanExperiment.ScanExperiment(self.settings,self.pulser,self.globalVariablesUi,"ScanExperiment", toolBar=self.experimentToolBar, 
-                                                            measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan"),
-                             (testExperiment.test(self.globalVariablesUi, measurementLog=self.measurementLog),"test"),
+                                                            measurementLog=self.measurementLog, callWhenDoneAdjusting=self.callWhenDoneAdjusting), "Scan")
                              ]:
             widget.setupUi( widget, self.config )
             if hasattr(widget,'setPulseProgramUi'):
@@ -190,6 +190,17 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setWidget(self.preferencesUi)
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
+        
+        self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.variables)
+        self.AWGUi.setupUi(self.AWGUi)
+        self.AWGUiDock = QtGui.QDockWidget("AWG")
+        self.AWGUiDock.setWidget(self.AWGUi)
+        self.AWGUiDock.setObjectName("_AWGUi")
+        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
+           
+        self.AWGUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )               
+        self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.outputChannels() )
+        self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
 
         self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.variables)
         self.pulserParameterUi.setupUi()
@@ -237,6 +248,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 #        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
+        self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -301,6 +313,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionReload.triggered.connect(self.onReload)
         self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionVoltageControl.triggered.connect(self.onVoltageControl)
+        self.actionScripting.triggered.connect(self.onScripting)
         self.actionMeasurementLog.triggered.connect(self.onMeasurementLog)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
@@ -313,10 +326,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
-        #if 'MainWindow.pos' in self.config:
-        #    self.move(self.config['MainWindow.pos'])
+        if 'MainWindow.pos' in self.config:
+            self.move(self.config['MainWindow.pos'])
         if 'MainWindow.size' in self.config:
             self.resize(self.config['MainWindow.size'])
+        if 'MainWindow.isMaximized' in self.config:
+            if self.config['MainWindow.isMaximized']:
+                self.showMaximized()
             
         self.dedicatedCountersWindow = DedicatedCounters(self.config, self.dbConnection, self.pulser, self.globalVariablesUi, self.ExternalParametersUi.callWhenDoneAdjusting )
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
@@ -328,14 +344,17 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
             self.voltageControlWindow.setupUi(self.voltageControlWindow)
             self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage') )               
-            self.voltageControlWindow.localAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage Local Adjust') )               
+            #self.voltageControlWindow.localAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage Local Adjust') )               
             self.scanExperiment.updateScanTarget( 'Voltage', self.voltageControlWindow.globalAdjustUi.outputChannels() )
-            self.scanExperiment.updateScanTarget( 'Voltage Local Adjust', self.voltageControlWindow.localAdjustUi.outputChannels() )
+            #self.scanExperiment.updateScanTarget( 'Voltage Local Adjust', self.voltageControlWindow.localAdjustUi.outputChannels() )
         except MyException.MissingFile as e:
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )
             logger.warning("Voltage subsystem disabled: {0}".format(str(e)))
-            
+        except Exception as e:
+            self.voltageControlWindow = None
+            self.actionVoltageControl.setEnabled( False )
+            logging.getLogger(__name__).exception(e)  
         self.setWindowTitle("Experimental Control ({0})".format(project) )
         self.tabDict["Scan"].ppStartSignal.connect( self.voltageControlWindow.synchronize )   # upload shuttling data before running pule program
         
@@ -356,6 +375,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         for widget in self.tabDict.values():
             if hasattr(widget, 'addPushDestination'):
                 widget.addPushDestination( 'External', self.ExternalParametersUi )
+                
+        # initialize ScriptingUi
+        self.scriptingWindow = ScriptingUi(self)
+        self.scriptingWindow.setupUi(self.scriptingWindow)
 
     def callWhenDoneAdjusting(self, callback):
         self.ExternalParametersUi.callWhenDoneAdjusting(callback)
@@ -393,6 +416,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.show()
         self.voltageControlWindow.setWindowState(QtCore.Qt.WindowActive)
         self.voltageControlWindow.raise_()
+
+    def onScripting(self):
+        self.scriptingWindow.show()
+        self.scriptingWindow.setWindowState(QtCore.Qt.WindowActive)
+        self.scriptingWindow.raise_()
         
     def onMeasurementLog(self):
         self.measurementLog.show()
@@ -537,10 +565,13 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.voltageControlWindow.close()
         self.dedicatedCountersWindow.close()
         self.pulseProgramDialog.onClose()
+        self.scriptingWindow.onClose()
         self.logicAnalyzerWindow.close()
         self.measurementLog.close()
         if self.instrumentLogger:
             self.instrumentLogger.shutdown()
+        for tempArea in self.scanExperiment.area.tempAreas:
+            tempArea.win.close()
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
@@ -549,12 +580,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
         self.config['MainWindow.pos'] = self.pos()
         self.config['MainWindow.size'] = self.size()
+        self.config['MainWindow.isMaximized'] = self.isMaximized()
         self.config['Settings.loggingLevel'] = self.loggingLevel
         self.config['Settings.consoleMaximumLinesNew'] = self.consoleMaximumLines
         self.config['Settings.ShutterNameDict'] = self.shutterNameDict 
         self.config['SettingsTriggerNameDict'] = self.triggerNameDict 
         self.config['Settings.consoleEnable'] = self.consoleEnable 
         self.pulseProgramDialog.saveConfig()
+        self.scriptingWindow.saveConfig()
         self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
         self.DACUi.saveConfig()
@@ -574,6 +607,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.valueHistoryUi.saveConfig()
         self.ExternalParametersUi.saveConfig()
         self.pulserParameterUi.saveConfig()
+        self.AWGUi.saveConfig()
         
     def onProjectSelection(self):
         ProjectSelectionUi.GetProjectSelection()
@@ -605,7 +639,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
 if __name__ == "__main__":
     import sys
-    from voltageControl.VoltageControl import VoltageControl
+    try:
+        from voltageControl.VoltageControl import VoltageControl
+    except Exception as e:
+        logging.getLogger(__name__).exception(e)  
 
     #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
     import ctypes

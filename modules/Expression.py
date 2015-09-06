@@ -52,27 +52,36 @@ def myround( value ):
         return value.round()
     return round(value)
 
+def nounitgen( fun ):
+    def retfun(x):
+        if(x.dimensionless()):
+            return fun(x)
+        else:
+            raise magnitude.MagnitudeError("Must be dimensionless!")
+    return retfun
+
 epsilon = 1e-12
 opn = { "+" : operator.add,
         "-" : operator.sub,
         "*" : operator.mul,
         "/" : operator.div,
         "^" : operator.pow }
-fn  = { "sin" : math.sin,
-        "cos" : math.cos,
-        "tan" : math.tan,
-        "log" : math.log,
-        "acos" : math.acos,
-        "asin" : math.asin,
-        "atan" : math.atan,
-        "degrees" : math.degrees,
-        "radians" : math.radians,
-        "erf" : math.erf,
-        "erfc" : math.erfc,
+fn  = { "sin" : nounitgen(math.sin),
+        "cos" : nounitgen(math.cos),
+        "tan" : nounitgen(math.tan),
+        "log" : nounitgen(math.log),
+        "acos" : nounitgen(math.acos),
+        "asin" : nounitgen(math.asin),
+        "atan" : nounitgen(math.atan),
+        "degrees" : nounitgen(math.degrees),
+        "radians" : nounitgen(math.radians),
+        "erf" : nounitgen(math.erf),
+        "erfc" : nounitgen(math.erfc),
         "abs" : abs,
         "exp" : math.exp,
         "trunc" : lambda a: int(a),
         "round" : myround,
+        "sign": lambda a: abs(a)>epsilon and cmp(a,0) or 0,
         "sgn" : lambda a: abs(a)>epsilon and cmp(a,0) or 0,
         "sqrt" : sqrt }
 
@@ -120,6 +129,30 @@ class Expression:
             self.exprStack.append( 'unary -' )
             #~ exprStack.append( '-1' )
             #~ exprStack.append( '*' )
+            
+    def findDependencies(self, s):
+        def helper(s, deps):
+            op = s.pop()
+            if op == 'unary -':
+                helper(s, deps)
+            if op in "+-*/^":
+                helper(s, deps)
+                helper(s, deps)
+            elif op == "PI" or op=='pi':
+                pass
+            elif op == "E" or op=="e":
+                pass
+            elif op in fn:
+                helper(s, deps)
+            elif op[0].isalpha():
+                deps.add(op)
+            elif op[0:2]=="0x":
+                pass
+            else:
+                pass
+        deps = set()
+        helper(s[:], deps)
+        return deps
 
     # map operator symbols to corresponding arithmetic operations
     def evaluateStack(self, s, dependencies, useFloat=True ):
@@ -156,6 +189,35 @@ class Expression:
             value = m.val
         else:
             value = m
+        return value
+    
+        # map operator symbols to corresponding arithmetic operations
+    def evaluateStackDepless(self, s, useFloat=True ):
+        op = s.pop()
+        if op == 'unary -':
+            return -self.evaluateStackDepless( s, useFloat )
+        if op in "+-*/^":
+            op2 = self.evaluateStackDepless( s, useFloat )
+            op1 = self.evaluateStackDepless( s, useFloat )
+            return opn[op]( op1, op2 )
+        elif op == "PI" or op=='pi':
+            return math.pi # 3.1415926535
+        elif op == "E" or op=="e":
+            return math.e  # 2.718281828
+        elif op in fn:
+            return fn[op]( self.evaluateStackDepless( s, useFloat ) )
+        elif op in self.variabledict:
+            return self.variabledict[op]
+        elif op[0].isalpha():
+            raise KeyError("operand '{0}' not found in dictionary.".format(op))
+        elif op[0:2]=="0x":
+            return int(op,0)
+        else:
+            return self._evaluate_literal(op, useFloat)
+        return 0
+    
+    def evaluateWithStack(self, stack, useFloat=True):
+        value = self.evaluateStackDepless( stack[:], useFloat )
         return value
                     
     @lru_cache(maxsize=100)

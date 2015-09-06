@@ -93,6 +93,7 @@ class AnalysisControlParameters(object):
 class AnalysisControl(ControlForm, ControlBase ):
     analysisConfigurationChanged = QtCore.pyqtSignal( object )
     currentAnalysisChanged = QtCore.pyqtSignal( object )
+    analysisResultSignal = QtCore.pyqtSignal( object )
     def __init__(self, config, globalDict, parentname, evaluationNames, parent=None):
         ControlForm.__init__(self)
         ControlBase.__init__(self,parent)
@@ -104,13 +105,13 @@ class AnalysisControl(ControlForm, ControlBase ):
         try:
             self.analysisDefinitionDict = self.config.get(self.configname+'.dict',dict())
         except TypeError:
-            logging.getLogger(__name__).info( "Unable to read scan control settings dictionary. Setting to empty dictionary." )
+            logging.getLogger(__name__).info( "Unable to read analysis control settings dictionary. Setting to empty dictionary." )
             self.analysisDefinitionDict = dict()
         self.analysisDefinitionDict.setdefault('', list() )  # add empty analysis
         try:
             self.analysisDefinition = self.config.get(self.configname,list())
         except Exception:
-            logging.getLogger(__name__).info( "Unable to read scan control settings. Setting to new scan." )
+            logging.getLogger(__name__).info( "Unable to read analysis control settings. Setting to new analysis." )
             self.analysisDefinition = list()
         self.pushDestinations = dict()
         self.currentAnalysisName =  self.config.get(self.configname+'.settingsName',None)
@@ -441,6 +442,9 @@ class AnalysisControl(ControlForm, ControlBase ):
                 replacements = fitfunction.replacementDict()
                 replacements.update( self.globalDict )
                 evaluation.updatePushVariables( replacements )
+        names = evaluation.fitfunction.fitfunction().parameterNames
+        vals = evaluation.fitfunction.fitfunction().parameters
+        return dict(zip(names, vals)) #Return a dictionary of fit parameters and fitted values
 
     def onSmartToStart(self):
         if self.fitfunction:
@@ -463,8 +467,10 @@ class AnalysisControl(ControlForm, ControlBase ):
         self.fitAll()
         
     def fitAll(self):
+        allResults = dict()
         for evaluation in self.analysisDefinition:
-            self.fit(evaluation)
+            allResults[evaluation.name] = self.fit(evaluation)
+        self.analysisResultSignal.emit(allResults)
     
     def onLoadFitFunction(self, name=None):
         name = str(name) if name is not None else self.currentAnalysisName

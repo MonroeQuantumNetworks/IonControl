@@ -62,6 +62,7 @@
    <addaction name="actionLogic"/>
    <addaction name="actionLogging"/>
    <addaction name="actionMeasurementLog"/>
+   <addaction name="actionScripting"/>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -83,11 +84,6 @@
      <addaction name="actionImport_from_XML_add"/>
      <addaction name="actionImport_from_XML_replace"/>
      <addaction name="actionImport_from_XML_update"/>
-    </widget>
-    <widget class="QMenu" name="menu">
-     <property name="title">
-      <string/>
-     </property>
     </widget>
     <addaction name="actionSettings"/>
     <addaction name="actionExit"/>
@@ -125,6 +121,7 @@
     <addaction name="actionDedicatedCounters"/>
     <addaction name="actionPulses"/>
     <addaction name="actionMeasurementLog"/>
+    <addaction name="actionScripting"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuOperation"/>
@@ -510,6 +507,18 @@
    </property>
    <property name="toolTip">
     <string>Import XML</string>
+   </property>
+  </action>
+  <action name="actionScripting">
+   <property name="icon">
+    <iconset resource="Experiment.qrc">
+     <normaloff>:/other/icons/Terminal-icon.png</normaloff>:/other/icons/Terminal-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Scripting</string>
+   </property>
+   <property name="toolTip">
+    <string>Scripting</string>
    </property>
   </action>
  </widget>

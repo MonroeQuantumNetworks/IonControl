@@ -50,6 +50,7 @@ xmlschema = etree.XMLSchema( etree.fromstring("""<?xml version="1.0"?>
         <xs:attribute type="xs:string" name="name" use="required"/>
         <xs:attribute type="xs:string" name="encoding" use="required"/>
         <xs:attribute type="xs:string" name="enabled" use="required"/>
+        <xs:attribute type="xs:string" name="categories" use="optional"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
@@ -136,11 +137,14 @@ def endParameter(parent, elem):
     p.name = a.get('name')
     p.encoding = a.get('encoding')
     p.enabled = stringToBool(a.get('enabled'))
+    p.categories = a.get('categories')
+    if p.categories:
+        p.categories = [x.strip() for x in p.categories.split(',')]
     parent.append(p)
 
 def endDescription(parent, elem):
     parent.description = elem.text
-    
+
 def endStatusbit(parent, elem):
     a = elem.attrib
     parent.append( (a.get('name'), int(a.get('bitNo'),0), a.get('active')))
@@ -188,8 +192,9 @@ def getPulserConfiguration( filename ):
             endhandler.get( elem.tag, lambda parent, elem: parent)(parent, elem)
             parent = stack.pop()
     return parent
-            
+
     
 
 if __name__ == "__main__":
-    print getPulserConfiguration('../config/PulserConfig.xml')
+    res = getPulserConfiguration('../config/PulserConfig.xml')
+    print res

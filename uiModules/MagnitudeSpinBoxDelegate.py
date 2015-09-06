@@ -8,23 +8,13 @@ from modules.MagnitudeParser import isValueExpression
 
 
 class MagnitudeSpinBoxDelegate(QtGui.QItemDelegate):
-  
-    """
-    This class is responsible for the combo box editor in the trace table,
-    which is used to select which pen to use in drawing the trace on the plot.
-    The pen icons are in the array penicons, which is determined when the delegate
-    is constructed.
-    """    
-    
+
     def __init__(self, globalDict=None, emptyStringValue=0):
-        """Construct the TraceComboDelegate object, and set the penicons array."""
         QtGui.QItemDelegate.__init__(self)
         self.globalDict = globalDict if globalDict is not None else dict()
         self.emptyStringValue = emptyStringValue
         
     def createEditor(self, parent, option, index ):
-        """Create the combo box editor used to select which pen icon to use.
-           The for loop adds each pen icon into the combo box."""
         if hasattr( index.model(), 'localReplacementDict' ):
             localDict = dict( self.globalDict )
             localDict.update( index.model().localReplacementDict() )

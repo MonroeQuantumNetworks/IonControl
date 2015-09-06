@@ -22,6 +22,7 @@ from uiModules.RotatedHeaderView import RotatedHeaderView
 from modules.enum import enum
 from pppCompiler.pppCompiler import pppCompiler
 from pppCompiler.CompileException import CompileException
+from pppCompiler.Symbol import SymbolTable
 from modules.PyqtUtility import BlockSignals
 from pyparsing import ParseException
 import copy
@@ -33,7 +34,8 @@ from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 from modules import DataDirectory
-from PulseProgram import Variable
+from PulseProgram import Variable, OPS
+import modules.magnitude as magnitude
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -62,11 +64,17 @@ class PulseProgramContext:
         self.counters = CounterDictionary()
         self.pulseProgramFile = None
         self.pulseProgramMode = 'pp'
-        
+        self.ramFile = None
+        self.ramData = []
+        self.writeRam = False
+
     def __setstate__(self, state):
         self.__dict__ = state
+        self.ramFile = None
+        self.ramData = []
+        self.writeRam = False
         
-    stateFields = ['parameters', 'shutters', 'triggers', 'counters', 'pulseProgramFile', 'pulseProgramMode'] 
+    stateFields = ['parameters', 'shutters', 'triggers', 'counters', 'pulseProgramFile', 'pulseProgramMode', 'ramFile', 'ramData', 'writeRam']
         
     def __eq__(self,other):
         return tuple(getattr(self,field) for field in self.stateFields)==tuple(getattr(other,field) for field in self.stateFields)
@@ -114,24 +122,30 @@ class PulseProgramContext:
         for e in myElement.findall("Shutter"):
             c.shutters[e.attrib['name']] = tuple((Variable.fromXMLElement(e) for e in myElement.findall("PPShutter") ))
         return (myElement.attrib['name'], c)
-            
-        
-        
-        
+
+
 class ConfiguredParams:
     def __init__(self):
         self.recentFiles = dict()
+        self.recentRamFiles = dict()
         self.lastContextName = None
         self.autoSaveContext = False
         
     def __setstate__(self,d):
         self.recentFiles = d['recentFiles']
+        self.recentRamFiles = dict()
         self.lastContextName = d.get('lastContextName', None )
         self.autoSaveContext = d.get('autoSaveContext', False)
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 
     contextDictChanged = QtCore.pyqtSignal(object)
+    definitionWords = ['counter', 'var', 'shutter', 'parameter', 'masked_shutter', 'trigger', 'address', 'exitcode', 'const']
+    builtinWords = []
+    for key, val in SymbolTable().iteritems(): #Extract the builtin words which should be highlighted
+        if type(val).__name__ == 'Builtin':
+            builtinWords.append(key)
+
     SourceMode = enum('pp','ppp') 
     def __init__(self, config, parameterdict, channelNameData):
         PulseProgramWidget.__init__(self)
@@ -160,6 +174,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         
         self.filenameComboBox.addItems( [key for key, path in self.configParams.recentFiles.iteritems() if os.path.exists(path)] )
         self.contextComboBox.addItems( sorted(self.contextDict.keys()) )
+        self.ramFilenameComboBox.addItems( [key for key, path in self.configParams.recentRamFiles.iteritems() if os.path.exists(path)] )
+        self.writeRamCheckbox.setChecked(self.currentContext.writeRam)
 
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
@@ -167,6 +183,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.loadButton.setDefaultAction( self.actionOpen )
         self.saveButton.setDefaultAction( self.actionSave )
         self.resetButton.setDefaultAction( self.actionReset )
+        self.loadButtonRam.clicked.connect( self.onLoadRamFile )
+        self.writeRamCheckbox.clicked.connect( self.onWriteRamCheckbox )
         self.shutterTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal, self.shutterTableView) )
         self.triggerTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal,self.triggerTableView ) )
         self.counterTableView.setHorizontalHeader( RotatedHeaderView(QtCore.Qt.Horizontal,self.counterTableView ) )
@@ -180,7 +198,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.configname+".splitterVertical" in self.config:
             self.splitterVertical.restoreState(self.config[self.configname+".splitterVertical"])
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
+        self.ramFilenameComboBox.currentIndexChanged[str].connect( self.onRamFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
+        self.removeCurrentRamFile.clicked.connect( self.onRemoveCurrentRamFile )
         
         self.variableTableModel = VariableTableModel( self.currentContext.parameters, self.config, self.currentContextName )
         if self.parameterChangedSignal:
@@ -320,7 +340,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.currentContext.pulseProgramMode == 'ppp':
             for name, text in [(self.pppSourceFile,self.pppSource)]:
                 textEdit = PulseProgramSourceEdit(mode='ppp')
-                textEdit.setupUi(textEdit)
+                textEdit.setupUi(textEdit, extraKeywords1=self.definitionWords, extraKeywords2=self.builtinWords)
                 textEdit.setPlainText(text)
                 self.pppCodeEdits[name] = textEdit
                 self.sourceTabs.addTab( textEdit, name )
@@ -331,7 +351,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.sourceCodeEdits = dict()
         for name, text in self.pulseProgram.source.iteritems():
             textEdit = PulseProgramSourceEdit()
-            textEdit.setupUi(textEdit)
+            textEdit.setupUi(textEdit, extraKeywords1=self.definitionWords, extraKeywords2=[key for key in OPS])
             textEdit.setPlainText(text)
             self.sourceCodeEdits[name] = textEdit
             self.sourceTabs.addTab( textEdit, name )
@@ -363,16 +383,62 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
                 with BlockSignals(self.filenameComboBox) as w:
                     w.setCurrentIndex( self.filenameComboBox.findText( name ))
         self.updateSaveStatus()
+
+    def onRamFilenameChange(self, name ):
+        name = str(name)
+        if name in self.configParams.recentRamFiles and self.configParams.recentRamFiles[name]!=self.currentContext.ramFile:
+            self.loadRamFile(self.configParams.recentRamFiles[name])
+            if str(self.ramFilenameComboBox.currentText())!=name:
+                with BlockSignals(self.ramFilenameComboBox) as w:
+                    w.setCurrentIndex( self.ramFilenameComboBox.findText( name ))
+        self.updateSaveStatus()
         
     def onOk(self):
         pass
     
+    def onLoadRamFile(self):
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file',ProjectSelection.configDir()))
+        if path != "":
+            self.loadRamFile(path)
+
+    def loadRamFile(self, path):
+        try:
+            self.ramData = []
+            tree = ElementTree.parse(path)
+            root = tree.getroot()
+            for child in root:
+                val = magnitude.mg( float(child.attrib['value']), child.attrib['unit'] )
+                encoding = child.attrib['encoding']
+                data = self.pulseProgram.convertParameter(val, encoding)
+                self.ramData.append(data)
+            self.currentContext.ramFile = path
+            filename = os.path.basename(path)
+            if filename not in self.configParams.recentRamFiles:
+                self.ramFilenameComboBox.addItem(filename)
+            self.configParams.recentRamFiles[filename]=path
+            with BlockSignals(self.ramFilenameComboBox) as w:
+                w.setCurrentIndex( self.ramFilenameComboBox.findText(filename))
+            self.updateSaveStatus()
+
+        except Exception as e:
+            self.ramData = []
+            logging.getLogger("__name__").exception("Unable to read in ram file {0}: {1}".format(path, e))
+
+    def onWriteRamCheckbox(self):
+        self.currentContext.writeRam = self.writeRamCheckbox.isChecked()
+
+    def onRemoveCurrentRamFile(self):
+        text = str(self.ramFilenameComboBox.currentText())
+        if text in self.configParams.recentRamFiles:
+            self.configParams.recentRamFiles.pop(text)
+        self.ramFilenameComboBox.removeItem(self.ramFilenameComboBox.currentIndex())
+
     def onLoad(self):
         path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
         if path!="":
             self.adaptiveLoadFile(path)
         self.updateSaveStatus()
-           
+        
     def adaptiveLoadFile(self, path):
         if path:
             _, ext = os.path.splitext(path)
@@ -511,11 +577,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname+'.currentContext'] = self.currentContext
         self.variableTableModel.saveConfig()
        
-    def getPulseProgramBinary(self,parameters=dict()):
+    def getPulseProgramBinary(self,parameters=dict(),override=dict()):
         # need to update variables self.pulseProgram.updateVariables( self.)
         substitutes = dict( self.currentContext.parameters.valueView.iteritems() )
         for model in [self.shutterTableModel, self.triggerTableModel, self.counterTableModel]:
             substitutes.update( model.getVariables() )
+        substitutes.update(override)
         self.pulseProgram.updateVariables(substitutes)
         return self.pulseProgram.toBinary()
     

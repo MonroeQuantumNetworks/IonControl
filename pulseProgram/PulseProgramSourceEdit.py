@@ -9,8 +9,6 @@ import functools
 
 from PyQt4 import QtCore, QtGui
 
-from pulseProgram.PPSyntaxHighlighter import PPHighlighter
-from pppCompiler.PPPSyntaxHighlighter import PPPHighlighter
 from PulseProgramEditUi import Ui_Form as Form
 from _functools import partial
 Base = QtGui.QWidget
@@ -24,7 +22,7 @@ class PulseProgramSourceEdit(Form, Base):
         self.selections = list()
         self.findWordOnly = False
         self.findCaseSensitive = False
-        self.findText = None
+        self.findText = ''
         self.errorFormat = QtGui.QTextCharFormat()
         self.errorFormat.setBackground(QtCore.Qt.red)
         self.defaultFormat = QtGui.QTextCharFormat()
@@ -33,18 +31,19 @@ class PulseProgramSourceEdit(Form, Base):
         self.cursorStack = list()
         self.mode = mode
         
-    def setupUi(self,parent):
-        Form.setupUi(self,parent)
+    def setupUi(self,parent,extraKeywords1=[], extraKeywords2=[]):
+        Form.setupUi(self,parent,extraKeywords1=extraKeywords1,extraKeywords2=extraKeywords2)
         self.findLineEdit.textChanged.connect( self.onFindTextChanged )
         self.findCloseButton.clicked.connect( self.onFindClose )
         self.findMatchCaseCheckBox.stateChanged.connect( partial( self.onFindFlagsChanged, 'findCaseSensitive') )
         self.findWholeWordsCheckBox.stateChanged.connect( partial(self.onFindFlagsChanged, 'findWordOnly') )
         self.findNextButton.clicked.connect( self.onFind )
         self.findPreviousButton.clicked.connect( functools.partial(self.onFind , True))
-        self.highlighter = PPHighlighter( self.textEdit, "Classic" ) if self.mode=='pp' else PPPHighlighter( self.textEdit, "Classic" ) 
         self.errorDisplay.hide()
+        self.findWidgetFrame.hide()
         self.closeErrorButton.clicked.connect( self.clearHighlightError )
-        
+        self.addAction(self.actionFind)
+        self.addAction(self.actionFindNext)
         
     def setReadOnly(self, enabled):
         self.textEdit.setReadOnly(enabled)
@@ -54,7 +53,6 @@ class PulseProgramSourceEdit(Form, Base):
         
     def onFindClose(self):
         self.findWidgetFrame.hide()
-        self.textEdit.setExtraSelections([])
 
     def setPlainText(self, text):
         self.textEdit.setPlainText(text)
