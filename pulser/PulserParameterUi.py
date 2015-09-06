@@ -47,7 +47,6 @@ class PulserParameter(ExpressionValue):
 
 class PulserParameterTreeModel(CategoryTreeModel):
     expression = Expression()
-    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
     def __init__(self, parameterList, parent=None):
         super(PulserParameterTreeModel, self).__init__(parameterList, parent)
         self.headerLookup.update({
@@ -57,9 +56,7 @@ class PulserParameterTreeModel(CategoryTreeModel):
         self.dataLookup.update({
             ('data', QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
             ('data', QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
-            ('data', QtCore.Qt.EditRole, 1): lambda node: node.content.string,
-            ('data', QtCore.Qt.BackgroundRole, 1): lambda node: self.backgroundLookup[node.content.hasDependency],
-            ('data', QtCore.Qt.ToolTipRole, 1): lambda node: node.content.string if node.content.hasDependency else None
+            ('data', QtCore.Qt.EditRole, 1): lambda node: node.content.string
             })
         self.setDataLookup.update({
             ('data', QtCore.Qt.EditRole, 1): lambda node, value: self.setValue(node, value),
