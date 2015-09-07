@@ -9,7 +9,7 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from uiModules.CategoryTree import CategoryTreeModel
+from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
 from modules.GuiAppearance import restoreGuiState, saveGuiState
@@ -54,17 +54,17 @@ class PulserParameterTreeModel(CategoryTreeModel):
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Value'
             })
         self.dataLookup.update({
-            ('data', QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
-            ('data', QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
-            ('data', QtCore.Qt.EditRole, 1): lambda node: node.content.string
+            (nodeTypes.data, QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
+            (nodeTypes.data, QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
+            (nodeTypes.data, QtCore.Qt.EditRole, 1): lambda node: node.content.string
             })
         self.setDataLookup.update({
-            ('data', QtCore.Qt.EditRole, 1): lambda node, value: self.setValue(node, value),
-            ('data', QtCore.Qt.UserRole, 1): lambda node, value: self.setStrValue(node, value)
+            (nodeTypes.data, QtCore.Qt.EditRole, 1): lambda node, value: self.setValue(node, value),
+            (nodeTypes.data, QtCore.Qt.UserRole, 1): lambda node, value: self.setStrValue(node, value)
             })
         self.flagsLookup.update({
-            ('data', 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
-            ('data', 1): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
+            (nodeTypes.data, 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
+            (nodeTypes.data, 1): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
             })
         self.numColumns = 2
 
@@ -84,6 +84,7 @@ class PulserParameterUi(UiForm,UiBase):
         self.isSetup = False
         self.globalDict = firstNotNone( globalDict, dict() )
         self.config = config
+        self.configName = 'PulserParameterUi'
         self.pulser = pulser
         oldValues = self.config.get( 'PulserParameterValues', dict() )
         self.parameterList = list()
@@ -101,44 +102,23 @@ class PulserParameterUi(UiForm,UiBase):
     def setupUi(self):
         UiForm.setupUi(self, self)
         self.model = PulserParameterTreeModel(self.parameterList)
-        self.treeView.setModel( self.model )
+        self.categoryTreeView.setModel(self.model)
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
-        self.treeView.setItemDelegateForColumn(1,self.delegate)
-        self.restoreTreeAppearance()
-        restoreGuiState( self, self.config.get('PulserParameterUi.guiState'))
+        self.categoryTreeView.setItemDelegateForColumn(1,self.delegate)
+        restoreGuiState( self, self.config.get(self.configName+'.guiState'))
+        try:
+            self.categoryTreeView.restoreTreeState( self.config.get(self.configName+'.treeState',(None,None)) )
+        except Exception as e:
+            logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
         self.isSetup = True
-
-    def restoreTreeAppearance(self):
-        widths = self.config.get('PulserParameterUi.columnWidths')
-        expandedNodeKeys = self.config.get('PulserParameterUi.expandedNodeKeys')
-        if widths:
-            try:
-                self.treeView.header().restoreState(widths)
-            except Exception as e:
-                logging.getLogger(__name__).error("unable to restore widths in PulserParameterUi: {0}".format(e))
-        if expandedNodeKeys:
-            try:
-                for key in expandedNodeKeys:
-                    if key in self.model.categoryNodes:
-                        node = self.model.categoryNodes[key]
-                        index = self.model.createIndex(node.row, 0, node)
-                        self.treeView.expand(index)
-            except Exception as e:
-                logging.getLogger(__name__).error("unable to restore tree expansion state in PulserParameterUi: {0}".format(e))
 
     def saveConfig(self):
         self.config['PulserParameterValues'] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
-        self.config['PulserParameterUi.guiState'] = saveGuiState(self)
-        self.config['PulserParameterUi.columnWidths'] = self.treeView.header().saveState()
-        expandedNodeKeys = []
+        self.config[self.configName+'.guiState'] = saveGuiState(self)
         try:
-            for key, node in self.model.categoryNodes.iteritems():
-                index = self.model.createIndex(node.row, 0, node)
-                if self.treeView.isExpanded(index):
-                    expandedNodeKeys.append(key)
+            self.config[self.configName+'.treeState'] = self.categoryTreeView.treeState()
         except Exception as e:
-            logging.getLogger(__name__).error("unable to save tree expansion state in PulserParameterUi: {0}".format(e))
-        self.config['PulserParameterUi.expandedNodeKeys'] = expandedNodeKeys
+            logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
 
     def onChange(self, index, event ):
         parameter = self.parameterList[index]
