@@ -15,7 +15,8 @@ class Settings:
 class SpectrumAnalyzerN9342Peak(object):
     @staticmethod
     def connectedInstruments():
-        return [name for name in visa.get_instruments_list(True) if name.find('COM')!=0 ]
+        rm = visa.ResourceManager()
+        return [name for name in rm.list_resources() if name.find('COM')!=0 ]
 
     def __init__(self, instrument=0, timeout=1, settings=None):
         self.settings = settings if settings is not None else Settings()
@@ -29,7 +30,8 @@ class SpectrumAnalyzerN9342Peak(object):
         self.settings.__dict__.setdefault('measureSeparation', mg(500,'ms'))
 
     def open(self):
-        self.conn = visa.instrument( self.instrument, timeout=self.timeout)
+        self.rm = visa.ResourceManager()
+        self.conn = self.rm.open_resource( self.instrument, timeout=self.timeout)
         self.conn.write(':CALCulate:MARKer1:CPEak ON')
        
     measureSeparation = AttributeRedirector( "settings", "measureSeparation" )
@@ -40,7 +42,7 @@ class SpectrumAnalyzerN9342Peak(object):
         
     def value(self):
         try:
-            reply = self.conn.ask(":CALCulate:MARKer1:Y?")
+            reply = self.conn.query(":CALCulate:MARKer1:Y?")
             result = float(reply)
         except Exception as e:
             logging.getLogger(__name__).error("Error reading from Spectrum Analyzer: reply: '{0}', exception: {1}".format(reply,str(e)))

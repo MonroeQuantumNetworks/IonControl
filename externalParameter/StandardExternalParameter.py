@@ -34,7 +34,8 @@ class N6700BPowerSupply(ExternalParameterBase):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
         logger.info( "trying to open '{0}'".format(instrument) )
-        self.instrument = visa.instrument(instrument) #open visa session
+        self.rm = visa.ResourceManager()
+        self.instrument = self.rm.open_resource( instrument)
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
         for channel in self._outputChannels:
@@ -53,7 +54,7 @@ class N6700BPowerSupply(ExternalParameterBase):
     def _getValue(self, channel):
         function, index, unit = self._outputLookup[channel]
         command = "{0}? (@{1})".format(function, index)
-        self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit) #set voltage
+        self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit) #set voltage
         return self.settings.value[channel]
         
     def currentValue(self, channel):
@@ -62,7 +63,7 @@ class N6700BPowerSupply(ExternalParameterBase):
     def currentExternalValue(self, channel):
         function, index, unit = self._outputLookup[channel]
         command = "MEAS:{0}? (@{1})".format(function, index)
-        value = magnitude.mg( float( self.instrument.ask(command)), unit )
+        value = magnitude.mg( float( self.instrument.query(command)), unit )
         return value 
 
     def paramDef(self):
@@ -88,7 +89,8 @@ class HP8672A(ExternalParameterBase):
         ExternalParameterBase.__init__(self,name,config)
         self.setDefaults()
         initialAmplitudeString = self.createAmplitudeString()
-        self.synthesizer = visa.instrument(instrument) #open visa session
+        self.rm = visa.ResourceManager()
+        self.synthesizer = self.rm.open_resource( instrument)
         self.synthesizer.write(initialAmplitudeString)
 
     def setDefaults(self):
@@ -167,7 +169,8 @@ class MicrowaveSynthesizerScan(ExternalParameterBase):
     _dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
-        self.synthesizer = visa.instrument(instrument) #open visa session
+        self.rm = visa.ResourceManager()
+        self.synthesizer = self.rm.open_resource( instrument)
         self.setDefaults()
     
     def setDefaults(self):
@@ -199,7 +202,8 @@ class E4422Synthesizer(ExternalParameterBase):
     _dimension = magnitude.mg(1,'MHz')
     def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
         ExternalParameterBase.__init__(self,name,config)
-        self.synthesizer = visa.instrument(instrument) #open visa session
+        self.rm = visa.ResourceManager()
+        self.synthesizer = self.rm.open_resource( instrument)
         self.setDefaults()
         self.settings.value[None] = self._getValue(None)
         self.settings.value['Power'] = self._getValue('Power')
@@ -220,11 +224,11 @@ class E4422Synthesizer(ExternalParameterBase):
         
     def _getValue(self, channel):
         if channel is None or channel=='Frequency':
-            answer = self.synthesizer.ask(":FREQ:CW?")
+            answer = self.synthesizer.query(":FREQ:CW?")
             self.settings.value[channel] = magnitude.mg( float(answer), "Hz" )
             return self.settings.value[channel]
         elif channel=='Power':
-            answer = self.synthesizer.ask(":POWER?")
+            answer = self.synthesizer.query(":POWER?")
             self.settings.value[channel] = magnitude.mg( float(answer), "" )
             return self.settings.value[channel]
         
@@ -259,8 +263,9 @@ class AgilentPowerSupply(ExternalParameterBase):
     _dimension = magnitude.mg(1,'V')
     def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
         ExternalParameterBase.__init__(self,name,config)
-        self.powersupply = visa.instrument(instrument)#open visa session
-        self.savedValue = magnitude.mg( float(self.powersupply.ask("volt?")), 'V')
+        self.rm = visa.ResourceManager()
+        self.powersupply = self.rm.open_resource( instrument)
+        self.savedValue = magnitude.mg( float(self.powersupply.query("volt?")), 'V')
         self.setDefaults()
     
     def setDefaults(self):

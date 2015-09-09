@@ -13,7 +13,8 @@ class Keithley2010Reader(object):
     modeNames = ['Voltage:DC','Voltage:AC','Current:DC','Current:AC','Resistance']
     @staticmethod
     def connectedInstruments():
-        return [name for name in visa.get_instruments_list(True) if name.find('COM')!=0 ]
+        rm = visa.ResourceManager()
+        return [name for name in rm.list_resources() if name.find('COM')!=0 ]
 
     def __init__(self, instrument=0, timeout=1, settings=None):
         self.instrument = instrument
@@ -28,7 +29,8 @@ class Keithley2010Reader(object):
         self.settings.__dict__.setdefault('mode','Voltage:DC')
 
     def open(self):
-        self.conn = visa.instrument( self.instrument, timeout=self.timeout)
+        self.rm = visa.ResourceManager()
+        self.conn = self.rm.open_resource( self.instrument, timeout=self.timeout)
         self.mode = self.mode
         self.digits = self.digits
         self.averagePoints = self.averagePoints 
@@ -67,8 +69,8 @@ class Keithley2010Reader(object):
         self.conn.close()
         
     def value(self):
-        #return float(self.conn.ask("N5H1"))
-        return float(self.conn.ask(":SENSE:DATA?"))
+        #return float(self.conn.query("N5H1"))
+        return float(self.conn.query(":SENSE:DATA?"))
     
     def paramDef(self):
         return [{'name': 'timeout', 'type': 'int', 'value': self.settings.digits, 'limits': (4,8), 'tip': "wait time for communication", 'field': 'digits'},

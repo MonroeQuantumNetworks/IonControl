@@ -5,6 +5,7 @@ Created on Apr 6, 2014
 '''
 from PyQt4 import QtCore, QtGui
 from _functools import partial
+import copy
 
 class TodoListTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal( object )
@@ -126,3 +127,12 @@ class TodoListTableModel(QtCore.QAbstractTableModel):
     def setValue(self, index, value):
         self.setData( index, value, QtCore.Qt.EditRole)
 
+    def copy_rows(self, row_list):
+        """ Copy a the rows given and append to the end of the TODO list.
+        row_list :: [Int] List of rows to copy
+        """
+        for row_index in row_list:
+            row_data = self.todolist[row_index]
+            self.addMeasurement(copy.deepcopy(row_data))
+            
+        

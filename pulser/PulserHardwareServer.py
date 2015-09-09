@@ -37,6 +37,7 @@ class Data(object):
         self._creationTime = time_time()
         self.timeTick = defaultdict(list)
         self.timeTickOffset = 0.0
+        self.timingViolations = None
         
     @property
     def creationTime(self):
@@ -185,6 +186,7 @@ class PulserHardwareServer(Process, OKBase):
             0xfffexxxxxxxxxxxx exitcode marker
             0xfffd000000000000 timestamping overflow marker
             0xfffcxxxxxxxxxxxx scan parameter, followed by scanparameter value
+            0xfffb00000000xxxx timing was not met, xxxx address of update command whose timing could not be met
             0x01ddnnxxxxxxxxxx count result from channel n id dd
             0x02ddnnxxxxxxxxxx timestamp result channel n id dd
             0x03ddnnxxxxxxxxxx timestamp gate start channel n id dd
@@ -272,7 +274,7 @@ class PulserHardwareServer(Process, OKBase):
                             self.dataQueue.put( self.dedicatedData )
                             self.dedicatedData = self.dedicatedDataClass(self.timeTickOffset)
                         if channel==33:
-                            self.dedicatedData.data[channel] = token & 0xffffffffffff + self.timestampOffset
+                            self.dedicatedData.data[channel] = (token & 0xffffffffff) + self.timestampOffset
                         else:
                             self.dedicatedData.data[channel] = token & 0xffffffffffff
                     except IndexError:
@@ -294,9 +296,13 @@ class PulserHardwareServer(Process, OKBase):
                         self.dataQueue.put( self.data )
                         self.data = Data()
                     elif token == 0xfffd000000000000:
-                        self.timestampOffset += 1<<40
+                        self.timestampOffset += (1<<40)
                     elif token & 0xffff000000000000 == 0xfffc000000000000:  # new scan parameter
                         self.state = self.analyzingState.dependentscanparameter if (token & 0x8000 == 0x8000) else self.analyzingState.scanparameter 
+                    elif token & 0xffff000000000000 == 0xfffb000000000000:
+                        if self.data.timingViolations is None:
+                            self.data.timingViolations = list()
+                        self.data.timingViolations.append( token & 0xffff )
                 else:
                     key = token >> 56 
                     #print "token", hex(token)

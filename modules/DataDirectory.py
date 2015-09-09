@@ -33,6 +33,10 @@ class DataDirectory:
         self.project = project
     
     def path(self, current=None, extradir=''):
+        """ Return a string path to data location for the given date.
+        @type current: datetime.date
+        @type extradir: str  
+        """
         if not current:
             current = datetime.date.today()
         #basedir = os.path.join(os.path.expanduser("~\\Documents\\"),self.project)

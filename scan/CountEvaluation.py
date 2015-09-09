@@ -29,7 +29,11 @@ class EvaluationBase(Observable):
         self.settings = settings if settings else dict()
         self.setDefault()
         self._parameter = Parameter.create(name='params', type='group',children=self.children())     
-        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        try:
+            self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        except TypeError:
+            # connection already exists, just ignore it
+            logging.getLogger(__name__).warning("EvaluationBase parameter connection already exists")
         self.settingsName = None
                
     def update(self, param, changes):
