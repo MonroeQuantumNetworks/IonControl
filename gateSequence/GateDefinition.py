@@ -33,6 +33,12 @@ class GateDefinition(object):
     def __init__(self):
         self.PulseDefinition = OrderedDict()
         self.Gates = dict()
+    
+    @classmethod
+    def from_file(cls, filename):
+        g = cls()
+        g.loadGateDefinition(filename)
+        return g
         
     def loadGateDefinition(self, filename):
         self.PulseDefinition = OrderedDict()

@@ -135,12 +135,13 @@ class DDSUi(DDSForm, DDSBase):
         if is_magnitude(value):
             value, unit = value.toval(returnUnit=True)
         self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
-    
+   
     def onWriteAll(self):
         for channel, settings in enumerate( self.ddsChannels ):
             self.ad9912.setFrequency(channel, settings.frequency)
             self.ad9912.setPhase(channel, settings.phase)
             self.ad9912.setAmplitude(channel, settings.amplitude)
+            self.ad9912.setSquareEnabled(channel, settings.squareEnabled)
         if self.autoApply: 
             self.onApply()
         

@@ -97,8 +97,14 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     def shuttlingNodes(self):
         return self.adjustUi.shuttlingNodes()
     
+    def synchronize(self):
+        self.adjustUi.synchronize()
+    
     def onUpdate(self, adjust, updateHardware=True ):
-        self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain), updateHardware )
+        try:
+            self.voltageBlender.applyLine( MagnitudeUtilit.value(adjust.line), MagnitudeUtilit.value(adjust.lineGain), MagnitudeUtilit.value(adjust.globalGain), updateHardware )
+        except ValueError as e:
+            logging.getLogger(__name__).warning( str(e) )
         self.adjustUi.setLine( MagnitudeUtilit.value(adjust.line) )
                      
     def onLoadGlobalAdjust(self, path):

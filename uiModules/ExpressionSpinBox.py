@@ -22,8 +22,6 @@ class ExpressionSpinBox(MagnitudeSpinBox):
             self.updateStyleSheet()
 
     def focusOutEvent(self, event):
-        self.expressionValue.string = self.text()
-        self.expressionValue.value = self.value()
         super(ExpressionSpinBox, self).focusOutEvent(event)
         if self.expressionValue:
             self.setValue( self.expressionValue.value )

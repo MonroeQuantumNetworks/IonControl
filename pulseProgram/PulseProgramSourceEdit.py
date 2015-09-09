@@ -93,7 +93,10 @@ class PulseProgramSourceEdit(Form, Base):
     def clearHighlightError(self):
         self.errorDisplay.hide()
         self.textEdit.clearError()
-                    
+        
+    def highlightTimingViolation(self, linelist ):
+        self.textEdit.highlightTimingViolation(linelist)
+                            
          
 if __name__ == "__main__":
     import sys

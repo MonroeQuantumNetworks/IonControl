@@ -15,18 +15,19 @@ import ReadGeneric
 
 class E5100B(ReadGeneric.ReadGeneric):
     def __init__(self,address):
-        self.GPIB = visa.instrument(address)
+        self.rm = visa.ResourceManager()
+        self.GPIB = self.rm.open_resource( address)
         
     def readTrace(self):
         self.t = Trace.Trace()
         self.t.addColumn('real')
         self.t.addColumn('imaginary')
         self.t.addColumn('amplitude')       
-        self.t.description["Instrument"] = self.GPIB.ask("*IDN?")
-        self.t.description["Center"] = float(self.GPIB.ask("CENT?"))
-        self.t.description["Start"] = float(self.GPIB.ask("STAR?") )
-        self.t.description["Stop"] = float(self.GPIB.ask("STOP?"))
-        self.t.rawTrace = numpy.array(self.GPIB.ask("OUTPDATA?").split(","),dtype=float)
+        self.t.description["Instrument"] = self.GPIB.query("*IDN?")
+        self.t.description["Center"] = float(self.GPIB.query("CENT?"))
+        self.t.description["Start"] = float(self.GPIB.query("STAR?") )
+        self.t.description["Stop"] = float(self.GPIB.query("STOP?"))
+        self.t.rawTrace = numpy.array(self.GPIB.query("OUTPDATA?").split(","),dtype=float)
         self.t.Trace = self.t.rawTrace.view(complex)
         self.t.description["Step"] = (self.t.description["Stop"]-self.t.description["Start"])/(self.t.Trace.size-1)
         self.t.x = numpy.arange(self.t.description["Start"],self.t.description["Stop"]+self.t.description["Step"],self.t.description["Step"])

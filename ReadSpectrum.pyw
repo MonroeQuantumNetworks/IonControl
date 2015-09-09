@@ -59,11 +59,13 @@ class ReadSpectrum( ReadSpectrumForm ):
     def findDevices(self):
         self.statusbar.showMessage("Scanning for connected Instruments...")
         self.comboBoxInstruments.clear()
-        instrumentlist = visa.get_instruments_list()
+        rm = visa.ResourceManager()
+        instrumentlist = rm.list_resources()
         for inst in instrumentlist:
             if (str.find(inst,"COM")!=0):
                 try:
-                    name = visa.instrument(inst).ask("*IDN?").split(",")
+                    rm = visa.ResourceManager()
+                    name = self.rm.open_resource( inst ).query("*IDN?").split(",")
                     self.Instruments.update( {inst : name} )
                     self.comboBoxInstruments.addItem(name[0]+" "+name[1],inst)
                 except visa.VisaIOError as err:

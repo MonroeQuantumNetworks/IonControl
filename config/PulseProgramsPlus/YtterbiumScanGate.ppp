@@ -45,6 +45,8 @@ parameter <AD9912_FRQ> RedSidebandFreq_4 = 247 MHz
 parameter<AD9912_FRQ> BlueSidebandFreq_2
 parameter<AD9912_FRQ> BlueSidebandFreq_4 
 
+parameter piTime
+parameter gateTime
 parameter RamanAOMCarrierFreq = 247 MHz
 parameter RamanCarrierShift = 0 kHz
 parameter RamanSingleDetuning = 0 MHz
@@ -121,7 +123,7 @@ parameter PresenceThresholdMulti = 6
 
 # excitcodes
 exitcode IonLostExitcode = 0xfffe000000000001
-exitcode endLabel = 0xffffffffffffffff
+exitcode endLabel = 0xfffe000000000000
 
 # Ramsey Calibration
 parameter<AD9912_PHASE> RamseyCalInitPhase

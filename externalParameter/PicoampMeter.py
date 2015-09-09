@@ -46,7 +46,8 @@ class PicoampMeter:
     def open(self, instrument):
         self.close()
         if hasVisa:
-            self.instrument = visa.instrument(instrument) #open visa session
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument) #open visa session
             self.isOpen = True
         
     def close(self):
@@ -92,7 +93,7 @@ class PicoampMeter:
     
     def read(self):
         if self.instrument:        
-            answer = self.instrument.ask("READ?")
+            answer = self.instrument.query("READ?")
             m = re.match("([-.+0-9E]+)([^,]*),([-.+0-9E]+),([-.+0-9E]+)",answer)
             if m:
                 value, unit, second, third = m.groups()  #@UnusedVariable

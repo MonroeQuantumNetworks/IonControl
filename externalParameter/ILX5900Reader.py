@@ -14,7 +14,8 @@ class Settings:
 class ILX5900Reader(object):
     @staticmethod
     def connectedInstruments():
-        return [name for name in visa.get_instruments_list(True) if name.find('COM')!=0 ]
+        rm = visa.ResourceManager()
+        return [name for name in rm.list_resources() if name.find('COM')!=0 ]
 
     def __init__(self, instrument=0, timeout=1, settings=None):
         self.instrument = instrument
@@ -22,6 +23,8 @@ class ILX5900Reader(object):
         self.settings = settings if settings is not None else Settings()
         self.timeout = mg(timeout,'s')
         self.setDefaults()
+
+    def initialize(self):
         if self.settings.Write:
             self.setPID()
             self.ILimHigh = self.settings.ILimHigh
@@ -31,6 +34,7 @@ class ILX5900Reader(object):
             self.readPID()
             self.readLimits()
             self.readSetpoint()
+
                
     def setDefaults(self):
         self.settings.__dict__.setdefault('waitTime', mg(0.1, 's') )
@@ -151,26 +155,27 @@ class ILX5900Reader(object):
         self.conn.write( "PID {0},{1},{2}".format(self.settings.P, self.settings.I, self.settings.D))
         
     def readPID(self):
-        answer = self.conn.ask("PID?")
+        answer = self.conn.query("PID?")
         self.settings.P, self.settings.I, self.settings.D = map( float, answer.split(",") )
 
     def readLimits(self):
-        self.settings.ILimHigh = mg( float(self.conn.ask(':LIMIT:ITE:HIGH?')), 'A')
-        self.settings.ILimLow = mg( float(self.conn.ask(':LIMIT:ITE:LOW?')), 'A')
+        self.settings.ILimHigh = mg( float(self.conn.query(':LIMIT:ITE:HIGH?')), 'A')
+        self.settings.ILimLow = mg( float(self.conn.query(':LIMIT:ITE:LOW?')), 'A')
 
     def readSetpoint(self):
-        self.settings.Setpoint = float(self.conn.ask(":SET:TEMP?"))
+        self.settings.Setpoint = float(self.conn.query(":SET:TEMP?"))
 
     def open(self):
-        self.conn = visa.instrument( self.instrument, timeout=self.settings.timeout.toval('s'))
-        self.readPID()
+        self.rm = visa.ResourceManager()
+        self.conn = self.rm.open_resource( self.instrument, timeout=self.settings.timeout.toval('s'))
+        self.initialize()
            
     def close(self):
         self.conn.close()
         
     def value(self):
-        #return float(self.conn.ask("N5H1"))
-        return float(self.conn.ask("Measure:Temp?"))
+        #return float(self.conn.query("N5H1"))
+        return float(self.conn.query("Measure:Temp?"))
     
     def paramDef(self):
         return [{'name': 'timeout', 'type': 'magnitude', 'value': self.settings.timeout, 'tip': "wait timeout for communication", 'field': 'timeout'},

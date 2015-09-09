@@ -512,6 +512,9 @@ class PulseProgram:
         if var.type == "exitcode":
             self._exitcodes[data & 0x0000ffffffffffff] = var
 
+    def lineOfInstruction(self, line):
+        return self.code[line][5]
+
     # code is (address, operation, data, label or variablename, currentfile)
     def toBytecode(self):
         """ generate bytecode from code
