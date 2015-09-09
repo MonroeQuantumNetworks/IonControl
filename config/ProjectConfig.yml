@@ -1,0 +1,10 @@
+#Project configuration information
+
+#If showGui is True, then baseDir and name are loaded into the GUI,
+#but the GUI subsequently overwrites this file.
+#If ShowGui is False, but baseDir or name are invalid, then the
+#GUI is shown.
+
+showGui: True
+baseDir: C:\Users\Public\Documents\experiments
+name: 'abc'

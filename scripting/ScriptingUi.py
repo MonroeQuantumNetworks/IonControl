@@ -62,6 +62,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             itemDef  = QtGui.QTreeWidgetItem(self.docTreeWidget, [funcDef])
             self.docTreeWidget.addTopLevelItem(itemDef)
             QtGui.QTreeWidgetItem(itemDef, [funcDesc])
+            self.docTreeWidget.setWordWrap(True)
 
         #load file
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )

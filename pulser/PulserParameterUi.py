@@ -45,10 +45,10 @@ class PulserParameter(ExpressionValue):
         return inputMask & (~shiftedMask) | self.encodedValue
 
 
-class PulserParameterTreeModel(CategoryTreeModel):
+class PulserParameterModel(CategoryTreeModel):
     expression = Expression()
     def __init__(self, parameterList, parent=None):
-        super(PulserParameterTreeModel, self).__init__(parameterList, parent)
+        super(PulserParameterModel, self).__init__(parameterList, parent)
         self.headerLookup.update({
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Value'
@@ -101,7 +101,7 @@ class PulserParameterUi(UiForm,UiBase):
         
     def setupUi(self):
         UiForm.setupUi(self, self)
-        self.model = PulserParameterTreeModel(self.parameterList)
+        self.model = PulserParameterModel(self.parameterList)
         self.categoryTreeView.setModel(self.model)
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
         self.categoryTreeView.setItemDelegateForColumn(1,self.delegate)

@@ -1,0 +1,54 @@
+#This determines whether a GUI is shown at the program start to allow setting
+#all the fields in this file. If ShowExperimentConfigGui is True, then the GUI
+#will be initialized via this file, but will subsequently overwrite it.
+ShowExperimentConfigGui: False
+
+#This section defines how different pieces of hardware are configured.
+#It does not matter if the hardware is present or not, as this information is
+#only used if the hardware is listed as available in the next section.
+HardwareConfig:
+  Pulser_FPGA:
+    Name: ChipLabPulseProgrammer
+    Instrument: Opal Kelly XEM6010
+    BitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\IonControl-firmware-UMD.bit
+    UploadOnStartup: False
+  32ChannelPMT_FPGA:
+    Name: 32PMTFPGA
+    Instrument: Opal Kelly XEM6010
+    BitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
+    UploadOnStartup: False
+  DAC_FPGA:
+    Name: DACFPGA
+    Instrument: Opal Kelly XEM6010
+    BitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
+    UploadOnStartup: False
+  Chase_AWG:
+    Name: Chase DA12000 AWG
+    Instrument: Chase DA12000 AWG
+    DLL: DA12000_DLL64.dll
+
+#This section defines how the software is configured.
+SoftwareConfig:
+  Pulser: Pulser_FPGA
+  Voltages: DAC_FPGA
+  AWG: Chase_AWG
+  GateSequencesAvailable: True
+  TimestampingAvailable: True
+
+#This section defines what pieces of hardware are physically available
+AvailableHardware:
+  - Pulser_FPGA
+  - 32ChannelPMT_FPGA
+  - ConexMotion
+  - APTMotion
+  - VISAInstruments
+
+#This section defines the settings to use to connect to the database.
+#Yes, the password is plain text. Don't use one you care deeply about.
+DatabaseConnection:
+  user: python
+  password: qsIph+173qed
+  database: ioncontrol
+  host: localhost
+  port: 5432
+  echo: False
