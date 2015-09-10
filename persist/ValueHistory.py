@@ -14,7 +14,7 @@ from sqlalchemy.exc import InvalidRequestError, IntegrityError
 from sqlalchemy.exc import OperationalError
 
 from modules.magnitude import is_magnitude
-from ProjectConfig.DatabaseConnectionSettings import DatabaseConnectionSettings
+from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 
 Base = declarative_base()
     
