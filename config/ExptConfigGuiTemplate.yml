@@ -1,0 +1,41 @@
+#This file is a template used in creating the GUI for editing the experiment configuration. It documents all hardware that the program knows about. When new pieces of hardware are added with new interfaces, they should be added to the list of "KnownHardware," together with their configuration information, if any. 
+
+#SoftwareRoles are particular pieces of functionality available in the
+#software that require a specific type of hardware. For example, many
+#different instruments couple be used to fulfill the "Voltages" role.
+#Any element of KnownHardware that has the attribute "SoftwareRole: Voltages"
+#could be used in the software as the voltage hardware.
+SoftwareRoles:
+ - &P Pulser
+ - &V Voltages
+ - &A AWG  
+ 
+#The configuration information for a piece of hardware can be specified in two ways: as a type or as a list of fields. If a type is specified, the Python code will generate a GUI for configuring that piece of hardware based on the given type, which must be pre-programmed in the Python code. If no type is specified, it will generate the set of fields specified under "Fields."
+KnownHardware:
+  Pulser_FPGA:
+    SoftwareRole: *P
+    Type: OpalKellyFPGA
+  32ChannelPMT_FPGA:
+    Type: OpalKellyFPGA
+  DAC_FPGA:
+    SoftwareRole: *V
+    Type: OpalKellyFPGA
+  NIChassis:
+    SoftwareRole: *V
+    Fields:
+      Name: str
+      ConfigFile: path
+  Chase_AWG:
+    SoftwareRole: *A
+    Fields:
+      Name: str
+      Instrument: str
+      DLL: str
+  ConexMotion:
+  APTMotion:
+  VISAInstruments:
+  
+#Behavior of specific software features can be controlled here
+SoftwareFeatures:
+  GateSequencesAvailable: bool
+  TimestampingAvailable: bool

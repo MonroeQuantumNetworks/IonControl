@@ -9,8 +9,8 @@ import sys
 import yaml
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
-uipath = os.path.join(os.path.dirname(__file__), '..', 'ui/ProjectSelection.ui')
-Form, Base = PyQt4.uic.loadUiType(uipath)
+ProjectConfigUiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ProjectConfig.ui')
+ProjectConfigUiForm, ProjectConfigUiBase = PyQt4.uic.loadUiType(ProjectConfigUiPath)
 
 class Project(object):
     def __init__(self):
@@ -24,10 +24,10 @@ class Project(object):
             self.__dict__.update(yaml.load(f))
 
         if not os.path.exists(self.baseDir): #If the baseDir doesn't exist, we have to use the GUI
-            self.showGui = True
+            self.showProjectConfigGui = True
         elif not self.name: #If no project name is specified, we have to use the GUI
-            self.showGui = True
-        if self.showGui:
+            self.showProjectConfigGui = True
+        if self.showProjectConfigGui:
             ui = ProjectSelectionUi(self)
             ui.show()
             accept = ui.exec_()
@@ -35,7 +35,7 @@ class Project(object):
                 sys.exit("Project must be selected for IonControl program to run")
             else: #overwrite the config file with the values just set
                 with open(self.projectConfigFilename, 'w') as f:
-                    yaml.dump({'showGui':self.showGui,
+                    yaml.dump({'showProjectConfigGui':self.showProjectConfigGui,
                                'baseDir':self.baseDir,
                                'name':self.name}, f, default_flow_style=False)
 
@@ -44,13 +44,15 @@ class Project(object):
             os.makedirs(self.projectDir)
 
         #load in experiment configuration information
-        self.experimentConfigFilename = os.path.join()
+        self.exptConfigFilename = os.path.join(self.projectDir, 'ExptConfig.yml')
+ #       if os.path.exists(self.exptConfigFilename):
 
-class ProjectSelectionUi(Base,Form):
+
+class ProjectSelectionUi(ProjectConfigUiBase,ProjectConfigUiForm):
     """Class for selecting a project"""
     def __init__(self, project):
-        Base.__init__(self)
-        Form.__init__(self)
+        ProjectConfigUiBase.__init__(self)
+        ProjectConfigUiForm.__init__(self)
         self.project = project
         self.setupUi(self)
 
@@ -58,10 +60,10 @@ class ProjectSelectionUi(Base,Form):
         """setup the dialog box ui"""
         super(ProjectSelectionUi,self).setupUi(parent)
         self.infoLabel.setText(
-            "In the future, this dialog box can be bypassed by directly editing the file {0}".format(
+            "This dialog box overwrites the configuration file {0}.".format(
                 self.project.projectConfigFilename))
         self.setBaseDir()
-        self.defaultCheckBox.setChecked(not self.project.showGui)
+        self.defaultCheckBox.setChecked(not self.project.showProjectConfigGui)
         self.populateProjectList()
         self.changeBaseDirectory.clicked.connect(self.onChangeBaseDirectory)
         self.createButton.clicked.connect(self.onCreate)
@@ -110,11 +112,11 @@ class ProjectSelectionUi(Base,Form):
     def accept(self):
         selectedProject = self.projectList.currentItem()
         if selectedProject: #something is selected
-            self.project.showGui = not self.defaultCheckBox.isChecked()
+            self.project.showProjectConfigGui = not self.defaultCheckBox.isChecked()
             self.project.name = str(selectedProject.text())
-            Base.accept(self)
+            ProjectConfigUiBase.accept(self)
         else: #if nothing is selected, equivalent to clicking cancel
-            Base.reject(self)
+            ProjectConfigUiBase.reject(self)
 
 if __name__ == '__main__':
     import sys
