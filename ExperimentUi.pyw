@@ -9,10 +9,10 @@ This is the main gui program for the ExperimentalUi
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 import sys
+from ProjectConfig.Project import Project, ProjectInfoUi
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    from ProjectConfig.Project import Project
     project = Project()
 
 import argparse
@@ -66,8 +66,9 @@ WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
-    def __init__(self, config, dbConnection):
+    def __init__(self, config, project):
         self.config = config
+        self.project = project
         super(ExperimentUi, self).__init__()
         self.settings = SettingsDialog.Settings()
         self.deviceSerial = config.get('Settings.deviceSerial')
@@ -86,7 +87,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.printMenu = None
         self.instrumentLogger = None
-        self.dbConnection = dbConnection
+        self.dbConnection = project.dbConnection
         
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -361,7 +362,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.voltageControlWindow = None
             self.actionVoltageControl.setEnabled( False )
             logging.getLogger(__name__).exception(e)  
-        self.setWindowTitle("Experimental Control ({0})".format(project) )
+        self.setWindowTitle("Experimental Control ({0})".format(self.project) )
         self.tabDict["Scan"].ppStartSignal.connect( self.voltageControlWindow.synchronize )   # upload shuttling data before running pule program
         
         self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
@@ -394,7 +395,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 
     def startLoggingProcess(self):
         if self.instrumentLogger is None or not self.instrumentLogger.is_alive():
-            self.instrumentLogger = InstrumentLoggingWindow(project)
+            self.instrumentLogger = InstrumentLoggingWindow(self.project)
         
     def onClearConsole(self):
         self.textEditConsole.clear()
@@ -616,7 +617,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.AWGUi.saveConfig()
         
     def onProjectSelection(self):
-        ProjectSelectionUi.GetProjectSelection()
+        ui = ProjectInfoUi(self.project)
+        ui.show()
+        ui.exec_()
         
     def getCurrentTab(self):
         index = self.tabWidget.currentIndex()
@@ -667,7 +670,7 @@ if __name__ == "__main__":
     #with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
     with configshelve.configshelve( project.guiConfigFile ) as config:
         #with ExperimentUi(config, dbConnection) as ui:
-         with ExperimentUi(config, project.dbConnection) as ui:
+         with ExperimentUi(config, project) as ui:
             ui.setupUi(ui)
             LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
             ui.show()

@@ -15,6 +15,10 @@ from datetime import datetime
 from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 from ProjectConfigUi import ProjectConfigUi, projectTag
 from ExptConfigUi import ExptConfigUi
+from sqlalchemy import create_engine
+
+uiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ProjectInfo.ui')
+Form, Base = PyQt4.uic.loadUiType(uiPath)
 
 projectName=None
 projectDir=None
@@ -78,6 +82,13 @@ class Project(object):
                 except yaml.scanner.ScannerError:
                     pass #leave defaults if the file is improperly formatted
 
+        if self.exptConfig.get('databaseConnection'):
+            self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
+            success = self.attemptDatabaseConnection()
+            if not success:
+                self.exptConfig['showGui']=True
+                logger.info("Database connection failed - please check settings")
+
         if self.exptConfig['showGui']: #TODO: THIS DOESN'T WORK YET
             ui = ExptConfigUi(self)
             ui.show()
@@ -103,6 +114,49 @@ class Project(object):
         projectName = self.name
         projectDir = self.projectDir
         dbConnection = self.dbConnection
+
+    def attemptDatabaseConnection(self):
+        """Attempt to connect to the database"""
+        logger = logging.getLogger(__name__)
+        try:
+            engine = create_engine(self.dbConnection.connectionString, echo=self.dbConnection.echo)
+            engine.connect()
+            engine.dispose()
+            success = True
+            logger.info("Database connection successful")
+        except Exception as e:
+            success = False
+        return success
+
+
+class ProjectInfoUi(Base,Form):
+    """Class for seeing project settings in the main GUI, and setting config GUIs to show on next program start"""
+    def __init__(self, project):
+        Base.__init__(self)
+        Form.__init__(self)
+        self.project = project
+        self.setupUi(self)
+
+    def setupUi(self, parent):
+        """setup the dialog box ui"""
+        super(ProjectInfoUi,self).setupUi(parent)
+        self.ProjectConfigTextEdit.setText( yaml.dump(self.project.projectConfig, default_flow_style=False) )
+        self.ExptConfigTextEdit.setText( yaml.dump(self.project.exptConfig, default_flow_style=False) )
+
+    def accept(self):
+        """update the config files based on the check boxes"""
+        if self.showProjectGuiCheckbox.isChecked() and not self.project.projectConfig['showGui']:
+            self.project.projectConfig.update({'showGui':True})
+            with open(self.project.projectConfigFilename, 'w') as f:
+                yaml.dump(self.project.projectConfig, f, default_flow_style=False)
+
+        if self.showExptGuiCheckbox.isChecked() and not self.project.exptConfig['showGui']:
+            self.project.exptConfig.update({'showGui':True})
+            with open(self.project.exptConfigFilename, 'w') as f:
+                yaml.dump(self.project.exptConfig, f, default_flow_style=False)
+
+        Base.accept(self)
+
 
 if __name__ == '__main__':
     import sys
