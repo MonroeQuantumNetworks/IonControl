@@ -6,7 +6,8 @@ Created on Aug 30, 2014
 
 from persist.ValueHistory import ValueHistoryStore
 from datetime import datetime
-from gui.ProjectSelection import getDatabaseConnection
+#from gui.ProjectSelection import getDatabaseConnection
+from ProjectConfig.Project import dbConnection
 from modules.Observable import Observable
 
 class DBPersist:
@@ -22,7 +23,7 @@ class DBPersist:
         
     def initDB(self):
         if DBPersist.store is None:
-            DBPersist.store = ValueHistoryStore(getDatabaseConnection())
+            DBPersist.store = ValueHistoryStore(dbConnection)
             DBPersist.store.open_session()        
         
     def persist(self, space, source, time, value, minval=None, maxval=None, unit=None):

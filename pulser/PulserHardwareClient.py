@@ -17,7 +17,8 @@ from PulserHardwareServer import PulserHardwareServer
 import modules.magnitude as magnitude
 from pulser.PulserHardwareServer import PulserHardwareException
 from pulser.PulserConfig import getPulserConfiguration
-from gui import ProjectSelection
+#from gui import ProjectSelection
+from ProjectConfig.Project import projectDir
 import os.path
 import shutil
 
@@ -121,7 +122,8 @@ class PulserHardware(QtCore.QObject):
         self.loggingReader.start()
         self.ppActive = False
         
-        configpath = os.path.join( ProjectSelection.configDir(), 'PulserConfig.xml' )
+        #configpath = os.path.join( ProjectSelection.configDir(), 'PulserConfig.xml' )
+        configpath = os.path.join( projectDir, 'PulserConfig.xml' )
         if not os.path.exists(configpath):
             skeletonpath = os.path.join( os.path.dirname(os.path.realpath(__file__)), '..', 'config', 'PulserConfig.xml' )
             shutil.copy( skeletonpath, configpath )

@@ -14,7 +14,8 @@ import numpy
 
 from Chassis import DAQmxUtility     
 from Chassis.itfParser import itfParser
-from gui import ProjectSelection
+#from gui import ProjectSelection
+from ProjectConfig.Project import projectDir
 from modules import MyException, MagnitudeUtilit
 from modules.SequenceDict import SequenceDict
 from AdjustValue import AdjustValue
@@ -64,7 +65,8 @@ class NIHardware(object):
             self.chassis = WaveformChassis()
             self.chassis.mode = Mode.Static
             self.hostname = socket.gethostname()
-            ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
+            #ConfigFilename = os.path.join( ProjectSelection.configDir(), "VoltageControl", self.hostname+'.cfg' )
+            ConfigFilename = os.path.join( projectDir, "VoltageControl", self.hostname+'.cfg' )
             if not os.path.exists( ConfigFilename):
                 raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
             self.chassis.initFromFile( ConfigFilename )

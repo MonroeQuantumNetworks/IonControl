@@ -12,7 +12,8 @@ from trace import pens
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-from gui import ProjectSelection
+#from gui import ProjectSelection
+from ProjectConfig.Project import projectDir
 from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
 from trace.PlottedTrace import PlottedTrace
@@ -27,7 +28,8 @@ class Settings:
     def __init__(self, lastDir=None, plotstyle=0):
         """Construct settings. Used only if configuration file has no Traceui settings."""
         if lastDir == None:
-            self.lastDir = ProjectSelection.configDir()
+            #self.lastDir = ProjectSelection.configDir()
+            self.lastDir = projectDir
         else:
             self.lastDir = lastDir
         self.plotstyle = plotstyle

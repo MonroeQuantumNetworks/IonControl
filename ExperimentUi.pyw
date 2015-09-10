@@ -6,12 +6,18 @@ This is the main gui program for the ExperimentalUi
 
 @author: pmaunz
 """
+from PyQt4 import QtCore, QtGui
+import PyQt4.uic
+import sys
+
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    from ProjectConfig.Project import Project
+    project = Project()
 
 import argparse
 import logging
 
-from PyQt4 import QtCore, QtGui 
-import PyQt4.uic
 
 from pulser import DDSUi
 from pulser.DACUi import DACUi
@@ -19,8 +25,8 @@ from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
 from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
-from gui import ProjectSelection
-from gui import ProjectSelectionUi
+#from gui import ProjectSelection
+#from gui import ProjectSelectionUi
 from pulser.PulserHardwareClient import PulserHardware 
 from gui import ScanExperiment
 from gui import SettingsDialog
@@ -652,21 +658,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
     parser.add_argument('--project',type=str,default=None,help='project name')
     args = parser.parse_args()
-    app = QtGui.QApplication(sys.argv)
 
     logger = logging.getLogger("")
 
-    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
-    
-    if accepted:
-        if project:
-            DataDirectory.DefaultProject = project
-            
-            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-                with ExperimentUi(config, dbConnection) as ui:
-                    ui.setupUi(ui)
-                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                    ui.show()
-                    sys.exit(app.exec_())
-        else:
-            logger.warning( "No project selected. Nothing I can do about that ;)" )
+#    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
+    DataDirectory.DefaultProject = project.name
+
+    #with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+    with configshelve.configshelve( project.guiConfigFile ) as config:
+        #with ExperimentUi(config, dbConnection) as ui:
+         with ExperimentUi(config, project.dbConnection) as ui:
+            ui.setupUi(ui)
+            LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())

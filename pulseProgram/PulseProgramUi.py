@@ -11,7 +11,8 @@ import PyQt4.uic
 import logging
 
 from pulseProgram import CounterTableModel
-from gui import ProjectSelection
+#from gui import ProjectSelection
+from ProjectConfig.Project import projectDir
 from pulseProgram import TriggerTableModel
 from pulseProgram import PulseProgram
 from pulseProgram import ShutterTableModel
@@ -400,7 +401,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
     
     def onLoadRamFile(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file',ProjectSelection.configDir()))
+        #path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file',ProjectSelection.configDir()))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file', projectDir))
         if path:
             self.loadRamFile(path)
 
@@ -437,7 +439,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.ramFilenameComboBox.removeItem(self.ramFilenameComboBox.currentIndex())
 
     def onLoad(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
+        #path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',projectDir))
         if path!="":
             self.adaptiveLoadFile(path)
         self.updateSaveStatus()

@@ -19,7 +19,8 @@ import time
 from modules import WeakMethod
 from functools import partial
 from itertools import izip
-from gui import ProjectSelection
+#from gui import ProjectSelection
+from ProjectConfig.Project import projectName
 
 def sort_lists_by(lists, key_list=0, desc=False):
     return izip(*sorted(izip(*lists), reverse=desc,
@@ -381,7 +382,8 @@ class PlottedTrace(object):
         self.needsReplot = False
 
     def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory(ProjectSelection.Project)
+        #directory = DataDirectory.DataDirectory(ProjectSelection.Project)
+        directory = DataDirectory.DataDirectory(projectName)
         if self.parent() is None or self.parent().isRootTrace: 
             if pattern and pattern!='':
                 filename, _ = directory.sequencefile(pattern)
