@@ -141,7 +141,7 @@ class ExptConfigUi(Base,Form):
                     except KeyError:
                         oldvalue = None
                     configwidget=configWidget(self,fieldtype,key,oldvalue,parent=mainwidget)
-                    self.fieldDict[key].append((fieldname,configwidget))
+                    self.fieldDict[key].append((guiName,fieldname,configwidget))
                     layout.addRow(fieldname, configwidget.widget)
             else:
                 layout.addRow('No configuration data for this selection', QtGui.QWidget())
@@ -156,21 +156,33 @@ class ExptConfigUi(Base,Form):
 
     def accept(self):
         """Ok button is clicked. Checks database settings before proceeding."""
-        dbConn = DatabaseConnectionSettings(**{'user':str(self.userEdit.text()),
-                                               'password':str(self.passwordEdit.text()),
-                                               'database':str(self.databaseEdit.text()),
-                                               'host':str(self.hostEdit.text()),
-                                               'port':str(self.portEdit.text()),
-                                               'echo':self.echoCheck.isChecked()
+        user=str(self.userEdit.text())
+        password=str(self.passwordEdit.text())
+        database=str(self.databaseEdit.text())
+        host=str(self.hostEdit.text())
+        port=self.portEdit.value()
+        echo=self.echoCheck.isChecked()
+        dbConn = DatabaseConnectionSettings(**{'user':user,
+                                               'password':password,
+                                               'database':database,
+                                               'host':host,
+                                               'port':port,
+                                               'echo':echo
                                                })
         success = self.project.attemptDatabaseConnection(dbConn)
         if not success:
             QtGui.QMessageBox.information(self, 'Database error', 'Invalid database settings')
         else:
             for name,vals in self.fieldDict.iteritems():
-                #TODO: SAVE TO EXPTCONFIG
-                for fieldname,configwidget in vals:
-                    print "{0}: {1}: {2}".format(name,fieldname,configwidget.content)
+                for guiname,fieldname,configwidget in vals:
+                    self.exptConfig[guiname][name][fieldname] = configwidget.content
+            self.exptConfig['databaseConnection']['user']=user
+            self.exptConfig['databaseConnection']['password']=password
+            self.exptConfig['databaseConnection']['datbase']=database
+            self.exptConfig['databaseConnection']['host']=host
+            self.exptConfig['databaseConnection']['port']=port
+            self.exptConfig['databaseConnection']['echo']=echo
+
             Base.accept(self)
 
     def reject(self):
