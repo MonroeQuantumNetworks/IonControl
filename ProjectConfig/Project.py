@@ -28,11 +28,11 @@ class Project(object):
     def __init__(self):
         """initialize a project by loading in the project config information"""
         logger = logging.getLogger(__name__)
-        mainDir = os.path.join(os.path.dirname(__file__), '..') #main IonControl directory
-        filename = 'config/ProjectConfig.yml' #relative path to config file
+        self.mainConfigDir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'config')) #IonControl/config directory
+        filename = 'ProjectConfig.yml'
+        self.projectConfigFilename = os.path.realpath(os.path.join(self.mainConfigDir, filename)) #absolute path to config file
         self.projectConfig = {'baseDir':'', 'name':'', 'showGui':True} #default values
         self.exptConfig = {'showGui':True}
-        self.projectConfigFilename = os.path.realpath(os.path.join(mainDir, filename)) #absolute path to config file
 
         #Load in the project config information
         if os.path.exists(self.projectConfigFilename):
@@ -84,12 +84,12 @@ class Project(object):
 
         if self.exptConfig.get('databaseConnection'):
             self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
-            success = self.attemptDatabaseConnection()
+            success = self.attemptDatabaseConnection(self.dbConnection)
             if not success:
                 self.exptConfig['showGui']=True
                 logger.info("Database connection failed - please check settings")
 
-        if self.exptConfig['showGui']: #TODO: THIS DOESN'T WORK YET
+        if self.exptConfig['showGui']:
             ui = ExptConfigUi(self)
             ui.show()
             ui.exec_()
@@ -115,16 +115,17 @@ class Project(object):
         projectDir = self.projectDir
         dbConnection = self.dbConnection
 
-    def attemptDatabaseConnection(self):
+    @staticmethod
+    def attemptDatabaseConnection(dbConn):
         """Attempt to connect to the database"""
         logger = logging.getLogger(__name__)
         try:
-            engine = create_engine(self.dbConnection.connectionString, echo=self.dbConnection.echo)
+            engine = create_engine(dbConn.connectionString, echo=dbConn.echo)
             engine.connect()
             engine.dispose()
             success = True
             logger.info("Database connection successful")
-        except Exception as e:
+        except Exception:
             success = False
         return success
 
