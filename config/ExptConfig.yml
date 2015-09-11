@@ -1,54 +1,49 @@
 #This is a commented example showing what an experiment config file looks like.
 
 #This determines whether a GUI is shown at the program start to allow setting
-#all the fields in this file. If ShowExperimentConfigGui is True, then the GUI
+#all the fields in this file. If showGui is True, then the GUI
 #will be initialized via the config file, but will subsequently overwrite it.
-ShowGui: false
+showGui: false
 
-#This section defines how different pieces of hardware are configured.
-#It does not matter if the hardware is present or not, as this information is
-#only used if the hardware is listed as available.
-HardwareConfig:
-  Pulser_FPGA:
-    Name: ChipLabPulseProgrammer
-    Instrument: Opal Kelly XEM6010
-    BitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\IonControl-firmware-UMD.bit
-    UploadOnStartup: False
-  32ChannelPMT_FPGA:
-    Name: 32PMTFPGA
-    Instrument: Opal Kelly XEM6010
-    BitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
-    UploadOnStartup: False
-  DAC_FPGA:
-    Name: DACFPGA
-    Instrument: Opal Kelly XEM6010
-    BitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
-    UploadOnStartup: False
-  Chase_AWG:
-    Name: Chase DA12000 AWG
-    Instrument: Chase DA12000 AWG
+#This section defines the available software, and how it's configured.
+software:
+  Pulser:
+    hardware: Pulser_FPGA
+  Voltages:
+    hardware: DAC_FPGA
+  AWG:
+    hardware: Chase_AWG
+  Gate Sequences:
+  Timestamps:
+
+#This section defines the available hardware, and how it's configured.
+hardware:
+  "FPGA: Pulser":
+    deviceIdentifier: ChipLabPulseProgrammer
+    instrument: Opal Kelly XEM6010
+    bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\IonControl-firmware-UMD.bit
+    uploadOnStartup: False
+  "FPGA: 32 Channel PMT":
+    deviceIdentifier: 32PMTFPGA
+    instrument: Opal Kelly XEM6010
+    bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
+    uploadOnStartup: False
+  "FPGA: DAC":
+    deviceIdentifier: DACFPGA
+    instrument: Opal Kelly XEM6010
+    bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
+    uploadOnStartup: False
+  Chase AWG:
+    name: Chase DA12000 AWG
+    instrument: Chase DA12000 AWG
     DLL: DA12000_DLL64.dll
-
-#This section defines how the software is configured.
-SoftwareFeatures:
-  Pulser: Pulser_FPGA
-  Voltages: DAC_FPGA
-  AWG: Chase_AWG
-  GateSequencesAvailable: True
-  TimestampingAvailable: True
-
-#This section defines what pieces of hardware are physically available
-AvailableHardware:
-  - Pulser_FPGA
-  - 32ChannelPMT_FPGA
-  - Chase_AWG
-  - ConexMotion
-  - APTMotion
-  - VISAInstruments
+  Conex Motion:
+  APT Motion:
+  VISA:
 
 #This section defines the settings to use to connect to the database.
 #Yes, the password is plain text. Don't use one you care deeply about.
-DatabaseConnection:
+databaseConnection:
   user: python
   password: mydbpassword
   database: ioncontrol

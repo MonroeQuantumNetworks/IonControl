@@ -104,6 +104,10 @@ class Project(object):
     def name(self):
         return self.projectConfig['name']
 
+    @property
+    def baseDir(self):
+        return self.projectConfig['baseDir']
+
     def __str__(self):
         return self.name
 

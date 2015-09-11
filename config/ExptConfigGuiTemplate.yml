@@ -1,43 +1,54 @@
-#This file is a template used in creating the GUI for editing the experiment configuration. It documents all hardware that the program knows about. When new pieces of hardware are added with new interfaces, they should be added to the list of "KnownHardware," together with their configuration information, if any. 
+#This file is a template used in creating the GUI for editing the experiment configuration. It documents all hardware and software that the program knows about. When new pieces of hardware (or configurable software) are added with new interfaces, they should be added here, together with their configuration information, if any.
 
-#SoftwareRoles are particular pieces of functionality available in the
-#software that require a specific type of hardware. For example, many
-#different instruments couple be used to fulfill the "Voltages" role.
-#Any element of KnownHardware that has the attribute "SoftwareRole: Voltages"
-#could be used in the software as the voltage hardware.
-#Behavior of specific software features can be controlled here
-softwareFeatures:
+#The GUI uses the "fields" dictionary to generate the configuration interface. Each field must be specified as a type. Known types are: role, path, str, int, float, bool
+
+#"software" is a dictionary of particular pieces of functionality available in the software, which have their own configuration information. For example, "Voltages" is a software feature, which must be configured by specifying its corresponding hardware. Hardware is a field of type "role," which means that the hardware can be set to any piece of hardware with role=Voltages.
+software:
   &P Pulser:
-    hardware:Role
+    fields:
+      hardware: role
   &V Voltages:
-    hardware:Role
+    fields:
+      hardware: role
   &A AWG:
-    hardware:Role
+    fields:
+      hardware: role
   Gate Sequences:
   Timestamps:
- 
-#The configuration information for a piece of hardware can be specified in two ways: as a type or as a list of fields. If a type is specified, the Python code will generate a GUI for configuring that piece of hardware based on the given type, which must be pre-programmed in the Python code. If no type is specified, it will generate the set of fields specified under "Fields."
-knownHardware:
-  Pulser_FPGA:
-    softwareRole: *P
-    type: OpalKellyFPGA
-  32ChannelPMT_FPGA:
-    type: OpalKellyFPGA
-  DAC_FPGA:
-    softwareRole: *V
-    type: OpalKellyFPGA
-  NIChassis:
-    softwareRole: *V
+
+#"hardware" are pieces of hardware together with configuration information. If a hardware has a role, it can be selected under the corresponding software's "hardware" field.
+hardware:
+  "FPGA: Pulser":
+    role: *P
+    fields:
+      deviceIdentifier: str
+      instrument: str
+      bitFile: path
+      uploadOnStartup: bool
+  "FPGA: 32 Channel PMT":
+    fields:
+      deviceIdentifier: str
+      instrument: str
+      bitFile: path
+      uploadOnStartup: bool
+  "FPGA: DAC":
+    role: *V
+    fields:
+      deviceIdentifier: str
+      instrument: str
+      bitFile: path
+      uploadOnStartup: bool
+  NI Chassis:
+    role: *V
     fields:
       name: str
       configFile: path
-  Chase_AWG:
-    softwareRole: *A
+  Chase AWG:
+    role: *A
     fields:
       name: str
       instrument: str
       DLL: str
-  ConexMotion:
-  APTMotion:
-  VISAInstruments:
- 
+  Conex Motion:
+  APT Motion:
+  VISA:

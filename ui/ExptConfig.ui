@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>548</width>
+    <width>657</width>
     <height>858</height>
    </rect>
   </property>
@@ -36,7 +36,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>445</width>
+          <width>554</width>
           <height>817</height>
          </rect>
         </property>
@@ -153,7 +153,11 @@
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
                </property>
-               <widget class="QListWidget" name="softwareListWidget"/>
+               <widget class="QListWidget" name="softwareListWidget">
+                <property name="styleSheet">
+                 <string notr="true">QListWidget:item:selected:active {background: darkBlue;color: white;} QListWidget:item:selected:!active {background: darkBlue;color: white;} QListWidget:item:selected:disabled {background: darkBlue;color: white;} QListWidget:item:selected:!disabled {background: darkBlue;color: white;}</string>
+                </property>
+               </widget>
                <widget class="QTabWidget" name="softwareTabWidget">
                 <property name="currentIndex">
                  <number>-1</number>
@@ -259,11 +263,6 @@
           </widget>
          </item>
         </layout>
-        <zorder></zorder>
-        <zorder>groupBox_2</zorder>
-        <zorder>groupBox_3</zorder>
-        <zorder>groupBox</zorder>
-        <zorder>defaultCheckBox</zorder>
        </widget>
       </widget>
      </item>
