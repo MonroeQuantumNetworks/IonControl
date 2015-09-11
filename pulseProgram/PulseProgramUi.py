@@ -9,6 +9,7 @@ import os.path
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 import logging
+from modules.file_data_cache import file_data_cache
 
 from pulseProgram import CounterTableModel
 from gui import ProjectSelection
@@ -157,8 +158,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.channelNameData = channelNameData
         self.pppCompileException = None
         self.globaldict = parameterdict
-        self.ramData = list()
-   
+
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
         self.experimentname = experimentname
@@ -200,8 +200,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.ramFilenameComboBox.currentIndexChanged[str].connect( self.onRamFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
         self.removeCurrentRamFile.clicked.connect( self.onRemoveCurrentRamFile )
-        self.reloadRamFileButton.clicked.connect(self.reloadRamFile)
-        
+
         self.variableTableModel = VariableTableModel( self.currentContext.parameters, self.config, self.currentContextName )
         if self.parameterChangedSignal:
             self.parameterChangedSignal.connect(self.variableTableModel.recalculateDependent )
@@ -289,7 +288,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         #changeMode = self.currentContext.pulseProgramMode != previousContext.pulseProgramMode
         if self.currentContext.pulseProgramFile != previousContext.pulseProgramFile or len(self.sourceCodeEdits)==0:
             self.adaptiveLoadFile(self.currentContext.pulseProgramFile)
-        if self.currentContext.ramFile != previousContext.ramFile or (self.currentContext.ramFile and not self.ramData):
+        if self.currentContext.ramFile != previousContext.ramFile or (self.currentContext.ramFile):
             self.loadRamFile(self.currentContext.ramFile)
         self.currentContext.merge( self.pulseProgram.variabledict )
         self.updateDisplayContext()
@@ -404,33 +403,37 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if path:
             self.loadRamFile(path)
 
-    def reloadRamFile(self):
-        self.loadRamFile(self.currentContext.ramFile)
+    @property
+    def ramData(self):
+        return self.loadRamData(self.currentContext.ramFile)
+
+    @property
+    def writeRam(self):
+        return self.currentContext.writeRam
+
+    @file_data_cache(maxsize=3)
+    def loadRamData(self, filename):
+        loaded_data = list()
+        tree = ElementTree.parse(filename)
+        root = tree.getroot()
+        for child in root:
+            val = magnitude.mg( float(child.attrib['value']), child.attrib['unit'] )
+            encoding = child.attrib['encoding']
+            data = self.pulseProgram.convertParameter(val, encoding)
+            loaded_data.append(data)
+        return loaded_data
 
     def loadRamFile(self, path):
-        if path:
-            try:
-                self.ramData = []
-                tree = ElementTree.parse(path)
-                root = tree.getroot()
-                for child in root:
-                    val = magnitude.mg( float(child.attrib['value']), child.attrib['unit'] )
-                    encoding = child.attrib['encoding']
-                    data = self.pulseProgram.convertParameter(val, encoding)
-                    self.ramData.append(data)
-                self.currentContext.ramFile = path
-                filename = os.path.basename(path)
-                if filename not in self.configParams.recentRamFiles:
-                    self.ramFilenameComboBox.addItem(filename)
-                self.configParams.recentRamFiles[filename]=path
-                with BlockSignals(self.ramFilenameComboBox) as w:
-                    w.setCurrentIndex( self.ramFilenameComboBox.findText(filename))
-                self.updateSaveStatus()
-            except Exception as e:
-                self.ramData = []
-                logging.getLogger("__name__").exception("Unable to read in ram file {0}: {1}".format(path, e))
+        if path and os.path.exists(path):
+            self.currentContext.ramFile = path
+            filename = os.path.basename(path)
+            if filename not in self.configParams.recentRamFiles:
+                self.ramFilenameComboBox.addItem(filename)
+            self.configParams.recentRamFiles[filename]=path
+            with BlockSignals(self.ramFilenameComboBox) as w:
+                w.setCurrentIndex( self.ramFilenameComboBox.findText(filename))
+            self.updateSaveStatus()
         else:
-            self.ramData = list()
             self.currentContext.ramFile = ''
             with BlockSignals(self.ramFilenameComboBox) as w:
                 w.setCurrentIndex( self.ramFilenameComboBox.findText(''))
