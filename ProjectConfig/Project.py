@@ -32,7 +32,7 @@ class Project(object):
         filename = 'ProjectConfig.yml'
         self.projectConfigFilename = os.path.realpath(os.path.join(self.mainConfigDir, filename)) #absolute path to config file
         self.projectConfig = {'baseDir':'', 'name':'', 'showGui':True} #default values
-        self.exptConfig = {'showGui':True}
+        self.exptConfig = {'hardware':None,'software':None,'showGui':True} #default values
 
         #Load in the project config information
         if os.path.exists(self.projectConfigFilename):
@@ -93,6 +93,7 @@ class Project(object):
             ui = ExptConfigUi(self)
             ui.show()
             ui.exec_()
+            self.exptConfig = ui.exptConfig
             with open(self.exptConfigFilename, 'w') as f: #save information from GUI to file
                 yaml.dump(self.exptConfig, f, default_flow_style=False)
 

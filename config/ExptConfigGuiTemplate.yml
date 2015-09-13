@@ -18,20 +18,20 @@ software:
 
 #"hardware" are pieces of hardware together with configuration information. If a hardware has a role, it can be selected under the corresponding software's "hardware" field.
 hardware:
-  "FPGA: Pulser":
+  "Opal Kelly FPGA: Pulser":
     role: *P
     fields:
       deviceIdentifier: str
       instrument: str
       bitFile: path
       uploadOnStartup: bool
-  "FPGA: 32 Channel PMT":
+  "Opal Kelly FPGA: 32 Channel PMT":
     fields:
       deviceIdentifier: str
       instrument: str
       bitFile: path
       uploadOnStartup: bool
-  "FPGA: DAC":
+  "Opal Kelly FPGA: DAC":
     role: *V
     fields:
       deviceIdentifier: str

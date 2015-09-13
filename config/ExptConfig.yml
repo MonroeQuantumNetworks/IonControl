@@ -18,17 +18,17 @@ software:
 
 #This section defines the available hardware, and how it's configured.
 hardware:
-  "FPGA: Pulser":
+  "Opal Kelly FPGA: Pulser":
     deviceIdentifier: ChipLabPulseProgrammer
     instrument: Opal Kelly XEM6010
     bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\IonControl-firmware-UMD.bit
     uploadOnStartup: False
-  "FPGA: 32 Channel PMT":
+  "Opal Kelly FPGA: 32 Channel PMT":
     deviceIdentifier: 32PMTFPGA
     instrument: Opal Kelly XEM6010
     bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
     uploadOnStartup: False
-  "FPGA: DAC":
+  "Opal Kelly FPGA: DAC":
     deviceIdentifier: DACFPGA
     instrument: Opal Kelly XEM6010
     bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit

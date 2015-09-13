@@ -20,7 +20,7 @@ from functools import partial
 uiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ExptConfig.ui')
 Form, Base = PyQt4.uic.loadUiType(uiPath)
 
-gui = enum('hardware', 'software')
+gui = enum('hardware', 'software') #two parts of the gui
 
 class ExptConfigUi(Base,Form):
     """Class for configuring an experiment"""
@@ -30,10 +30,10 @@ class ExptConfigUi(Base,Form):
         Form.__init__(self)
         self.project = project
         self.exptConfig = project.exptConfig
-        filename = 'ExptConfigGuiTemplate.yml'
-        self.widgetDict = dict() #key: hardware or software name. val: widget for configuring that name
-        self.roleDict = dict() #key: a role. val: a list of hardware that can fulfill that role
-        self.fieldDict = dict()
+        filename = 'ExptConfigGuiTemplate.yml' #template for creating GUI
+        self.widgetDict = dict() #key: tuple (guiType, name). val: widget for configuring that name
+        self.subwidgetDict = dict() #key: tuple (guiType, name). val: list of subwidget for configuring that name
+        self.roleDict = dict() #key: a role (i.e. voltages, pulser, etc.). val: a list of hardware that can fulfill that role
         self.guiTemplateFilename = os.path.join(self.project.mainConfigDir, filename)
         with open(self.guiTemplateFilename, 'r') as f:
             self.guiTemplate = yaml.load(f)
@@ -83,7 +83,7 @@ class ExptConfigUi(Base,Form):
         """List widget is clicked. Change the current tab on the tab widget."""
         guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
         name = str(name)
-        widget = self.widgetDict[name]
+        widget = self.widgetDict[(guiType,name)]
         index = tabWidget.indexOf(widget)
         with BlockSignals(tabWidget) as w:
             w.setCurrentIndex(index)
@@ -101,7 +101,7 @@ class ExptConfigUi(Base,Form):
                 item=QtGui.QListWidgetItem(name,w)
                 w.setCurrentItem(item)
             with BlockSignals(tabWidget) as w:
-                widget=self.getWidget(name,guiType)
+                widget=self.getWidget(guiType,name)
                 w.addTab(widget,name)
                 w.setCurrentIndex(w.indexOf(widget))
             index=comboBox.findText(name,QtCore.Qt.MatchExactly)
@@ -115,7 +115,7 @@ class ExptConfigUi(Base,Form):
             with BlockSignals(listWidget) as w:
                 w.takeItem(w.currentRow())
             with BlockSignals(tabWidget) as w:
-                widget = self.widgetDict[name]
+                widget = self.widgetDict[(guiType,name)]
                 w.removeTab(w.indexOf(widget))
             comboBox.addItem(name)
             templateDict= self.guiTemplate[guiName][name]
@@ -124,65 +124,61 @@ class ExptConfigUi(Base,Form):
                 self.roleDict[role].remove(name)
             self.updateRoles.emit()
 
-    def getWidget(self, key, guiType):
-        """Get the widget associated with the given key."""
+    def getWidget(self, guiType, name):
+        """Get the widget associated with the given name."""
         guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
-        configDict=self.guiTemplate[guiName][key]
+        configDict=self.guiTemplate[guiName][name]
         fields = configDict.get('fields') if configDict else None
         role = configDict.get('role') if configDict else None
-        if key not in self.widgetDict:
-            self.fieldDict[key] = []
+        if (guiType,name) not in self.widgetDict:
+            self.subwidgetDict[(guiType,name)] = []
             mainwidget = QtGui.QWidget()
             layout = QtGui.QFormLayout(mainwidget)
             if configDict and fields:
                 for fieldname, fieldtype in fields.iteritems():
                     try:
-                        oldvalue = self.exptConfig[guiName][key][fieldname]
+                        oldvalue = self.exptConfig[guiName][name][fieldname]
                     except KeyError:
                         oldvalue = None
-                    configwidget=configWidget(self,fieldtype,key,oldvalue,parent=mainwidget)
-                    self.fieldDict[key].append((guiName,fieldname,configwidget))
-                    layout.addRow(fieldname, configwidget.widget)
+                    subwidget=configWidget(self,fieldtype,name,oldvalue,parent=mainwidget)
+                    self.subwidgetDict[(guiType,name)].append((fieldname,subwidget))
+                    layout.addRow(fieldname, subwidget.widget)
             else:
                 layout.addRow('No configuration data for this selection', QtGui.QWidget())
-            self.widgetDict[key] = mainwidget
+            self.widgetDict[(guiType,name)] = mainwidget
         if role:
             if self.roleDict.get(role):
-                self.roleDict[role].append(key)
+                self.roleDict[role].append(name)
             else:
-                self.roleDict[role]=[key]
+                self.roleDict[role]=[name]
             self.updateRoles.emit()
-        return self.widgetDict[key]
+        return self.widgetDict[(guiType,name)]
 
     def accept(self):
         """Ok button is clicked. Checks database settings before proceeding."""
-        user=str(self.userEdit.text())
-        password=str(self.passwordEdit.text())
-        database=str(self.databaseEdit.text())
-        host=str(self.hostEdit.text())
-        port=self.portEdit.value()
-        echo=self.echoCheck.isChecked()
-        dbConn = DatabaseConnectionSettings(**{'user':user,
-                                               'password':password,
-                                               'database':database,
-                                               'host':host,
-                                               'port':port,
-                                               'echo':echo
-                                               })
+        dbSettings = {'user':str(self.userEdit.text()),
+                      'password':str(self.passwordEdit.text()),
+                      'database':str(self.databaseEdit.text()),
+                      'host':str(self.hostEdit.text()),
+                      'port':self.portEdit.value(),
+                      'echo':self.echoCheck.isChecked()
+                      }
+        dbConn = DatabaseConnectionSettings(**dbSettings)
         success = self.project.attemptDatabaseConnection(dbConn)
         if not success:
             QtGui.QMessageBox.information(self, 'Database error', 'Invalid database settings')
         else:
-            for name,vals in self.fieldDict.iteritems():
-                for guiname,fieldname,configwidget in vals:
-                    self.exptConfig[guiname][name][fieldname] = configwidget.content
-            self.exptConfig['databaseConnection']['user']=user
-            self.exptConfig['databaseConnection']['password']=password
-            self.exptConfig['databaseConnection']['datbase']=database
-            self.exptConfig['databaseConnection']['host']=host
-            self.exptConfig['databaseConnection']['port']=port
-            self.exptConfig['databaseConnection']['echo']=echo
-
+            self.exptConfig=dict()
+            self.exptConfig['hardware']=dict()
+            self.exptConfig['software']=dict()
+            for (guiType,name), subwidgetList in self.subwidgetDict.iteritems():
+                guiname=self.guiDict[guiType][0] #'hardware' or 'software'
+                if name in self.addedNames(guiType):
+                    self.exptConfig[guiname][name]=dict() #name of piece of equipment
+                    for fieldname,subwidget in subwidgetList: #fieldname is the specific config field for 'name'
+                        self.exptConfig[guiname][name][fieldname] = subwidget.content
+            self.exptConfig['databaseConnection'] = dbSettings
+            self.exptConfig['showGui']=not self.defaultCheckBox.isChecked()
             Base.accept(self)
 
     def reject(self):
@@ -191,20 +187,30 @@ class ExptConfigUi(Base,Form):
         logging.getLogger(__name__).exception(message)
         sys.exit(message)
 
+    def addedNames(self, guiType):
+        """return the names that have been added to the list of hardware or software"""
+        listWidget = self.guiDict[guiType][3]
+        names = []
+        for index in xrange(listWidget.count()):
+             names.append(str(listWidget.item(index).text()))
+        return names
+
 
 class configWidget(object):
     def __init__(self,exptConfigUi,fieldtype,role,oldvalue,parent=None):
         self.fieldtype = fieldtype
-        self.widget = {'bool' :QtGui.QCheckBox,
-                       'float':QtGui.QDoubleSpinBox,
-                       'int'  :QtGui.QSpinBox,
-                       'role' :partial(roleWidget,role,exptConfigUi),
-                       'path' :partial(pathWidget,exptConfigUi.project.baseDir),
-                       'str'  :QtGui.QLineEdit
-                      }.get(self.fieldtype)(parent=parent)
-        if not self.widget:
+        self.widgetCall = {'bool' :QtGui.QCheckBox,
+                           'float':QtGui.QDoubleSpinBox,
+                           'int'  :QtGui.QSpinBox,
+                           'role' :partial(roleWidget,role,exptConfigUi),
+                           'path' :partial(pathWidget,exptConfigUi.project.baseDir),
+                           'str'  :QtGui.QLineEdit
+                          }.get(self.fieldtype)
+        if not self.widgetCall:
             self.widget=QtGui.QLabel('error: unknown type',parent=parent)
             self.widget.setStyleSheet("QLabel {color: red;}")
+        else:
+            self.widget=self.widgetCall(parent=parent)
         if oldvalue:
             if self.fieldtype=='bool':
                 self.widget.setChecked(oldvalue)
@@ -268,9 +274,12 @@ class roleWidget(QtGui.QComboBox):
         self.exptConfigUi.updateRoles.connect(self.onUpdate)
 
     def onUpdate(self):
+        currentText=self.currentText()
         self.clear()
         self.addItem('')
         hardwareList = self.exptConfigUi.roleDict.get(self.role)
         if hardwareList:
             self.addItems(hardwareList)
+        self.setCurrentIndex( self.findText(currentText,QtCore.Qt.MatchExactly) )
+
 

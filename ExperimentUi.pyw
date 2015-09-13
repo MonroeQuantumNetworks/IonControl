@@ -9,59 +9,39 @@ This is the main gui program for the ExperimentalUi
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 import sys
-from ProjectConfig.Project import Project, ProjectInfoUi
-
-if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
-    project = Project()
-
-import argparse
 import logging
-
-
-from pulser import DDSUi
-from pulser.DACUi import DACUi
+import ctypes
 from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
 from gui import GlobalVariables
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
-#from gui import ProjectSelection
-#from gui import ProjectSelectionUi
-from pulser.PulserHardwareClient import PulserHardware 
+from mylogging.LoggingSetup import qtWarningButtonHandler
 from gui import ScanExperiment
 from gui import SettingsDialog
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from externalParameter import ExternalParameterSelection
-from externalParameter import ExternalParameterUi 
+from externalParameter import ExternalParameterUi
+from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
+from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
 from modules import DataDirectory, MyException
 from modules.DataChanged import DataChanged
-from pulser.ChannelNameDict import ChannelNameDict  
 from persist import configshelve
 from pulseProgram import PulseProgramUi
-from pulser import ShutterUi
 from uiModules import MagnitudeParameter #@UnusedImport
 from gui.TodoList import TodoList
+from gui.Preferences import PreferencesUi
+from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
+from gui.ValueHistoryUi import ValueHistoryUi
 from modules.SequenceDict import SequenceDict
 from functools import partial
-import externalParameter.ExternalParameter #@UnusedImport
-from gui.Preferences import PreferencesUi
-from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
-from gui.FPGASettings import FPGASettingsDialog
-from pulser.OKBase import OKBase
-from gui.MeasurementLogUi.MeasurementLogUi import MeasurementLogUi
-from pulser.DACController import DACController    #@UnresolvedImport
-from gui.ValueHistoryUi import ValueHistoryUi
-from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
-from externalParameter.ExternalParameterBase import InstrumentDict
-from mylogging.LoggingSetup import qtWarningButtonHandler
-from pulser.PulserParameterUi import PulserParameterUi
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify
-from AWG.AWGUi import AWGUi
 from scripting.ScriptingUi import ScriptingUi
+from ProjectConfig.Project import Project, ProjectInfoUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
+
 
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
@@ -644,32 +624,34 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
             
             self.currentTab.onPrint(target, printer, pdfPrinter, self.preferencesUi.preferences().printPreferences)
-    
-        
-if __name__ == "__main__":
-    import sys
+
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    project = Project()
+    from pulser import DDSUi
+    from pulser.DACUi import DACUi
+    from pulser.DACController import DACController    #@UnresolvedImport
+    from pulser.PulserHardwareClient import PulserHardware
+    from pulser.ChannelNameDict import ChannelNameDict
+    from pulser import ShutterUi
+    from pulser.OKBase import OKBase
+    from pulser.PulserParameterUi import PulserParameterUi
+    from gui.FPGASettings import FPGASettingsDialog
+    import externalParameter.ExternalParameter #@UnusedImport
+    from externalParameter.ExternalParameterBase import InstrumentDict
+    from AWG.AWGUi import AWGUi
+
     try:
         from voltageControl.VoltageControl import VoltageControl
     except Exception as e:
         logging.getLogger(__name__).exception(e)  
 
-    #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
-    import ctypes
-    myappid = 'TrappedIons.FPGAControlProgram' # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    #This make the icon in the Windows taskbar match the icon set in Qt Designer
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('TrappedIons.FPGAControlProgram')
     
-    parser = argparse.ArgumentParser(description='Get a program and run it with input', version='%(prog)s 1.0')
-    parser.add_argument('--project',type=str,default=None,help='project name')
-    args = parser.parse_args()
-
-    logger = logging.getLogger("")
-
-#    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
     DataDirectory.DefaultProject = project.name
-
-    #with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
+    logger = logging.getLogger("")
     with configshelve.configshelve( project.guiConfigFile ) as config:
-        #with ExperimentUi(config, dbConnection) as ui:
          with ExperimentUi(config, project) as ui:
             ui.setupUi(ui)
             LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
