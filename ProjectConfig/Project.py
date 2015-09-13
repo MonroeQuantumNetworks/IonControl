@@ -13,7 +13,7 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 from datetime import datetime
 from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
-from ProjectConfigUi import ProjectConfigUi, projectTag
+from ProjectConfigUi import ProjectConfigUi
 from ExptConfigUi import ExptConfigUi
 from sqlalchemy import create_engine
 
@@ -32,7 +32,7 @@ class Project(object):
         filename = 'ProjectConfig.yml'
         self.projectConfigFilename = os.path.realpath(os.path.join(self.mainConfigDir, filename)) #absolute path to config file
         self.projectConfig = {'baseDir':'', 'name':'', 'showGui':True} #default values
-        self.exptConfig = {'hardware':None,'software':None,'showGui':True} #default values
+        self.exptConfig = {'hardware':dict(),'software':dict(),'databaseConnection':dict(),'showGui':True} #default values
 
         #Load in the project config information
         if os.path.exists(self.projectConfigFilename):
@@ -54,26 +54,26 @@ class Project(object):
             with open(self.projectConfigFilename, 'w') as f: #save information from GUI to file
                 yaml.dump(self.projectConfig, f, default_flow_style=False)
 
+        #make project directories if they don't exist
         self.projectDir = os.path.join(self.projectConfig['baseDir'], self.projectConfig['name'])
+        self.configDir = os.path.join(self.projectDir,'config')
+        self.guiConfigDir = os.path.join(self.projectDir, '.gui-config')
+        scriptname,_ = os.path.splitext( os.path.basename(__main__.__file__) )
+        self.guiConfigFile = os.path.join( self.guiConfigDir, scriptname+".config.db" )
+        self.exptConfigFilename = os.path.realpath(os.path.join(self.configDir, 'ExptConfig.yml'))
+
         if not os.path.exists(self.projectDir):
             os.makedirs(self.projectDir)
-            tagFilename = os.path.join(self.projectDir, projectTag)
-            message = 'project {0} created {1}'.format(self.projectConfig['name'], datetime.now())
-            with open(tagFilename, 'w') as f:
-                f.write(message)
-            logger.info(message)
 
-        self.guiConfigDir = os.path.join(self.projectDir, '.gui-config')
-        if not os.path.exists(self.guiConfigDir):
-            os.makedirs(self.guiConfigDir)
-        scriptname,_ = os.path.splitext( os.path.basename(__main__.__file__))
-        self.guiConfigFile = os.path.join( self.guiConfigDir, scriptname+".config.db" )
-        self.configDir = os.path.join(self.projectDir, 'config')
         if not os.path.exists(self.configDir):
             os.makedirs(self.configDir)
+            with open(self.exptConfigFilename, 'w') as f:
+                yaml.dump(self.exptConfig, f, default_flow_style=False)
+
+        if not os.path.exists(self.guiConfigDir):
+            os.makedirs(self.guiConfigDir)
 
         #Load in the experiment config information
-        self.exptConfigFilename = os.path.realpath(os.path.join(self.projectDir, 'config/ExptConfig.yml'))
         if os.path.exists(self.exptConfigFilename):
             with open(self.exptConfigFilename, 'r') as f:
                 try:

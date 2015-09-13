@@ -10,10 +10,9 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 from datetime import datetime
 
-projectTag = '.IonControl-project.txt'
-
 uiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ProjectConfig.ui')
 Form, Base = PyQt4.uic.loadUiType(uiPath)
+import yaml
 
 class ProjectConfigUi(Base,Form):
     """Class for selecting a project"""
@@ -58,10 +57,11 @@ class ProjectConfigUi(Base,Form):
         projectDir = os.path.join(self.projectConfig['baseDir'], name)
         if not os.path.exists(projectDir):
             os.makedirs(projectDir)
-            tagFilename = os.path.join(projectDir, projectTag)
-            with open(tagFilename, 'w') as f:
-                newFileText = 'project {0} created {1}'.format(name, datetime.now())
-                f.write(newFileText)
+            configDir=os.path.join(projectDir,'config')
+            os.makedirs(configDir)
+            exptConfigFilename = os.path.join(configDir, 'ExptConfig.yml')
+            with open(exptConfigFilename, 'w') as f:
+                yaml.dump(self.project.exptConfig, f, default_flow_style=False)
         item = QtGui.QListWidgetItem(name)
         self.projectList.addItem(item)
         self.projectList.setCurrentItem(item)
@@ -69,7 +69,7 @@ class ProjectConfigUi(Base,Form):
 
     def populateProjectList(self):
         self.projectList.clear()
-        projects = [name for name in os.listdir(self.projectConfig['baseDir']) if os.path.exists(os.path.join(self.projectConfig['baseDir'], name, projectTag))]
+        projects = [name for name in os.listdir(self.projectConfig['baseDir']) if os.path.exists(os.path.join(self.projectConfig['baseDir'], name, 'config/ExptConfig.yml'))]
         self.projectList.addItems(projects)
         matches = self.projectList.findItems(self.projectConfig['name'], QtCore.Qt.MatchExactly)
         if matches:

@@ -43,17 +43,17 @@ class ExptConfigUi(Base,Form):
         """setup the dialog box ui"""
         super(ExptConfigUi,self).setupUi(parent)
         self.infoLabel.setText(
-            "This dialog box overwrites the experiment configuration file:\n{0}.".format(
-                self.project.exptConfigFilename))
+            "Experiment configuration for project {0}.\n\nThis dialog box overwrites the experiment configuration file:\n{1}.".format(
+                self.project.name, self.project.exptConfigFilename))
         self.defaultCheckBox.setChecked(not self.exptConfig['showGui'])
         self.hardwareComboBox.addItems(self.guiTemplate['hardware'].keys())
         self.softwareComboBox.addItems(self.guiTemplate['software'].keys())
-        self.userEdit.setText(self.exptConfig['databaseConnection']['user'])
-        self.passwordEdit.setText(self.exptConfig['databaseConnection']['password'])
-        self.databaseEdit.setText(self.exptConfig['databaseConnection']['database'])
-        self.hostEdit.setText(self.exptConfig['databaseConnection']['host'])
-        self.portEdit.setValue(self.exptConfig['databaseConnection']['port'])
-        self.echoCheck.setChecked(self.exptConfig['databaseConnection']['echo'])
+        self.userEdit.setText(self.exptConfig['databaseConnection'].get('user',''))
+        self.passwordEdit.setText(self.exptConfig['databaseConnection'].get('password',''))
+        self.databaseEdit.setText(self.exptConfig['databaseConnection'].get('database',''))
+        self.hostEdit.setText(self.exptConfig['databaseConnection'].get('host','localhost'))
+        self.portEdit.setValue(self.exptConfig['databaseConnection'].get('port',5432))
+        self.echoCheck.setChecked(self.exptConfig['databaseConnection'].get('echo',False))
 
         self.guiDict = {gui.hardware: ('hardware', self.hardwareTabWidget, self.hardwareComboBox, self.hardwareListWidget),
                         gui.software: ('software', self.softwareTabWidget, self.softwareComboBox, self.softwareListWidget)}
@@ -202,8 +202,8 @@ class configWidget(object):
         self.widgetCall = {'bool' :QtGui.QCheckBox,
                            'float':QtGui.QDoubleSpinBox,
                            'int'  :QtGui.QSpinBox,
-                           'role' :partial(roleWidget,role,exptConfigUi),
-                           'path' :partial(pathWidget,exptConfigUi.project.baseDir),
+                           'role' :partial(RoleWidget,role,exptConfigUi),
+                           'path' :partial(PathWidget,exptConfigUi.project.baseDir),
                            'str'  :QtGui.QLineEdit
                           }.get(self.fieldtype)
         if not self.widgetCall:
@@ -242,9 +242,9 @@ class configWidget(object):
             return str(self.widget.text())
 
 
-class pathWidget(QtGui.QHBoxLayout):
+class PathWidget(QtGui.QHBoxLayout):
     def __init__(self,baseDir,parent=None):
-        super(pathWidget, self).__init__()
+        super(PathWidget, self).__init__()
         self.lineEdit=QtGui.QLineEdit(parent)
         self.lineEdit.setReadOnly(True)
         self.openButton=QtGui.QPushButton(parent)
@@ -264,10 +264,10 @@ class pathWidget(QtGui.QHBoxLayout):
             self.lineEdit.setText(filename)
 
 
-class roleWidget(QtGui.QComboBox):
+class RoleWidget(QtGui.QComboBox):
     """Combo box for selecting what hardware to use for a specific software role"""
     def __init__(self,role,exptConfigUi,parent=None):
-        super(roleWidget, self).__init__()
+        super(RoleWidget, self).__init__()
         self.role = role
         self.exptConfigUi = exptConfigUi
         self.onUpdate()
@@ -281,5 +281,3 @@ class roleWidget(QtGui.QComboBox):
         if hardwareList:
             self.addItems(hardwareList)
         self.setCurrentIndex( self.findText(currentText,QtCore.Qt.MatchExactly) )
-
-
