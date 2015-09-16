@@ -20,9 +20,8 @@ from sqlalchemy import create_engine
 uiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ProjectInfo.ui')
 Form, Base = PyQt4.uic.loadUiType(uiPath)
 
-projectName=None
-projectDir=None
-dbConnection=None
+currentProject=None
+
 
 class Project(object):
     def __init__(self):
@@ -99,7 +98,7 @@ class Project(object):
 
         self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
 
-        self.setGlobalProjectVars()
+        self.setGlobalProject()
 
     @property
     def name(self):
@@ -112,13 +111,9 @@ class Project(object):
     def __str__(self):
         return self.name
 
-    def setGlobalProjectVars(self):
-        global projectDir
-        global dbConnection
-        global projectName
-        projectName = self.name
-        projectDir = self.projectDir
-        dbConnection = self.dbConnection
+    def setGlobalProject(self):
+        global currentProject
+        currentProject=self
 
     @staticmethod
     def attemptDatabaseConnection(dbConn):
@@ -162,6 +157,17 @@ class ProjectInfoUi(Base,Form):
                 yaml.dump(self.project.exptConfig, f, default_flow_style=False)
 
         Base.accept(self)
+
+
+class ProjectException(Exception):
+    pass
+
+
+def getProject():
+    if not currentProject:
+        raise ProjectException('No project set')
+    return currentProject
+
 
 
 if __name__ == '__main__':

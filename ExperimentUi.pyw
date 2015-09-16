@@ -7,25 +7,20 @@ This is the main gui program for the ExperimentalUi
 @author: pmaunz
 """
 from PyQt4 import QtCore, QtGui
+import PyQt4.uic
 from ProjectConfig.Project import Project, ProjectInfoUi
 import sys
-
-if __name__ == '__main__': #project initialized before anything else
-    app = QtGui.QApplication(sys.argv)
-    project = Project()
-
-import PyQt4.uic
 import logging
 import ctypes
-from modules.SequenceDict import SequenceDict
 from modules.XmlUtilit import prettify
+from modules.SequenceDict import SequenceDict
 from functools import partial
 import xml.etree.ElementTree as ElementTree
 from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
-from gui import GlobalVariables
-from mylogging.LoggerLevelsUi import LoggerLevelsUi
-from mylogging import LoggingSetup  #@UnusedImport
+from mylogging import LoggingSetup  #@UnusedImport #This runs the logging setup code
 from mylogging.LoggingSetup import qtWarningButtonHandler
+from mylogging.LoggerLevelsUi import LoggerLevelsUi
+from gui import GlobalVariables
 from gui import ScanExperiment
 from gui import SettingsDialog
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
@@ -53,14 +48,8 @@ from pulser import ShutterUi
 from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettingsDialog
-import externalParameter.ExternalParameter #@UnusedImport
 from externalParameter.ExternalParameterBase import InstrumentDict
 from AWG.AWGUi import AWGUi
-
-try:
-    from voltageControl.VoltageControl import VoltageControl
-except Exception as e:
-    logging.getLogger(__name__).exception(e)
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -648,6 +637,17 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.currentTab.onPrint(target, printer, pdfPrinter, self.preferencesUi.preferences().printPreferences)
 
 if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    project = Project()
+    hardware = project.exptConfig['hardware']
+    software = project.exptConfig['software']
+    if hardware.get('Conex Motion'):
+        import MotionParameter  #@UnusedImport
+    if hardware.get('APT Motion'):
+        import APTInstruments #@UnusedImport
+    if software.get('Voltages'):
+        from voltageControl.VoltageControl import VoltageControl
+
     #This make the icon in the Windows taskbar match the icon set in Qt Designer
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('TrappedIons.FPGAControlProgram')
     

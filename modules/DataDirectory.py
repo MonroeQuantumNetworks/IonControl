@@ -13,25 +13,17 @@ import datetime
 import functools
 import os.path
 import re
+from ProjectConfig.Project import getProject
 
 
 class DataDirectoryException(Exception):
     pass
 
-DataDirectoryBase = os.path.expanduser("~public\\Documents\\experiments")
-DefaultProject = None
 
 class DataDirectory:
-    def __init__(self,project=None,basedirectory=None):
-        self.project = project if project else DefaultProject
-        global DataDirectoryBase
-        if basedirectory:
-            DataDirectoryBase = basedirectory
-            
-    
-    def setProject(self,project):
-        self.project = project
-    
+    def __init__(self):
+        pass
+
     def path(self, current=None, extradir=''):
         """ Return a string path to data location for the given date.
         @type current: datetime.date
@@ -39,8 +31,7 @@ class DataDirectory:
         """
         if not current:
             current = datetime.date.today()
-        #basedir = os.path.join(os.path.expanduser("~\\Documents\\"),self.project)
-        basedir = os.path.join(DataDirectoryBase,self.project)
+        basedir = getProject().projectDir
         yeardir = os.path.join(basedir,str(current.year))
         monthdir = os.path.join(yeardir,"{0}_{1:02d}".format(current.year,current.month))
         daydir = os.path.join(monthdir,"{0}_{1:02d}_{2:02d}".format(current.year,current.month,current.day))
@@ -61,11 +52,6 @@ class DataDirectory:
         """
         if not current:
             current = datetime.date.today()
-        """
-        return the sequenced filename in the current data directory.
-        _000 serial is inserted before the file extension or at the end of the name if the filename has no extension.
-        The directory is reread every time.
-        """
         extradir, leaf = os.path.split(name)
         directory = self.path(current, extradir=extradir)
         fileName, fileExtension = os.path.splitext(leaf)

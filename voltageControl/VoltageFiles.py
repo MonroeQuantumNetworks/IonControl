@@ -11,7 +11,7 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 #from gui import ProjectSelection
-from ProjectConfig.Project import projectDir
+from ProjectConfig.Project import getProject
 from modules.firstNotNone import firstNotNone
 
 
@@ -44,8 +44,7 @@ class VoltageFiles(VoltageFilesForm, VoltageFilesBase ):
         self.config = config
         self.configname = 'VoltageFiles.Files'
         self.files = self.config.get(self.configname,Files())
-        #self.lastDir = ProjectSelection.configDir()
-        self.lasDir = projectDir
+        self.lastDir = getProject().configDir
 
     def setupUi(self, parent):
         VoltageFilesForm.setupUi(self,parent)

@@ -12,7 +12,7 @@ from PyQt4.Qsci import QsciScintilla
 import logging
 from datetime import datetime
 #from gui import ProjectSelection
-from ProjectConfig.Project import projectDir
+from ProjectConfig.Project import getProject
 from modules.PyqtUtility import BlockSignals
 from Script import Script, scriptFunctions, scriptDocs
 from ScriptHandler import ScriptHandler
@@ -30,8 +30,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.recentFiles = dict() #dict of form {shortname: fullname}, where fullname has path and shortname doesn't
         self.script = Script() #encapsulates the script
         self.scriptHandler = ScriptHandler(self.script, experimentUi) #handles interface to the script
-        #self.defaultDir = ProjectSelection.configDir()+'\\Scripts'
-        self.defaultDir = projectDir+'\\Scripts'
+        self.defaultDir = getProject().configDir+'\\Scripts'
         if not os.path.exists(self.defaultDir):
             os.makedirs(self.defaultDir)
    
