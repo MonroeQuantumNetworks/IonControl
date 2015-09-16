@@ -54,18 +54,19 @@ class ProjectConfigUi(Base,Form):
     def onCreate(self):
         """Create a new project folder"""
         name = str(self.newProjectName.text())
-        projectDir = os.path.join(self.projectConfig['baseDir'], name)
-        if not os.path.exists(projectDir):
-            os.makedirs(projectDir)
-            configDir=os.path.join(projectDir,'config')
-            os.makedirs(configDir)
-            exptConfigFilename = os.path.join(configDir, 'ExptConfig.yml')
-            with open(exptConfigFilename, 'w') as f:
-                yaml.dump(self.project.exptConfig, f, default_flow_style=False)
-        item = QtGui.QListWidgetItem(name)
-        self.projectList.addItem(item)
-        self.projectList.setCurrentItem(item)
-        self.newProjectName.clear()
+        if name:
+            projectDir = os.path.join(self.projectConfig['baseDir'], name)
+            if not os.path.exists(projectDir):
+                os.makedirs(projectDir)
+                configDir=os.path.join(projectDir,'config')
+                os.makedirs(configDir)
+                exptConfigFilename = os.path.join(configDir, 'ExptConfig.yml')
+                with open(exptConfigFilename, 'w') as f:
+                    yaml.dump(self.project.exptConfig, f, default_flow_style=False)
+            item = QtGui.QListWidgetItem(name)
+            self.projectList.addItem(item)
+            self.projectList.setCurrentItem(item)
+            self.newProjectName.clear()
 
     def populateProjectList(self):
         self.projectList.clear()
