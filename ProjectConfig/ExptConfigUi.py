@@ -14,13 +14,11 @@ from datetime import datetime
 import yaml
 from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 from modules.enum import enum
-from modules.PyqtUtility import BlockSignals
+from modules.PyqtUtility import BlockSignals, textSize
 from functools import partial
 
 uiPath = os.path.join(os.path.dirname(__file__), '..', 'ui/ExptConfig.ui')
 Form, Base = PyQt4.uic.loadUiType(uiPath)
-
-gui = enum('hardware', 'software') #two parts of the gui
 
 class ExptConfigUi(Base,Form):
     """Class for configuring an experiment"""
@@ -31,8 +29,8 @@ class ExptConfigUi(Base,Form):
         self.project = project
         self.exptConfig = project.exptConfig
         filename = 'ExptConfigGuiTemplate.yml' #template for creating GUI
-        self.widgetDict = dict() #key: tuple (guiType, name). val: widget for configuring that name
-        self.subwidgetDict = dict() #key: tuple (guiType, name). val: list of subwidget for configuring that name
+        self.widgetDict = dict() #key: tuple (guiName, name). val: widget for configuring that name
+        self.subwidgetDict = dict() #key: tuple (guiName, name). val: list of subwidget for configuring that name
         self.roleDict = dict() #key: a role (i.e. voltages, pulser, etc.). val: a list of hardware that can fulfill that role
         self.guiTemplateFilename = os.path.join(self.project.mainConfigDir, filename)
         with open(self.guiTemplateFilename, 'r') as f:
@@ -43,7 +41,7 @@ class ExptConfigUi(Base,Form):
         """setup the dialog box ui"""
         super(ExptConfigUi,self).setupUi(parent)
         self.infoLabel.setText(
-            "Experiment configuration for project {0}.\n\nThis dialog box overwrites the experiment configuration file:\n{1}.".format(
+            'Experiment configuration for project: <b>{0}</b><br><br>This dialog box overwrites the experiment configuration file:<br>{1}.'.format(
                 self.project.name, self.project.exptConfigFilename))
         self.defaultCheckBox.setChecked(not self.exptConfig['showGui'])
         self.hardwareComboBox.addItems(self.guiTemplate['hardware'].keys())
@@ -55,104 +53,111 @@ class ExptConfigUi(Base,Form):
         self.portEdit.setValue(self.exptConfig['databaseConnection'].get('port',5432))
         self.echoCheck.setChecked(self.exptConfig['databaseConnection'].get('echo',False))
 
-        self.guiDict = {gui.hardware: ('hardware', self.hardwareTabWidget, self.hardwareComboBox, self.hardwareListWidget),
-                        gui.software: ('software', self.softwareTabWidget, self.softwareComboBox, self.softwareListWidget)}
-        for guiType in [gui.hardware, gui.software]:
-            guiName,_,_,_ = self.guiDict[guiType]
+        self.guiDict = {'hardware': (self.hardwareTabWidget, self.hardwareComboBox, self.hardwareListWidget),
+                        'software': (self.softwareTabWidget, self.softwareComboBox, self.softwareListWidget)}
+        for guiName in self.guiDict:
             for name in self.exptConfig[guiName]:
-                self.addName(guiType, name)
+                self.addName(guiName, name)
 
-        self.addHardwareButton.clicked.connect( partial(self.onAdd, gui.hardware) )
-        self.removeHardwareButton.clicked.connect( partial(self.onRemove, gui.hardware) )
-        self.hardwareListWidget.currentTextChanged.connect( partial(self.onSelect, gui.hardware) )
-        self.hardwareTabWidget.currentChanged.connect( partial(self.onTabWidgetChanged, gui.hardware) )
-        self.addSoftwareButton.clicked.connect( partial(self.onAdd, gui.software) )
-        self.removeSoftwareButton.clicked.connect( partial(self.onRemove, gui.software) )
-        self.softwareListWidget.currentTextChanged.connect( partial(self.onSelect, gui.software) )
-        self.softwareTabWidget.currentChanged.connect( partial(self.onTabWidgetChanged, gui.software) )
+        self.addHardwareButton.clicked.connect( partial(self.onAdd, 'hardware') )
+        self.removeHardwareButton.clicked.connect( partial(self.onRemove, 'hardware') )
+        self.hardwareListWidget.currentTextChanged.connect( partial(self.onSelect, 'hardware') )
+        self.hardwareTabWidget.currentChanged.connect( partial(self.onTabWidgetChanged, 'hardware') )
+        self.addSoftwareButton.clicked.connect( partial(self.onAdd, 'software') )
+        self.removeSoftwareButton.clicked.connect( partial(self.onRemove, 'software') )
+        self.softwareListWidget.currentTextChanged.connect( partial(self.onSelect, 'software') )
+        self.softwareTabWidget.currentChanged.connect( partial(self.onTabWidgetChanged, 'software') )
 
-    def onTabWidgetChanged(self, guiType, index):
+    def onTabWidgetChanged(self, guiName, index):
         """Tab widget is clicked. Change the selection in the list widget."""
-        guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
+        tabWidget,comboBox,listWidget = self.guiDict[guiName]
         name = str(tabWidget.tabText(index))
         item = listWidget.findItems(name, QtCore.Qt.MatchExactly)[0]
         with BlockSignals(listWidget) as w:
             w.setCurrentItem(item)
 
-    def onSelect(self, guiType, name):
+    def onSelect(self, guiName, name):
         """List widget is clicked. Change the current tab on the tab widget."""
-        guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
+        tabWidget,comboBox,listWidget = self.guiDict[guiName]
         name = str(name)
-        widget = self.widgetDict[(guiType,name)]
+        widget = self.widgetDict[(guiName,name)]
         index = tabWidget.indexOf(widget)
         with BlockSignals(tabWidget) as w:
             w.setCurrentIndex(index)
 
-    def onAdd(self, guiType):
-        """Add is clicked. Add the name to the list widget, remove it from the combo box, and add the appropriate tab to the tab widget."""
-        guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
+    def onAdd(self, guiName):
+        """Add is clicked."""
+        tabWidget,comboBox,listWidget = self.guiDict[guiName]
         name = str(comboBox.currentText())
-        self.addName(guiType, name)
+        self.addName(guiName, name)
 
-    def addName(self, guiType, name):
-        guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
-        if name:
+    def addName(self, guiName, name):
+        """Add the name to the list widget, remove it from the combo box, and add the appropriate tab to the tab widget."""
+        tabWidget,comboBox,listWidget = self.guiDict[guiName]
+        if name and name in self.guiTemplate[guiName]:
+            templateDict = self.guiTemplate[guiName][name]
+            description = templateDict.get('description') if templateDict else None
             with BlockSignals(listWidget) as w:
                 item=QtGui.QListWidgetItem(name,w)
+                if description:
+                    item.setToolTip(description)
                 w.setCurrentItem(item)
             with BlockSignals(tabWidget) as w:
-                widget=self.getWidget(guiType,name)
+                widget=self.getWidget(guiName,name)
                 w.addTab(widget,name)
-                w.setCurrentIndex(w.indexOf(widget))
+                index=w.indexOf(widget)
+                if description:
+                    w.setTabToolTip(index,description)
+                w.setCurrentIndex(index)
             index=comboBox.findText(name,QtCore.Qt.MatchExactly)
             comboBox.removeItem(index)
 
-    def onRemove(self, guiType):
+    def onRemove(self, guiName):
         """Remove is clicked. Remove it from the list widget, remove it from the tab widget, and add it back to the combo box."""
-        guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
+        tabWidget,comboBox,listWidget = self.guiDict[guiName]
         if listWidget.currentItem():
             name = str(listWidget.currentItem().text())
             with BlockSignals(listWidget) as w:
                 w.takeItem(w.currentRow())
             with BlockSignals(tabWidget) as w:
-                widget = self.widgetDict[(guiType,name)]
+                widget = self.widgetDict[(guiName,name)]
                 w.removeTab(w.indexOf(widget))
             comboBox.addItem(name)
-            templateDict= self.guiTemplate[guiName][name]
+            templateDict = self.guiTemplate[guiName][name]
             role = templateDict.get('role') if templateDict else None
             if role:
                 self.roleDict[role].remove(name)
             self.updateRoles.emit()
 
-    def getWidget(self, guiType, name):
+    def getWidget(self, guiName, name):
         """Get the widget associated with the given name."""
-        guiName,tabWidget,comboBox,listWidget = self.guiDict[guiType]
-        configDict=self.guiTemplate[guiName][name]
-        fields = configDict.get('fields') if configDict else None
-        role = configDict.get('role') if configDict else None
-        if (guiType,name) not in self.widgetDict:
-            self.subwidgetDict[(guiType,name)] = []
+        templateDict = self.guiTemplate[guiName][name]
+        fields = templateDict.get('fields') if templateDict else None
+        role = templateDict.get('role') if templateDict else None
+
+        if (guiName,name) not in self.widgetDict:
+            self.subwidgetDict[(guiName,name)] = []
             mainwidget = QtGui.QWidget()
             layout = QtGui.QFormLayout(mainwidget)
-            if configDict and fields:
+            if templateDict and fields:
                 for fieldname, fieldtype in fields.iteritems():
                     try:
                         oldvalue = self.exptConfig[guiName][name][fieldname]
                     except KeyError:
                         oldvalue = None
                     subwidget=configWidget(self,fieldtype,name,oldvalue,parent=mainwidget)
-                    self.subwidgetDict[(guiType,name)].append((fieldname,subwidget))
+                    self.subwidgetDict[(guiName,name)].append((fieldname,subwidget))
                     layout.addRow(fieldname, subwidget.widget)
             else:
-                layout.addRow('No configuration data for this selection', QtGui.QWidget())
-            self.widgetDict[(guiType,name)] = mainwidget
+                layout.addRow('No configuration data for this selection', None)
+            self.widgetDict[(guiName,name)] = mainwidget
         if role:
             if self.roleDict.get(role):
                 self.roleDict[role].append(name)
             else:
                 self.roleDict[role]=[name]
             self.updateRoles.emit()
-        return self.widgetDict[(guiType,name)]
+        return self.widgetDict[(guiName,name)]
 
     def accept(self):
         """Ok button is clicked. Checks database settings before proceeding."""
@@ -171,12 +176,11 @@ class ExptConfigUi(Base,Form):
             self.exptConfig=dict()
             self.exptConfig['hardware']=dict()
             self.exptConfig['software']=dict()
-            for (guiType,name), subwidgetList in self.subwidgetDict.iteritems():
-                guiname=self.guiDict[guiType][0] #'hardware' or 'software'
-                if name in self.addedNames(guiType):
-                    self.exptConfig[guiname][name]=dict() #name of piece of equipment
-                    for fieldname,subwidget in subwidgetList: #fieldname is the specific config field for 'name'
-                        self.exptConfig[guiname][name][fieldname] = subwidget.content
+            for (guiName,name), subwidgetList in self.subwidgetDict.iteritems():
+                if name in self.addedNames(guiName):
+                    self.exptConfig[guiName][name]=dict() #'name' is name of piece of equipment or software feature
+                    for field,subwidget in subwidgetList: #'field' is the specific config field for 'name'
+                        self.exptConfig[guiName][name][field] = subwidget.content
             self.exptConfig['databaseConnection'] = dbSettings
             self.exptConfig['showGui']=not self.defaultCheckBox.isChecked()
             Base.accept(self)
@@ -187,9 +191,9 @@ class ExptConfigUi(Base,Form):
         logging.getLogger(__name__).exception(message)
         sys.exit(message)
 
-    def addedNames(self, guiType):
+    def addedNames(self, guiName):
         """return the names that have been added to the list of hardware or software"""
-        listWidget = self.guiDict[guiType][3]
+        tabWidget,comboBox,listWidget = self.guiDict[guiName]
         names = []
         for index in xrange(listWidget.count()):
              names.append(str(listWidget.item(index).text()))
@@ -197,34 +201,39 @@ class ExptConfigUi(Base,Form):
 
 
 class configWidget(object):
+    """Class for arbitrary config widget"""
     def __init__(self,exptConfigUi,fieldtype,role,oldvalue,parent=None):
+        """Creates a widget of the specified fieldtype"""
         self.fieldtype = fieldtype
-        self.widgetCall = {'bool' :QtGui.QCheckBox,
-                           'float':QtGui.QDoubleSpinBox,
-                           'int'  :QtGui.QSpinBox,
-                           'role' :partial(RoleWidget,role,exptConfigUi),
-                           'path' :partial(PathWidget,exptConfigUi.project.baseDir),
-                           'str'  :QtGui.QLineEdit
-                          }.get(self.fieldtype)
-        if not self.widgetCall:
-            self.widget=QtGui.QLabel('error: unknown type',parent=parent)
+
+        self.widgetCallLookup = {'bool'   : QtGui.QCheckBox,
+                                 'float'  : QtGui.QDoubleSpinBox,
+                                 'int'    : QtGui.QSpinBox,
+                                 'role'   : partial(RoleWidget,role,exptConfigUi),
+                                 'path'   : partial(PathWidget,exptConfigUi.project.baseDir),
+                                 'str'    : QtGui.QLineEdit,
+                                 'ok_fpga': OK_FPGA_Widget}
+
+        widgetCall = self.widgetCallLookup.get(self.fieldtype)
+        if not widgetCall:
+            self.widget = QtGui.QLabel('error: unknown type',parent=parent)
             self.widget.setStyleSheet("QLabel {color: red;}")
         else:
-            self.widget=self.widgetCall(parent=parent)
+            self.widget = widgetCall(parent=parent)
+
+        self.widgetSetLookup = {'bool'   : getattr(self.widget, 'setChecked', None),
+                                'float'  : getattr(self.widget, 'setValue', None),
+                                'int'    : getattr(self.widget, 'setValue', None),
+                                'role'   : getattr(self.widget, 'setToText', None),
+                                'path'   : getattr(self.widget, 'setText', None),
+                                'str'    : getattr(self.widget, 'setText', None),
+                                'ok_fpga': getattr(self.widget, 'setToText', None)}
+
         if oldvalue:
-            if self.fieldtype=='bool':
-                self.widget.setChecked(oldvalue)
-            elif self.fieldtype=='float':
-                self.widget.setValue(oldvalue)
-            elif self.fieldtype=='int':
-                self.widget.setValue(oldvalue)
-            elif self.fieldtype=='role':
-                index=self.widget.findText(oldvalue, QtCore.Qt.MatchExactly)
-                self.widget.setCurrentIndex(index)
-            elif self.fieldtype=='path':
-                self.widget.lineEdit.setText(oldvalue)
-            elif self.fieldtype=='str':
-                self.widget.setText(oldvalue)
+            try:
+                self.widgetSetLookup.get(self.fieldtype)(oldvalue)
+            except Exception:
+                pass
 
     @property
     def content(self):
@@ -240,9 +249,12 @@ class configWidget(object):
             return str(self.widget.lineEdit.text())
         elif self.fieldtype=='str':
             return str(self.widget.text())
+        elif self.fieldtype=='ok_fpga':
+            return str(self.widget.identifierComboBox.currentText())
 
 
 class PathWidget(QtGui.QHBoxLayout):
+    """Config widget for selecting files"""
     def __init__(self,baseDir,parent=None):
         super(PathWidget, self).__init__()
         self.lineEdit=QtGui.QLineEdit(parent)
@@ -258,10 +270,14 @@ class PathWidget(QtGui.QHBoxLayout):
         self.baseDir=baseDir
         self.parent=parent
 
+    @QtCore.pyqtSlot()
     def onOpen(self):
         filename = str(QtGui.QFileDialog.getOpenFileName(self.parent, 'Select File',self.baseDir,'All files (*.*)'))
         if filename:
             self.lineEdit.setText(filename)
+
+    def setText(self,text):
+        self.lineEdit.setText(text)
 
 
 class RoleWidget(QtGui.QComboBox):
@@ -273,7 +289,9 @@ class RoleWidget(QtGui.QComboBox):
         self.onUpdate()
         self.exptConfigUi.updateRoles.connect(self.onUpdate)
 
+    @QtCore.pyqtSlot()
     def onUpdate(self):
+        """Update the list of possible hardware to use for this role"""
         currentText=self.currentText()
         self.clear()
         self.addItem('')
@@ -281,3 +299,61 @@ class RoleWidget(QtGui.QComboBox):
         if hardwareList:
             self.addItems(hardwareList)
         self.setCurrentIndex( self.findText(currentText,QtCore.Qt.MatchExactly) )
+
+    def setToText(self, text):
+        """Set widget to particular text"""
+        index=self.findText(text, QtCore.Qt.MatchExactly)
+        self.setCurrentIndex(index)
+
+
+class OK_FPGA_Widget(QtGui.QHBoxLayout):
+    """Config widget for selecting an Opal Kelly FPGA"""
+    OK_FPGA_Dict=dict() #FPGAs found by scan
+    def __init__(self,parent=None):
+        super(OK_FPGA_Widget, self).__init__()
+        self.identifierComboBox = QtGui.QComboBox(parent)
+        self.modelLineEdit = QtGui.QLineEdit(parent)
+        self.modelLineEdit.setReadOnly(True)
+        # self.scanButton = QtGui.QPushButton(parent)
+        # self.scanButton.setText('Scan')
+        # self.scanButton.setFixedWidth(1.5*textSize('Scan').width())
+        # self.scanButton.clicked.connect(self.scan)
+        self.addWidget(self.identifierComboBox)
+        self.addWidget(self.modelLineEdit)
+#        self.addWidget(self.scanButton)
+        self.identifierComboBox.currentIndexChanged[int].connect(self.onChanged)
+        self.listFPGAs()
+
+    def listFPGAs(self):
+        """list FPGAs in the combo box."""
+        if not self.__class__.OK_FPGA_Dict:
+            self.__class__.scan() #Scan for FPGAs if it hasn't already been done
+        FPGAs = self.__class__.OK_FPGA_Dict
+        if FPGAs:
+            self.identifierComboBox.clear()
+            for index, key in enumerate(FPGAs):
+                modelName = FPGAs[key].modelName
+                self.identifierComboBox.addItem(key)
+                self.identifierComboBox.setItemData(index,modelName,QtCore.Qt.UserRole)
+                self.identifierComboBox.setCurrentIndex(index)
+                self.modelLineEdit.setFixedSize(textSize(modelName))
+                self.modelLineEdit.setText(modelName)
+            self.identifierComboBox.addItem('')
+
+    @QtCore.pyqtSlot(int)
+    def onChanged(self, index):
+        modelName=self.identifierComboBox.itemData(index, QtCore.Qt.UserRole).toString()
+        self.modelLineEdit.setFixedSize(textSize(modelName))
+        self.modelLineEdit.setText(modelName)
+
+    def setToText(self, text):
+        """Set widget to particular device id text"""
+        index=self.identifierComboBox.findText(text, QtCore.Qt.MatchExactly)
+        self.identifierComboBox.setCurrentIndex(index)
+
+    @classmethod
+    def scan(cls):
+        """Scan for Opal Kelly FPGAs."""
+        from pulser.OKBase import OKBase
+        okbase = OKBase()
+        cls.OK_FPGA_Dict = okbase.listBoards()

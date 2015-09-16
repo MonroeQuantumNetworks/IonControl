@@ -1,3 +1,14 @@
+from PyQt4 import QtGui, QtCore
+
+def textSize(text):
+    """return the default size of a block of text"""
+    defaultFontName = QtGui.QFont().defaultFamily()
+    font = QtGui.QFont(defaultFontName,-1,QtGui.QFont.Normal)
+    fm = QtGui.QFontMetrics(font)
+    width = fm.width(text)
+    height = fm.height()
+    return QtCore.QSize(width,height)
+
 def updateComboBoxItems( combo, items, selected=None):
     """Update the items in a combo Box,
     if the selected item is still there select it 
