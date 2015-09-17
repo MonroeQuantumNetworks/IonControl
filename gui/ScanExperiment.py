@@ -54,6 +54,7 @@ from scan.AnalysisControl import AnalysisControl   #@UnresolvedImport
 from modules.Utility import join
 import pytz
 from PyQt4.QtGui import QApplication
+from ProjectConfig.Project import getProject
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -324,17 +325,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             
             override = dict()
             scanParam = None
-            
-            AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
-            if AWGdevice.parent.parameters.enabled and self.scan.scanMode == 0: # 0 = Parameter Scan
-                logging.getLogger(__name__).info("AWG active!")
-                (setScanParam, scanParam) = AWGdevice.scanParam() 
-                # don't scan over scanParam if not a duration scan. instead override scanParam if necessary and program the AWG
-                if not (self.scan.scanMode == 0 and self.scan.scanTarget == "AWG" and self.scan.scanParameter == "Duration"):
-                    if setScanParam:
-                        override = {scanParam: AWGdevice._waveform.vars['Duration']['value']}
-                        scanParam = None
-                    AWGdevice.program(False)
+
+            AWG = getProject().exptConfig['software'].get('AWG')
+            AWGEnabled = AWG.get('enabled') if AWG else False
+            if AWGEnabled:
+                AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
+                if AWGdevice.parent.parameters.enabled and self.scan.scanMode == 0: # 0 = Parameter Scan
+                    logging.getLogger(__name__).info("AWG active!")
+                    (setScanParam, scanParam) = AWGdevice.scanParam()
+                    # don't scan over scanParam if not a duration scan. instead override scanParam if necessary and program the AWG
+                    if not (self.scan.scanMode == 0 and self.scan.scanTarget == "AWG" and self.scan.scanParameter == "Duration"):
+                        if setScanParam:
+                            override = {scanParam: AWGdevice._waveform.vars['Duration']['value']}
+                            scanParam = None
+                        AWGdevice.program(False)
             
             PulseProgramBinary = self.pulseProgramUi.getPulseProgramBinary(override=override) # also overwrites the current variable values
             if self.scan.scanMode == 0:

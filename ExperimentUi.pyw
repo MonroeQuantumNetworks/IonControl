@@ -6,7 +6,6 @@ This is the main gui program for the ExperimentalUi
 
 @author: pmaunz
 """
-__version__ = '0.8'
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
@@ -14,6 +13,7 @@ from ProjectConfig.Project import Project, ProjectInfoUi
 import sys
 import logging
 import ctypes
+import importlib
 from modules.XmlUtilit import prettify
 from modules.SequenceDict import SequenceDict
 from functools import partial
@@ -28,7 +28,6 @@ from gui import SettingsDialog
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from externalParameter import ExternalParameterSelection
 from externalParameter import ExternalParameterUi
-from externalParameter.InstrumentLoggingWindow import InstrumentLoggingWindow
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from logicAnalyzer.LogicAnalyzer import LogicAnalyzer
 from modules import DataDirectory, MyException
@@ -51,7 +50,6 @@ from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettingsDialog
 from externalParameter.ExternalParameterBase import InstrumentDict
-from AWG.AWGUi import AWGUi
 
 try:
     from voltageControl.VoltageControl import VoltageControl
@@ -63,6 +61,7 @@ WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
+
     def __init__(self, config, project):
         self.config = config
         self.project = project
@@ -83,9 +82,15 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
         self.printMenu = None
-        self.instrumentLogger = None
         self.dbConnection = project.dbConnection
-        
+
+        self.hardware = project.exptConfig['hardware']
+        self.software = project.exptConfig['software']
+        AWG = self.software.get('AWG')
+        self.AWGEnabled = AWG.get('enabled') if AWG else False
+        if self.AWGEnabled:
+            self.AWGUi_class = getattr(importlib.import_module('AWG.AWGUi'), 'AWGUi')
+
     def __enter__(self):
         self.pulser = PulserHardware()
         return self
@@ -194,17 +199,17 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.preferencesUiDock.setWidget(self.preferencesUi)
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
-        
-        self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.variables)
-        self.AWGUi.setupUi(self.AWGUi)
-        self.AWGUiDock = QtGui.QDockWidget("AWG")
-        self.AWGUiDock.setWidget(self.AWGUi)
-        self.AWGUiDock.setObjectName("_AWGUi")
-        self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
-           
-        self.AWGUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )               
-        self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.outputChannels() )
-        self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
+
+        if self.AWGEnabled:
+            self.AWGUi = self.AWGUi_class(self.pulser, self.config, self.globalVariablesUi.variables)
+            self.AWGUi.setupUi(self.AWGUi)
+            self.AWGUiDock = QtGui.QDockWidget("AWG")
+            self.AWGUiDock.setWidget(self.AWGUi)
+            self.AWGUiDock.setObjectName("_AWGUi")
+            self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.AWGUiDock)
+            self.AWGUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'AWG') )
+            self.scanExperiment.updateScanTarget( 'AWG', self.AWGUi.outputChannels() )
+            self.globalVariablesUi.valueChanged.connect( self.AWGUi.evaluate )
 
         self.pulserParameterUi = PulserParameterUi(self.pulser, self.config, self.globalVariablesUi.variables)
         self.pulserParameterUi.setupUi()
@@ -252,7 +257,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 #        self.tabifyDockWidget( self.DDS9910DockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.DACDockWidget, self.globalVariablesDock )
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
-        self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
+        if self.AWGEnabled:
+            self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -321,7 +327,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionMeasurementLog.triggered.connect(self.onMeasurementLog)
         self.actionDedicatedCounters.triggered.connect(self.showDedicatedCounters)
         self.actionLogic.triggered.connect(self.showLogicAnalyzer)
-        self.actionLogging.triggered.connect(self.startLoggingProcess)
         self.currentTab = self.tabDict.at( min(len(self.tabDict)-1, self.config.get('MainWindow.currentIndex',0) ) )
         self.tabWidget.setCurrentIndex( self.config.get('MainWindow.currentIndex',0) )
         self.currentTab.activate()
@@ -389,11 +394,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
     def onEnableConsole(self, state):
         self.consoleEnable = state==QtCore.Qt.Checked
-                
-    def startLoggingProcess(self):
-        if self.instrumentLogger is None or not self.instrumentLogger.is_alive():
-            self.instrumentLogger = InstrumentLoggingWindow(self.project)
-        
+
     def onClearConsole(self):
         self.textEditConsole.clear()
         
@@ -572,8 +573,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.scriptingWindow.onClose()
         self.logicAnalyzerWindow.close()
         self.measurementLog.close()
-        if self.instrumentLogger:
-            self.instrumentLogger.shutdown()
         for tempArea in self.scanExperiment.area.tempAreas:
             tempArea.win.close()
 
@@ -611,7 +610,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.valueHistoryUi.saveConfig()
         self.ExternalParametersUi.saveConfig()
         self.pulserParameterUi.saveConfig()
-        self.AWGUi.saveConfig()
+        if self.AWGEnabled:
+            self.AWGUi.saveConfig()
         
     def onProjectSelection(self):
         ui = ProjectInfoUi(self.project)
@@ -645,8 +645,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     project = Project()
-    hardware = project.exptConfig['hardware']
-    software = project.exptConfig['software']
     # if hardware.get('Conex Motion'):
     #     import MotionParameter  #@UnusedImport
     # if hardware.get('APT Motion'):
