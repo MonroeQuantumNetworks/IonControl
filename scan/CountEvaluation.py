@@ -18,6 +18,7 @@ from modules.enum import enum
 import logging
 from modules.Expression import Expression
 from modules import MagnitudeUtilit
+from modules import magnitude
 
 class EvaluationException(Exception):
     pass
@@ -160,28 +161,42 @@ class FeedbackEvaluation(EvaluationBase):
     sourceType = enum('Counter','Result')
     def __init__(self,settings=None):
         EvaluationBase.__init__(self,settings)
+        self.integrator = None
         
     def setDefault(self):
-        pass
+        self.settings.setdefault('SetPoint',0.)
+        self.settings.setdefault('P', magnitude.mg(0,''))
+        self.settings.setdefault('I', magnitude.mg(0,''))
+        self.settings.setdefault('IntegrationTime', magnitude.mg(10,'s'))
+        self.settings.setdefault('GlobalVariable', "")
     
+    def evaluateMinMax(self, countarray):
+        mean = numpy.mean( countarray )
+        return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
+
     def evaluate(self, data, evaluation, expected=None, globalDict=None, iOld):
         countarray = evaluation.getChannelData(data)
+        globalName = self.settings['GlobalVariable']
         if not countarray:
             return 0, (0,0), 0
-        mean, (minus, plus), raw =  self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
+        if not globalDict or globalName not in globalDict:
+            return 0, (0,0), 0
+        if self.integrator is None:
+            self.integrator = globalDict[globalName]
+        mean, (_, _), raw =  self.evaluateMinMax(countarray)
         errorval = self.settings['SetPoint'] - mean
-        pGain = self.settings['P'] * errorval
-        iVal = iOld + mean
-        iGain = self.settings['I'] * iVal
-        totalGain = pGain + iGain
-        return totalGain, (mean, errorval), raw
+        pOut = self.settings['P'] * errorval
+        self.integrator = self.integrator + errorval * self.settings['I'] 
+        totalOut = pOut + self.integrator
+        globalDict[globalName] = totalOut
+        return MagnitudeUtilit.value(totalOut), (None, None), raw
     
     def children(self):
-        return [{'name':'SetPoint',        'type': 'int', 'value': self.settings['SetPoint'],        'tip': "Set point of PI loop"                                          },
-                {'name':'P',               'type': 'int', 'value': self.settings['P'],               'tip': "Proportional gain"                                             },
-                {'name':'I',               'type': 'int', 'value': self.settings['I'],               'tip': "Integral gain"                                                 },
-                {'name':'IntegrationTime', 'type': 'int', 'value': self.settings['AveragingTime'],   'tip': "Time spent accumulating data before updating the servo output" },
-                {'name':'OutputParameter', 'type': 'str', 'value': self.settings['OutputParameter'], 'tip': "Name of variable to which servo output value should be pushed" }]     
+        return [{'name':'SetPoint',        'type': 'float', 'value': self.settings['SetPoint'],        'tip': "Set point of PI loop"                                          },
+                {'name':'P',               'type': 'magnitude', 'value': self.settings['P'],               'tip': "Proportional gain"                                             },
+                {'name':'I',               'type': 'magnitude', 'value': self.settings['I'],               'tip': "Integral gain"                                                 },
+                {'name':'IntegrationTime', 'type': 'magnitude', 'value': self.settings['AveragingTime'],   'tip': "Time spent accumulating data before updating the servo output" },
+                {'name':'GlobalVariable',  'type': 'str', 'value': self.settings['GlobalVariable'],  'tip': "Name of variable to which servo output value should be pushed" }]     
  
 
 class ThresholdEvaluation(EvaluationBase):
