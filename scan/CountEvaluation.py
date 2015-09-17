@@ -18,6 +18,7 @@ from modules.enum import enum
 import logging
 from modules.Expression import Expression
 from modules import MagnitudeUtilit
+from modules import magnitude
 
 class EvaluationException(Exception):
     pass
@@ -108,15 +109,15 @@ class MeanEvaluation(EvaluationBase):
         mean = numpy.mean( countarray )
         return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
     
-    def evaluate(self, data, evaluation, expected=None, globalDict=None):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, (0,0), 0
         mean, (minus, plus), raw =  self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
         if self.settings['transformation']!="":
             mydict = { 'y': mean }
-            if globalDict:
-                mydict.update( globalDict )
+            if ppDict:
+                mydict.update( ppDict )
             mean = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
             mydict['y'] = mean+plus
             plus = MagnitudeUtilit.value(self.expression.evaluate(self.settings['transformation'], mydict))
@@ -142,7 +143,7 @@ class NumberEvaluation(EvaluationBase):
     def setDefault(self):
         pass
     
-    def evaluate(self, data, evaluation, expected=None, globalDict=None):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -151,6 +152,56 @@ class NumberEvaluation(EvaluationBase):
     def children(self):
         return []     
 
+class FeedbackEvaluation(EvaluationBase):
+    """
+    returns mean and shot noise error
+    """
+    name = 'Feedback'
+    tooltip = "Slow feedback on external parameter" 
+    sourceType = enum('Counter','Result')
+    def __init__(self,settings=None):
+        EvaluationBase.__init__(self,settings)
+        self.integrator = None
+        self.lastUpdate = None
+        
+    def setDefault(self):
+        self.settings.setdefault('SetPoint',0.)
+        self.settings.setdefault('P', magnitude.mg(0,''))
+        self.settings.setdefault('I', magnitude.mg(0,''))
+        self.settings.setdefault('AveragingTime', magnitude.mg(10,'s'))
+        self.settings.setdefault('GlobalVariable', "")
+        self.settings.setdefault('Reset', False)
+    
+    def evaluateMinMax(self, countarray):
+        mean = numpy.mean( countarray )
+        return mean, (mean-numpy.min(countarray), numpy.max(countarray)-mean), numpy.sum(countarray)
+
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None):
+        countarray = evaluation.getChannelData(data)
+        globalName = self.settings['GlobalVariable']
+        if not countarray:
+            return 2, (0,0), 0
+        if not globalDict or globalName not in globalDict:
+            return 1, (0,0), 0
+        if self.integrator is None or self.settings['Reset']:
+            self.integrator = globalDict[globalName]
+            self.settings['Reset'] = False
+        mean, (_, _), raw =  self.evaluateMinMax(countarray)
+        errorval = self.settings['SetPoint'] - mean
+        pOut = self.settings['P'] * errorval
+        self.integrator = self.integrator + errorval * self.settings['I'] 
+        totalOut = pOut + self.integrator
+        globalDict[globalName] = totalOut
+        return MagnitudeUtilit.value(totalOut), (None, None), raw
+    
+    def children(self):
+        return [{'name':'SetPoint',        'type': 'float',     'value': self.settings['SetPoint'],        'tip': "Set point of PI loop"                                          },
+                {'name':'P',               'type': 'magnitude', 'value': self.settings['P'],               'tip': "Proportional gain"                                             },
+                {'name':'I',               'type': 'magnitude', 'value': self.settings['I'],               'tip': "Integral gain"                                                 },
+                {'name':'AveragingTime',   'type': 'magnitude', 'value': self.settings['AveragingTime'],   'tip': "Time spent accumulating data before updating the servo output" },
+                {'name':'GlobalVariable',  'type': 'str',       'value': self.settings['GlobalVariable'],  'tip': "Name of variable to which servo output value should be pushed" },
+                {'name':'Reset',  'type': 'bool',       'value': self.settings['Reset'],  'tip': "Reset integrator" }]     
+ 
 
 class ThresholdEvaluation(EvaluationBase):
     """
@@ -167,7 +218,7 @@ class ThresholdEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -208,7 +259,7 @@ class RangeEvaluation(EvaluationBase):
         self.settings.setdefault('max',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -253,7 +304,7 @@ class DoubleRangeEvaluation(EvaluationBase):
         self.settings.setdefault('max_2',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -301,7 +352,7 @@ class FidelityEvaluation(EvaluationBase):
         self.settings.setdefault('threshold',1)
         self.settings.setdefault('invert',False)
         
-    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         countarray = evaluation.getChannelData(data)
         if not countarray:
             return 0, None, 0
@@ -348,7 +399,7 @@ class ParityEvaluation(EvaluationBase):
         self.settings.setdefault('Ion_1','')
         self.settings.setdefault('Ion_2','')
         
-    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         name1, name2 = self.settings['Ion_1'], self.settings['Ion_2']
         eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2) 
         if eval1 is None:
@@ -400,7 +451,7 @@ class TwoIonEvaluation(EvaluationBase):
         self.settings.setdefault('bd',-1)
         self.settings.setdefault('bb',1)
         
-    def evaluate(self, data, evaluation, expected=None, globalDict=None ):
+    def evaluate(self, data, evaluation, expected=None, ppDict=None, globalDict=None ):
         name1, name2 = self.settings['Ion_1'], self.settings['Ion_2']
         eval1, eval2 = data.evaluated.get(name1), data.evaluated.get(name2) 
         if eval1 is None:
