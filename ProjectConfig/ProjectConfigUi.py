@@ -45,7 +45,7 @@ class ProjectConfigUi(Base,Form):
                                                                 ))
             if not os.path.exists(baseDir):
                 message = "Valid base directory for projects must be specified for IonControl program to run"
-                logger.exception(message)
+                logger.error(message)
                 sys.exit(message)
             else:
                 self.projectConfig['baseDir'] = baseDir

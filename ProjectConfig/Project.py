@@ -39,8 +39,9 @@ class Project(object):
                 try:
                     yamldata = yaml.load(f)
                     self.projectConfig = yamldata
-                except yaml.scanner.ScannerError:
-                    pass #leave defaults if the file is improperly formatted
+                    logger.info('Project config file {0} loaded'.format(self.projectConfigFilename))
+                except yaml.scanner.ScannerError: #leave defaults if the file is improperly formatted
+                    logger.warning('YAML formatting error: unable to read in project config file {0}'.format(self.projectConfigFilename))
 
         #If the baseDir doesn't exist or no project is specified, we have to use the GUI
         if not os.path.exists(self.projectConfig['baseDir']) or not self.projectConfig['name']:
@@ -52,6 +53,7 @@ class Project(object):
             ui.exec_()
             with open(self.projectConfigFilename, 'w') as f: #save information from GUI to file
                 yaml.dump(self.projectConfig, f, default_flow_style=False)
+                logger.info('GUI data saved to {0}'.format(self.projectConfigFilename))
 
         #make project directories if they don't exist
         self.projectDir = os.path.join(self.projectConfig['baseDir'], self.projectConfig['name'])
@@ -63,11 +65,14 @@ class Project(object):
 
         if not os.path.exists(self.projectDir):
             os.makedirs(self.projectDir)
+            logger.debug('Directory {0} created'.format(self.projectDir))
 
         if not os.path.exists(self.configDir):
             os.makedirs(self.configDir)
+            logger.debug('Directory {0} created'.format(self.configDir))
             with open(self.exptConfigFilename, 'w') as f:
                 yaml.dump(self.exptConfig, f, default_flow_style=False)
+                logger.debug('File {0} created'.format(self.exptConfigFilename))
 
         if not os.path.exists(self.guiConfigDir):
             os.makedirs(self.guiConfigDir)
@@ -78,15 +83,15 @@ class Project(object):
                 try:
                     yamldata = yaml.load(f)
                     self.exptConfig = yamldata
-                except yaml.scanner.ScannerError:
-                    pass #leave defaults if the file is improperly formatted
+                    logger.info('Experiment config file {0} loaded'.format(self.exptConfigFilename))
+                except yaml.scanner.ScannerError: #leave defaults if the file is improperly formatted
+                    logger.warning('YAML formatting error: unable to read in experiment config file {0}'.format(self.exptConfigFilename))
 
-        if self.exptConfig.get('databaseConnection'):
+        if self.exptConfig.get('databaseConnection') and not self.exptConfig.get('showGui'):
             self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
             success = self.attemptDatabaseConnection(self.dbConnection)
             if not success:
                 self.exptConfig['showGui']=True
-                logger.info("Database connection failed - please check settings")
 
         if self.exptConfig['showGui']:
             ui = ExptConfigUi(self)
@@ -95,6 +100,7 @@ class Project(object):
             self.exptConfig = ui.exptConfig
             with open(self.exptConfigFilename, 'w') as f: #save information from GUI to file
                 yaml.dump(self.exptConfig, f, default_flow_style=False)
+                logger.info('GUI data saved to {0}'.format(self.exptConfigFilename))
 
         self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
 
@@ -127,6 +133,7 @@ class Project(object):
             logger.info("Database connection successful")
         except Exception:
             success = False
+            logger.info("Database connection failed - please check settings")
         return success
 
 
@@ -172,5 +179,6 @@ def getProject():
 
 if __name__ == '__main__':
     import sys
+    logging.basicConfig(level=logging.DEBUG)
     app = QtGui.QApplication(sys.argv)
     project = Project()

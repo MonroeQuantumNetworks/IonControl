@@ -188,7 +188,7 @@ class ExptConfigUi(Base,Form):
     def reject(self):
         """Cancel or close is clicked. Shut down the program."""
         message = "Experiment must be configured for IonControl program to run"
-        logging.getLogger(__name__).exception(message)
+        logging.getLogger(__name__).error(message)
         sys.exit(message)
 
     def addedNames(self, guiName):
