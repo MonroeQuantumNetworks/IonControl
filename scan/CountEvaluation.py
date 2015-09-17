@@ -151,6 +151,38 @@ class NumberEvaluation(EvaluationBase):
     def children(self):
         return []     
 
+class FeedbackEvaluation(EvaluationBase):
+    """
+    returns mean and shot noise error
+    """
+    name = 'Feedback'
+    tooltip = "Slow feedback on external parameter" 
+    sourceType = enum('Counter','Result')
+    def __init__(self,settings=None):
+        EvaluationBase.__init__(self,settings)
+        
+    def setDefault(self):
+        pass
+    
+    def evaluate(self, data, evaluation, expected=None, globalDict=None, iOld):
+        countarray = evaluation.getChannelData(data)
+        if not countarray:
+            return 0, (0,0), 0
+        mean, (minus, plus), raw =  self.errorBarTypeLookup[self.settings['errorBarType']](countarray)
+        errorval = self.settings['SetPoint'] - mean
+        pGain = self.settings['P'] * errorval
+        iVal = iOld + mean
+        iGain = self.settings['I'] * iVal
+        totalGain = pGain + iGain
+        return totalGain, (mean, errorval), raw
+    
+    def children(self):
+        return [{'name':'SetPoint',        'type': 'int', 'value': self.settings['SetPoint'],        'tip': "Set point of PI loop"                                          },
+                {'name':'P',               'type': 'int', 'value': self.settings['P'],               'tip': "Proportional gain"                                             },
+                {'name':'I',               'type': 'int', 'value': self.settings['I'],               'tip': "Integral gain"                                                 },
+                {'name':'IntegrationTime', 'type': 'int', 'value': self.settings['AveragingTime'],   'tip': "Time spent accumulating data before updating the servo output" },
+                {'name':'OutputParameter', 'type': 'str', 'value': self.settings['OutputParameter'], 'tip': "Name of variable to which servo output value should be pushed" }]     
+ 
 
 class ThresholdEvaluation(EvaluationBase):
     """
