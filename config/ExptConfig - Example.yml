@@ -8,13 +8,13 @@ showGui: false
 #This section defines the available software, and how it's configured.
 software:
   Pulser:
-    enable: true
+    enabled: true
     hardware: "Opal Kelly FPGA: Pulser"
   Voltages:
-    enable: true
+    enabled: true
     hardware: "Opal Kelly FPGA: DAC"
   AWG:
-    enable: true
+    enabled: true
     hardware: Chase AWG
   Gate Sequences:
   Timestamps:
@@ -22,22 +22,22 @@ software:
 #This section defines the available hardware, and how it's configured.
 hardware:
   "Opal Kelly FPGA: Pulser":
-    enable: true
+    enabled: true
     device: ChipLabPulseProgrammer
     bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\IonControl-firmware-UMD.bit
     uploadOnStartup: False
   "Opal Kelly FPGA: 32 Channel PMT":
-    enable: true
+    enabled: true
     device: 32PMTFPGA
     bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
     uploadOnStartup: False
   "Opal Kelly FPGA: DAC":
-    enable: true
+    enabled: true
     device: DACFPGA
     bitFile: C:\Users\jmizrahi\IonControl\FPGA_Ions\mybitfile.bit
     uploadOnStartup: False
   Chase AWG:
-    enable: true
+    enabled: true
     name: Chase DA12000 AWG
     instrument: Chase DA12000 AWG
     DLL: DA12000_DLL64.dll

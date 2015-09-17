@@ -12,6 +12,7 @@ import modules.magnitude as magnitude
 from ExternalParameterBase import ExternalParameterBase, nextValue
 from ProjectConfig.Project import getProject
 from PyQt4 import QtGui
+from uiModules.ImportErrorPopup import importErrorPopup
 
 project=getProject()
 hardware=project.exptConfig['hardware']
@@ -25,12 +26,7 @@ if visaEnabled:
     try:
         import visa
     except ImportError: #popup on failed import of enabled visa
-        messageBox = QtGui.QMessageBox()
-        response = messageBox.warning(messageBox,'Import Failure',
-                                      'VISA module is listed as enabled in the configuration file, but the import failed. Proceed without?',
-                                      QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Ok)
-        if response==QtGui.QMessageBox.Ok: visaEnabled=False
-        else: sys.exit('Visa import failure')
+        importErrorPopup('VISA')
 
 if visaEnabled:
     class N6700BPowerSupply(ExternalParameterBase):

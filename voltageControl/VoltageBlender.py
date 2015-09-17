@@ -14,7 +14,6 @@ import numpy
 
 from Chassis import DAQmxUtility     
 from Chassis.itfParser import itfParser
-#from gui import ProjectSelection
 from ProjectConfig.Project import getProject
 from modules import MyException, MagnitudeUtilit
 from modules.SequenceDict import SequenceDict
