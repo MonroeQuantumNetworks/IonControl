@@ -70,3 +70,5 @@ hardware:
     description: APT motorized actuators from Thorlabs
   VISA:
     description: communication with peripherals (e.g. GPIB, RS232, USB, Ethernet)
+  HighFinesse Wavemeter:
+    description: HighFinesse Wavemeter from Toptica photonics for reading laser wavelengths, with Java applet web interface

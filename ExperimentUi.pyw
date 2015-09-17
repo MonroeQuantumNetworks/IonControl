@@ -13,7 +13,6 @@ from ProjectConfig.Project import Project, ProjectInfoUi
 import sys
 import logging
 import ctypes
-import importlib
 from modules.XmlUtilit import prettify
 from modules.SequenceDict import SequenceDict
 from functools import partial
@@ -49,7 +48,6 @@ from pulser import ShutterUi
 from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettingsDialog
-from externalParameter.ExternalParameterBase import InstrumentDict
 
 try:
     from voltageControl.VoltageControl import VoltageControl
@@ -84,12 +82,43 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.printMenu = None
         self.dbConnection = project.dbConnection
 
+        #get hardware and software configuraiton
         self.hardware = project.exptConfig['hardware']
         self.software = project.exptConfig['software']
+
+        #determine if AWG is enabled and import class if it is
         AWG = self.software.get('AWG')
         self.AWGEnabled = AWG.get('enabled') if AWG else False
         if self.AWGEnabled:
-            self.AWGUi_class = getattr(importlib.import_module('AWG.AWGUi'), 'AWGUi')
+            from AWG.AWGUi import AWGUi
+            self.AWGUi_class = AWGUi
+
+        #setup external parameters; import specific libraries if they are needed, popup warnings if selected hardware import fail
+        import externalParameter.StandardExternalParameter
+        import externalParameter.InterProcessParameters
+        if 'Conex Motion' in self.hardware:
+            try:
+                import MotionParameter
+            except ImportError: #popup on failed import
+                messageBox = QtGui.QMessageBox()
+                response = messageBox.warning(messageBox,'Import Failure',
+                                              'Conex motion module is listed as enabled in the configuration file, but the import failed. Proceed without?',
+                                              QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Ok)
+                if response!=QtGui.QMessageBox.Ok:
+                    sys.exit('Conex import failure')
+        if 'APT Motion' in self.hardware:
+            try:
+                import APTInstruments #@UnusedImport
+            except ImportError: #popup on failed import
+                messageBox = QtGui.QMessageBox()
+                response = messageBox.warning(messageBox,'Import Failure',
+                                              'APT motion module is listed as enabled in the configuration file, but the import failed. Proceed without?',
+                                              QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Ok)
+                if response!=QtGui.QMessageBox.Ok:
+                    sys.exit('APT import failure')
+
+        from externalParameter.ExternalParameterBase import InstrumentDict
+        self.InstrumentDict = InstrumentDict
 
     def __enter__(self):
         self.pulser = PulserHardware()
@@ -260,7 +289,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.AWGEnabled:
             self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=self.InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
