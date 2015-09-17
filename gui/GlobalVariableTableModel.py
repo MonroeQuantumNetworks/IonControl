@@ -12,12 +12,6 @@ import sip
 from modules import Expression
 import modules.magnitude as magnitude
 from modules import MagnitudeUtilit
-from externalParameter.persistence import DBPersist
-from externalParameter.decimation import StaticDecimation
-import time
-from modules.magnitude import is_magnitude
-from functools import partial
-from collections import defaultdict
 from modules.MagnitudeParser import isIdentifier
 
 api2 = sip.getapi("QVariant") == 2
@@ -26,7 +20,6 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
     headerDataLookup = ['Name', 'Value']
     expression = Expression.Expression()
-    persistSpace = 'globalVar'
     def __init__(self, config, variables, parent=None, *args): 
         """ variabledict dictionary of variable value pairs as defined in the pulse programmer file
             parameterdict dictionary of parameter value pairs that can be used to calculate the value of a variable
@@ -47,8 +40,6 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
                                (QtCore.Qt.EditRole, 1): self.setValue,
                                }
-        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(10, 's')))
-        self.persistence = DBPersist()
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.variables) 
@@ -69,20 +60,11 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
             self.valueChanged.emit(name)
-            self.variables.observables[name].fire(name=name, value=result)
-            self.decimation[name].decimate(time.time(), result, partial(self.persistCallback, name))
             return True    
         except Exception:
             logger.exception("No match for {0}".format(str(value.toString())))
             return False
  
-    def persistCallback(self, source, data):
-        time, value, minval, maxval = data
-        unit = None
-        if is_magnitude(value):
-            value, unit = value.toval(returnUnit=True)
-        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
-
     def setDataName(self, index, value):
         try:
             strvalue = str(value if api2 else str(value.toString())).strip()
@@ -113,10 +95,8 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         name = self.variables.keyAt(index.row())
         old = self.variables[name]
         if not old.isIdenticalTo(value):
-            self.variables[name] = value
+            self.variables.setItem(name, value)
             self.valueChanged.emit(name)
-            self.variables.observables[name].fire(name=name, value=value)
-            self.decimation[name].decimate(time.time(), value, partial(self.persistCallback, name))
 
     def getVariables(self):
         return self.variables
@@ -185,12 +165,9 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 old = self.variables[key]
                 if value.dimension() != old.dimension() or value != old:
                     self.variables[key] = value
-                    self.variables.observables[key].fire(name=key, value=value)
                     self.valueChanged.emit(key)
                     index = self.variables.index(key)
                     self.dataChanged.emit(self.createIndex(index, 1), self.createIndex(index, 1))
-                    #self.decimation[key].decimate(time.time(), value, partial(self.persistCallback, key))
-                    self.persistCallback(key, (time.time(), value, None, None))
 
     def saveConfig(self):
         self.config['GlobalVariables.BoldSet'] = self.boldSet
