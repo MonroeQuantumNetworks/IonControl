@@ -29,15 +29,18 @@ Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
 class GlobalVariables(SequenceDict):
     persistSpace = 'globalVar'
     def __init__(self, *args, **kwds):
-        SequenceDict.__init__(self, *args, **kwds)
         self.customOrder = list()
         self.observables = defaultdict( Observable )
         self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(10, 's')))
         self.persistence = DBPersist()
+        SequenceDict.__init__(self, *args, **kwds)
+        pass
             
     def __reduce__(self):
         data = SequenceDict.__reduce__(self)
         data[2].pop('observables')
+        data[2].pop('decimation')
+        data[2].pop('persistence')
         return data
     
     def exportXml(self, element):
