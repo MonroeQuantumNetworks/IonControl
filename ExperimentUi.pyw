@@ -6,6 +6,8 @@ This is the main gui program for the ExperimentalUi
 
 @author: pmaunz
 """
+__version__ = '0.8'
+
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 from ProjectConfig.Project import Project, ProjectInfoUi
@@ -51,6 +53,10 @@ from gui.FPGASettings import FPGASettingsDialog
 from externalParameter.ExternalParameterBase import InstrumentDict
 from AWG.AWGUi import AWGUi
 
+try:
+    from voltageControl.VoltageControl import VoltageControl
+except:
+    pass
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
 
@@ -641,12 +647,12 @@ if __name__ == '__main__':
     project = Project()
     hardware = project.exptConfig['hardware']
     software = project.exptConfig['software']
-    if hardware.get('Conex Motion'):
-        import MotionParameter  #@UnusedImport
-    if hardware.get('APT Motion'):
-        import APTInstruments #@UnusedImport
-    if software.get('Voltages'):
-        from voltageControl.VoltageControl import VoltageControl
+    # if hardware.get('Conex Motion'):
+    #     import MotionParameter  #@UnusedImport
+    # if hardware.get('APT Motion'):
+    #     import APTInstruments #@UnusedImport
+    # if software.get('Voltages'):
+    #     from voltageControl.VoltageControl import VoltageControl
 
     #This make the icon in the Windows taskbar match the icon set in Qt Designer
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('TrappedIons.FPGAControlProgram')

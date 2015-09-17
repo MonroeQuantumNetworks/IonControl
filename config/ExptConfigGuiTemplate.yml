@@ -7,14 +7,17 @@ software:
   &P Pulser:
     description: The main pulser interface used for running experiments
     fields:
+      enable: bool
       hardware: role
   &V Voltages:
     description: Interface for controlling a set of voltages
     fields:
+      enable: bool
       hardware: role
   &A AWG:
     description: Interface for using an arbitrary waveform generator
     fields:
+      enable: bool
       hardware: role
   Gate Sequences:
     description: Interface for running long sequences of gates (e.g. randomized benchmarking)
@@ -27,12 +30,14 @@ hardware:
     description: The main FPGA used for running experiments
     role: *P
     fields:
+      enable: bool
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
   "Opal Kelly FPGA: 32 Channel PMT":
     description: FPGA used to pre-process outputs from 32 channel PMT
     fields:
+      enable: bool
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
@@ -40,6 +45,7 @@ hardware:
     description: FPGA used to control 100 output DAC board
     role: *V
     fields:
+      enable: bool
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
@@ -47,12 +53,14 @@ hardware:
     description: DAC system from National Instruments used to output voltages
     role: *V
     fields:
+      enable: bool
       name: str
       configFile: path
   Chase AWG:
     description: Arbitrary Waveform Generator from Chase Scientific Company
     role: *A
     fields:
+      enable: bool
       name: str
       instrument: str
       DLL: str
