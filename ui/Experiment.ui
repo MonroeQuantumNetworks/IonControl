@@ -60,7 +60,6 @@
    <addaction name="actionReload"/>
    <addaction name="actionSettings"/>
    <addaction name="actionLogic"/>
-   <addaction name="actionLogging"/>
    <addaction name="actionMeasurementLog"/>
    <addaction name="actionScripting"/>
   </widget>
@@ -426,15 +425,6 @@
    </property>
    <property name="text">
     <string>Logic</string>
-   </property>
-  </action>
-  <action name="actionLogging">
-   <property name="icon">
-    <iconset resource="Experiment.qrc">
-     <normaloff>:/openicon/icons/measure.png</normaloff>:/openicon/icons/measure.png</iconset>
-   </property>
-   <property name="text">
-    <string>Logging</string>
    </property>
   </action>
   <action name="actionAbort">

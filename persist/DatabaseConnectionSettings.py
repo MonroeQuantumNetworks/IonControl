@@ -5,9 +5,10 @@ Created on Dec 2, 2014
 '''
 
 
-
 class DatabaseConnectionSettings(object):
+    """Class to encapsulate database connection settings"""
     def __init__(self, **kwargs):
+        """initialize class"""
         self.user = kwargs.get('user', "")
         self.password = kwargs.get('password', "")
         self.database = kwargs.get('database', "")
@@ -17,6 +18,5 @@ class DatabaseConnectionSettings(object):
         
     @property
     def connectionString(self):
+        """Create database connection string"""
         return "postgresql://{user}:{password}@{host}:{port}/{database}".format(**self.__dict__)
-
-DatabaseConectionSettings = DatabaseConnectionSettings   # make sure unpickling still works

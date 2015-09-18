@@ -5,18 +5,16 @@ Created on Fri May 10 21:12:12 2013
 @author: pmaunz
 """
 
-import sys 
+import sys
+from _functools import partial
+import logging
 
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
+from sqlalchemy import create_engine
 
 import ProjectSelection
-from _functools import partial
 from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
-
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
-import logging
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\ProjectSelection.ui')
 

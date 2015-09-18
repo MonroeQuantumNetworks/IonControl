@@ -12,7 +12,7 @@ import logging
 from modules.file_data_cache import file_data_cache
 
 from pulseProgram import CounterTableModel
-from gui import ProjectSelection
+from ProjectConfig.Project import getProject
 from pulseProgram import TriggerTableModel
 from pulseProgram import PulseProgram
 from pulseProgram import ShutterTableModel
@@ -399,7 +399,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
     
     def onLoadRamFile(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file',ProjectSelection.configDir()))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file', getProject().configDir))
         if path:
             self.loadRamFile(path)
 
@@ -451,7 +451,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.updateSaveStatus()
 
     def onLoad(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',ProjectSelection.configDir()))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',getProject().configDir))
         if path!="":
             self.adaptiveLoadFile(path)
         self.updateSaveStatus()

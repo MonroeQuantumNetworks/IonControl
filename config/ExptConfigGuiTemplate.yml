@@ -1,0 +1,74 @@
+#This file is a template used in creating the GUI for editing the experiment configuration. It documents all hardware and software that the program knows about. When new pieces of hardware (or configurable software) are added with new interfaces, they should be added here, together with their configuration information, if any.
+
+#The GUI uses the "fields" dictionary to generate the configuration interface. Each field must be specified as a type. Known types are: role, path, str, int, float, bool, and ok_fpga
+
+#"software" is a dictionary of particular pieces of functionality available in the software, which have their own configuration information. For example, "Voltages" is a software feature, which must be configured by specifying its corresponding hardware. Hardware is a field of type "role," which means that the hardware can be set to any piece of hardware with role=Voltages.
+software:
+  &P Pulser:
+    description: The main pulser interface used for running experiments
+    fields:
+      enabled: bool
+      hardware: role
+  &V Voltages:
+    description: Interface for controlling a set of voltages
+    fields:
+      enabled: bool
+      hardware: role
+  &A AWG:
+    description: Interface for using an arbitrary waveform generator
+    fields:
+      enabled: bool
+      hardware: role
+  Gate Sequences:
+    description: Interface for running long sequences of gates (e.g. randomized benchmarking)
+  Timestamps:
+    description: Interface for reading and plotting the timestamps of TTL pulses
+
+#"hardware" are pieces of hardware together with configuration information. If a hardware has a role, it can be selected under the corresponding software's "hardware" field.
+hardware:
+  "Opal Kelly FPGA: Pulser":
+    description: The main FPGA used for running experiments
+    role: *P
+    fields:
+      enabled: bool
+      device: ok_fpga
+      bitFile: path
+      uploadOnStartup: bool
+  "Opal Kelly FPGA: 32 Channel PMT":
+    description: FPGA used to pre-process outputs from 32 channel PMT
+    fields:
+      enabled: bool
+      device: ok_fpga
+      bitFile: path
+      uploadOnStartup: bool
+  "Opal Kelly FPGA: DAC":
+    description: FPGA used to control 100 output DAC board
+    role: *V
+    fields:
+      enabled: bool
+      device: ok_fpga
+      bitFile: path
+      uploadOnStartup: bool
+  NI DAC Chassis:
+    description: DAC system from National Instruments used to output voltages
+    role: *V
+    fields:
+      enabled: bool
+      name: str
+      configFile: path
+  Chase AWG:
+    description: Arbitrary Waveform Generator from Chase Scientific Company
+    role: *A
+    fields:
+      enabled: bool
+      name: str
+      instrument: str
+      DLL: str
+  Conex Motion:
+    description: Conex motorized actuators from Newport Corporation
+  APT Motion:
+    description: APT motorized actuators from Thorlabs
+  VISA:
+    description: communication with peripherals (e.g. GPIB, RS232, USB, Ethernet)
+  HighFinesse Wavemeter:
+    description: HighFinesse Wavemeter from Toptica photonics for reading laser wavelengths, with Java applet web interface

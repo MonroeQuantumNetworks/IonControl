@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>657</width>
+    <height>858</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Project Selection</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_3">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QLabel" name="infoLabel">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QScrollArea" name="scrollArea">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="widgetResizable">
+        <bool>true</bool>
+       </property>
+       <widget class="QWidget" name="scrollAreaWidgetContents_2">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>556</width>
+          <height>810</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="QSplitter" name="splitter_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="childrenCollapsible">
+            <bool>false</bool>
+           </property>
+           <widget class="QGroupBox" name="groupBox_2">
+            <property name="title">
+             <string>Available Hardware</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QComboBox" name="hardwareComboBox"/>
+               </item>
+               <item>
+                <widget class="QToolButton" name="addHardwareButton">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="Experiment.qrc">
+                   <normaloff>:/openicon/icons/edit-add.png</normaloff>:/openicon/icons/edit-add.png</iconset>
+                 </property>
+                 <property name="autoRaise">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="removeHardwareButton">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="Experiment.qrc">
+                   <normaloff>:/openicon/icons/edit_remove.png</normaloff>:/openicon/icons/edit_remove.png</iconset>
+                 </property>
+                 <property name="autoRaise">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QSplitter" name="splitter">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <widget class="QListWidget" name="hardwareListWidget">
+                <property name="styleSheet">
+                 <string notr="true">/*QListWidget:item:selected:active {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:!active {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:disabled {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:!disabled {
+		background: darkBlue;
+		color: white;
+	}*/
+
+QListWidget:item:selected:active {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:!active {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:disabled {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:!disabled {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	}</string>
+                </property>
+               </widget>
+               <widget class="QTabWidget" name="hardwareTabWidget">
+                <property name="currentIndex">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QGroupBox" name="groupBox_3">
+            <property name="title">
+             <string>Software Features</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_4">
+               <item>
+                <widget class="QComboBox" name="softwareComboBox"/>
+               </item>
+               <item>
+                <widget class="QToolButton" name="addSoftwareButton">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="Experiment.qrc">
+                   <normaloff>:/openicon/icons/edit-add.png</normaloff>:/openicon/icons/edit-add.png</iconset>
+                 </property>
+                 <property name="autoRaise">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="removeSoftwareButton">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="Experiment.qrc">
+                   <normaloff>:/openicon/icons/edit_remove.png</normaloff>:/openicon/icons/edit_remove.png</iconset>
+                 </property>
+                 <property name="autoRaise">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QSplitter" name="splitter_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <widget class="QListWidget" name="softwareListWidget">
+                <property name="styleSheet">
+                 <string notr="true">/*QListWidget:item:selected:active {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:!active {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:disabled {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:!disabled {
+		background: darkBlue;
+		color: white;
+	}*/
+
+QListWidget:item:selected:active {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:!active {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:disabled {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:!disabled {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	}</string>
+                </property>
+               </widget>
+               <widget class="QTabWidget" name="softwareTabWidget">
+                <property name="currentIndex">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QGroupBox" name="groupBox">
+            <property name="title">
+             <string>Database connection</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
+             <item>
+              <layout class="QGridLayout" name="gridLayout_2">
+               <item row="5" column="1">
+                <widget class="QSpinBox" name="portEdit">
+                 <property name="maximum">
+                  <number>999999999</number>
+                 </property>
+                 <property name="value">
+                  <number>5432</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_9">
+                 <property name="text">
+                  <string>Password</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_10">
+                 <property name="text">
+                  <string>Database</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_8">
+                 <property name="text">
+                  <string>User</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="0">
+                <widget class="QLabel" name="label_12">
+                 <property name="text">
+                  <string>Port</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string>Host</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="2">
+                <widget class="QCheckBox" name="echoCheck">
+                 <property name="text">
+                  <string>Echo</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1" colspan="2">
+                <widget class="QLineEdit" name="hostEdit"/>
+               </item>
+               <item row="3" column="1" colspan="2">
+                <widget class="QLineEdit" name="databaseEdit"/>
+               </item>
+               <item row="2" column="1" colspan="2">
+                <widget class="QLineEdit" name="passwordEdit">
+                 <property name="echoMode">
+                  <enum>QLineEdit::Password</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1" colspan="2">
+                <widget class="QLineEdit" name="userEdit">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>1</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="defaultCheckBox">
+           <property name="text">
+            <string>Set as default</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>userEdit</tabstop>
+  <tabstop>passwordEdit</tabstop>
+  <tabstop>databaseEdit</tabstop>
+  <tabstop>hostEdit</tabstop>
+  <tabstop>portEdit</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources>
+  <include location="Experiment.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>Dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>Dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

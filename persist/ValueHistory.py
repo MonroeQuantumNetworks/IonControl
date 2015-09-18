@@ -4,14 +4,16 @@ Created on Aug 27, 2014
 @author: pmaunz
 '''
 
+import logging
+
 from sqlalchemy import Column, String, Float, DateTime, Integer, ForeignKey, Index
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
-from modules.magnitude import is_magnitude
 from sqlalchemy.exc import OperationalError
-import logging
+
+from modules.magnitude import is_magnitude
 from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 
 Base = declarative_base()
