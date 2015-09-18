@@ -2,6 +2,7 @@ __author__ = 'jmizrahi'
 
 from PyQt4 import QtCore, QtGui
 from modules.enum import enum
+from uiModules.KeyboardFilter import KeyListFilter
 nodeTypes = enum('base', 'category', 'data')
 
 class Node(object):
@@ -185,8 +186,20 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
-    def __init__(self, parent=None):
+    def __init__(self, model, parent=None):
         super(CategoryTreeView, self).__init__(parent)
+        self.setModel(model)
+        self.filter = KeyListFilter( [], [QtCore.Qt.Key_B] )
+        self.filter.controlKeyPressed.connect( self.onBold )
+        self.installEventFilter(self.filter)
+
+    def onBold(self):
+        indexes = self.selectedIndexes()
+        for index in indexes:
+            node=self.model().nodeFromIndex(index)
+            if node.nodeType==nodeTypes.data:
+                node.content.isBold = not node.content.isBold if hasattr(node.content,'isBold') else True
+                self.model().dataChanged.emit(index, index)
 
     def treeState(self):
         """Returns column widths and expansion state for saving config"""
@@ -234,7 +247,6 @@ if __name__ == "__main__":
                                myContent('Dewey', ['People']),
                                myContent('Louie', ['People'])
                                ])
-    view = CategoryTreeView()
-    view.setModel(model)
+    view = CategoryTreeView(model)
     view.show()
     sys.exit(app.exec_())
