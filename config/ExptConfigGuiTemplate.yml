@@ -49,7 +49,7 @@ hardware:
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
-  NI Chassis:
+  NI DAC Chassis:
     description: DAC system from National Instruments used to output voltages
     role: *V
     fields:

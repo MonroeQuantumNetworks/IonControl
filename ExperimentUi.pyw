@@ -388,14 +388,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 #self.scanExperiment.updateScanTarget( 'Voltage Local Adjust', self.voltageControlWindow.localAdjustUi.outputChannels() )
             except MyException.MissingFile as e:
                 self.voltageControlWindow = None
-                self.actionVoltageControl.setEnabled( False )
-                logger.warning("Voltage subsystem disabled: {0}".format(str(e)))
-            except Exception as e:
-                self.voltageControlWindow = None
-                self.actionVoltageControl.setEnabled( False )
-                logging.getLogger(__name__).exception(e)
-            self.tabDict["Scan"].ppStartSignal.connect( self.voltageControlWindow.synchronize )   # upload shuttling data before running pule program
-            self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
+                self.actionVoltageControl.setDisabled( True )
+                logger.warning("Missing file - voltage subsystem disabled: {0}".format(str(e)))
+            if self.voltageControlWindow:
+                self.tabDict["Scan"].ppStartSignal.connect( self.voltageControlWindow.synchronize )   # upload shuttling data before running pule program
+                self.dedicatedCountersWindow.autoLoad.setVoltageControl( self.voltageControlWindow )
 
         self.setWindowTitle("Experimental Control ({0})".format(self.project) )
 

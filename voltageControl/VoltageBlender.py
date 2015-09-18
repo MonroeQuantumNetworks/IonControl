@@ -4,34 +4,44 @@ Created on Tue Mar 19 23:14:52 2013
 
 @author: pmaunz
 """
+from PyQt4 import QtCore
 import logging
 import math
 import os.path
 import socket
-
-from PyQt4 import QtCore
 import numpy
-
-from Chassis import DAQmxUtility     
-from Chassis.itfParser import itfParser
-from ProjectConfig.Project import getProject
+from numpy import linspace
 from modules import MyException, MagnitudeUtilit
 from modules.SequenceDict import SequenceDict
-from AdjustValue import AdjustValue
-from pulser.DACController import DACControllerException   
-from numpy import linspace
 from modules.doProfile import doprofile
+from AdjustValue import AdjustValue
+from ProjectConfig.Project import getProject
+from uiModules.ImportErrorPopup import importErrorPopup
+from Chassis.itfParser import itfParser
 
-try:
-    from Chassis.WaveformChassis import WaveformChassis
-    from Chassis.DAQmxUtility import Mode
-    import PyDAQmx.DAQmxFunctions
+project = getProject()
+hardware = project.exptConfig['hardware']
+voltageHardware = project.exptConfig['software']['Voltages']['hardware']
 
-    HardwareDriverLoaded = True
-except ImportError as e:
-    logger = logging.getLogger(__name__)
-    logger.warning( "Import of waveform hardware drivers failed '{0}' proceeding without.".format(e) )
-    HardwareDriverLoaded = False
+NI_name = 'NI DAC Chassis'
+NI = hardware.get(NI_name)
+NI_enabled = hardware[NI_name].get('enabled') if NI else False
+
+FPGA_DAC_name = 'Opal Kelly FPGA: DAC'
+FPGA_DAC = hardware.get(FPGA_DAC_name)
+FPGA_DAC_enabled = hardware[FPGA_DAC_name].get('enabled') if FPGA_DAC else False
+
+if NI_enabled:
+    try:
+        from Chassis import DAQmxUtility
+        from Chassis.WaveformChassis import WaveformChassis
+        from Chassis.DAQmxUtility import Mode
+        import PyDAQmx.DAQmxFunctions
+    except ImportError as e:
+        importErrorPopup(NI_name)
+
+if FPGA_DAC_enabled:
+    from pulser.DACController import DACControllerException
 
 class HardwareException(Exception):
     pass
@@ -57,16 +67,17 @@ class NoneHardware(object):
 
 
 class NIHardware(object):
-    name = "NI DAC"
+    name = NI_name
     nativeShuttling = False
     def __init__(self):
         try:
             self.chassis = WaveformChassis()
             self.chassis.mode = Mode.Static
-            self.hostname = socket.gethostname()
-            ConfigFilename = os.path.join( getProject().configDir, "VoltageControl", self.hostname+'.cfg' )
-            if not os.path.exists( ConfigFilename):
-                raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
+            ConfigFilename = NI['configFile']
+            #self.hostname = socket.gethostname()
+            # ConfigFilename = os.path.join( getProject().configDir, "VoltageControl", self.hostname+'.cfg' )
+            # if not os.path.exists( ConfigFilename):
+            #     raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
             self.chassis.initFromFile( ConfigFilename )
             self.DoLine = self.chassis.createFalseDoBuffer()
             self.DoLine[0] = 1
@@ -108,7 +119,7 @@ class NIHardware(object):
 
 
 class FPGAHardware(object):
-    name = "FPGA Hardware"
+    name = FPGA_DAC_name
     nativeShuttling = True
     def __init__(self, dacController):
         self.dacController = dacController
@@ -151,12 +162,14 @@ class VoltageBlender(QtCore.QObject):
         logger = logging.getLogger(__name__)
         super(VoltageBlender,self).__init__()
         self.dacController = dacController
-        try:
-            self.hardware = FPGAHardware(self.dacController) if dacController.isOpen else ( NIHardware() if HardwareDriverLoaded else NoneHardware() )
-        except HardwareException as e:
+
+        if voltageHardware==FPGA_DAC_name and FPGA_DAC_enabled:
+            self.hardware = FPGAHardware(self.dacController)
+        elif voltageHardware==NI_name and NI_enabled:
+            self.hardware = NIHardware()
+        else:
             self.hardware = NoneHardware()
-            logger.error(str(e))
-            logger.error("Loading Voltage driver failed. Running without available voltage output.")
+
         self.itf = itfParser()
         self.lines = list()  # a list of lines with numpy arrays
         self.adjustDict = SequenceDict()  # names of the lines presented as possible adjusts
