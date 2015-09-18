@@ -309,51 +309,37 @@ class RoleWidget(QtGui.QComboBox):
 class OK_FPGA_Widget(QtGui.QHBoxLayout):
     """Config widget for selecting an Opal Kelly FPGA"""
     OK_FPGA_Dict=dict() #FPGAs found by scan
+    FPGAlistModel=QtGui.QStringListModel() #same list of FPGAs for all instances
     def __init__(self,parent=None):
         super(OK_FPGA_Widget, self).__init__()
         self.identifierComboBox = QtGui.QComboBox(parent)
         self.modelLineEdit = QtGui.QLineEdit(parent)
         self.modelLineEdit.setReadOnly(True)
-        # self.scanButton = QtGui.QPushButton(parent)
-        # self.scanButton.setText('Scan')
-        # self.scanButton.setFixedWidth(1.5*textSize('Scan').width())
-        # self.scanButton.clicked.connect(self.scan)
+        self.modelLineEdit.setFixedWidth(120)
         self.addWidget(self.identifierComboBox)
         self.addWidget(self.modelLineEdit)
-#        self.addWidget(self.scanButton)
-        self.identifierComboBox.currentIndexChanged[int].connect(self.onChanged)
-        self.listFPGAs()
+        self.identifierComboBox.currentIndexChanged[str].connect(self.onChanged)
+        self.identifierComboBox.setModel(self.FPGAlistModel)
+        if not self.__class__.OK_FPGA_Dict: #only need to scan if it hasn't been done already
+            self.__class__.scan()
 
-    def listFPGAs(self):
-        """list FPGAs in the combo box."""
-        if not self.__class__.OK_FPGA_Dict:
-            self.__class__.scan() #Scan for FPGAs if it hasn't already been done
-        FPGAs = self.__class__.OK_FPGA_Dict
-        if FPGAs:
-            self.identifierComboBox.clear()
-            for index, key in enumerate(FPGAs):
-                modelName = FPGAs[key].modelName
-                self.identifierComboBox.addItem(key)
-                self.identifierComboBox.setItemData(index,modelName,QtCore.Qt.UserRole)
-                self.identifierComboBox.setCurrentIndex(index)
-                self.modelLineEdit.setFixedSize(textSize(modelName))
-                self.modelLineEdit.setText(modelName)
-            self.identifierComboBox.addItem('')
+    @classmethod
+    def scan(cls):
+        """Get list of FPGAs"""
+        from pulser.OKBase import OKBase
+        cls.OK_FPGA_Dict = OKBase().listBoards()
+        cls.OK_FPGA_Dict.update({'':'dummy'})
+        cls.FPGAlistModel.setStringList(cls.OK_FPGA_Dict.keys())
 
-    @QtCore.pyqtSlot(int)
-    def onChanged(self, index):
-        modelName=self.identifierComboBox.itemData(index, QtCore.Qt.UserRole).toString()
-        self.modelLineEdit.setFixedSize(textSize(modelName))
+    @QtCore.pyqtSlot(str)
+    def onChanged(self, name):
+        """set modelLineEdit to display FPGA model name"""
+        name = str(name)
+        modelName=self.OK_FPGA_Dict.get(name).modelName if name else ''
         self.modelLineEdit.setText(modelName)
 
     def setToText(self, text):
         """Set widget to particular device id text"""
         index=self.identifierComboBox.findText(text, QtCore.Qt.MatchExactly)
+        self.currentText=text if index >=0 else ''
         self.identifierComboBox.setCurrentIndex(index)
-
-    @classmethod
-    def scan(cls):
-        """Scan for Opal Kelly FPGAs."""
-        from pulser.OKBase import OKBase
-        okbase = OKBase()
-        cls.OK_FPGA_Dict = okbase.listBoards()

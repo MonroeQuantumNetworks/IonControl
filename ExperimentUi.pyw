@@ -92,8 +92,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.AWGUi_class = AWGUi
 
         #determine if Voltages software is enabled and import class if it is
-        Voltages = self.software.get('Voltages')
-        self.voltagesEnabled = Voltages.get('enabled') if Voltages else False
+        voltages = self.software.get('Voltages')
+        self.voltagesEnabled = voltages.get('enabled') if voltages else False
         if self.voltagesEnabled:
             from voltageControl.VoltageControl import VoltageControl
             self.VoltageControl = VoltageControl
@@ -153,7 +153,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
         self.parent = parent
         self.tabDict = SequenceDict()
-               
+
+        #Program FPGAs
         self.settingsDialog = FPGASettingsDialog( self.config, parent=self.parent)
         self.settingsDialog.setupUi()
         self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
