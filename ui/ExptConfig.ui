@@ -106,7 +106,39 @@
                </property>
                <widget class="QListWidget" name="hardwareListWidget">
                 <property name="styleSheet">
-                 <string notr="true">QListWidget:item:selected:active {background: darkBlue;color: white;} QListWidget:item:selected:!active {background: darkBlue;color: white;} QListWidget:item:selected:disabled {background: darkBlue;color: white;} QListWidget:item:selected:!disabled {background: darkBlue;color: white;}</string>
+                 <string notr="true">/*QListWidget:item:selected:active {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:!active {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:disabled {
+		background: darkBlue;
+		color: white;
+	} 
+QListWidget:item:selected:!disabled {
+		background: darkBlue;
+		color: white;
+	}*/
+
+QListWidget:item:selected:active {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:!active {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:disabled {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	} 
+QListWidget:item:selected:!disabled {
+		background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  stop:1 rgba(171, 208, 255, 255));
+		color: black;
+	}</string>
                 </property>
                </widget>
                <widget class="QTabWidget" name="hardwareTabWidget">
