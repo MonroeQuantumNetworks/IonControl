@@ -51,12 +51,14 @@ class GlobalVariables(SequenceDict):
         return GlobalVariables( xmlParseDictionary(element, "Variable") )
     
     def __setitem__(self, key, value):
-        super( GlobalVariables, self ).__setitem__(key, value)
+        super(GlobalVariables, self).__setitem__(key, value)
         self.observables[key].fire(name=key, value=value)
         self.persistCallback(key, (time.time(), value, None, None))
         
     def setItem(self, key, value):
         """set the item, but only commit to database after wait time"""
+        super(GlobalVariables, self).__setitem__(key, value)
+        self.observables[key].fire(name=key, value=value)
         self.decimation[key].decimate(time.time(), value, partial(self.persistCallback, key))
 
     def persistCallback(self, source, data):
