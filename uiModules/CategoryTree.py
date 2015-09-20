@@ -186,9 +186,8 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
-    def __init__(self, model, parent=None):
+    def __init__(self, parent=None):
         super(CategoryTreeView, self).__init__(parent)
-        self.setModel(model)
         self.filter = KeyListFilter( [], [QtCore.Qt.Key_B] )
         self.filter.controlKeyPressed.connect( self.onBold )
         self.installEventFilter(self.filter)
@@ -247,6 +246,7 @@ if __name__ == "__main__":
                                myContent('Dewey', ['People']),
                                myContent('Louie', ['People'])
                                ])
-    view = CategoryTreeView(model)
+    view = CategoryTreeView()
+    view.setModel(model)
     view.show()
     sys.exit(app.exec_())
