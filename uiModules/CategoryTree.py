@@ -77,25 +77,22 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.backgroundLookup = {True:self.dependencyBgColor, False:self.normalBgColor}
         self.headerLookup = {} #overwrite to set headers. key: (orientation, role, section) val: str
         self.dataLookup = {
-                           (nodeTypes.category, QtCore.Qt.DisplayRole, 0):
-                               lambda node: node.name,
-                           (nodeTypes.data, QtCore.Qt.DisplayRole, 0):
+                           (QtCore.Qt.DisplayRole, 0):
                                lambda node: str(node.content) #default, normally overwritten
                            }
         self.dataAllColLookup = { #data lookup that applies to all columns
-            (nodeTypes.data, QtCore.Qt.BackgroundRole):
+            QtCore.Qt.BackgroundRole:
                   lambda node: self.backgroundLookup.get(getattr(node.content,'hasDependency',False)),
-            (nodeTypes.data, QtCore.Qt.ToolTipRole):
+            QtCore.Qt.ToolTipRole:
                   lambda node: getattr(node.content,'string','') if getattr(node.content,'hasDependency',False) else None,
-            (nodeTypes.data, QtCore.Qt.FontRole):
-                  lambda node: self.fontLookup.get(getattr(node.content, 'isBold', False)),
-            (nodeTypes.category, QtCore.Qt.FontRole):
-                  lambda node: self.normalFont
+            QtCore.Qt.FontRole:
+                  lambda node: self.fontLookup.get(getattr(node.content, 'isBold', False))
             }
-        self.setDataLookup = {} #overwrite to set data. key: (type, role, col). val: function that takes (index, value)
+        self.categoryDataLookup = {(QtCore.Qt.DisplayRole, 0): lambda node: node.name}
+        self.categoryDataAllColLookup = {QtCore.Qt.FontRole: lambda node: self.normalFont}
+        self.setDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
         self.flagsLookup = {
-                            (nodeTypes.category, 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
-                            (nodeTypes.data, 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
+                            0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
                             }
         self.numColumns = 1 #Overwrite with number of columns
         self.root = CategoryNode(None, 0, 'root')
@@ -139,12 +136,19 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def data(self, index, role):
         node, col = self.getLocation(index)
         t = node.nodeType
-        return self.dataLookup.get( (t, role, col), self.dataAllColLookup.get( (t, role), lambda node: None))(node)
+        if t==nodeTypes.category:
+            return self.categoryDataLookup.get( (role, col), self.categoryDataAllColLookup.get(role, lambda node: None))(node)
+        else:
+            return self.dataLookup.get( (role, col), self.dataAllColLookup.get(role, lambda node: None))(node)
+
 
     def setData(self, index, value, role):
         node, col = self.getLocation(index)
         t = node.nodeType
-        return self.setDataLookup.get( (t, role, col), lambda index, value: False)(index, value)
+        if t==nodeTypes.category:
+            return None
+        else:
+            return self.setDataLookup.get( (role, col), lambda index, value: False)(index, value)
 
     def parent(self, index):
         node = self.nodeFromIndex(index)
@@ -154,7 +158,10 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def flags(self, index ):
         node, col = self.getLocation(index)
         t = node.nodeType
-        return self.flagsLookup.get((t, col), QtCore.Qt.NoItemFlags)
+        if t==nodeTypes.category:
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        else:
+            return self.flagsLookup.get(col, QtCore.Qt.NoItemFlags)
 
     def headerData(self, section, orientation, role):
         return self.headerLookup.get((orientation, role, section))
