@@ -9,7 +9,7 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
+from uiModules.CategoryTree import CategoryTreeModel, CategoryTreeView, nodeTypes
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
 from modules.GuiAppearance import restoreGuiState, saveGuiState
@@ -18,8 +18,6 @@ from _functools import partial
 from _collections import defaultdict
 from pulseProgram import PulseProgram
 import logging
-
-UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\PulserParameterUi.ui')
 
 class PulserParameter(ExpressionValue):
     def __init__(self, name=None, address=0, string=None, onChange=None, bitmask=0xffffffffffffffff,
@@ -77,10 +75,9 @@ class PulserParameterModel(CategoryTreeModel):
         return True
         
 
-class PulserParameterUi(UiForm,UiBase):
+class PulserParameterUi(CategoryTreeView):
     def __init__(self, pulser, config, globalDict=None, parent=None):
-        UiBase.__init__(self,parent)
-        UiForm.__init__(self)
+        super(PulserParameterUi, self).__init__(parent)
         self.isSetup = False
         self.globalDict = firstNotNone( globalDict, dict() )
         self.config = config
@@ -100,14 +97,13 @@ class PulserParameterUi(UiForm,UiBase):
                 parameter.value = value
         
     def setupUi(self):
-        UiForm.setupUi(self, self)
-        self.model = PulserParameterModel(self.parameterList)
-        self.categoryTreeView.setModel(self.model)
+        model = PulserParameterModel(self.parameterList)
+        self.setModel(model)
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
-        self.categoryTreeView.setItemDelegateForColumn(1,self.delegate)
+        self.setItemDelegateForColumn(1,self.delegate)
         restoreGuiState( self, self.config.get(self.configName+'.guiState'))
         try:
-            self.categoryTreeView.restoreTreeState( self.config.get(self.configName+'.treeState',(None,None)) )
+            self.restoreTreeState( self.config.get(self.configName+'.treeState',(None,None)) )
         except Exception as e:
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
         self.isSetup = True
@@ -116,7 +112,7 @@ class PulserParameterUi(UiForm,UiBase):
         self.config['PulserParameterValues'] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
         self.config[self.configName+'.guiState'] = saveGuiState(self)
         try:
-            self.config[self.configName+'.treeState'] = self.categoryTreeView.treeState()
+            self.config[self.configName+'.treeState'] = self.treeState()
         except Exception as e:
             logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
 
@@ -126,5 +122,5 @@ class PulserParameterUi(UiForm,UiBase):
         self.pulser.setExtendedWireIn( parameter.address, self.currentWireValues[parameter.address] )
         if self.isSetup and event.origin!='value':
             node = self.nodes[parameter.name]
-            ind = self.model.createIndex(node.row, 1, node)
-            self.model.dataChanged.emit(ind, ind)
+            ind = self.model().createIndex(node.row, 1, node)
+            self.model().dataChanged.emit(ind, ind)
