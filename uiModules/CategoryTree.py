@@ -184,6 +184,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         parent.children.append(node)
         self.endInsertRows()
 
+
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
     def __init__(self, parent=None):
@@ -193,12 +194,13 @@ class CategoryTreeView(QtGui.QTreeView):
         self.installEventFilter(self.filter)
 
     def onBold(self):
-        indexes = self.selectedIndexes()
-        for index in indexes:
-            node=self.model().nodeFromIndex(index)
+        indexes = self.selectionModel().selectedRows(0)
+        for leftIndex in indexes:
+            node=self.model().nodeFromIndex(leftIndex)
             if node.nodeType==nodeTypes.data:
                 node.content.isBold = not node.content.isBold if hasattr(node.content,'isBold') else True
-                self.model().dataChanged.emit(index, index)
+                rightIndex = self.model().indexFromNode(node, self.model().numColumns-1)
+                self.model().dataChanged.emit(leftIndex, rightIndex)
 
     def treeState(self):
         """Returns column widths and expansion state for saving config"""
@@ -248,5 +250,9 @@ if __name__ == "__main__":
                                ])
     view = CategoryTreeView()
     view.setModel(model)
-    view.show()
+    window = QtGui.QMainWindow()
+    dock = QtGui.QDockWidget("Category Tree View")
+    dock.setWidget(view)
+    window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+    window.show()
     sys.exit(app.exec_())
