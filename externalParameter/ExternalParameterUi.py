@@ -27,17 +27,17 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
     def __init__(self, controlUi, parameterList=None, parent=None):
         super(ExternalParameterControlTableModel, self).__init__(parent)
-        self.parameterDict = SequenceDict()
+        self.parameterList = []
         self.controlUi = controlUi
         self.headerLookup = ['Name', 'Control', 'External']
-        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.parameterDict.keyAt(row),
+        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.parameterList[row].name,
                              (QtCore.Qt.DisplayRole,1): lambda row: str(self.targetValues[row]),
-                             (QtCore.Qt.EditRole,1): lambda row: firstNotNone( self.parameterDict.at(row).strValue, str(self.targetValues[row]) ),
-                             (QtCore.Qt.UserRole,1): lambda row: self.parameterDict.at(row).dimension,
+                             (QtCore.Qt.EditRole,1): lambda row: firstNotNone( self.parameterList[row].strValue, str(self.targetValues[row]) ),
+                             (QtCore.Qt.UserRole,1): lambda row: self.parameterList[row].dimension,
                              (QtCore.Qt.DisplayRole,2): lambda row: str(self.externalValues[row]),
                              #(QtCore.Qt.ToolTipRole,2): lambda row: str(self.toolTips[row]),
-                             (QtCore.Qt.BackgroundRole,1): lambda row: self.backgroundLookup[self.parameterDict.at(row).strValue is not None],
-                             (QtCore.Qt.ToolTipRole,1): lambda row: self.parameterDict.at(row).strValue if self.parameterDict.at(row).strValue is not None else None
+                             (QtCore.Qt.BackgroundRole,1): lambda row: self.backgroundLookup[self.parameterList[row].strValue is not None],
+                             (QtCore.Qt.ToolTipRole,1): lambda row: self.parameterList[row].strValue if self.parameterList[row].strValue is not None else None
                      }
         self.setDataLookup = {
                              (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
@@ -48,17 +48,17 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
 
     def setParameterList(self, outputChannelDict):
         self.beginResetModel()
-        self.parameterDict = SequenceDict(outputChannelDict)
-        self.targetValues = [inst.value for inst in self.parameterDict.values()]
-        self.externalValues = [inst.externalValue for inst in self.parameterDict.values()]
+        self.parameterList = outputChannelDict.values()
+        self.targetValues = [inst.value for inst in self.parameterList]
+        self.externalValues = self.targetValues[:]
         self.toolTips = [None]*len(self.externalValues )
-        for index,inst in enumerate(self.parameterDict.values()):
+        for index,inst in enumerate(self.parameterList):
             inst.observable.clear()
             inst.observable.subscribe( functools.partial( self.showValue, index ) )
         self.endResetModel()
         
     def rowCount(self, parent=QtCore.QModelIndex()):
-        return len(self.parameterDict)
+        return len(self.parameterList)
     
     def columnCount(self,  parent=QtCore.QModelIndex()):
         return 3
@@ -100,15 +100,15 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         return True
  
     def setStrValue(self, index, strValue):
-        self.parameterDict.at( index.row() ).strValue = strValue
+        self.parameterList[index.row()].strValue = strValue
         return True
         
     def setValueFollowup(self, row):
         try:
             logger = logging.getLogger(__name__)
-            logger.debug( "setValueFollowup {0}".format( self.parameterDict.at(row).value ) )
-            delay = int( self.parameterDict.at(row).delay.toval('ms') )
-            if not self.parameterDict.at(row).setValue( self.targetValues[row] ):
+            logger.debug( "setValueFollowup {0}".format( self.parameterList[row].value ) )
+            delay = int( self.parameterList[row].delay.toval('ms') )
+            if not self.parameterList[row].setValue( self.targetValues[row] ):
                 QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,row) )
             else:
                 self.adjustingDevices -= 1
@@ -123,19 +123,19 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     def update(self, iterable):
         for destination, name, value in iterable:
             if destination=='External':
-                row = self.parameterDict.index(name)
-                self.parameterDict.at(row).savedValue = value    # set saved value to make this new value the default
+                row = self.parameterList.index(name)
+                self.parameterList[row].savedValue = value    # set saved value to make this new value the default
                 self.setValue( self.createIndex( row,1), value )
-                self.parameterDict.at(row).strValue = None
+                self.parameterList[row].strValue = None
                 logging.info("Pushed to external parameter {0} value {1}".format(name,value)) 
                 
     def evaluate(self, name):
-        for row, value in enumerate(self.parameterDict.values()):
+        for row, value in enumerate(self.parameterList):
             expr = value.strValue
             if expr is not None:
                 value = self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict)
                 self._setValue( row, value )
-                self.parameterDict.at(row).savedValue = value   # set saved value to make this new value the default
+                self.parameterList[row].savedValue = value   # set saved value to make this new value the default
                 leftInd = self.createIndex(row, 1)
                 self.dataChanged.emit( leftInd, leftInd )
 
@@ -173,7 +173,8 @@ class ControlUi(UiForm,UiBase):
             logging.getLogger(__name__).warning(str(e))
         
     def keys(self):
-        return self.tableModel.parameterDict.keys()
+        pList = self.tableModel.parameterList
+        return [p.name for p in pList]
     
     def update(self, iterable):
         self.tableModel.update( iterable )
