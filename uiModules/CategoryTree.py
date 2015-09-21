@@ -135,8 +135,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
     def data(self, index, role):
         node, col = self.getLocation(index)
-        t = node.nodeType
-        if t==nodeTypes.category:
+        if node.nodeType==nodeTypes.category:
             return self.categoryDataLookup.get( (role, col), self.categoryDataAllColLookup.get(role, lambda node: None))(node)
         else:
             return self.dataLookup.get( (role, col), self.dataAllColLookup.get(role, lambda node: None))(node)
@@ -144,8 +143,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
     def setData(self, index, value, role):
         node, col = self.getLocation(index)
-        t = node.nodeType
-        if t==nodeTypes.category:
+        if node.nodeType==nodeTypes.category:
             return None
         else:
             return self.setDataLookup.get( (role, col), lambda index, value: False)(index, value)
@@ -157,8 +155,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
     def flags(self, index ):
         node, col = self.getLocation(index)
-        t = node.nodeType
-        if t==nodeTypes.category:
+        if node.nodeType==nodeTypes.category:
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         else:
             return self.flagsLookup.get(col, QtCore.Qt.NoItemFlags)

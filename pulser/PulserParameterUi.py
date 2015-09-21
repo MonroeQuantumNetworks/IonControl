@@ -52,17 +52,17 @@ class PulserParameterModel(CategoryTreeModel):
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Value'
             })
         self.dataLookup.update({
-            (nodeTypes.data, QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
-            (nodeTypes.data, QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
-            (nodeTypes.data, QtCore.Qt.EditRole, 1): lambda node: node.content.string
+            (QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
+            (QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
+            (QtCore.Qt.EditRole, 1): lambda node: node.content.string
             })
         self.setDataLookup.update({
-            (nodeTypes.data, QtCore.Qt.EditRole, 1): lambda index, value: self.setValue(index, value),
-            (nodeTypes.data, QtCore.Qt.UserRole, 1): lambda index, value: self.setStrValue(index, value)
+            (QtCore.Qt.EditRole, 1): lambda index, value: self.setValue(index, value),
+            (QtCore.Qt.UserRole, 1): lambda index, value: self.setStrValue(index, value)
             })
         self.flagsLookup.update({
-            (nodeTypes.data, 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
-            (nodeTypes.data, 1): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
+            0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
+            1: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
             })
         self.numColumns = 2
 
