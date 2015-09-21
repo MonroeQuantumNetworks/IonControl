@@ -82,10 +82,18 @@ class Project(object):
             with open(self.exptConfigFilename, 'r') as f:
                 try:
                     yamldata = yaml.load(f)
+                    yamldata['databaseConnection']
+                    yamldata['showGui']
+                    yamldata['hardware']
+                    yamldata['software']
                     self.exptConfig = yamldata
                     logger.info('Experiment config file {0} loaded'.format(self.exptConfigFilename))
                 except yaml.scanner.ScannerError: #leave defaults if the file is improperly formatted
                     logger.warning('YAML formatting error: unable to read in experiment config file {0}'.format(self.exptConfigFilename))
+                except AttributeError:
+                    logger.warning('YAML data is not a dictionary in experiment config file {0}'.format(self.exptConfigFilename))
+                except KeyError as e:
+                    logger.warning('YAML data is missing required element {0} in experiment config file {1}'.format(e, self.exptConfigFilename))
 
         if self.exptConfig.get('databaseConnection') and not self.exptConfig.get('showGui'):
             self.dbConnection = DatabaseConnectionSettings(**self.exptConfig['databaseConnection'])
