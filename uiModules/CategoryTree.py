@@ -88,7 +88,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
             (nodeTypes.category, QtCore.Qt.FontRole):
                   lambda node: self.normalFont
             }
-        self.setDataLookup = {} #overwrite to set data. key: (type, role, col). val: function that takes (node, value)
+        self.setDataLookup = {} #overwrite to set data. key: (type, role, col). val: function that takes (index, value)
         self.flagsLookup = {
                             (nodeTypes.category, 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
                             (nodeTypes.data, 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
@@ -140,7 +140,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def setData(self, index, value, role):
         node, col = self.getLocation(index)
         t = node.nodeType
-        return self.setDataLookup.get( (t, role, col), lambda node, value: False)(node, value)
+        return self.setDataLookup.get( (t, role, col), lambda index, value: False)(index, value)
 
     def parent(self, index):
         node = self.nodeFromIndex(index)

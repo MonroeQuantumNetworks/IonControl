@@ -57,8 +57,8 @@ class PulserParameterModel(CategoryTreeModel):
             (nodeTypes.data, QtCore.Qt.EditRole, 1): lambda node: node.content.string
             })
         self.setDataLookup.update({
-            (nodeTypes.data, QtCore.Qt.EditRole, 1): lambda node, value: self.setValue(node, value),
-            (nodeTypes.data, QtCore.Qt.UserRole, 1): lambda node, value: self.setStrValue(node, value)
+            (nodeTypes.data, QtCore.Qt.EditRole, 1): lambda index, value: self.setValue(index, value),
+            (nodeTypes.data, QtCore.Qt.UserRole, 1): lambda index, value: self.setStrValue(index, value)
             })
         self.flagsLookup.update({
             (nodeTypes.data, 0): QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
@@ -66,11 +66,13 @@ class PulserParameterModel(CategoryTreeModel):
             })
         self.numColumns = 2
 
-    def setValue(self, node, value):
+    def setValue(self, index, value):
+        node = self.nodeFromIndex(index)
         node.content.value = value
         return True
          
-    def setStrValue(self, node, strValue):
+    def setStrValue(self, index, strValue):
+        node = self.nodeFromIndex(index)
         node.content.string = strValue
         return True
         
