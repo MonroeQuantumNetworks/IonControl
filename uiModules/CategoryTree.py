@@ -49,17 +49,21 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     A category tree is a simplified tree structure in which a flat list of data is broken down by categories. It
     is intended to be an extension of a table model, in which the elements of the table are broken down into different
     categories. The data itself is not hierarchical. For that reasons, the data can be presented to the model as a
-    flat list. If a given element of the list has an attribute "categories," then that element will be displayed
-    beneath those categories. "categories" is a list of strings, with the most general category first.
+    flat list. If a given element of the list has an attribute defined by categoriesAttr, then that element will be displayed
+    beneath those categories. categoriesAttr is a list of strings, with the most general category first. If categoriesAttr
+    is a string, it is interpreted as a list of strings of length 1.
 
     Other attributes that are respected are "hasDepedency" and "isBold." If the content has one of those attributes,
     the content is displayed accordingly.
     """
-    def __init__(self, contentList=[], parent=None):
+    def __init__(self, contentList=[], parent=None, categoriesAttr='categories'):
         super(CategoryTreeModel, self).__init__(parent)
 
         #list of objects. Can be anything. If the objects have a category attribute, a tree will result.
         self.contentList = contentList
+
+        #attribute that determines how to categorize content
+        self.categoriesAttr = categoriesAttr
 
         #styling for different types of content
         self.normalBgColor = QtGui.QColor(QtCore.Qt.white)
@@ -162,7 +166,9 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
     def addNode(self, content):
         """Add a node to the tree containing 'content' """
-        categories = getattr(content, 'categories', None)
+        categories = getattr(content, self.categoriesAttr, None)
+        categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
+        categories = None if categories.__class__!=list else categories #no categories if it's not a list
         parent = self.makeCategoryNodes(map(str, categories)) if categories else self.root
         node = DataNode(parent, parent.childCount(), content)
         self.addRow(parent, node)
