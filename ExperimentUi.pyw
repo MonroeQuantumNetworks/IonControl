@@ -103,12 +103,12 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         import externalParameter.InterProcessParameters
         if 'Conex Motion' in self.hardware:
             try:
-                import MotionParameter #@UnusedImport
+                import externalParameter.MotionParameter #@UnusedImport
             except ImportError: #popup on failed import
                 importErrorPopup('Conex Motion')
         if 'APT Motion' in self.hardware:
             try:
-                import APTInstruments #@UnusedImport
+                import externalParameter.APTInstruments #@UnusedImport
             except ImportError: #popup on failed import
                 importErrorPopup('APT Motion')
 
