@@ -19,6 +19,7 @@ from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from PyQt4 import QtGui, QtCore
 import math
+import numpy
 from modules.round import roundToNDigits
 import logging
 from pyqtgraphAddons.DateAxisItem import DateAxisItem
@@ -271,18 +272,22 @@ class CoordinatePlotWidget(pg.GraphicsLayoutWidget):
                 except ValueError:
                     pass
             else:
-                self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
-                logY = self._graphicsView.ctrl.logYCheck.isChecked()
-                logX = self._graphicsView.ctrl.logXCheck.isChecked()
-                y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
-                x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
-                vR = self._graphicsView.vb.viewRange()
-                deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
-                deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
-                precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1
-                precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
-                roundedx, roundedy = roundToNDigits( x,precx), roundToNDigits(y, precy )
-                self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
+                try:
+                    self.mousePoint = self._graphicsView.vb.mapSceneToView(pos)
+                    logY = self._graphicsView.ctrl.logYCheck.isChecked()
+                    logX = self._graphicsView.ctrl.logXCheck.isChecked()
+                    y = self.mousePoint.y() if not logY else pow(10, self.mousePoint.y())
+                    x = self.mousePoint.x() if not logX else pow(10, self.mousePoint.x())
+                    vR = self._graphicsView.vb.viewRange()
+                    deltaY = vR[1][1]-vR[1][0] if not logY else pow(10,vR[1][1])-pow(10,vR[1][0]) #Calculate x and y display ranges
+                    deltaX = vR[0][1]-vR[0][0] if not logX else pow(10,vR[0][1])-pow(10,vR[0][0])
+                    precx = int( math.ceil( math.log10(abs(x/deltaX)) ) + 3 ) if x!=0 and deltaX>0 else 1
+                    precy = int( math.ceil( math.log10(abs(y/deltaY)) ) + 3 ) if y!=0 and deltaY>0 else 1
+                    roundedx, roundedy = roundToNDigits( x,precx), roundToNDigits(y, precy )
+                    self.coordinateLabel.setText( self.template.format( repr(roundedx), repr(roundedy) ))
+                except numpy.linalg.linalg.LinAlgError:
+                    pass
+                    
             
     def onCopyLocation(self,which):
         text = {'x': ("{0}".format(self.mousePoint.x())),
