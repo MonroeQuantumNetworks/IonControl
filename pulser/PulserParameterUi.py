@@ -9,7 +9,7 @@ from PyQt4 import QtCore, QtGui
 import PyQt4.uic
 
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from uiModules.CategoryTree import CategoryTreeModel, CategoryTreeView, nodeTypes
+from uiModules.CategoryTree import CategoryTreeModel, CategoryTreeView
 from modules.firstNotNone import firstNotNone
 from modules.Expression import Expression
 from modules.GuiAppearance import restoreGuiState, saveGuiState

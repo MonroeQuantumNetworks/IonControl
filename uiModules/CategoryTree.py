@@ -58,12 +58,9 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     """
     def __init__(self, contentList=[], parent=None, categoriesAttr='categories'):
         super(CategoryTreeModel, self).__init__(parent)
-
-        #list of objects. Can be anything. If the objects have a category attribute, a tree will result.
-        self.contentList = contentList
-
         #attribute that determines how to categorize content
         self.categoriesAttr = categoriesAttr
+        self.nodeList = []
 
         #styling for different types of content
         self.normalBgColor = QtGui.QColor(QtCore.Qt.white)
@@ -97,7 +94,8 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.numColumns = 1 #Overwrite with number of columns
         self.root = CategoryNode(None, 0, 'root')
         self.categoryNodes = {(): self.root} #dictionary of category nodes, with tuple indicating hierarchy to that item
-        self.addNodeList(self.contentList)
+        #contentList is a list of objects. Can be anything. If the objects have a category attribute, a tree will result.
+        self.addNodeList(contentList)
 
     def nodeFromIndex(self, index):
         """Return the node at the given index"""
@@ -140,7 +138,6 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         else:
             return self.dataLookup.get( (role, col), self.dataAllColLookup.get(role, lambda node: None))(node)
 
-
     def setData(self, index, value, role):
         node, col = self.getLocation(index)
         if node.nodeType==nodeTypes.category:
@@ -158,7 +155,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         if node.nodeType==nodeTypes.category:
             return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         else:
-            return self.flagsLookup.get(col, QtCore.Qt.NoItemFlags)
+            return self.flagsLookup.get(col, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
 
     def headerData(self, section, orientation, role):
         return self.headerLookup.get((orientation, role, section))
@@ -176,6 +173,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         parent = self.makeCategoryNodes(map(str, categories)) if categories else self.root
         node = DataNode(parent, parent.childCount(), content)
         self.addRow(parent, node)
+        self.nodeList.append(node)
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
@@ -193,6 +191,12 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.beginInsertRows(parentIndex, parent.childCount(), parent.childCount())
         parent.children.append(node)
         self.endInsertRows()
+
+    def nodeFromContent(self, content):
+        """Find the node that has a given content"""
+        for node in self.nodeList:
+            if node.content==content:
+                return node
 
 
 class CategoryTreeView(QtGui.QTreeView):
