@@ -18,98 +18,89 @@ from modules.Expression import Expression
 from modules.Observable import Observable
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 from modules.magnitude import MagnitudeError
+from uiModules.CategoryTree import CategoryTreeModel, CategoryTreeView
+from copy import deepcopy
 
-UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
-
-class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
+class ExternalParameterControlModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(str, object)
     expression = Expression()
-    backgroundLookup = {True:QtGui.QColor(QtCore.Qt.green).lighter(175), False:QtGui.QColor(QtCore.Qt.white)}
-    def __init__(self, controlUi, parameterList=None, parent=None):
-        super(ExternalParameterControlTableModel, self).__init__(parent)
-        self.parameterList = []
+    def __init__(self, controlUi, parameterList=[], parent=None):
+        super(ExternalParameterControlModel, self).__init__(parameterList, parent, 'device')
+        self.parameterList=parameterList
         self.controlUi = controlUi
-        self.headerLookup = ['Name', 'Control', 'External']
-        self.dataLookup =  { (QtCore.Qt.DisplayRole,0): lambda row: self.parameterList[row].name,
-                             (QtCore.Qt.DisplayRole,1): lambda row: str(self.targetValues[row]),
-                             (QtCore.Qt.EditRole,1): lambda row: firstNotNone( self.parameterList[row].strValue, str(self.targetValues[row]) ),
-                             (QtCore.Qt.UserRole,1): lambda row: self.parameterList[row].dimension,
-                             (QtCore.Qt.DisplayRole,2): lambda row: str(self.externalValues[row]),
-                             #(QtCore.Qt.ToolTipRole,2): lambda row: str(self.toolTips[row]),
-                             (QtCore.Qt.BackgroundRole,1): lambda row: self.backgroundLookup[self.parameterList[row].strValue is not None],
-                             (QtCore.Qt.ToolTipRole,1): lambda row: self.parameterList[row].strValue if self.parameterList[row].strValue is not None else None
-                     }
-        self.setDataLookup = {
-                             (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
-                             (QtCore.Qt.UserRole,1): lambda index, value: self.setStrValue( index, value ),
-                              }
+        self.headerLookup.update({
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Control',
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 2): 'External'
+            })
+        self.dataLookup.update({
+            (QtCore.Qt.DisplayRole,0): lambda node: node.content.name,
+            (QtCore.Qt.DisplayRole,1): lambda node: str(node.content.targetValue),
+            (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.strValue, str(node.content.targetValue) ),
+            (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
+            (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.externalValue),
+            (QtCore.Qt.BackgroundRole,1): lambda node: self.backgroundLookup[node.content.strValue is not None],
+            (QtCore.Qt.ToolTipRole,1): lambda node: getattr(node.content, strValue, None)
+            })
+        self.dataAllColLookup.pop(QtCore.Qt.BackgroundRole)
+        self.dataAllColLookup.pop(QtCore.Qt.ToolTipRole)
+        self.setDataLookup.update({
+            (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
+            (QtCore.Qt.UserRole,1): lambda index, value: self.setStrValue( index, value ),
+            })
+        self.flagsLookup = {
+            1:QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
+        }
         self.adjustingDevices = 0
         self.doneAdjusting = Observable()
+        self.numColumns = 3
 
     def setParameterList(self, outputChannelDict):
         self.beginResetModel()
         self.parameterList = outputChannelDict.values()
-        self.targetValues = [inst.value for inst in self.parameterList]
-        self.externalValues = self.targetValues[:]
-        self.toolTips = [None]*len(self.externalValues )
-        for index,inst in enumerate(self.parameterList):
+        for listIndex,inst in enumerate(self.parameterList):
+            inst.targetValue = deepcopy(inst.value)
+            inst.lastExternalValue = deepcopy(inst.targetValue)
+            inst.toolTip = None
             inst.observable.clear()
-            inst.observable.subscribe( functools.partial( self.showValue, index ) )
+            inst.observable.subscribe( functools.partial( self.showValue, listIndex ) )
+        self.addNodeList(self.parameterList)
         self.endResetModel()
-        
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        return len(self.parameterList)
-    
-    def columnCount(self,  parent=QtCore.QModelIndex()):
-        return 3
-    
-    def data(self, index, role): 
-        if index.isValid():
-            return self.dataLookup.get((role,index.column()),lambda row: None)(index.row())
-        return None
 
-    def setData(self,index, value, role):
-        return self.setDataLookup.get( (role,index.column() ), lambda index, value: False)(index, value)
-                      
-    def flags(self, index ):
-        return  QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable if index.column()==1 else QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-
-    def headerData(self, section, orientation, role ):
-        if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
-            return self.headerLookup[section]
-        return None #QtCore.QVariant()
- 
-    def showValue(self, index, value, tooltip=None):
-        self.externalValues[index] = value.value
-        self.toolTips[index] = tooltip
-        leftInd = self.createIndex(index, 2)
-        rightInd = self.createIndex(index, 2)
-        self.dataChanged.emit(leftInd, rightInd) 
+    def showValue(self, listIndex, value, tooltip=None):
+        inst=self.parameterList[listIndex]
+        inst.externalValue = value.value
+        inst.toolTip = tooltip
+        node = self.nodeFromContent(inst)
+        modelIndex=self.indexFromNode(node, 2)
+        self.dataChanged.emit(modelIndex,modelIndex)
             
     def setValue(self, index, value):
-        self._setValue( index.row(), value )
-        
-    def _setValue(self, row, value):
+        node=self.nodeFromIndex(index)
+        self._setValue(node.content, value)
+
+    def _setValue(self, inst, value):
         logger = logging.getLogger(__name__)
-        logger.debug( "setValue {0}".format( value ) )
-        if self.targetValues[row] is None or value != self.targetValues[row]:
-            self.targetValues[row] = value
+        logger.debug( "setValue {0}".format(value))
+        if inst.targetValue is None or value != inst.targetValue:
+            inst.targetValue = value
             self.adjustingDevices += 1
             logger.debug("Increased adjusting instruments to {0}".format(self.adjustingDevices))
-            self.setValueFollowup(row)
+            self.setValueFollowup(inst)
         return True
  
     def setStrValue(self, index, strValue):
-        self.parameterList[index.row()].strValue = strValue
+        node=self.nodeFromIndex(index)
+        node.strValue = strValue
         return True
         
-    def setValueFollowup(self, row):
+    def setValueFollowup(self, inst):
         try:
             logger = logging.getLogger(__name__)
-            logger.debug( "setValueFollowup {0}".format( self.parameterList[row].value ) )
-            delay = int( self.parameterList[row].delay.toval('ms') )
-            if not self.parameterList[row].setValue( self.targetValues[row] ):
-                QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,row) )
+            logger.debug( "setValueFollowup {0}".format( inst.value ) )
+            delay = int( inst.delay.toval('ms') )
+            if not inst.setValue(inst.targetValue):
+                QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,inst))
             else:
                 self.adjustingDevices -= 1
                 logger.debug("Decreased adjusting instruments to {0}".format(self.adjustingDevices))
@@ -123,27 +114,29 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
     def update(self, iterable):
         for destination, name, value in iterable:
             if destination=='External':
-                row = self.parameterList.index(name)
-                self.parameterList[row].savedValue = value    # set saved value to make this new value the default
-                self.setValue( self.createIndex( row,1), value )
-                self.parameterList[row].strValue = None
+                for inst in self.parameterList:
+                    if inst.name==name:
+                        break
+                inst.savedValue = value    # set saved value to make this new value the default
+                node = self.nodeFromContent(inst)
+                self.setValue(self.indexFromNode(node,1), value)
+                inst.strValue = None
                 logging.info("Pushed to external parameter {0} value {1}".format(name,value)) 
                 
     def evaluate(self, name):
-        for row, value in enumerate(self.parameterList):
-            expr = value.strValue
+        for inst in self.parameterList:
+            expr = inst.strValue
             if expr is not None:
                 value = self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict)
-                self._setValue( row, value )
-                self.parameterList[row].savedValue = value   # set saved value to make this new value the default
-                leftInd = self.createIndex(row, 1)
-                self.dataChanged.emit( leftInd, leftInd )
+                self._setValue(inst, value)
+                inst.savedValue = inst   # set saved value to make this new value the default
+                node = self.nodeFromContent(inst)
+                index = self.indexFromNode(node,1)
+                self.dataChanged.emit(index, index)
 
-class ControlUi(UiForm,UiBase):
-    
+class ControlUi(CategoryTreeView):
     def __init__(self, config, globalDict=None, parent=None):
-        UiBase.__init__(self,parent)
-        UiForm.__init__(self)
+        super(ControlUi, self).__init__(parent)
         self.spacerItem = None
         self.myLabelList = list()
         self.myBoxList = list()
@@ -154,44 +147,53 @@ class ControlUi(UiForm,UiBase):
         self.tagetValue = dict()
         self.globalDict = firstNotNone( globalDict, dict() )
         self.config = config
+        self.configName = 'ControlUi'
     
-    def setupUi(self, outputChannels ,MainWindow):
-        UiForm.setupUi(self,MainWindow)
-        self.tableModel = ExternalParameterControlTableModel(self)
-        self.tableView.setModel( self.tableModel )
+    def setupUi(self, outputChannels):
+        model = ExternalParameterControlModel(self)
+        self.setModel(model)
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
-        self.tableView.setItemDelegateForColumn(1,self.delegate) 
-        self.setupParameters( outputChannels )
-        restoreGuiState( self, self.config.get('ControlUi.guiState'))
-        
+        self.setItemDelegateForColumn(1,self.delegate)
+        self.setupParameters(outputChannels)
+        restoreGuiState(self, self.config.get(self.configName+'.guiState'))
+        try:
+            self.restoreTreeState( self.config.get(self.configName+'.treeState',(None,None)) )
+        except Exception as e:
+            logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
+
     def setupParameters(self, outputChannels):
-        self.tableModel.setParameterList( outputChannels )
-        self.tableView.horizontalHeader().setStretchLastSection(True)   
+        self.model().setParameterList(outputChannels)
+        self.header().setStretchLastSection(True)
         try:
             self.evaluate(None)
         except (KeyError, MagnitudeError) as e:
             logging.getLogger(__name__).warning(str(e))
         
     def keys(self):
-        pList = self.tableModel.parameterList
+        pList = self.model().parameterList
         return [p.name for p in pList]
     
     def update(self, iterable):
-        self.tableModel.update( iterable )
-        self.tableView.viewport().repaint()
+        self.model().update(iterable)
+        self.viewport().repaint()
         
     def evaluate(self, name):
-        self.tableModel.evaluate(name)
+        self.model().evaluate(name)
         
     def isAdjusting(self):
-        return self.tableModel.adjustingDevices>0
+        return self.model().adjustingDevices>0
     
     def callWhenDoneAdjusting(self, callback):
         if self.isAdjusting():
-            self.tableModel.doneAdjusting.subscribe(callback)
+            self.model().doneAdjusting.subscribe(callback)
         else:
             QtCore.QTimer.singleShot(0, callback)
             
     def saveConfig(self):
-        self.config['ControlUi.guiState'] = saveGuiState(self)
+        self.config[self.configName+'.guiState'] = saveGuiState(self)
+        try:
+            self.config[self.configName+'.treeState'] = self.treeState()
+        except Exception as e:
+            logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
+
     
