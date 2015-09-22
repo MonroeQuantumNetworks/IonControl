@@ -303,7 +303,7 @@ if visaEnabled:
         """
         Set the HP6632B power supply
         """
-        className = "N6632B Power Supply"
+        className = "HP6632B Power Supply"
         _dimension = magnitude.mg(1,'A')
         _outputChannels = {"Curr": "A", "Volt": "V", "OnOff": ""}
         _outputLookup = { "Curr": ("Curr","A"),
@@ -364,6 +364,65 @@ if visaEnabled:
 
         def close(self):
             del self.instrument
+
+
+    class PTS3500(ExternalParameterBase):
+        """
+        Set the PTS3500 Frequency
+        """
+        className = "PTS3500 Frequency "
+        _dimension = magnitude.mg(1,'A')
+        _outputChannels = {"Freq": "MHz"}
+        _inputChannels = dict({"Freq": "MHz"})
+        def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
+            logger = logging.getLogger(__name__)
+            ExternalParameterBase.__init__(self,name,config)
+            logger.info( "trying to open '{0}'".format(instrument) )
+            self.instrument = visa.instrument(instrument) #open visa session
+            logger.info( "opened {0}".format(instrument) )
+            self.setDefaults()
+    #        for channel in self._outputChannels:
+    #            self.settings.value[channel] = self._getValue(channel)
+
+        def setDefaults(self):
+            ExternalParameterBase.setDefaults(self)
+            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+
+        def _setValue(self, channel, v):
+            unit= self._outputChannels[channel]
+            command = "F{0}\nA1\n".format(v.toval(unit))
+            self.instrument.write(command)
+            self.settings.value[channel] = v
+
+        # def _getValue(self, channel):
+        #     function, unit = self._outputLookup[channel]
+        #     if channel=="OnOff":
+        #         command = "OUTP?"
+        #     else:
+        #         command = "MEAS:{0}?".format(function)
+        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
+        #     return self.settings.value[channel]
+
+        def currentValue(self, channel):
+            return self.settings.value[channel]
+
+    #     def currentExternalValue(self, channel):
+    #         function, unit = self._outputLookup[channel]
+    #         if channel=="OnOff":
+    #             command = "OUTP?"
+    #         else:
+    #             command = "MEAS:{0}?".format(function)
+    #         value = magnitude.mg( float( self.instrument.ask(command)), unit )
+    #         return value
+
+        def paramDef(self):
+            superior = ExternalParameterBase.paramDef(self)
+            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
+            return superior
+
+        def close(self):
+            del self.instrument
+
 
 if visaEnabled and wavemeterEnabled:
     class LaserWavemeterScan(AgilentPowerSupply):
