@@ -50,7 +50,7 @@ class ExternalParameterControlTableModel( QtCore.QAbstractTableModel ):
         self.beginResetModel()
         self.parameterDict = SequenceDict(outputChannelDict)
         self.targetValues = [inst.value for inst in self.parameterDict.values()]
-        self.externalValues = self.targetValues[:]
+        self.externalValues = [inst.externalValue for inst in self.parameterDict.values()]
         self.toolTips = [None]*len(self.externalValues )
         for index,inst in enumerate(self.parameterDict.values()):
             inst.observable.clear()
