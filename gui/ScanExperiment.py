@@ -128,24 +128,18 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if "Timestamps" not in plotNames:
             plotNames.append("Timestamps")
         # initialize all the plot windows we want
-        for name in plotNames:
-            dock = Dock(name)
-            widget = CoordinatePlotWidget(self, name=name)
-            if hasattr(axesType, name):
-                widget.setTimeAxis(axesType[name])
-            view = widget._graphicsView
-            self.area.addDock(dock, "bottom")
-            dock.addWidget(widget)
-            self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
-            del dock, widget, view #This is probably unnecessary, but can't hurt
-        del plotNames #I don't want to leave this list around, as it is not updated and may cause confusion.
-        self.plotDict["Histogram"]["widget"].autoRange()
-        self.plotDict["Timestamps"]["widget"].autoRange()
+        self.createPlotWindows(plotNames, axesType)
         try:
             if self.experimentName+'.pyqtgraph-dockareastate' in self.config:
                 self.area.restoreState(self.config[self.experimentName+'.pyqtgraph-dockareastate'])
-        except Exception as e:
+        except Exception as e: #If an except occurs, we have to completely rebuild the DockArea
             logger.warning("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
+            self.area.deleteLater()
+            self.area = DockArea()
+            self.setCentralWidget(self.area)
+            self.plotDict=dict()
+            self.createPlotWindows(plotNames, axesType)
+        del plotNames #I don't want to leave this list around, as it is not updated and may cause confusion.
 
         # Traceui
         self.penicons = pens.penicons().penicons()
@@ -223,7 +217,21 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.actionList.append(self.renamePlot)
         
         self.analysisControlWidget.addPushDestination('Global', self.globalVariablesUi )
-        
+
+    def createPlotWindows(self, plotNames, axesType):
+        for name in plotNames:
+            dock = Dock(name)
+            widget = CoordinatePlotWidget(self, name=name)
+            if hasattr(axesType, name):
+                widget.setTimeAxis(axesType[name])
+            view = widget._graphicsView
+            self.area.addDock(dock, "bottom")
+            dock.addWidget(widget)
+            self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
+            del dock, widget, view #This is probably unnecessary, but can't hurt
+        self.plotDict["Histogram"]["widget"].autoRange()
+        self.plotDict["Timestamps"]["widget"].autoRange()
+
     def exportXml(self, element):
         self.scanControlWidget.onExportXml(element)
         self.analysisControlWidget.onExportXml(element)
