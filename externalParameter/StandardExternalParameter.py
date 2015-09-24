@@ -306,10 +306,68 @@ if visaEnabled:
         className = "HP6632B Power Supply"
         _dimension = magnitude.mg(1,'A')
         _outputChannels = {"Curr": "A", "Volt": "V", "OnOff": ""}
-        _outputLookup = { "Curr": ("Curr","A"),
-                          "Volt": ("Volt","V"),
-                          "OnOff":("OnOff","")}
-        _inputChannels = dict({"Curr":"A", "Volt":"V", "OnOff":""})
+        def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
+            logger = logging.getLogger(__name__)
+            ExternalParameterBase.__init__(self,name,config)
+            logger.info( "trying to open '{0}'".format(instrument) )
+            self.instrument = visa.instrument(instrument) #open visa session
+            logger.info( "opened {0}".format(instrument) )
+            self.setDefaults()
+
+        def setDefaults(self):
+            ExternalParameterBase.setDefaults(self)
+            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
+
+        def _setValue(self, channel, v):
+            if channel=="OnOff":
+                command = "OUTP ON" if v > 0 else "OUTP OFF"
+            elif channel=="Curr":
+                command = "Curr {0}".format(v.toval("A"))
+            elif channel=="Volt":
+                command = "Volt {0}".format(v.toval("V"))
+            self.instrument.write(command)
+            self.settings.value[channel] = v
+            for ch in self._outputChannels:
+                self.displayValueObservable[ch].fire( value=self._getValue(ch) )
+            return v
+
+        def _getValue(self, channel):
+            if channel=="OnOff":
+                command, unit = "OUTP?", ""
+            elif channel=="Curr":
+                command, unit = "MEAS:Curr?", "A"
+            elif channel=="Volt":
+                command, unit = "Meas:Volt?", "V"
+            value = magnitude.mg(float(self.instrument.ask(command)), unit)
+            return value
+
+        def currentValue(self, channel):
+            return self.settings.value[channel]
+
+        def currentExternalValue(self, channel):
+            return self._getValue(channel)
+
+        def setValue(self, channel, value):
+            self._setValue(channel, value)
+            return True
+
+        def paramDef(self):
+            superior = ExternalParameterBase.paramDef(self)
+            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
+            return superior
+
+        def close(self):
+            del self.instrument
+
+
+    class PTS3500(ExternalParameterBase):
+        """
+        Set the PTS3500 Frequency Source
+        """
+        className = "PTS3500 Frequency "
+        _dimension = magnitude.mg(1,'Hz')
+        _outputChannels = {"Freq": "Hz"}
+        _inputChannels = dict({"Freq": "Hz"})
         def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
@@ -322,28 +380,22 @@ if visaEnabled:
 
         def setDefaults(self):
             ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
+            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'Hz'))       # if True go to the target value in one jump
 
         def _setValue(self, channel, v):
-            function, unit = self._outputLookup[channel]
-            if channel=="OnOff":
-                if v > 0:
-                    command = "OUTP ON"
-                else:
-                    command = "OUTP OFF"
-            else:
-                command = "{0} {1}".format(function, v.toval(unit))
+            unit= self._outputChannels[channel]
+            command = "F{0}\nA1\n".format(v.toval(unit))
             self.instrument.write(command)
             self.settings.value[channel] = v
 
-        def _getValue(self, channel):
-            function, unit = self._outputLookup[channel]
-            if channel=="OnOff":
-                command = "OUTP?"
-            else:
-                command = "MEAS:{0}?".format(function)
-            self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
-            return self.settings.value[channel]
+        # def _getValue(self, channel):
+        #     function, unit = self._outputLookup[channel]
+        #     if channel=="OnOff":
+        #         command = "OUTP?"
+        #     else:
+        #         command = "MEAS:{0}?".format(function)
+        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
+        #     return self.settings.value[channel]
 
         def currentValue(self, channel):
             return self.settings.value[channel]
@@ -366,14 +418,16 @@ if visaEnabled:
             del self.instrument
 
 
-    class PTS3500(ExternalParameterBase):
+    class DS345(ExternalParameterBase):
         """
-        Set the PTS3500 Frequency
+        Set the DS345 SRS Function Generator
         """
-        className = "PTS3500 Frequency "
-        _dimension = magnitude.mg(1,'A')
-        _outputChannels = {"Freq": "MHz"}
-        _inputChannels = dict({"Freq": "MHz"})
+        className = "DS345 SRS Function Generator "
+        _dimension = magnitude.mg(1,'Hz')
+        _outputChannels = {"Freq": "Hz", "Ampl": "dB"}
+        _outputLookup = { "Freq": ("FREQ","Hz"),
+                          "Ampl": ("AMPL","dB")}
+        _inputChannels = dict({"Freq":"MHz", "Ampl":"dB"})
         def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
@@ -386,20 +440,20 @@ if visaEnabled:
 
         def setDefaults(self):
             ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'Hz'))       # if True go to the target value in one jump
 
         def _setValue(self, channel, v):
-            unit= self._outputChannels[channel]
-            command = "F{0}\nA1\n".format(v.toval(unit))
+            function, unit = self._outputLookup[channel]
+            if channel=="Ampl":
+             command = "{0}{1}DB".format(function, v.toval(unit))
+            else:
+             command = "{0} {1}".format(function, v.toval(unit))
             self.instrument.write(command)
             self.settings.value[channel] = v
 
         # def _getValue(self, channel):
         #     function, unit = self._outputLookup[channel]
-        #     if channel=="OnOff":
-        #         command = "OUTP?"
-        #     else:
-        #         command = "MEAS:{0}?".format(function)
+        #     command = "MEAS:{0} ?".format(function)
         #     self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
         #     return self.settings.value[channel]
 
