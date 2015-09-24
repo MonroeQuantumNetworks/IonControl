@@ -25,22 +25,24 @@ class ExternalParameterControlModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(str, object)
     expression = Expression()
     def __init__(self, controlUi, parameterList=[], parent=None):
-        super(ExternalParameterControlModel, self).__init__(parameterList, parent, 'device')
+        super(ExternalParameterControlModel, self).__init__(parameterList, parent, nodeNameAttr='channelName')
         self.parameterList=parameterList
         self.controlUi = controlUi
+        for parameter in parameterList:
+            parameter.categories = parameter.device.name
         self.headerLookup.update({
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Control',
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 2): 'External'
             })
         self.dataLookup.update({
-            (QtCore.Qt.DisplayRole,0): lambda node: node.content.name,
+            (QtCore.Qt.DisplayRole,0): lambda node: node.content.channelName,
             (QtCore.Qt.DisplayRole,1): lambda node: str(node.content.targetValue),
             (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.strValue, str(node.content.targetValue) ),
             (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
-            (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.externalValue),
+            (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.lastExternalValue),
             (QtCore.Qt.BackgroundRole,1): lambda node: self.backgroundLookup[node.content.strValue is not None],
-            (QtCore.Qt.ToolTipRole,1): lambda node: getattr(node.content, strValue, None)
+            (QtCore.Qt.ToolTipRole,1): lambda node: getattr(node.content, 'strValue', None)
             })
         self.dataAllColLookup.pop(QtCore.Qt.BackgroundRole)
         self.dataAllColLookup.pop(QtCore.Qt.ToolTipRole)
@@ -59,8 +61,9 @@ class ExternalParameterControlModel(CategoryTreeModel):
         self.beginResetModel()
         self.parameterList = outputChannelDict.values()
         for listIndex,inst in enumerate(self.parameterList):
+            inst.categories = inst.device.name
             inst.targetValue = deepcopy(inst.value)
-            inst.lastExternalValue = deepcopy(inst.targetValue)
+            inst.lastExternalValue = deepcopy(inst.externalValue)
             inst.toolTip = None
             inst.observable.clear()
             inst.observable.subscribe( functools.partial( self.showValue, listIndex ) )
@@ -69,9 +72,9 @@ class ExternalParameterControlModel(CategoryTreeModel):
 
     def showValue(self, listIndex, value, tooltip=None):
         inst=self.parameterList[listIndex]
-        inst.externalValue = value.value
+        inst.lastExternalValue = value.value
         inst.toolTip = tooltip
-        node = self.nodeFromContent(inst)
+        node = self.nodeDict[inst.name]
         modelIndex=self.indexFromNode(node, 2)
         self.dataChanged.emit(modelIndex,modelIndex)
             

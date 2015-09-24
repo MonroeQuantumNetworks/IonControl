@@ -43,13 +43,15 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     Other attributes that are respected are "hasDepedency" and "isBold." If the content has one of those attributes,
     the content is displayed accordingly.
     """
-    def __init__(self, contentList=[], parent=None, categoriesAttr='categories'):
+    def __init__(self, contentList=[], parent=None, categoriesAttr='categories', nodeNameAttr='name'):
         super(CategoryTreeModel, self).__init__(parent)
         #attribute that determines how to categorize content
         self.categoriesAttr = categoriesAttr
+        #attribute that determines node names
+        self.nodeNameAttr = nodeNameAttr
 
         #styling for different types of content
-        self.normalBgColor = QtGui.QColor(QtCore.Qt.white)
+        #self.normalBgColor = QtGui.QColor(QtCore.Qt.white)
         self.dependencyBgColor = QtGui.QColor(QtCore.Qt.green).lighter(175)
         self.defaultFontName = str(QtGui.QFont().defaultFamily())
         self.normalFont = QtGui.QFont(self.defaultFontName,-1,QtGui.QFont.Normal)
@@ -57,7 +59,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
         #lookups to determine the appearance of the model
         self.fontLookup = {True:self.boldFont, False:self.normalFont}
-        self.backgroundLookup = {True:self.dependencyBgColor, False:self.normalBgColor}
+        self.backgroundLookup = {True:self.dependencyBgColor, False:None}
         self.headerLookup = {} #overwrite to set headers. key: (orientation, role, section) val: str
         self.dataLookup = {
                            (QtCore.Qt.DisplayRole, 0):
@@ -150,7 +152,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def addNodeList(self, contentList):
         """Add a list of nodes to the tree"""
         for listIndex, content in enumerate(contentList):
-            name = getattr(content, 'name', str(listIndex))
+            name = getattr(content, self.nodeNameAttr, str(listIndex))
             self.addNode(content, name)
 
     def addNode(self, content, name):
@@ -184,12 +186,6 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.beginInsertRows(parentIndex, parent.childCount(), parent.childCount())
         parent.children.append(node)
         self.endInsertRows()
-
-    def nodeFromContent(self, content):
-        """Find the node that has a given content"""
-        for node in self.nodeList:
-            if node.content==content:
-                return node
 
 
 class CategoryTreeView(QtGui.QTreeView):
