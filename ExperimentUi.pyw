@@ -604,7 +604,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.voltageControlWindow.close()
         numTempAreas = len(self.scanExperiment.area.tempAreas)
         for i in range(numTempAreas):
-            self.scanExperiment.area.tempAreas[0].win.close()
+            if len(self.scanExperiment.area.tempAreas) > 0:
+                self.scanExperiment.area.tempAreas[0].win.close()
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
