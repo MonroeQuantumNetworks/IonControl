@@ -3,29 +3,18 @@ __author__ = 'jmizrahi'
 from PyQt4 import QtCore, QtGui
 from modules.enum import enum
 from uiModules.KeyboardFilter import KeyListFilter
-nodeTypes = enum('base', 'category', 'data')
+nodeTypes = enum('category', 'data')
 
 class Node(object):
-    """Base class for tree nodes"""
-    def __init__(self, parent, row):
+    """Class for tree nodes"""
+    def __init__(self, parent, row, id, nodeType, content):
         self.parent = parent #parent node
         self.row = row #this node's row number in its parent's children
-        self.nodeType = nodeTypes.base
-
-    def childCount(self):
-        return 0
-
-    def child(self, row):
-        return None
-
-
-class CategoryNode(Node):
-    """Class for category nodes"""
-    def __init__(self, parent, row, name):
-        super(CategoryNode, self).__init__(parent, row)
-        self.name = name
+        self.id = id #All nodes need a unique id
+        self.content = content #content is the actual data in the tree, it can be anything
         self.children = []
-        self.nodeType = nodeTypes.category
+        self.nodeType = nodeType #nodeTypes.category or nodeTypes.data
+        self.isBold = False #Determines whether node is shown bold
 
     def childCount(self):
         return len(self.children)
@@ -34,13 +23,11 @@ class CategoryNode(Node):
         if 0 <= row < self.childCount():
             return self.children[row]
 
+    def __eq__(self, other):
+        return self.id==other.id
 
-class DataNode(Node):
-    """Class for data nodes"""
-    def __init__(self, parent, row, content):
-        super(DataNode, self).__init__(parent, row)
-        self.content = content #content is the actual data in the tree, it can be anything
-        self.nodeType = nodeTypes.data
+    def __str__(self):
+        return "Node: " + str(self.id)
 
 
 class CategoryTreeModel(QtCore.QAbstractItemModel):
@@ -60,7 +47,6 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         super(CategoryTreeModel, self).__init__(parent)
         #attribute that determines how to categorize content
         self.categoriesAttr = categoriesAttr
-        self.nodeList = []
 
         #styling for different types of content
         self.normalBgColor = QtGui.QColor(QtCore.Qt.white)
@@ -83,17 +69,18 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
             QtCore.Qt.ToolTipRole:
                   lambda node: getattr(node.content,'string','') if getattr(node.content,'hasDependency',False) else None,
             QtCore.Qt.FontRole:
-                  lambda node: self.fontLookup.get(getattr(node.content, 'isBold', False))
+                  lambda node: self.fontLookup.get(getattr(node, 'isBold', False))
             }
-        self.categoryDataLookup = {(QtCore.Qt.DisplayRole, 0): lambda node: node.name}
-        self.categoryDataAllColLookup = {QtCore.Qt.FontRole: lambda node: self.normalFont}
+        self.categoryDataLookup = {(QtCore.Qt.DisplayRole, 0): lambda node: node.content}
+        self.categoryDataAllColLookup = {QtCore.Qt.FontRole: lambda node: self.fontLookup.get(getattr(node, 'isBold', False))}
         self.setDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
         self.flagsLookup = {
                             0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
                             }
         self.numColumns = 1 #Overwrite with number of columns
-        self.root = CategoryNode(None, 0, 'root')
-        self.categoryNodes = {(): self.root} #dictionary of category nodes, with tuple indicating hierarchy to that item
+        self.root = Node(parent=None, row=0, id='', nodeType=nodeTypes.category, content=None)
+        self.nodeDict = {'': self.root} #dictionary of all nodes, with string indicating hierarchy to that item
+        self.nodeList = [] #List of data nodes only
         #contentList is a list of objects. Can be anything. If the objects have a category attribute, a tree will result.
         self.addNodeList(contentList)
 
@@ -162,28 +149,34 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
     def addNodeList(self, contentList):
         """Add a list of nodes to the tree"""
-        for content in contentList:
-            self.addNode(content)
+        for listIndex, content in enumerate(contentList):
+            name = getattr(content, 'name', str(listIndex))
+            self.addNode(content, name)
 
-    def addNode(self, content):
-        """Add a node to the tree containing 'content' """
+    def addNode(self, content, name):
+        """Add a node to the tree containing 'content' with id 'id'"""
+        name = str(name)
         categories = getattr(content, self.categoriesAttr, None)
         categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
         categories = None if categories.__class__!=list else categories #no categories if it's not a list
-        parent = self.makeCategoryNodes(map(str, categories)) if categories else self.root
-        node = DataNode(parent, parent.childCount(), content)
+        categories = map(str, categories) if categories else categories #turn into list of strings
+        parent = self.makeCategoryNodes(categories) if categories else self.root
+        id, row, nodeType = parent.id+'_'+name if parent.id else name, parent.childCount(), nodeTypes.data
+        node = Node(parent, row, id, nodeType, content)
         self.addRow(parent, node)
+        self.nodeDict[id] = node
         self.nodeList.append(node)
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
-        key = tuple(categories)
-        if key not in self.categoryNodes: #the empty tuple will always be in the dictionary, so the recursion will end
+        key = '_'.join(categories)
+        if key not in self.nodeDict: #the empty key will always be in the dictionary, so the recursion will end
             parent = self.makeCategoryNodes(categories[:-1]) #This is the recursive step
-            node = CategoryNode(parent, parent.childCount(), categories[-1])
+            name = categories[-1]
+            node = Node(parent=parent, row=parent.childCount(), id=parent.id+'_'+name if parent.id else name, nodeType=nodeTypes.category, content=name)
             self.addRow(parent, node)
-            self.categoryNodes[key] = node
-        return self.categoryNodes[key]
+            self.nodeDict[key] = node
+        return self.nodeDict[key]
 
     def addRow(self, parent, node):
         """Add 'node' the table under 'parent'"""
@@ -211,32 +204,39 @@ class CategoryTreeView(QtGui.QTreeView):
         indexes = self.selectionModel().selectedRows(0)
         for leftIndex in indexes:
             node=self.model().nodeFromIndex(leftIndex)
-            if node.nodeType==nodeTypes.data:
-                node.content.isBold = not node.content.isBold if hasattr(node.content,'isBold') else True
-                rightIndex = self.model().indexFromNode(node, self.model().numColumns-1)
-                self.model().dataChanged.emit(leftIndex, rightIndex)
+            node.isBold = not node.isBold if hasattr(node,'isBold') else True
+            rightIndex = self.model().indexFromNode(node, self.model().numColumns-1)
+            self.model().dataChanged.emit(leftIndex, rightIndex)
 
     def treeState(self):
-        """Returns column widths and expansion state for saving config"""
+        """Returns tree state for saving config"""
         columnWidths = self.header().saveState()
         expandedNodeKeys = []
-        for key, node in self.model().categoryNodes.iteritems():
+        boldNodeKeys = []
+        for key, node in self.model().nodeDict.iteritems():
             index = self.model().createIndex(node.row, 0, node)
             if self.isExpanded(index):
                 expandedNodeKeys.append(key)
-        return columnWidths, expandedNodeKeys
+            if getattr(node, 'isBold', False):
+                boldNodeKeys.append(key)
+        return columnWidths, expandedNodeKeys, boldNodeKeys
 
     def restoreTreeState(self, state):
-        """load in a tree state from the given column widths, expanded nodes"""
-        columnWidths, expandedNodeKeys = state
+        """load in a tree state from the given column widths, expanded nodes, bold nodes"""
+        columnWidths, expandedNodeKeys, boldNodeKeys = state
         if columnWidths:
             self.header().restoreState(columnWidths)
         if expandedNodeKeys:
             for key in expandedNodeKeys:
-                if key in self.model().categoryNodes:
-                    node = self.model().categoryNodes[key]
+                if key in self.model().nodeDict:
+                    node = self.model().nodeDict[key]
                     index = self.model().createIndex(node.row, 0, node)
                     self.expand(index)
+        if boldNodeKeys:
+            for key in boldNodeKeys:
+                if key in self.model().nodeDict:
+                    node = self.model().nodeDict[key]
+                    node.isBold=True
 
 
 if __name__ == "__main__":
@@ -260,7 +260,8 @@ if __name__ == "__main__":
                                myContent('People', ['People']),
                                myContent('Huey', ['People']),
                                myContent('Dewey', ['People']),
-                               myContent('Louie', ['People'])
+                               myContent('Louie', ['People']),
+                               myContent('other')
                                ])
     view = CategoryTreeView()
     view.setModel(model)
