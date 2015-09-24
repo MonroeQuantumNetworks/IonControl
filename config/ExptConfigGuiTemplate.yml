@@ -2,22 +2,21 @@
 
 #The GUI uses the "fields" dictionary to generate the configuration interface. Each field must be specified as a type. Known types are: role, path, str, int, float, bool, and ok_fpga
 
+#In addition to the specified fields, there is also an "enabled" field which is common to all items, so it does not need to be listed here. It will, however, appear in the resulting ExptConfig.yml file
+
 #"software" is a dictionary of particular pieces of functionality available in the software, which have their own configuration information. For example, "Voltages" is a software feature, which must be configured by specifying its corresponding hardware. Hardware is a field of type "role," which means that the hardware can be set to any piece of hardware with role=Voltages.
 software:
   &P Pulser:
     description: The main pulser interface used for running experiments
     fields:
-      enabled: bool
       hardware: role
   &V Voltages:
     description: Interface for controlling a set of voltages
     fields:
-      enabled: bool
       hardware: role
   &A AWG:
     description: Interface for using an arbitrary waveform generator
     fields:
-      enabled: bool
       hardware: role
   Gate Sequences:
     description: Interface for running long sequences of gates (e.g. randomized benchmarking)
@@ -30,14 +29,12 @@ hardware:
     description: The main FPGA used for running experiments
     role: *P
     fields:
-      enabled: bool
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
   "Opal Kelly FPGA: 32 Channel PMT":
     description: FPGA used to pre-process outputs from 32 channel PMT
     fields:
-      enabled: bool
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
@@ -45,7 +42,6 @@ hardware:
     description: FPGA used to control 100 output DAC board
     role: *V
     fields:
-      enabled: bool
       device: ok_fpga
       bitFile: path
       uploadOnStartup: bool
@@ -53,14 +49,12 @@ hardware:
     description: DAC system from National Instruments used to output voltages
     role: *V
     fields:
-      enabled: bool
       name: str
       configFile: path
   Chase AWG:
     description: Arbitrary Waveform Generator from Chase Scientific Company
     role: *A
     fields:
-      enabled: bool
       name: str
       instrument: str
       DLL: str

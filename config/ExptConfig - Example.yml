@@ -17,7 +17,9 @@ software:
     enabled: true
     hardware: Chase AWG
   Gate Sequences:
+    enabled: true
   Timestamps:
+    enabled: true
 
 #This section defines the available hardware, and how it's configured.
 hardware:
@@ -42,8 +44,11 @@ hardware:
     instrument: Chase DA12000 AWG
     DLL: DA12000_DLL64.dll
   Conex Motion:
+    enabled: true
   APT Motion:
+    enabled: true
   VISA:
+    enabled: true
 
 #This section defines the settings to use to connect to the database.
 #Yes, the password is plain text. Don't use one you care deeply about.

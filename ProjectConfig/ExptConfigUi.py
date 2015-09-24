@@ -101,6 +101,14 @@ class ExptConfigUi(Base,Form):
                 item=QtGui.QListWidgetItem(name,w)
                 if description:
                     item.setToolTip(description)
+                    if self.exptConfig[guiName].has_key(name):
+                        if self.exptConfig[guiName][name].has_key('enabled'):
+                            checkState = QtCore.Qt.Checked if self.exptConfig[guiName][name]['enabled'] else QtCore.Qt.Unchecked
+                        else:
+                            checkState = QtCore.Qt.Checked
+                    else:
+                        checkState = QtCore.Qt.Checked
+                    item.setCheckState(checkState)
                 w.setCurrentItem(item)
             with BlockSignals(tabWidget) as w:
                 widget=self.getWidget(guiName,name)
@@ -181,6 +189,9 @@ class ExptConfigUi(Base,Form):
                     self.exptConfig[guiName][name]=dict() #'name' is name of piece of equipment or software feature
                     for field,subwidget in subwidgetList: #'field' is the specific config field for 'name'
                         self.exptConfig[guiName][name][field] = subwidget.content
+                    listWidget=self.guiDict[guiName][2]
+                    item = listWidget.findItems(name, QtCore.Qt.MatchExactly)[0]
+                    self.exptConfig[guiName][name]['enabled'] = item.checkState()==QtCore.Qt.Checked
             self.exptConfig['databaseConnection'] = dbSettings
             self.exptConfig['showGui']=not self.defaultCheckBox.isChecked()
             Base.accept(self)
