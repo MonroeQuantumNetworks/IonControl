@@ -542,11 +542,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
-        for dock in [self.dockWidgetConsole, self.shutterDockWidget, self.triggerDockWidget, self.DDSDockWidget, self.DACDockWidget,
-                     self.ExternalParameterDock, self.ExternalParameterSelectionDock, self.globalVariablesDock, self.pulserParameterUiDock,
-                     #self.DDS9910DockWidget, 
-                     self.loggerDock, self.todoListDock, #self.measurementLogDock 
-                     ]:
+        dockList = self.findChildren(QtGui.QDockWidget)
+        for dock in dockList:
             self.menuView.addAction(dock.toggleViewAction())
         # Print menu
         if self.printMenu is not None:
@@ -557,8 +554,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             for plot in self.currentTab.printTargets():
                 action = self.printMenu.addAction( plot )
                 action.triggered.connect( partial(self.onPrint, plot ))
-                
-         
+
     def onSettings(self):
         self.settingsDialog.show()
         
