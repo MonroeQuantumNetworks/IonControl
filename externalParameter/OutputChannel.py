@@ -66,4 +66,15 @@ class OutputChannel(object):
     @property
     def useExternalValue(self):
         return self.device.useExternalValue(self.channelName)
-    
+
+    @property
+    def hasDependency(self):
+        return self.strValue is not None
+
+    @property
+    def string(self):
+        return self.strValue
+
+    @string.setter
+    def string(self, value):
+        self.strValue=value

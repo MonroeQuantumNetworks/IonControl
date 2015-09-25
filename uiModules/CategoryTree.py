@@ -59,17 +59,14 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
         #lookups to determine the appearance of the model
         self.fontLookup = {True:self.boldFont, False:self.normalFont}
-        self.backgroundLookup = {True:self.dependencyBgColor, False:None}
         self.headerLookup = {} #overwrite to set headers. key: (orientation, role, section) val: str
         self.dataLookup = {
                            (QtCore.Qt.DisplayRole, 0):
                                lambda node: str(node.content) #default, normally overwritten
                            }
+        self.backgroundFunction = lambda node: self.dependencyBgColor if getattr(node.content,'hasDependency',None) else None
+        self.toolTipFunction = lambda node: getattr(node.content,'string','') if getattr(node.content,'hasDependency',None) else None
         self.dataAllColLookup = { #data lookup that applies to all columns
-            QtCore.Qt.BackgroundRole:
-                  lambda node: self.backgroundLookup.get(getattr(node.content,'hasDependency',False)),
-            QtCore.Qt.ToolTipRole:
-                  lambda node: getattr(node.content,'string','') if getattr(node.content,'hasDependency',False) else None,
             QtCore.Qt.FontRole:
                   lambda node: self.fontLookup.get(getattr(node, 'isBold', False))
             }
@@ -82,7 +79,6 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.numColumns = 1 #Overwrite with number of columns
         self.root = Node(parent=None, row=0, id='', nodeType=nodeTypes.category, content=None)
         self.nodeDict = {'': self.root} #dictionary of all nodes, with string indicating hierarchy to that item
-        self.nodeList = [] #List of data nodes only
         #contentList is a list of objects. Can be anything. If the objects have a category attribute, a tree will result.
         self.addNodeList(contentList)
 
@@ -167,7 +163,6 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         node = Node(parent, row, id, nodeType, content)
         self.addRow(parent, node)
         self.nodeDict[id] = node
-        self.nodeList.append(node)
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
@@ -186,6 +181,18 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.beginInsertRows(parentIndex, parent.childCount(), parent.childCount())
         parent.children.append(node)
         self.endInsertRows()
+
+    def nodeFromContent(self, content):
+        success=False
+        for node in self.nodeDict.itervalues():
+            if node.content==content:
+                success=True
+                break
+        return node if success else None
+
+    def clear(self):
+        self.root.children = []
+        self.nodeDict = {'': self.root}
 
 
 class CategoryTreeView(QtGui.QTreeView):
@@ -239,26 +246,56 @@ if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
     class myContent(object):
-        def __init__(self, data, categories=None, hasDependency=False, string='', isBold=False):
-            self.data = data
+        def __init__(self, data1, data2, categories=None, hasDependency=False, string='', isBold=False):
+            self.data1 = data1
+            self.data2 = data2
             self.categories = categories
             self.hasDependency = hasDependency
             self.string = string
             self.isBold = isBold
         def __str__(self):
-            return str(self.data)
-    model = CategoryTreeModel([myContent('hot dog', ['Foods', 'Red'], True, 'qq',isBold=True),
-                               myContent('strawberry', ['Foods', 'Red']),
-                               myContent('blueberry', ['Foods', 'Blue'],isBold=True),
-                               myContent('golf',['Games', 'ball based'],True,'abc'),
-                               myContent('baseball',['Games', 'ball based']),
-                               myContent('hockey', ['Games','puck based']),
-                               myContent('People', ['People']),
-                               myContent('Huey', ['People']),
-                               myContent('Dewey', ['People']),
-                               myContent('Louie', ['People']),
-                               myContent('other')
-                               ])
+            return str((str(self.data1), str(self.data2)))
+    class myModel(CategoryTreeModel):
+        def __init__(self, contentList=[], parent=None, categoriesAttr='categories', nodeNameAttr='name'):
+            super(myModel, self).__init__(contentList,parent,categoriesAttr,nodeNameAttr)
+            self.numColumns=2
+            self.headerLookup.update({
+                    (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
+                    (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Value'
+                    })
+            self.dataLookup.update({
+                           (QtCore.Qt.DisplayRole, 0):
+                               lambda node: str(node.content.data1),
+                           (QtCore.Qt.DisplayRole, 1):
+                               lambda node: str(node.content.data2),
+                           (QtCore.Qt.EditRole, 1):
+                               lambda node: str(node.content.data2)
+                           })
+            self.setDataLookup.update({
+                (QtCore.Qt.EditRole, 1): lambda index, value: self.setValue(index, value)
+                })
+            self.flagsLookup.update({
+                0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable,
+                1: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
+                })
+
+        def setValue(self, index, value):
+            node = self.nodeFromIndex(index)
+            node.content.data2 = str(value.toString())
+            return True
+
+    model = myModel([myContent('hot dog', 3, ['Foods', 'Red'], True, 'qq',isBold=True),
+                     myContent('strawberry', 4, ['Foods', 'Red']),
+                     myContent('blueberry', 12, ['Foods', 'Blue'],isBold=True),
+                     myContent('golf',2,['Games', 'ball based'],True,'abc'),
+                     myContent('baseball',12,['Games', 'ball based']),
+                     myContent('hockey', 13, ['Games','puck based']),
+                     myContent('People', 12, ['People']),
+                     myContent('Huey',225, ['People']),
+                     myContent('Dewey', 1251,['People']),
+                     myContent('Louie', 12,['People']),
+                     myContent('other',125121)
+                     ])
     view = CategoryTreeView()
     view.setModel(model)
     window = QtGui.QMainWindow()

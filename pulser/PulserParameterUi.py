@@ -54,7 +54,9 @@ class PulserParameterModel(CategoryTreeModel):
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole, 0): lambda node: node.content.name,
             (QtCore.Qt.DisplayRole, 1): lambda node: str(node.content.value),
-            (QtCore.Qt.EditRole, 1): lambda node: node.content.string
+            (QtCore.Qt.EditRole, 1): lambda node: node.content.string,
+            (QtCore.Qt.BackgroundRole,1): self.backgroundFunction,
+            (QtCore.Qt.ToolTipRole,1): self.toolTipFunction
             })
         self.setDataLookup.update({
             (QtCore.Qt.EditRole, 1): lambda index, value: self.setValue(index, value),
@@ -123,6 +125,6 @@ class PulserParameterUi(CategoryTreeView):
         self.currentWireValues[parameter.address] = parameter.setBits(self.currentWireValues[parameter.address])
         self.pulser.setExtendedWireIn( parameter.address, self.currentWireValues[parameter.address] )
         if self.isSetup and event.origin!='value':
-            node = self.nodes[parameter.name]
-            ind = self.model().createIndex(node.row, 1, node)
-            self.model().dataChanged.emit(ind, ind)
+            node = self.model().nodeFromContent(parameter)
+            index = self.model().indexFromNode(node, col=1)
+            self.model().dataChanged.emit(index, index)

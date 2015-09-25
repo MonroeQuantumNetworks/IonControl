@@ -41,14 +41,12 @@ class ExternalParameterControlModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.strValue, str(node.content.targetValue) ),
             (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
             (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.lastExternalValue),
-            (QtCore.Qt.BackgroundRole,1): lambda node: self.backgroundLookup[node.content.strValue is not None],
-            (QtCore.Qt.ToolTipRole,1): lambda node: getattr(node.content, 'strValue', None)
+            (QtCore.Qt.BackgroundRole,1): self.backgroundFunction,
+            (QtCore.Qt.ToolTipRole,1): self.toolTipFunction
             })
-        self.dataAllColLookup.pop(QtCore.Qt.BackgroundRole)
-        self.dataAllColLookup.pop(QtCore.Qt.ToolTipRole)
         self.setDataLookup.update({
-            (QtCore.Qt.EditRole,1): lambda index, value: self.setValue( index, value ),
-            (QtCore.Qt.UserRole,1): lambda index, value: self.setStrValue( index, value ),
+            (QtCore.Qt.EditRole,1): lambda index, value: self.setValue(index, value),
+            (QtCore.Qt.UserRole,1): lambda index, value: self.setStrValue(index, value),
             })
         self.flagsLookup = {
             1:QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable
@@ -67,8 +65,9 @@ class ExternalParameterControlModel(CategoryTreeModel):
             inst.toolTip = None
             inst.observable.clear()
             inst.observable.subscribe( functools.partial( self.showValue, listIndex ) )
-        self.addNodeList(self.parameterList)
+        self.clear()
         self.endResetModel()
+        self.addNodeList(self.parameterList)
 
     def showValue(self, listIndex, value, tooltip=None):
         inst=self.parameterList[listIndex]
@@ -94,7 +93,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
  
     def setStrValue(self, index, strValue):
         node=self.nodeFromIndex(index)
-        node.strValue = strValue
+        node.content.strValue = strValue
         return True
         
     def setValueFollowup(self, inst):
@@ -165,8 +164,15 @@ class ControlUi(CategoryTreeView):
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
 
     def setupParameters(self, outputChannels):
+        oldState=self.treeState()
+        oldNodeDictKeys=self.model().nodeDict.keys()
         self.model().setParameterList(outputChannels)
         self.header().setStretchLastSection(True)
+        self.restoreTreeState(oldState)
+        for key, node in self.model().nodeDict.iteritems():
+            if key not in oldNodeDictKeys: #Expand any new nodes
+                index = self.model().indexFromNode(node)
+                self.expand(index)
         try:
             self.evaluate(None)
         except (KeyError, MagnitudeError) as e:
