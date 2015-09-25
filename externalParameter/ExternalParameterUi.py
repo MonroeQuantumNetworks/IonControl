@@ -25,7 +25,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(str, object)
     expression = Expression()
     def __init__(self, controlUi, parameterList=[], parent=None):
-        super(ExternalParameterControlModel, self).__init__(parameterList, parent, nodeNameAttr='channelName')
+        super(ExternalParameterControlModel, self).__init__(parameterList, parent, nodeNameAttr='displayName')
         self.parameterList=parameterList
         self.controlUi = controlUi
         for parameter in parameterList:
@@ -36,7 +36,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 2): 'External'
             })
         self.dataLookup.update({
-            (QtCore.Qt.DisplayRole,0): lambda node: node.content.channelName,
+            (QtCore.Qt.DisplayRole,0): lambda node: node.content.displayName,
             (QtCore.Qt.DisplayRole,1): lambda node: str(node.content.targetValue),
             (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.strValue, str(node.content.targetValue) ),
             (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
@@ -59,7 +59,9 @@ class ExternalParameterControlModel(CategoryTreeModel):
         self.beginResetModel()
         self.parameterList = outputChannelDict.values()
         for listIndex,inst in enumerate(self.parameterList):
-            inst.categories = inst.device.name
+            inst.multipleChannels = len(inst.device._outputChannels)>1
+            inst.categories = inst.device.name if inst.multipleChannels else None
+            inst.displayName = inst.channelName if inst.multipleChannels else inst.device.name
             inst.targetValue = deepcopy(inst.value)
             inst.lastExternalValue = deepcopy(inst.externalValue)
             inst.toolTip = None
@@ -73,7 +75,8 @@ class ExternalParameterControlModel(CategoryTreeModel):
         inst=self.parameterList[listIndex]
         inst.lastExternalValue = value.value
         inst.toolTip = tooltip
-        node = self.nodeDict[inst.name]
+        id=inst.name if inst.multipleChannels else inst.device.name
+        node = self.nodeDict[id]
         modelIndex=self.indexFromNode(node, 2)
         self.dataChanged.emit(modelIndex,modelIndex)
             
