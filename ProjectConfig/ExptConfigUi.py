@@ -325,12 +325,17 @@ class OK_FPGA_Widget(QtGui.QHBoxLayout):
         self.modelLineEdit = QtGui.QLineEdit(parent)
         self.modelLineEdit.setReadOnly(True)
         self.modelLineEdit.setFixedWidth(120)
-        self.scanButton = QtGui.QPushButton(parent)
-        self.scanButton.setText('Scan')
-        self.scanButton.setFixedWidth(1.5*textSize('Scan').width())
+        self.uploadButton = QtGui.QPushButton('Upload', parent)
+        self.uploadButton.setFixedWidth(60)
+        self.uploadButton.setToolTip("Upload bitfile to FPGA")
+        self.uploadButton.clicked.connect(self.onUpload)
+        self.scanButton = QtGui.QPushButton('Scan', parent)
+        self.scanButton.setFixedWidth(60)
+        self.scanButton.setToolTip("Scan for FPGAs")
         self.scanButton.clicked.connect(self.onScan)
         self.addWidget(self.identifierComboBox)
         self.addWidget(self.modelLineEdit)
+        self.addWidget(self.uploadButton)
         self.addWidget(self.scanButton)
         self.OK_FPGA_Dict=dict()
         self.FPGAlistModel=QtGui.QStringListModel()
@@ -338,6 +343,7 @@ class OK_FPGA_Widget(QtGui.QHBoxLayout):
         self.identifierComboBox.currentIndexChanged[str].connect(self.onChanged)
         self.onScan()
 
+    @QtCore.pyqtSlot()
     def onScan(self):
         """Get list of FPGAs"""
         currentText = self.identifierComboBox.currentText()
@@ -346,6 +352,11 @@ class OK_FPGA_Widget(QtGui.QHBoxLayout):
         self.OK_FPGA_Dict.update({'':'dummy'})
         self.FPGAlistModel.setStringList(self.OK_FPGA_Dict.keys())
         self.setToText(currentText)
+
+    @QtCore.pyqtSlot()
+    def onUpload(self):
+        """upload bitfile to FPGA"""
+        pass #TODO: make this work
 
     @QtCore.pyqtSlot(str)
     def onChanged(self, name):
