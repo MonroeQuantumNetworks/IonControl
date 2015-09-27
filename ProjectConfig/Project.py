@@ -165,12 +165,10 @@ class ProjectInfoUi(Base,Form):
             self.project.projectConfig.update({'showGui':True})
             with open(self.project.projectConfigFilename, 'w') as f:
                 yaml.dump(self.project.projectConfig, f, default_flow_style=False)
-
         if self.showExptGuiCheckbox.isChecked() and not self.project.exptConfig['showGui']:
             self.project.exptConfig.update({'showGui':True})
             with open(self.project.exptConfigFilename, 'w') as f:
                 yaml.dump(self.project.exptConfig, f, default_flow_style=False)
-
         Base.accept(self)
 
 
@@ -182,7 +180,6 @@ def getProject():
     if not currentProject:
         raise ProjectException('No project set')
     return currentProject
-
 
 
 if __name__ == '__main__':

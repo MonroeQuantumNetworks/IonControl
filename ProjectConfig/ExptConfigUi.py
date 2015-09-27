@@ -153,7 +153,7 @@ class ExptConfigUi(Base,Form):
                         oldvalue = self.exptConfig[guiName][name][fieldname]
                     except KeyError:
                         oldvalue = None
-                    subwidget=configWidget(self,fieldtype,name,oldvalue,parent=mainwidget)
+                    subwidget=ConfigWidget(self,fieldtype,name,oldvalue,self.subwidgetDict,parent=mainwidget)
                     self.subwidgetDict[(guiName,name)].append((fieldname,subwidget))
                     layout.addRow(fieldname, subwidget.widget)
             else:
@@ -211,19 +211,19 @@ class ExptConfigUi(Base,Form):
         return names
 
 
-class configWidget(object):
+class ConfigWidget(object):
     """Class for arbitrary config widget"""
-    def __init__(self,exptConfigUi,fieldtype,role,oldvalue,parent=None):
+    def __init__(self,exptConfigUi,fieldtype,name,oldvalue,subwidgetDict,parent=None):
         """Creates a widget of the specified fieldtype"""
         self.fieldtype = fieldtype
 
         self.widgetCallLookup = {'bool'   : QtGui.QCheckBox,
                                  'float'  : QtGui.QDoubleSpinBox,
                                  'int'    : QtGui.QSpinBox,
-                                 'role'   : partial(RoleWidget,role,exptConfigUi),
+                                 'role'   : partial(RoleWidget,name,exptConfigUi),
                                  'path'   : partial(PathWidget,exptConfigUi.project.baseDir),
                                  'str'    : QtGui.QLineEdit,
-                                 'ok_fpga': OK_FPGA_Widget}
+                                 'ok_fpga': partial(OK_FPGA_Widget,subwidgetDict,name)}
 
         widgetCall = self.widgetCallLookup.get(self.fieldtype)
         if not widgetCall:
@@ -248,20 +248,13 @@ class configWidget(object):
 
     @property
     def content(self):
-        if self.fieldtype=='bool':
-            return self.widget.isChecked()
-        elif self.fieldtype=='float':
-            return self.widget.value()
-        elif self.fieldtype=='int':
-            return self.widget.value()
-        elif self.fieldtype=='role':
-            return str(self.widget.currentText())
-        elif self.fieldtype=='path':
-            return str(self.widget.lineEdit.text())
-        elif self.fieldtype=='str':
-            return str(self.widget.text())
-        elif self.fieldtype=='ok_fpga':
-            return str(self.widget.identifierComboBox.currentText())
+        if   self.fieldtype=='bool':    return self.widget.isChecked()
+        elif self.fieldtype=='float':   return self.widget.value()
+        elif self.fieldtype=='int':     return self.widget.value()
+        elif self.fieldtype=='role':    return str(self.widget.currentText())
+        elif self.fieldtype=='path':    return str(self.widget.lineEdit.text())
+        elif self.fieldtype=='str':     return str(self.widget.text())
+        elif self.fieldtype=='ok_fpga': return str(self.widget.identifierComboBox.currentText())
 
 
 class PathWidget(QtGui.QHBoxLayout):
@@ -293,9 +286,9 @@ class PathWidget(QtGui.QHBoxLayout):
 
 class RoleWidget(QtGui.QComboBox):
     """Combo box for selecting what hardware to use for a specific software role"""
-    def __init__(self,role,exptConfigUi,parent=None):
+    def __init__(self,name,exptConfigUi,parent=None):
         super(RoleWidget, self).__init__()
-        self.role = role
+        self.name = name
         self.exptConfigUi = exptConfigUi
         self.onUpdate()
         self.exptConfigUi.updateRoles.connect(self.onUpdate)
@@ -306,7 +299,7 @@ class RoleWidget(QtGui.QComboBox):
         currentText=self.currentText()
         self.clear()
         self.addItem('')
-        hardwareList = self.exptConfigUi.roleDict.get(self.role)
+        hardwareList = self.exptConfigUi.roleDict.get(self.name)
         if hardwareList:
             self.addItems(hardwareList)
         self.setCurrentIndex( self.findText(currentText,QtCore.Qt.MatchExactly) )
@@ -319,8 +312,12 @@ class RoleWidget(QtGui.QComboBox):
 
 class OK_FPGA_Widget(QtGui.QHBoxLayout):
     """Config widget for selecting an Opal Kelly FPGA"""
-    def __init__(self,parent=None):
+    def __init__(self,subwidgetDict,name,parent=None):
         super(OK_FPGA_Widget, self).__init__()
+        from pulser.OKBase import OKBase
+        self.pulser = OKBase()
+        self.subwidgetDict = subwidgetDict
+        self.name = name
         self.identifierComboBox = QtGui.QComboBox(parent)
         self.modelLineEdit = QtGui.QLineEdit(parent)
         self.modelLineEdit.setReadOnly(True)
@@ -346,17 +343,36 @@ class OK_FPGA_Widget(QtGui.QHBoxLayout):
     @QtCore.pyqtSlot()
     def onScan(self):
         """Get list of FPGAs"""
+        logger = logging.getLogger(__name__)
         currentText = self.identifierComboBox.currentText()
-        from pulser.OKBase import OKBase
-        self.OK_FPGA_Dict = OKBase().listBoards()
+        self.OK_FPGA_Dict = self.pulser.listBoards()
+        logger.info( "Opal Kelly Devices found: {0}".format({k:v.modelName for k,v in self.OK_FPGA_Dict.iteritems()}) )
         self.OK_FPGA_Dict.update({'':'dummy'})
         self.FPGAlistModel.setStringList(self.OK_FPGA_Dict.keys())
         self.setToText(currentText)
 
     @QtCore.pyqtSlot()
     def onUpload(self):
-        """upload bitfile to FPGA"""
-        pass #TODO: make this work
+        """upload bitFile to FPGA"""
+        logger = logging.getLogger(__name__)
+        subwidgets = self.subwidgetDict[('hardware',self.name)]
+        FPGA_name = str(self.identifierComboBox.currentText())
+        FPGA = self.OK_FPGA_Dict[FPGA_name]
+        bitFileFound=False
+        for fieldName,widget in subwidgets:
+            if fieldName=='bitFile':
+                bitFileFound=True
+                bitFile=widget.content
+        if not bitFileFound:
+            logger.error("No bitfile field found; unable to upload bitfile")
+        elif not os.path.exists(bitFile):
+            logger.error("Invalid bitfile path")
+        elif not FPGA_name:
+            logger.error("No FPGA selected")
+        else:
+            self.pulser.openBySerial(FPGA.serial)
+            self.pulser.uploadBitfile(bitFile)
+            logger.info("Uploaded file '{0}'".format(bitFile))
 
     @QtCore.pyqtSlot(str)
     def onChanged(self, name):
