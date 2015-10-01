@@ -18,6 +18,7 @@ from AdjustValue import AdjustValue
 from ProjectConfig.Project import getProject
 from uiModules.ImportErrorPopup import importErrorPopup
 from Chassis.itfParser import itfParser
+from pulser.DACController import DACControllerException
 
 project = getProject()
 hardware = project.exptConfig['hardware']
@@ -40,8 +41,6 @@ if NI_enabled:
     except ImportError as e:
         importErrorPopup(NI_name)
 
-if FPGA_DAC_enabled:
-    from pulser.DACController import DACControllerException
 
 class HardwareException(Exception):
     pass
