@@ -49,7 +49,7 @@ from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettingsDialog
 import ctypes
-SetID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
+setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
@@ -80,41 +80,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.printMenu = None
         self.dbConnection = project.dbConnection
 
-        #get hardware and software configuraiton
-        self.hardware = project.exptConfig['hardware']
-        self.software = project.exptConfig['software']
-
-        #determine if AWG software is enabled and import class if it is
-        AWG = self.software.get('AWG')
-        self.AWGEnabled = AWG.get('enabled') if AWG else False
-        if self.AWGEnabled:
-            from AWG.AWGUi import AWGUi
-            self.AWGUi_class = AWGUi
-
-        #determine if Voltages software is enabled and import class if it is
-        voltages = self.software.get('Voltages')
-        self.voltagesEnabled = voltages.get('enabled') if voltages else False
-        if self.voltagesEnabled:
-            from voltageControl.VoltageControl import VoltageControl
-            self.VoltageControl = VoltageControl
-
-        #setup external parameters; import specific libraries if they are needed, popup warnings if selected hardware import fail
-        import externalParameter.StandardExternalParameter
-        import externalParameter.InterProcessParameters
-        if 'Conex Motion' in self.hardware:
-            try:
-                import externalParameter.MotionParameter #@UnusedImport
-            except ImportError: #popup on failed import
-                importErrorPopup('Conex Motion')
-        if 'APT Motion' in self.hardware:
-            try:
-                import externalParameter.APTInstruments #@UnusedImport
-            except ImportError: #popup on failed import
-                importErrorPopup('APT Motion')
-
-        from externalParameter.ExternalParameterBase import InstrumentDict
-        self.InstrumentDict = InstrumentDict
-
     def __enter__(self):
         self.pulser = PulserHardware()
         return self
@@ -133,28 +98,62 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.loggerDock.setObjectName("_LoggerDock")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.loggerDock)
         self.loggerDock.hide()
-                
-        logger = logging.getLogger()        
+
+        logger = logging.getLogger()
         self.toolBar.addWidget(ExceptionLogButton())
-        
+
         self.warningLogButton = LogButton(messageIcon=":/petersIcons/icons/Warning.png", messageName="warnings")
         self.toolBar.addWidget(self.warningLogButton)
         qtWarningButtonHandler.textWritten.connect(self.warningLogButton.addMessage)
-        
+
         # Setup Console Dockwidget
         self.levelComboBox.addItems(self.levelNameList)
-        self.levelComboBox.currentIndexChanged[int].connect( self.setLoggingLevel )            
+        self.levelComboBox.currentIndexChanged[int].connect( self.setLoggingLevel )
         self.levelComboBox.setCurrentIndex( self.levelValueList.index(self.loggingLevel) )
         self.consoleClearButton.clicked.connect( self.onClearConsole )
         self.linesSpinBox.valueChanged.connect( self.onConsoleMaximumLinesChanged )
         self.linesSpinBox.setValue( self.consoleMaximumLines )
         self.checkBoxEnableConsole.stateChanged.connect( self.onEnableConsole )
         self.checkBoxEnableConsole.setChecked( self.consoleEnable )
-        
+
         self.parent = parent
         self.tabDict = SequenceDict()
 
-        #Program FPGAs
+        #determine if AWG software is enabled and import class if it is
+        self.AWGEnabled = self.project.isEnabled('software', 'AWG')
+        if self.AWGEnabled:
+            from AWG.AWGUi import AWGUi
+
+        #determine if Voltages software is enabled and import class if it is
+        softwareVoltages = self.project.software.get('Voltages')
+        self.voltagesEnabled = self.project.isEnabled('software', 'Voltages')
+        hardwareVoltagesName = softwareVoltages.get('hardware') if softwareVoltages else None
+        hardwareVoltagesEnabled = self.project.isEnabled('hardware', hardwareVoltagesName)
+        if self.voltagesEnabled:
+            from voltageControl.VoltageControl import VoltageControl
+
+        #setup external parameters; import specific libraries if they are needed, popup warnings if selected hardware import fail
+        import externalParameter.StandardExternalParameter
+        import externalParameter.InterProcessParameters
+        if self.project.isEnabled('hardware', 'Conex Motion'):
+            try:
+                import externalParameter.MotionParameter #@UnusedImport
+            except ImportError: #popup on failed import
+                importErrorPopup('Conex Motion')
+        if self.project.isEnabled('hardware', 'APT Motion'):
+            try:
+                import externalParameter.APTInstruments #@UnusedImport
+            except ImportError: #popup on failed import
+                importErrorPopup('APT Motion')
+        from externalParameter.ExternalParameterBase import InstrumentDict
+
+        #setup FPGAs
+        softwarePulser = self.project.software.get('Pulser')
+        softwarePulserEnabled = self.project.isEnabled('software', 'Pulser')
+        hardwarePulserName = softwarePulser.get('hardware') if softwarePulser else None
+        hardwarePulserEnabled = self.project.isEnabled('hardware', hardwarePulserName)
+        self.pulserEnabled = softwarePulserEnabled and hardwarePulserEnabled
+
         self.settingsDialog = FPGASettingsDialog( self.config, parent=self.parent)
         self.settingsDialog.setupUi()
         self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
@@ -226,7 +225,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
 
         if self.AWGEnabled:
-            self.AWGUi = self.AWGUi_class(self.pulser, self.config, self.globalVariablesUi.variables)
+            self.AWGUi = AWGUi(self.pulser, self.config, self.globalVariablesUi.variables)
             self.AWGUi.setupUi(self.AWGUi)
             self.AWGUiDock = QtGui.QDockWidget("AWG")
             self.AWGUiDock.setWidget(self.AWGUi)
@@ -285,7 +284,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if self.AWGEnabled:
             self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
         
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=self.InstrumentDict)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")
@@ -380,7 +379,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         if self.voltagesEnabled:
             try:
-                self.voltageControlWindow = self.VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
+                self.voltageControlWindow = VoltageControl(self.config, self.globalVariablesUi.variables, self.dac)
                 self.voltageControlWindow.setupUi(self.voltageControlWindow)
                 self.voltageControlWindow.globalAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage') )
                 #self.voltageControlWindow.localAdjustUi.outputChannelsChanged.connect( partial(self.scanExperiment.updateScanTarget, 'Voltage Local Adjust') )
@@ -675,9 +674,9 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     project = Project() #loads in the project through the config files/config GUIs
     logger = logging.getLogger("")
-    SetID('TrappedIons.FPGAControlProgram') #Makes the icon in the Windows taskbar match the icon set in Qt Designer
+    setID('TrappedIons.FPGAControlProgram') #Makes the icon in the Windows taskbar match the icon set in Qt Designer
 
-    with configshelve.configshelve( project.guiConfigFile ) as config:
+    with configshelve.configshelve(project.guiConfigFile) as config:
          with ExperimentUi(config, project) as ui:
             ui.setupUi(ui)
             LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)

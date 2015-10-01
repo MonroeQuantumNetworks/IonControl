@@ -15,9 +15,8 @@ from PyQt4 import QtGui
 from uiModules.ImportErrorPopup import importErrorPopup
 
 project=getProject()
-hardware=project.exptConfig['hardware']
-wavemeterEnabled = True if 'HighFinesse Wavemeter' in hardware else False
-visaEnabled = True if 'VISA' in hardware else False
+wavemeterEnabled = project.isEnabled('hardware', 'HighFinesse Wavemeter')
+visaEnabled = project.isEnabled('hardware', 'VISA')
 
 if wavemeterEnabled:
     from wavemeter.Wavemeter import Wavemeter

@@ -13,9 +13,18 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="label">
+     <property name="styleSheet">
+      <string notr="true">QLabel{
+	font: 14pt &quot;MS Shell Dlg 2&quot;;
+	background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(208, 229, 255, 255),  	stop:1 rgba(171, 208, 255, 255));
+}</string>
+     </property>
      <property name="text">
       <string>Project Information</string>
      </property>
@@ -79,7 +88,6 @@
        </widget>
       </item>
      </layout>
-     <zorder>gridLayoutWidget</zorder>
      <zorder>label_2</zorder>
      <zorder>showProjectGuiCheckbox</zorder>
      <zorder>ProjectConfigTextEdit</zorder>

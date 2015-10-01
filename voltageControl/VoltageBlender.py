@@ -21,16 +21,15 @@ from Chassis.itfParser import itfParser
 from pulser.DACController import DACControllerException
 
 project = getProject()
-hardware = project.exptConfig['hardware']
 voltageHardware = project.exptConfig['software']['Voltages']['hardware']
 
 NI_name = 'NI DAC Chassis'
-NI = hardware.get(NI_name)
-NI_enabled = hardware[NI_name].get('enabled') if NI else False
+NI = project.hardware.get(NI_name)
+NI_enabled = project.isEnabled('hardware', NI_name)
 
 FPGA_DAC_name = 'Opal Kelly FPGA: DAC'
-FPGA_DAC = hardware.get(FPGA_DAC_name)
-FPGA_DAC_enabled = hardware[FPGA_DAC_name].get('enabled') if FPGA_DAC else False
+FPGA_DAC = project.hardware.get(FPGA_DAC_name)
+FPGA_DAC_enabled = project.isEnabled('hardware', FPGA_DAC_name)
 
 if NI_enabled:
     try:
@@ -73,10 +72,6 @@ class NIHardware(object):
             self.chassis = WaveformChassis()
             self.chassis.mode = Mode.Static
             ConfigFilename = NI['configFile']
-            #self.hostname = socket.gethostname()
-            # ConfigFilename = os.path.join( getProject().configDir, "VoltageControl", self.hostname+'.cfg' )
-            # if not os.path.exists( ConfigFilename):
-            #     raise MyException.MissingFile( "Chassis configuration file '{0}' not found.".format(ConfigFilename))
             self.chassis.initFromFile( ConfigFilename )
             self.DoLine = self.chassis.createFalseDoBuffer()
             self.DoLine[0] = 1

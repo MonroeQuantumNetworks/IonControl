@@ -334,8 +334,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             override = dict()
             scanParam = None
 
-            AWG = getProject().exptConfig['software'].get('AWG')
-            AWGEnabled = AWG.get('enabled') if AWG else False
+            project=getProject()
+            AWGEnabled = project.isEnabled('software', 'AWG')
             if AWGEnabled:
                 AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
                 if AWGdevice.parent.parameters.enabled and self.scan.scanMode == 0: # 0 = Parameter Scan

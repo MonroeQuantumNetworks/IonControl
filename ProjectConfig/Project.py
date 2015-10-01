@@ -122,6 +122,14 @@ class Project(object):
     def baseDir(self):
         return self.projectConfig['baseDir']
 
+    @property
+    def hardware(self):
+        return self.exptConfig['hardware']
+
+    @property
+    def software(self):
+        return self.exptConfig['software']
+
     def __str__(self):
         return self.name
 
@@ -144,6 +152,11 @@ class Project(object):
             logger.info("Database connection failed - please check settings")
         return success
 
+    def isEnabled(self, guiName, name):
+        """returns True if 'name' is present in the config file and is enabled"""
+        item = self.exptConfig[guiName].get(name)
+        enabled = item.get('enabled') if item else False
+        return enabled
 
 class ProjectInfoUi(Base,Form):
     """Class for seeing project settings in the main GUI, and setting config GUIs to show on next program start"""
@@ -158,6 +171,7 @@ class ProjectInfoUi(Base,Form):
         super(ProjectInfoUi,self).setupUi(parent)
         self.ProjectConfigTextEdit.setText( yaml.dump(self.project.projectConfig, default_flow_style=False) )
         self.ExptConfigTextEdit.setText( yaml.dump(self.project.exptConfig, default_flow_style=False) )
+        self.label.setText("Currently running project: {0}".format(self.project))
 
     def accept(self):
         """update the config files based on the check boxes"""
