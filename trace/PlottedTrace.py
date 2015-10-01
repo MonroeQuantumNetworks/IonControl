@@ -19,7 +19,6 @@ import time
 from modules import WeakMethod
 from functools import partial
 from itertools import izip
-#from gui import ProjectSelection
 from ProjectConfig.Project import getProject
 
 def sort_lists_by(lists, key_list=0, desc=False):

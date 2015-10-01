@@ -21,7 +21,6 @@ from externalParameter.InstrumentLoggingSelection import InstrumentLoggingSelect
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
 from fit.FitUi import FitUi
 from externalParameter.InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
-from gui import ProjectSelectionUi
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from modules.SequenceDict import SequenceDict
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
