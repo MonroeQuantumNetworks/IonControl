@@ -107,7 +107,7 @@ class PulserParameterUi(CategoryTreeView):
         self.setItemDelegateForColumn(1,self.delegate)
         restoreGuiState( self, self.config.get(self.configName+'.guiState'))
         try:
-            self.restoreTreeState(self.config.get(self.configName+'.treeState',(None, None, None)))
+            self.restoreTreeState(self.config.get(self.configName+'.treeState',tuple([None]*4)))
         except Exception as e:
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
         self.isSetup = True

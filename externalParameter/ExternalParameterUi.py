@@ -54,6 +54,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
         self.adjustingDevices = 0
         self.doneAdjusting = Observable()
         self.numColumns = 3
+        self.allowReordering = True
 
     def setParameterList(self, outputChannelDict):
         self.beginResetModel()
@@ -153,6 +154,7 @@ class ControlUi(CategoryTreeView):
         self.globalDict = firstNotNone( globalDict, dict() )
         self.config = config
         self.configName = 'ControlUi'
+        self.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
     
     def setupUi(self, outputChannels):
         model = ExternalParameterControlModel(self)
@@ -162,7 +164,7 @@ class ControlUi(CategoryTreeView):
         self.setupParameters(outputChannels)
         restoreGuiState(self, self.config.get(self.configName+'.guiState'))
         try:
-            self.restoreTreeState( self.config.get(self.configName+'.treeState',(None,None)) )
+            self.restoreTreeState( self.config.get(self.configName+'.treeState',tuple([None]*4)) )
         except Exception as e:
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
 

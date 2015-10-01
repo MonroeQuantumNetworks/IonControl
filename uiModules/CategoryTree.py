@@ -2,14 +2,14 @@ __author__ = 'jmizrahi'
 
 from PyQt4 import QtCore, QtGui
 from modules.enum import enum
+import functools
 from uiModules.KeyboardFilter import KeyListFilter
 nodeTypes = enum('category', 'data')
 
 class Node(object):
     """Class for tree nodes"""
-    def __init__(self, parent, row, id, nodeType, content):
+    def __init__(self, parent, id, nodeType, content):
         self.parent = parent #parent node
-        self.row = row #this node's row number in its parent's children
         self.id = id #All nodes need a unique id
         self.content = content #content is the actual data in the tree, it can be anything
         self.children = []
@@ -28,6 +28,16 @@ class Node(object):
 
     def __str__(self):
         return "Node: " + str(self.id)
+
+    @property
+    def row(self):
+        """Return this node's row in its parent's list of children"""
+        return self.parent.children.index(self) if (self.parent and self.parent.children) else 0
+
+    @row.setter
+    def row(self, newRow):
+        if 0 <= newRow < len(self.parent.children):
+            self.parent.children.insert( newRow, self.parent.children.pop(self.row) )
 
 
 class CategoryTreeModel(QtCore.QAbstractItemModel):
@@ -77,7 +87,8 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                             0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
                             }
         self.numColumns = 1 #Overwrite with number of columns
-        self.root = Node(parent=None, row=0, id='', nodeType=nodeTypes.category, content=None)
+        self.allowReordering = False #If True, nodes can be moved around
+        self.root = Node(parent=None, id='', nodeType=nodeTypes.category, content=None)
         self.nodeDict = {'': self.root} #dictionary of all nodes, with string indicating hierarchy to that item
         #contentList is a list of objects. Can be anything. If the objects have a category attribute, a tree will result.
         self.addNodeList(contentList)
@@ -159,8 +170,8 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         categories = None if categories.__class__!=list else categories #no categories if it's not a list
         categories = map(str, categories) if categories else categories #turn into list of strings
         parent = self.makeCategoryNodes(categories) if categories else self.root
-        id, row, nodeType = parent.id+'_'+name if parent.id else name, parent.childCount(), nodeTypes.data
-        node = Node(parent, row, id, nodeType, content)
+        id, nodeType = parent.id+'_'+name if parent.id else name, nodeTypes.data
+        node = Node(parent, id, nodeType, content)
         self.addRow(parent, node)
         self.nodeDict[id] = node
 
@@ -170,7 +181,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         if key not in self.nodeDict: #the empty key will always be in the dictionary, so the recursion will end
             parent = self.makeCategoryNodes(categories[:-1]) #This is the recursive step
             name = categories[-1]
-            node = Node(parent=parent, row=parent.childCount(), id=parent.id+'_'+name if parent.id else name, nodeType=nodeTypes.category, content=name)
+            node = Node(parent=parent, id=parent.id+'_'+name if parent.id else name, nodeType=nodeTypes.category, content=name)
             self.addRow(parent, node)
             self.nodeDict[key] = node
         return self.nodeDict[key]
@@ -190,50 +201,89 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                 break
         return node if success else None
 
+    def nodeFromId(self, id):
+        success=False
+        for node in self.nodeDict.itervalues():
+            if node.id==id:
+                success=True
+                break
+        return node if success else None
+
     def clear(self):
         self.root.children = []
         self.nodeDict = {'': self.root}
+
+    def moveRow(self, index, up):
+        """move modelIndex 'index' up if up is True, else down"""
+        node=self.nodeFromIndex(index)
+        delta = -1 if up else 1
+        parentIndex=self.indexFromNode(node.parent)
+        if 0 <= node.row+delta < len(node.parent.children):
+            moveValid = self.beginMoveRows(parentIndex, node.row, node.row, parentIndex, node.row-1 if up else node.row+2)
+            if moveValid:
+                node.row += delta
+                self.endMoveRows()
 
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
     def __init__(self, parent=None):
         super(CategoryTreeView, self).__init__(parent)
-        self.filter = KeyListFilter( [], [QtCore.Qt.Key_B] )
-        self.filter.controlKeyPressed.connect( self.onBold )
+        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown], [QtCore.Qt.Key_B] )
+        self.filter.keyPressed.connect(self.onReorder)
+        self.filter.controlKeyPressed.connect(self.onBold)
         self.installEventFilter(self.filter)
 
     def onBold(self):
         indexes = self.selectionModel().selectedRows(0)
+        model=self.model()
         for leftIndex in indexes:
-            node=self.model().nodeFromIndex(leftIndex)
+            node=model.nodeFromIndex(leftIndex)
             node.isBold = not node.isBold if hasattr(node,'isBold') else True
-            rightIndex = self.model().indexFromNode(node, self.model().numColumns-1)
-            self.model().dataChanged.emit(leftIndex, rightIndex)
+            rightIndex = model.indexFromNode(node, model.numColumns-1)
+            model.dataChanged.emit(leftIndex, rightIndex)
+
+    def onReorder(self, key):
+        if self.model().allowReordering and key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
+            up = key==QtCore.Qt.Key_PageUp
+            indexList = self.selectionModel().selectedRows(0)
+            indexList.sort(key=lambda index: index.row())
+            if not up: indexList.reverse()
+            for index in indexList:
+                self.model().moveRow(index, up)
 
     def treeState(self):
         """Returns tree state for saving config"""
         columnWidths = self.header().saveState()
         expandedNodeKeys = []
         boldNodeKeys = []
+        idTree = {}
         for key, node in self.model().nodeDict.iteritems():
-            index = self.model().createIndex(node.row, 0, node)
+            index = self.model().indexFromNode(node)
             if self.isExpanded(index):
                 expandedNodeKeys.append(key)
             if getattr(node, 'isBold', False):
                 boldNodeKeys.append(key)
-        return columnWidths, expandedNodeKeys, boldNodeKeys
+            if self.model().allowReordering: #Only save this if the model is has reordering enabled
+                idTree[node.id] = [child.id for child in node.children]
+        return columnWidths, expandedNodeKeys, boldNodeKeys, idTree
 
     def restoreTreeState(self, state):
-        """load in a tree state from the given column widths, expanded nodes, bold nodes"""
-        columnWidths, expandedNodeKeys, boldNodeKeys = state
+        """load in a tree state from the given column widths, expanded nodes, bold nodes, and idTree"""
+        columnWidths, expandedNodeKeys, boldNodeKeys, idTree = state
+        if self.model().allowReordering:
+            self.model().beginResetModel()
+            for id, childList in idTree.iteritems():
+                node=self.model().nodeFromId(id)
+                node.children.sort(key=lambda node: self.indexWithDefault(childList, node.id))
+            self.model().endResetModel()
         if columnWidths:
             self.header().restoreState(columnWidths)
         if expandedNodeKeys:
             for key in expandedNodeKeys:
                 if key in self.model().nodeDict:
                     node = self.model().nodeDict[key]
-                    index = self.model().createIndex(node.row, 0, node)
+                    index = self.model().indexFromNode(node)
                     self.expand(index)
         if boldNodeKeys:
             for key in boldNodeKeys:
@@ -241,6 +291,9 @@ class CategoryTreeView(QtGui.QTreeView):
                     node = self.model().nodeDict[key]
                     node.isBold=True
 
+    def indexWithDefault(self, itemList, item):
+        """Return the index of item in itemList if it's present, otherwise -1"""
+        return itemList.index(item) if item in itemList else -1
 
 if __name__ == "__main__":
     import sys
@@ -259,6 +312,7 @@ if __name__ == "__main__":
         def __init__(self, contentList=[], parent=None, categoriesAttr='categories', nodeNameAttr='name'):
             super(myModel, self).__init__(contentList,parent,categoriesAttr,nodeNameAttr)
             self.numColumns=2
+            self.allowReordering=True
             self.headerLookup.update({
                     (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
                     (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Value'
@@ -298,6 +352,7 @@ if __name__ == "__main__":
                      ])
     view = CategoryTreeView()
     view.setModel(model)
+    view.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
     window = QtGui.QMainWindow()
     dock = QtGui.QDockWidget("Category Tree View")
     dock.setWidget(view)
