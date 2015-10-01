@@ -1,3 +1,4 @@
+import sys
 import logging
 
 from PyQt4 import QtCore, QtGui 
@@ -6,14 +7,13 @@ import PyQt4.uic
 from mylogging.ExceptionLogButton import ExceptionLogButton
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from mylogging import LoggingSetup  #@UnusedImport
-from gui import ProjectSelection
-from gui import ProjectSelectionUi
-from digitalLock.controller.ControllerClient import Controller 
+from digitalLock.controller.ControllerClient import Controller
 from gui import SettingsDialog
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
 from digitalLock.ui import RepetitionRate_rc   #@UnusedImport
+from ProjectConfig.Project import Project, ProjectInfoUi
 
 from trace import Traceui
 from trace import pens
@@ -25,6 +25,10 @@ from digitalLock.LockStatus import LockStatus
 from pyqtgraph.dockarea import DockArea, Dock
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 
+import ctypes
+setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
+
+
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'digitalLock\ui\DigitalLockUi.ui')
 
 
@@ -32,8 +36,9 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     plotConfigurationChanged = QtCore.pyqtSignal( object )
-    def __init__(self,config):
+    def __init__(self, config, project):
         self.config = config
+        self.project = project
         super(DigitalLockUi, self).__init__()
         self.settings = SettingsDialog.Settings()
         self.deviceSerial = config.get('Settings.deviceSerial')
@@ -126,7 +131,7 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.toolBar.addAction(self.renamePlot)
 
-        self.setWindowTitle("Digital Lock ({0})".format(project) )
+        self.setWindowTitle( "Digital Lock ({0})".format(self.project) )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         self.initMenu()
@@ -212,7 +217,9 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
             logger.info("There are no plots which can be renamed")
 
     def onProjectSelection(self):
-        ProjectSelectionUi.GetProjectSelection()
+        ui = ProjectInfoUi(self.project)
+        ui.show()
+        ui.exec_()
 
     def onSettings(self):
         self.settingsDialog.show()
@@ -270,26 +277,14 @@ class DigitalLockUi(WidgetContainerBase,WidgetContainerForm):
         self.traceControl.saveConfig()
 
 if __name__ == "__main__":
-    #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
-    import ctypes, sys
-    myappid = 'TrappedIons.DigitalLockUi' # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-    
     app = QtGui.QApplication(sys.argv)
-
+    project = Project() #loads in the project through the config files/config GUIs
     logger = logging.getLogger("")
+    setID('TrappedIons.DigitalLockUi') #Makes the icon in the Windows taskbar match the icon set in Qt Designer
 
-    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
-    
-    if accepted:
-        if project:
-            DataDirectory.DefaultProject = project
-            
-            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-                with DigitalLockUi(config) as ui:
-                    ui.setupUi(ui)
-                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                    ui.show()
-                    sys.exit(app.exec_())
-        else:
-            logger.warning( "No project selected. Nothing I can do about that ;)" )
+    with configshelve.configshelve(project.guiConfigFile) as config:
+        with DigitalLockUi(config, project) as ui:
+            ui.setupUi(ui)
+            LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())
