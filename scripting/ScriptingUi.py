@@ -11,7 +11,6 @@ import PyQt4.uic
 from PyQt4.Qsci import QsciScintilla
 import logging
 from datetime import datetime
-#from gui import ProjectSelection
 from ProjectConfig.Project import getProject
 from modules.PyqtUtility import BlockSignals
 from Script import Script, scriptFunctions, scriptDocs

@@ -17,10 +17,10 @@ from collections import defaultdict
 import logging
 from modules import WeakMethod 
 import weakref
-from gui.ProjectSelection import getDatabaseConnection
 from modules.NamedTimespan import getRelativeDatetime, timespans
 import pytz
 from externalParameter.persistence import DBPersist
+from ProjectConfig.Project import getProject
 
 Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
 
@@ -53,7 +53,8 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.parameters = self.config.get("InstrumentLoggerQueryUi",Parameters())
         self.traceui = traceui
         self.plotDict = plotDict
-        self.connection = ValueHistoryStore(getDatabaseConnection())
+        self.project = getProject()
+        self.connection = ValueHistoryStore(self.project.dbConnection)
         self.connection.open_session()
         self.cache = dict()
     

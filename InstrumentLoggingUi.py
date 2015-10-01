@@ -1,11 +1,11 @@
 import logging
+import sys
 
 from PyQt4 import QtCore, QtGui 
 import PyQt4.uic
 
 from mylogging.ExceptionLogButton import ExceptionLogButton
 from mylogging import LoggingSetup  #@UnusedImport
-from gui import ProjectSelection
 from modules import DataDirectory
 from persist import configshelve
 from uiModules import MagnitudeParameter #@UnusedImport
@@ -21,13 +21,15 @@ from externalParameter.InstrumentLoggingSelection import InstrumentLoggingSelect
 from externalParameter.InstrumentLoggingHandler import InstrumentLoggingHandler
 from fit.FitUi import FitUi
 from externalParameter.InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
-from gui import ProjectSelectionUi
 from externalParameter.InstrumentLoggingDisplay import InstrumentLoggingDisplay
 from modules.SequenceDict import SequenceDict
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from _functools import partial
 from gui.Preferences import PreferencesUi
 from modules.SceneToPrint import SceneToPrint
+from ProjectConfig.Project import Project, ProjectInfoUi
+import ctypes
+setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingUi.ui')
 
@@ -147,7 +149,7 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         self.renamePlot.triggered.connect(self.onRenamePlot)
         self.toolBar.addAction(self.renamePlot)
 
-        self.setWindowTitle("Instrument Logger ({0})".format(self.project) )
+        self.setWindowTitle( "Instrument Logger ({0})".format(self.project) )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
         try:
@@ -156,7 +158,13 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
         except Exception as e:
             logger.error("Cannot restore dock state in experiment {0}. Exception occurred: ".format(self.experimentName) + str(e))
         self.initMenu()
+        self.actionProject.triggered.connect( self.onProjectSelection)
         self.actionExit.triggered.connect(self.onClose)
+
+    def onProjectSelection(self):
+        ui = ProjectInfoUi(self.project)
+        ui.show()
+        ui.exec_()
 
     def onEnableConsole(self, state):
         self.consoleEnable = state==QtCore.Qt.Checked
@@ -337,27 +345,13 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
        
 
 if __name__ == "__main__":
-    #The next three lines make it so that the icon in the Windows taskbar matches the icon set in Qt Designer
-    import ctypes, sys
-    myappid = 'TrappedIons.InstrumentLogging' # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-    logger = logging.getLogger(__name__)
-    
     app = QtGui.QApplication(sys.argv)
-
+    project = Project()
     logger = logging.getLogger("")
-
-    project, projectDir, dbConnection, accepted = ProjectSelectionUi.GetProjectSelection(True)
-    
-    if accepted:
-        if project:
-            DataDirectory.DefaultProject = project
-            
-            with configshelve.configshelve( ProjectSelection.guiConfigFile() ) as config:
-                with InstrumentLoggingUi(project, config) as ui:
-                    ui.setupUi(ui)
-                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-                    ui.show()
-                    sys.exit(app.exec_())
-        else:
-            logger.warning( "No project selected. Nothing I can do about that ;)" )
+    setID('TrappedIons.InstrumentLogging') #Makes the icon in the Windows taskbar match the icon set in Qt Designer
+    with configshelve.configshelve(project.guiConfigFile) as config:
+        with InstrumentLoggingUi(project, config) as ui:
+            ui.setupUi(ui)
+            LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+            ui.show()
+            sys.exit(app.exec_())

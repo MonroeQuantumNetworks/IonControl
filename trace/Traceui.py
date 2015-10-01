@@ -12,7 +12,6 @@ from trace import pens
 from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
-#from gui import ProjectSelection
 from ProjectConfig.Project import getProject
 from TraceTreeModel import TraceComboDelegate
 from TraceTreeModel import TraceTreeModel
