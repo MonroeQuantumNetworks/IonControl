@@ -171,7 +171,7 @@ class ProjectInfoUi(Base,Form):
         super(ProjectInfoUi,self).setupUi(parent)
         self.ProjectConfigTextEdit.setText( yaml.dump(self.project.projectConfig, default_flow_style=False) )
         self.ExptConfigTextEdit.setText( yaml.dump(self.project.exptConfig, default_flow_style=False) )
-        self.label.setText("Currently running project: {0}".format(self.project))
+        self.label.setText("Currently running project: <b>{0}</b>".format(self.project))
 
     def accept(self):
         """update the config files based on the check boxes"""
