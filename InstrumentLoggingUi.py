@@ -334,6 +334,13 @@ class InstrumentLoggingUi(WidgetContainerBase,WidgetContainerForm):
                 painter.drawImage(QtCore.QPoint(pageWidth*preferences.printX,pageHeight*preferences.printY), png)
 
     def initMenu(self):
+        """Initialize print menu and view menu"""
+        #View menu
+        self.menuView.clear()
+        dockList = self.findChildren(QtGui.QDockWidget)
+        for dock in dockList:
+            self.menuView.addAction(dock.toggleViewAction())
+
         # Print menu
         if self.printMenu is not None:
             self.printMenu.clear()
