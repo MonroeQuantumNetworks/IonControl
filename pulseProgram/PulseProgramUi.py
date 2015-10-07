@@ -24,7 +24,7 @@ from modules.enum import enum
 from pppCompiler.pppCompiler import pppCompiler
 from pppCompiler.CompileException import CompileException
 from pppCompiler.Symbol import SymbolTable
-from modules.PyqtUtility import BlockSignals
+from modules.PyqtUtility import BlockSignals, restoreDockWidgetSizes, saveDockWidgetSizes
 from pyparsing import ParseException
 import copy
 from ShutterDictionary import ShutterDictionary
@@ -37,6 +37,7 @@ from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 from modules import DataDirectory
 from PulseProgram import Variable, OPS
 import modules.magnitude as magnitude
+import functools
 
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
 
@@ -161,6 +162,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
+        self.setCentralWidget(None) #No central widget
         self.experimentname = experimentname
         self.configname = 'PulseProgramUi.'+self.experimentname
         self.contextDict = self.config.get( self.configname+'.contextdict', dict() )
@@ -191,11 +193,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.saveContextButton.clicked.connect( self.onSaveContext )
         self.deleteContextButton.clicked.connect( self.onDeleteContext )
         self.contextComboBox.currentIndexChanged[str].connect( self.onLoadContext )
-                
-        if self.configname+".splitterHorizontal" in self.config:
-            self.splitterHorizontal.restoreState(self.config[self.configname+".splitterHorizontal"])
-        if self.configname+".splitterVertical" in self.config:
-            self.splitterVertical.restoreState(self.config[self.configname+".splitterVertical"])
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
         self.ramFilenameComboBox.currentIndexChanged[str].connect( self.onRamFilenameChange )
         self.removeCurrent.clicked.connect( self.onRemoveCurrent )
@@ -243,12 +240,23 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.autoSaveAction.setChecked( self.configParams.autoSaveContext )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
-        if self.configname+".splitterHorizontal" in self.config:
-            self.splitterHorizontal.restoreState( self.config[self.configname+".splitterHorizontal"] )
-        if self.configname+".splitterVertical" in self.config:
-            self.splitterVertical.restoreState( self.config[self.configname+".splitterVertical"] )
-        self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
         self.exportXmlButton.clicked.connect( self.onExportXml )
+        self.initMenu()
+        self.restoreLayout()
+
+    def restoreLayout(self):
+        """Restore layout from config settings"""
+        if self.configname+".state" in self.config:
+            self.restoreState(self.config[self.configname+".state"])
+        if self.configname+".splitter" in self.config:
+            self.splitter.restoreState(self.config[self.configname+".splitter"])
+        restoreDockWidgetSizes(self, self.config, self.configname)
+
+    def initMenu(self):
+        self.menuView.clear()
+        dockList = self.findChildren(QtGui.QDockWidget)
+        for dock in dockList:
+            self.menuView.addAction(dock.toggleViewAction())
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('PulseProgramList')
@@ -580,15 +588,17 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             
                     
     def onAccept(self):
-        pass
+        self.saveConfig()
     
     def onReject(self):
         pass
         
     def saveConfig(self):
+        """Save the pulse program configuration state"""
         self.configParams.lastContextName = str(self.contextComboBox.currentText())
-        self.config[self.configname+".splitterHorizontal"] = self.splitterHorizontal.saveState()
-        self.config[self.configname+".splitterVertical"] = self.splitterVertical.saveState()
+        self.config[self.configname+".state"] = self.saveState() #Arrangement of dock widgets
+        self.config[self.configname+".splitter"] = self.splitter.saveState() #triggers/shutters/counters splitter position
+        saveDockWidgetSizes(self, self.config, self.configname)
         self.config[self.configname] = self.configParams
         self.config[self.configname+'.contextdict'] = self.contextDict 
         self.config[self.configname+'.currentContext'] = self.currentContext
@@ -665,6 +675,7 @@ class PulseProgramSetUi(QtGui.QDialog):
     def __init__(self,config, channelNameData):
         super(PulseProgramSetUi,self).__init__()
         self.config = config
+        self.configname = 'PulseProgramSetUi'
         self.pulseProgramSet = dict()        # ExperimentName -> PulseProgramUi
         self.lastExperimentFile = dict()     # ExperimentName -> last pp file used for this experiment
         self.isShown = False
@@ -695,31 +706,33 @@ class PulseProgramSetUi(QtGui.QDialog):
         return self.pulseProgramSet[experiment]
         
     def accept(self):
-        self.config['PulseProgramSetUi.pos'] = self.pos()
-        self.config['PulseProgramSetUi.size'] = self.size()
+        self.config[self.configname+'.pos'] = self.pos()
+        self.config[self.configname+'.size'] = self.size()
         self.hide()
         self.recipient.onSettingsApply()  
         for page in self.pulseProgramSet.values():
             page.onAccept()
         
     def reject(self):
-        self.config['PulseProgramSetUi.pos'] = self.pos()
-        self.config['PulseProgramSetUi.size'] = self.size()
+        self.config[self.configname+'.pos'] = self.pos()
+        self.config[self.configname+'.size'] = self.size()
         self.hide()
         for page in self.pulseProgramSet.values():
             page.onAccept()
         
     def show(self):
-        if 'PulseProgramSetUi.pos' in self.config:
-            self.move(self.config['PulseProgramSetUi.pos'])
-        if 'PulseProgramSetUi.size' in self.config:
-            self.resize(self.config['PulseProgramSetUi.size'])
+        if self.configname+'.pos' in self.config:
+            self.move(self.config[self.configname+'.pos'])
+        if self.configname+'.size' in self.config:
+            self.resize(self.config[self.configname+'.size'])
+        for page in self.pulseProgramSet.values():
+            page.restoreLayout()
         QtGui.QDialog.show(self)
         self.isShown = True
         
     def saveConfig(self):
-        self.config['PulseProgramSetUi.pos'] = self.pos()
-        self.config['PulseProgramSetUi.size'] = self.size()
+        self.config[self.configname+'.pos'] = self.pos()
+        self.config[self.configname+'.size'] = self.size()
         if self.isShown:
             for page in self.pulseProgramSet.values():
                 page.saveConfig()

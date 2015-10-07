@@ -1,4 +1,5 @@
 from PyQt4 import QtGui, QtCore
+import functools
 
 def textSize(text):
     """return the default size of a block of text"""
@@ -23,6 +24,34 @@ def updateComboBoxItems( combo, items, selected=None):
         else:
             combo.setCurrentIndex(0)
     return str(combo.currentText())
+
+def restoreDockWidgetSizes(mainWindow, config, configname):
+    """
+    Restore the dock widget sizes in a main window.
+
+    This function addresses a bug in Qt. "restoreState" should restore the size of dock widgets, but it doesn't.
+    Instead dock widgets are set to their miminum size. To deal with this, this function sets the minimum size to
+    the saved size, and then reset the minimum size to zero one second later, after the widget has been drawn.
+    """
+    dockList = mainWindow.findChildren(QtGui.QDockWidget)
+    for dock in dockList: #restore size of each dock
+        dockSizeName = configname+"."+str(dock.objectName())+".size"
+        if dockSizeName in config:
+            width, height = config[dockSizeName]
+            dock.setMinimumWidth(width)
+            dock.setMinimumHeight(height)
+            QtCore.QTimer.singleShot(1000, functools.partial(dock.setMinimumWidth, 0))
+            QtCore.QTimer.singleShot(1000, functools.partial(dock.setMinimumHeight, 0))
+
+def saveDockWidgetSizes(mainWindow, config, configname):
+    """Save the dock widget sizes of a main window"""
+    dockList = mainWindow.findChildren(QtGui.QDockWidget)
+    for dock in dockList:
+        dockSizeName = configname+"."+str(dock.objectName())+".size"
+        if dock.isVisibleTo(mainWindow):
+            config[dockSizeName] = dock.width(), dock.height() #save size of each visible dock
+        elif dockSizeName in config: #If dock is not visible, don't leave a size in the config dict
+            del config[dockSizeName]
 
 
 class BlockSignals:
