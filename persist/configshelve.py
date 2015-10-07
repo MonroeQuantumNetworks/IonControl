@@ -76,7 +76,19 @@ class configshelve:
             elem = ShelveEntry(key,value,category)
             self.session.add(elem)
         elem.value = value
-        
+
+    def __delitem__(self, key):
+        if isinstance(key,tuple):
+            category, key = key
+        else:
+            category, key = defaultcategory, key
+        try:
+            elem = self.session.query(ShelveEntry).filter(ShelveEntry.key==key, ShelveEntry.category==category).one()
+        except NoResultFound:
+            return False
+        self.session.delete(elem)
+        return True
+
     def __getitem__(self, key):
         if isinstance(key,tuple):
             category, key = key
