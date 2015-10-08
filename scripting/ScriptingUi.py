@@ -5,6 +5,7 @@ Created on Jul 24, 2015
 '''
 
 import os.path
+import shutil
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
@@ -31,8 +32,9 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.scriptHandler = ScriptHandler(self.script, experimentUi) #handles interface to the script
         self.defaultDir = getProject().configDir+'\\Scripts'
         if not os.path.exists(self.defaultDir):
-            os.makedirs(self.defaultDir)
-   
+            defaultScriptsDir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'config\\Scripts')) #/IonControl/config/Scripts directory
+            shutil.copytree(defaultScriptsDir, self.defaultDir) #Copy over all example scripts
+
     def setupUi(self,parent):
         super(ScriptingUi,self).setupUi(parent)
         self.configname = 'Scripting'
