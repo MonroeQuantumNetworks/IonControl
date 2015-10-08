@@ -381,7 +381,7 @@ class PlottedTrace(object):
         self.needsReplot = False
 
     def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory(getProject().projectDir)
+        directory = DataDirectory.DataDirectory()
         if self.parent() is None or self.parent().isRootTrace: 
             if pattern and pattern!='':
                 filename, _ = directory.sequencefile(pattern)
