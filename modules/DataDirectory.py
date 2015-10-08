@@ -21,9 +21,6 @@ class DataDirectoryException(Exception):
 
 
 class DataDirectory:
-    def __init__(self):
-        pass
-
     def path(self, current=None, extradir=''):
         """ Return a string path to data location for the given date.
         @type current: datetime.date
