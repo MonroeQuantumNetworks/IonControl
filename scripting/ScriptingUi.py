@@ -66,7 +66,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
 
         #load file
         self.script.fullname = self.config.get( self.configname+'.script.fullname' , '' )
-        self.script.shortname = os.path.basename(self.script.fullname)
         if self.script.fullname != '' and os.path.exists(self.script.fullname):
             with open(self.script.fullname,"r") as f:
                 self.script.code = f.read()
@@ -229,7 +228,10 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         """A name is typed into the filename combo box."""
         shortname = str(shortname)
         logger = logging.getLogger(__name__)
-        if shortname not in self.recentFiles:
+        if not shortname:
+            self.script.fullname=''
+            self.textEdit.setPlainText('')
+        elif shortname not in self.recentFiles:
             logger.info('Use "open" or "new" commands to access a file not in the drop down menu')
             self.loadFile(self.recentFiles[self.script.shortname])
         else:
@@ -251,13 +253,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         logger = logging.getLogger(__name__)
         if fullname:
             self.script.fullname = fullname
-            self.script.shortname = os.path.basename(fullname) 
             with open(fullname,"r") as f:
                 self.script.code = f.read()
             self.textEdit.setPlainText(self.script.code)
             if self.script.shortname not in self.recentFiles:
+                self.recentFiles[self.script.shortname] = fullname
                 self.filenameComboBox.addItem(self.script.shortname)
-            self.recentFiles[self.script.shortname] = fullname
             with BlockSignals(self.filenameComboBox) as w:
                 w.setCurrentIndex( self.filenameComboBox.findText(self.script.shortname))
             logger.info('{0} loaded'.format(self.script.fullname))

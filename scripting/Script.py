@@ -55,7 +55,6 @@ class Script(QtCore.QThread):
     def __init__(self, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
         self.fullname = fullname #Full name, with path
-        self.shortname = os.path.basename(fullname)
         self.code = code #The code in the script
         
         self.mutex = QtCore.QMutex() #used to control access to class variables that are accessed by ScriptHandler
@@ -93,7 +92,11 @@ class Script(QtCore.QThread):
         self.data = dict()
         self.allData = dict()
         self.exception = None
-        
+
+    @QtCore.pyqtProperty(str)
+    def shortname(self):
+        return os.path.basename(self.fullname)
+
     def run(self):
         """run the script"""
         try:
