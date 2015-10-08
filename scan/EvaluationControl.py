@@ -155,7 +155,7 @@ class Evaluation:
 
 class EvaluationControlParameters:
     def __init__(self):
-        self.autoSave = False
+        self.autoSave = True
 
 class EvaluationControl(ControlForm, ControlBase ):
     evaluationConfigurationChanged = QtCore.pyqtSignal( object )

@@ -88,7 +88,7 @@ class AnalysisDefinitionElement(object):
             
 class AnalysisControlParameters(object):
     def __init__(self):
-        self.autoSave = False
+        self.autoSave = True
 
 class AnalysisControl(ControlForm, ControlBase ):
     analysisConfigurationChanged = QtCore.pyqtSignal( object )

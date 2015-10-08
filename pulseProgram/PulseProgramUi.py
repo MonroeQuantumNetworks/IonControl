@@ -129,13 +129,13 @@ class ConfiguredParams:
         self.recentFiles = dict()
         self.recentRamFiles = dict()
         self.lastContextName = None
-        self.autoSaveContext = False
+        self.autoSaveContext = True
         
     def __setstate__(self,d):
         self.recentFiles = d['recentFiles']
         self.recentRamFiles =getattr(self, 'recentRamFiles', dict())
         self.lastContextName = d.get('lastContextName', None )
-        self.autoSaveContext = d.get('autoSaveContext', False)
+        self.autoSaveContext = d.get('autoSaveContext', True)
 
 class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
     pulseProgramChanged = QtCore.pyqtSignal() 

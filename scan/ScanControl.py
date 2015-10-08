@@ -55,7 +55,7 @@ class Scan:
         self.scanRepeat = 0
         self.filename = ""
         self.histogramFilename = ""
-        self.autoSave = False
+        self.autoSave = True
         self.histogramSave = False
         self.xUnit = ""
         self.xExpression = ""
@@ -141,7 +141,7 @@ class Scan:
 
 class ScanControlParameters:
     def __init__(self):
-        self.autoSave = False
+        self.autoSave = True
         self.currentScanTarget = None
         self.scanTargetCache = dict()
         
