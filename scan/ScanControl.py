@@ -249,7 +249,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.addAction(self.defaultFilenameAction)
         if self.parameters.useDefaultFilename:
             self.settings.filename = self.settingsName
-            self.filenameEdit.setText(self.settingsName)
+            self.filenameEdit.setText(self.settingsName if self.settingsName else '')
             self.filenameEdit.setDisabled(True)
         else:
             self.filenameEdit.setDisabled(False)
@@ -295,7 +295,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.parameters.useDefaultFilename = checked
         if checked:
             self.settings.filename = self.settingsName
-            self.filenameEdit.setText(self.settingsName)
+            self.filenameEdit.setText(self.settingsName if self.settingsName else '')
             self.filenameEdit.setDisabled(True)
         else:
             self.filenameEdit.setDisabled(False)
@@ -323,7 +323,8 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         elif self.comboBoxScanTarget.count()>0:
             self.settings.scanTarget = str( self.comboBoxScanTarget.currentText() )
             self.settings.scanParameter = self.doChangeScanTarget(self.settings.scanTarget, None)
-        self.filenameEdit.setText( getattr(self.settings,'filename','') )
+        filename = getattr(self.settings,'filename','')
+        self.filenameEdit.setText(filename if filename else '')
         self.rawFilenameEdit.setText( getattr(self.settings,'rawFilename','') )
         self.histogramFilenameEdit.setText( getattr(self.settings,'histogramFilename','') )
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
