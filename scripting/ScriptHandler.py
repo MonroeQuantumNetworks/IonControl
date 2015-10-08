@@ -293,8 +293,8 @@ class ScriptHandler:
     @QtCore.pyqtSlot()
     @scriptCommand
     def onPauseScriptFromScript(self):
-        self.onPauseScript(True)
-        message = 'script paused'
+        self.experimentUi.scriptingWindow.onPauseScript(True)
+        message = None
         error = False
         return (error, message)
 
