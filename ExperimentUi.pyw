@@ -14,7 +14,6 @@ import sys
 import logging
 from modules.XmlUtilit import prettify
 from modules.SequenceDict import SequenceDict
-from modules.PyqtUtility import restoreDockWidgetSizes, saveDockWidgetSizes
 from functools import partial
 import xml.etree.ElementTree as ElementTree
 from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
@@ -363,7 +362,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.currentTab.stateChanged.connect( self.todoList.onStateChanged )
         if 'MainWindow.State' in self.config:
             self.parent.restoreState(self.config['MainWindow.State'])
-        restoreDockWidgetSizes(self, self.config, 'MainWindow')
         self.initMenu()
         if 'MainWindow.pos' in self.config:
             self.move(self.config['MainWindow.pos'])
@@ -606,7 +604,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
     def saveConfig(self):
         self.config['MainWindow.State'] = self.parent.saveState()
-        saveDockWidgetSizes(self, self.config, 'MainWindow')
         for tab in self.tabDict.values():
             tab.saveConfig()
         self.config['MainWindow.currentIndex'] = self.tabWidget.currentIndex()
