@@ -50,7 +50,7 @@ addOperator = oneOf("+ -")
 not_ = Keyword("not")
 
 logger = logging.getLogger(__name__)
-logger.setLevel( logging.DEBUG )
+logger.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(levelname)s %(name)s(%(filename)s:%(lineno)d %(funcName)s) %(message)s')
 
