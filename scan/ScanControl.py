@@ -142,6 +142,7 @@ class Scan:
 class ScanControlParameters:
     def __init__(self):
         self.autoSave = True
+        self.useDefaultFilename = True
         self.currentScanTarget = None
         self.scanTargetCache = dict()
         
@@ -149,6 +150,7 @@ class ScanControlParameters:
         self.__dict__ = state
         self.__dict__.setdefault( 'currentScanTarget', None )
         self.__dict__.setdefault( 'scanTargetCache', dict() )
+        self.__dict__.setdefault( 'useDefaultFilename', True )
         if self.scanTargetCache is None:
             self.scanTargetCache = dict()
 
@@ -181,7 +183,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
             logger.info( "Unable to read scan control settings. Setting to new scan." )
             self.settings = Scan()
         self.gateSequenceUi = None
-        self.settingsName = self.config.get(self.configname+'.settingsName',None)
+        self.settingsName = self.config.get(self.configname+'.settingsName','')
         self.pulseProgramUi = None
         self.parameters = self.config.get( self.configname+'.parameters', ScanControlParameters() )
         self.globalVariablesUi = globalVariablesUi
@@ -227,16 +229,30 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
         self.loadPPComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadPP )
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
+
         self.autoSaveAction = QtGui.QAction( "auto save" , self)
         self.autoSaveAction.setCheckable(True)
         self.autoSaveAction.setChecked(self.parameters.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
+
         self.settings.evaluate(self.globalVariablesUi.variables)
         self.globalVariablesUi.valueChanged.connect( self.evaluate )
         self.comboBoxScanTarget.currentIndexChanged[QtCore.QString].connect( self.onChangeScanTarget )
         self.currentScanChanged.emit( self.settingsName )
         self.exportXmlButton.clicked.connect( self.onExportXml )
+
+        self.defaultFilenameAction = QtGui.QAction('Use default filename', self)
+        self.defaultFilenameAction.setCheckable(True)
+        self.defaultFilenameAction.setChecked(self.parameters.useDefaultFilename)
+        self.defaultFilenameAction.triggered.connect(self.onDefaultFilename)
+        self.addAction(self.defaultFilenameAction)
+        if self.parameters.useDefaultFilename:
+            self.settings.filename = self.settingsName
+            self.filenameEdit.setText(self.settingsName)
+            self.filenameEdit.setDisabled(True)
+        else:
+            self.filenameEdit.setDisabled(False)
 
     def onExportXml(self, element=None, writeToFile=True):
         root = element if element is not None else ElementTree.Element('ScanList')
@@ -272,7 +288,17 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onAutoSave(self, checked):
         self.parameters.autoSave = checked
         if self.parameters.autoSave:
-            self.onSave()     
+            self.onSave()
+
+    @QtCore.pyqtSlot(bool)
+    def onDefaultFilename(self, checked):
+        self.parameters.useDefaultFilename = checked
+        if checked:
+            self.settings.filename = self.settingsName
+            self.filenameEdit.setText(self.settingsName)
+            self.filenameEdit.setDisabled(True)
+        else:
+            self.filenameEdit.setDisabled(False)
         
     def onAddScanSegment(self):
         self.settings.scanSegmentList.append( ScanSegmentDefinition() )
@@ -522,6 +548,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.settingsName = str(name)
         if self.settingsName !='' and self.settingsName in self.settingsDict:
             self.setSettings(self.settingsDict[self.settingsName])
+        if self.parameters.useDefaultFilename:
+            self.settings.filename = self.settingsName
+            self.filenameEdit.setText(self.settingsName)
         self.checkSettingsSavable()
         self.currentScanChanged.emit( self.settingsName )
 
