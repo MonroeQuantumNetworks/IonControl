@@ -76,8 +76,10 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.recentFiles = self.config.get( self.configname+'.recentFiles' , dict() )
         self.filenameComboBox.addItems( [shortname for shortname, fullname in self.recentFiles.iteritems() if os.path.exists(fullname)] )
         self.filenameComboBox.currentIndexChanged[str].connect( self.onFilenameChange )
-        self.removeCurrent.clicked.connect( self.onRemoveCurrent ) 
-        
+        self.removeCurrent.clicked.connect( self.onRemoveCurrent )
+        self.filenameComboBox.setValidator( QtGui.QRegExpValidator() ) #verifies that files typed into combo box can be used
+        self.updateValidator()
+
         #connect buttons
         self.repeatButton.clicked.connect( self.onRepeat )
         self.slowButton.clicked.connect( self.onSlow )
@@ -259,8 +261,9 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             if self.script.shortname not in self.recentFiles:
                 self.recentFiles[self.script.shortname] = fullname
                 self.filenameComboBox.addItem(self.script.shortname)
+                self.updateValidator()
             with BlockSignals(self.filenameComboBox) as w:
-                w.setCurrentIndex( self.filenameComboBox.findText(self.script.shortname))
+                w.setCurrentIndex(w.findText(self.script.shortname))
             logger.info('{0} loaded'.format(self.script.fullname))
             
     def onReset(self):
@@ -271,9 +274,12 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
     def onRemoveCurrent(self):
         """Remove current button is clicked. Remove file from combo box."""
         text = str(self.filenameComboBox.currentText())
+        ind = self.filenameComboBox.findText(text)
+        self.filenameComboBox.setCurrentIndex(ind)
+        self.filenameComboBox.removeItem(ind)
         if text in self.recentFiles:
             self.recentFiles.pop(text)
-        self.filenameComboBox.removeItem(self.filenameComboBox.currentIndex())
+        self.updateValidator()
 
     def onSave(self):
         """Save action. Save file to disk, and clear any highlighted errors."""
@@ -363,3 +369,13 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
             docsplit = [line.strip() for line in docsplit]
             docsplit = '\n'.join(docsplit)
             self.docDict[defLine] = docsplit
+
+    def updateValidator(self):
+        """Make the validator match the recentFiles list. Uses regExp \\b(f1|f2|f3...)\\b, where fn are filenames."""
+        regExp = '\\b('
+        for shortname in self.recentFiles:
+            if shortname:
+                regExp += shortname + '|'
+        regExp = regExp[:-1] #drop last pipe symbol
+        regExp += ')\\b'
+        self.filenameComboBox.validator().setRegExp(QtCore.QRegExp(regExp))
