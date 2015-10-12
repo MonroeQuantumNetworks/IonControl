@@ -17,7 +17,7 @@ class FPGASettings:
     def __init__(self):
         self.deviceSerial = None
         self.deviceDescription = None
-        self.pulser = None
+        self.deviceInfo = None
 
 SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\FPGASettings.ui')
 ListForm, ListBase = PyQt4.uic.loadUiType(r'ui\FPGASettingsList.ui')
@@ -28,7 +28,7 @@ class FPGASettingsDialogConfig:
         self.lastInstrument = None
         self.lastBitfile = None
         self.enabled = False
-        
+
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object"""
         self.__dict__ = state
