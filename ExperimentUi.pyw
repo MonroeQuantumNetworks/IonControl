@@ -12,6 +12,7 @@ import PyQt4.uic
 from ProjectConfig.Project import Project, ProjectInfoUi
 import sys
 import logging
+import os
 from modules.XmlUtilit import prettify
 from modules.SequenceDict import SequenceDict
 from functools import partial
@@ -22,7 +23,6 @@ from mylogging.LoggingSetup import qtWarningButtonHandler
 from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from gui import GlobalVariables
 from gui import ScanExperiment
-from gui import SettingsDialog
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
 from externalParameter import ExternalParameterSelection
 from externalParameter import ExternalParameterUi
@@ -47,7 +47,7 @@ from pulser.ChannelNameDict import ChannelNameDict
 from pulser import ShutterUi
 from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
-from gui.FPGASettings import FPGASettingsDialog
+from gui.FPGASettings import FPGASettings
 import ctypes
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 
@@ -62,9 +62,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config = config
         self.project = project
         super(ExperimentUi, self).__init__()
-        self.settings = SettingsDialog.Settings()
-        self.deviceSerial = config.get('Settings.deviceSerial')
-        self.deviceDescription = config.get('Settings.deviceDescription')
+        self.settings = FPGASettings()
         self.loggingLevel = config.get('Settings.loggingLevel',logging.INFO)
         self.consoleMaximumLines = config.get('Settings.consoleMaximumLinesNew',100)
         self.consoleEnable = config.get('Settings.consoleEnable',False)
@@ -148,22 +146,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         from externalParameter.ExternalParameterBase import InstrumentDict
 
         #setup FPGAs
-        softwarePulser = self.project.software.get('Pulser')
-        softwarePulserEnabled = self.project.isEnabled('software', 'Pulser')
-        hardwarePulserName = softwarePulser.get('hardware') if softwarePulser else None
-        hardwarePulserEnabled = self.project.isEnabled('hardware', hardwarePulserName)
-        self.pulserEnabled = softwarePulserEnabled and hardwarePulserEnabled
-
-        self.settingsDialog = FPGASettingsDialog( self.config, parent=self.parent)
-        self.settingsDialog.setupUi()
-        self.settingsDialog.addEntry( "Pulse Programmer", self.pulser)
-        self.okBase = OKBase()
-        self.settingsDialog.addEntry( "32 Channel PMT", self.okBase )
-        self.dac = DACController()
-        self.settingsDialog.addEntry( "DAC system", self.dac)
-        self.settingsDialog.initialize()
-
-        self.settings = self.settingsDialog.settings("Pulse Programmer")   
+        self.setupFPGAs()
         logger.info("Pulser Configuration {0}".format(self.pulser.getConfiguration()))
 
         # initialize PulseProgramUi
@@ -340,7 +323,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
         self.actionAbort.triggered.connect(self.onAbort)
-        self.actionSettings.triggered.connect(self.onSettings)
         self.actionExit.triggered.connect(self.onClose)
         self.actionContinue.triggered.connect(self.onContinue)
         self.actionPulses.triggered.connect(self.onPulses)
@@ -554,9 +536,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 action = self.printMenu.addAction( plot )
                 action.triggered.connect( partial(self.onPrint, plot ))
 
-    def onSettings(self):
-        self.settingsDialog.show()
-        
     def onPulses(self):
         self.pulseProgramDialog.show()
         self.pulseProgramDialog.setWindowState(QtCore.Qt.WindowActive)
@@ -588,7 +567,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             tab.onClose()
         self.currentTab.deactivate()
         self.pulseProgramDialog.done(0)
-        self.settingsDialog.done(0)
         self.ExternalParametersSelectionUi.onClose()
         self.dedicatedCountersWindow.close()
         self.pulseProgramDialog.onClose()
@@ -617,7 +595,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.config['Settings.consoleEnable'] = self.consoleEnable 
         self.pulseProgramDialog.saveConfig()
         self.scriptingWindow.saveConfig()
-        self.settingsDialog.saveConfig()
         self.DDSUi.saveConfig()
         self.DACUi.saveConfig()
         #self.DDSUi9910.saveConfig()
@@ -668,6 +645,62 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         
             
             self.currentTab.onPrint(target, printer, pdfPrinter, self.preferencesUi.preferences().printPreferences)
+
+    def setupFPGAs(self):
+        """Setup all Opal Kelly FPGAs"""
+        self.pmt32 = OKBase() #32 channel PMT
+        self.dac = DACController() #100 channel DAC board
+
+        #Determine what's enabled
+        softwarePulserConfig = self.project.software.get('Pulser')
+        softwarePulserEnabled = softwarePulserConfig.get('enabled') if softwarePulserConfig else False
+        hardwarePulserName = softwarePulserConfig.get('hardware') if softwarePulserConfig else None
+        hardwarePulserConfig = self.project.hardware.get(hardwarePulserName)
+        hardwarePulserEnabled = hardwarePulserConfig.get('enabled') if hardwarePulserConfig else False
+        self.pulserEnabled = softwarePulserEnabled and hardwarePulserEnabled
+
+        pmt32Name = "Opal Kelly FPGA: 32 Channel PMT"
+        pmt32Config = self.project.hardware.get(pmt32Name)
+        self.pmt32Enabled = pmt32Config.get('enabled') if pmt32Config else False
+
+        dacName = "Opal Kelly FPGA: DAC"
+        dacConfig = self.project.hardware.get(dacName)
+        self.dacEnabled = dacConfig.get('enabled') if dacConfig else False
+
+        self.settings = FPGASettings() #settings for pulser specifically
+        if not any([self.pulserEnabled, self.pmt32Enabled, self.dacEnabled]): #if nothing is enabled, no need to do anything
+            return
+
+        self.OK_FPGA_Dict = self.pulser.listBoards() #all connected Opal Kelly FPGA boards
+        logger.info( "Opal Kelly Devices found: {0}".format({k:v.modelName for k,v in self.OK_FPGA_Dict.iteritems()}) )
+
+        for FPGA, FPGAName, FPGAConfig, FPGAEnabled in [(self.pulser, hardwarePulserName, hardwarePulserConfig, self.pulserEnabled),
+                                                        (self.dac, dacName, dacConfig, self.dacEnabled),
+                                                        (self.pmt32, pmt32Name, pmt32Config, self.pmt32Enabled)]:
+            if FPGAEnabled:
+                deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
+                if not deviceName:
+                    logger.error("No FPGA specified: 'device' field missing in '{0}' config".format(FPGAName))
+                elif deviceName not in self.OK_FPGA_Dict:
+                    logger.error("FPGA device {0} specified in '{1}' config cannot be found".format(deviceName, FPGAName))
+                else:
+                    device=self.OK_FPGA_Dict[deviceName]
+                    FPGA.openBySerial(device.serial)
+                    if FPGAConfig.get('uploadOnStartup'):
+                        bitFile=FPGAConfig.get('bitFile')
+                        if not bitFile:
+                            logger.error("No bitfile specified")
+                        elif not isinstance(bitFile, str):
+                            logger.error("bitfile {0} specified in '{1}' config is not a string".format(bitFile, FPGAName))
+                        elif not os.path.exists(bitFile):
+                            logger.error("Unable to upload bitfile {0} specified in '{1}' config: Invalid bitfile path".format(bitFile, FPGAName))
+                        else:
+                            FPGA.uploadBitfile(bitFile)
+                            logger.info("Uploaded file '{0}' to {1} (model {2}) in '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
+                    if FPGA==self.pulser:
+                        self.settings.deviceSerial = device.serial
+                        self.settings.deviceDescription = device.identifier
+                        self.settings.deviceInfo = device
 
 
 if __name__ == '__main__':
