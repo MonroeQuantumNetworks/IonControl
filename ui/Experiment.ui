@@ -61,7 +61,6 @@
    <addaction name="actionPulses"/>
    <addaction name="actionVoltageControl"/>
    <addaction name="actionReload"/>
-   <addaction name="actionSettings"/>
    <addaction name="actionLogic"/>
    <addaction name="actionMeasurementLog"/>
    <addaction name="actionScripting"/>
@@ -87,7 +86,6 @@
      <addaction name="actionImport_from_XML_replace"/>
      <addaction name="actionImport_from_XML_update"/>
     </widget>
-    <addaction name="actionSettings"/>
     <addaction name="actionExit"/>
     <addaction name="actionClear"/>
     <addaction name="actionSave"/>
@@ -330,18 +328,6 @@
    </property>
    <property name="toolTip">
     <string>Stop Experiment</string>
-   </property>
-  </action>
-  <action name="actionSettings">
-   <property name="icon">
-    <iconset resource="Experiment.qrc">
-     <normaloff>:/kde/icons/gear.png</normaloff>:/kde/icons/gear.png</iconset>
-   </property>
-   <property name="text">
-    <string>Settings</string>
-   </property>
-   <property name="toolTip">
-    <string>FPGA Settings</string>
    </property>
   </action>
   <action name="actionContinue">
