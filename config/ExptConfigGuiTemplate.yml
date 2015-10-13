@@ -18,8 +18,6 @@ software:
     description: Interface for using an arbitrary waveform generator
     fields:
       hardware: role
-  Gate Sequences:
-    description: Interface for running long sequences of gates (e.g. randomized benchmarking)
   Timestamps:
     description: Interface for reading and plotting the timestamps of TTL pulses
 
