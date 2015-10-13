@@ -55,6 +55,7 @@ from modules.Utility import join
 import pytz
 from PyQt4.QtGui import QApplication
 from ProjectConfig.Project import getProject
+from copy import copy
 
 ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
 
@@ -108,6 +109,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.rawDataFile = None
         self.dataFinalized = False
         self.accumulatedTimingViolations = set()
+        self.project = getProject()
+        self.timestampsEnabled = self.project.isEnabled('software', 'Timestamps')
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -117,16 +120,15 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.setCentralWidget(self.area)
         self.plotDict = dict()
         axesType = self.config.get( self.experimentName+'.axesType', defaultdict( lambda: False ))
+
+        self.requiredPlotNames = ["Scan Data", "Histogram", "Timestamps"] if self.timestampsEnabled else ["Scan Data", "Histogram"]
         if self.experimentName+'.plotNames' in self.config:
             plotNames = self.config[self.experimentName+'.plotNames']
+            for name in self.requiredPlotNames: #make sure required plots are present
+                if name not in plotNames:
+                    plotNames.append(name)
         else:
-            plotNames = {"Scan Data", "Histogram", "Timestamps"}
-        if "Scan Data" not in plotNames:
-            plotNames.append("Scan Data")
-        if "Histogram" not in plotNames:
-            plotNames.append("Histogram")
-        if "Timestamps" not in plotNames:
-            plotNames.append("Timestamps")
+            plotNames = copy(self.requiredPlotNames)
         # initialize all the plot windows we want
         self.createPlotWindows(plotNames, axesType)
         try:
@@ -147,14 +149,16 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.traceui.setupUi(self.traceui)
         self.measurementLog.addTraceui( 'Scan', self.traceui )
         # traceui for timestamps
-        self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict)
-        self.timestampTraceui.setupUi(self.timestampTraceui)
-        self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
+        if self.timestampsEnabled:
+            self.timestampTraceui = Traceui.Traceui(self.penicons,self.config,self.experimentName+"-timestamps",self.plotDict)
+            self.timestampTraceui.setupUi(self.timestampTraceui)
+            self.timestampTraceuiDock = self.setupAsDockWidget(self.timestampTraceui, "Timestamp traces", QtCore.Qt.LeftDockWidgetArea)
         # new fit widget
         self.fitWidget = FitUi(self.traceui,self.config,self.experimentName, globalDict = self.globalVariablesUi.variables )
         self.fitWidget.setupUi(self.fitWidget)
         self.globalVariablesUi.valueChanged.connect( self.fitWidget.evaluate )
-        self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.timestampTraceuiDock)
+        self.fitWidgetDock = self.setupAsDockWidget(self.fitWidget, "Fit", QtCore.Qt.LeftDockWidgetArea,
+                                                    stackAbove=self.timestampTraceuiDock if self.timestampsEnabled else None)
         # TraceuiDock
         self.traceuiDock = self.setupAsDockWidget(self.traceui, "Traces", QtCore.Qt.LeftDockWidgetArea, stackAbove=self.fitWidgetDock )
         # ScanProgress
@@ -230,7 +234,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plotDict[name] = {"dock":dock, "widget":widget, "view":view}
             del dock, widget, view #This is probably unnecessary, but can't hurt
         self.plotDict["Histogram"]["widget"].autoRange()
-        self.plotDict["Timestamps"]["widget"].autoRange()
+        if self.timestampsEnabled: self.plotDict["Timestamps"]["widget"].autoRange()
 
     def exportXml(self, element):
         self.scanControlWidget.onExportXml(element)
@@ -334,8 +338,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             override = dict()
             scanParam = None
 
-            project=getProject()
-            AWGEnabled = project.isEnabled('software', 'AWG')
+            AWGEnabled = self.project.isEnabled('software', 'AWG')
             if AWGEnabled:
                 AWGdevice = self.scanTargetDict["AWG"]["Duration"].device
                 if AWGdevice.parent.parameters.enabled and self.scan.scanMode == 0: # 0 = Parameter Scan
@@ -479,7 +482,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if data.other:
             logger.info( "Other: {0}".format( data.other ) )
         self.currentIndex += 1
-        if self.evaluation.enableTimestamps: 
+        if self.evaluation.enableTimestamps and self.timestampsEnabled:
             self.showTimestamps(data)
         self.scanMethod.prepareNextPoint(data)
         names = [self.evaluation.ev.name for self.evaluation.ev in self.evaluation.evalList]
@@ -685,7 +688,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         names = QtCore.QStringList()
         for name in self.plotDict.keys():
-            if name not in ['Scan Data', 'Histogram', 'Timestamps']:
+            if name not in self.requiredPlotNames:
                 names.append(name)
         if names.count() > 0:
             name, ok = QtGui.QInputDialog.getItem(self, "Select Plot", "Please select which plot to remove: ", names, editable=False)
@@ -708,7 +711,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         logger = logging.getLogger(__name__)
         names = QtCore.QStringList()
         for name in self.plotDict.keys():
-            if name not in ['Scan Data', 'Histogram', 'Timestamps']:
+            if name not in self.requiredPlotNames:
                 names.append(name)
         if names.count() > 0:
             name, ok = QtGui.QInputDialog.getItem(self, "Select Plot", "Please select which plot to rename: ", names, editable=False)
