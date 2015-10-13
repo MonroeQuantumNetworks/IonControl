@@ -25,8 +25,8 @@ from scan.AbszisseType import AbszisseType
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlEncodeDictionary,\
     xmlParseAttributes, xmlParseDictionary
+from ProjectConfig.Project import getProject
 
- 
 ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
 
 
@@ -188,7 +188,9 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.pulseProgramUi = None
         self.parameters = self.config.get( self.configname+'.parameters', EvaluationControlParameters() )
         self.globalVariablesUi = globalVariablesUi
-        
+        self.project = getProject()
+        self.timestampsEnabled = self.project.isEnabled('software', 'Timestamps')
+
     def setupUi(self, parent):
         ControlForm.setupUi(self,parent)
         # History and Dictionary
@@ -226,13 +228,20 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.integrateHistogramCheckBox.stateChanged.connect( self.onIntegrateHistogramClicked )
                 
         # Timestamps
-        self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
-        self.roiStartSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiStart') )
-        self.roiWidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiWidth') )
-        self.enableCheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'enableTimestamps' ) )
-        self.saveRawDataCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData' ) )
-        self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
-        self.channelSpinBox.valueChanged.connect( functools.partial(self.onBareValueChanged, 'timestampsChannel') )
+        if self.timestampsEnabled:
+            self.binwidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'binwidth') )
+            self.roiStartSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiStart') )
+            self.roiWidthSpinBox.valueChanged.connect( functools.partial(self.onValueChanged, 'roiWidth') )
+            self.enableCheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'enableTimestamps' ) )
+            self.saveRawDataCheckBox.stateChanged.connect( functools.partial(self.onStateChanged,'saveRawData' ) )
+            self.integrateCombo.currentIndexChanged[int].connect( self.onIntegrationChanged )
+            self.channelSpinBox.valueChanged.connect( functools.partial(self.onBareValueChanged, 'timestampsChannel') )
+        else:
+            self.settings.enableTimestamps = False
+            timestampsWidget = self.toolBox.widget(1)
+            self.toolBox.removeItem(1) #Remove timestamps from toolBox
+            timestampsWidget.deleteLater() #Delete timestamps widget
+
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.autoSaveAction = QtGui.QAction( "auto save" , self)
         self.autoSaveAction.setCheckable(True)
@@ -282,13 +291,14 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.histogramBinsBox.setValue(self.settings.histogramBins)
         self.integrateHistogramCheckBox.setChecked( self.settings.integrateHistogram )
         # Timestamps
-        self.enableCheckBox.setChecked(self.settings.enableTimestamps )
-        self.saveRawDataCheckBox.setChecked(self.settings.saveRawData)
-        self.binwidthSpinBox.setValue(self.settings.binwidth)
-        self.roiStartSpinBox.setValue(self.settings.roiStart)
-        self.roiWidthSpinBox.setValue(self.settings.roiWidth)
-        self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
-        self.channelSpinBox.setValue( self.settings.timestampsChannel )
+        if self.timestampsEnabled:
+            self.enableCheckBox.setChecked(self.settings.enableTimestamps )
+            self.saveRawDataCheckBox.setChecked(self.settings.saveRawData)
+            self.binwidthSpinBox.setValue(self.settings.binwidth)
+            self.roiStartSpinBox.setValue(self.settings.roiStart)
+            self.roiWidthSpinBox.setValue(self.settings.roiWidth)
+            self.integrateCombo.setCurrentIndex( self.settings.integrateTimestamps )
+            self.channelSpinBox.setValue( self.settings.timestampsChannel )
         self.checkSettingsSavable()
         self.evalAlgorithmList = []
         for evaluation in self.settings.evalList:
