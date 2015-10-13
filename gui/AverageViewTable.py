@@ -5,8 +5,9 @@ from modules.RunningStat import RunningStat
 from modules.round import roundToStdDev, roundToNDigits
 from uiModules.KeyboardFilter import KeyListFilter
 
-
-Form, Base = PyQt4.uic.loadUiType(r'ui\AverageViewTable.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AverageViewTable.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
     def __init__(self):

@@ -15,7 +15,9 @@ from modules.GuiAppearance import restoreGuiState, saveGuiState
 import logging
 from modules.Utility import unique
 
-DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\DDS.ui')
+DDSForm, DDSBase = PyQt4.uic.loadUiType(uipath)
 
 def extendTo(array, length, defaulttype):
     for _ in range( len(array), length ):

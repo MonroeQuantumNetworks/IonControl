@@ -57,7 +57,8 @@ from PyQt4.QtGui import QApplication
 from ProjectConfig.Project import getProject
 from copy import copy
 
-ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(r'ui\ScanExperiment.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ScanExperiment.ui')
+ScanExperimentForm, ScanExperimentBase = PyQt4.uic.loadUiType(uipath)
 
 ExpectedLoopkup = { 'd': 0, 'u' : 1, '1':0.5, '-1':0.5, 'i':0.5, '-i':0.5 }
 

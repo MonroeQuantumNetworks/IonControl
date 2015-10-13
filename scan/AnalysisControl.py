@@ -27,7 +27,9 @@ from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 import xml.etree.ElementTree as ElementTree
 from fit.FitFunctions import fromXmlElement
 
-ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\AnalysisControl.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AnalysisControl.ui')
+ControlForm, ControlBase = PyQt4.uic.loadUiType(uipath)
 
 class AnalysisDefinitionElement(object):
     XMLTagName = "AnalysisDefinition"

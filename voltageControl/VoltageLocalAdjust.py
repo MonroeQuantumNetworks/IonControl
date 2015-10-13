@@ -21,7 +21,8 @@ import numpy
 from _functools import partial
 from modules import MagnitudeUtilit
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\VoltageLocalAdjust.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\VoltageLocalAdjust.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
     def __init__(self):

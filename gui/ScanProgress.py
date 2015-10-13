@@ -7,8 +7,9 @@ import PyQt4.uic
 from modules.enum import enum
 from modules.firstNotNone import firstNotNone
 
-
-Form, Base = PyQt4.uic.loadUiType(r'ui\ScanProgress.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ScanProgress.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class ScanProgress(Form,Base):
     OpStates = enum('idle','running','paused','starting','stopping', 'interrupted')

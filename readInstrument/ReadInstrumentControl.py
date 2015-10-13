@@ -16,7 +16,9 @@ from trace import pens
 import time
 from modules import MagnitudeUtilit
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\ReadInstrument.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ReadInstrument.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class ReadInstrumentState:
     def __init__(self):

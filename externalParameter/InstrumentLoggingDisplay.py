@@ -13,7 +13,9 @@ from uiModules.KeyboardFilter import KeyListFilter
 from collections import defaultdict
 from externalParameter.InputData import InputData
 
-UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterUi.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ExternalParameterUi.ui')
+UiForm, UiBase = PyQt4.uic.loadUiType(uipath)
 
 def defaultFontsize():
     return 10

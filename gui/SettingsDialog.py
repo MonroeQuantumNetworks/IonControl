@@ -19,7 +19,8 @@ class Settings:
         self.deviceDescription = None
         self.pulser = None
 
-SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\SettingsDialog.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\SettingsDialog.ui')
+SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(uipath)
 
 class SettingsDialogConfig:
     def __init__(self):

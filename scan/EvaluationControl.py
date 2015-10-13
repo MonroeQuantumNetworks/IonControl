@@ -27,7 +27,9 @@ from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlEncodeDictionary
     xmlParseAttributes, xmlParseDictionary
 from ProjectConfig.Project import getProject
 
-ControlForm, ControlBase = PyQt4.uic.loadUiType(r'ui\EvaluationControl.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\EvaluationControl.ui')
+ControlForm, ControlBase = PyQt4.uic.loadUiType(uipath)
 
 
 class EvaluationDefinition(object):

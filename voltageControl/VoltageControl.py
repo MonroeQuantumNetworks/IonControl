@@ -18,8 +18,9 @@ from modules import MagnitudeUtilit
 from voltageControl.VoltageLocalAdjust import VoltageLocalAdjust
 from reportlab.pdfbase.pdfdoc import Destination
 
-
-VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(r'ui\VoltageControl.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\VoltageControl.ui')
+VoltageControlForm, VoltageControlBase = PyQt4.uic.loadUiType(uipath)
 
 
 class Settings:

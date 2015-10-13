@@ -13,7 +13,9 @@ from modules.GuiAppearance import restoreGuiState, saveGuiState
 import logging
 from pulser.DAC import DACChannelSetting, DAC
 
-dacForm, dacBase = PyQt4.uic.loadUiType(r'ui\DDS.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\DDS.ui')
+dacForm, dacBase = PyQt4.uic.loadUiType(uipath)
 
 def extendTo(array, length, defaulttype):
     for _ in range( len(array), length ):

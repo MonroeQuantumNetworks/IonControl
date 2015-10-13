@@ -26,9 +26,10 @@ import re
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from modules import MagnitudeUtilit
 
-
-VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageAdjust.ui')
-ShuttlingEdgeForm, ShuttlingEdgeBase = PyQt4.uic.loadUiType(r'ui\ShuttlingEdge.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\VoltageAdjust.ui')
+VoltageAdjustForm, VoltageAdjustBase = PyQt4.uic.loadUiType(uipath)
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ShuttlingEdge.ui')
+ShuttlingEdgeForm, ShuttlingEdgeBase = PyQt4.uic.loadUiType(uipath)
 
     
 class Adjust(object):

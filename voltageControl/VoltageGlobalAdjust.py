@@ -15,8 +15,9 @@ from _collections import defaultdict
 from modules.Observable import Observable
 from modules import MagnitudeUtilit
 
-
-VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(r'ui\VoltageGlobalAdjust.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\VoltageGlobalAdjust.ui')
+VoltageGlobalAdjustForm, VoltageGlobalAdjustBase = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
     def __init__(self):

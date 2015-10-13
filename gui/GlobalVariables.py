@@ -18,7 +18,9 @@ from modules.XmlUtilit import xmlEncodeDictionary, xmlParseDictionary, prettify
 import xml.etree.ElementTree as ElementTree
 from modules import DataDirectory
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\GlobalVariables.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class GlobalVariables(SequenceDict):
     def __init__(self, *args, **kwds):

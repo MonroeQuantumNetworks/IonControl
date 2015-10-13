@@ -13,7 +13,9 @@ from modules.PyqtUtility import BlockSignals
 from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
 from fit.StoredFitFunction import StoredFitFunction               #@UnresolvedImport
 
-fitForm, fitBase = PyQt4.uic.loadUiType(r'ui\FitUi.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\FitUi.ui')
+fitForm, fitBase = PyQt4.uic.loadUiType(uipath)
             
 class Parameters(object):
     def __init__(self):

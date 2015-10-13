@@ -16,7 +16,9 @@ from sqlalchemy import create_engine
 import ProjectSelection
 from persist.DatabaseConnectionSettings import DatabaseConnectionSettings
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\ProjectSelection.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ProjectSelection.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class ProjectSelectionUi(Form, Base):
     def __init__(self,parent=None):

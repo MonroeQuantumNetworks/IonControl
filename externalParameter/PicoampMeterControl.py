@@ -17,7 +17,9 @@ from trace import pens
 import time
 from modules import MagnitudeUtilit
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\PicoampMeterControl.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\PicoampMeterControl.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 def find_index_nearest(array, value):
     index = (numpy.abs(array-value)).argmin()

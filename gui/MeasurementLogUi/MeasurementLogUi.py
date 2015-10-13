@@ -27,8 +27,9 @@ from trace.PlottedTrace import PlottedTrace
 from modules import WeakMethod
 from modules.GuiAppearance import saveGuiState, restoreGuiState    
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\MeasurementLog.ui')
-
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', '..', r'ui\\MeasurementLog.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 
 class Settings:

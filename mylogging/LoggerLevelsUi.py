@@ -15,8 +15,9 @@ import PyQt4.uic
 from modules.SequenceDict import SequenceDict
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
-
-Form, Base = PyQt4.uic.loadUiType(r'ui\LoggerLevelsUi.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\LoggerLevelsUi.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 levelNames = OrderedDict([(0,"Not Set"),(10,"Debug"), (20,"Info"), (25,"Trace"), (30,"Warning"), (40,"Error"), (50,"Critical")])
 levelNumbers = OrderedDict([(v,k) for k, v in levelNames.items() ])

@@ -22,8 +22,9 @@ from trace.PlottedTrace import PlottedTrace
 from trace.Trace import Trace
 from trace.Traceui import Traceui
 
-
-testForm, testBase = PyQt4.uic.loadUiType(r'ui\testExperiment.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\testExperiment.ui')
+testForm, testBase = PyQt4.uic.loadUiType(uipath)
 
 class test(testForm, MainWindowWidget.MainWindowWidget):
     StatusMessage = QtCore.pyqtSignal( str )

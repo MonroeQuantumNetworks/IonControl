@@ -16,7 +16,9 @@ from PyQt4 import QtGui
 import PyQt4.uic
 from modules.firstNotNone import firstNotNone
 
-ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(r'ui\ExceptionMessage.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ExceptionMessage.ui')
+ExceptionMessageForm, ExceptionMessageBase = PyQt4.uic.loadUiType(uipath)
 
 class ExceptionMessage( ExceptionMessageForm, ExceptionMessageBase):
     def __init__(self,message,parent=None,showTime=True):

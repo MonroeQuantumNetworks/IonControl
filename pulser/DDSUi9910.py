@@ -6,8 +6,9 @@ import PyQt4.uic
 from pulser import Ad9910
 from modules.magnitude import mg
 
-
-DDSForm, DDSBase = PyQt4.uic.loadUiType(r'ui\DDS9910.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\DDS9910.ui')
+DDSForm, DDSBase = PyQt4.uic.loadUiType(uipath)
 
 def extendTo(array, length, defaulttype):
     for _ in range( len(array), length ):

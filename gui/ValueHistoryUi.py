@@ -18,7 +18,9 @@ from modules.magnitude import mg
 from modules.NamedTimespan import getRelativeDatetime, timespans
 from dateutil.tz import tzlocal
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\ValueHistory.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ValueHistory.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 
 class Parameters(object):

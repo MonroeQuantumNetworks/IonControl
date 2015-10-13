@@ -18,7 +18,9 @@ from _functools import partial
 from modules.doProfile import doprofile
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\LogicAnalyzer.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\LogicAnalyzer.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
     def __init__(self):

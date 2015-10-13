@@ -11,9 +11,9 @@ import PyQt4.uic
 from modules.RunningStat import RunningStat
 from modules.round import roundToStdDev, roundToNDigits
 
-
-Form, Base = PyQt4.uic.loadUiType(r'ui\AverageViewUi.ui')
-
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AverageViewUi.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 
 class AverageView(Form, Base ):

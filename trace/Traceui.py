@@ -20,7 +20,8 @@ from TraceDescriptionTableModel import TraceDescriptionTableModel
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.KeyboardFilter import KeyListFilter
 
-TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(r'ui\TraceTreeui.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\TraceTreeui.ui')
+TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
     """Class to hold Traceui settings"""

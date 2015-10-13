@@ -19,8 +19,10 @@ class FPGASettings:
         self.deviceDescription = None
         self.deviceInfo = None
 
-SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(r'ui\FPGASettings.ui')
-ListForm, ListBase = PyQt4.uic.loadUiType(r'ui\FPGASettingsList.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\FPGASettings.ui')
+SettingsDialogForm, SettingsDialogBase = PyQt4.uic.loadUiType(uipath)
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\FPGASettingsList.ui')
+ListForm, ListBase = PyQt4.uic.loadUiType(uipath)
 
 class FPGASettingsDialogConfig:
     def __init__(self):

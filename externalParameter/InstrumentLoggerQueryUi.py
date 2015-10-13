@@ -22,7 +22,9 @@ import pytz
 from externalParameter.persistence import DBPersist
 from ProjectConfig.Project import getProject
 
-Form, Base = PyQt4.uic.loadUiType(r'ui\InstrumentLoggerQueryUi.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\InstrumentLoggerQueryUi.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class Parameters:
     def __init__(self):

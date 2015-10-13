@@ -11,8 +11,9 @@ import PyQt4.uic
 
 from pulser import ShutterHardwareTableModel
 
-
-ShutterForm, ShutterBase = PyQt4.uic.loadUiType(r'ui\Shutter.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Shutter.ui')
+ShutterForm, ShutterBase = PyQt4.uic.loadUiType(uipath)
 
 class ShutterUi(ShutterForm, ShutterBase):
     onColor =  QtGui.QColor(QtCore.Qt.green)

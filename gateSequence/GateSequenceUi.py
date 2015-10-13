@@ -23,8 +23,9 @@ from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
     xmlEncodeDictionary, xmlParseDictionary
 from string import split
 
-
-Form, Base = PyQt4.uic.loadUiType('ui/GateSequence.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GateSequence.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 
 class Settings:

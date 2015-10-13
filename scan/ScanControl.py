@@ -31,7 +31,9 @@ from modules.firstNotNone import firstNotNone
 import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import prettify, xmlEncodeAttributes, xmlParseAttributes
 
-ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(r'ui\ScanControlUi.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ScanControlUi.ui')
+ScanControlForm, ScanControlBase = PyQt4.uic.loadUiType(uipath)
 
 
 class Scan:

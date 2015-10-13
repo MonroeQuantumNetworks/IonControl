@@ -39,7 +39,8 @@ from PulseProgram import Variable, OPS
 import modules.magnitude as magnitude
 import functools
 
-PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType('ui/PulseProgram.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\PulseProgram.ui')
+PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType(uipath)
 
 def getPpFileName( filename ):
     if filename is None:

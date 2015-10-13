@@ -18,7 +18,9 @@ from modules.PyqtUtility import updateComboBoxItems
 import itertools
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 
-SelectionForm, SelectionBase = PyQt4.uic.loadUiType(r'ui\ExternalParameterSelection.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ExternalParameterSelection.ui')
+SelectionForm, SelectionBase = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
     pass

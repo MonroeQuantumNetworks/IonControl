@@ -13,8 +13,9 @@ import PyQt4.uic
 from ProjectConfig.Project import getProject
 from modules.firstNotNone import firstNotNone
 
-
-VoltageFilesForm, VoltageFilesBase = PyQt4.uic.loadUiType(r'ui\VoltageFiles.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\VoltageFiles.ui')
+VoltageFilesForm, VoltageFilesBase = PyQt4.uic.loadUiType(uipath)
 
 
 class Scan:

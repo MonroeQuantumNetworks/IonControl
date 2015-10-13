@@ -28,7 +28,9 @@ from mylogging.ServerLogging import configureServerLogging
 from InstrumentLoggerQueryUi import InstrumentLoggerQueryUi
 from InstrumentLoggingDisplay import InstrumentLoggingDisplay
 
-WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\InstrumentLoggingWindow.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\InstrumentLoggingWindow.ui')
+WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(uipath)
 
 class FinishException(Exception):
     pass
