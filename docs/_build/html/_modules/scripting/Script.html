@@ -1,0 +1,591 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>scripting.Script &mdash; IonControl 0.8 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="IonControl 0.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> IonControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">IonControl.scripting module</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">IonControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>scripting.Script</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for scripting.Script</h1><div class="highlight"><pre>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Jul 27, 2015</span>
+
+<span class="sd">@author: jmizrahi</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">PyQt4</span> <span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="k">class</span> <span class="nc">ScriptException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<div class="viewcode-block" id="Script"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script">[docs]</a><span class="k">class</span> <span class="nc">Script</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QThread</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Encapsulates a running script together with all the scripting functions. Script executes in separate thread.</span>
+<span class="sd">    </span>
+<span class="sd">    The script behavior is as follows: each script function that manipulates a GUI element does so by emitting a</span>
+<span class="sd">    signal, followed by entering  QWaitCondition. The ScriptHandler responds to the signal, and wakes up the </span>
+<span class="sd">    QWaitCondition. For access to GUI data, the script waits at a QWaitCondition until the data is available.</span>
+<span class="sd">    When the data is available, the ScriptHandler sets the script data variables appropriately, and then wakes the</span>
+<span class="sd">    wait condition. This back-and-forth handoff between the Script thread and the ScriptHandler (which lives in the</span>
+<span class="sd">    main GUI thread) is what ensures synchronicity and avoids race conditions.</span>
+
+<span class="sd">    Note that the script thread does not have an event loop. This means that it cannot respond to emitted signals,</span>
+<span class="sd">    and calls like Script.quit and Script.exit do not work. Instead, the script emits signals indicating what to</span>
+<span class="sd">    change, and then enters a QWaitCondition. The ScriptingUi responds to the signal, and tells the script to exit</span>
+<span class="sd">    the wait condition once the action has been done. </span>
+<span class="sd">    </span>
+<span class="sd">    All the script functions are executed via the script function decorator, which simplifies the code.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#Signals to send information to the main thread</span>
+    <span class="n">locationSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c"># arg: trace locations corresponding to the script</span>
+    <span class="n">consoleSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: String to write, True if no error occurred, color to use</span>
+    <span class="n">exceptionSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: exception message, traceback</span>
+    
+    <span class="c">#Signals to send instructions to the main thread</span>
+    <span class="n">pauseScriptSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">stopScriptSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">pauseScanSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">stopScanSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+    
+    <span class="n">setGlobalSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: name, value, unit</span>
+    <span class="n">addGlobalSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: name, value, unit</span>
+    <span class="n">startScanSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">setScanSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c">#arg: scan name</span>
+    <span class="n">setEvaluationSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c">#arg: evaluation name</span>
+    <span class="n">setAnalysisSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c">#arg: analysis name</span>
+    <span class="n">plotPointSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: x, y, tracename</span>
+    <span class="n">plotListSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: xList, yList, tracename</span>
+    <span class="n">addPlotSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c">#arg: plot name</span>
+    <span class="n">abortScanSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+    <span class="n">createTraceSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span> <span class="c">#arg: trace creation data</span>
+    <span class="n">fitSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: fitName, traceName</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Script</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fullname</span> <span class="o">=</span> <span class="n">fullname</span> <span class="c">#Full name, with path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span> <span class="c">#The code in the script</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">mutex</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutex</span><span class="p">()</span> <span class="c">#used to control access to class variables that are accessed by ScriptHandler</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">pauseWait</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QWaitCondition</span><span class="p">()</span> <span class="c">#Used to wait while script is paused</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanWait</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QWaitCondition</span><span class="p">()</span> <span class="c">#Used to wait for end of scan</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataWait</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QWaitCondition</span><span class="p">()</span> <span class="c">#Used to wait for single data point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allDataWait</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QWaitCondition</span><span class="p">()</span> <span class="c">#Used to wait for full data set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysisWait</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QWaitCondition</span><span class="p">()</span> <span class="c">#Used to wait for analysis results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">guiWait</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QWaitCondition</span><span class="p">()</span> <span class="c">#Used to wait for gui to execute command</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">scriptFunctions</span><span class="p">:</span> <span class="c">#Define global functions corresponding to the scripting functions</span>
+            <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        
+        <span class="c">#Below are all class elements that are modified directly during operation by ScriptHandler</span>
+        <span class="c">#All access to these parameters is mutex protected while the script is running</span>
+        
+        <span class="c">#parameters that control the script execution process</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">paused</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slow</span> <span class="o">=</span> <span class="bp">False</span>
+        
+        <span class="c">#parameters that control synchronization with the gui</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanStatus</span> <span class="o">=</span> <span class="s">&#39;idle&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scanIsRunning</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waitOnScan</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysisReady</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allDataReady</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataReady</span> <span class="o">=</span> <span class="bp">False</span>
+        
+        <span class="c">#parameters to send information from the gui to the script</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysisResults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allData</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@QtCore.pyqtProperty</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">shortname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullname</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Script.run"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;run the script&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">locals</span><span class="p">(),</span> <span class="o">**</span><span class="nb">globals</span><span class="p">())</span> <span class="c">#Executing in this scope allows a function defined in the script to call another function defined in the script</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="nb">execfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullname</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="c">#run the script</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">:</span>
+                    <span class="k">break</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">trace</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+            <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exceptionSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span><span class="o">+</span><span class="s">&quot;: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">),</span> <span class="n">trace</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Script.emitLocation"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.emitLocation">[docs]</a>    <span class="k">def</span> <span class="nf">emitLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Emits a signal containing the current script location&quot;&quot;&quot;</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        <span class="n">stack_trace</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">extract_stack</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span> <span class="c">#Gets the full stack trace</span>
+        <span class="k">del</span> <span class="n">frame</span> <span class="c">#Getting rid of captured frames is recommended</span>
+        <span class="n">locs</span> <span class="o">=</span> <span class="p">[</span><span class="n">loc</span> <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">stack_trace</span> <span class="k">if</span> <span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">fullname</span><span class="p">]</span> <span class="c">#Find the locations that match the script name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locationSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">locs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Script.scriptFunction"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.scriptFunction">[docs]</a>    <span class="k">def</span> <span class="nf">scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">waitForAnalysis</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForData</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForAllData</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">runIfStopped</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span> <span class="c">#@NoSelf</span>
+        <span class="sd">&quot;&quot;&quot;Decorator for script functions.</span>
+<span class="sd">        </span>
+<span class="sd">        This decorator performs all the functions that are common to all the script functions. It checks</span>
+<span class="sd">        whether the script has been stopped or paused, and emits the current location in the script. Once</span>
+<span class="sd">        the function has executed, it waits to be told to continue by the main GUI. Exceptions that occur</span>
+<span class="sd">        during execution are sent back to the script thread and raised here.&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">realScriptFunction</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;The decorator without arguments (returned by the decorator with arguments)&quot;&quot;&quot;</span>
+            <span class="k">def</span> <span class="nf">baseScriptFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot;The base script function that wraps all the other script functions&quot;&quot;&quot;</span>
+                <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">):</span> <span class="c">#Acquire mutex before inspecting any variables</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="ow">and</span> <span class="n">runIfStopped</span><span class="p">):</span> <span class="c">#if stopped, don&#39;t do anything</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanIsRunning</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">waitOnScan</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">scanWait</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">paused</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">pauseWait</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">emitLocation</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">slow</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="o">.</span><span class="n">unlock</span><span class="p">()</span>
+                            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span> <span class="c">#On slow, we wait on each line for 0.4 s </span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="o">.</span><span class="n">lock</span><span class="p">()</span> 
+                        <span class="k">if</span> <span class="n">waitForAnalysis</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysisReady</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">analysisWait</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">waitForAllData</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">allDataReady</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">allDataWait</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">waitForData</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataReady</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">dataWait</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">)</span>
+                        <span class="n">returnData</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span> <span class="c">#This is the actual function</span>
+                        <span class="k">if</span> <span class="n">waitForGui</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">guiWait</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">exception</span>
+                        <span class="k">return</span> <span class="n">returnData</span>
+            <span class="n">baseScriptFunction</span><span class="o">.</span><span class="n">isScriptFunction</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">baseScriptFunction</span><span class="o">.</span><span class="n">func_name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">func_name</span>
+            <span class="n">baseScriptFunction</span><span class="o">.</span><span class="n">func_doc</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">func_doc</span>
+            <span class="k">return</span> <span class="n">baseScriptFunction</span>
+        <span class="k">return</span> <span class="n">realScriptFunction</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.setGlobal"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.setGlobal">[docs]</a>    <span class="k">def</span> <span class="nf">setGlobal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setGlobal(name, value, unit)</span>
+<span class="sd">        set global &#39;name&#39; to (value, unit).</span>
+
+<span class="sd">        This is equivalent to typing in a value/unit in the globals table.</span>
+<span class="sd">        If there is not a global with the given name, an exception is raised.</span>
+<span class="sd">        This is to avoid typos leading to unexpected behavior. To add a global,</span>
+<span class="sd">        use &#39;addGlobal&#39;</span>
+<span class="sd">         </span>
+<span class="sd">        name: str</span>
+<span class="sd">        value: float</span>
+<span class="sd">        unit: str&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGlobalSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+         </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.addGlobal"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.addGlobal">[docs]</a>    <span class="k">def</span> <span class="nf">addGlobal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;addGlobal(name, value, unit)</span>
+<span class="sd">        add a global &#39;name&#39;, set to (value, unit).     </span>
+<span class="sd">         </span>
+<span class="sd">        This is equivalent to adding a global via the globals UI,and</span>
+<span class="sd">        then setting its value in the globals table.</span>
+<span class="sd">        </span>
+<span class="sd">        name: str</span>
+<span class="sd">        value: float</span>
+<span class="sd">        unit: str&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addGlobalSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.pauseScript"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.pauseScript">[docs]</a>    <span class="k">def</span> <span class="nf">pauseScript</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;pauseScript()</span>
+<span class="sd">        Pause the script.</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to clicking the &quot;pause script&quot; button.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pauseScriptSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.stopScript"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.stopScript">[docs]</a>    <span class="k">def</span> <span class="nf">stopScript</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;stopScript()</span>
+<span class="sd">        Stop the script.</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to clicking the &quot;stop script&quot; button.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopScriptSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.startScan"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.startScan">[docs]</a>    <span class="k">def</span> <span class="nf">startScan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;startScan(wait=True)</span>
+<span class="sd">        Start the scan.</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to clicking &quot;start&quot; on the experiment GUI. If</span>
+<span class="sd">        wait=True, the script will not continue until the scan is finished.</span>
+<span class="sd">        </span>
+<span class="sd">        wait: bool&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waitOnScan</span> <span class="o">=</span> <span class="n">wait</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">startScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.setScan"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.setScan">[docs]</a>    <span class="k">def</span> <span class="nf">setScan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setScan(name)</span>
+<span class="sd">        set the scan interface to &quot;name.&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to selecting &quot;name&quot; from the scan drop down menu.</span>
+<span class="sd">        If there is no scan by that name, an exception is raised.</span>
+<span class="sd">        </span>
+<span class="sd">        name: str&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+     </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.setEvaluation"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.setEvaluation">[docs]</a>    <span class="k">def</span> <span class="nf">setEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setEvaluation(name)</span>
+<span class="sd">        set the evaluation interface to &quot;name.&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to selecting &quot;name&quot; from the evaluation drop down menu.</span>
+<span class="sd">        If there is no evaluation by that name, an exception is raised.</span>
+<span class="sd">        </span>
+<span class="sd">        name: str&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setEvaluationSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+     </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.setAnalysis"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.setAnalysis">[docs]</a>    <span class="k">def</span> <span class="nf">setAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setAnalysis(name)</span>
+<span class="sd">        set the analysis interface to &quot;name.&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to selecting &quot;name&quot; from the analysis drop down menu.</span>
+<span class="sd">        If there is no analysis by that name, an exception is raised.</span>
+<span class="sd">        </span>
+<span class="sd">        name: str&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAnalysisSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.plotPoint"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.plotPoint">[docs]</a>    <span class="k">def</span> <span class="nf">plotPoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;plotPoint(x, y, traceName)</span>
+<span class="sd">        Plot a single point (x, y) to trace traceName.</span>
+<span class="sd">        </span>
+<span class="sd">        x: float</span>
+<span class="sd">        y: float</span>
+<span class="sd">        traceName: str&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotPointSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">traceName</span><span class="p">)</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.plotList"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.plotList">[docs]</a>    <span class="k">def</span> <span class="nf">plotList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xList</span><span class="p">,</span> <span class="n">yList</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;plotList(xList, yList, traceName)</span>
+<span class="sd">        Plot a set of points given in xList, yList to trace traceName.</span>
+<span class="sd">        </span>
+<span class="sd">        x: list</span>
+<span class="sd">        y: list</span>
+<span class="sd">        traceName: str&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">xList</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+            <span class="n">xList</span> <span class="o">=</span> <span class="n">xList</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">yList</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+            <span class="n">yList</span> <span class="o">=</span> <span class="n">yList</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotListSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">xList</span><span class="p">,</span> <span class="n">yList</span><span class="p">,</span> <span class="n">traceName</span><span class="p">)</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.addPlot"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.addPlot">[docs]</a>    <span class="k">def</span> <span class="nf">addPlot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;addPlot(name)</span>
+<span class="sd">        Add a plot named &quot;name&quot;.</span>
+<span class="sd">         </span>
+<span class="sd">        This is equivalent to clicking &quot;add plot&quot; on the experiment GUI.</span>
+<span class="sd">        </span>
+<span class="sd">        name: str&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addPlotSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.pauseScan"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.pauseScan">[docs]</a>    <span class="k">def</span> <span class="nf">pauseScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;pauseScan()</span>
+<span class="sd">        Pause the scan.</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to clicking &quot;pause&quot; on the experiment GUI.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pauseScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.stopScan"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.stopScan">[docs]</a>    <span class="k">def</span> <span class="nf">stopScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;stopScan()</span>
+<span class="sd">        Stop the scan.</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to clicking &quot;stop&quot; on the experiment GUI.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+    </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>  
+<div class="viewcode-block" id="Script.abortScan"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.abortScan">[docs]</a>    <span class="k">def</span> <span class="nf">abortScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;abortScan()</span>
+<span class="sd">        Abort the scan.</span>
+<span class="sd">        </span>
+<span class="sd">        This is equivalent to clicking &quot;abort&quot; on the experiment GUI.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">abortScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.createTrace"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.createTrace">[docs]</a>    <span class="k">def</span> <span class="nf">createTrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traceName</span><span class="p">,</span> <span class="n">plotName</span><span class="p">,</span> <span class="n">xUnit</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">xLabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;createTrace(traceName, plotName, xUnit=&#39;&#39;, xLabel=&#39;&#39;, comment=&#39;&#39;)</span>
+<span class="sd">        </span>
+<span class="sd">        create a new trace with name &#39;traceName&#39; to be plotted on plot</span>
+<span class="sd">        &#39;plotName&#39; with unit &#39;xUnit&#39;, label &#39;xLabel&#39;, and comment &#39;comment&#39;.</span>
+<span class="sd">        </span>
+<span class="sd">        traceName: str</span>
+<span class="sd">        plotName: str</span>
+<span class="sd">        xUnit: str</span>
+<span class="sd">        xLabel: str</span>
+<span class="sd">        comment: str&quot;&quot;&quot;</span>
+        <span class="n">traceCreationData</span> <span class="o">=</span> <span class="p">[</span><span class="n">traceName</span><span class="p">,</span> <span class="n">plotName</span><span class="p">,</span> <span class="n">xUnit</span><span class="p">,</span> <span class="n">xLabel</span><span class="p">,</span> <span class="n">comment</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">createTraceSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">traceCreationData</span><span class="p">)</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">()</span>
+<div class="viewcode-block" id="Script.fit"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fitName</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;fit(fitName, traceName)</span>
+
+<span class="sd">        fit the data in &#39;traceName&#39; using &#39;fitName&#39;&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">fitName</span><span class="p">,</span> <span class="n">traceName</span><span class="p">)</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="viewcode-block" id="Script.waitForScan"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.waitForScan">[docs]</a>    <span class="k">def</span> <span class="nf">waitForScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;waitForScan()</span>
+<span class="sd">        Wait for scan to finish before continuing script.</span>
+<span class="sd">        </span>
+<span class="sd">        If startScan is run with wait=True, this function is unnecessary.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waitOnScan</span> <span class="o">=</span> <span class="bp">True</span>
+    </div>
+    <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForData</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="viewcode-block" id="Script.getData"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.getData">[docs]</a>    <span class="k">def</span> <span class="nf">getData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getData()</span>
+<span class="sd">        Get the most recent data point from a running scan.</span>
+<span class="sd">        </span>
+<span class="sd">        Data is returned as a dictionary. The key corresponds to</span>
+<span class="sd">        the name of each evaluation in the evaluation list. The value</span>
+<span class="sd">        is a tuple (x, y).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataReady</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForAllData</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="viewcode-block" id="Script.getAllData"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.getAllData">[docs]</a>    <span class="k">def</span> <span class="nf">getAllData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getAllData()</span>
+<span class="sd">        Get the full set of data from the most recent scan.</span>
+<span class="sd">        </span>
+<span class="sd">        Data is returned as a dictionary. The key corresponds to</span>
+<span class="sd">        the name of each evaluation in the evaluation list. The value</span>
+<span class="sd">        is a tuple (xList, yList).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allDataReady</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">allData</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForAnalysis</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="viewcode-block" id="Script.getAnalysis"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.getAnalysis">[docs]</a>    <span class="k">def</span> <span class="nf">getAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getAnalysis()</span>
+<span class="sd">        Get the analysis results for the most recent scan.</span>
+<span class="sd">        </span>
+<span class="sd">        Analysis is returned as a dictionary of dictionaries. The key corresponds</span>
+<span class="sd">        to the name of each analysis in the analysis list. The value is another</span>
+<span class="sd">        dictionary, whose keys correspond to the names of fit parameters in the</span>
+<span class="sd">        specified evaluation.</span>
+<span class="sd">        </span>
+<span class="sd">        Example: a Gaussian fit named &quot;myFit&quot; in the analysis, with center parameter</span>
+<span class="sd">        x0, would return its center value as getAnalysis()[&#39;myFit&#39;][&#39;x0&#39;]&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analysisReady</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysisResults</span>
+</div>
+    <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="viewcode-block" id="Script.scanRunning"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.scanRunning">[docs]</a>    <span class="k">def</span> <span class="nf">scanRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;scanRunning()</span>
+<span class="sd">        Return True if the scan is running. Otherwise, False.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanIsRunning</span>
+    </div>
+    <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="viewcode-block" id="Script.getScanStatus"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.getScanStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getScanStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;getScanStatus()</span>
+<span class="sd">        Return the current state of the scan.</span>
+<span class="sd">        </span>
+<span class="sd">        One of &#39;idle&#39;, &#39;running&#39;, &#39;paused&#39;, &#39;starting&#39;, &#39;stopping&#39;, or &#39;interrupted&#39;&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanStatus</span>
+        </div>
+    <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">runIfStopped</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="viewcode-block" id="Script.scriptIsStopped"><a class="viewcode-back" href="../../scripting.html#scripting.Script.Script.scriptIsStopped">[docs]</a>    <span class="k">def</span> <span class="nf">scriptIsStopped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;scriptIsStopped()</span>
+<span class="sd">        Return True if the script has been stopped, Otherwise, False.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span>
+</div></div>
+<div class="viewcode-block" id="checkScripting"><a class="viewcode-back" href="../../scripting.html#scripting.Script.checkScripting">[docs]</a><span class="k">def</span> <span class="nf">checkScripting</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check whether a function has been marked as a script function&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s">&#39;isScriptFunction&#39;</span><span class="p">)</span>
+</div>
+<span class="n">scriptFunctions</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">Script</span><span class="p">,</span> <span class="n">checkScripting</span><span class="p">)]</span> <span class="c">#Get the names of the scripting functions</span>
+<span class="n">scriptDocs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">Script</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">__doc__</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">scriptFunctions</span><span class="p">]</span> <span class="c">#Get the doc strings</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright .
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
