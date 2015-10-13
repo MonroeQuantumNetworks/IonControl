@@ -12,8 +12,9 @@ import PyQt4.uic
 from modules import CountrateConversion
 import modules.magnitude as magnitude
 
-
-DedicatedCountersSettingsForm, DedicatedCountersSettingsBase = PyQt4.uic.loadUiType(r'ui\DedicatedCountersSettings.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\DedicatedCountersSettings.ui')
+DedicatedCountersSettingsForm, DedicatedCountersSettingsBase = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
     def __init__(self):

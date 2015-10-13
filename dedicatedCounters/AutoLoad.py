@@ -34,7 +34,9 @@ import copy
 from modules.PyqtUtility import updateComboBoxItems
 from persist.LoadingEvent import LoadingEvent, LoadingHistory
 
-UiForm, UiBase = PyQt4.uic.loadUiType(r'ui\AutoLoad.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AutoLoad.ui')
+UiForm, UiBase = PyQt4.uic.loadUiType(uipath)
 
 import pytz
 def now():

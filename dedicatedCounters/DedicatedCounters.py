@@ -21,8 +21,10 @@ from trace.Trace import Trace, TracePlotting
 from modules.DataDirectory import DataDirectory
 from trace.pens import penList
 from dedicatedCounters.StatusDisplay import StatusDisplay
- 
-DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(r'ui\DedicatedCounters.ui')
+
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\DedicatedCounters.ui')
+DedicatedCountersForm, DedicatedCountersBase = PyQt4.uic.loadUiType(uipath)
 
 #curvecolors = [ 'b', 'g', 'r', 'b', 'c', 'm', 'y', 'g' ]
 

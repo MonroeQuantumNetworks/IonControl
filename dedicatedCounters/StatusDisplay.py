@@ -9,8 +9,9 @@ import PyQt4.uic
 from dedicatedCounters.StatusTableModel import StatusTableModel
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 
-
-Form, Base = PyQt4.uic.loadUiType(r'ui\TableViewWidget.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\TableViewWidget.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 
 class Settings:

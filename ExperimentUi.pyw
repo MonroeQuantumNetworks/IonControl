@@ -17,10 +17,6 @@ from modules.XmlUtilit import prettify
 from modules.SequenceDict import SequenceDict
 from functools import partial
 import xml.etree.ElementTree as ElementTree
-from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
-from mylogging import LoggingSetup  #@UnusedImport #This runs the logging setup code
-from mylogging.LoggingSetup import qtWarningButtonHandler
-from mylogging.LoggerLevelsUi import LoggerLevelsUi
 from gui import GlobalVariables
 from gui import ScanExperiment
 from dedicatedCounters.DedicatedCounters import DedicatedCounters
@@ -32,7 +28,6 @@ from modules import DataDirectory, MyException
 from modules.DataChanged import DataChanged
 from persist import configshelve
 from pulseProgram import PulseProgramUi
-from uiModules import MagnitudeParameter #@UnusedImport
 from uiModules.ImportErrorPopup import importErrorPopup
 from gui.TodoList import TodoList
 from gui.Preferences import PreferencesUi
@@ -50,9 +45,14 @@ from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettings
 import ctypes
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
+if __name__=='__main__': #imports that aren't just definitions
+    from uiModules import MagnitudeParameter #@UnusedImport
+    from mylogging.ExceptionLogButton import ExceptionLogButton, LogButton
+    from mylogging import LoggingSetup  #@UnusedImport #This runs the logging setup code
+    from mylogging.LoggingSetup import qtWarningButtonHandler
+    from mylogging.LoggerLevelsUi import LoggerLevelsUi
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
-
 
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]

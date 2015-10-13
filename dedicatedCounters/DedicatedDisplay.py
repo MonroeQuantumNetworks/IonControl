@@ -11,8 +11,9 @@ import PyQt4.uic
 
 import modules.magnitude as magnitude
 
-
-DedicatedDisplayForm, DedicatedDisplayBase = PyQt4.uic.loadUiType(r'ui\DedicatedDisplay.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\DedicatedDisplay.ui')
+DedicatedDisplayForm, DedicatedDisplayBase = PyQt4.uic.loadUiType(uipath)
 
 
 class Settings:

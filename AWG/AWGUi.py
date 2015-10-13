@@ -21,8 +21,9 @@ import sympy as sp
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 
-
-AWGForm, AWGBase = PyQt4.uic.loadUiType(r'ui\AWGUi.ui')
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\AWGUi.ui')
+AWGForm, AWGBase = PyQt4.uic.loadUiType(uipath)
 
 class AWGWaveform(object):
     expression = Expression()

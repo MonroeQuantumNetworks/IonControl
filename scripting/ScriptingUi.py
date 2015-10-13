@@ -19,7 +19,8 @@ from ScriptHandler import ScriptHandler
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 from collections import OrderedDict
 
-ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType('ui/Scripting.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Scripting.ui')
+ScriptingWidget, ScriptingBase = PyQt4.uic.loadUiType(uipath)
 
 class ScriptingUi(ScriptingWidget,ScriptingBase):
     """Ui for the scripting interface."""
