@@ -262,11 +262,11 @@ class ScriptHandler:
         traceName = str(traceName)
         fitAnalysisIndex = self.fitWidget.analysisNameComboBox.findText('fitAnalysisName')
         if fitAnalysisIndex < 0:
-            message = "Fit {0} does not exist.".format(fitName)
+            message = "Fit '{0}' does not exist.".format(fitName)
             error = True
         else:
             self.fitWidget.analysisNameComboBox.setIndex(fitAnalysisIndex)
-            message = "Fit set to {0}".format(fitName)
+            message = "Fit set to '{0}'".format(fitName)
             error = False
         return (error, message)
 
