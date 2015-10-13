@@ -30,6 +30,7 @@ class ScriptHandler:
         self.scanControlWidget = self.scanExperiment.scanControlWidget
         self.evaluationControlWidget = self.scanExperiment.evaluationControlWidget
         self.analysisControlWidget = self.scanExperiment.analysisControlWidget
+        self.fitWidget = self.scanExperiment.fitWidget
         self.pulser = self.experimentUi.pulser
         self.currentLines = []
         self.script = script
@@ -63,6 +64,7 @@ class ScriptHandler:
         self.script.stopScanSignal.connect(self.onStopScan)
         self.script.abortScanSignal.connect(self.onAbortScan)
         self.script.createTraceSignal.connect(self.onCreateTrace)
+        self.script.fitSignal.connect(self.onFit)
 
         #finished signal
         self.script.finished.connect(self.onFinished)
@@ -251,6 +253,21 @@ class ScriptHandler:
         self.traceAlreadyCreated[traceName] = False #Keep track of whether the trace has already been added
         error = False
         message = "Added trace {0}\n plot: {1}\n xUnit: {2}\n xLabel: {3}\n comment: {4}".format(traceName, plotName, xUnit, xLabel, comment)
+        return (error, message)
+
+    @QtCore.pyqtSlot(str, str)
+    @scriptCommand
+    def onFit(self, fitName, traceName):
+        fitName = str(fitName)
+        traceName = str(traceName)
+        fitAnalysisIndex = self.fitWidget.analysisNameComboBox.findText('fitAnalysisName')
+        if fitAnalysisIndex < 0:
+            message = "Fit {0} does not exist.".format(fitName)
+            error = True
+        else:
+            self.fitWidget.analysisNameComboBox.setIndex(fitAnalysisIndex)
+            message = "Fit set to {0}".format(fitName)
+            error = False
         return (error, message)
 
     @QtCore.pyqtSlot(float, float, str)

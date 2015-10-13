@@ -51,6 +51,7 @@ class Script(QtCore.QThread):
     addPlotSignal = QtCore.pyqtSignal(str) #arg: plot name
     abortScanSignal = QtCore.pyqtSignal()
     createTraceSignal = QtCore.pyqtSignal(list) #arg: trace creation data
+    fitSignal = QtCore.pyqtSignal(str, str) #args: fitName, traceName
     
     def __init__(self, fullname='', code='', parent=None):
         super(Script,self).__init__(parent)
@@ -319,6 +320,13 @@ class Script(QtCore.QThread):
         comment: str"""
         traceCreationData = [traceName, plotName, xUnit, xLabel, comment]
         self.createTraceSignal.emit(traceCreationData)
+
+    @scriptFunction()
+    def fit(self, fitName, traceName):
+        """fit(fitName, traceName)
+
+        fit the data in 'traceName' using 'fitName'"""
+        self.fitSignal.emit(fitName, traceName)
         
     @scriptFunction(waitForGui=False)
     def waitForScan(self):
