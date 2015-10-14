@@ -17,6 +17,7 @@ import VoltageTableModel
 from modules import MagnitudeUtilit
 from voltageControl.VoltageLocalAdjust import VoltageLocalAdjust
 from reportlab.pdfbase.pdfdoc import Destination
+import functools
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\VoltageControl.ui')
@@ -81,6 +82,9 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
             logger.error("cannot apply voltages. Ignored for now. Exception:{0}".format(e))
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.shuttlingGraph.setPosition )
+        visibility = getattr(self.settings, 'isVisible', False)
+        #set it visible half a second later, so that main UI is shown first, and icons are stacked correctly in Win7 taskbar
+        QtCore.QTimer.singleShot(500, functools.partial(self.setVisible, visibility))
     
     def onLoadVoltage(self, path, shuttledefpath ):
         self.voltageBlender.loadVoltage(path)
@@ -114,6 +118,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
     
     def saveConfig(self):
         self.settings.state = self.saveState()
+        self.settings.isVisible = self.isVisible()
         self.config[self.configname] = self.settings
         self.adjustUi.saveConfig()
         self.globalAdjustUi.saveConfig()

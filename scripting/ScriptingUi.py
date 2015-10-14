@@ -6,6 +6,7 @@ Created on Jul 24, 2015
 
 import os.path
 import shutil
+import functools
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
@@ -105,7 +106,13 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.setWindowTitle(self.configname)
         self.setWindowIcon(QtGui.QIcon(":/other/icons/Terminal-icon.png"))
         self.statusLabel.setText("Idle")
-                
+
+        #load visibility
+        visible = self.config.get(self.configname+'.isVisible', True)
+        #set it visible 500 ms later, so that main UI is shown first, and icons are stacked correctly in Win7 taskbar
+        if visible: QtCore.QTimer.singleShot(500, self.show)
+        else: self.hide()
+
     @QtCore.pyqtSlot()
     def onStartScript(self):
         """Start script button is clicked"""
@@ -298,6 +305,7 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         """Save configuration."""
         self.config[self.configname+'.recentFiles'] = self.recentFiles
         self.config[self.configname+'.script.fullname'] = self.script.fullname
+        self.config[self.configname+'.isVisible'] = self.isVisible()
        
     def show(self):
         pos = self.config.get(self.configname+'.ScriptingUi.pos')
@@ -313,7 +321,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         if splitterVerticalState:
             self.splitterVertical.restoreState(splitterVerticalState)
         QtGui.QDialog.show(self)
-        self.isShown = True
 
     def onClose(self):
         self.config[self.configname+'.ScriptingUi.pos'] = self.pos()

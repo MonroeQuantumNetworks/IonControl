@@ -689,6 +689,10 @@ class PulseProgramSetUi(QtGui.QDialog):
         self.setWindowTitle('Pulse Program')
         self.setWindowFlags(QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QtGui.QIcon(":/petersIcons/icons/pulser1.png"))
+        visible = self.config.get(self.configname+'.isVisible', True)
+        #set it visible one second later, so that main UI is shown first, and icons are stacked correctly in Win7 taskbar
+        if visible: QtCore.QTimer.singleShot(1000, self.show)
+        else: self.hide()
 
     def addExperiment(self, experiment, parameterdict=dict(), parameterChangedSignal=None):
         if not experiment in self.pulseProgramSet:
@@ -734,6 +738,7 @@ class PulseProgramSetUi(QtGui.QDialog):
     def saveConfig(self):
         self.config[self.configname+'.pos'] = self.pos()
         self.config[self.configname+'.size'] = self.size()
+        self.config[self.configname+'.isVisible'] = self.isVisible()
         if self.isShown:
             for page in self.pulseProgramSet.values():
                 page.saveConfig()
