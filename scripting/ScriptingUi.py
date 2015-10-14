@@ -107,12 +107,6 @@ class ScriptingUi(ScriptingWidget,ScriptingBase):
         self.setWindowIcon(QtGui.QIcon(":/other/icons/Terminal-icon.png"))
         self.statusLabel.setText("Idle")
 
-        #load visibility
-        visible = self.config.get(self.configname+'.isVisible', False)
-        #set it visible 500 ms later, so that main UI is shown first, and icons are stacked correctly in Win7 taskbar
-        if visible: QtCore.QTimer.singleShot(500, self.show)
-        else: self.hide()
-
     @QtCore.pyqtSlot()
     def onStartScript(self):
         """Start script button is clicked"""

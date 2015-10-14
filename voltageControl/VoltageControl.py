@@ -82,10 +82,7 @@ class VoltageControl(VoltageControlForm, VoltageControlBase ):
             logger.error("cannot apply voltages. Ignored for now. Exception:{0}".format(e))
         self.adjustUi.shuttleOutput.connect( self.voltageBlender.shuttle )
         self.voltageBlender.shuttlingOnLine.connect( self.adjustUi.shuttlingGraph.setPosition )
-        visibility = getattr(self.settings, 'isVisible', False)
-        #set it visible half a second later, so that main UI is shown first, and icons are stacked correctly in Win7 taskbar
-        QtCore.QTimer.singleShot(500, functools.partial(self.setVisible, visibility))
-    
+
     def onLoadVoltage(self, path, shuttledefpath ):
         self.voltageBlender.loadVoltage(path)
         self.adjustUi.loadShuttleDef( shuttledefpath )

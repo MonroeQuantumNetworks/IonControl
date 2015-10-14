@@ -639,15 +639,32 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 dialog = QtGui.QPrintDialog(printer, self)
                 dialog.setWindowTitle("Print Document")
                 if dialog.exec_() != QtGui.QDialog.Accepted:
-                    return;    
+                    return
             printer.setResolution(self.preferencesUi.preferences().printPreferences.printResolution)
     
             pdfPrinter = QtGui.QPrinter()
-            pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat);
+            pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat)
             pdfPrinter.setOutputFileName(DataDirectory.DataDirectory().sequencefile(target+".pdf")[0])
-        
-            
             self.currentTab.onPrint(target, printer, pdfPrinter, self.preferencesUi.preferences().printPreferences)
+
+    def show(self):
+        """show ExperimentUi, and any of the other main windows which were previously visible"""
+        super(ExperimentUi, self).show()
+
+        pulseProgramVisible = self.config.get(self.pulseProgramDialog.configname+'.isVisible', True) #pulse program defaults to visible
+        if pulseProgramVisible: self.pulseProgramDialog.show()
+        else: self.pulseProgramDialog.hide()
+
+        scriptingWindowVisible = self.config.get(self.scriptingWindow.configname+'.isVisible', False)
+        if scriptingWindowVisible: self.scriptingWindow.show()
+        else: self.scriptingWindow.hide()
+
+        if self.voltagesEnabled:
+            voltageControlWindowVisible = getattr(self.voltageControlWindow.settings, 'isVisible', False)
+            if voltageControlWindowVisible: self.voltageControlWindow.show()
+            else: self.voltageControlWindow.hide()
+
+        self.raise_()
 
     def setupFPGAs(self):
         """Setup all Opal Kelly FPGAs"""
