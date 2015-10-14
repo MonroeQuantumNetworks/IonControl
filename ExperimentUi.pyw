@@ -75,7 +75,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.triggerNameDict = ChannelNameDict( self.triggerNameDict.names )
         self.triggerNameSignal = DataChanged()
         if self.loggingLevel not in self.levelValueList: self.loggingLevel = logging.INFO
-        self.printMenu = None
         self.dbConnection = project.dbConnection
 
     def __enter__(self):
@@ -202,7 +201,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         self.preferencesUi = PreferencesUi(config, self)
         self.preferencesUi.setupUi(self.preferencesUi)
-        self.preferencesUiDock = QtGui.QDockWidget("Preferences")
+        self.preferencesUiDock = QtGui.QDockWidget("Print Preferences")
         self.preferencesUiDock.setWidget(self.preferencesUi)
         self.preferencesUiDock.setObjectName("_preferencesUi")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.preferencesUiDock)
@@ -523,20 +522,20 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             self.initMenu()
         
     def initMenu(self):
+        """setup print and view menus"""
+        #view menu
         self.menuView.clear()
         if hasattr(self.currentTab,'viewActions'):
             self.menuView.addActions(self.currentTab.viewActions())
         dockList = self.findChildren(QtGui.QDockWidget)
         for dock in dockList:
             self.menuView.addAction(dock.toggleViewAction())
-        # Print menu
-        if self.printMenu is not None:
-            self.printMenu.clear()
-        else:
-            self.printMenu = self.menuFile.addMenu("Print")
+
+        #print menu
+        self.menuPrint.clear()
         if hasattr(self.currentTab,'printTargets'):
             for plot in self.currentTab.printTargets():
-                action = self.printMenu.addAction( plot )
+                action = self.menuPrint.addAction( plot )
                 action.triggered.connect( partial(self.onPrint, plot ))
 
     def onPulses(self):
