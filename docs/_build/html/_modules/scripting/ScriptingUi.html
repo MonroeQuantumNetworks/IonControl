@@ -81,7 +81,10 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">IonControl.scripting module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimentUi_manual.html">User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs.html">Code Documentation</a></li>
 </ul>
 
             
@@ -135,6 +138,7 @@
 
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">functools</span>
 
 <span class="kn">from</span> <span class="nn">PyQt4</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtGui</span>
 <span class="kn">import</span> <span class="nn">PyQt4.uic</span>
@@ -234,7 +238,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="s">&quot;:/other/icons/Terminal-icon.png&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statusLabel</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s">&quot;Idle&quot;</span><span class="p">)</span>
-                
+
+        <span class="c">#load visibility</span>
+        <span class="n">visible</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;.isVisible&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="c">#set it visible 500 ms later, so that main UI is shown first, and icons are stacked correctly in Win7 taskbar</span>
+        <span class="k">if</span> <span class="n">visible</span><span class="p">:</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QTimer</span><span class="o">.</span><span class="n">singleShot</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+
     <span class="nd">@QtCore.pyqtSlot</span><span class="p">()</span>
 <div class="viewcode-block" id="ScriptingUi.onStartScript"><a class="viewcode-back" href="../../scripting.html#scripting.ScriptingUi.ScriptingUi.onStartScript">[docs]</a>    <span class="k">def</span> <span class="nf">onStartScript</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Start script button is clicked&quot;&quot;&quot;</span>
@@ -427,6 +437,7 @@
         <span class="sd">&quot;&quot;&quot;Save configuration.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;.recentFiles&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recentFiles</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;.script.fullname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">script</span><span class="o">.</span><span class="n">fullname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;.isVisible&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">isVisible</span><span class="p">()</span>
        </div>
     <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;.ScriptingUi.pos&#39;</span><span class="p">)</span>
@@ -442,7 +453,6 @@
         <span class="k">if</span> <span class="n">splitterVerticalState</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">splitterVertical</span><span class="o">.</span><span class="n">restoreState</span><span class="p">(</span><span class="n">splitterVerticalState</span><span class="p">)</span>
         <span class="n">QtGui</span><span class="o">.</span><span class="n">QDialog</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">isShown</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">onClose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">configname</span><span class="o">+</span><span class="s">&#39;.ScriptingUi.pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>

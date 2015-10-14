@@ -1,0 +1,94 @@
+User Manual
+===========
+
+.. _Introduction:
+
+Introduction
+------------
+
+There are two main top level programs in the IonControl software package:
+
+ExperimentUi.pyw
+    This is the main experimental control program.
+
+InstrumentLoggerUi.pyw
+    This is a separate program designed to read, log and plot data from any external instrument. Logged data is saved to a database. The program can plot historical data from the database, including data from the main experimental control program.
+
+The IonControl program is based around the following concepts, which are explained in detail below:
+1) The :ref:`PulseProgram`. The pulse program is a "pythonic" text file which is compiled to a
+
+
+.. _Projects:
+
+Projects
+--------
+
+.. _PulseProgram:
+
+Pulse Program
+-------------
+
+.. _GlobalVariables:
+
+Global Variables
+----------------
+
+.. _Scans:
+
+Scans
+-----
+
+.. _ExternalVariables:
+
+External Variables
+------------------
+
+.. _VoltageControl:
+
+Voltage Control
+---------------
+
+.. _DedicatedCounters:
+
+Dedicated Counters
+------------------
+
+.. _Autoloaders:
+
+Autoloader
+----------
+
+.. _Scripting:
+
+Scripting
+---------
+
+.. _MeasurementLog:
+
+Measurement Log
+---------------
+
+.. _GateSequences:
+
+Gate Sequences
+--------------
+
+.. _InstrumentLogger:
+
+Instrument Logger
+-----------------
+
+.. _AWG:
+
+AWG
+---
+
+.. _Printing:
+
+Printing
+--------
+
+.. _Extending:
+
+Extending the Code
+------------------

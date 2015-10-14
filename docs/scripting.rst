@@ -1,23 +1,20 @@
-IonControl.scripting module
-===========================
+scripting module
+================
 
-Files
------
-
-IonControl.scripting.ScriptingUi
---------------------------------
+scripting.ScriptingUi
+---------------------
 
 .. automodule:: scripting.ScriptingUi
     :members:
 
-IonControl.scripting.Script
----------------------------
+scripting.Script
+----------------
 
 .. automodule:: scripting.Script
     :members:
 
-IonControl.scripting.ScriptHandler
-----------------------------------
+scripting.ScriptHandler
+-----------------------
 
 .. automodule:: scripting.ScriptHandler
     :members:

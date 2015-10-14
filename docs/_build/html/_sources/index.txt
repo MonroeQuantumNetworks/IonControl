@@ -3,15 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to IonControl's documentation!
-======================================
+Documentation for IonControl Project
+====================================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   scripting
+   installation
+   experimentUi_manual
+   instrumentLoggerUi_manual
+   docs
 
 Indices and tables
 ==================
