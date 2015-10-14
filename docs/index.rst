@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    installation
+   hardware
    experimentUi_manual
    instrumentLoggerUi_manual
    docs

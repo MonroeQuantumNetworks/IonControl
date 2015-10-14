@@ -1,3 +1,5 @@
+.. _Installation:
+
 Installation
 ============
 
@@ -81,18 +83,23 @@ Database Server
 
 * Close pgAdmin III
 
+Git
+---
+
+.. _SourceTree: https://www.sourcetreeapp.com/
+
+* Download and install SourceTree_, which is a convenient front-end for Git
+* Click Clone/New
+* Set the source path to be wherever you're getting the code from
+* set the destination to be wherever you would like the code to go (this can be anywhere convenient)
+
 Development Tools
 -----------------
 
-.. _SourceTree: https://www.sourcetreeapp.com/
 .. _pyCharm: https://www.jetbrains.com/pycharm/
 .. _Eclipse: https://eclipse.org/downloads/
 
 If you plan to make changes to the code, you will need a python IDE and version control software.
-
-**Version control:**
-
-For version control we use Git. We have been using SourceTree_ as our Git front end.
 
 **IDE:**
 

@@ -32,7 +32,7 @@
   
     <link rel="top" title="IonControl 0.8 documentation" href="index.html"/>
         <link rel="next" title="Instrument Logger User Manual" href="instrumentLoggerUi_manual.html"/>
-        <link rel="prev" title="Installation" href="installation.html"/> 
+        <link rel="prev" title="Hardware" href="hardware.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -83,22 +83,26 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">User Manual</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#projects">Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#projects">Projects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#project-selection">Project Selection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#experiment-configuration">Experiment Configuration</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#pulse-program">Pulse Program</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#global-variables">Global Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#scans">Scans</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#external-variables">External Variables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#voltage-control">Voltage Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#external-parameters">External Parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dedicated-counters">Dedicated Counters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#autoloader">Autoloader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#scripting">Scripting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#measurement-log">Measurement Log</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#gate-sequences">Gate Sequences</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#instrument-logger">Instrument Logger</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#awg">AWG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#printing">Printing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#voltage-control">Voltage Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#awg">AWG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#extending-the-code">Extending the Code</a></li>
 </ul>
 </li>
@@ -150,59 +154,140 @@
             
   <div class="section" id="user-manual">
 <h1>User Manual<a class="headerlink" href="#user-manual" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#introduction" id="id10">Introduction</a></li>
+<li><a class="reference internal" href="#projects" id="id11">Projects</a><ul>
+<li><a class="reference internal" href="#project-selection" id="id12">Project Selection</a></li>
+<li><a class="reference internal" href="#experiment-configuration" id="id13">Experiment Configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pulse-program" id="id14">Pulse Program</a></li>
+<li><a class="reference internal" href="#global-variables" id="id15">Global Variables</a></li>
+<li><a class="reference internal" href="#scans" id="id16">Scans</a></li>
+<li><a class="reference internal" href="#external-parameters" id="id17">External Parameters</a></li>
+<li><a class="reference internal" href="#dedicated-counters" id="id18">Dedicated Counters</a></li>
+<li><a class="reference internal" href="#autoloader" id="id19">Autoloader</a></li>
+<li><a class="reference internal" href="#scripting" id="id20">Scripting</a></li>
+<li><a class="reference internal" href="#measurement-log" id="id21">Measurement Log</a></li>
+<li><a class="reference internal" href="#gate-sequences" id="id22">Gate Sequences</a></li>
+<li><a class="reference internal" href="#printing" id="id23">Printing</a></li>
+<li><a class="reference internal" href="#voltage-control" id="id24">Voltage Control</a></li>
+<li><a class="reference internal" href="#awg" id="id25">AWG</a></li>
+<li><a class="reference internal" href="#extending-the-code" id="id26">Extending the Code</a></li>
+</ul>
+</div>
 <div class="section" id="introduction">
-<span id="id1"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
-<p>The IonControl program is based around the following concepts, which are explained in detail below:</p>
+<span id="id1"></span><h2><a class="toc-backref" href="#id10">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The IonControl program is based around the following concepts, which are summarized below:</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p class="first"><a class="reference internal" href="#pulseprogram"><span>Pulse Program</span></a>. The pulse program is a &#8220;pythonic&#8221; text file which is executed by a microcontroller implemented on the FPGA. The pulse program controls:</p>
 <blockquote>
 <div><ol class="arabic simple">
-<li>The <a class="reference internal" href="#pulseprogram"><span>Pulse Program</span></a>. The pulse program is a &#8220;pythonic&#8221; text file which is executed by a microcontroller implemented on the FPGA.</li>
+<li>The timing of all TTL outputs</li>
+<li>Counting on TTL inputs</li>
+<li>Monitoring of ADC inputs</li>
+<li>programming of DDSs</li>
+<li>programming of DACs</li>
+<li>behavior of FPGA PI loops</li>
+</ol>
+</div></blockquote>
+</li>
+</ol>
+<p>The pulse program can execute standard control structures, such as loops and conditionals, and can do simple math. It can also read data from on-board RAM.</p>
+<p>All of this is implemented in firmware (known as a &#8220;bitfile&#8221;) which is written to the FPGA. At the moment (10/14/2015), bitfiles have been produced for the following two FPGA modules:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Opal Kelly XEM6010-LX45</li>
+<li>Opal Kelly XEM6010-LX150</li>
+</ol>
+</div></blockquote>
+<p>Other FPGA modules could in principle be added at some point in the future.</p>
+<ol class="arabic" start="2">
+<li><p class="first"><a class="reference internal" href="#scans"><span>Scans</span></a>. One dimensional scans are controlled by three separate interfaces:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>The <strong>scan</strong> interface allows a one-dimensional scan over any parameter defined in the pulse program, or any other instrument connected to the computer that is defined in the software. At each point in the scan, data is returned by the FPGA. The results of a scan are saved to a text file, and also registered in the <a class="reference internal" href="#measurementlog"><span>Measurement Log</span></a>.</li>
+<li>The <strong>evaluation</strong> interface determines how that data is plotted. An evaluation is a defined method for taking a set of data and reducing it to a single point for plotting, such as &#8220;mean&#8221; or &#8220;discriminator&#8221; or &#8220;parity.&#8221; As many evaluations as needed can be added. The plot windows are completely reconfigurable; you can add as many plot windows as necessary, and each evaluation can be directed to any plot window.</li>
+<li>The <strong>analysis</strong> interface determines how the data is fit at the conclusion of the scan. In addition, the analysis interface can push the results of a fit to a global variable, which can in turn be referenced by any part of the program. In this way, calibrations are straightforward.</li>
+</ol>
+</div></blockquote>
+</li>
+<li><p class="first"><a class="reference internal" href="#dedicatedcounters"><span>Dedicated Counters</span></a>. The dedicated counters interface allows continuous monitoring of the counters and ADCs connected to the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.</p>
+</li>
+<li><p class="first"><a class="reference internal" href="#scripting"><span>Scripting</span></a>. The scripting interface allows for the creation of extremely complex, automated experiments. It executes Python scripts, but adds a number of commands which allow control over the experiment.</p>
+</li>
 </ol>
 </div></blockquote>
 </div>
 <div class="section" id="projects">
-<span id="id2"></span><h2>Projects<a class="headerlink" href="#projects" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2><a class="toc-backref" href="#id11">Projects</a><a class="headerlink" href="#projects" title="Permalink to this headline">¶</a></h2>
+<p>All of the program settings, GUI configuration, data, etc. are attached to a specific <em>project</em>. Oftentimes only a single project is necessary for a given lab. However, if for whatever reason you need to be able to switch between totally different configurations of the program, the project functionality will allow this.</p>
+<div class="section" id="project-selection">
+<h3><a class="toc-backref" href="#id12">Project Selection</a><a class="headerlink" href="#project-selection" title="Permalink to this headline">¶</a></h3>
+<p>When you start the program for the very first time, you will be asked to select a base directory. This will be the directory under which will be the individual project directories. Once you select a base directory, the project selection GUI will appear:</p>
+<div class="figure" id="id8">
+<a class="reference internal image-reference" href="_images/ProjectSelection.png"><img alt="_images/ProjectSelection.png" src="_images/ProjectSelection.png" style="width: 380.0px; height: 363.0px;" /></a>
+<p class="caption"><span class="caption-text">Project selection GUI.</span></p>
+</div>
+<p>Existing projects can be selected in the table, or a new project can be added by typing a name into the editor and clicking &#8220;create.&#8221; If &#8220;Set as default&#8221; is checked, the GUI will not be shown the next time the program opens. Instead, the selected project will be used. A different base directory can also be selected via this GUI.</p>
+<p>This GUI creates a configuration file in the source directory: <em>\IonControl\config\ProjectConfig.yml</em>. This file contains three lines, specifying the base directory, the project name, and whether or not to show the project selection GUI the next time the program starts. The GUI can be bypassed entirely by editing this file directly. The GUI is simply an interface for editing the config file.</p>
+<p>If you wish to see the project selection GUI the next time the program starts up, you can do so via the main control program by selecting File &gt; Project. This will display the currently selected project along with its configuration, and give you the option to show the selection GUI on next startup. Alternatively, you can directly edit ProjectConfig.yml, and change <em>showGui</em> to <em>True</em>.</p>
+</div>
+<div class="section" id="experiment-configuration">
+<h3><a class="toc-backref" href="#id13">Experiment Configuration</a><a class="headerlink" href="#experiment-configuration" title="Permalink to this headline">¶</a></h3>
+<p>Once a project is selected, the experiment configuration GUI will appear:</p>
+<div class="figure" id="id9">
+<a class="reference internal image-reference" href="_images/ExptConfig.png"><img alt="_images/ExptConfig.png" src="_images/ExptConfig.png" style="width: 674.0px; height: 897.0px;" /></a>
+<p class="caption"><span class="caption-text">Experiment configuration GUI.</span></p>
+</div>
+<p>This GUI allows you to select what pieces of hardware or types of hardware are connected to the computer, and how it is configured. It also allows you to selectively enable or disable specific software features and establishes the connection to the database. For example, select <em>Opal Kelly FPGA: Pulser</em> from the &#8220;Available Hardware&#8221; drop down menu, then click <a class="reference internal" href="_images/edit-add.png"><img alt="add" src="_images/edit-add.png" style="width: 14.4px; height: 14.4px;" /></a>. This will add that item to the list of available hardware. A tab will appear with configuration data specific to that item. For the FPGA, click &#8220;Scan&#8221; to scan for Opal Kelly FPGA devices connected to the computer, which will populate the device drop down menu. Select from that menu which FPGA to use. Click &#8220;Upload&#8221; to upload the selected bitfile to the selected FPGA. Click &#8220;uploadOnStartup&#8221; to have the program automatically upload the bitfile whenever the program starts (this is normally not necessary).</p>
+<p>&#8220;Software Features&#8221; works the same way as does the hardware. Under &#8220;Software Features,&#8221; select <em>Pulser</em> and click <a class="reference internal" href="_images/edit-add.png"><img alt="add" src="_images/edit-add.png" style="width: 14.4px; height: 14.4px;" /></a>. This has one configuration field, which is what piece of hardware to use for the pulser. Select <em>Opal Kelly FPGA: Pulser</em> from the dropdown. Other hardware/software features can be added similarly.</p>
+<p>Under &#8220;Database connection,&#8221; type in the password you set up during <a class="reference internal" href="installation.html#installation"><span>Installation</span></a>.</p>
+<p>If &#8220;Set as default&#8221; is checked, the GUI will not be shown the next time the program starts.</p>
+<p>This GUI creates a configuration file in the project directory: <em>\YourBaseDirectory\YourProjectName\config\ExptConfig.yml</em>. This file contains a list of hardware, software, the configuration of each, and the database connection. As with the project selection GUI, the experiment configuration GUI is a front end for editing this file. The GUI can be bypassed by editing the file directly. As with the project configuration file, if you wish to see the experiment configuration GUI on next program start after it was already set to default, you can do so via the main control program by selecting File &gt; Project. Alternatively, you can edit ExptConfig.yml and change <em>showGui</em> to <em>True</em>.</p>
+</div>
 </div>
 <div class="section" id="pulse-program">
-<span id="pulseprogram"></span><h2>Pulse Program<a class="headerlink" href="#pulse-program" title="Permalink to this headline">¶</a></h2>
+<span id="pulseprogram"></span><h2><a class="toc-backref" href="#id14">Pulse Program</a><a class="headerlink" href="#pulse-program" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="global-variables">
-<span id="globalvariables"></span><h2>Global Variables<a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h2>
+<span id="globalvariables"></span><h2><a class="toc-backref" href="#id15">Global Variables</a><a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="scans">
-<span id="id3"></span><h2>Scans<a class="headerlink" href="#scans" title="Permalink to this headline">¶</a></h2>
+<span id="id3"></span><h2><a class="toc-backref" href="#id16">Scans</a><a class="headerlink" href="#scans" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="external-variables">
-<span id="externalvariables"></span><h2>External Variables<a class="headerlink" href="#external-variables" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="voltage-control">
-<span id="voltagecontrol"></span><h2>Voltage Control<a class="headerlink" href="#voltage-control" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="external-parameters">
+<span id="externalparameters"></span><h2><a class="toc-backref" href="#id17">External Parameters</a><a class="headerlink" href="#external-parameters" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="dedicated-counters">
-<span id="dedicatedcounters"></span><h2>Dedicated Counters<a class="headerlink" href="#dedicated-counters" title="Permalink to this headline">¶</a></h2>
+<span id="dedicatedcounters"></span><h2><a class="toc-backref" href="#id18">Dedicated Counters</a><a class="headerlink" href="#dedicated-counters" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="autoloader">
-<span id="autoloaders"></span><h2>Autoloader<a class="headerlink" href="#autoloader" title="Permalink to this headline">¶</a></h2>
+<span id="id4"></span><h2><a class="toc-backref" href="#id19">Autoloader</a><a class="headerlink" href="#autoloader" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="scripting">
-<span id="id4"></span><h2>Scripting<a class="headerlink" href="#scripting" title="Permalink to this headline">¶</a></h2>
+<span id="id5"></span><h2><a class="toc-backref" href="#id20">Scripting</a><a class="headerlink" href="#scripting" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="measurement-log">
-<span id="measurementlog"></span><h2>Measurement Log<a class="headerlink" href="#measurement-log" title="Permalink to this headline">¶</a></h2>
+<span id="measurementlog"></span><h2><a class="toc-backref" href="#id21">Measurement Log</a><a class="headerlink" href="#measurement-log" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="gate-sequences">
-<span id="gatesequences"></span><h2>Gate Sequences<a class="headerlink" href="#gate-sequences" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="instrument-logger">
-<span id="instrumentlogger"></span><h2>Instrument Logger<a class="headerlink" href="#instrument-logger" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="awg">
-<span id="id5"></span><h2>AWG<a class="headerlink" href="#awg" title="Permalink to this headline">¶</a></h2>
+<span id="gatesequences"></span><h2><a class="toc-backref" href="#id22">Gate Sequences</a><a class="headerlink" href="#gate-sequences" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="printing">
-<span id="id6"></span><h2>Printing<a class="headerlink" href="#printing" title="Permalink to this headline">¶</a></h2>
+<span id="id6"></span><h2><a class="toc-backref" href="#id23">Printing</a><a class="headerlink" href="#printing" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="voltage-control">
+<span id="voltagecontrol"></span><h2><a class="toc-backref" href="#id24">Voltage Control</a><a class="headerlink" href="#voltage-control" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="awg">
+<span id="id7"></span><h2><a class="toc-backref" href="#id25">AWG</a><a class="headerlink" href="#awg" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="extending-the-code">
-<span id="extending"></span><h2>Extending the Code<a class="headerlink" href="#extending-the-code" title="Permalink to this headline">¶</a></h2>
+<span id="extending"></span><h2><a class="toc-backref" href="#id26">Extending the Code</a><a class="headerlink" href="#extending-the-code" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -216,7 +301,7 @@
         <a href="instrumentLoggerUi_manual.html" class="btn btn-neutral float-right" title="Instrument Logger User Manual" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="hardware.html" class="btn btn-neutral" title="Hardware" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
