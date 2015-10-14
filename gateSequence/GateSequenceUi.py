@@ -22,6 +22,7 @@ import xml.etree.ElementTree as ElementTree
 from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
     xmlEncodeDictionary, xmlParseDictionary
 from string import split
+from ProjectConfig.Project import getProject
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GateSequence.ui')
@@ -112,8 +113,7 @@ class GateSequenceUi(Form,Base):
     def __init__(self,parent=None):
         Form.__init__(self)
         Base.__init__(self,parent)
-        
-        
+
     def postInit(self,name,config,pulseProgram):
         self.config = config
         self.configname = "GateSequenceUi."+name
@@ -122,7 +122,6 @@ class GateSequenceUi(Form,Base):
         self.gateSequenceContainer = GateSequenceContainer(self.gatedef)
         self.gateSequenceCompiler = GateSequenceCompiler(pulseProgram)
 
-    
     def setupUi(self,parent):
         super(GateSequenceUi,self).setupUi(parent)
         self.setSettings( self.settings )
@@ -136,7 +135,12 @@ class GateSequenceUi(Form,Base):
         self.GateSequenceBox.currentIndexChanged[str].connect( self.onGateSequenceChanged )
         self.GateDefinitionBox.currentIndexChanged[str].connect( self.onGateDefinitionChanged )
         self.debugCheckBox.stateChanged.connect( self.onDebugChanged )
-        
+        self.project = getProject()
+        self.defaultGateSequencesDir = self.project.configDir+'\\GateSequences'
+        if not os.path.exists(self.defaultGateSequencesDir):
+            exampleGateSequencesDir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'config\\GateSequences')) #/IonControl/config/GateSequences directory
+            shutil.copytree(exampleGateSequencesDir, self.defaultGateSequencesDir) #Copy over all example gate sequence files
+
     def getSettings(self):
         logger = logging.getLogger(__name__)
         logger.debug( "GateSequenceUi GetSettings {0}".format(self.settings.__dict__) )

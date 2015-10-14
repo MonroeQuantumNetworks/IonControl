@@ -39,6 +39,7 @@ from PulseProgram import Variable, OPS
 import modules.magnitude as magnitude
 import functools
 import yaml
+import shutil
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\PulseProgram.ui')
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType(uipath)
@@ -161,6 +162,20 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.channelNameData = channelNameData
         self.pppCompileException = None
         self.globaldict = parameterdict
+        self.project = getProject()
+        self.defaultPPPDir = self.project.configDir+'\\PulseProgramsPlus'
+        if not os.path.exists(self.defaultPPPDir):
+            os.makedirs(self.defaultPPPDir)
+            examplePPPDir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'config\\PulseProgramsPlus')) #/IonControl/config/PulseProgramsPlus directory
+            for basename in os.listdir(examplePPPDir):
+                if basename.endswith('.ppp'):
+                    pathname = os.path.join(examplePPPDir, basename)
+                    if os.path.isfile(pathname):
+                        shutil.copy(pathname, self.defaultPPPDir) #Copy over all example PPP pulse programs
+        self.defaultRAMDir = self.project.configDir+'\\RAMFiles'
+        if not os.path.exists(self.defaultRAMDir):
+            exampleRAMDir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'config\\RAMFiles')) #/IonControl/config/RAMFiles directory
+            shutil.copytree(exampleRAMDir, self.defaultRAMDir) #Copy over all example RAM files
 
     def setupUi(self,experimentname,parent):
         super(PulseProgramUi,self).setupUi(parent)
@@ -409,7 +424,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
     
     def onLoadRamFile(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file', getProject().configDir, filter='*.yml'))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file', self.defaultRAMDir, filter='*.yml'))
         if path:
             self.loadRamFile(path)
 
@@ -456,7 +471,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.updateSaveStatus()
 
     def onLoad(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file',getProject().configDir))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open Pulse Programmer file', self.defaultPPPDir, filter='*.ppp *.pp'))
         if path!="":
             self.adaptiveLoadFile(path)
         self.updateSaveStatus()
