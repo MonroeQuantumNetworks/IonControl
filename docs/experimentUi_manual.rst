@@ -1,6 +1,10 @@
 User Manual
 ===========
 
+.. contents:: Table of Contents
+   :depth: 2
+   :local:
+
 .. _Introduction:
 
 Introduction
@@ -8,7 +12,23 @@ Introduction
 
 The IonControl program is based around the following concepts, which are explained in detail below:
 
-    1) The :ref:`PulseProgram`. The pulse program is a "pythonic" text file which is executed by a microcontroller implemented on the FPGA.
+    1) The :ref:`PulseProgram`. The pulse program is a "pythonic" text file which is executed by a microcontroller implemented on the FPGA. The pulse program controls:
+
+        1) The timing of all TTL outputs
+        2) Counting on TTL inputs
+        3) Monitoring of ADC inputs
+        4) programming of DDSs
+        5) programming of DACs
+        6) behavior of FPGA PI loops
+
+    The pulse program can execute standard control structures, such as loops and conditionals, and can do simple math.
+
+    All of this is implemented in firmware (known as a "bitfile") which is written to the FPGA. At the moment (10/14/2015), bitfiles have been produced for the following two FPGA modules:
+
+        1) Opal Kelly XEM6010-LX45
+        2) Opal Kelly XEM6010-LX150
+
+    2) :ref:`Scans`.
 
 
 .. _Projects:
@@ -31,22 +51,17 @@ Global Variables
 Scans
 -----
 
-.. _ExternalVariables:
+.. _ExternalParameters:
 
-External Variables
-------------------
-
-.. _VoltageControl:
-
-Voltage Control
----------------
+External Parameters
+-------------------
 
 .. _DedicatedCounters:
 
 Dedicated Counters
 ------------------
 
-.. _Autoloaders:
+.. _Autoloader:
 
 Autoloader
 ----------
@@ -66,20 +81,20 @@ Measurement Log
 Gate Sequences
 --------------
 
-.. _InstrumentLogger:
+.. _Printing:
 
-Instrument Logger
------------------
+Printing
+--------
+
+.. _VoltageControl:
+
+Voltage Control
+---------------
 
 .. _AWG:
 
 AWG
 ---
-
-.. _Printing:
-
-Printing
---------
 
 .. _Extending:
 
