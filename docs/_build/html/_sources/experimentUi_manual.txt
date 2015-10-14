@@ -73,12 +73,17 @@ Once a project is selected, the experiment configuration GUI will appear:
 
    Experiment configuration GUI.
 
-.. |add| image:: images/edit-add.png
+.. |add| image:: images/icons/edit-add.png
+   :scale: 30 %
+
+.. |remove| image:: images/icons/edit_remove.png
    :scale: 30 %
 
 This GUI allows you to select what pieces of hardware or types of hardware are connected to the computer, and how it is configured. It also allows you to selectively enable or disable specific software features and establishes the connection to the database. For example, select *Opal Kelly FPGA: Pulser* from the "Available Hardware" drop down menu, then click |add|. This will add that item to the list of available hardware. A tab will appear with configuration data specific to that item. For the FPGA, click "Scan" to scan for Opal Kelly FPGA devices connected to the computer, which will populate the device drop down menu. Select from that menu which FPGA to use. Click "Upload" to upload the selected bitfile to the selected FPGA. Click "uploadOnStartup" to have the program automatically upload the bitfile whenever the program starts (this is normally not necessary).
 
-"Software Features" works the same way as does the hardware. Under "Software Features," select *Pulser* and click |add|. This has one configuration field, which is what piece of hardware to use for the pulser. Select *Opal Kelly FPGA: Pulser* from the dropdown. Other hardware/software features can be added similarly.
+"Software Features" works the same way as does the hardware. Under "Software Features," select *Pulser* and click |add| . This has one configuration field, which is what piece of hardware to use for the pulser. Select *Opal Kelly FPGA: Pulser* from the dropdown. Other hardware/software features can be added similarly.
+
+Each hardware and software item has an enable checkbox next to it. Unchecking this disables that item, and is functionally equivalent to removing that item completely by clicking |remove| . The only difference is that if an item is removed, its configuration data is deleted. If an item is unchecked, its configuration data remains. Therefore, use the enable checkbox for items you wish to remove only temporarily.
 
 Under "Database connection," type in the password you set up during :ref:`Installation`.
 
@@ -90,6 +95,55 @@ This GUI creates a configuration file in the project directory: *\\YourBaseDirec
 
 Pulse Program
 -------------
+
+.. |pulses| image:: images/icons/pulser1.png
+   :scale: 20 %
+
+Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click |pulses| .
+
+The pulse program window consists of four sections. The primary section is the text file itself, which is under the heading *Pulse Program*. The two sections *Shutters, Triggers, Counters* and *Parameters* are interfaces to set the variables which are declared in the pulse program. The *Shutters, Triggers, Counters* window is for settings binary variables, while the *Parameters* window is for setting all other types of parameters. Finally, the *RAM Control* window is for directly writing to the RAM on the FPGA board.
+
+.. figure:: images/PulseProgram.png
+   :scale: 100 %
+
+   The pulse program interface
+
+The pulse program written here is run on the FPGA. It is compiled to a machine code that contains microcontroller instructions that are understood by the FPGA.
+
+Pulse Program Syntax
+~~~~~~~~~~~~~~~~~~~~
+
+variable types
+``````````````
+
+- const
+   A constant value, which we typically use for things like DDS Channels, e.g.:
+
+   .. code-block:: C
+
+      const DDSDetect = 0
+      const DDSCooling = 1
+
+- parameter
+
+- var
+   An internal variable. This is something that might change throughout the course of an experiment (unlike **const**), but which is set within the experiment rather than by the user, e.g.:
+
+   .. code-block:: C#
+
+      var experimentsleft = 100
+
+   where experimentleft is an internal variable which keeps track of how many experiments are remaining.
+
+- counter
+- shutter
+- masked_shutter
+- trigger
+- address
+- exitcode
+
+commands
+````````
 
 .. _GlobalVariables:
 
