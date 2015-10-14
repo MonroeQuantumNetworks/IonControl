@@ -310,7 +310,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 widget.analysisConfigurationChanged.connect( partial( self.todoList.populateAnalysisItem, name)  )
        
         #tabify 
-        self.tabifyDockWidget( self.ExternalParameterSelectionDock, self.ExternalParameterDock)
+        self.tabifyDockWidget(self.ExternalParameterSelectionDock, self.ExternalParameterDock)
+        self.tabifyDockWidget(self.ExternalParameterDock, self.instrumentLoggingDisplayDock)
         
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
@@ -352,6 +353,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         if 'MainWindow.isMaximized' in self.config:
             if self.config['MainWindow.isMaximized']:
                 self.showMaximized()
+        else:
+            self.showMaximized()
             
         self.dedicatedCountersWindow = DedicatedCounters(self.config, self.dbConnection, self.pulser, self.globalVariablesUi, self.ExternalParametersUi.callWhenDoneAdjusting )
         self.dedicatedCountersWindow.setupUi(self.dedicatedCountersWindow)
