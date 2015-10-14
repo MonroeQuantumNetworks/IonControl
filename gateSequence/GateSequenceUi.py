@@ -23,6 +23,7 @@ from modules.XmlUtilit import xmlEncodeAttributes, xmlParseAttributes,\
     xmlEncodeDictionary, xmlParseDictionary
 from string import split
 from ProjectConfig.Project import getProject
+import shutil
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GateSequence.ui')
