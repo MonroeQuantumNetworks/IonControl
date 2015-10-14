@@ -220,7 +220,7 @@ class GateSequenceUi(Form,Base):
         self.config[self.configname] = self.settings
                 
     def onLoadGateDefinition(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open Gate definition file:", self.settings.lastDir))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open Gate definition file:", self.defaultGateSequencesDir))
         if path!="":
             filedir, filename = os.path.split(path)
             self.settings.lastDir = filedir
@@ -245,7 +245,7 @@ class GateSequenceUi(Form,Base):
         self.valueChanged.emit()      
     
     def onLoadGateSequenceList(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open Gate Set file:", self.settings.lastDir))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, "Open Gate Set file:", self.defaultGateSequencesDir))
         if path!="":
             filedir, filename = os.path.split(path)
             self.settings.lastDir = filedir
