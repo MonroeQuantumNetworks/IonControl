@@ -38,6 +38,7 @@ from modules import DataDirectory
 from PulseProgram import Variable, OPS
 import modules.magnitude as magnitude
 import functools
+import yaml
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\PulseProgram.ui')
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType(uipath)
@@ -271,7 +272,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         return root
 
     def onImportXml(self, filename=None, mode="addMissing"):
-        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
+        filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filter="*.xml" )
         tree = ElementTree.parse(filename)
         element = tree.getroot()
         self.importXml(element, mode=mode)
@@ -408,29 +409,24 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         pass
     
     def onLoadRamFile(self):
-        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file', getProject().configDir))
+        path = str(QtGui.QFileDialog.getOpenFileName(self, 'Open RAM file', getProject().configDir, filter='*.yml'))
         if path:
             self.loadRamFile(path)
 
-    @property
+    @QtCore.pyqtProperty(list)
     def ramData(self):
-        return self.loadRamData(self.currentContext.ramFile)
+        return self.loadRamData(filename=self.currentContext.ramFile)
 
-    @property
+    @QtCore.pyqtProperty(bool)
     def writeRam(self):
         return self.currentContext.writeRam
 
     @file_data_cache(maxsize=3)
-    def loadRamData(self, filename):
-        loaded_data = list()
-        tree = ElementTree.parse(filename)
-        root = tree.getroot()
-        for child in root:
-            val = magnitude.mg( float(child.attrib['value']), child.attrib['unit'] )
-            encoding = child.attrib['encoding']
-            data = self.pulseProgram.convertParameter(val, encoding)
-            loaded_data.append(data)
-        return loaded_data
+    def loadRamData(self, filename=''):
+        """load in the data from a RAM file"""
+        with open(filename, 'r') as f:
+            yamldata = yaml.load(f)
+        return [self.pulseProgram.convertParameter(magnitude.mg(float(ramValue['value']), ramValue['unit']), ramValue['encoding']) for ramValue in yamldata]
 
     def loadRamFile(self, path):
         if path and os.path.exists(path):
