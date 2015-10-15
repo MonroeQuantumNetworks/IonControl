@@ -85,7 +85,12 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">User Manual</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#units">Units</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#global-variables">Global Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gui-reconfiguring">GUI reconfiguring</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#projects">Projects</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#project-selection">Project Selection</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#experiment-configuration">Experiment Configuration</a></li>
@@ -99,7 +104,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#global-variables">Global Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#globalvariables">Global Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#scans">Scans</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#external-parameters">External Parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dedicated-counters">Dedicated Counters</a></li>
@@ -164,32 +169,37 @@
 <div class="contents local topic" id="table-of-contents">
 <p class="topic-title first">Table of Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#introduction" id="id11">Introduction</a></li>
-<li><a class="reference internal" href="#projects" id="id12">Projects</a><ul>
-<li><a class="reference internal" href="#project-selection" id="id13">Project Selection</a></li>
-<li><a class="reference internal" href="#experiment-configuration" id="id14">Experiment Configuration</a></li>
+<li><a class="reference internal" href="#introduction" id="id12">Introduction</a><ul>
+<li><a class="reference internal" href="#units" id="id13">Units</a></li>
+<li><a class="reference internal" href="#global-variables" id="id14">Global Variables</a></li>
+<li><a class="reference internal" href="#gui-reconfiguring" id="id15">GUI reconfiguring</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pulse-program" id="id15">Pulse Program</a><ul>
-<li><a class="reference internal" href="#pulse-program-syntax" id="id16">Pulse Program Syntax</a></li>
+<li><a class="reference internal" href="#projects" id="id16">Projects</a><ul>
+<li><a class="reference internal" href="#project-selection" id="id17">Project Selection</a></li>
+<li><a class="reference internal" href="#experiment-configuration" id="id18">Experiment Configuration</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#global-variables" id="id17">Global Variables</a></li>
-<li><a class="reference internal" href="#scans" id="id18">Scans</a></li>
-<li><a class="reference internal" href="#external-parameters" id="id19">External Parameters</a></li>
-<li><a class="reference internal" href="#dedicated-counters" id="id20">Dedicated Counters</a></li>
-<li><a class="reference internal" href="#autoloader" id="id21">Autoloader</a></li>
-<li><a class="reference internal" href="#scripting" id="id22">Scripting</a></li>
-<li><a class="reference internal" href="#measurement-log" id="id23">Measurement Log</a></li>
-<li><a class="reference internal" href="#gate-sequences" id="id24">Gate Sequences</a></li>
-<li><a class="reference internal" href="#printing" id="id25">Printing</a></li>
-<li><a class="reference internal" href="#voltage-control" id="id26">Voltage Control</a></li>
-<li><a class="reference internal" href="#awg" id="id27">AWG</a></li>
-<li><a class="reference internal" href="#extending-the-code" id="id28">Extending the Code</a></li>
+<li><a class="reference internal" href="#pulse-program" id="id19">Pulse Program</a><ul>
+<li><a class="reference internal" href="#pulse-program-syntax" id="id20">Pulse Program Syntax</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#globalvariables" id="id21">Global Variables</a></li>
+<li><a class="reference internal" href="#scans" id="id22">Scans</a></li>
+<li><a class="reference internal" href="#external-parameters" id="id23">External Parameters</a></li>
+<li><a class="reference internal" href="#dedicated-counters" id="id24">Dedicated Counters</a></li>
+<li><a class="reference internal" href="#autoloader" id="id25">Autoloader</a></li>
+<li><a class="reference internal" href="#scripting" id="id26">Scripting</a></li>
+<li><a class="reference internal" href="#measurement-log" id="id27">Measurement Log</a></li>
+<li><a class="reference internal" href="#gate-sequences" id="id28">Gate Sequences</a></li>
+<li><a class="reference internal" href="#printing" id="id29">Printing</a></li>
+<li><a class="reference internal" href="#voltage-control" id="id30">Voltage Control</a></li>
+<li><a class="reference internal" href="#awg" id="id31">AWG</a></li>
+<li><a class="reference internal" href="#extending-the-code" id="id32">Extending the Code</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
-<span id="id1"></span><h2><a class="toc-backref" href="#id11">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2><a class="toc-backref" href="#id12">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>The IonControl program is based around the following concepts, which are summarized below:</p>
 <blockquote>
 <div><ol class="arabic">
@@ -231,14 +241,45 @@
 </li>
 </ol>
 </div></blockquote>
+<p>A few general points about the interface:</p>
+<div class="section" id="units">
+<h3><a class="toc-backref" href="#id13">Units</a><a class="headerlink" href="#units" title="Permalink to this headline">¶</a></h3>
+<p>Almost all quantities referenced in the program have units. Physical quantities have units, and using them avoids any ambiguity. This means a few things:</p>
+<ul>
+<li><p class="first">quantities can be typed as 0.365 MHz or as 365 kHz or as 365000 Hz, they are all equivalent.</p>
+</li>
+<li><p class="first">in fields which allow mathematical expressions, units are respected &#8211; you could write something like:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="mi">7</span> <span class="n">kHz</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">100</span> <span class="n">us</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>which would equal 17 kHz. This can be useful for writing things like:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="n">ExpectedPhotonNumber</span> <span class="o">=</span> <span class="n">CoolingTime</span> <span class="o">*</span> <span class="n">ExpectedFluorescenceRate</span>
+</pre></div>
+</div>
+<p>Here CoolingTime likely has base unit seconds, ExpectedFluorescenceRate has base unit Hz, and ExpectedPhotonNumber is unitless, as expected.</p>
+</div></blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="global-variables">
+<h3><a class="toc-backref" href="#id14">Global Variables</a><a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h3>
+<p>Global variables can be used almost everywhere throughout the program. In many cases it is far more useful to reference something to a global, rather than giving it its own value. If the same value will appear in more than one place, you are almost always better off setting it to a global.</p>
+</div>
+<div class="section" id="gui-reconfiguring">
+<h3><a class="toc-backref" href="#id15">GUI reconfiguring</a><a class="headerlink" href="#gui-reconfiguring" title="Permalink to this headline">¶</a></h3>
+<p>The GUI is highly reconfigurable. Plot windows and almost all control windows can be resized, rearranged, tabbed on top of each other, or pulled out as a stand alone window. The GUI configuration is automatically saved to the database. This means that when you close the program and reopen it, the GUI appearance will stay the same.</p>
+</div>
 </div>
 <div class="section" id="projects">
-<span id="id2"></span><h2><a class="toc-backref" href="#id12">Projects</a><a class="headerlink" href="#projects" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2><a class="toc-backref" href="#id16">Projects</a><a class="headerlink" href="#projects" title="Permalink to this headline">¶</a></h2>
 <p>All of the program settings, GUI configuration, data, etc. are attached to a specific <em>project</em>. Oftentimes only a single project is necessary for a given lab. However, if for whatever reason you need to be able to switch between totally different configurations of the program, the project functionality will allow this.</p>
 <div class="section" id="project-selection">
-<h3><a class="toc-backref" href="#id13">Project Selection</a><a class="headerlink" href="#project-selection" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id17">Project Selection</a><a class="headerlink" href="#project-selection" title="Permalink to this headline">¶</a></h3>
 <p>When you start the program for the very first time, you will be asked to select a base directory. This will be the directory under which will be the individual project directories. Once you select a base directory, the project selection GUI will appear:</p>
-<div class="figure" id="id8">
+<div class="figure" id="id9">
 <a class="reference internal image-reference" href="_images/ProjectSelection.png"><img alt="_images/ProjectSelection.png" src="_images/ProjectSelection.png" style="width: 380.0px; height: 363.0px;" /></a>
 <p class="caption"><span class="caption-text">Project selection GUI.</span></p>
 </div>
@@ -247,9 +288,9 @@
 <p>If you wish to see the project selection GUI the next time the program starts up, you can do so via the main control program by selecting File &gt; Project. This will display the currently selected project along with its configuration, and give you the option to show the selection GUI on next startup. Alternatively, you can directly edit ProjectConfig.yml, and change <em>showGui</em> to <em>True</em>.</p>
 </div>
 <div class="section" id="experiment-configuration">
-<h3><a class="toc-backref" href="#id14">Experiment Configuration</a><a class="headerlink" href="#experiment-configuration" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id18">Experiment Configuration</a><a class="headerlink" href="#experiment-configuration" title="Permalink to this headline">¶</a></h3>
 <p>Once a project is selected, the experiment configuration GUI will appear:</p>
-<div class="figure" id="id9">
+<div class="figure" id="id10">
 <a class="reference internal image-reference" href="_images/ExptConfig.png"><img alt="_images/ExptConfig.png" src="_images/ExptConfig.png" style="width: 674.0px; height: 897.0px;" /></a>
 <p class="caption"><span class="caption-text">Experiment configuration GUI.</span></p>
 </div>
@@ -262,16 +303,17 @@
 </div>
 </div>
 <div class="section" id="pulse-program">
-<span id="pulseprogram"></span><h2><a class="toc-backref" href="#id15">Pulse Program</a><a class="headerlink" href="#pulse-program" title="Permalink to this headline">¶</a></h2>
+<span id="pulseprogram"></span><h2><a class="toc-backref" href="#id19">Pulse Program</a><a class="headerlink" href="#pulse-program" title="Permalink to this headline">¶</a></h2>
 <p>Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click <a class="reference internal" href="_images/pulser1.png"><img alt="pulses" src="_images/pulser1.png" style="width: 29.4px; height: 29.4px;" /></a> .</p>
 <p>The pulse program window consists of four sections. The primary section is the text file itself, which is under the heading <em>Pulse Program</em>. The two sections <em>Shutters, Triggers, Counters</em> and <em>Parameters</em> are interfaces to set the variables which are declared in the pulse program. The <em>Shutters, Triggers, Counters</em> window is for settings binary variables, while the <em>Parameters</em> window is for setting all other types of parameters. Finally, the <em>RAM Control</em> window is for directly writing to the RAM on the FPGA board.</p>
-<div class="figure" id="id10">
+<p>When a pulse program is saved (CTRL-S in the editor, or click <a class="reference internal" href="_images/filesave.png"><img alt="save" src="_images/filesave.png" style="width: 24.0px; height: 24.0px;" /></a>), the program attempts to compile it. If it fails, it indicates where and why it failed. If it is successful, it updates the parameters, shutters, triggers, and counters displays to match the pulse program.</p>
+<div class="figure" id="id11">
 <a class="reference internal image-reference" href="_images/PulseProgram.png"><img alt="_images/PulseProgram.png" src="_images/PulseProgram.png" style="width: 1916.0px; height: 1040.0px;" /></a>
 <p class="caption"><span class="caption-text">The pulse program interface</span></p>
 </div>
 <p>The pulse program written here is run on the FPGA. It is compiled to a machine code that contains microcontroller instructions that are understood by the FPGA.</p>
 <div class="section" id="pulse-program-syntax">
-<h3><a class="toc-backref" href="#id16">Pulse Program Syntax</a><a class="headerlink" href="#pulse-program-syntax" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id20">Pulse Program Syntax</a><a class="headerlink" href="#pulse-program-syntax" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="variable-types">
 <h4>variable types<a class="headerlink" href="#variable-types" title="Permalink to this headline">¶</a></h4>
 <ul>
@@ -285,15 +327,85 @@
 </dd>
 </dl>
 </li>
-<li><p class="first">parameter</p>
+<li><dl class="first docutils">
+<dt>parameter</dt>
+<dd><p class="first">A numerical value that is set by the user or by a scan. This is the main variable type which allows configuring the experiment. When the pulse program is saved, the list of parameters in the parameter window is updated.</p>
+<p>The simplest parameter declaration would look like:</p>
+<div class="highlight-Python"><div class="highlight"><pre><span class="n">parameter</span> <span class="n">CoolingTime</span>
+</pre></div>
+</div>
+<p>This initializes a parameter named &#8220;CoolingTime,&#8221; which will show up in the parameter table and as a scan target. You can also type:</p>
+<div class="highlight-Python"><div class="highlight"><pre><span class="n">parameter</span> <span class="n">CoolingTime</span> <span class="o">=</span> <span class="mi">500</span> <span class="n">us</span>
+</pre></div>
+</div>
+<p>The effect of this will be to set CoolingTime to 500 us when you save the program and CoolingTime is added to the parameter list. However, that is the only time the 500 us value is read! Every subsequent time the program is run, the value of CoolingTime will be set via whatever is typed into the Parameters table, or via a scan. Therefore, this is to be avoided, as it can lead to confusion, and instead parameters should be declared without any value called out in the pulse program code.</p>
+<p>A parameter can also have a device specific <em>encoding</em>. An encoding is a way of translating something like &#8220;200 MHz&#8221; into a frequency tuning word used to program a DDS. An encoding is written like this:</p>
+<div class="highlight-Python"><div class="highlight"><pre><span class="n">parameter</span> <span class="o">&lt;</span><span class="n">AD9912_FRQ</span><span class="o">&gt;</span> <span class="n">CoolingFreq</span>
+</pre></div>
+</div>
+<p>This means that <code class="code python docutils literal"><span class="name"><span class="pre">CoolingFreq</span></span></code>, which is in MHz, will be converted appropriately to program an AD9912 DDS. Encodings are only necessary on a frequency that is actually written to a DDS. For example, the following is fine:</p>
+<div class="highlight-Python"><div class="highlight"><pre><span class="n">const</span> <span class="n">DDSRaman1</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">parameter</span> <span class="n">RamanCarrierFreq</span>
+<span class="n">parameter</span> <span class="n">RamanDetuning</span>
+<span class="n">parameter</span> <span class="o">&lt;</span><span class="n">AD9912_FRQ</span><span class="o">&gt;</span> <span class="n">DDSRaman1Freq</span>
+<span class="n">set_dds</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="n">DDSRaman1</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">DDSRaman1Freq</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where in the parameters table, <code class="code python docutils literal"><span class="name"><span class="pre">DDSRaman1Freq</span></span></code> is set to <code class="code python docutils literal"><span class="name"><span class="pre">RamanCarrierFreq</span></span> <span class="operator"><span class="pre">+</span></span> <span class="name"><span class="pre">RamanDetuning</span></span></code>. Only <code class="code python docutils literal"><span class="name"><span class="pre">DDSRaman1Freq</span></span></code> need have the encoding, as it is the only one which is directly written to the DDS, while the others are used indirectly.</p>
+<p>The following encodings are available:</p>
+<ul class="last">
+<li><dl class="first docutils">
+<dt>AD9912_FRQ</dt>
+<dd><p class="first last">frequency to set an AD9912 DDS</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>AD9910_FRQ</dt>
+<dd><p class="first last">frequency to set an AD9910 DDS</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>AD9912_PHASE</dt>
+<dd><p class="first last">phase to set an AD9912 DDS</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>AD9910_PHASE</dt>
+<dd><p class="first last">phase to set an AD9910 DDS</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>DAC8568_VOLTAGE</dt>
+<dd><p class="first last">voltage to set a DAC8568 DAC</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>ADC7606_VOLTAGE</dt>
+<dd><p class="first last">voltage returned by the ADC7606 ADC</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">ADC_VOLTAGE</p>
+</li>
+<li><p class="first">ADCTI122S101_VOLTAGE</p>
+</li>
+</ul>
+</dd>
+</dl>
 </li>
 <li><dl class="first docutils">
 <dt>var</dt>
-<dd><p class="first">An internal variable. This is something that might change throughout the course of an experiment (unlike <strong>const</strong>), but which is set within the experiment rather than by the user, e.g.:</p>
+<dd><p class="first">An internal variable. This is something that might change throughout the course of an experiment (unlike <strong>const</strong>), but which is set within the experiment rather than by the user. An example would be:</p>
 <div class="highlight-C#"><div class="highlight"><pre><span class="kt">var</span> <span class="n">experimentsleft</span> <span class="p">=</span> <span class="m">100</span>
 </pre></div>
 </div>
-<p class="last">where experimentleft is an internal variable which keeps track of how many experiments are remaining.</p>
+<p>where experimentleft is an internal variable, initialized to 100. (In the pulse program this is from, it is used to keep track of how many experiments are remaining). The difference between <strong>var</strong> and <strong>parameter</strong> is only in how they are treated by the GUI; <strong>var</strong> variables are not shown in the GUI as something to be scanned or set by the user. Also, normally there are programmatic changes made to <strong>vars</strong>, while <strong>parameters</strong> are not changed by the program unless they are being scanned. This is for clarity, though, not a requirement. As with parameters, vars can have an encoding.</p>
+<p class="last">Unlike parameters, vars often need to be initialized in the code, as they are not overridden from outside the code.</p>
 </dd>
 </dl>
 </li>
@@ -316,41 +428,41 @@
 </div>
 </div>
 </div>
-<div class="section" id="global-variables">
-<span id="globalvariables"></span><h2><a class="toc-backref" href="#id17">Global Variables</a><a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="globalvariables">
+<span id="id3"></span><h2><a class="toc-backref" href="#id21">Global Variables</a><a class="headerlink" href="#globalvariables" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="scans">
-<span id="id3"></span><h2><a class="toc-backref" href="#id18">Scans</a><a class="headerlink" href="#scans" title="Permalink to this headline">¶</a></h2>
+<span id="id4"></span><h2><a class="toc-backref" href="#id22">Scans</a><a class="headerlink" href="#scans" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="external-parameters">
-<span id="externalparameters"></span><h2><a class="toc-backref" href="#id19">External Parameters</a><a class="headerlink" href="#external-parameters" title="Permalink to this headline">¶</a></h2>
+<span id="externalparameters"></span><h2><a class="toc-backref" href="#id23">External Parameters</a><a class="headerlink" href="#external-parameters" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="dedicated-counters">
-<span id="dedicatedcounters"></span><h2><a class="toc-backref" href="#id20">Dedicated Counters</a><a class="headerlink" href="#dedicated-counters" title="Permalink to this headline">¶</a></h2>
+<span id="dedicatedcounters"></span><h2><a class="toc-backref" href="#id24">Dedicated Counters</a><a class="headerlink" href="#dedicated-counters" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="autoloader">
-<span id="id4"></span><h2><a class="toc-backref" href="#id21">Autoloader</a><a class="headerlink" href="#autoloader" title="Permalink to this headline">¶</a></h2>
+<span id="id5"></span><h2><a class="toc-backref" href="#id25">Autoloader</a><a class="headerlink" href="#autoloader" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="scripting">
-<span id="id5"></span><h2><a class="toc-backref" href="#id22">Scripting</a><a class="headerlink" href="#scripting" title="Permalink to this headline">¶</a></h2>
+<span id="id6"></span><h2><a class="toc-backref" href="#id26">Scripting</a><a class="headerlink" href="#scripting" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="measurement-log">
-<span id="measurementlog"></span><h2><a class="toc-backref" href="#id23">Measurement Log</a><a class="headerlink" href="#measurement-log" title="Permalink to this headline">¶</a></h2>
+<span id="measurementlog"></span><h2><a class="toc-backref" href="#id27">Measurement Log</a><a class="headerlink" href="#measurement-log" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="gate-sequences">
-<span id="gatesequences"></span><h2><a class="toc-backref" href="#id24">Gate Sequences</a><a class="headerlink" href="#gate-sequences" title="Permalink to this headline">¶</a></h2>
+<span id="gatesequences"></span><h2><a class="toc-backref" href="#id28">Gate Sequences</a><a class="headerlink" href="#gate-sequences" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="printing">
-<span id="id6"></span><h2><a class="toc-backref" href="#id25">Printing</a><a class="headerlink" href="#printing" title="Permalink to this headline">¶</a></h2>
+<span id="id7"></span><h2><a class="toc-backref" href="#id29">Printing</a><a class="headerlink" href="#printing" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="voltage-control">
-<span id="voltagecontrol"></span><h2><a class="toc-backref" href="#id26">Voltage Control</a><a class="headerlink" href="#voltage-control" title="Permalink to this headline">¶</a></h2>
+<span id="voltagecontrol"></span><h2><a class="toc-backref" href="#id30">Voltage Control</a><a class="headerlink" href="#voltage-control" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="awg">
-<span id="id7"></span><h2><a class="toc-backref" href="#id27">AWG</a><a class="headerlink" href="#awg" title="Permalink to this headline">¶</a></h2>
+<span id="id8"></span><h2><a class="toc-backref" href="#id31">AWG</a><a class="headerlink" href="#awg" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="extending-the-code">
-<span id="extending"></span><h2><a class="toc-backref" href="#id28">Extending the Code</a><a class="headerlink" href="#extending-the-code" title="Permalink to this headline">¶</a></h2>
+<span id="extending"></span><h2><a class="toc-backref" href="#id32">Extending the Code</a><a class="headerlink" href="#extending-the-code" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

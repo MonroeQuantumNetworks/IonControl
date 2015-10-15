@@ -1,3 +1,6 @@
+.. role:: python(code)
+   :language: python
+
 User Manual
 ===========
 
@@ -39,6 +42,38 @@ The IonControl program is based around the following concepts, which are summari
     3) :ref:`DedicatedCounters`. The dedicated counters interface allows continuous monitoring of the counters and ADCs connected to the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.
 
     4) :ref:`Scripting`. The scripting interface allows for the creation of extremely complex, automated experiments. It executes Python scripts, but adds a number of commands which allow control over the experiment.
+
+A few general points about the interface:
+
+Units
+~~~~~
+
+Almost all quantities referenced in the program have units. Physical quantities have units, and using them avoids any ambiguity. This means a few things:
+
+- quantities can be typed as 0.365 MHz or as 365 kHz or as 365000 Hz, they are all equivalent.
+- in fields which allow mathematical expressions, units are respected -- you could write something like:
+
+   .. code-block:: python
+
+      7 kHz + 1/(100 us)
+
+  which would equal 17 kHz. This can be useful for writing things like:
+
+   .. code-block:: python
+
+      ExpectedPhotonNumber = CoolingTime * ExpectedFluorescenceRate
+
+   Here CoolingTime likely has base unit seconds, ExpectedFluorescenceRate has base unit Hz, and ExpectedPhotonNumber is unitless, as expected.
+
+Global Variables
+~~~~~~~~~~~~~~~~
+
+Global variables can be used almost everywhere throughout the program. In many cases it is far more useful to reference something to a global, rather than giving it its own value. If the same value will appear in more than one place, you are almost always better off setting it to a global.
+
+GUI reconfiguring
+~~~~~~~~~~~~~~~~~
+
+The GUI is highly reconfigurable. Plot windows and almost all control windows can be resized, rearranged, tabbed on top of each other, or pulled out as a stand alone window. The GUI configuration is automatically saved to the database. This means that when you close the program and reopen it, the GUI appearance will stay the same.
 
 .. _Projects:
 
@@ -99,9 +134,14 @@ Pulse Program
 .. |pulses| image:: images/icons/pulser1.png
    :scale: 20 %
 
+.. |save| image:: images/icons/filesave.png
+   :scale: 50 %
+
 Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click |pulses| .
 
 The pulse program window consists of four sections. The primary section is the text file itself, which is under the heading *Pulse Program*. The two sections *Shutters, Triggers, Counters* and *Parameters* are interfaces to set the variables which are declared in the pulse program. The *Shutters, Triggers, Counters* window is for settings binary variables, while the *Parameters* window is for setting all other types of parameters. Finally, the *RAM Control* window is for directly writing to the RAM on the FPGA board.
+
+When a pulse program is saved (CTRL-S in the editor, or click |save|), the program attempts to compile it. If it fails, it indicates where and why it failed. If it is successful, it updates the parameters, shutters, triggers, and counters displays to match the pulse program.
 
 .. figure:: images/PulseProgram.png
    :scale: 100 %
@@ -125,17 +165,71 @@ variable types
       const DDSCooling = 1
 
 - parameter
+   A numerical value that is set by the user or by a scan. This is the main variable type which allows configuring the experiment. When the pulse program is saved, the list of parameters in the parameter window is updated.
+
+   The simplest parameter declaration would look like:
+
+   .. code-block:: Python
+
+      parameter CoolingTime
+
+   This initializes a parameter named "CoolingTime," which will show up in the parameter table and as a scan target. You can also type:
+
+   .. code-block:: Python
+
+      parameter CoolingTime = 500 us
+
+   The effect of this will be to set CoolingTime to 500 us when you save the program and CoolingTime is added to the parameter list. However, that is the only time the 500 us value is read! Every subsequent time the program is run, the value of CoolingTime will be set via whatever is typed into the Parameters table, or via a scan. Therefore, this is to be avoided, as it can lead to confusion, and instead parameters should be declared without any value called out in the pulse program code.
+
+   A parameter can also have a device specific *encoding*. An encoding is a way of translating something like "200 MHz" into a frequency tuning word used to program a DDS. An encoding is written like this:
+
+   .. code-block:: Python
+
+      parameter <AD9912_FRQ> CoolingFreq
+
+   This means that :python:`CoolingFreq`, which is in MHz, will be converted appropriately to program an AD9912 DDS. Encodings are only necessary on a frequency that is actually written to a DDS. For example, the following is fine:
+
+   .. code-block:: Python
+
+      const DDSRaman1 = 2
+      parameter RamanCarrierFreq
+      parameter RamanDetuning
+      parameter <AD9912_FRQ> DDSRaman1Freq
+      set_dds(channel=DDSRaman1, freq=DDSRaman1Freq)
+
+   where in the parameters table, :python:`DDSRaman1Freq` is set to :python:`RamanCarrierFreq + RamanDetuning`. Only :python:`DDSRaman1Freq` need have the encoding, as it is the only one which is directly written to the DDS, while the others are used indirectly.
+
+   The following encodings are available:
+
+   - AD9912_FRQ
+      frequency to set an AD9912 DDS
+   - AD9910_FRQ
+      frequency to set an AD9910 DDS
+   - AD9912_PHASE
+      phase to set an AD9912 DDS
+   - AD9910_PHASE
+      phase to set an AD9910 DDS
+   - DAC8568_VOLTAGE
+      voltage to set a DAC8568 DAC
+   - ADC7606_VOLTAGE
+      voltage returned by the ADC7606 ADC
+   - ADC_VOLTAGE
+   - ADCTI122S101_VOLTAGE
 
 - var
-   An internal variable. This is something that might change throughout the course of an experiment (unlike **const**), but which is set within the experiment rather than by the user, e.g.:
+   An internal variable. This is something that might change throughout the course of an experiment (unlike **const**), but which is set within the experiment rather than by the user. An example would be:
 
    .. code-block:: C#
 
       var experimentsleft = 100
 
-   where experimentleft is an internal variable which keeps track of how many experiments are remaining.
+   where experimentleft is an internal variable, initialized to 100. (In the pulse program this is from, it is used to keep track of how many experiments are remaining). The difference between **var** and **parameter** is only in how they are treated by the GUI; **var** variables are not shown in the GUI as something to be scanned or set by the user. Also, normally there are programmatic changes made to **vars**, while **parameters** are not changed by the program unless they are being scanned. This is for clarity, though, not a requirement. As with parameters, vars can have an encoding.
+
+   Unlike parameters, vars often need to be initialized in the code, as they are not overridden from outside the code.
 
 - counter
+
+
 - shutter
 - masked_shutter
 - trigger
