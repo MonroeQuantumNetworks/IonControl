@@ -259,15 +259,15 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.addAction( self.autoSaveAction )
         self.exportXmlButton.clicked.connect( self.onExportXml )
         self.initMenu()
+        self.tabifyDockWidget(self.shutterDock, self.triggerDock)
+        self.tabifyDockWidget(self.triggerDock, self.counterDock)
         self.restoreLayout()
 
     def restoreLayout(self):
         """Restore layout from config settings"""
         if self.configname+".state" in self.config:
             self.restoreState(self.config[self.configname+".state"])
-        if self.configname+".splitter" in self.config:
-            self.splitter.restoreState(self.config[self.configname+".splitter"])
-        restoreDockWidgetSizes(self, self.config, self.configname)
+        #restoreDockWidgetSizes(self, self.config, self.configname)
 
     def initMenu(self):
         self.menuView.clear()
@@ -609,7 +609,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         """Save the pulse program configuration state"""
         self.configParams.lastContextName = str(self.contextComboBox.currentText())
         self.config[self.configname+".state"] = self.saveState() #Arrangement of dock widgets
-        self.config[self.configname+".splitter"] = self.splitter.saveState() #triggers/shutters/counters splitter position
         saveDockWidgetSizes(self, self.config, self.configname)
         self.config[self.configname] = self.configParams
         self.config[self.configname+'.contextdict'] = self.contextDict 
