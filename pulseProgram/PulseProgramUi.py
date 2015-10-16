@@ -19,6 +19,7 @@ from pulseProgram import ShutterTableModel
 from pulseProgram.PulseProgramSourceEdit import PulseProgramSourceEdit
 from pulseProgram.VariableDictionary import VariableDictionary
 from pulseProgram.VariableTableModel import VariableTableModel
+from pulseProgram.PulseProgram import encodings
 from uiModules.RotatedHeaderView import RotatedHeaderView
 from modules.enum import enum
 from pppCompiler.pppCompiler import pppCompiler
@@ -197,7 +198,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.writeRamCheckbox.setChecked(self.currentContext.writeRam)
 
         #setup documentation list
-        definitionDict, builtinDict = self.getDocs()
+        definitionDict, builtinDict, encodingDict = self.getDocs()
 
         defItem = QtGui.QTreeWidgetItem(self.docTreeWidget, ["Variable Definitions"])
         self.docTreeWidget.addTopLevelItem(defItem)
@@ -208,6 +209,12 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.docTreeWidget.addTopLevelItem(builtinItem)
         #This populates the tree under "Pulse Program Commands" with each builtin word and its documentation
         [QtGui.QTreeWidgetItem(QtGui.QTreeWidgetItem(builtinItem, [name]), [documentation]) for name, documentation in builtinDict.iteritems()]
+
+        encodingItem = QtGui.QTreeWidgetItem(self.docTreeWidget, ["Encodings"])
+        self.docTreeWidget.addTopLevelItem(encodingItem)
+        #This populates the tree under "Encodings" with each encoding and its documentation
+        [QtGui.QTreeWidgetItem(QtGui.QTreeWidgetItem(encodingItem, [name]), [documentation]) for name, documentation in encodingDict.iteritems()]
+
 
         #connect actions
         self.actionOpen.triggered.connect( self.onLoad )
@@ -382,7 +389,8 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         if self.currentContext.pulseProgramMode == 'ppp':
             for name, text in [(self.pppSourceFile,self.pppSource)]:
                 textEdit = PulseProgramSourceEdit(mode='ppp')
-                textEdit.setupUi(textEdit, extraKeywords1=self.definitionWords, extraKeywords2=self.builtinWords)
+                encodingStrings = [str(encoding) for encoding in encodings.keys()]
+                textEdit.setupUi(textEdit, extraKeywords1=self.definitionWords+encodingStrings, extraKeywords2=self.builtinWords)
                 textEdit.setPlainText(text)
                 self.pppCodeEdits[name] = textEdit
                 self.sourceTabs.addTab( textEdit, name )
@@ -699,11 +707,14 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         """Assemble the pulse program function documentation into a dictionary"""
         definitionDict = OrderedDict()
         builtinDict = OrderedDict()
+        encodingDict = OrderedDict()
         for name in self.definitionWords:
             definitionDict[name] = "This should be documentation for definition word {0}".format(name)
         for name in self.builtinWords:
             builtinDict[name] = "This should be documentation for builtin word {0}".format(name)
-        return definitionDict, builtinDict
+        for name in encodings.keys():
+            encodingDict[str(name)] = "This should be documentation for encoding word {0}".format(name)
+        return definitionDict, builtinDict, encodingDict
 
 
 class PulseProgramSetUi(QtGui.QDialog):
