@@ -1,0 +1,68 @@
+.. role:: python(code)
+   :language: python
+
+.. |start| image:: images/icons/media-playback-start-7.png
+   :scale: 50 %
+
+.. |pause| image:: images/icons/media-playback-pause-7.png
+   :scale: 50 %
+
+.. |abort| image:: images/icons/edit-delete-6.png
+   :scale: 50 %
+
+.. |stop| image:: images/icons/media-playback-stop-7.png
+   :scale: 50 %
+
+.. |save| image:: images/icons/filesave.png
+   :scale: 50 %
+
+.. |XMLSave| image:: images/icons/ExportToXMLFile-48.png
+   :scale: 50 %
+
+.. |DedicatedCounters| image:: images/icons/gnome-power-statistics.png
+   :scale: 50 %
+
+.. |pulses| image:: images/icons/pulser1.png
+   :scale: 15 %
+
+.. |voltages| image:: images/icons/pictogram-din-w008-electricisty.png
+   :scale: 50 %
+
+.. |LogicAnalyzer| image:: images/icons/ChipScope.png
+   :scale: 10 %
+
+.. |MeasurementLog| image:: images/icons/Owwnotebook_icon.png
+   :scale: 25 %
+
+.. |Scripting| image:: images/icons/Terminal-icon.png
+   :scale: 5 %
+
+.. |CheckBox| image:: images/icons/Success-01.png
+   :scale: 7%
+
+.. |Exception| image:: images/icons/Error-01.png
+   :scale: 5%
+
+.. |Warning| image:: images/icons/Warning.png
+   :scale: 5%
+
+.. |histogram| image:: images/icons/office-chart-bar.png
+   :scale: 60%
+
+.. |saveHistogram| image:: images/icons/office-chart-bar-save.png
+   :scale: 20%
+
+.. |addPlot| image:: images/icons/add-plot.png
+   :scale: 50%
+
+.. |removePlot| image:: images/icons/remove-plot.png
+   :scale: 50%
+
+.. |renamePlot| image:: images/icons/rename-plot.png
+   :scale: 50%
+
+.. |add| image:: images/icons/edit-add.png
+   :scale: 30 %
+
+.. |remove| image:: images/icons/edit_remove.png
+   :scale: 30 %
