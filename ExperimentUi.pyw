@@ -265,7 +265,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
         if self.AWGEnabled:
             self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
-        
+
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
@@ -300,6 +300,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.todoListDock.setWidget(self.todoList)
         self.todoListDock.setObjectName("_todoList")
         self.addDockWidget( QtCore.Qt.RightDockWidgetArea, self.todoListDock)
+        if self.AWGEnabled: self.tabifyDockWidget(self.AWGUiDock, self.todoListDock)
+        else: self.tabifyDockWidget(self.valueHistoryDock, self.todoListDock)
+
         for name, widget in self.tabDict.iteritems():
             if hasattr( widget, 'scanConfigurationListChanged' ) and widget.scanConfigurationListChanged is not None:
                 widget.scanConfigurationListChanged.connect( partial( self.todoList.populateMeasurementsItem, name)  )
