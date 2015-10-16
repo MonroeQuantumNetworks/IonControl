@@ -632,6 +632,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.onCurrentChanged(self.tabDict.index(name))
 
     def onPrint(self, target):
+        """Print action is triggered on 'target', which is a plot name"""
         if hasattr( self.currentTab, 'onPrint' ):
             printer = QtGui.QPrinter(mode=QtGui.QPrinter.ScreenResolution)
             if self.preferencesUi.preferences().printPreferences.doPrint:
@@ -649,6 +650,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     def show(self):
         """show ExperimentUi, and any of the other main windows which were previously visible"""
         super(ExperimentUi, self).show()
+
+        # restore dock state of ScanExperiment. Because ScanExperiment is a child QMainWindow of ExperimentUi
+        # (rather than an independent window), restoreState must be called after show() is called on the parent
+        # widget in order to work properly.
+        for tab in self.tabDict.values():
+            tabStateName = tab.experimentName+'.MainWindow.State'
+            if tabStateName in self.config:
+                tab.restoreState(self.config[tabStateName])
 
         pulseProgramVisible = self.config.get(self.pulseProgramDialog.configname+'.isVisible', True) #pulse program defaults to visible
         if pulseProgramVisible: self.pulseProgramDialog.show()

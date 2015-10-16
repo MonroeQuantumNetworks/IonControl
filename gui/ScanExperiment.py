@@ -192,9 +192,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.globalVariablesUi.valueChanged.connect( self.analysisControlWidget.evaluate )
         self.analysisConfigurationChanged = self.analysisControlWidget.analysisConfigurationChanged
 
-        if self.experimentName+'.MainWindow.State' in self.config:
-            QtGui.QMainWindow.restoreState(self,self.config[self.experimentName+'.MainWindow.State'])
-        
         #toolBar actions
         self.copyHistogram = QtGui.QAction( QtGui.QIcon(":/openicon/icons/office-chart-bar.png"), "Copy histogram to traces", self ) 
         self.copyHistogram.setToolTip("Copy histogram to traces")

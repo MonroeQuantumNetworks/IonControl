@@ -24,7 +24,7 @@ from modules.enum import enum
 from pppCompiler.pppCompiler import pppCompiler
 from pppCompiler.CompileException import CompileException
 from pppCompiler.Symbol import SymbolTable
-from modules.PyqtUtility import BlockSignals, restoreDockWidgetSizes, saveDockWidgetSizes
+from modules.PyqtUtility import BlockSignals
 from pyparsing import ParseException
 import copy
 from ShutterDictionary import ShutterDictionary
@@ -267,7 +267,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         """Restore layout from config settings"""
         if self.configname+".state" in self.config:
             self.restoreState(self.config[self.configname+".state"])
-        #restoreDockWidgetSizes(self, self.config, self.configname)
 
     def initMenu(self):
         self.menuView.clear()
@@ -609,7 +608,6 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         """Save the pulse program configuration state"""
         self.configParams.lastContextName = str(self.contextComboBox.currentText())
         self.config[self.configname+".state"] = self.saveState() #Arrangement of dock widgets
-        saveDockWidgetSizes(self, self.config, self.configname)
         self.config[self.configname] = self.configParams
         self.config[self.configname+'.contextdict'] = self.contextDict 
         self.config[self.configname+'.currentContext'] = self.currentContext
@@ -732,13 +730,13 @@ class PulseProgramSetUi(QtGui.QDialog):
             page.onAccept()
         
     def show(self):
+        super(PulseProgramSetUi, self).show()
         if self.configname+'.pos' in self.config:
             self.move(self.config[self.configname+'.pos'])
         if self.configname+'.size' in self.config:
             self.resize(self.config[self.configname+'.size'])
         for page in self.pulseProgramSet.values():
             page.restoreLayout()
-        QtGui.QDialog.show(self)
         self.isShown = True
         
     def saveConfig(self):
