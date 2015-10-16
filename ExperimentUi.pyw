@@ -265,6 +265,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.tabifyDockWidget( self.globalVariablesDock, self.valueHistoryDock )
         if self.AWGEnabled:
             self.tabifyDockWidget( self.valueHistoryDock, self.AWGUiDock )
+        self.triggerDockWidget.hide()
+        self.preferencesUiDock.hide()
 
         self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
@@ -311,7 +313,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             if hasattr( widget, 'analysisConfigurationChanged' ) and widget.analysisConfigurationChanged is not None:
                 widget.analysisConfigurationChanged.connect( partial( self.todoList.populateAnalysisItem, name)  )
        
-        #tabify 
+        #tabify external parameters controls
         self.tabifyDockWidget(self.ExternalParameterSelectionDock, self.ExternalParameterDock)
         self.tabifyDockWidget(self.ExternalParameterDock, self.instrumentLoggingDisplayDock)
         
@@ -540,6 +542,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             for plot in self.currentTab.printTargets():
                 action = self.menuPrint.addAction( plot )
                 action.triggered.connect( partial(self.onPrint, plot ))
+        self.menuPrint.addSeparator()
+        action = self.menuPrint.addAction("Print Preferences")
+        action.triggered.connect(self.preferencesUiDock.show)
+        action.triggered.connect(self.preferencesUiDock.raise_)
 
     def onPulses(self):
         self.pulseProgramDialog.show()
