@@ -48,7 +48,7 @@ A few general points about the interface:
 Units
 ~~~~~
 
-Almost all quantities referenced in the program have units. Physical quantities have units, and using them avoids any ambiguity. This means a few things:
+Almost all quantities referenced in the program have units. This is for the simple reason that real physical quantities have units, and using them avoids any ambiguity. This means a few things:
 
 - quantities can be typed as 0.365 MHz or as 365 kHz or as 365000 Hz, they are all equivalent.
 - in fields which allow mathematical expressions, units are respected -- you could write something like:
@@ -63,7 +63,7 @@ Almost all quantities referenced in the program have units. Physical quantities 
 
       ExpectedPhotonNumber = CoolingTime * ExpectedFluorescenceRate
 
-   Here CoolingTime likely has base unit seconds, ExpectedFluorescenceRate has base unit Hz, and ExpectedPhotonNumber is unitless, as expected.
+   Here CoolingTime likely has base unit seconds, ExpectedFluorescenceRate has base unit Hz, and ExpectedPhotonNumber is unitless, as expected. If CoolingTime changes, ExpectedPhotonNumber changes appropriately.
 
 Global Variables
 ~~~~~~~~~~~~~~~~
@@ -73,7 +73,142 @@ Global variables can be used almost everywhere throughout the program. In many c
 GUI reconfiguring
 ~~~~~~~~~~~~~~~~~
 
-The GUI is highly reconfigurable. Plot windows and almost all control windows can be resized, rearranged, tabbed on top of each other, or pulled out as a stand alone window. The GUI configuration is automatically saved to the database. This means that when you close the program and reopen it, the GUI appearance will stay the same.
+The GUI is highly reconfigurable. Plot windows and almost all control windows (known as "docks") can be resized, rearranged, tabbed on top of each other, closed, or pulled out as a stand alone window. The GUI configuration is automatically saved to the database. This means that when you close the program and reopen it, the GUI appearance will stay the same. Closed docks can be re-opened via the "view" menu. In the main experiment GUI, they can also be re-opened by right clicking on a dock header bar.
+
+Settings Menus
+~~~~~~~~~~~~~~
+
+Many places in the program have *settings menus*, which are drop downs that allow you to save and recall all the settings associated with that particular interface. For example, the scan control settings menu allows you to load different scan settings. To make new saved settings, simply type a new name into a context menu and push enter. You can then edit the new settings.
+
+GUI controls
+~~~~~~~~~~~~
+
+.. |start| image:: images/icons/media-playback-start-7.png
+   :scale: 50 %
+
+.. |pause| image:: images/icons/media-playback-pause-7.png
+   :scale: 50 %
+
+.. |abort| image:: images/icons/edit-delete-6.png
+   :scale: 50 %
+
+.. |stop| image:: images/icons/media-playback-stop-7.png
+   :scale: 50 %
+
+.. |save| image:: images/icons/filesave.png
+   :scale: 50 %
+
+.. |XMLSave| image:: images/icons/ExportToXMLFile-48.png
+   :scale: 50 %
+
+.. |DedicatedCounters| image:: images/icons/gnome-power-statistics.png
+   :scale: 50 %
+
+.. |pulses| image:: images/icons/pulser1.png
+   :scale: 15 %
+
+.. |voltages| image:: images/icons/pictogram-din-w008-electricisty.png
+   :scale: 50 %
+
+.. |LogicAnalyzer| image:: images/icons/ChipScope.png
+   :scale: 10 %
+
+.. |MeasurementLog| image:: images/icons/Owwnotebook_icon.png
+   :scale: 25 %
+
+.. |Scripting| image:: images/icons/Terminal-icon.png
+   :scale: 5 %
+
+.. |CheckBox| image:: images/icons/Success-01.png
+   :scale: 7%
+
+.. |Exception| image:: images/icons/Error-01.png
+   :scale: 5%
+
+.. |Warning| image:: images/icons/Warning.png
+   :scale: 5%
+
+.. |histogram| image:: images/icons/office-chart-bar.png
+   :scale: 60%
+
+.. |saveHistogram| image:: images/icons/office-chart-bar-save.png
+   :scale: 20%
+
+.. |addPlot| image:: images/icons/add-plot.png
+   :scale: 50%
+
+.. |removePlot| image:: images/icons/remove-plot.png
+   :scale: 50%
+
+.. |renamePlot| image:: images/icons/rename-plot.png
+   :scale: 50%
+
+
+.. figure:: images/ExperimentUi.png
+   :scale: 100 %
+
+   The main Experiment GUI
+
+When you first start the program, the main GUI consists of a central area with plot windows surrounded by various control docks, with an action toolbar on top. The effects of the different toolbar actions are:
+
+|start| -- start a scan
+   This will run the scan set in the scan control dock, with the evaulation set in the evaulation control dock. When the scan concludes, it will run the analysis set in the analysis control dock.
+
+|pause| -- pause a scan
+   This will pause the scan wherever it currently is.
+
+|stop| -- stop a scan
+   This will stop the scan, but will still perform the analysis and register the scan in the measurement log.
+
+|abort| -- abort a scan
+   This will stop the scan, but will NOT perform the analysis or register the scan in the measurement log.
+
+|save| -- save GUI configuration data
+   This will save the GUI configuration to a new database file with the name "configuration_X.db" (where X is 001 the first time you hit save, then increments) which will be placed in the day's data directory. This can be used if you want to take a snapshot of your GUI configuration which you can later return to. Each time you click save, a new file is created. To reload the GUI configuration, copy the saved file to 'yourProjectDir/.gui-config', and rename it 'ExperimentUi.config'.
+
+   Note that this is not for ordinary saving of the GUI configuration -- this happens automatically once a minute, and whenever the program is closed.
+
+|XMLSave| -- save experiment configuration data to an XML file
+  This will save all the global variables, scan settings, evaluation settings, analysis settings, and pulse program settings to XML files. These files can be imported via File > Import XML. This is mainly useful if you want to move a large list of experiment settings between projects.
+
+|DedicatedCounters| -- open the :ref:`DedicatedCounters` window.
+   \
+
+|pulses| -- open the :ref:`PulseProgram` window.
+   \
+
+|voltages| -- open the :ref:`VoltageControl` window.
+   \
+
+|LogicAnalyzer| -- open the :ref:`LogicAnalyzer` window.
+   \
+
+|MeasurementLog| -- open the :ref:`MeasurementLog` window.
+   \
+
+|Scripting| -- open the :ref:`Scripting` window.
+   \
+
+|CheckBox| or |Exception| -- display if an exception occurred
+   The |CheckBox| will turn into a |Exception| when an error occurs. If you click on it, you will see a list of all exceptions since the list was last cleared. You can clear the list, or clear individual exceptions.
+
+|CheckBox| or |Warning| -- display if a warning occurred
+   The |CheckBox| will turn into a |Warning| when a warning occurs. Interface is the same as for exceptions.
+
+|histogram| -- copy histogram to traces
+   This will copy the last histogram from the most recent scan to the trace list together with the other traces. From there it can be saved or viewed later.
+
+|saveHistogram| -- save all histogram from last scan
+   This will save every histogram from the most recent scan to a file. It does not create an entry in the trace list. The filename used is specified in the scan control (see :ref:`Scans`).
+
+|addPlot| -- add a plot
+   This will add a plot window, which will available for any evaluation.
+
+|removePlot| -- remove a plot
+   This will remove an existing plot window. Note: "Scan Data" and "Histogram" (and "Timestamps" if enabled) cannot be removed.
+
+|renamePlot| -- rename a plot
+   This will rename an existing plot window. The same plots which cannot be removed also cannot be renamed.
 
 .. _Projects:
 
@@ -130,12 +265,6 @@ This GUI creates a configuration file in the project directory: *\\YourBaseDirec
 
 Pulse Program
 -------------
-
-.. |pulses| image:: images/icons/pulser1.png
-   :scale: 20 %
-
-.. |save| image:: images/icons/filesave.png
-   :scale: 50 %
 
 Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click |pulses| .
 
@@ -227,10 +356,12 @@ variable types
 
    Unlike parameters, vars often need to be initialized in the code, as they are not overridden from outside the code.
 
-- counter
-
-
 - shutter
+   A shutter is a binary variable, which specifies the state of every TTL output of the FPGA, whether every PI loop is on or off, and whether the DAC scans are on or off see (:ref:`PILoops` for an explanation of the last two). When a shutter is added to the pulse program, a new line appears in the shutters window
+
+- counter
+  A counter variable. When a counter is added, a new line appears in the counters GUI.
+
 - masked_shutter
 - trigger
 - address
@@ -238,6 +369,16 @@ variable types
 
 commands
 ````````
+
+.. _PILoops:
+
+PI Loops
+~~~~~~~~
+
+.. _nonPulsedFPGAControl:
+
+Non-pulsed FPGA control
+-----------------------
 
 .. _GlobalVariables:
 
@@ -289,6 +430,11 @@ Printing
 Voltage Control
 ---------------
 
+.. _LogicAnalyzer:
+
+Logic Analyzer
+--------------
+
 .. _AWG:
 
 AWG
@@ -298,3 +444,4 @@ AWG
 
 Extending the Code
 ------------------
+

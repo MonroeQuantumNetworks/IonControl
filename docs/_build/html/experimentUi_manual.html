@@ -89,6 +89,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#units">Units</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#global-variables">Global Variables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#gui-reconfiguring">GUI reconfiguring</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#settings-menus">Settings Menus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gui-controls">GUI controls</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#projects">Projects</a><ul>
@@ -102,8 +104,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#commands">commands</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#pi-loops">PI Loops</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#non-pulsed-fpga-control">Non-pulsed FPGA control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#globalvariables">Global Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#scans">Scans</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#external-parameters">External Parameters</a></li>
@@ -114,6 +118,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#gate-sequences">Gate Sequences</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#printing">Printing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#voltage-control">Voltage Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logic-analyzer">Logic Analyzer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#awg">AWG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#extending-the-code">Extending the Code</a></li>
 </ul>
@@ -169,37 +174,42 @@
 <div class="contents local topic" id="table-of-contents">
 <p class="topic-title first">Table of Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#introduction" id="id12">Introduction</a><ul>
-<li><a class="reference internal" href="#units" id="id13">Units</a></li>
-<li><a class="reference internal" href="#global-variables" id="id14">Global Variables</a></li>
-<li><a class="reference internal" href="#gui-reconfiguring" id="id15">GUI reconfiguring</a></li>
+<li><a class="reference internal" href="#introduction" id="id13">Introduction</a><ul>
+<li><a class="reference internal" href="#units" id="id14">Units</a></li>
+<li><a class="reference internal" href="#global-variables" id="id15">Global Variables</a></li>
+<li><a class="reference internal" href="#gui-reconfiguring" id="id16">GUI reconfiguring</a></li>
+<li><a class="reference internal" href="#settings-menus" id="id17">Settings Menus</a></li>
+<li><a class="reference internal" href="#gui-controls" id="id18">GUI controls</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#projects" id="id16">Projects</a><ul>
-<li><a class="reference internal" href="#project-selection" id="id17">Project Selection</a></li>
-<li><a class="reference internal" href="#experiment-configuration" id="id18">Experiment Configuration</a></li>
+<li><a class="reference internal" href="#projects" id="id19">Projects</a><ul>
+<li><a class="reference internal" href="#project-selection" id="id20">Project Selection</a></li>
+<li><a class="reference internal" href="#experiment-configuration" id="id21">Experiment Configuration</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pulse-program" id="id19">Pulse Program</a><ul>
-<li><a class="reference internal" href="#pulse-program-syntax" id="id20">Pulse Program Syntax</a></li>
+<li><a class="reference internal" href="#pulse-program" id="id22">Pulse Program</a><ul>
+<li><a class="reference internal" href="#pulse-program-syntax" id="id23">Pulse Program Syntax</a></li>
+<li><a class="reference internal" href="#pi-loops" id="id24">PI Loops</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#globalvariables" id="id21">Global Variables</a></li>
-<li><a class="reference internal" href="#scans" id="id22">Scans</a></li>
-<li><a class="reference internal" href="#external-parameters" id="id23">External Parameters</a></li>
-<li><a class="reference internal" href="#dedicated-counters" id="id24">Dedicated Counters</a></li>
-<li><a class="reference internal" href="#autoloader" id="id25">Autoloader</a></li>
-<li><a class="reference internal" href="#scripting" id="id26">Scripting</a></li>
-<li><a class="reference internal" href="#measurement-log" id="id27">Measurement Log</a></li>
-<li><a class="reference internal" href="#gate-sequences" id="id28">Gate Sequences</a></li>
-<li><a class="reference internal" href="#printing" id="id29">Printing</a></li>
-<li><a class="reference internal" href="#voltage-control" id="id30">Voltage Control</a></li>
-<li><a class="reference internal" href="#awg" id="id31">AWG</a></li>
-<li><a class="reference internal" href="#extending-the-code" id="id32">Extending the Code</a></li>
+<li><a class="reference internal" href="#non-pulsed-fpga-control" id="id25">Non-pulsed FPGA control</a></li>
+<li><a class="reference internal" href="#globalvariables" id="id26">Global Variables</a></li>
+<li><a class="reference internal" href="#scans" id="id27">Scans</a></li>
+<li><a class="reference internal" href="#external-parameters" id="id28">External Parameters</a></li>
+<li><a class="reference internal" href="#dedicated-counters" id="id29">Dedicated Counters</a></li>
+<li><a class="reference internal" href="#autoloader" id="id30">Autoloader</a></li>
+<li><a class="reference internal" href="#scripting" id="id31">Scripting</a></li>
+<li><a class="reference internal" href="#measurement-log" id="id32">Measurement Log</a></li>
+<li><a class="reference internal" href="#gate-sequences" id="id33">Gate Sequences</a></li>
+<li><a class="reference internal" href="#printing" id="id34">Printing</a></li>
+<li><a class="reference internal" href="#voltage-control" id="id35">Voltage Control</a></li>
+<li><a class="reference internal" href="#logic-analyzer" id="id36">Logic Analyzer</a></li>
+<li><a class="reference internal" href="#awg" id="id37">AWG</a></li>
+<li><a class="reference internal" href="#extending-the-code" id="id38">Extending the Code</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
-<span id="id1"></span><h2><a class="toc-backref" href="#id12">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2><a class="toc-backref" href="#id13">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>The IonControl program is based around the following concepts, which are summarized below:</p>
 <blockquote>
 <div><ol class="arabic">
@@ -243,8 +253,8 @@
 </div></blockquote>
 <p>A few general points about the interface:</p>
 <div class="section" id="units">
-<h3><a class="toc-backref" href="#id13">Units</a><a class="headerlink" href="#units" title="Permalink to this headline">¶</a></h3>
-<p>Almost all quantities referenced in the program have units. Physical quantities have units, and using them avoids any ambiguity. This means a few things:</p>
+<h3><a class="toc-backref" href="#id14">Units</a><a class="headerlink" href="#units" title="Permalink to this headline">¶</a></h3>
+<p>Almost all quantities referenced in the program have units. This is for the simple reason that real physical quantities have units, and using them avoids any ambiguity. This means a few things:</p>
 <ul>
 <li><p class="first">quantities can be typed as 0.365 MHz or as 365 kHz or as 365000 Hz, they are all equivalent.</p>
 </li>
@@ -259,27 +269,81 @@
 <div><div class="highlight-python"><div class="highlight"><pre><span class="n">ExpectedPhotonNumber</span> <span class="o">=</span> <span class="n">CoolingTime</span> <span class="o">*</span> <span class="n">ExpectedFluorescenceRate</span>
 </pre></div>
 </div>
-<p>Here CoolingTime likely has base unit seconds, ExpectedFluorescenceRate has base unit Hz, and ExpectedPhotonNumber is unitless, as expected.</p>
+<p>Here CoolingTime likely has base unit seconds, ExpectedFluorescenceRate has base unit Hz, and ExpectedPhotonNumber is unitless, as expected. If CoolingTime changes, ExpectedPhotonNumber changes appropriately.</p>
 </div></blockquote>
 </li>
 </ul>
 </div>
 <div class="section" id="global-variables">
-<h3><a class="toc-backref" href="#id14">Global Variables</a><a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id15">Global Variables</a><a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h3>
 <p>Global variables can be used almost everywhere throughout the program. In many cases it is far more useful to reference something to a global, rather than giving it its own value. If the same value will appear in more than one place, you are almost always better off setting it to a global.</p>
 </div>
 <div class="section" id="gui-reconfiguring">
-<h3><a class="toc-backref" href="#id15">GUI reconfiguring</a><a class="headerlink" href="#gui-reconfiguring" title="Permalink to this headline">¶</a></h3>
-<p>The GUI is highly reconfigurable. Plot windows and almost all control windows can be resized, rearranged, tabbed on top of each other, or pulled out as a stand alone window. The GUI configuration is automatically saved to the database. This means that when you close the program and reopen it, the GUI appearance will stay the same.</p>
+<h3><a class="toc-backref" href="#id16">GUI reconfiguring</a><a class="headerlink" href="#gui-reconfiguring" title="Permalink to this headline">¶</a></h3>
+<p>The GUI is highly reconfigurable. Plot windows and almost all control windows (known as &#8220;docks&#8221;) can be resized, rearranged, tabbed on top of each other, closed, or pulled out as a stand alone window. The GUI configuration is automatically saved to the database. This means that when you close the program and reopen it, the GUI appearance will stay the same. Closed docks can be re-opened via the &#8220;view&#8221; menu. In the main experiment GUI, they can also be re-opened by right clicking on a dock header bar.</p>
+</div>
+<div class="section" id="settings-menus">
+<h3><a class="toc-backref" href="#id17">Settings Menus</a><a class="headerlink" href="#settings-menus" title="Permalink to this headline">¶</a></h3>
+<p>Many places in the program have <em>settings menus</em>, which are drop downs that allow you to save and recall all the settings associated with that particular interface. For example, the scan control settings menu allows you to load different scan settings. To make new saved settings, simply type a new name into a context menu and push enter. You can then edit the new settings.</p>
+</div>
+<div class="section" id="gui-controls">
+<h3><a class="toc-backref" href="#id18">GUI controls</a><a class="headerlink" href="#gui-controls" title="Permalink to this headline">¶</a></h3>
+<div class="figure" id="id9">
+<a class="reference internal image-reference" href="_images/ExperimentUi.png"><img alt="_images/ExperimentUi.png" src="_images/ExperimentUi.png" style="width: 1921.0px; height: 1079.0px;" /></a>
+<p class="caption"><span class="caption-text">The main Experiment GUI</span></p>
+</div>
+<p>When you first start the program, the main GUI consists of a central area with plot windows surrounded by various control docks, with an action toolbar on top. The effects of the different toolbar actions are:</p>
+<dl class="docutils">
+<dt><a class="reference internal" href="_images/media-playback-start-7.png"><img alt="start" src="_images/media-playback-start-7.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; start a scan</dt>
+<dd>This will run the scan set in the scan control dock, with the evaulation set in the evaulation control dock. When the scan concludes, it will run the analysis set in the analysis control dock.</dd>
+<dt><a class="reference internal" href="_images/media-playback-pause-7.png"><img alt="pause" src="_images/media-playback-pause-7.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; pause a scan</dt>
+<dd>This will pause the scan wherever it currently is.</dd>
+<dt><a class="reference internal" href="_images/media-playback-stop-7.png"><img alt="stop" src="_images/media-playback-stop-7.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; stop a scan</dt>
+<dd>This will stop the scan, but will still perform the analysis and register the scan in the measurement log.</dd>
+<dt><a class="reference internal" href="_images/edit-delete-6.png"><img alt="abort" src="_images/edit-delete-6.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; abort a scan</dt>
+<dd>This will stop the scan, but will NOT perform the analysis or register the scan in the measurement log.</dd>
+<dt><a class="reference internal" href="_images/filesave.png"><img alt="save" src="_images/filesave.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; save GUI configuration data</dt>
+<dd><p class="first">This will save the GUI configuration to a new database file with the name &#8220;configuration_X.db&#8221; (where X is 001 the first time you hit save, then increments) which will be placed in the day&#8217;s data directory. This can be used if you want to take a snapshot of your GUI configuration which you can later return to. Each time you click save, a new file is created. To reload the GUI configuration, copy the saved file to &#8216;yourProjectDir/.gui-config&#8217;, and rename it &#8216;ExperimentUi.config&#8217;.</p>
+<p class="last">Note that this is not for ordinary saving of the GUI configuration &#8211; this happens automatically once a minute, and whenever the program is closed.</p>
+</dd>
+<dt><a class="reference internal" href="_images/ExportToXMLFile-48.png"><img alt="XMLSave" src="_images/ExportToXMLFile-48.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; save experiment configuration data to an XML file</dt>
+<dd>This will save all the global variables, scan settings, evaluation settings, analysis settings, and pulse program settings to XML files. These files can be imported via File &gt; Import XML. This is mainly useful if you want to move a large list of experiment settings between projects.</dd>
+<dt><a class="reference internal" href="_images/gnome-power-statistics.png"><img alt="DedicatedCounters" src="_images/gnome-power-statistics.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="#dedicatedcounters"><span>Dedicated Counters</span></a> window.</dt>
+<dd></dd>
+<dt><a class="reference internal" href="_images/pulser1.png"><img alt="pulses" src="_images/pulser1.png" style="width: 22.05px; height: 22.05px;" /></a> &#8211; open the <a class="reference internal" href="#pulseprogram"><span>Pulse Program</span></a> window.</dt>
+<dd></dd>
+<dt><a class="reference internal" href="_images/pictogram-din-w008-electricisty.png"><img alt="voltages" src="_images/pictogram-din-w008-electricisty.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="#voltagecontrol"><span>Voltage Control</span></a> window.</dt>
+<dd></dd>
+<dt><a class="reference internal" href="_images/ChipScope.png"><img alt="LogicAnalyzer" src="_images/ChipScope.png" style="width: 26.5px; height: 26.4px;" /></a> &#8211; open the <a class="reference internal" href="#logicanalyzer"><span>Logic Analyzer</span></a> window.</dt>
+<dd></dd>
+<dt><a class="reference internal" href="_images/Owwnotebook_icon.png"><img alt="MeasurementLog" src="_images/Owwnotebook_icon.png" style="width: 32.0px; height: 32.0px;" /></a> &#8211; open the <a class="reference internal" href="#measurementlog"><span>Measurement Log</span></a> window.</dt>
+<dd></dd>
+<dt><a class="reference internal" href="_images/Terminal-icon.png"><img alt="Scripting" src="_images/Terminal-icon.png" style="width: 25.6px; height: 25.6px;" /></a> &#8211; open the <a class="reference internal" href="#scripting"><span>Scripting</span></a> window.</dt>
+<dd></dd>
+<dt><a class="reference internal" href="_images/Success-01.png"><img alt="CheckBox" src="_images/Success-01.png" style="width: 27.3px; height: 27.23px;" /></a> or <a class="reference internal" href="_images/Error-01.png"><img alt="Exception" src="_images/Error-01.png" style="width: 27.05px; height: 27.05px;" /></a> &#8211; display if an exception occurred</dt>
+<dd>The <a class="reference internal" href="_images/Success-01.png"><img alt="CheckBox" src="_images/Success-01.png" style="width: 27.3px; height: 27.23px;" /></a> will turn into a <a class="reference internal" href="_images/Error-01.png"><img alt="Exception" src="_images/Error-01.png" style="width: 27.05px; height: 27.05px;" /></a> when an error occurs. If you click on it, you will see a list of all exceptions since the list was last cleared. You can clear the list, or clear individual exceptions.</dd>
+<dt><a class="reference internal" href="_images/Success-01.png"><img alt="CheckBox" src="_images/Success-01.png" style="width: 27.3px; height: 27.23px;" /></a> or <a class="reference internal" href="_images/Warning.png"><img alt="Warning" src="_images/Warning.png" style="width: 26.05px; height: 23.45px;" /></a> &#8211; display if a warning occurred</dt>
+<dd>The <a class="reference internal" href="_images/Success-01.png"><img alt="CheckBox" src="_images/Success-01.png" style="width: 27.3px; height: 27.23px;" /></a> will turn into a <a class="reference internal" href="_images/Warning.png"><img alt="Warning" src="_images/Warning.png" style="width: 26.05px; height: 23.45px;" /></a> when a warning occurs. Interface is the same as for exceptions.</dd>
+<dt><a class="reference internal" href="_images/office-chart-bar.png"><img alt="histogram" src="_images/office-chart-bar.png" style="width: 28.8px; height: 28.8px;" /></a> &#8211; copy histogram to traces</dt>
+<dd>This will copy the last histogram from the most recent scan to the trace list together with the other traces. From there it can be saved or viewed later.</dd>
+<dt><a class="reference internal" href="_images/office-chart-bar-save.png"><img alt="saveHistogram" src="_images/office-chart-bar-save.png" style="width: 24.2px; height: 24.6px;" /></a> &#8211; save all histogram from last scan</dt>
+<dd>This will save every histogram from the most recent scan to a file. It does not create an entry in the trace list. The filename used is specified in the scan control (see <a class="reference internal" href="#scans"><span>Scans</span></a>).</dd>
+<dt><a class="reference internal" href="_images/add-plot.png"><img alt="addPlot" src="_images/add-plot.png" style="width: 24.5px; height: 24.5px;" /></a> &#8211; add a plot</dt>
+<dd>This will add a plot window, which will available for any evaluation.</dd>
+<dt><a class="reference internal" href="_images/remove-plot.png"><img alt="removePlot" src="_images/remove-plot.png" style="width: 26.5px; height: 26.5px;" /></a> &#8211; remove a plot</dt>
+<dd>This will remove an existing plot window. Note: &#8220;Scan Data&#8221; and &#8220;Histogram&#8221; (and &#8220;Timestamps&#8221; if enabled) cannot be removed.</dd>
+<dt><a class="reference internal" href="_images/rename-plot.png"><img alt="renamePlot" src="_images/rename-plot.png" style="width: 22.5px; height: 24.0px;" /></a> &#8211; rename a plot</dt>
+<dd>This will rename an existing plot window. The same plots which cannot be removed also cannot be renamed.</dd>
+</dl>
 </div>
 </div>
 <div class="section" id="projects">
-<span id="id2"></span><h2><a class="toc-backref" href="#id16">Projects</a><a class="headerlink" href="#projects" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2><a class="toc-backref" href="#id19">Projects</a><a class="headerlink" href="#projects" title="Permalink to this headline">¶</a></h2>
 <p>All of the program settings, GUI configuration, data, etc. are attached to a specific <em>project</em>. Oftentimes only a single project is necessary for a given lab. However, if for whatever reason you need to be able to switch between totally different configurations of the program, the project functionality will allow this.</p>
 <div class="section" id="project-selection">
-<h3><a class="toc-backref" href="#id17">Project Selection</a><a class="headerlink" href="#project-selection" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id20">Project Selection</a><a class="headerlink" href="#project-selection" title="Permalink to this headline">¶</a></h3>
 <p>When you start the program for the very first time, you will be asked to select a base directory. This will be the directory under which will be the individual project directories. Once you select a base directory, the project selection GUI will appear:</p>
-<div class="figure" id="id9">
+<div class="figure" id="id10">
 <a class="reference internal image-reference" href="_images/ProjectSelection.png"><img alt="_images/ProjectSelection.png" src="_images/ProjectSelection.png" style="width: 380.0px; height: 363.0px;" /></a>
 <p class="caption"><span class="caption-text">Project selection GUI.</span></p>
 </div>
@@ -288,9 +352,9 @@
 <p>If you wish to see the project selection GUI the next time the program starts up, you can do so via the main control program by selecting File &gt; Project. This will display the currently selected project along with its configuration, and give you the option to show the selection GUI on next startup. Alternatively, you can directly edit ProjectConfig.yml, and change <em>showGui</em> to <em>True</em>.</p>
 </div>
 <div class="section" id="experiment-configuration">
-<h3><a class="toc-backref" href="#id18">Experiment Configuration</a><a class="headerlink" href="#experiment-configuration" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id21">Experiment Configuration</a><a class="headerlink" href="#experiment-configuration" title="Permalink to this headline">¶</a></h3>
 <p>Once a project is selected, the experiment configuration GUI will appear:</p>
-<div class="figure" id="id10">
+<div class="figure" id="id11">
 <a class="reference internal image-reference" href="_images/ExptConfig.png"><img alt="_images/ExptConfig.png" src="_images/ExptConfig.png" style="width: 674.0px; height: 897.0px;" /></a>
 <p class="caption"><span class="caption-text">Experiment configuration GUI.</span></p>
 </div>
@@ -303,17 +367,17 @@
 </div>
 </div>
 <div class="section" id="pulse-program">
-<span id="pulseprogram"></span><h2><a class="toc-backref" href="#id19">Pulse Program</a><a class="headerlink" href="#pulse-program" title="Permalink to this headline">¶</a></h2>
-<p>Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click <a class="reference internal" href="_images/pulser1.png"><img alt="pulses" src="_images/pulser1.png" style="width: 29.4px; height: 29.4px;" /></a> .</p>
+<span id="pulseprogram"></span><h2><a class="toc-backref" href="#id22">Pulse Program</a><a class="headerlink" href="#pulse-program" title="Permalink to this headline">¶</a></h2>
+<p>Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click <a class="reference internal" href="_images/pulser1.png"><img alt="pulses" src="_images/pulser1.png" style="width: 22.05px; height: 22.05px;" /></a> .</p>
 <p>The pulse program window consists of four sections. The primary section is the text file itself, which is under the heading <em>Pulse Program</em>. The two sections <em>Shutters, Triggers, Counters</em> and <em>Parameters</em> are interfaces to set the variables which are declared in the pulse program. The <em>Shutters, Triggers, Counters</em> window is for settings binary variables, while the <em>Parameters</em> window is for setting all other types of parameters. Finally, the <em>RAM Control</em> window is for directly writing to the RAM on the FPGA board.</p>
 <p>When a pulse program is saved (CTRL-S in the editor, or click <a class="reference internal" href="_images/filesave.png"><img alt="save" src="_images/filesave.png" style="width: 24.0px; height: 24.0px;" /></a>), the program attempts to compile it. If it fails, it indicates where and why it failed. If it is successful, it updates the parameters, shutters, triggers, and counters displays to match the pulse program.</p>
-<div class="figure" id="id11">
-<a class="reference internal image-reference" href="_images/PulseProgram.png"><img alt="_images/PulseProgram.png" src="_images/PulseProgram.png" style="width: 1916.0px; height: 1040.0px;" /></a>
+<div class="figure" id="id12">
+<a class="reference internal image-reference" href="_images/PulseProgram.png"><img alt="_images/PulseProgram.png" src="_images/PulseProgram.png" style="width: 1919.0px; height: 1080.0px;" /></a>
 <p class="caption"><span class="caption-text">The pulse program interface</span></p>
 </div>
 <p>The pulse program written here is run on the FPGA. It is compiled to a machine code that contains microcontroller instructions that are understood by the FPGA.</p>
 <div class="section" id="pulse-program-syntax">
-<h3><a class="toc-backref" href="#id20">Pulse Program Syntax</a><a class="headerlink" href="#pulse-program-syntax" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id23">Pulse Program Syntax</a><a class="headerlink" href="#pulse-program-syntax" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="variable-types">
 <h4>variable types<a class="headerlink" href="#variable-types" title="Permalink to this headline">¶</a></h4>
 <ul>
@@ -409,9 +473,14 @@
 </dd>
 </dl>
 </li>
-<li><p class="first">counter</p>
+<li><dl class="first docutils">
+<dt>shutter</dt>
+<dd><p class="first last">A shutter is a binary variable, which specifies the state of every TTL output of the FPGA, whether every PI loop is on or off, and whether the DAC scans are on or off see (<a class="reference internal" href="#piloops"><span>PI Loops</span></a> for an explanation of the last two). When a shutter is added to the pulse program, a new line appears in the shutters window</p>
+</dd>
+</dl>
 </li>
-<li><p class="first">shutter</p>
+<li><p class="first">counter
+A counter variable. When a counter is added, a new line appears in the counters GUI.</p>
 </li>
 <li><p class="first">masked_shutter</p>
 </li>
@@ -427,42 +496,51 @@
 <h4>commands<a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h4>
 </div>
 </div>
+<div class="section" id="pi-loops">
+<span id="piloops"></span><h3><a class="toc-backref" href="#id24">PI Loops</a><a class="headerlink" href="#pi-loops" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="non-pulsed-fpga-control">
+<span id="nonpulsedfpgacontrol"></span><h2><a class="toc-backref" href="#id25">Non-pulsed FPGA control</a><a class="headerlink" href="#non-pulsed-fpga-control" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="globalvariables">
-<span id="id3"></span><h2><a class="toc-backref" href="#id21">Global Variables</a><a class="headerlink" href="#globalvariables" title="Permalink to this headline">¶</a></h2>
+<span id="id3"></span><h2><a class="toc-backref" href="#id26">Global Variables</a><a class="headerlink" href="#globalvariables" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="scans">
-<span id="id4"></span><h2><a class="toc-backref" href="#id22">Scans</a><a class="headerlink" href="#scans" title="Permalink to this headline">¶</a></h2>
+<span id="id4"></span><h2><a class="toc-backref" href="#id27">Scans</a><a class="headerlink" href="#scans" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="external-parameters">
-<span id="externalparameters"></span><h2><a class="toc-backref" href="#id23">External Parameters</a><a class="headerlink" href="#external-parameters" title="Permalink to this headline">¶</a></h2>
+<span id="externalparameters"></span><h2><a class="toc-backref" href="#id28">External Parameters</a><a class="headerlink" href="#external-parameters" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="dedicated-counters">
-<span id="dedicatedcounters"></span><h2><a class="toc-backref" href="#id24">Dedicated Counters</a><a class="headerlink" href="#dedicated-counters" title="Permalink to this headline">¶</a></h2>
+<span id="dedicatedcounters"></span><h2><a class="toc-backref" href="#id29">Dedicated Counters</a><a class="headerlink" href="#dedicated-counters" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="autoloader">
-<span id="id5"></span><h2><a class="toc-backref" href="#id25">Autoloader</a><a class="headerlink" href="#autoloader" title="Permalink to this headline">¶</a></h2>
+<span id="id5"></span><h2><a class="toc-backref" href="#id30">Autoloader</a><a class="headerlink" href="#autoloader" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="scripting">
-<span id="id6"></span><h2><a class="toc-backref" href="#id26">Scripting</a><a class="headerlink" href="#scripting" title="Permalink to this headline">¶</a></h2>
+<span id="id6"></span><h2><a class="toc-backref" href="#id31">Scripting</a><a class="headerlink" href="#scripting" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="measurement-log">
-<span id="measurementlog"></span><h2><a class="toc-backref" href="#id27">Measurement Log</a><a class="headerlink" href="#measurement-log" title="Permalink to this headline">¶</a></h2>
+<span id="measurementlog"></span><h2><a class="toc-backref" href="#id32">Measurement Log</a><a class="headerlink" href="#measurement-log" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="gate-sequences">
-<span id="gatesequences"></span><h2><a class="toc-backref" href="#id28">Gate Sequences</a><a class="headerlink" href="#gate-sequences" title="Permalink to this headline">¶</a></h2>
+<span id="gatesequences"></span><h2><a class="toc-backref" href="#id33">Gate Sequences</a><a class="headerlink" href="#gate-sequences" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="printing">
-<span id="id7"></span><h2><a class="toc-backref" href="#id29">Printing</a><a class="headerlink" href="#printing" title="Permalink to this headline">¶</a></h2>
+<span id="id7"></span><h2><a class="toc-backref" href="#id34">Printing</a><a class="headerlink" href="#printing" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="voltage-control">
-<span id="voltagecontrol"></span><h2><a class="toc-backref" href="#id30">Voltage Control</a><a class="headerlink" href="#voltage-control" title="Permalink to this headline">¶</a></h2>
+<span id="voltagecontrol"></span><h2><a class="toc-backref" href="#id35">Voltage Control</a><a class="headerlink" href="#voltage-control" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="logic-analyzer">
+<span id="logicanalyzer"></span><h2><a class="toc-backref" href="#id36">Logic Analyzer</a><a class="headerlink" href="#logic-analyzer" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="awg">
-<span id="id8"></span><h2><a class="toc-backref" href="#id31">AWG</a><a class="headerlink" href="#awg" title="Permalink to this headline">¶</a></h2>
+<span id="id8"></span><h2><a class="toc-backref" href="#id37">AWG</a><a class="headerlink" href="#awg" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="extending-the-code">
-<span id="extending"></span><h2><a class="toc-backref" href="#id32">Extending the Code</a><a class="headerlink" href="#extending-the-code" title="Permalink to this headline">¶</a></h2>
+<span id="extending"></span><h2><a class="toc-backref" href="#id38">Extending the Code</a><a class="headerlink" href="#extending-the-code" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
