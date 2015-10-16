@@ -40,6 +40,7 @@ import modules.magnitude as magnitude
 import functools
 import yaml
 import shutil
+from collections import OrderedDict
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\PulseProgram.ui')
 PulseProgramWidget, PulseProgramBase = PyQt4.uic.loadUiType(uipath)
@@ -195,6 +196,20 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.ramFilenameComboBox.addItems( [''] + [key for key, path in self.configParams.recentRamFiles.iteritems() if os.path.exists(path)] )
         self.writeRamCheckbox.setChecked(self.currentContext.writeRam)
 
+        #setup documentation list
+        definitionDict, builtinDict = self.getDocs()
+
+        defItem = QtGui.QTreeWidgetItem(self.docTreeWidget, ["Variable Definitions"])
+        self.docTreeWidget.addTopLevelItem(defItem)
+        #This populates the tree under "Variable Definitions" with each definition word and its documentation
+        [QtGui.QTreeWidgetItem(QtGui.QTreeWidgetItem(defItem, [name]), [documentation]) for name, documentation in definitionDict.iteritems()]
+
+        builtinItem = QtGui.QTreeWidgetItem(self.docTreeWidget, ["Pulse Program Commands"])
+        self.docTreeWidget.addTopLevelItem(builtinItem)
+        #This populates the tree under "Pulse Program Commands" with each builtin word and its documentation
+        [QtGui.QTreeWidgetItem(QtGui.QTreeWidgetItem(builtinItem, [name]), [documentation]) for name, documentation in builtinDict.iteritems()]
+
+        #connect actions
         self.actionOpen.triggered.connect( self.onLoad )
         self.actionSave.triggered.connect( self.onSave )
         self.actionReset.triggered.connect(self.onReset)
@@ -265,8 +280,10 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def restoreLayout(self):
         """Restore layout from config settings"""
-        if self.configname+".state" in self.config:
-            self.restoreState(self.config[self.configname+".state"])
+        windowState = self.config.get(self.configname+".state")
+        if windowState: self.restoreState(windowState)
+        docSplitterState = self.config.get(self.configname+'.docSplitter')
+        if docSplitterState: self.docSplitter.restoreState(docSplitterState)
 
     def initMenu(self):
         self.menuView.clear()
@@ -611,6 +628,7 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         self.config[self.configname] = self.configParams
         self.config[self.configname+'.contextdict'] = self.contextDict 
         self.config[self.configname+'.currentContext'] = self.currentContext
+        self.config[self.configname+'.docSplitter'] = self.docSplitter.saveState()
         self.variableTableModel.saveConfig()
        
     def getPulseProgramBinary(self,parameters=dict(),override=dict()):
@@ -676,6 +694,17 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         edit = self.pppCodeEdits.get(self.pppSourceFile)
         if edit:
             edit.highlightTimingViolation( [l[1]-1 for l in linelist] )
+
+    def getDocs(self):
+        """Assemble the pulse program function documentation into a dictionary"""
+        definitionDict = OrderedDict()
+        builtinDict = OrderedDict()
+        for name in self.definitionWords:
+            definitionDict[name] = "This should be documentation for definition word {0}".format(name)
+        for name in self.builtinWords:
+            builtinDict[name] = "This should be documentation for builtin word {0}".format(name)
+        return definitionDict, builtinDict
+
 
 class PulseProgramSetUi(QtGui.QDialog):
     class Parameters:
@@ -749,7 +778,7 @@ class PulseProgramSetUi(QtGui.QDialog):
                 
     def onClose(self):
         self.reject()
-        
+
 
 #    def resizeEvent(self, event):
 #        self.config['PulseProgramSetUi.size'] = event.size()
