@@ -282,7 +282,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.StatusMessage.emit("test Clear not implemented")
     
     def onSave(self):
-        self.StatusMessage.emit("test Save not implemented")
+        pass
     
     def setTimeLabel(self):
         elapsed = time.time()-self.startTime
