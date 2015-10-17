@@ -6,6 +6,7 @@ This is the main gui program for the ExperimentalUi
 
 @author: pmaunz
 """
+import webbrowser
 
 from PyQt4 import QtCore, QtGui
 import PyQt4.uic
@@ -333,6 +334,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionPulses.triggered.connect(self.onPulses)
         self.actionReload.triggered.connect(self.onReload)
         self.actionProject.triggered.connect( self.onProjectSelection)
+        self.actionDocumentation.triggered.connect(self.onShowDocumentation)
         if self.voltagesEnabled:
             self.actionVoltageControl.triggered.connect(self.onVoltageControl)
         else:
@@ -655,6 +657,10 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             pdfPrinter.setOutputFormat(QtGui.QPrinter.PdfFormat)
             pdfPrinter.setOutputFileName(DataDirectory.DataDirectory().sequencefile(target+".pdf")[0])
             self.currentTab.onPrint(target, printer, pdfPrinter, self.preferencesUi.preferences().printPreferences)
+
+    def onShowDocumentation(self):
+        url = "file://" + os.path.join(os.path.dirname(os.path.abspath(__file__)),"docs\\_build\\html\\index.html")
+        webbrowser.open(url, new=2)
 
     def show(self):
         """show ExperimentUi, and any of the other main windows which were previously visible"""
