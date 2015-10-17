@@ -708,10 +708,11 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
         definitionDict = OrderedDict()
         builtinDict = OrderedDict()
         encodingDict = OrderedDict()
+        symbolTable = SymbolTable()
         for name in self.definitionWords:
             definitionDict[name] = "This should be documentation for definition word {0}".format(name)
         for name in self.builtinWords:
-            builtinDict[name] = "This should be documentation for builtin word {0}".format(name)
+            builtinDict[name] = symbolTable[name].doc or "This should be documentation for builtin word {0}".format(name)
         for name in encodings.keys():
             encodingDict[str(name)] = "This should be documentation for encoding word {0}".format(name)
         return definitionDict, builtinDict, encodingDict

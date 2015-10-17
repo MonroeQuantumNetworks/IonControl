@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import inspect
 import Builtins
 from CompileException import SymbolException
 
@@ -33,6 +34,7 @@ class Builtin(FunctionSymbol):
     def __init__(self, name, codegen):
         super(Builtin, self).__init__(name)
         self.codegen = codegen
+        self.doc = inspect.getdoc(codegen)
         
     
 class SymbolTable(OrderedDict):
