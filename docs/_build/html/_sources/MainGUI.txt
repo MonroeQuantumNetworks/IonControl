@@ -8,7 +8,12 @@ Main GUI
 
    The main Experiment GUI
 
-When you first start the program, the main GUI consists of a central area with plot windows surrounded by various control docks, with an action toolbar on top. The effects of the different toolbar actions are:
+When you first start the program, the main GUI consists of a central area with plot windows surrounded by various control docks, with an action toolbar on top.
+
+Toolbar
+-------
+
+The effects of the different toolbar actions are:
 
 |start| -- start a scan
    This will run the scan set in the scan control dock, with the evaulation set in the evaulation control dock. When the scan concludes, it will run the analysis set in the analysis control dock.
@@ -68,3 +73,52 @@ When you first start the program, the main GUI consists of a central area with p
 
 |renamePlot| -- rename a plot
    This will rename an existing plot window. The same plots which cannot be removed also cannot be renamed.
+
+Menu Bar
+--------
+
+The menu bar has many of the same options as in the toolbar, with the addition of:
+
+View
+   Show or hide any dock widget
+
+Print
+   Print (or save to PDF or SVG) any of the plot windows, as configured by the Print Preferences dock.
+
+File > Project:
+   Show the current project and its configuration settings (see :ref:`Projects` ). Also allows setting the Project Selection GUI and Experiment Configuration GUI on next program start.
+
+File > Import from XML:
+   Import an XML file containing settings for the Scan Control, Evaluation, Analysis, Global Variables, or Pulse Program.
+
+Docks
+-----
+
+All of the control and information windows in the main GUI are divided into the following docks:
+
+FPGA Control Docks
+~~~~~~~~~~~~~~~~~~
+
+- Shutters
+
+Scan Control Docks
+~~~~~~~~~~~~~~~~~~
+
+- Scan Control
+- Evaluation Control
+- Analysis Control
+- Traces
+- Fit
+- Progress
+- Average
+
+see :ref:`Scans` for information on all of these docks.
+
+External Parameters Docks
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Params Selection
+- Params Control
+- Params Reading
+
+see :ref:`ExternalParameters` for information on all of these docks.

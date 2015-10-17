@@ -92,6 +92,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="">Pulse Program</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#pulse-program-syntax">Pulse Program Syntax</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#variable-types">variable types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#control-structures">control structures</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#commands">commands</a></li>
 </ul>
 </li>
@@ -275,21 +276,63 @@
 </dd>
 </dl>
 </li>
-<li><p class="first">counter
-A counter variable. When a counter is added, a new line appears in the counters GUI.</p>
+<li><dl class="first docutils">
+<dt>counter</dt>
+<dd><p class="first last">A counter variable. When a counter is added, a new line appears in the counters GUI. Counters are gates to count on input channels or to record ADC channels. Results are transmitted to the computer.</p>
+</dd>
+</dl>
 </li>
-<li><p class="first">masked_shutter</p>
+<li><dl class="first docutils">
+<dt>masked_shutter</dt>
+<dd><p class="first last">As shutter, however it has three states: red: off, green:on, white: do not change</p>
+</dd>
+</dl>
 </li>
 <li><p class="first">trigger</p>
 </li>
 <li><p class="first">address</p>
 </li>
-<li><p class="first">exitcode</p>
+<li><dl class="first docutils">
+<dt>exitcode</dt>
+<dd><p class="first">Exitcodes are transmitted to the computer when the pulse program stops executing. Exitcodes are 64bit numbers where the most significant bits are 0xfffe</p>
+<div class="last highlight-Python"><div class="highlight"><pre><span class="n">exitcode</span> <span class="n">IonLostExitcode</span> <span class="o">=</span> <span class="mh">0xfffe000000000001</span>
+<span class="n">exitcode</span> <span class="n">SuccessExitcode</span> <span class="o">=</span> <span class="mh">0xfffe000000000000</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="control-structures">
+<h3>control structures<a class="headerlink" href="#control-structures" title="Permalink to this headline">¶</a></h3>
+<p>The following control structures are supported:</p>
+<ul>
+<li><p class="first">while loops</p>
+<blockquote>
+<div><div class="highlight-Python"><div class="highlight"><pre><span class="n">experimentsleft</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="k">while</span> <span class="n">experimentsleft</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+   <span class="n">experimentsleft</span> <span class="o">-=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">if then else conditionals</p>
+<blockquote>
+<div><div class="highlight-Python"><div class="highlight"><pre><span class="k">if</span> <span class="n">photonsfound</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+   <span class="n">experimentsleft</span> <span class="o">-=</span> <span class="mi">1</span>
+<span class="k">else</span><span class="p">:</span>
+   <span class="nb">exit</span><span class="p">(</span> <span class="n">IonLostExitcode</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
 </li>
 </ul>
 </div>
 <div class="section" id="commands">
 <h3>commands<a class="headerlink" href="#commands" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div></div></blockquote>
 </div>
 </div>
 <div class="section" id="pi-loops">

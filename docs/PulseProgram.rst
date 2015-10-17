@@ -99,15 +99,48 @@ variable types
    A shutter is a binary variable, which specifies the state of every TTL output of the FPGA, whether every PI loop is on or off, and whether the DAC scans are on or off see (:ref:`PILoops` for an explanation of the last two). When a shutter is added to the pulse program, a new line appears in the shutters window
 
 - counter
-  A counter variable. When a counter is added, a new line appears in the counters GUI.
+   A counter variable. When a counter is added, a new line appears in the counters GUI. Counters are gates to count on input channels or to record ADC channels. Results are transmitted to the computer.
 
 - masked_shutter
+   As shutter, however it has three states: red: off, green:on, white: do not change
+
 - trigger
 - address
 - exitcode
+   Exitcodes are transmitted to the computer when the pulse program stops executing. Exitcodes are 64bit numbers where the most significant bits are 0xfffe
+
+   .. code-block:: Python
+
+      exitcode IonLostExitcode = 0xfffe000000000001
+      exitcode SuccessExitcode = 0xfffe000000000000
+
+control structures
+``````````````````
+
+The following control structures are supported:
+
+- while loops
+
+   .. code-block:: Python
+
+      experimentsleft = 100
+      while experimentsleft>0:
+         experimentsleft -= 1
+
+- if then else conditionals
+
+   .. code-block:: Python
+
+      if photonsfound>0:
+         experimentsleft -= 1
+      else:
+         exit( IonLostExitcode )
+
 
 commands
 ````````
+
+   .. autodata:: Builtins
 
 .. _PILoops:
 

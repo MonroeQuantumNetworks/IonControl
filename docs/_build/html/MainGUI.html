@@ -87,9 +87,19 @@
 <li class="toctree-l1"><a class="reference internal" href="hardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="experimentUi_manual.html">User Manual</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="Introduction.html">Introduction</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">Main GUI</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Main GUI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#toolbar">Toolbar</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#menu-bar">Menu Bar</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#docks">Docks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fpga-control-docks">FPGA Control Docks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#scan-control-docks">Scan Control Docks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#external-parameters-docks">External Parameters Docks</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#pulse-program">Pulse Program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PulseProgram.html">Pulse Program</a></li>
 <li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#non-pulsed-fpga-control">Non-pulsed FPGA control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#global-variables">Global Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#scans">Scans</a></li>
@@ -160,7 +170,10 @@
 <a class="reference internal image-reference" href="_images/ExperimentUi.png"><img alt="_images/ExperimentUi.png" src="_images/ExperimentUi.png" style="width: 1921.0px; height: 1079.0px;" /></a>
 <p class="caption"><span class="caption-text">The main Experiment GUI</span></p>
 </div>
-<p>When you first start the program, the main GUI consists of a central area with plot windows surrounded by various control docks, with an action toolbar on top. The effects of the different toolbar actions are:</p>
+<p>When you first start the program, the main GUI consists of a central area with plot windows surrounded by various control docks, with an action toolbar on top.</p>
+<div class="section" id="toolbar">
+<h2>Toolbar<a class="headerlink" href="#toolbar" title="Permalink to this headline">¶</a></h2>
+<p>The effects of the different toolbar actions are:</p>
 <dl class="docutils">
 <dt><a class="reference internal" href="_images/media-playback-start-7.png"><img alt="start" src="_images/media-playback-start-7.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; start a scan</dt>
 <dd>This will run the scan set in the scan control dock, with the evaulation set in the evaulation control dock. When the scan concludes, it will run the analysis set in the analysis control dock.</dd>
@@ -178,7 +191,7 @@
 <dd>This will save all the global variables, scan settings, evaluation settings, analysis settings, and pulse program settings to XML files. These files can be imported via File &gt; Import XML. This is mainly useful if you want to move a large list of experiment settings between projects.</dd>
 <dt><a class="reference internal" href="_images/gnome-power-statistics.png"><img alt="DedicatedCounters" src="_images/gnome-power-statistics.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#dedicatedcounters"><span>Dedicated Counters</span></a> window.</dt>
 <dd></dd>
-<dt><a class="reference internal" href="_images/pulser1.png"><img alt="pulses" src="_images/pulser1.png" style="width: 22.05px; height: 22.05px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#pulseprogram"><span>Pulse Program</span></a> window.</dt>
+<dt><a class="reference internal" href="_images/pulser1.png"><img alt="pulses" src="_images/pulser1.png" style="width: 22.05px; height: 22.05px;" /></a> &#8211; open the <a class="reference internal" href="PulseProgram.html#pulseprogram"><span>Pulse Program</span></a> window.</dt>
 <dd></dd>
 <dt><a class="reference internal" href="_images/pictogram-din-w008-electricisty.png"><img alt="voltages" src="_images/pictogram-din-w008-electricisty.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#voltagecontrol"><span>Voltage Control</span></a> window.</dt>
 <dd></dd>
@@ -203,6 +216,53 @@
 <dt><a class="reference internal" href="_images/rename-plot.png"><img alt="renamePlot" src="_images/rename-plot.png" style="width: 22.5px; height: 24.0px;" /></a> &#8211; rename a plot</dt>
 <dd>This will rename an existing plot window. The same plots which cannot be removed also cannot be renamed.</dd>
 </dl>
+</div>
+<div class="section" id="menu-bar">
+<h2>Menu Bar<a class="headerlink" href="#menu-bar" title="Permalink to this headline">¶</a></h2>
+<p>The menu bar has many of the same options as in the toolbar, with the addition of:</p>
+<dl class="docutils">
+<dt>View</dt>
+<dd>Show or hide any dock widget</dd>
+<dt>Print</dt>
+<dd>Print (or save to PDF or SVG) any of the plot windows, as configured by the Print Preferences dock.</dd>
+<dt>File &gt; Project:</dt>
+<dd>Show the current project and its configuration settings (see <a class="reference internal" href="Projects.html#projects"><span>Projects</span></a> ). Also allows setting the Project Selection GUI and Experiment Configuration GUI on next program start.</dd>
+<dt>File &gt; Import from XML:</dt>
+<dd>Import an XML file containing settings for the Scan Control, Evaluation, Analysis, Global Variables, or Pulse Program.</dd>
+</dl>
+</div>
+<div class="section" id="docks">
+<h2>Docks<a class="headerlink" href="#docks" title="Permalink to this headline">¶</a></h2>
+<p>All of the control and information windows in the main GUI are divided into the following docks:</p>
+<div class="section" id="fpga-control-docks">
+<h3>FPGA Control Docks<a class="headerlink" href="#fpga-control-docks" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Shutters</li>
+</ul>
+</div>
+<div class="section" id="scan-control-docks">
+<h3>Scan Control Docks<a class="headerlink" href="#scan-control-docks" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Scan Control</li>
+<li>Evaluation Control</li>
+<li>Analysis Control</li>
+<li>Traces</li>
+<li>Fit</li>
+<li>Progress</li>
+<li>Average</li>
+</ul>
+<p>see <a class="reference internal" href="experimentUi_manual.html#scans"><span>Scans</span></a> for information on all of these docks.</p>
+</div>
+<div class="section" id="external-parameters-docks">
+<h3>External Parameters Docks<a class="headerlink" href="#external-parameters-docks" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Params Selection</li>
+<li>Params Control</li>
+<li>Params Reading</li>
+</ul>
+<p>see <a class="reference internal" href="experimentUi_manual.html#externalparameters"><span>External Parameters</span></a> for information on all of these docks.</p>
+</div>
+</div>
 </div>
 
 
