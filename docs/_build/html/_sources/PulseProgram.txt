@@ -140,7 +140,9 @@ The following control structures are supported:
 commands
 ````````
 
-   .. autodata:: Builtins
+   .. automodule:: Builtins
+      :members:
+      :exclude-members: exit_
 
 .. _PILoops:
 

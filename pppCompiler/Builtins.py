@@ -1,14 +1,12 @@
 '''
-Created on Feb 15, 2014
-
-@author: pmaunz
+Functions built into the ppp language.
 '''
 from CompileException import CompileException
 from modules.stringutilit import stringToBool
 
 def set_shutter( symboltable, arg=list(), kwarg=dict() ):
     """
-    set_shutter( <shutter> )
+    set_shutter( shutter )
     Set the shutter values to be applied with next update.
     """
     if len(arg)!=2:
@@ -26,7 +24,7 @@ def set_shutter( symboltable, arg=list(), kwarg=dict() ):
 
 def set_inv_shutter( symboltable, arg=list(), kwarg=dict() ):
     """
-    set_inv_shutter( <shutter> )
+    set_inv_shutter( shutter )
     Set inverse shutter values to be applied with next update. All bits that are green become disabled, all bit red enabled, all white bits remain unaltered.
     """
     if len(arg)!=2:
@@ -44,7 +42,7 @@ def set_inv_shutter( symboltable, arg=list(), kwarg=dict() ):
 
 def set_counter( symboltable, arg=list(), kwarg=dict() ):
     """
-    set_counter( <counter> )
+    set_counter( counter )
     Set the counterchannels to be enabled after the next update.
     """
     if len(arg)!=2:
@@ -63,7 +61,7 @@ def clear_counter( symboltable, arg=list(), kwarg=dict() ):
 
 def update( symboltable, arg=list(), kwarg=dict() ):
     """
-    update( [time parameter], [wait_dds=True] )
+    update( parameter_time, [wait_dds=True] )
     Update the shutter, trigger and counter gate outputs.
     If time parameter is given, start timer with this time.
     wait_dds=True (default): wait for all DDS and other hardware to be written.
@@ -80,7 +78,7 @@ def update( symboltable, arg=list(), kwarg=dict() ):
 
 def load_count( symboltable, arg=list(), kwarg=dict()):
     """
-    load_count( <const> )
+    load_count( const_channel )
     load detected counts from counter channel given by the const paarameter.
     The new count value becomes available AFTER the gate is closed and is available
     until the next counter gate is closed for the same channel.
@@ -92,7 +90,7 @@ def load_count( symboltable, arg=list(), kwarg=dict()):
 
 def set_trigger( symboltable, arg=list(), kwarg=dict()):
     """
-    set_trigger( <trigger> )
+    set_trigger( trigger )
     set trigger values to be applied after next update.
     trigger channels only put out one clock cycle pulses when enabled.
     """
@@ -103,7 +101,7 @@ def set_trigger( symboltable, arg=list(), kwarg=dict()):
 
 def set_dds( symboltable, arg=list(), kwarg=dict()):
     """
-    set_dds( <const>, [freq=<parameter>], [phase=<parameter>], [amp=<parameter>] )
+    set_dds( const_channel, [freq=freq_parameter], [phase=phase_parameter], [amp=amp_parameter] )
     set dds parameters of channel given by const parameter.
     Only given parameters are written. Frequency and Phase
     only take effect after the next io_update trigger.
@@ -124,7 +122,7 @@ def set_dds( symboltable, arg=list(), kwarg=dict()):
 
 def set_dac( symboltable, arg=list(), kwarg=dict()):
     """
-    set_dac( <const>, <parameter> )
+    set_dac( const_channel, parameter )
     set dac channel given by const parameter to value given by second parameter.
     """
     if len(arg)!=3:
@@ -135,7 +133,7 @@ def set_dac( symboltable, arg=list(), kwarg=dict()):
 
 def serial_write( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     """
-    serial_write( <const channel>, <parameter value> )
+    serial_write( const_channel, value )
     write value to serial interface channel.
     """
     if len(arg)!=3:
@@ -146,7 +144,7 @@ def serial_write( symboltable, arg=list(), kwarg=dict()):  # channel, variable
 
 def set_parameter( symboltable, arg=list(), kwarg=dict()):  # index, variable):
     """
-    set_parameter( <const index>, <parameter value> )
+    set_parameter( const_index, parameter value )
     set pulser parameter channel index to value.
     """
     if len(arg)!=3:
@@ -157,14 +155,14 @@ def set_parameter( symboltable, arg=list(), kwarg=dict()):  # index, variable):
   
 def read_pipe( symboltable, arg=list(), kwarg=dict()):
     """
-    <parameter> = read_pipe()
+    read_pipe()
     Read one word from the incoming pipe and place in parameter.
     """
     return ["  READPIPE"]
 
 def write_pipe( symboltable, arg=list(), kwarg=dict()):
     """
-    write_pipe( <parameter> )
+    write_pipe( parameter )
     Write parameter to pipe to computer.
     """
     code = list()
@@ -176,8 +174,8 @@ def write_pipe( symboltable, arg=list(), kwarg=dict()):
 
 def write_result( symboltable, arg=list(), kwarg=dict()):  # channel, variable
     """
-    write_result( <const channel>, <parameter value> )
-    Write value as a result of the given channel.
+    write_result( const_channel, parameter )
+    Write parameter as a result of the given channel.
     Values can be plotted by selecting "Result" and channel
     number in the Evaluation configuration.
     """
@@ -202,9 +200,15 @@ def ram_read_valid( symboltable, arg=list(), kwarg=dict()):
     """
     return {True: ' JMPRAMVALID', False: '  JMPRAMINVALID'}
 
+def exit( symboltable, arg=list(), kwarg=dict()):
+    """
+    exit( exitcode )
+    Stop propgram execution with the given exitcode.
+    """
+
 def exit_( symboltable, arg=list(), kwarg=dict()):
     """
-    exit( <exitcode> )
+    exit( exitcode )
     Stop propgram execution with the given exitcode.
     """
     if len(arg)!=2:
@@ -215,7 +219,7 @@ def exit_( symboltable, arg=list(), kwarg=dict()):
 
 def set_ram_address( symboltable, arg=list(), kwarg=dict()):
     """
-    set_ram_address( <parameter> )
+    set_ram_address( parameter )
     Set the address of the RAM read pointer.
     Invalidates the FIFO and starts reading at the given address.
     """
@@ -226,7 +230,7 @@ def set_ram_address( symboltable, arg=list(), kwarg=dict()):
 
 def read_ram( symboltable, arg=list(), kwarg=dict()):
     """
-    parameter = read_ram()
+    read_ram()
     Read one word from the RAM pipe.
     Only valif if ram_valid() return true.
     """
@@ -241,7 +245,7 @@ def wait_dds( symboltable, arg=list(), kwarg=dict()):
 
 def wait_trigger( symboltable, arg=list(), kwarg=dict()):
     """
-    wait_trigger( <parameter> )
+    wait_trigger( parameter )
     wait for external trigger. Parameter is a bitmask where
     [7:0]: edge trigger, continue if |(parameter[7:0] & trigger_in[7:0])
     [31:24]: level trigger, we care about bits set here.

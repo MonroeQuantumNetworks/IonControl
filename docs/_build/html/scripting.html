@@ -149,7 +149,7 @@
 <p>&#64;author: jmizrahi</p>
 <dl class="class">
 <dt id="scripting.ScriptingUi.ScriptingUi">
-<em class="property">class </em><code class="descclassname">scripting.ScriptingUi.</code><code class="descname">ScriptingUi</code><span class="sig-paren">(</span><em>experimentUi</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/ScriptingUi.html#ScriptingUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.ScriptingUi.ScriptingUi" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">ScriptingUi</code><span class="sig-paren">(</span><em>experimentUi</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/ScriptingUi.html#ScriptingUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.ScriptingUi.ScriptingUi" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ui for the scripting interface.</p>
 <dl class="method">
 <dt id="scripting.ScriptingUi.ScriptingUi.enableScriptChange">
@@ -286,7 +286,7 @@
 <p>&#64;author: jmizrahi</p>
 <dl class="class">
 <dt id="scripting.Script.Script">
-<em class="property">class </em><code class="descclassname">scripting.Script.</code><code class="descname">Script</code><span class="sig-paren">(</span><em>fullname=''</em>, <em>code=''</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#Script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.Script" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">Script</code><span class="sig-paren">(</span><em>fullname=''</em>, <em>code=''</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#Script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.Script" title="Permalink to this definition">¶</a></dt>
 <dd><p>Encapsulates a running script together with all the scripting functions. Script executes in separate thread.</p>
 <p>The script behavior is as follows: each script function that manipulates a GUI element does so by emitting a
 signal, followed by entering  QWaitCondition. The ScriptHandler responds to the signal, and wakes up the 
@@ -520,7 +520,7 @@ wait=True, the script will not continue until the scan is finished.</p>
 
 <dl class="function">
 <dt id="scripting.Script.checkScripting">
-<code class="descclassname">scripting.Script.</code><code class="descname">checkScripting</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#checkScripting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.checkScripting" title="Permalink to this definition">¶</a></dt>
+<code class="descname">checkScripting</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#checkScripting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.checkScripting" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check whether a function has been marked as a script function</p>
 </dd></dl>
 
@@ -531,7 +531,7 @@ wait=True, the script will not continue until the scan is finished.</p>
 <p>&#64;author: jmizrahi</p>
 <dl class="class">
 <dt id="scripting.ScriptHandler.ScriptHandler">
-<em class="property">class </em><code class="descclassname">scripting.ScriptHandler.</code><code class="descname">ScriptHandler</code><span class="sig-paren">(</span><em>script</em>, <em>experimentUi</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/ScriptHandler.html#ScriptHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">ScriptHandler</code><span class="sig-paren">(</span><em>script</em>, <em>experimentUi</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/ScriptHandler.html#ScriptHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.ScriptHandler.ScriptHandler" title="Permalink to this definition">¶</a></dt>
 <dd><p>The ScriptHandler is what handles all the interfacing between the Script and the GUI. The Script
 emits signals, which are picked up by the ScriptHandler, which executes the necessary changes on the
 GUI.</p>
