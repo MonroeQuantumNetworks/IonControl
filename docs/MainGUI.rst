@@ -1,5 +1,7 @@
 .. include:: inlineImages.include
 
+.. _MainGUI:
+
 Main GUI
 ========
 
@@ -22,18 +24,10 @@ The effects of the different toolbar actions are:
    This will pause the scan wherever it currently is.
 
 |stop| -- stop a scan
-   This will stop the scan, but will still perform the analysis and register the scan in the measurement log.
+   This will stop the scan, but will still perform the analysis and register the scan in the :ref`MeasurementLog`.
 
 |abort| -- abort a scan
    This will stop the scan, but will NOT perform the analysis or register the scan in the measurement log.
-
-|save| -- save GUI configuration data
-   This will save the GUI configuration to a new database file with the name "configuration_X.db" (where X is 001 the first time you hit save, then increments) which will be placed in the day's data directory. This can be used if you want to take a snapshot of your GUI configuration which you can later return to. Each time you click save, a new file is created. To reload the GUI configuration, copy the saved file to 'yourProjectDir/.gui-config', and rename it 'ExperimentUi.config'.
-
-   Note that this is not for ordinary saving of the GUI configuration -- this happens automatically once a minute, and whenever the program is closed.
-
-|XMLSave| -- save experiment configuration data to an XML file
-  This will save all the global variables, scan settings, evaluation settings, analysis settings, and pulse program settings to XML files. These files can be imported via File > Import XML. This is mainly useful if you want to move a large list of experiment settings between projects.
 
 |DedicatedCounters| -- open the :ref:`DedicatedCounters` window.
    \
@@ -85,11 +79,19 @@ View
 Print
    Print (or save to PDF or SVG) any of the plot windows, as configured by the Print Preferences dock.
 
-File > Project:
+File > Project Information:
    Show the current project and its configuration settings (see :ref:`Projects` ). Also allows setting the Project Selection GUI and Experiment Configuration GUI on next program start.
 
-File > Import from XML:
-   Import an XML file containing settings for the Scan Control, Evaluation, Analysis, Global Variables, or Pulse Program.
+File > Save GUI Configuration:
+   This will save the current GUI configuration to a new database file with the name "configuration_X.db" (where X=001 on first save, then increments) which will be placed in the day's data directory. This can be used if you want to take a snapshot of your GUI configuration which you can later return to. To reload the GUI configuration: close the program, copy the saved file to '<YourProjectDir>/.gui-config', and rename it 'ExperimentUi.config'.
+
+   Note that this is only for taking a snapshot to return to. Ordinary saving of the GUI configuration happens automatically once a minute, and whenever the program is closed.
+
+File > Save Settings:
+   This will save experiment configuration data to a file in the day's data directory. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.
+
+File > Load Settings:
+   Load experiment configuration data from a file saved via File > Save Settings.
 
 Docks
 -----
@@ -100,6 +102,12 @@ FPGA Control Docks
 ~~~~~~~~~~~~~~~~~~
 
 - Shutters
+- Triggers
+- DDS
+- DAC
+- Pulser Parameters
+
+see :ref:`FPGAControl` for information on all of these docks.
 
 Scan Control Docks
 ~~~~~~~~~~~~~~~~~~
@@ -111,6 +119,7 @@ Scan Control Docks
 - Fit
 - Progress
 - Average
+- Todo List
 
 see :ref:`Scans` for information on all of these docks.
 
@@ -122,3 +131,50 @@ External Parameters Docks
 - Params Reading
 
 see :ref:`ExternalParameters` for information on all of these docks.
+
+Value History Dock
+~~~~~~~~~~~~~~~~~~
+
+.. figure:: images/ValueHistory.png
+   :scale: 100 %
+
+   Value History Dock
+
+   Allows querying the history associated with a specific value. History is shown in a table. To update the table, click |revert|. This same information can also be plotted using the :ref:`Instrument Logger <InstrumentLogger>`.
+
+Global Variables Dock
+~~~~~~~~~~~~~~~~~~~~~
+
+.. figure:: images/GlobalVariables.png
+   :scale: 100 %
+
+   Global Variables Dock
+
+Global variables can be referenced in many places throught the program, and allow different parts of the program to reference the same value. The global variables dock shows all current global variables. They can be re-arranged in the table using the PgUp and PgDn keys, or sorted by clicking the column header. If the global variables are arranged in a particular order, and then sorted, they can be restored to the previous order by right clicking in the table and selecting "restore custom order."
+
+Global variables can also be made bold by selecting the variable and hitting CTRL-B. This has no effect on the program, it simply makes that global variable easier to find quickly in the list.
+
+To add a global variable, type a name in the text box and click |add|. The are no specific naming requirements, however, to avoid namespace collisions with the pulse program, I tend to end all global variables with the word "Global." (If you have a pulse program variable "CoolingFreq" and a global variable by the same name, this will likely cause problems and at the very least confusion.)
+
+Console Docks
+~~~~~~~~~~~~~
+
+- Console Output
+   Displays console output. If IDE is being used, IDE console will show the same information
+
+- Logging
+   Enables granular control over what information is logged to the console
+
+Print Preferences Dock
+~~~~~~~~~~~~~~~~~~~~~~
+
+   Settings for printing. Can also be shown via the print menu.
+
+Optional Docks
+~~~~~~~~~~~~~~
+
+- Timestamp Traces
+   Will only be visible if timestamps are enabled. See :ref:`Timestamps` .
+
+- AWG
+   Will only be visible if AWG is enabled. See :ref:`AWG` .

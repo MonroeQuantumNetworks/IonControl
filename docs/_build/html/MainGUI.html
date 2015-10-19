@@ -32,7 +32,7 @@
   
     <link rel="top" title="IonControl 0.8 documentation" href="index.html"/>
         <link rel="up" title="User Manual" href="experimentUi_manual.html"/>
-        <link rel="next" title="Projects" href="Projects.html"/>
+        <link rel="next" title="FPGA Control" href="FPGAControl.html"/>
         <link rel="prev" title="Introduction" href="Introduction.html"/> 
 
   
@@ -94,26 +94,27 @@
 <li class="toctree-l4"><a class="reference internal" href="#fpga-control-docks">FPGA Control Docks</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#scan-control-docks">Scan Control Docks</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#external-parameters-docks">External Parameters Docks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#value-history-dock">Value History Dock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#global-variables-dock">Global Variables Dock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#console-docks">Console Docks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#print-preferences-dock">Print Preferences Dock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#optional-docks">Optional Docks</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="FPGAControl.html">FPGA Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PulseProgram.html">Pulse Program</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#non-pulsed-fpga-control">Non-pulsed FPGA control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#global-variables">Global Variables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#scans">Scans</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#external-parameters">External Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#dedicated-counters">Dedicated Counters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#autoloader">Autoloader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#scripting">Scripting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#measurement-log">Measurement Log</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#gate-sequences">Gate Sequences</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#printing">Printing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#voltage-control">Voltage Control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#logic-analyzer">Logic Analyzer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#awg">AWG</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#extending-the-code">Extending the Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Scans.html">Scans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GateSequences.html">Gate Sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExternalParameters.html">External Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="KnownHardware.html">Known Hardware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DedicatedCounters.html">Dedicated Counters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VoltageControl.html">Voltage Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LogicAnalyzer.html">Logic Analyzer</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
@@ -165,7 +166,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="main-gui">
-<h1>Main GUI<a class="headerlink" href="#main-gui" title="Permalink to this headline">¶</a></h1>
+<span id="maingui"></span><h1>Main GUI<a class="headerlink" href="#main-gui" title="Permalink to this headline">¶</a></h1>
 <div class="figure" id="id1">
 <a class="reference internal image-reference" href="_images/ExperimentUi.png"><img alt="_images/ExperimentUi.png" src="_images/ExperimentUi.png" style="width: 1921.0px; height: 1079.0px;" /></a>
 <p class="caption"><span class="caption-text">The main Experiment GUI</span></p>
@@ -180,26 +181,20 @@
 <dt><a class="reference internal" href="_images/media-playback-pause-7.png"><img alt="pause" src="_images/media-playback-pause-7.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; pause a scan</dt>
 <dd>This will pause the scan wherever it currently is.</dd>
 <dt><a class="reference internal" href="_images/media-playback-stop-7.png"><img alt="stop" src="_images/media-playback-stop-7.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; stop a scan</dt>
-<dd>This will stop the scan, but will still perform the analysis and register the scan in the measurement log.</dd>
+<dd>This will stop the scan, but will still perform the analysis and register the scan in the :ref`MeasurementLog`.</dd>
 <dt><a class="reference internal" href="_images/edit-delete-6.png"><img alt="abort" src="_images/edit-delete-6.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; abort a scan</dt>
 <dd>This will stop the scan, but will NOT perform the analysis or register the scan in the measurement log.</dd>
-<dt><a class="reference internal" href="_images/filesave.png"><img alt="save" src="_images/filesave.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; save GUI configuration data</dt>
-<dd><p class="first">This will save the GUI configuration to a new database file with the name &#8220;configuration_X.db&#8221; (where X is 001 the first time you hit save, then increments) which will be placed in the day&#8217;s data directory. This can be used if you want to take a snapshot of your GUI configuration which you can later return to. Each time you click save, a new file is created. To reload the GUI configuration, copy the saved file to &#8216;yourProjectDir/.gui-config&#8217;, and rename it &#8216;ExperimentUi.config&#8217;.</p>
-<p class="last">Note that this is not for ordinary saving of the GUI configuration &#8211; this happens automatically once a minute, and whenever the program is closed.</p>
-</dd>
-<dt><a class="reference internal" href="_images/ExportToXMLFile-48.png"><img alt="XMLSave" src="_images/ExportToXMLFile-48.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; save experiment configuration data to an XML file</dt>
-<dd>This will save all the global variables, scan settings, evaluation settings, analysis settings, and pulse program settings to XML files. These files can be imported via File &gt; Import XML. This is mainly useful if you want to move a large list of experiment settings between projects.</dd>
-<dt><a class="reference internal" href="_images/gnome-power-statistics.png"><img alt="DedicatedCounters" src="_images/gnome-power-statistics.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#dedicatedcounters"><span>Dedicated Counters</span></a> window.</dt>
+<dt><a class="reference internal" href="_images/gnome-power-statistics.png"><img alt="DedicatedCounters" src="_images/gnome-power-statistics.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="DedicatedCounters.html#dedicatedcounters"><span>Dedicated Counters</span></a> window.</dt>
 <dd></dd>
 <dt><a class="reference internal" href="_images/pulser1.png"><img alt="pulses" src="_images/pulser1.png" style="width: 22.05px; height: 22.05px;" /></a> &#8211; open the <a class="reference internal" href="PulseProgram.html#pulseprogram"><span>Pulse Program</span></a> window.</dt>
 <dd></dd>
-<dt><a class="reference internal" href="_images/pictogram-din-w008-electricisty.png"><img alt="voltages" src="_images/pictogram-din-w008-electricisty.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#voltagecontrol"><span>Voltage Control</span></a> window.</dt>
+<dt><a class="reference internal" href="_images/pictogram-din-w008-electricisty.png"><img alt="voltages" src="_images/pictogram-din-w008-electricisty.png" style="width: 24.0px; height: 24.0px;" /></a> &#8211; open the <a class="reference internal" href="VoltageControl.html#voltagecontrol"><span>Voltage Control</span></a> window.</dt>
 <dd></dd>
-<dt><a class="reference internal" href="_images/ChipScope.png"><img alt="LogicAnalyzer" src="_images/ChipScope.png" style="width: 26.5px; height: 26.4px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#logicanalyzer"><span>Logic Analyzer</span></a> window.</dt>
+<dt><a class="reference internal" href="_images/ChipScope.png"><img alt="LogicAnalyzer" src="_images/ChipScope.png" style="width: 26.5px; height: 26.4px;" /></a> &#8211; open the <a class="reference internal" href="LogicAnalyzer.html#logicanalyzer"><span>Logic Analyzer</span></a> window.</dt>
 <dd></dd>
-<dt><a class="reference internal" href="_images/Owwnotebook_icon.png"><img alt="MeasurementLog" src="_images/Owwnotebook_icon.png" style="width: 32.0px; height: 32.0px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#measurementlog"><span>Measurement Log</span></a> window.</dt>
+<dt><a class="reference internal" href="_images/Owwnotebook_icon.png"><img alt="MeasurementLog" src="_images/Owwnotebook_icon.png" style="width: 32.0px; height: 32.0px;" /></a> &#8211; open the <a class="reference internal" href="MeasurementLog.html#measurementlog"><span>Measurement Log</span></a> window.</dt>
 <dd></dd>
-<dt><a class="reference internal" href="_images/Terminal-icon.png"><img alt="Scripting" src="_images/Terminal-icon.png" style="width: 25.6px; height: 25.6px;" /></a> &#8211; open the <a class="reference internal" href="experimentUi_manual.html#scripting"><span>Scripting</span></a> window.</dt>
+<dt><a class="reference internal" href="_images/Terminal-icon.png"><img alt="Scripting" src="_images/Terminal-icon.png" style="width: 25.6px; height: 25.6px;" /></a> &#8211; open the <a class="reference internal" href="Scripting.html#scripting"><span>Scripting</span></a> window.</dt>
 <dd></dd>
 <dt><a class="reference internal" href="_images/Success-01.png"><img alt="CheckBox" src="_images/Success-01.png" style="width: 27.3px; height: 27.23px;" /></a> or <a class="reference internal" href="_images/Error-01.png"><img alt="Exception" src="_images/Error-01.png" style="width: 27.05px; height: 27.05px;" /></a> &#8211; display if an exception occurred</dt>
 <dd>The <a class="reference internal" href="_images/Success-01.png"><img alt="CheckBox" src="_images/Success-01.png" style="width: 27.3px; height: 27.23px;" /></a> will turn into a <a class="reference internal" href="_images/Error-01.png"><img alt="Exception" src="_images/Error-01.png" style="width: 27.05px; height: 27.05px;" /></a> when an error occurs. If you click on it, you will see a list of all exceptions since the list was last cleared. You can clear the list, or clear individual exceptions.</dd>
@@ -208,7 +203,7 @@
 <dt><a class="reference internal" href="_images/office-chart-bar.png"><img alt="histogram" src="_images/office-chart-bar.png" style="width: 28.8px; height: 28.8px;" /></a> &#8211; copy histogram to traces</dt>
 <dd>This will copy the last histogram from the most recent scan to the trace list together with the other traces. From there it can be saved or viewed later.</dd>
 <dt><a class="reference internal" href="_images/office-chart-bar-save.png"><img alt="saveHistogram" src="_images/office-chart-bar-save.png" style="width: 24.2px; height: 24.6px;" /></a> &#8211; save all histogram from last scan</dt>
-<dd>This will save every histogram from the most recent scan to a file. It does not create an entry in the trace list. The filename used is specified in the scan control (see <a class="reference internal" href="experimentUi_manual.html#scans"><span>Scans</span></a>).</dd>
+<dd>This will save every histogram from the most recent scan to a file. It does not create an entry in the trace list. The filename used is specified in the scan control (see <a class="reference internal" href="Scans.html#scans"><span>Scans</span></a>).</dd>
 <dt><a class="reference internal" href="_images/add-plot.png"><img alt="addPlot" src="_images/add-plot.png" style="width: 24.5px; height: 24.5px;" /></a> &#8211; add a plot</dt>
 <dd>This will add a plot window, which will available for any evaluation.</dd>
 <dt><a class="reference internal" href="_images/remove-plot.png"><img alt="removePlot" src="_images/remove-plot.png" style="width: 26.5px; height: 26.5px;" /></a> &#8211; remove a plot</dt>
@@ -225,10 +220,16 @@
 <dd>Show or hide any dock widget</dd>
 <dt>Print</dt>
 <dd>Print (or save to PDF or SVG) any of the plot windows, as configured by the Print Preferences dock.</dd>
-<dt>File &gt; Project:</dt>
+<dt>File &gt; Project Information:</dt>
 <dd>Show the current project and its configuration settings (see <a class="reference internal" href="Projects.html#projects"><span>Projects</span></a> ). Also allows setting the Project Selection GUI and Experiment Configuration GUI on next program start.</dd>
-<dt>File &gt; Import from XML:</dt>
-<dd>Import an XML file containing settings for the Scan Control, Evaluation, Analysis, Global Variables, or Pulse Program.</dd>
+<dt>File &gt; Save GUI Configuration:</dt>
+<dd><p class="first">This will save the current GUI configuration to a new database file with the name &#8220;configuration_X.db&#8221; (where X=001 on first save, then increments) which will be placed in the day&#8217;s data directory. This can be used if you want to take a snapshot of your GUI configuration which you can later return to. To reload the GUI configuration: close the program, copy the saved file to &#8216;&lt;YourProjectDir&gt;/.gui-config&#8217;, and rename it &#8216;ExperimentUi.config&#8217;.</p>
+<p class="last">Note that this is only for taking a snapshot to return to. Ordinary saving of the GUI configuration happens automatically once a minute, and whenever the program is closed.</p>
+</dd>
+<dt>File &gt; Save Settings:</dt>
+<dd>This will save experiment configuration data to a file in the day&#8217;s data directory. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.</dd>
+<dt>File &gt; Load Settings:</dt>
+<dd>Load experiment configuration data from a file saved via File &gt; Save Settings.</dd>
 </dl>
 </div>
 <div class="section" id="docks">
@@ -238,7 +239,12 @@
 <h3>FPGA Control Docks<a class="headerlink" href="#fpga-control-docks" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Shutters</li>
+<li>Triggers</li>
+<li>DDS</li>
+<li>DAC</li>
+<li>Pulser Parameters</li>
 </ul>
+<p>see <a class="reference internal" href="FPGAControl.html#fpgacontrol"><span>FPGA Control</span></a> for information on all of these docks.</p>
 </div>
 <div class="section" id="scan-control-docks">
 <h3>Scan Control Docks<a class="headerlink" href="#scan-control-docks" title="Permalink to this headline">¶</a></h3>
@@ -250,8 +256,9 @@
 <li>Fit</li>
 <li>Progress</li>
 <li>Average</li>
+<li>Todo List</li>
 </ul>
-<p>see <a class="reference internal" href="experimentUi_manual.html#scans"><span>Scans</span></a> for information on all of these docks.</p>
+<p>see <a class="reference internal" href="Scans.html#scans"><span>Scans</span></a> for information on all of these docks.</p>
 </div>
 <div class="section" id="external-parameters-docks">
 <h3>External Parameters Docks<a class="headerlink" href="#external-parameters-docks" title="Permalink to this headline">¶</a></h3>
@@ -260,7 +267,65 @@
 <li>Params Control</li>
 <li>Params Reading</li>
 </ul>
-<p>see <a class="reference internal" href="experimentUi_manual.html#externalparameters"><span>External Parameters</span></a> for information on all of these docks.</p>
+<p>see <a class="reference internal" href="ExternalParameters.html#externalparameters"><span>External Parameters</span></a> for information on all of these docks.</p>
+</div>
+<div class="section" id="value-history-dock">
+<h3>Value History Dock<a class="headerlink" href="#value-history-dock" title="Permalink to this headline">¶</a></h3>
+<div class="figure" id="id2">
+<a class="reference internal image-reference" href="_images/ValueHistory.png"><img alt="_images/ValueHistory.png" src="_images/ValueHistory.png" style="width: 331.0px; height: 369.0px;" /></a>
+<p class="caption"><span class="caption-text">Value History Dock</span></p>
+<div class="legend">
+Allows querying the history associated with a specific value. History is shown in a table. To update the table, click <a class="reference internal" href="_images/document-revert-5.png"><img alt="revert" src="_images/document-revert-5.png" style="width: 24.0px; height: 24.0px;" /></a>. This same information can also be plotted using the <a class="reference internal" href="instrumentLoggerUi_manual.html#instrumentlogger"><span>Instrument Logger</span></a>.</div>
+</div>
+</div>
+<div class="section" id="global-variables-dock">
+<h3>Global Variables Dock<a class="headerlink" href="#global-variables-dock" title="Permalink to this headline">¶</a></h3>
+<div class="figure" id="id3">
+<a class="reference internal image-reference" href="_images/GlobalVariables.png"><img alt="_images/GlobalVariables.png" src="_images/GlobalVariables.png" style="width: 322.0px; height: 398.0px;" /></a>
+<p class="caption"><span class="caption-text">Global Variables Dock</span></p>
+</div>
+<p>Global variables can be referenced in many places throught the program, and allow different parts of the program to reference the same value. The global variables dock shows all current global variables. They can be re-arranged in the table using the PgUp and PgDn keys, or sorted by clicking the column header. If the global variables are arranged in a particular order, and then sorted, they can be restored to the previous order by right clicking in the table and selecting &#8220;restore custom order.&#8221;</p>
+<p>Global variables can also be made bold by selecting the variable and hitting CTRL-B. This has no effect on the program, it simply makes that global variable easier to find quickly in the list.</p>
+<p>To add a global variable, type a name in the text box and click <a class="reference internal" href="_images/edit-add.png"><img alt="add" src="_images/edit-add.png" style="width: 14.4px; height: 14.4px;" /></a>. The are no specific naming requirements, however, to avoid namespace collisions with the pulse program, I tend to end all global variables with the word &#8220;Global.&#8221; (If you have a pulse program variable &#8220;CoolingFreq&#8221; and a global variable by the same name, this will likely cause problems and at the very least confusion.)</p>
+</div>
+<div class="section" id="console-docks">
+<h3>Console Docks<a class="headerlink" href="#console-docks" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>Console Output</dt>
+<dd><p class="first last">Displays console output. If IDE is being used, IDE console will show the same information</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Logging</dt>
+<dd><p class="first last">Enables granular control over what information is logged to the console</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="print-preferences-dock">
+<h3>Print Preferences Dock<a class="headerlink" href="#print-preferences-dock" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div>Settings for printing. Can also be shown via the print menu.</div></blockquote>
+</div>
+<div class="section" id="optional-docks">
+<h3>Optional Docks<a class="headerlink" href="#optional-docks" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>Timestamp Traces</dt>
+<dd><p class="first last">Will only be visible if timestamps are enabled. See <a class="reference internal" href="Scans.html#timestamps"><span>Timestamps</span></a> .</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>AWG</dt>
+<dd><p class="first last">Will only be visible if AWG is enabled. See <a class="reference internal" href="KnownHardware.html#awg"><span>AWG</span></a> .</p>
+</dd>
+</dl>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -272,7 +337,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="Projects.html" class="btn btn-neutral float-right" title="Projects" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="FPGAControl.html" class="btn btn-neutral float-right" title="FPGA Control" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="Introduction.html" class="btn btn-neutral" title="Introduction" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

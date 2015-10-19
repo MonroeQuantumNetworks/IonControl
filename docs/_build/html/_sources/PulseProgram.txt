@@ -3,7 +3,7 @@
 .. _PulseProgram:
 
 Pulse Program
--------------
+=============
 
 Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click |pulses| .
 
@@ -19,10 +19,10 @@ When a pulse program is saved (CTRL-S in the editor, or click |save|), the progr
 The pulse program written here is run on the FPGA. It is compiled to a machine code that contains microcontroller instructions that are understood by the FPGA.
 
 Pulse Program Syntax
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 variable types
-``````````````
+~~~~~~~~~~~~~~
 
 - const
    A constant value, which we typically use for things like DDS Channels, e.g.:
@@ -115,7 +115,7 @@ variable types
       exitcode SuccessExitcode = 0xfffe000000000000
 
 control structures
-``````````````````
+~~~~~~~~~~~~~~~~~~
 
 The following control structures are supported:
 
@@ -138,14 +138,10 @@ The following control structures are supported:
 
 
 commands
-````````
+~~~~~~~~
 
    .. automodule:: Builtins
       :members:
       :exclude-members: exit_
 
-.. _PILoops:
-
-PI Loops
-~~~~~~~~
 

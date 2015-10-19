@@ -32,7 +32,7 @@
   
     <link rel="top" title="IonControl 0.8 documentation" href="index.html"/>
         <link rel="up" title="User Manual" href="experimentUi_manual.html"/>
-        <link rel="next" title="Main GUI" href="MainGUI.html"/>
+        <link rel="next" title="Projects" href="Projects.html"/>
         <link rel="prev" title="User Manual" href="experimentUi_manual.html"/> 
 
   
@@ -90,30 +90,29 @@
 <li class="toctree-l3"><a class="reference internal" href="#concepts">Concepts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#interface">Interface</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#units">Units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spin-boxes">Spin boxes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#global-variables">Global Variables</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#gui-reconfiguring">GUI reconfiguring</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#settings-menus">Settings Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data">Data</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="MainGUI.html">Main GUI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MainGUI.html">Main GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="FPGAControl.html">FPGA Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PulseProgram.html">Pulse Program</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#non-pulsed-fpga-control">Non-pulsed FPGA control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#global-variables">Global Variables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#scans">Scans</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#external-parameters">External Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#dedicated-counters">Dedicated Counters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#autoloader">Autoloader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#scripting">Scripting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#measurement-log">Measurement Log</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#gate-sequences">Gate Sequences</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#printing">Printing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#voltage-control">Voltage Control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#logic-analyzer">Logic Analyzer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#awg">AWG</a></li>
-<li class="toctree-l2"><a class="reference internal" href="experimentUi_manual.html#extending-the-code">Extending the Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Scans.html">Scans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GateSequences.html">Gate Sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExternalParameters.html">External Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="KnownHardware.html">Known Hardware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DedicatedCounters.html">Dedicated Counters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="VoltageControl.html">Voltage Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LogicAnalyzer.html">Logic Analyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingTheCode.html">Extending the Code</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
@@ -196,18 +195,18 @@
 </div></blockquote>
 <p>Other FPGA modules could in principle be added at some point in the future.</p>
 <ol class="arabic" start="2">
-<li><p class="first"><a class="reference internal" href="experimentUi_manual.html#scans"><span>Scans</span></a>. One dimensional scans are controlled by three separate interfaces:</p>
+<li><p class="first"><a class="reference internal" href="Scans.html#scans"><span>Scans</span></a>. One dimensional scans are controlled by three separate interfaces:</p>
 <blockquote>
 <div><ol class="arabic simple">
-<li>The <strong>scan</strong> interface allows a one-dimensional scan over any parameter defined in the pulse program, or any other instrument connected to the computer that is defined in the software. At each point in the scan, data is returned by the FPGA. The results of a scan are saved to a text file, and also registered in the <a class="reference internal" href="experimentUi_manual.html#measurementlog"><span>Measurement Log</span></a>.</li>
+<li>The <strong>scan</strong> interface allows a one-dimensional scan over any parameter defined in the pulse program, or any other instrument connected to the computer that is defined in the software. At each point in the scan, data is returned by the FPGA. The results of a scan are saved to a text file, and also registered in the <a class="reference internal" href="MeasurementLog.html#measurementlog"><span>Measurement Log</span></a>.</li>
 <li>The <strong>evaluation</strong> interface determines how that data is plotted. An evaluation is a defined method for taking a set of data and reducing it to a single point for plotting, such as &#8220;mean&#8221; or &#8220;discriminator&#8221; or &#8220;parity.&#8221; As many evaluations as needed can be added. The plot windows are completely reconfigurable; you can add as many plot windows as necessary, and each evaluation can be directed to any plot window.</li>
 <li>The <strong>analysis</strong> interface determines how the data is fit at the conclusion of the scan. In addition, the analysis interface can push the results of a fit to a global variable, which can in turn be referenced by any part of the program. In this way, calibrations are straightforward.</li>
 </ol>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="experimentUi_manual.html#dedicatedcounters"><span>Dedicated Counters</span></a>. The dedicated counters interface allows continuous monitoring of the counters and ADCs connected to the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.</p>
+<li><p class="first"><a class="reference internal" href="DedicatedCounters.html#dedicatedcounters"><span>Dedicated Counters</span></a>. The dedicated counters interface allows continuous monitoring of the counters and ADCs connected to the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.</p>
 </li>
-<li><p class="first"><a class="reference internal" href="experimentUi_manual.html#scripting"><span>Scripting</span></a>. The scripting interface allows for the creation of extremely complex, automated experiments. It executes Python scripts, but adds a number of commands which allow control over the experiment.</p>
+<li><p class="first"><a class="reference internal" href="Scripting.html#scripting"><span>Scripting</span></a>. The scripting interface allows for the creation of extremely complex, automated experiments. It executes Python scripts, but adds a number of commands which allow control over the experiment.</p>
 </li>
 </ol>
 </div></blockquote>
@@ -237,6 +236,10 @@
 </li>
 </ul>
 </div>
+<div class="section" id="spin-boxes">
+<h3>Spin boxes<a class="headerlink" href="#spin-boxes" title="Permalink to this headline">¶</a></h3>
+<p>In most boxes that allow entering a number, the value can be changed by either typing in a number, or by using the up and down arrows. When using the up and down arrows, the digit to the left of the cursor will change.</p>
+</div>
 <div class="section" id="global-variables">
 <h3>Global Variables<a class="headerlink" href="#global-variables" title="Permalink to this headline">¶</a></h3>
 <p>Global variables can be used almost everywhere throughout the program. In many cases it is far more useful to reference something to a global, rather than giving it its own value. If the same value will appear in more than one place, you are always better off setting it to a global.</p>
@@ -249,6 +252,12 @@
 <h3>Settings Menus<a class="headerlink" href="#settings-menus" title="Permalink to this headline">¶</a></h3>
 <p>Many places in the program have <em>settings menus</em>, which are drop downs that allow you to save and recall all the settings associated with that particular interface. For example, the scan control settings menu allows you to load different scan settings. To make new saved settings, simply type a new name into a context menu and push enter. You can then edit the new settings.</p>
 </div>
+<div class="section" id="data">
+<h3>Data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h3>
+<p>Whenever a scan is run, by default the data is saved to a text file in /&lt;YourProjectDir&gt;/&lt;Year&gt;/&lt;Month&gt;/&lt;Day&gt;/ (see <a class="reference internal" href="Projects.html#projects"><span>Projects</span></a>). The saved file has an XML header with all the metadata about the scan (i.e., what all the settings were when this scan was run), followed by a table with all the data. The metadata element <em>ColumnSpec</em> (together with <em>TracePlottingList</em>) indicates what column is what in the data table.</p>
+<p>Information about all scans which have been performed on the project is stored in the database and accessed via the <a class="reference internal" href="MeasurementLog.html#measurementlog"><span>Measurement Log</span></a>, which has an absolute path to the data filename. Therefore, it is important that you not delete or move data files, or the measurement log will not work properly (unless you directly change the database entry as well).</p>
+<p>This requirement may be removed at some future point by also storing the data itself in the database.</p>
+</div>
 </div>
 </div>
 
@@ -259,7 +268,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="MainGUI.html" class="btn btn-neutral float-right" title="Main GUI" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="Projects.html" class="btn btn-neutral float-right" title="Projects" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="experimentUi_manual.html" class="btn btn-neutral" title="User Manual" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

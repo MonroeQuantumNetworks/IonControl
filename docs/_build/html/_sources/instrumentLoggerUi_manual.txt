@@ -1,3 +1,5 @@
+.. _InstrumentLogger:
+
 Instrument Logger User Manual
 =============================
 

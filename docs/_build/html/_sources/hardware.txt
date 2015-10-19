@@ -3,6 +3,8 @@ Hardware
 
 The only FPGAs that can currently be used with this software are the Opal Kelly **XEM6010-LX45** and the **XEM6010-LX150**. The LX150 is a larger FPGA, but you cannot compile firmware for it without a license. It is therefore a more expensive option if you need to modify the FPGA firmware itself. However, the firmware as it stands is pushing the capacity limits of the LX45, and there is very little room for any future modifications.
 
+All firmware can be found in /IonControl/FPGA_Ions
+
 A given bitfile assumes a specific internal hardware configuration, as the FPGA must know what pins are connected to what DDS/DAC/ADC. The hardware configuration described here is for the LX150 firmware *IonControl-firmware-LX150-UMD.bit*. This firmware is setup for use with the Duke breakout board *OpalKellyIonControlBoxFanout_v3b*, which contains 8x DACs, 8x ADCs, 3x 8 pin TTL input banks, 9x 8 pin TTL output banks, and 10x SMA TTL outputs (for connecting to RF switches).
 
 The FPGA is configured to talk to the 4x of the 2 channel AD9912 DDS boards: *DDS-AD9912_r4*, for a total of 8x DDSs. The breakout board should be connected to the DDSs as follows:

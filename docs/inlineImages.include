@@ -66,3 +66,6 @@
 
 .. |remove| image:: images/icons/edit_remove.png
    :scale: 30 %
+
+.. |revert| image:: images/icons/document-revert-5.png
+   :scale: 50%

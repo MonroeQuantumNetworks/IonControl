@@ -67,6 +67,11 @@ Almost all quantities referenced in the program have units. This is for the simp
 
    Here CoolingTime likely has base unit seconds, ExpectedFluorescenceRate has base unit Hz, and ExpectedPhotonNumber is unitless, as expected. If CoolingTime changes, ExpectedPhotonNumber changes appropriately.
 
+Spin boxes
+~~~~~~~~~~
+
+In most boxes that allow entering a number, the value can be changed by either typing in a number, or by using the up and down arrows. When using the up and down arrows, the digit to the left of the cursor will change.
+
 Global Variables
 ~~~~~~~~~~~~~~~~
 
@@ -81,3 +86,12 @@ Settings Menus
 ~~~~~~~~~~~~~~
 
 Many places in the program have *settings menus*, which are drop downs that allow you to save and recall all the settings associated with that particular interface. For example, the scan control settings menu allows you to load different scan settings. To make new saved settings, simply type a new name into a context menu and push enter. You can then edit the new settings.
+
+Data
+~~~~
+
+Whenever a scan is run, by default the data is saved to a text file in /<YourProjectDir>/<Year>/<Month>/<Day>/ (see :ref:`Projects`). The saved file has an XML header with all the metadata about the scan (i.e., what all the settings were when this scan was run), followed by a table with all the data. The metadata element *ColumnSpec* (together with *TracePlottingList*) indicates what column is what in the data table.
+
+Information about all scans which have been performed on the project is stored in the database and accessed via the :ref:`MeasurementLog`, which has an absolute path to the data filename. Therefore, it is important that you not delete or move data files, or the measurement log will not work properly (unless you directly change the database entry as well).
+
+This requirement may be removed at some future point by also storing the data itself in the database.
