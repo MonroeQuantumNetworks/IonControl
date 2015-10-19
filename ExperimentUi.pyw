@@ -321,11 +321,22 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.tabWidget.currentChanged.connect(self.onCurrentChanged)
         self.actionClear.triggered.connect(self.onClear)
         self.actionPause.triggered.connect(self.onPause)
-        self.actionSave.triggered.connect(self.onSave)
-        self.actionExport_to_XML.triggered.connect(self.onXmlExport)
-        self.actionImport_from_XML_add.triggered.connect( partial(self.onXmlImport,'addMissing'))
-        self.actionImport_from_XML_replace.triggered.connect(partial(self.onXmlImport,'replace'))
-        self.actionImport_from_XML_update.triggered.connect(partial(self.onXmlImport,'update'))
+
+        #Save and load actions
+        self.actionSave_GUI.triggered.connect(self.onSaveGUI)
+        settingsCategories = ('All Settings', 'Scan Settings', 'Evaluation Settings', 'Analysis Settings', 'Pulse Program Settings', 'Global Variables')
+        importModes = ('Replace', 'Update', 'Add')
+        for category in settingsCategories:
+            saveAction = QtGui.QAction(category, self)
+            self.menuSave_Settings.addAction(saveAction)
+            saveAction.triggered.connect(partial(self.onSaveSettings, category))
+            loadMenu = QtGui.QMenu(category, self)
+            self.menuLoad_Settings.addMenu(loadMenu)
+            for mode in importModes:
+                loadAction = QtGui.QAction(mode, self)
+                loadMenu.addAction(loadAction)
+                loadAction.triggered.connect(partial(self.onLoadSettings, category, mode))
+
         self.actionStart.triggered.connect(self.onStart)
         self.actionStop.triggered.connect(self.onStop)
         self.actionAbort.triggered.connect(self.onAbort)
@@ -453,7 +464,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     def onClear(self):
         self.currentTab.onClear()
     
-    def onSave(self, _):
+    def onSaveGUI(self, _):
         logger = logging.getLogger(__name__)
         self.currentTab.onSave()
         logger.info( "Saving config" )
@@ -461,7 +472,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.saveConfig()
         self.config.saveConfig(filename)
         
-    def onXmlExport(self):
+    def onSaveSettings(self, category):
+        """Save settings associated with given category"""
+        #Not looking at category yet
         root = ElementTree.Element('IonControlSettings')
         self.globalVariablesUi.onExportXml(root, writeToFile=False)
         if hasattr(self.currentTab,'exportXml'):
@@ -470,7 +483,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         with open(filename,'w') as f:
             f.write(prettify(root))
             
-    def onXmlImport(self, mode):
+    def onLoadSettings(self, category, mode):
+        """Load settings associated with given category, with given mode"""
+        #Not looking at category yet
         filename = QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filter="*.xml" )
         if filename:
             tree = ElementTree.parse(filename)
