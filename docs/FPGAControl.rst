@@ -39,14 +39,9 @@ When a scan is not running, the FPGA outputs can be controlled via the following
    - DAC Scan Parameters
       Each of the 8 DACs on the breakout board can be configured to put out a triangle waveform by turning on the respective DAC Scan (shutters 41-48 on *IonControl-firmware-LX150-UMD.bit*). This can be useful if the DAC is being used for a lock. The parameters set here control the behavior of that scan:
 
-      - Max
-          The maximum of the triangle waveform
-
-      -Min
-         The minimum of the triangle waveform
-
-      -Increment
-         The amount it changes each clock cycle (which indirectly determines the frequency)
+      - **Max**: The maximum of the triangle waveform
+      - **Min**: The minimum of the triangle waveform
+      - **Increment**: The amount it changes each clock cycle (which indirectly determines the frequency)
 
    - PI Loop Regulator Inputs
       see :ref:`PILoops` .

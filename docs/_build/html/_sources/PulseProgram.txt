@@ -7,14 +7,37 @@ Pulse Program
 
 Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click |pulses| .
 
-The pulse program window consists of four sections. The primary section is the text file itself, which is under the heading *Pulse Program*. The two sections *Shutters, Triggers, Counters* and *Parameters* are interfaces to set the variables which are declared in the pulse program. The *Shutters, Triggers, Counters* window is for settings binary variables, while the *Parameters* window is for setting all other types of parameters. Finally, the *RAM Control* window is for directly writing to the RAM on the FPGA board.
-
-When a pulse program is saved (CTRL-S in the editor, or click |save|), the program attempts to compile it. If it fails, it indicates where and why it failed. If it is successful, it updates the parameters, shutters, triggers, and counters displays to match the pulse program.
-
 .. figure:: images/PulseProgram.png
    :scale: 100 %
 
    The pulse program interface
+
+The pulse program window consists of the following docks:
+
+   - Pulse Program
+      This is the primary dock, which is the text file itself.
+
+   - Parameters
+      This is an interface for setting parameters which are declared in the pulse program. Any expression can be typed in here, and the result will be shown under "evaluated." Expressions can reference global variables, and can also reference other pulse program parameters. If parameter *A* depends on parameter *B*, and parameter *B* is scanned, parameter *A* is scanned too. This allows things like this:
+
+ .. figure:: images/parameterDependenciesExample.png
+   :scale: 100 %
+
+   Example of pulse program dependencies. If *GateDetuning* is now scanned, *detuning* will be scanned as well (because it depends on *GateDetuning*), as will *RamanGateDDSFreq1* and *RamanGateDDSFreq2* (because they depend on detuning). The code will prevent circular dependencies.
+
+   All parameters can be scanned in the scan control, see :ref:`Scans`.
+
+   - Shutters
+      Interfaces for setting shutters.
+
+   - Triggers
+
+   - Counters
+
+   - RAM Control
+      Interface for directly writing to the RAM on the FPGA board. This overwrites the RAM values set by the :ref:`GateSequences` interface.
+
+When a pulse program is saved (CTRL-S in the editor, or click |save|), the program attempts to compile it. If it fails, it indicates where and why it failed. If it is successful, it updates the parameters, shutters, triggers, and counters displays to match the pulse program.
 
 The pulse program written here is run on the FPGA. It is compiled to a machine code that contains microcontroller instructions that are understood by the FPGA.
 

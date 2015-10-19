@@ -200,28 +200,11 @@
 <li><dl class="first docutils">
 <dt>DAC Scan Parameters</dt>
 <dd><p class="first">Each of the 8 DACs on the breakout board can be configured to put out a triangle waveform by turning on the respective DAC Scan (shutters 41-48 on <em>IonControl-firmware-LX150-UMD.bit</em>). This can be useful if the DAC is being used for a lock. The parameters set here control the behavior of that scan:</p>
-<ul>
-<li><dl class="first docutils">
-<dt>Max</dt>
-<dd><p class="first last">The maximum of the triangle waveform</p>
-</dd>
-</dl>
-</li>
+<ul class="last simple">
+<li><strong>Max</strong>: The maximum of the triangle waveform</li>
+<li><strong>Min</strong>: The minimum of the triangle waveform</li>
+<li><strong>Increment</strong>: The amount it changes each clock cycle (which indirectly determines the frequency)</li>
 </ul>
-<table class="last docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group">
-<kbd><span class="option">-M<var>in</var></span></kbd></td>
-<td><p class="first last">The minimum of the triangle waveform</p>
-</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-I<var>ncrement</var></span></kbd></td>
-<td><p class="first last">The amount it changes each clock cycle (which indirectly determines the frequency)</p>
-</td></tr>
-</tbody>
-</table>
 </dd>
 </dl>
 </li>
