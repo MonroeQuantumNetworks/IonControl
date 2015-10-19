@@ -72,7 +72,7 @@ class DDSUi(DDSForm, DDSBase):
         self.config = config
         self.ad9912 = Ad9912.Ad9912(pulser)
         self.ddsChannels = self.config.get('DDSUi.ddsChannels', [DDSChannelSettings() for _ in range(self.numChannels) ] )
-        self.autoApply = self.config.get('DDSUi.autoApply',False)
+        self.autoApply = self.config.get('DDSUi.autoApply',True)
         self.decimation = defaultdict( lambda: StaticDecimation(mg(30,'s')) )
         self.persistence = DBPersist()
         self.globalDict = globalDict

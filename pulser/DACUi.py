@@ -35,7 +35,7 @@ class DACUi(dacForm, dacBase):
         for index, channel in enumerate(self.dacChannels):
             channel.globalDict = globalDict
             channel.onChange = partial( self.onChange, index )
-        self.autoApply = self.config.get('dacUi.autoApply',False)
+        self.autoApply = self.config.get('dacUi.autoApply',True)
         self.decimation = defaultdict( lambda: StaticDecimation(mg(30,'s')) )
         self.persistence = DBPersist()
         self.globalDict = globalDict
