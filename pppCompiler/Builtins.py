@@ -246,10 +246,11 @@ def wait_dds( symboltable, arg=list(), kwarg=dict()):
 def wait_trigger( symboltable, arg=list(), kwarg=dict()):
     """
     wait_trigger( parameter )
-    wait for external trigger. Parameter is a bitmask where
-    [7:0]: edge trigger, continue if |(parameter[7:0] & trigger_in[7:0])
-    [31:24]: level trigger, we care about bits set here.
-    [23:16]: and we need those bits to have the value given here.
+    wait for external trigger. Parameter is a bitmask where:
+
+    - [7:0]: edge trigger, continue if \|(parameter[7:0] & trigger_in[7:0])
+    - [31:24]: level trigger, we care about bits set here.
+    - [23:16]: and we need those bits to have the value given here.
     """
     if len(arg)!=2:
         raise CompileException( "expected exactly one argument in wait_trigger" )
