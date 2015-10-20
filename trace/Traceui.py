@@ -58,9 +58,6 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
         self.traceView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which plot to use
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
-        self.filter = KeyListFilter( [QtCore.Qt.Key_Delete] )
-        self.filter.keyPressed.connect( self.onKey )
-        self.traceView.installEventFilter(self.filter)
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
         self.removeButton.clicked.connect(self.onRemove)
@@ -83,12 +80,9 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.clicked.connect( self.onActiveTraceChanged )
         self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
 
-    def onKey(self, key):
-        if key==QtCore.Qt.Key_Delete:
-            self.onRemove()
-
-    def onActiveTraceChanged(self, modelIndex ):
-        trace = self.model.getTrace(modelIndex)
+    def onActiveTraceChanged(self, index):
+        node = self.model.nodeFromIndex(index)
+        trace = node.content
         self.descriptionModel.setDescription(trace.trace.description)
 
     def onUnplotSetting(self, checked):
