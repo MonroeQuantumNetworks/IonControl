@@ -232,7 +232,7 @@ class Trace(object):
     def save(self):
         """save the trace to file"""
         if not self.saved:
-            self.filename, (self.filepath, name, ext) = DataDirectory().sequencefile(pattern)
+            self.filename, (self.filepath, name, ext) = DataDirectory().sequencefile(self.filenamePattern)
             self.fileleaf = name+ext
         # move the timestamp column to the end
         if self.record_timestamps and 'timestamp' in self.columnNames:
