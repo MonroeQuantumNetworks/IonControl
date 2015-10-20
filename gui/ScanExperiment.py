@@ -85,7 +85,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.deviceSettings = settings
         self.pulserHardware = pulserHardware
         self.plottedTraceList = list()
-        self.averagePlottedTraceList = list()
         self.currentIndex = 0
         self.activated = False
         self.histogramCurveList = list()
@@ -296,11 +295,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.scan = self.scanControlWidget.getScan()
         self.evaluation = self.evaluationControlWidget.getEvaluation()
         self.displayUi.setNames( [evaluation.name for evaluation in self.evaluation.evalList ])
-        if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
-            self.createAverageTrace(self.evaluation.evalList)
-            self.progressUi.setAveraged(0)
-        else:
-            self.progressUi.setAveraged(None)
         self.scanMethod = ScanMethodsDict[self.scan.scanTarget](self)
         self.progressUi.setStarting()
         self.ppStartSignal.emit()
@@ -312,21 +306,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.rawDataFile = open(DataDirectory.DataDirectory().sequencefile(self.scan.rawFilename)[0],'w')
         self.dataFinalized = False
 
-    def createAverageTrace(self,evalList):
-        trace = Trace()
-        self.averagePlottedTraceList = list()
-        for index, evaluation in enumerate(evalList):
-            yColumnName = 'y{0}'.format(index)
-#             rawColumnName = 'raw{0}'.format(index)
-            trace.addColumn( yColumnName )
-            thisAveragePlottedTrace = PlottedTrace(trace, self.plotDict[evaluation.plotname]["view"], pens.penList, yColumn=yColumnName, xAxisUnit = self.scan.xUnit,
-                                                    xAxisLabel = self.scan.scanParameter, windowName=evaluation.plotname)
-            thisAveragePlottedTrace.trace.name = self.scan.settingsName + " Average"
-            thisAveragePlottedTrace.trace.description["comment"] = "Average Trace"
-            thisAveragePlottedTrace.trace.filenameCallback = functools.partial( thisAveragePlottedTrace.traceFilename, self.scan.filename)
-            self.averagePlottedTraceList.append( thisAveragePlottedTrace  )                
-            self.traceui.addTrace(thisAveragePlottedTrace, pen=0)
-        
     def startScan(self):
         logger = logging.getLogger(__name__)
         if self.progressUi.state in [self.OpStates.idle, self.OpStates.starting, self.OpStates.stopping, self.OpStates.running, self.OpStates.paused, self.OpStates.interrupted]:
@@ -527,10 +506,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].trace.filenameCallback = functools.partial( WeakMethod.ref(self.plottedTraceList[0].traceFilename), self.scan.filename )
             self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
-                if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.           
-                    self.traceui.addTrace( plottedTrace, pen=-1, parentTrace=self.averagePlottedTraceList[index])
-                else:
-                    self.traceui.addTrace( plottedTrace, pen=-1)
+                self.traceui.addTrace( plottedTrace, pen=-1)
             self.traceui.resizeColumnsToContents()
         else:
             self.generator.appendData(self.plottedTraceList, x, evaluated, timeinterval )
@@ -557,15 +533,6 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if saveData:
                 failedList = self.dataAnalysis()
                 self.registerMeasurement(failedList)
-            if (self.scan.scanRepeat == 1) and (self.scan.scanMode != 1): #scanMode == 1 corresponds to step in place.
-                if reason == 'end of scan': #We only re-average the data if finalizeData is called because a scan ended
-                    averagePlottedTrace = None
-                    for averagePlottedTrace in self.averagePlottedTraceList:
-                        averagePlottedTrace.averageChildren()
-                        averagePlottedTrace.plot(7) #average trace is plotted in black
-                    if averagePlottedTrace:
-                        self.progressUi.setAveraged(averagePlottedTrace.childCount())
-                        averagePlottedTrace.trace.resave(saveIfUnsaved=self.scan.autoSave)
             if self.scan.histogramSave:
                 self.onSaveHistogram(self.scan.histogramFilename if self.scan.histogramFilename else None)
             self.dataFinalized = reason
