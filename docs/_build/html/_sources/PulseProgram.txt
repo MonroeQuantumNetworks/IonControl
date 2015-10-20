@@ -20,10 +20,11 @@ The pulse program window consists of the following docks:
    - Parameters
       This is an interface for setting parameters which are declared in the pulse program. Any expression can be typed in here, and the result will be shown under "evaluated." Expressions can reference global variables, and can also reference other pulse program parameters. If parameter *A* depends on parameter *B*, and parameter *B* is scanned, parameter *A* is scanned too. This allows things like this:
 
- .. figure:: images/parameterDependenciesExample.png
-   :scale: 100 %
+   .. figure:: images/parameterDependenciesExample.png
+      :scale: 100 %
+      :align: center
 
-   Example of pulse program dependencies. If *GateDetuning* is now scanned, *detuning* will be scanned as well (because it depends on *GateDetuning*), as will *RamanGateDDSFreq1* and *RamanGateDDSFreq2* (because they depend on detuning). The code will prevent circular dependencies.
+      Example of pulse program dependencies. If *GateDetuning* is now scanned, *detuning* will be scanned as well (because it depends on *GateDetuning*), as will *RamanGateDDSFreq1* and *RamanGateDDSFreq2* (because they depend on detuning). The code will prevent circular dependencies.
 
    All parameters can be scanned in the scan control, see :ref:`Scans`.
 

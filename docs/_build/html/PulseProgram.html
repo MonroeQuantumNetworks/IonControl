@@ -101,11 +101,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="Scans.html">Scans</a></li>
 <li class="toctree-l2"><a class="reference internal" href="GateSequences.html">Gate Sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExternalParameters.html">External Parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="KnownHardware.html">Known Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="DedicatedCounters.html">Dedicated Counters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
 <li class="toctree-l2"><a class="reference internal" href="VoltageControl.html">Voltage Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LogicAnalyzer.html">Logic Analyzer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExtendingTheCode.html">Extending the Code</a></li>
@@ -168,7 +168,6 @@
 </div>
 <p>The pulse program window consists of the following docks:</p>
 <blockquote>
-<div><blockquote>
 <div><ul>
 <li><dl class="first docutils">
 <dt>Pulse Program</dt>
@@ -183,11 +182,10 @@
 </dl>
 </li>
 </ul>
-</div></blockquote>
-<div class="figure" id="id2">
+<div class="figure align-center" id="id2">
 <a class="reference internal image-reference" href="_images/parameterDependenciesExample.png"><img alt="_images/parameterDependenciesExample.png" src="_images/parameterDependenciesExample.png" style="width: 442.0px; height: 206.0px;" /></a>
 <p class="caption"><span class="caption-text">Example of pulse program dependencies. If <em>GateDetuning</em> is now scanned, <em>detuning</em> will be scanned as well (because it depends on <em>GateDetuning</em>), as will <em>RamanGateDDSFreq1</em> and <em>RamanGateDDSFreq2</em> (because they depend on detuning). The code will prevent circular dependencies.</span></p>
-<div class="legend">
+</div>
 <p>All parameters can be scanned in the scan control, see <a class="reference internal" href="Scans.html#scans"><span>Scans</span></a>.</p>
 <ul>
 <li><dl class="first docutils">
@@ -207,8 +205,6 @@
 </dl>
 </li>
 </ul>
-</div>
-</div>
 </div></blockquote>
 <p>When a pulse program is saved (CTRL-S in the editor, or click <a class="reference internal" href="_images/filesave.png"><img alt="save" src="_images/filesave.png" style="width: 24.0px; height: 24.0px;" /></a>), the program attempts to compile it. If it fails, it indicates where and why it failed. If it is successful, it updates the parameters, shutters, triggers, and counters displays to match the pulse program.</p>
 <p>The pulse program written here is run on the FPGA. It is compiled to a machine code that contains microcontroller instructions that are understood by the FPGA.</p>

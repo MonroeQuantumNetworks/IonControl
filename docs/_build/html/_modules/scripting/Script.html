@@ -186,10 +186,18 @@
     <span class="n">createTraceSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span> <span class="c">#arg: trace creation data</span>
     <span class="n">fitSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: fitName, traceName</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.__init__"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the script.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fullname (str): full path to script</span>
+<span class="sd">            code (str): code in the script</span>
+<span class="sd">            parent (QObject): parent QObject, if any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Script</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fullname</span> <span class="o">=</span> <span class="n">fullname</span> <span class="c">#Full name, with path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span> <span class="c">#The code in the script</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fullname</span> <span class="o">=</span> <span class="n">fullname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">mutex</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutex</span><span class="p">()</span> <span class="c">#used to control access to class variables that are accessed by ScriptHandler</span>
         
@@ -226,7 +234,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allData</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="bp">None</span>
-
+</div>
     <span class="nd">@QtCore.pyqtProperty</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">shortname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullname</span><span class="p">)</span>
@@ -258,7 +266,14 @@
 <span class="sd">        This decorator performs all the functions that are common to all the script functions. It checks</span>
 <span class="sd">        whether the script has been stopped or paused, and emits the current location in the script. Once</span>
 <span class="sd">        the function has executed, it waits to be told to continue by the main GUI. Exceptions that occur</span>
-<span class="sd">        during execution are sent back to the script thread and raised here.&quot;&quot;&quot;</span>
+<span class="sd">        during execution are sent back to the script thread and raised here.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            waitForGui (Optional[bool]): defaults to True. If True, script waits on guiWait after executing function.</span>
+<span class="sd">            waitForAnalysis (Optional[bool]): defaults to False. If True, script waits on analysisWait before executing function.</span>
+<span class="sd">            waitForData (Optional[bool]): defaults to False. If True, script waits on dataWait before executing function.</span>
+<span class="sd">            waitForAllData (Optional[bool]): defaults to False. If True, script waits on allDataWait before executing function.</span>
+<span class="sd">            runIfStopped (Optional[bool]): defaults to False. If True, function executes even if the script has been stopped.&quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">realScriptFunction</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;The decorator without arguments (returned by the decorator with arguments)&quot;&quot;&quot;</span>
             <span class="k">def</span> <span class="nf">baseScriptFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
@@ -298,13 +313,14 @@
 <span class="sd">        set global &#39;name&#39; to (value, unit).</span>
 
 <span class="sd">        This is equivalent to typing in a value/unit in the globals table.</span>
-<span class="sd">        If there is not a global with the given name, an exception is raised.</span>
-<span class="sd">        This is to avoid typos leading to unexpected behavior. To add a global,</span>
-<span class="sd">        use &#39;addGlobal&#39;</span>
-<span class="sd">         </span>
-<span class="sd">        name: str</span>
-<span class="sd">        value: float</span>
-<span class="sd">        unit: str&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the global to change</span>
+<span class="sd">            value (float): value to set it to</span>
+<span class="sd">            unit (str): unit to use</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ScriptException: if there is not a global with the given name. This is to avoid typos leading to unexpected behavior. To add a global, use &#39;addGlobal&#39;&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setGlobalSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
          </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
@@ -312,12 +328,12 @@
         <span class="sd">&quot;&quot;&quot;addGlobal(name, value, unit)</span>
 <span class="sd">        add a global &#39;name&#39;, set to (value, unit).     </span>
 <span class="sd">         </span>
-<span class="sd">        This is equivalent to adding a global via the globals UI,and</span>
-<span class="sd">        then setting its value in the globals table.</span>
+<span class="sd">        This is equivalent to adding a global via the globals UI,and then setting its value in the globals table.</span>
 <span class="sd">        </span>
-<span class="sd">        name: str</span>
-<span class="sd">        value: float</span>
-<span class="sd">        unit: str&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the global to add</span>
+<span class="sd">            value (float): value to set it to</span>
+<span class="sd">            unit (str): unit to use&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">addGlobalSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
@@ -351,54 +367,72 @@
     <span class="nd">@scriptFunction</span><span class="p">()</span>
 <div class="viewcode-block" id="Script.setScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.setScan">[docs]</a>    <span class="k">def</span> <span class="nf">setScan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setScan(name)</span>
-<span class="sd">        set the scan interface to &quot;name.&quot;</span>
+<span class="sd">        set the scan settings to &quot;name.&quot;</span>
 <span class="sd">        </span>
-<span class="sd">        This is equivalent to selecting &quot;name&quot; from the scan drop down menu.</span>
-<span class="sd">        If there is no scan by that name, an exception is raised.</span>
-<span class="sd">        </span>
-<span class="sd">        name: str&quot;&quot;&quot;</span>
+<span class="sd">        This is equivalent to selecting &quot;name&quot; from the scan settings drop down menu.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the scan settings to set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ScriptException: if there is no scan by that name&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
      </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
 <div class="viewcode-block" id="Script.setEvaluation"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.setEvaluation">[docs]</a>    <span class="k">def</span> <span class="nf">setEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setEvaluation(name)</span>
-<span class="sd">        set the evaluation interface to &quot;name.&quot;</span>
+<span class="sd">        set the evaluation settings to &quot;name.&quot;</span>
 <span class="sd">        </span>
-<span class="sd">        This is equivalent to selecting &quot;name&quot; from the evaluation drop down menu.</span>
-<span class="sd">        If there is no evaluation by that name, an exception is raised.</span>
-<span class="sd">        </span>
-<span class="sd">        name: str&quot;&quot;&quot;</span>
+<span class="sd">        This is equivalent to selecting &quot;name&quot; from the evaluation settings drop down menu.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the evaluation settings to set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ScriptException: if there is no evaluation by that name&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setEvaluationSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
      </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
 <div class="viewcode-block" id="Script.setAnalysis"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.setAnalysis">[docs]</a>    <span class="k">def</span> <span class="nf">setAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setAnalysis(name)</span>
-<span class="sd">        set the analysis interface to &quot;name.&quot;</span>
+<span class="sd">        set the analysis settings to &quot;name.&quot;</span>
 <span class="sd">        </span>
-<span class="sd">        This is equivalent to selecting &quot;name&quot; from the analysis drop down menu.</span>
-<span class="sd">        If there is no analysis by that name, an exception is raised.</span>
-<span class="sd">        </span>
-<span class="sd">        name: str&quot;&quot;&quot;</span>
+<span class="sd">        This is equivalent to selecting &quot;name&quot; from the analysis settings drop down menu.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the analysis settings to set</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ScriptException: if there is no analysis by that name&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setAnalysisSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
 <div class="viewcode-block" id="Script.plotPoint"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.plotPoint">[docs]</a>    <span class="k">def</span> <span class="nf">plotPoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;plotPoint(x, y, traceName)</span>
 <span class="sd">        Plot a single point (x, y) to trace traceName.</span>
-<span class="sd">        </span>
-<span class="sd">        x: float</span>
-<span class="sd">        y: float</span>
-<span class="sd">        traceName: str&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (float): x coordinate</span>
+<span class="sd">            y (float): y coordinate</span>
+<span class="sd">            traceName (str): name of trace to use</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ScriptException: if traceName is not a trace&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plotPointSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">traceName</span><span class="p">)</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
 <div class="viewcode-block" id="Script.plotList"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.plotList">[docs]</a>    <span class="k">def</span> <span class="nf">plotList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xList</span><span class="p">,</span> <span class="n">yList</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;plotList(xList, yList, traceName)</span>
 <span class="sd">        Plot a set of points given in xList, yList to trace traceName.</span>
-<span class="sd">        </span>
-<span class="sd">        x: list</span>
-<span class="sd">        y: list</span>
-<span class="sd">        traceName: str&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (list[float]): x coordinates</span>
+<span class="sd">            y (list[float]): y coordinates</span>
+<span class="sd">            traceName (str): name of trace to use</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ScriptException: if traceName is not a trace</span>
+<span class="sd">            ScriptException: if x and y are of unequal lengths&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">xList</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
             <span class="n">xList</span> <span class="o">=</span> <span class="n">xList</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">yList</span><span class="p">)</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
@@ -410,9 +444,10 @@
         <span class="sd">&quot;&quot;&quot;addPlot(name)</span>
 <span class="sd">        Add a plot named &quot;name&quot;.</span>
 <span class="sd">         </span>
-<span class="sd">        This is equivalent to clicking &quot;add plot&quot; on the experiment GUI.</span>
+<span class="sd">        This is equivalent to clicking &quot;add plot&quot; on the experiment GUI. If &#39;name&#39; already exists, does nothing.</span>
 <span class="sd">        </span>
-<span class="sd">        name: str&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of plot to add&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">addPlotSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
@@ -442,24 +477,26 @@
     <span class="nd">@scriptFunction</span><span class="p">()</span>
 <div class="viewcode-block" id="Script.createTrace"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.createTrace">[docs]</a>    <span class="k">def</span> <span class="nf">createTrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traceName</span><span class="p">,</span> <span class="n">plotName</span><span class="p">,</span> <span class="n">xUnit</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">xLabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;createTrace(traceName, plotName, xUnit=&#39;&#39;, xLabel=&#39;&#39;, comment=&#39;&#39;)</span>
-<span class="sd">        </span>
-<span class="sd">        create a new trace with name &#39;traceName&#39; to be plotted on plot</span>
-<span class="sd">        &#39;plotName&#39; with unit &#39;xUnit&#39;, label &#39;xLabel&#39;, and comment &#39;comment&#39;.</span>
-<span class="sd">        </span>
-<span class="sd">        traceName: str</span>
-<span class="sd">        plotName: str</span>
-<span class="sd">        xUnit: str</span>
-<span class="sd">        xLabel: str</span>
-<span class="sd">        comment: str&quot;&quot;&quot;</span>
+<span class="sd">        create a new trace</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            traceName (str): name of new trace</span>
+<span class="sd">            plotName (str): plot to plot it on</span>
+<span class="sd">            xUnit (str): unit for x axis</span>
+<span class="sd">            xLabel (str): label for x axis</span>
+<span class="sd">            comment (str): comment for trace file</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ScriptException: if plotName is not a plot&quot;&quot;&quot;</span>
         <span class="n">traceCreationData</span> <span class="o">=</span> <span class="p">[</span><span class="n">traceName</span><span class="p">,</span> <span class="n">plotName</span><span class="p">,</span> <span class="n">xUnit</span><span class="p">,</span> <span class="n">xLabel</span><span class="p">,</span> <span class="n">comment</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">createTraceSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">traceCreationData</span><span class="p">)</span>
-</div>
-    <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.fit"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fitName</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;fit(fitName, traceName)</span>
 
-<span class="sd">        fit the data in &#39;traceName&#39; using &#39;fitName&#39;&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fitSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">fitName</span><span class="p">,</span> <span class="n">traceName</span><span class="p">)</span>
+    <span class="c"># @scriptFunction()</span>
+    <span class="c"># def fit(self, fitName, traceName):</span>
+    <span class="c">#     &quot;&quot;&quot;fit(fitName, traceName)</span>
+    <span class="c">#</span>
+    <span class="c">#     fit the data in &#39;traceName&#39; using &#39;fitName&#39;&quot;&quot;&quot;</span>
+    <span class="c">#     self.fitSignal.emit(fitName, traceName)</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 <div class="viewcode-block" id="Script.waitForScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.waitForScan">[docs]</a>    <span class="k">def</span> <span class="nf">waitForScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -473,10 +510,9 @@
 <div class="viewcode-block" id="Script.getData"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.getData">[docs]</a>    <span class="k">def</span> <span class="nf">getData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getData()</span>
 <span class="sd">        Get the most recent data point from a running scan.</span>
-<span class="sd">        </span>
-<span class="sd">        Data is returned as a dictionary. The key corresponds to</span>
-<span class="sd">        the name of each evaluation in the evaluation list. The value</span>
-<span class="sd">        is a tuple (x, y).&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: data from running scan. **key**: the name of each evaluation in the evaluation list. **val**: tuple (x, y).&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dataReady</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
 </div>
@@ -485,9 +521,8 @@
         <span class="sd">&quot;&quot;&quot;getAllData()</span>
 <span class="sd">        Get the full set of data from the most recent scan.</span>
 <span class="sd">        </span>
-<span class="sd">        Data is returned as a dictionary. The key corresponds to</span>
-<span class="sd">        the name of each evaluation in the evaluation list. The value</span>
-<span class="sd">        is a tuple (xList, yList).&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: all data from most recent scan. **key**: name of each evaluation in the evaluation list. **val**: tuple (xList, yList).&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allDataReady</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">allData</span>
 </div>
@@ -496,34 +531,41 @@
         <span class="sd">&quot;&quot;&quot;getAnalysis()</span>
 <span class="sd">        Get the analysis results for the most recent scan.</span>
 <span class="sd">        </span>
-<span class="sd">        Analysis is returned as a dictionary of dictionaries. The key corresponds</span>
-<span class="sd">        to the name of each analysis in the analysis list. The value is another</span>
-<span class="sd">        dictionary, whose keys correspond to the names of fit parameters in the</span>
-<span class="sd">        specified evaluation.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: analysis results as dictionary of dictionaries. **key**: to the name of each analysis in the analysis list. **val**: Another dictionary. **Inner key**: names of fit parameters in the specified evaluation. **Inner val**: fit value of that parameter</span>
 <span class="sd">        </span>
-<span class="sd">        Example: a Gaussian fit named &quot;myFit&quot; in the analysis, with center parameter</span>
-<span class="sd">        x0, would return its center value as getAnalysis()[&#39;myFit&#39;][&#39;x0&#39;]&quot;&quot;&quot;</span>
+<span class="sd">        Example:</span>
+<span class="sd">            A Gaussian fit named &quot;myFit&quot; in the analysis, with center parameter &#39;x0&#39;, would return its best fit center value as::</span>
+
+<span class="sd">                &gt;&gt;&gt; getAnalysis()[&#39;myFit&#39;][&#39;x0&#39;]&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analysisReady</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysisResults</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 <div class="viewcode-block" id="Script.scanRunning"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.scanRunning">[docs]</a>    <span class="k">def</span> <span class="nf">scanRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;scanRunning()</span>
-<span class="sd">        Return True if the scan is running. Otherwise, False.&quot;&quot;&quot;</span>
+<span class="sd">        Determine if scan is running.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the scan is running. Otherwise, False.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanIsRunning</span>
     </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 <div class="viewcode-block" id="Script.getScanStatus"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.getScanStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getScanStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getScanStatus()</span>
 <span class="sd">        Return the current state of the scan.</span>
-<span class="sd">        </span>
-<span class="sd">        One of &#39;idle&#39;, &#39;running&#39;, &#39;paused&#39;, &#39;starting&#39;, &#39;stopping&#39;, or &#39;interrupted&#39;&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: One of &#39;idle&#39;, &#39;running&#39;, &#39;paused&#39;, &#39;starting&#39;, &#39;stopping&#39;, or &#39;interrupted&#39;&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanStatus</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">runIfStopped</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <div class="viewcode-block" id="Script.scriptIsStopped"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.scriptIsStopped">[docs]</a>    <span class="k">def</span> <span class="nf">scriptIsStopped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;scriptIsStopped()</span>
-<span class="sd">        Return True if the script has been stopped, Otherwise, False.&quot;&quot;&quot;</span>
+<span class="sd">        Determine if script is stopped.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the script has been stopped, Otherwise, False.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span>
 </div></div>
 <div class="viewcode-block" id="checkScripting"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.checkScripting">[docs]</a><span class="k">def</span> <span class="nf">checkScripting</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>

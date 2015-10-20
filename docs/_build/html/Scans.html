@@ -87,22 +87,31 @@
 <li class="toctree-l1"><a class="reference internal" href="hardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="experimentUi_manual.html">User Manual</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MainGUI.html">Main GUI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="FPGAControl.html">FPGA Control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Projects.html">Projects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PulseProgram.html">Pulse Program</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Scans</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scan-control">Scan Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evaluation-control">Evaluation Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#analysis-control">Analysis Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#traces">Traces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fit">Fit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#progress">Progress</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#average">Average</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#todo-list">Todo List</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#timestamps">Timestamps</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="GateSequences.html">Gate Sequences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ExternalParameters.html">External Parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="KnownHardware.html">Known Hardware</a></li>
 <li class="toctree-l2"><a class="reference internal" href="DedicatedCounters.html">Dedicated Counters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Scripting.html">Scripting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="MeasurementLog.html">Measurement Log</a></li>
 <li class="toctree-l2"><a class="reference internal" href="VoltageControl.html">Voltage Control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LogicAnalyzer.html">Logic Analyzer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ExtendingTheCode.html">Extending the Code</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="instrumentLoggerUi_manual.html">Instrument Logger User Manual</a></li>
@@ -155,6 +164,36 @@
             
   <div class="section" id="scans">
 <span id="id1"></span><h1>Scans<a class="headerlink" href="#scans" title="Permalink to this headline">¶</a></h1>
+<p>The scan controls allow performing a one dimensional scan of any parameter, with a specified method of evaluating the returning data, and analyzing the resulting curve. This shows the sequence of a scan:</p>
+<div class="figure">
+<a class="reference internal image-reference" href="_images/OneDimensionalScan.png"><img alt="_images/OneDimensionalScan.png" src="_images/OneDimensionalScan.png" style="width: 1121.0px; height: 705.0px;" /></a>
+</div>
+<p>An analysis is able to push fit results to global variables. Since pulse program parameters can depend on global variables, this can determine the parameter values used for the next scan.</p>
+<p>The scan is controlled and examined by the following docks:</p>
+<div class="section" id="scan-control">
+<h2>Scan Control<a class="headerlink" href="#scan-control" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="evaluation-control">
+<h2>Evaluation Control<a class="headerlink" href="#evaluation-control" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="analysis-control">
+<h2>Analysis Control<a class="headerlink" href="#analysis-control" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="traces">
+<h2>Traces<a class="headerlink" href="#traces" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="fit">
+<h2>Fit<a class="headerlink" href="#fit" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="progress">
+<h2>Progress<a class="headerlink" href="#progress" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="average">
+<h2>Average<a class="headerlink" href="#average" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="todo-list">
+<h2>Todo List<a class="headerlink" href="#todo-list" title="Permalink to this headline">¶</a></h2>
+</div>
 <div class="section" id="timestamps">
 <span id="id2"></span><h2>Timestamps<a class="headerlink" href="#timestamps" title="Permalink to this headline">¶</a></h2>
 </div>
