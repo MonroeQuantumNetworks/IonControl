@@ -243,10 +243,16 @@ class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
     def __init__(self, parent=None):
         super(CategoryTreeView, self).__init__(parent)
-        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown], [QtCore.Qt.Key_B] )
+        self.filter = KeyListFilter( [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown], [QtCore.Qt.Key_B, QtCore.Qt.Key_Delete] )
         self.filter.keyPressed.connect(self.onReorder)
-        self.filter.controlKeyPressed.connect(self.onBold)
+        self.filter.controlKeyPressed.connect(self.onControl)
         self.installEventFilter(self.filter)
+
+    def onControl(self, key):
+        if key==QtCore.Qt.Key_B:
+            self.onBold()
+        elif key==QtCore.Qt.Key_Delete:
+            self.onDelete()
 
     def onBold(self):
         indexes = self.selectionModel().selectedRows(0)
@@ -256,6 +262,14 @@ class CategoryTreeView(QtGui.QTreeView):
             node.isBold = not node.isBold if hasattr(node,'isBold') else True
             rightIndex = model.indexFromNode(node, model.numColumns-1)
             model.dataChanged.emit(leftIndex, rightIndex)
+
+    def onDelete(self):
+        model=self.model()
+        if model.allowDeletion:
+            indexes = self.selectionModel().selectedRows(0)
+            for leftIndex in indexes:
+                node=model.nodeFromIndex(leftIndex)
+                model.removeNode(node)
 
     def onReorder(self, key):
         if self.model().allowReordering and key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
