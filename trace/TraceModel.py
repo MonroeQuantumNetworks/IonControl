@@ -118,7 +118,7 @@ class TraceModel(CategoryTreeModel):
     def choice(self, index):
         return self.graphicsViewDict.keys() if index.column()==5 else []
 
-    def modelChange(self, index, value, changeType):
+    def modelChange(self, index, value=None, changeType='update'):
         node = self.nodeFromIndex(index)
         trace = node.content
         success = {'checkbox' : self.checkboxChange,
