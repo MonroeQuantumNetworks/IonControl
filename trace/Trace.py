@@ -8,6 +8,8 @@ This is the class in which the data associated with a single trace is stored.
 
 """
 
+from PyQt4 import QtCore
+
 from datetime import datetime
 from dateutil import parser
 import io
@@ -99,7 +101,7 @@ varFactory = { 'str': str,
                'int': int }
     
 
-class Trace(object):
+class Trace(QtCore.QObject):
     """ Class to encapsulate one trace.
 
     This class contains the trace data, and takes care of saving and loading traces from file
@@ -116,8 +118,11 @@ class Trace(object):
         filenamePattern (str): filename pattern to use when saving the trace
     """
 
-    def __init__(self, record_timestamps=False):
+    commentChanged = QtCore.pyqtSignal(str)
+    filenameChanged = QtCore.pyqtSignal(str)
+    def __init__(self, record_timestamps=False, parent=None):
         """Construct a trace object."""
+        super(Trace, self).__init__(parent)
         self._x_ = numpy.array([]) #array of x values
         self._y_ = numpy.array([]) #array of y values
         self.name = "noname" #name to display in table of traces
@@ -161,7 +166,7 @@ class Trace(object):
             self.timeTickFirst = numpy.append(self.timeTickFirst, timeinterval[0])
             self.timeTickLast = numpy.append(self.timeTickLast, timeinterval[1])
     
-    @property
+    @QtCore.pyqtProperty(list)
     def timeinterval(self):
         return (self.timeTickFirst, self.timeTickLast )
     
@@ -169,7 +174,7 @@ class Trace(object):
     def timeinterval(self, val):
         self.timeTickFirst, self.timeTickLast = val
     
-    @property
+    @QtCore.pyqtProperty(list)
     def x(self):
         """Get x array"""
         return self._x_
@@ -182,7 +187,7 @@ class Trace(object):
         if self.record_timestamps:
             self.timestamp = numpy.append( self.timestamp, time.time() )
         
-    @property
+    @QtCore.pyqtProperty(list)
     def y(self):
         """Get y array"""
         return self._y_
@@ -192,15 +197,16 @@ class Trace(object):
         """Set y array, and record the time it was set."""
         self._y_ = val
 
-    @property
+    @QtCore.pyqtProperty(str)
     def comment(self):
         return self.description['comment']
     
     @comment.setter
     def comment(self, comment):
         self.description['comment'] = comment
+        self.commentChanged.emit(comment)
 
-    @property
+    @QtCore.pyqtProperty(object)
     def xUnit(self):
         return self.description.get('xUnit')
     
@@ -208,7 +214,7 @@ class Trace(object):
     def xUnit(self, magnitude):
         self.description['xUnit'] = magnitude
         
-    @property
+    @QtCore.pyqtProperty(object)
     def yUnit(self):
         return self.description.get('yUnit')
     
@@ -216,7 +222,7 @@ class Trace(object):
     def yUnit(self, magnitude):
         self.description['yUnit'] = magnitude
 
-    @property
+    @QtCore.pyqtProperty(str)
     def filenamePattern(self):
         """Get the pattern of the file name"""
         return self._filenamePattern
@@ -232,6 +238,7 @@ class Trace(object):
         if not self.saved:
             self.filename, (self.filepath, name, ext) = DataDirectory().sequencefile(self.filenamePattern)
             self.fileleaf = name+ext
+            self.filenameChanged.emit(self.filename)
         # move the timestamp column to the end
         if self.record_timestamps and 'timestamp' in self.columnNames:
             self.columnNames.append( self.columnNames.pop(self.columnNames.index('timestamp')))
@@ -404,11 +411,11 @@ class Trace(object):
     def addTracePlotting(self, traceplotting):
         self.description["tracePlottingList"].append(traceplotting)
         
-    @property 
+    @QtCore.pyqtProperty(object)
     def tracePlottingList(self):
         return self.description["tracePlottingList"]
     
-    @property
+    @QtCore.pyqtProperty(object)
     def indexColumn(self):
         return numpy.arange( 0, len(self.x), 1)
     
