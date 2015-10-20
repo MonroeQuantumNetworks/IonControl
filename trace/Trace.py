@@ -100,22 +100,20 @@ varFactory = { 'str': str,
     
 
 class Trace(object):
-    
-    """ Class to encapsulate one displayed trace. 
-    
-    instance variables:
-    _x -- array of x values
-    _y -- array of y values
-    name -- name to display in table of traces
-    description --
-        description["comment"] -- comment to add to file
-        description["traceCreation"] -- the time the Trace object was created
-    header --
-    curvePen -- which style pen to use for displaying the trace
-    _filename -- filename to save the trace as
-    
-    The data can be saved to and loaded
-    from a file.
+    """ Class to encapsulate one trace.
+
+    This class contains the trace data, and takes care of saving and loading traces from file
+
+    Attributes:
+        x (list[float]): array of x values
+        y (list[float]): array of y values
+        name (str): name to display in table of traces
+        description (dict): description data
+        description["comment"] (str): comment to add to file
+        description["traceCreation"] (str): the time the Trace object was created
+        header (str): header for saved file
+        curvePen (): pen style to use for displaying the trace
+        filenamePattern (str): filename pattern to use when saving the trace
     """
 
     def __init__(self, record_timestamps=False):
