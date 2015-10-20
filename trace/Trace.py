@@ -223,7 +223,7 @@ class Trace(object):
         """Get the pattern of the file name"""
         return self._filenamePattern
 
-    @filename.setter
+    @filenamePattern.setter
     def filenamePattern(self, pattern):
         """Set the filenamePattern. Use 'Untitled' as default. Save if autoSave is on."""
         self._filenamePattern = pattern if pattern else 'Untitled'
