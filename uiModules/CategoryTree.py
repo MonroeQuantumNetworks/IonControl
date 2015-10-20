@@ -239,6 +239,10 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                 node.row += delta
                 self.endMoveRows()
 
+    def contentFromIndex(self, index):
+        """Get the content associated with the given index"""
+        return self.nodeFromIndex(index).content
+
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
