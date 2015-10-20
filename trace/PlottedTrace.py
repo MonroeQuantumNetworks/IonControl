@@ -181,36 +181,6 @@ class PlottedTrace(object):
     def isPlotted(self, plotted):
         if plotted != (self.curvePen>0):
             self.plot( -1 if plotted else 0 )
-        
-    def child(self, number):
-        """Return the child at the specified number, from the trace's list of children."""
-        return self.childTraces[number]
-
-    def childCount(self):
-        """Return the number of children of the trace."""
-        return len(self.childTraces)
-
-    def childNumber(self):
-        """Return the row of this trace in its parent's list of traces."""
-        if self.parentTrace != None:
-            return self.parentTrace.childTraces.index(self)
-        else:
-            return 0
-
-    def parent(self):
-        """Return the parent of the trace."""
-        return self.parentTrace
-    
-    def appendChild(self, trace):
-        """Append a child to the trace."""
-        self.childTraces.append(trace)
-        return True
-        
-    def averageChildren(self):
-        """Set the trace data to the average of its children's data."""
-        self.x = self.childTraces[0].x #All child traces should have the same x data!
-        childTraceYvalues = numpy.array([childTrace.y for childTrace in self.childTraces]) #2D array of children's y data
-        self.y = numpy.mean(childTraceYvalues, axis=0) #set parent y to mean of children's y
 
     def removePlots(self):
         if self._graphicsView is not None:
@@ -262,8 +232,7 @@ class PlottedTrace(object):
             else:
                 self.__dict__.setdefault( 'fitFunctionPenIndex', self.curvePen )
                 self.fitcurve = self._graphicsView.plot(self.fitx, self.fity, pen=self.penList[self.fitFunctionPenIndex][0])
-                
- 
+
     def plotErrorBars(self,penindex):
         if self._graphicsView is not None:
             if self.hasHeightColumn:
@@ -274,7 +243,6 @@ class PlottedTrace(object):
                                                            pen=self.penList[penindex][0])
                 self._graphicsView.addItem(self.errorBarItem)
             
-
     def plotLines(self,penindex, errorbars=True ):
         if self._graphicsView is not None:
             if errorbars:
@@ -299,7 +267,6 @@ class PlottedTrace(object):
                 else:
                     self._graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
 
-    
     def plotLinespoints(self,penindex, errorbars=True ):
         if self._graphicsView is not None:
             if errorbars:
@@ -313,7 +280,6 @@ class PlottedTrace(object):
                 else:
                     self._graphicsView.setLabel('bottom', text = "{0}".format(self.xAxisLabel))
                 
-    
     def plotSteps(self,penindex):
         if self._graphicsView is not None:
             mycolor = list(self.penList[penindex][4])
