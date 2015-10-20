@@ -137,13 +137,13 @@ class FitUi(fitForm, QtGui.QWidget):
         self.evaluate()
         
     def onGetSmartStart(self):
-        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
+        for plot in self.traceui.selectedTraces(useLastIfNoSelection=True, allowUnplotted=False):
             smartParameters = self.fitfunction.enabledSmartStartValues(plot.x,plot.y,self.fitfunction.parameters)
             self.fitfunction.startParameters = list(smartParameters)
             self.fitfunctionTableModel.startDataChanged()     
         
     def onFit(self):
-        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
+        for plot in self.traceui.selectedTraces(useLastIfNoSelection=True, allowUnplotted=False):
             sigma = None
             if plot.hasHeightColumn:
                 sigma = plot.height
@@ -162,7 +162,7 @@ class FitUi(fitForm, QtGui.QWidget):
             self.setFitfunction( fitfunction )
                 
     def onPlot(self):
-        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True, allowUnplotted=False):
+        for plot in self.traceui.selectedTraces(useLastIfNoSelection=True, allowUnplotted=False):
             fitfunction = copy.deepcopy(self.fitfunction)
             fitfunction.parameters = [value(param) for param in fitfunction.startParameters]
             plot.fitFunction = fitfunction
@@ -170,13 +170,13 @@ class FitUi(fitForm, QtGui.QWidget):
             fitfunction.update()
                 
     def onRemoveFit(self):
-        for plot in self.traceui.selectedPlottedTraces(defaultToLastLine=True):
+        for plot in self.traceui.selectedTraces(useLastIfNoSelection=True):
             plot.fitFunction = None
             plot.plot(-2)
     
     def onExtractFit(self):
         logger = logging.getLogger(__name__)
-        plots = self.traceui.selectedPlottedTraces(defaultToLastLine=True)
+        plots = self.traceui.selectedTraces(useLastIfNoSelection=True)
         logger.debug( "onExtractFit {0} plots selected".format(len(plots) ) )
         if plots:
             plot = plots[0]

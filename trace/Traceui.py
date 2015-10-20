@@ -39,12 +39,12 @@ class Settings:
         self.__dict__.setdefault( 'unplotLastTrace', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
-    def __init__(self, penicons, config, parentname, graphicsViewDict, parent=None, lastDir=None):
+    def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None):
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
         self.penicons = penicons
         self.config = config
-        self.configname = "Traceui."+parentname
+        self.configname = "Traceui."+experimentName
         self.settings = self.config.get(self.configname+".settings",Settings(lastDir=lastDir, plotstyle=0))
         self.graphicsViewDict = graphicsViewDict
 
@@ -81,8 +81,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
 
     def onActiveTraceChanged(self, index):
-        node = self.model.nodeFromIndex(index)
-        trace = node.content
+        trace = self.model.contentFromIndex(index)
         self.descriptionModel.setDescription(trace.trace.description)
 
     def onUnplotSetting(self, checked):
@@ -91,38 +90,28 @@ class Traceui(TraceuiForm, TraceuiBase):
     def unplotLastTrace(self):
         return self.settings.unplotLastTrace
 
-    def uniqueSelectedIndexes(self, useLastIfNoSelection=True, allowUnplotted=True):
-        """From the selected elements, return one index from each row.
-        
-        Using one index from each row prevents executing an action multiple times on the same row.
-        If useLastifNoSelection is true, then an index to the last trace added is used if there is
-        no selection.
-        """
-        uniqueIndexes = []
-        selectedIndexes = self.traceView.selectedIndexes()
-        if (len(selectedIndexes) != 0):
-            for traceIndex in selectedIndexes:
-                if traceIndex.column() == 0 and (allowUnplotted or self.model.getTrace(traceIndex).isPlotted):
-                    uniqueIndexes.append(traceIndex)
-        if (len(uniqueIndexes) == 0) and useLastIfNoSelection:
-            if len(self.tracePersistentIndexes) != 0:
-                #Find and return the most recently added trace that still has a valid index (i.e. has not been removed).
-                for ind in range(-1, -len(self.tracePersistentIndexes)-1, -1): 
-                    if self.tracePersistentIndexes[ind].isValid():
-                        return [QtCore.QModelIndex(self.tracePersistentIndexes[ind])]
-                return None #If the for loop failed to find a valid index, return None. This happens if all traces have been deleted.
-            else:
-                return None #If there were no traces added, return None. This happens if no trace was ever added.
-        return uniqueIndexes
+    def selectedRows(self, useLastIfNoSelection=True, allowUnplotted=True):
+        inputIndexes = self.selectionModel().selectedRows(0)
+        outputIndexes = []
+        for index in inputIndexes:
+            trace = self.model.contentFromIndex(index)
+            if allowUnplotted or trace.isPlotted:
+                outputIndexes.append(index)
+        if not outputIndexes and useLastIfNoSelection:
+            trace = self.model.traceList[-1]
+            node = self.model.nodeFromContent(trace)
+            index = self.model.indexFromNode(node)
+            outputIndexes.append(index)
+        return outputIndexes
 
-    def addTrace(self, trace, pen, parentTrace=None):
-        """Add a trace to the model, plot it, and resize the view appropriately."""
-        PersistentIndex = self.model.addTrace(trace, parentTrace)
-        self.tracePersistentIndexes.append(PersistentIndex)
-        if parentTrace != None:
-            parentIndex = self.model.createIndex(parentTrace.childNumber(), 0, parentTrace)
-            if not self.traceView.isExpanded(parentIndex):
-                self.traceView.expand(parentIndex)
+    def selectedTraces(self, useLastIfNoSelection=False, allowUnplotted=True):
+        """Return a list of the selected traces."""
+        selectedIndexes = self.selectedRows(useLastIfNoSelection, allowUnplotted)
+        return [self.model.contentFromIndex(index) for index in selectedIndexes]
+
+    def addTrace(self, trace, pen):
+        """Add a trace to the model and plot it."""
+        self.model.addNode(trace, trace.name)
         trace.plot(pen,self.settings.plotstyle)
                 
     def resizeColumnsToContents(self):
@@ -141,61 +130,51 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     def onPlot(self):
         """Execute when the plot button is clicked. Plot the selected traces."""
-        selectedIndexes = self.uniqueSelectedIndexes()
+        selectedIndexes = self.selectedRows()
         if selectedIndexes:
-            for traceIndex in selectedIndexes:
-                trace = self.model.getTrace(traceIndex)
+            for index in selectedIndexes:
+                trace = self.model.contentFromIndex(index)
                 trace.plot(-1,self.settings.plotstyle)
-                self.model.updateTrace(QtCore.QPersistentModelIndex(traceIndex))
+                self.model.modelChange(index)
 
     def onClear(self):
         """Execute when the clear button is clicked. Remove the selected plots from the trace.
         
            This leaves the traces in the list of traces (i.e. in the model and view)."""
-        selectedIndexes = self.uniqueSelectedIndexes()
+        selectedIndexes = self.selectedRows()
         if selectedIndexes:
-            for traceIndex in selectedIndexes:
-                trace = self.model.getTrace(traceIndex)
+            for index in selectedIndexes:
+                trace = self.model.contentFromIndex(index)
                 if trace.curvePen != 0:
                     trace.plot(0)
-                self.model.updateTrace(QtCore.QPersistentModelIndex(traceIndex))
+                self.model.modelChange(index)
 
     def onApplyStyle(self):
         """Execute when the apply style button is clicked. Change the selected traces to the new style."""
-        selectedIndexes = self.uniqueSelectedIndexes()
+        selectedIndexes = self.selectedRows()
         if selectedIndexes:
-            for traceIndex in selectedIndexes:
-                trace = self.model.getTrace(traceIndex)
+            for index in selectedIndexes:
+                trace = self.model.contentFromIndex(index)
                 trace.plot(-2, self.settings.plotstyle)           
 
     def onSave(self):
-        """Execute when the save button is clicked. Save (or resave) the selected traces."""
-        selectedIndexes = self.uniqueSelectedIndexes()
+        """Execute when the save button is clicked. Save the selected traces."""
+        selectedIndexes = self.selectedRows()
         if selectedIndexes:
-            for traceIndex in selectedIndexes:
-                trace = self.model.getTrace(traceIndex)
-                trace.trace.resave()
+            for index in selectedIndexes:
+                trace = self.model.contentFromIndex(index)
+                trace.trace.save()
 
     def onRemove(self):
         """Execute when the remove button is clicked. Remove the selected traces from the model and view (but don't delete files)."""
-        selectedIndexes = self.uniqueSelectedIndexes()
+        selectedIndexes = self.selectedRows()
         if selectedIndexes:
-            for traceIndex in selectedIndexes: #Loop through each trace and remove it
-                trace = self.model.getTrace(traceIndex)
-                parentIndex = self.model.parent(traceIndex)
-                row = trace.childNumber()
-                if trace.childCount() != 0: #If the trace has children, remove them first
-                    while trace.childCount() != 0:
-                        if trace.child(0).curvePen != 0:
-                            trace.child(0).plot(0)
-                        self.model.dropTrace(traceIndex, 0) #Repeatedly remove row zero until there are no more child traces
+            for index in selectedIndexes:
+                node = self.model.nodeFromIndex(index)
+                trace = node.content
                 if trace.curvePen != 0:
                     trace.plot(0)
-                self.model.dropTrace(parentIndex, row)
-        # remove invalid indices to prevent memory leak
-        for ind in reversed(range( len(self.tracePersistentIndexes) )): 
-            if not self.tracePersistentIndexes[ind].isValid():
-                self.tracePersistentIndexes.pop(ind)
+                self.model.removeNode(node)
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
@@ -220,16 +199,6 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Execute when the UI is closed. Save the settings to the config file."""
         self.config[self.configname+".settings"] = self.settings
         
-    def selectedPlottedTraces(self, defaultToLastLine=False, allowUnplotted=True):
-        """Return a list of the selected traces."""
-        selectedIndexes = self.uniqueSelectedIndexes(allowUnplotted=allowUnplotted)
-        traceList = []
-        if selectedIndexes:
-            for traceIndex in selectedIndexes:
-                trace = self.model.getTrace(traceIndex)
-                traceList.append(trace)
-        return traceList
-    
     def onShowOnlyLast(self):
         pass
         
