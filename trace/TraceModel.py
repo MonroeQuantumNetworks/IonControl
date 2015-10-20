@@ -66,7 +66,7 @@ class TraceComboDelegate(QtGui.QItemDelegate):
         """Required. Set the size of the combo box appropriately."""
         editor.setGeometry(option.rect)
     
-class TraceTreeModel(QtCore.QAbstractItemModel):
+class TraceModel(QtCore.QAbstractTableModel):
     
     """
     This class is the data model used to displaying the traces in a tree.
@@ -79,7 +79,7 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
                  in the model.
 
     methods:
-    __init__(self, TraceList, penicons, parent=None, *args): Construct the TraceTreeModel
+    __init__(self, TraceList, penicons, parent=None, *args): Construct the TraceModel
     getTrace(self, traceIndex): Return the trace at the given index.
     addTrace(self,trace,parentIndex=QtCore.QModelIndex()): Add a new trace to the list of traces.
     dropTrace(self, parentTraceIndex, row): Remove a trace from the list of traces.
@@ -100,19 +100,15 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
     
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
         """
-        Construct the TraceTreeModel.
+        Construct the TraceModel.
         
         traceList: The initial list of traces (typically empty)
         penicons: The list of available icons for the different traces
         """
-        super(TraceTreeModel, self).__init__(parent)
-        self.rootTrace = PlottedTrace(None,None,None,isRootTrace=True) #rootTrace is an empty plotted trace
+        super(TraceModel, self).__init__(parent)
         self.penicons = penicons
+        self.traceList = traceList
         self.graphicsViewDict = graphicsViewDict
-        for trace in traceList: #set all top level traces to have rootTrace as parent
-            if trace.parentTrace == None:
-                trace.parentTrace = self.rootTrace
-                self.rootTrace.appendChild(trace)
         self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
                  1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                  3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
@@ -140,26 +136,6 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         if not traceIndex.isValid():
             return self.rootTrace
         return traceIndex.internalPointer()
-        
-    def index(self, row, column, parentIndex=QtCore.QModelIndex()):
-        """Required. Return a model index for the specified row, column, and parent."""
-        if not self.hasIndex(row, column, parentIndex):
-            return QtCore.QModelIndex()
-        parentTrace = self.getTrace(parentIndex)
-        trace = parentTrace.child(row)
-        if trace == None:
-            return QtCore.QModelIndex()
-        return self.createIndex(row, column, trace)
-
-    def parent(self, traceIndex):
-        """Required. Return a model index for the parent of the specified index."""
-        trace = self.getTrace(traceIndex)
-        if trace == self.rootTrace:
-            return QtCore.QModelIndex()
-        parentTrace = trace.parent()
-        if parentTrace == self.rootTrace:
-            return QtCore.QModelIndex()
-        return self.createIndex(parentTrace.childNumber(), 0, parentTrace) #index created for column 0 of parent
 
     def rowCount(self, parentIndex=QtCore.QModelIndex()):
         """Required. Return the number of rows beneath the given parent."""
@@ -235,20 +211,12 @@ class TraceTreeModel(QtCore.QAbstractItemModel):
         else:
             return False
             
-    def addTrace(self,trace,parentTrace=None):
-        """Add a new trace to the list of traces. Return a persistent index to that trace."""
-        if parentTrace == None:
-            parentTrace = self.rootTrace
-            parentIndex = QtCore.QModelIndex()
-        else:
-            parentIndex = self.createIndex(parentTrace.childNumber(), 0, parentTrace)
-        position = parentTrace.childCount() #New trace is added at the end of the list
-        self.beginInsertRows(parentIndex, position, position)
-        parentTrace.appendChild(trace)
-        trace.parentTrace = parentTrace
+    def addTrace(self,trace):
+        """Add a new trace to the list of traces."""
+        self.beginInsertRows(QtCore.QModelIndex, self.rowCount(), self.rowCount())
+        self.traceList.append(trace)
         #For the callback, we use a persistent index, so that when the trace "calls"
         #that its data is changed, the index it calls remains valid.
-        persistentIndex = QtCore.QPersistentModelIndex(self.createIndex(position, 0, trace))
         trace.trace.filenameChanged.subscribe( partial(self.updateTrace, persistentIndex) )
         self.endInsertRows()
         return persistentIndex

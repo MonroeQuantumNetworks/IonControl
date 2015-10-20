@@ -12,7 +12,6 @@ import numpy
 from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 
-from modules import DataDirectory 
 from modules import enum
 from trace.Trace import TracePlotting
 import time 
@@ -29,7 +28,7 @@ class PlottedTrace(object):
     Styles = enum.enum('lines','points','linespoints','lines_with_errorbars','points_with_errorbars','linepoints_with_errorbars')
     PointsStyles = [ 1, 4 ]
     Types = enum.enum('default','steps')
-    def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None, isRootTrace=False,
+    def __init__(self,Trace,graphicsView,penList=None,pen=0,style=None,plotType=None,
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
                  yAxisLabel = None, yAxisUnit = None, fill=True, windowName=None):
@@ -48,10 +47,6 @@ class PlottedTrace(object):
         self.errorBarItem = None
         self.style = self.Styles.lines if style is None else style
         self.type = self.Types.default if plotType is None else plotType
-        #Tree related data. Parent and children are set in the model's addTrace method, but declared here
-        self.isRootTrace = isRootTrace
-        self.parentTrace = None
-        self.childTraces = []
         self.curvePen = 0
         self.name = name
         self.xAxisLabel = xAxisLabel
@@ -380,20 +375,6 @@ class PlottedTrace(object):
         self.lastPlotTime = time.time()
         self.needsReplot = False
 
-    def traceFilename(self, pattern):
-        directory = DataDirectory.DataDirectory()
-        if self.parent() is None or self.parent().isRootTrace: 
-            if pattern and pattern!='':
-                filename, _ = directory.sequencefile(pattern)
-                return filename
-            else:
-                path = str(QtGui.QFileDialog.getSaveFileName(None, 'Save file',directory.path()))
-                return path
-        else:
-            parentFilename = self.parent().trace.getFilename() 
-            filename, _ = directory.sequencefile( os.path.split(parentFilename)[1] )
-            return filename
-        
     def setView(self, graphicsView ):
         self.removePlots()
         self._graphicsView = graphicsView
@@ -406,11 +387,15 @@ class PlottedTrace(object):
     @fitFunction.setter
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
-        
-    
+
+    @property
+    def displayName(self):
+        """Name to use to categorize trace in traceList."""
+        return trace.fileleaf if trace.saved else "UNSAVED_"+trace.filenamePattern
+
 #     def __del__(self):
 #         super(PlottedTrace, self)__del__()
-        
+
 if __name__=="__main__":
     from trace.Trace import Trace
     import gc

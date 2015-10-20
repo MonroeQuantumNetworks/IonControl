@@ -13,14 +13,14 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 from ProjectConfig.Project import getProject
-from TraceTreeModel import TraceComboDelegate
-from TraceTreeModel import TraceTreeModel
+from TraceModel import TraceComboDelegate
+from TraceModel import TraceModel
 from trace.PlottedTrace import PlottedTrace
 from TraceDescriptionTableModel import TraceDescriptionTableModel
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.KeyboardFilter import KeyListFilter
 
-uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\TraceTreeui.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Traceui.ui')
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
@@ -42,7 +42,7 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     """
     Class for the trace interface. It displays the plotted traces (using a tree
-    view, and the model in TraceTreeModel), and allows for selecting which are 
+    view, and the model in TraceModel), and allows for selecting which are
     plotted, in addition to deleting them, adding them, saving them, etc.
     
     instance variables:
@@ -84,28 +84,28 @@ class Traceui(TraceuiForm, TraceuiBase):
     def setupUi(self,MainWindow):
         """Setup the UI. Create the model and the view. Connect all the buttons."""
         TraceuiForm.setupUi(self,MainWindow)
-        self.model = TraceTreeModel([], self.penicons, self.graphicsViewDict)
+        self.model = TraceModel([], self.penicons, self.graphicsViewDict)
         self.tracePersistentIndexes = []
-        self.traceTreeView.setModel(self.model)
+        self.traceView.setModel(self.model)
         self.delegate = TraceComboDelegate(self.penicons)
         self.graphicsViewDelegate = ComboBoxDelegate()
-        self.traceTreeView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
-        self.traceTreeView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which pen to use in the plot
-        self.traceTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
+        self.traceView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
+        self.traceView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which pen to use in the plot
+        self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
         self.filter = KeyListFilter( [QtCore.Qt.Key_Delete] )
         self.filter.keyPressed.connect( self.onKey )
-        self.traceTreeView.installEventFilter(self.filter)
+        self.traceView.installEventFilter(self.filter)
         self.clearButton.clicked.connect(self.onClear)
         self.saveButton.clicked.connect(self.onSave)
         self.removeButton.clicked.connect(self.onRemove)
-        self.traceTreeView.clicked.connect(self.onViewClicked)
+        self.traceView.clicked.connect(self.onViewClicked)
         self.comboBoxStyle.setCurrentIndex(self.settings.plotstyle)
         self.comboBoxStyle.currentIndexChanged[int].connect(self.setPlotStyle)
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.plotButton.clicked.connect(self.onPlot)
         self.showOnlyLastButton.clicked.connect(self.onShowOnlyLast)
-        self.selectAllButton.clicked.connect(self.traceTreeView.selectAll)
+        self.selectAllButton.clicked.connect(self.traceView.selectAll)
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
         self.unplotSettingsAction = QtGui.QAction( "Unplot last trace", self )
         self.unplotSettingsAction.setCheckable(True)
@@ -114,7 +114,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.addAction( self.unplotSettingsAction )
         self.descriptionModel = TraceDescriptionTableModel() 
         self.descriptionTableView.setModel( self.descriptionModel )
-        self.traceTreeView.clicked.connect( self.onActiveTraceChanged )
+        self.traceView.clicked.connect( self.onActiveTraceChanged )
         self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
 
     def onKey(self, key):
@@ -139,7 +139,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         no selection.
         """
         uniqueIndexes = []
-        selectedIndexes = self.traceTreeView.selectedIndexes()
+        selectedIndexes = self.traceView.selectedIndexes()
         if (len(selectedIndexes) != 0):
             for traceIndex in selectedIndexes:
                 if traceIndex.column() == 0 and (allowUnplotted or self.model.getTrace(traceIndex).isPlotted):
@@ -161,13 +161,13 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.tracePersistentIndexes.append(PersistentIndex)
         if parentTrace != None:
             parentIndex = self.model.createIndex(parentTrace.childNumber(), 0, parentTrace)
-            if not self.traceTreeView.isExpanded(parentIndex):
-                self.traceTreeView.expand(parentIndex)
+            if not self.traceView.isExpanded(parentIndex):
+                self.traceView.expand(parentIndex)
         trace.plot(pen,self.settings.plotstyle)
                 
     def resizeColumnsToContents(self):
         for column in range(self.model.columnCount()):
-            self.traceTreeView.resizeColumnToContents(column)
+            self.traceView.resizeColumnToContents(column)
 
     def setPlotStyle(self,value):
         """Set the plot style to 'value'."""
@@ -177,7 +177,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onViewClicked(self,index):
         """If one of the editable columns is clicked, begin to edit it."""
         if index.column() in [1,3]:
-            self.traceTreeView.edit(index)
+            self.traceView.edit(index)
 
     def onPlot(self):
         """Execute when the plot button is clicked. Plot the selected traces."""
@@ -216,61 +216,22 @@ class Traceui(TraceuiForm, TraceuiBase):
                 trace = self.model.getTrace(traceIndex)
                 trace.trace.resave()
 
-    def onShredder(self):
-        """Execute when the shredder button is clicked. Remove the selected plots, and delete the files from disk.
-        
-           A warning message appears first, asking to confirm deletion. Traces with children cannot be deleted from disk until their children are deleted."""
-        logger = logging.getLogger(__name__)
-        selectedIndexes = self.uniqueSelectedIndexes()
-        if selectedIndexes:
-            warningResponse = self.warningMessage("Are you sure you want to delete the selected trace file(s) from disk?", "Press OK to continue with deletion.")
-            if warningResponse == QtGui.QMessageBox.Ok:
-                for traceIndex in selectedIndexes:
-                    trace = self.model.getTrace(traceIndex)
-                    parentIndex = self.model.parent(traceIndex)
-                    row = trace.childNumber()
-                    if trace.childCount() == 0:
-                        if trace.curvePen != 0:
-                            trace.plot(0)
-                        try:
-                            trace.trace.deleteFile()
-                        except WindowsError:
-                            pass   # we ignore if the file cannot be found
-                        self.model.dropTrace(parentIndex, row)
-                    else:
-                        logger.warning( "trace has children, please delete them first." )
-
-    def warningMessage(self, warningText, informativeText):
-        """Pop up a warning message. Return the response."""
-        warningMessage = QtGui.QMessageBox()
-        warningMessage.setText(warningText)
-        warningMessage.setInformativeText(informativeText)
-        warningMessage.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
-        return warningMessage.exec_()        
-
     def onRemove(self):
         """Execute when the remove button is clicked. Remove the selected traces from the model and view (but don't delete files)."""
         selectedIndexes = self.uniqueSelectedIndexes()
         if selectedIndexes:
-            thereAreParents = False
-            for traceIndex in selectedIndexes: #Loop through selection and find out if any of the traces have children
-                if self.model.getTrace(traceIndex).childCount() != 0:
-                    thereAreParents = True
-                    warningResponse = self.warningMessage("Some of the selected traces have child traces. Removal will also remove the child traces.", "Press OK to proceed with removal.")
-                    break
-            if (not thereAreParents) or (warningResponse == QtGui.QMessageBox.Ok):
-                for traceIndex in selectedIndexes: #Loop through each trace and remove it
-                    trace = self.model.getTrace(traceIndex)
-                    parentIndex = self.model.parent(traceIndex)
-                    row = trace.childNumber()
-                    if trace.childCount() != 0: #If the trace has children, remove them first
-                        while trace.childCount() != 0:
-                            if trace.child(0).curvePen != 0:
-                                trace.child(0).plot(0)
-                            self.model.dropTrace(traceIndex, 0) #Repeatedly remove row zero until there are no more child traces
-                    if trace.curvePen != 0:
-                        trace.plot(0)
-                    self.model.dropTrace(parentIndex, row)
+            for traceIndex in selectedIndexes: #Loop through each trace and remove it
+                trace = self.model.getTrace(traceIndex)
+                parentIndex = self.model.parent(traceIndex)
+                row = trace.childNumber()
+                if trace.childCount() != 0: #If the trace has children, remove them first
+                    while trace.childCount() != 0:
+                        if trace.child(0).curvePen != 0:
+                            trace.child(0).plot(0)
+                        self.model.dropTrace(traceIndex, 0) #Repeatedly remove row zero until there are no more child traces
+                if trace.curvePen != 0:
+                    trace.plot(0)
+                self.model.dropTrace(parentIndex, row)
         # remove invalid indices to prevent memory leak
         for ind in reversed(range( len(self.tracePersistentIndexes) )): 
             if not self.tracePersistentIndexes[ind].isValid():

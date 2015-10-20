@@ -22,8 +22,8 @@ from modules.enum import enum
 import xml.etree.ElementTree as ElementTree
 import time
 from modules.SequenceDictSignal import SequenceDictSignal as SequenceDict
-from modules.Observable import Observable
 import pytz
+from modules.DataDirectory import DataDirectory
 
 try:
     from fit import FitFunctions
@@ -128,14 +128,13 @@ class Trace(object):
         self.description["traceCreation"] = datetime.now(pytz.utc)
         self.header = None
         self.headerDict = dict()
-        self._filename = None
-        self.filenameCallback = None   # function to result in filename for save
+        self.autoSave = False
+        self.saved = False
+        self._filenamePattern = None
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
         self.description["tracePlottingList"] = TracePlottingList()
         self.record_timestamps = record_timestamps
-        self.commentChanged = Observable()
-        self.filenameChanged = Observable()
         if record_timestamps:
             self.addColumn('timestamp')
         
@@ -194,14 +193,7 @@ class Trace(object):
     def y(self,val):
         """Set y array, and record the time it was set."""
         self._y_ = val
-         
-    def getFilename(self):
-        """return the filename if no filename is available get a filename using the callback"""
-        if not self._filename and self.filenameCallback:
-            self.filename = self.filenameCallback()
-            self.resave()
-        return self._filename
-          
+
     @property
     def comment(self):
         return self.description['comment']
@@ -209,25 +201,7 @@ class Trace(object):
     @comment.setter
     def comment(self, comment):
         self.description['comment'] = comment
-        self.commentChanged.fire(comment=comment)       
-          
-    @property
-    def filename(self):
-        """Get the full pathname of the file."""
-        return self._filename
-        
-    @filename.setter
-    def filename(self, filename):
-        """ setter for the full pathname of the file
-        upon resave, the data gets saved into this file
-        """
-        self._filename = filename    
-        if filename:
-            self.filepath, self.fileleaf = os.path.split(filename)
-        else:
-            self.filepath, self.fileleaf = None, None
-        self.filenameChanged.fire(filename=filename,path=self.filepath,leaf=self.fileleaf)
-        
+
     @property
     def xUnit(self):
         return self.description.get('xUnit')
@@ -243,24 +217,73 @@ class Trace(object):
     @yUnit.setter
     def yUnit(self, magnitude):
         self.description['yUnit'] = magnitude
-        
-        
-        
-    def resave(self, saveIfUnsaved=True):
-        """ save the data to the filename set previously by writing to filename
-        """
-        if hasattr(self, 'filename' ) and self.filename and self.filename!='':
-            self.saveTrace(self.filename)
-        elif self.filenameCallback and saveIfUnsaved:
-            self.saveTrace(self.filenameCallback())
-        return self._filename
-    
-    def deleteFile(self):
-        """ delete the file from disk
-        """
-        if hasattr(self, 'filename' ) and self.filename and self.filename!='':
-            os.remove(self.filename)
-    
+
+    @property
+    def filenamePattern(self):
+        """Get the pattern of the file name"""
+        return self._filenamePattern
+
+    @filename.setter
+    def filenamePattern(self, pattern):
+        """Set the filenamePattern. Use 'Untitled' as default. Save if autoSave is on."""
+        self._filenamePattern = pattern if pattern else 'Untitled'
+        if self.autoSave: self.save()
+
+    def save(self):
+        """save the trace to file"""
+        if not self.saved:
+            self.filename, (self.filepath, name, ext) = DataDirectory().sequencefile(pattern)
+            self.fileleaf = name+ext
+        # move the timestamp column to the end
+        if self.record_timestamps and 'timestamp' in self.columnNames:
+            self.columnNames.append( self.columnNames.pop(self.columnNames.index('timestamp')))
+        if self.rawdata:
+            self.description["rawdata"] = self.rawdata.save()
+        if hasattr(self,'fitfunction'):
+            self.description["fitfunction"] = self.fitfunction
+        if self.filename:
+            of = open(self.filename,'w')
+            columnlist = [self._x_]
+            columnspec = ColumnSpec(['x'])
+            if len(self._y_)>0:
+                columnlist += [self._y_]
+                columnspec += ['y']
+            for column in self.columnNames:
+                if hasattr(self, column):
+                    columnlist.append( getattr(self,column) )
+                    columnspec.append( column )
+            self.description["columnspec"] = columnspec #",".join(columnspec)
+            self.saveTraceHeaderXml(of)
+            for l in izip_longest(*columnlist, fillvalue=float('NaN')):
+                print >>of, "\t".join(map(repr,l))
+            of.close()
+            self.saved=True
+
+    def saveBare(self):
+        if not self.saved:
+            self.filename, (self.filepath, name, ext) = DataDirectory().sequencefile(pattern)
+            self.fileleaf = name+ext
+        if self.rawdata:
+            self.description["rawdata"] = self.rawdata.save()
+        if hasattr(self,'fitfunction'):
+            self.description['fitfunction'] = self.fitfunction
+        if self.filename:
+            of = open(self.filename,'w')
+            columnlist = [self._x_]
+            columnspec = ['x']
+            if len(self._y_)>0:
+                columnlist += [self._y_]
+                columnspec += ['y']
+            for column in self.columnNames:
+                if hasattr(self, column):
+                    columnlist.append( getattr(self,column) )
+                    columnspec.append( column )
+            self.description["columnspec"] = ",".join(columnspec)
+            self.saveTraceHeader(of)
+            for l in zip(*columnlist):
+                print >>of, "\t".join(map(repr,l))
+            of.close()
+
     def plot(self,penindex):
         """ plot the data, penindex >= 0 gives requests the style with this number,
         penindex = -1 uses the first available style, penindex = -2 uses the previous style
@@ -304,55 +327,6 @@ class Trace(object):
             e = ElementTree.SubElement(element, 'Element', {'name': name, 'type': type(value).__name__})
             e.text = str(value)
 
-    def saveTraceBare(self,filename):
-        if self.rawdata:
-            self.description["rawdata"] = self.rawdata.save()
-        if hasattr(self,'fitfunction'):
-            self.description['fitfunction'] = self.fitfunction
-        if filename!='':
-            of = open(filename,'w')
-            columnlist = [self._x_]
-            columnspec = ['x']
-            if len(self._y_)>0:
-                columnlist += [self._y_]
-                columnspec += ['y']
-            for column in self.columnNames:
-                if hasattr(self, column):
-                    columnlist.append( getattr(self,column) )
-                    columnspec.append( column )
-            self.description["columnspec"] = ",".join(columnspec)
-            self.saveTraceHeader(of)
-            for l in zip(*columnlist):
-                print >>of, "\t".join(map(repr,l))
-            self.filename = filename
-            of.close()
-
-    def saveTrace(self,filename):
-        # move the timestamp column to the end
-        if self.record_timestamps and 'timestamp' in self.columnNames:
-            self.columnNames.append( self.columnNames.pop(self.columnNames.index('timestamp')))
-        if self.rawdata:
-            self.description["rawdata"] = self.rawdata.save()
-        if hasattr(self,'fitfunction'):
-            self.description["fitfunction"] = self.fitfunction
-        if filename!='':
-            of = open(filename,'w')
-            columnlist = [self._x_]
-            columnspec = ColumnSpec(['x'])
-            if len(self._y_)>0:
-                columnlist += [self._y_]
-                columnspec += ['y']
-            for column in self.columnNames:
-                if hasattr(self, column):
-                    columnlist.append( getattr(self,column) )
-                    columnspec.append( column )
-            self.description["columnspec"] = columnspec #",".join(columnspec)
-            self.saveTraceHeaderXml(of)
-            for l in izip_longest(*columnlist, fillvalue=float('NaN')):
-                print >>of, "\t".join(map(repr,l))
-            self.filename = filename
-            of.close()
-    
     def loadTrace(self,filename):
         with io.open(filename,'r') as instream:
             position = instream.tell()
@@ -365,7 +339,6 @@ class Trace(object):
                 self.description["tracePlottingList"].append(TracePlotting())
         self.filename = filename
 
-        
     def loadTraceXml(self, stream):
         xmlstringlist = []
         data = []
@@ -394,8 +367,7 @@ class Trace(object):
                 except ValueError:
                     pass
                     
-        
-    def loadTraceText(self, stream):    
+    def loadTraceText(self, stream):
         data = []
         self.description["columnspec"] = "x,y"
         for line in stream:

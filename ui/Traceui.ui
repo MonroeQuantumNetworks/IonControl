@@ -317,7 +317,7 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QTreeView" name="traceTreeView"/>
+     <widget class="QTreeView" name="traceView"/>
      <widget class="QTableView" name="descriptionTableView"/>
     </widget>
    </item>
