@@ -88,6 +88,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                             }
         self.numColumns = 1 #Overwrite with number of columns
         self.allowReordering = False #If True, nodes can be moved around
+        self.allowDeletion = False #If True, nodes can be deleted
         self.root = Node(parent=None, id='', nodeType=nodeTypes.category, content=None)
         self.nodeDict = {'': self.root} #dictionary of all nodes, with string indicating hierarchy to that item
         #contentList is a list of objects. Can be anything. If the objects have a category attribute, a tree will result.
@@ -163,7 +164,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
             self.addNode(content, name)
 
     def addNode(self, content, name):
-        """Add a node to the tree containing 'content' with id 'id'"""
+        """Add a node to the tree containing 'content' with name 'name'"""
         name = str(name)
         categories = getattr(content, self.categoriesAttr, None)
         categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
@@ -174,6 +175,19 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         node = Node(parent, id, nodeType, content)
         self.addRow(parent, node)
         self.nodeDict[id] = node
+
+    def removeNode(self, node):
+        """Remove the specified node from the tree"""
+        if self.allowDeletion:
+            parent = node.parent
+            row = node.row
+            id = node.id
+            parentIndex = self.indexFromNode(parent)
+            self.beginRemoveRows(parentIndex, row, row)
+            del parent.children[row]
+            del self.nodeDict[id]
+            del node
+            self.endRemoveRows()
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
@@ -187,7 +201,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         return self.nodeDict[key]
 
     def addRow(self, parent, node):
-        """Add 'node' the table under 'parent'"""
+        """Add 'node' to the table under 'parent'"""
         parentIndex = self.indexFromNode(parent)
         self.beginInsertRows(parentIndex, parent.childCount(), parent.childCount())
         parent.children.append(node)
@@ -313,6 +327,7 @@ if __name__ == "__main__":
             super(myModel, self).__init__(contentList,parent,categoriesAttr,nodeNameAttr)
             self.numColumns=2
             self.allowReordering=True
+            self.allowDeletion=True
             self.headerLookup.update({
                     (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
                     (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Value'
