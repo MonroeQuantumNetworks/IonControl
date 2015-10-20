@@ -13,7 +13,7 @@ from PyQt4 import QtCore, QtGui
 import sip
 
 from PlottedTrace import PlottedTrace
-
+from uiModules.CategoryTree import CategoryTreeModel
 
 api2 = sip.getapi("QVariant")==2
 
@@ -66,178 +66,99 @@ class TraceComboDelegate(QtGui.QItemDelegate):
         """Required. Set the size of the combo box appropriately."""
         editor.setGeometry(option.rect)
     
-class TraceModel(QtCore.QAbstractTableModel):
-    
+class TraceModel(CategoryTreeModel):
     """
-    This class is the data model used to displaying the traces in a tree.
-    
-    instance variables:
-    penicons -- the list of icons available for the different traces
-    rootTrace -- This is an empty PlottedTrace object. It is the parent of all the top level
-                 traces. It contains a list of all its child traces, which in turn contain
-                 a list of their child traces, etc. In this way, all the traces are stored
-                 in the model.
+    Construct the TraceModel.
 
-    methods:
-    __init__(self, TraceList, penicons, parent=None, *args): Construct the TraceModel
-    getTrace(self, traceIndex): Return the trace at the given index.
-    addTrace(self,trace,parentIndex=QtCore.QModelIndex()): Add a new trace to the list of traces.
-    dropTrace(self, parentTraceIndex, row): Remove a trace from the list of traces.
-    updateTrace(self, traceIndex): Emit the signal to update the trace.
-    
-    The following methods are required reimplementations of QAbstractItemModel methods (they are used by
-    the view to display the data):
-    index(self, row, column, parentIndex=QtCore.QModelIndex()): Return the index at the row, column, and parentIndex.
-    parent(self, traceIndex): Return the index of the parent of traceIndex.
-    rowCount(self, parentIndex=QtCore.QModelIndex()): Return the number of rows beneath the given parent.
-    columnCount(self, parent=QtCore.QModelIndex()): Return the number of columns.
-    data(self, traceIndex, role): Return the data from the model to the view at the given index for the given role.
-    setData(self, traceIndex, value, role): Set the data in the model from the value set in the view.
-    flags(self, index): Return the flags for the given index.
-    headerData(self, section, orientation, role): Return the headers for each column.
-    setData(self, traceIndex, value, role): Set the data in the model from the value set in the view.
+    Args:
+        traceList (list[PlottedTrace]): The initial list of traces
+        penicons (list[QtGui.QIcon]): Icons for showing available plot colors
+        graphicsViewDict (dict): dictionary of the available plot windows
+        parent (QtCore.QObject): parent QObject
     """
-    
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
-        """
-        Construct the TraceModel.
-        
-        traceList: The initial list of traces (typically empty)
-        penicons: The list of available icons for the different traces
-        """
-        super(TraceModel, self).__init__(parent)
+        super(TraceModel, self).__init__(traceList, parent)
         self.penicons = penicons
         self.traceList = traceList
         self.graphicsViewDict = graphicsViewDict
-        self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-                 1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-                 5: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
-                 }
-        self.dataLookup =  { (QtCore.Qt.DisplayRole,2): lambda trace: ", ".join([str(trace.trace.name), str(trace.name)]),
-                 (QtCore.Qt.DisplayRole,3): lambda trace: trace.trace.comment,
-                 (QtCore.Qt.DisplayRole,4): lambda trace: getattr( trace.trace, 'fileleaf', None ),
-                 (QtCore.Qt.DisplayRole,5): lambda trace: trace.windowName,
-                 (QtCore.Qt.EditRole,5): lambda trace: trace.windowName,
-                 (QtCore.Qt.CheckStateRole,0): lambda trace: QtCore.Qt.Checked if trace.curvePen > 0 else QtCore.Qt.Unchecked,
-                 (QtCore.Qt.DecorationRole,1): lambda trace: QtGui.QIcon(self.penicons[trace.curvePen]) if hasattr(trace, 'curve') and trace.curve is not None else None,
-                 (QtCore.Qt.BackgroundColorRole,1): lambda trace: QtGui.QColor(QtCore.Qt.white) if not (hasattr(trace, 'curve') and trace.curve is not None) else None,
-                 (QtCore.Qt.EditRole,1): lambda trace: trace.curvePen,
-                 (QtCore.Qt.EditRole,3): lambda trace: trace.trace.comment
-                 }
-                
+        self.numColumns = 6
+        self.allowDeletion = True
+        self.headerLookup.update({
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Plot',
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 2): 'Name',
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 3): 'Comment',
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 4): 'Filename',
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 5):  'Window'
+            })
+        self.dataLookup.update({
+            (QtCore.Qt.DisplayRole,2): lambda node: ", ".join([str(node.content.trace.name), str(node.content.name)]),
+            (QtCore.Qt.DisplayRole,3): lambda node: node.content.trace.comment,
+            (QtCore.Qt.DisplayRole,4): lambda node: getattr( node.content.trace, 'fileleaf', None ),
+            (QtCore.Qt.DisplayRole,5): lambda node: node.content.windowName,
+            (QtCore.Qt.EditRole,5): lambda node: node.content.windowName,
+            (QtCore.Qt.CheckStateRole,0): lambda node: QtCore.Qt.Checked if node.content.curvePen > 0 else QtCore.Qt.Unchecked,
+            (QtCore.Qt.DecorationRole,1): lambda node: QtGui.QIcon(self.penicons[node.content.curvePen]) if hasattr(node.content, 'curve') and node.content.curve is not None else None,
+            (QtCore.Qt.BackgroundColorRole,1): lambda node: QtGui.QColor(QtCore.Qt.white) if not (hasattr(node.content, 'curve') and node.content.curve is not None) else None,
+            (QtCore.Qt.EditRole,1): lambda node: node.content.curvePen,
+            (QtCore.Qt.EditRole,3): lambda node: node.content.trace.comment
+            })
+        self.setDataLookup.update({
+            (QtCore.Qt.CheckStateRole,0): lambda index, value: self.checkboxChange(index, value, 'checkbox'),
+            (QtCore.Qt.EditRole,1): lambda index, value: self.penChange(index, value, 'pen'),
+            (QtCore.Qt.EditRole,3): lambda index, value: self.commentChange(index, value, 'comment'),
+            (QtCore.Qt.EditRole,5): lambda index, value: self.plotChange(index, value, 'plot')
+            })
+        self.flagsLookup = {
+            0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
+            1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+            3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+            5: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+            }
+
     def choice(self, index):
-        if index.column()==5:
-            return self.graphicsViewDict.keys()
-        return []
+        return self.graphicsViewDict.keys() if index.column()==5 else []
 
-    def getTrace(self, traceIndex):
-        """Return the trace at the given index. If the index is invalid, return the root trace."""
-        if not traceIndex.isValid():
-            return self.rootTrace
-        return traceIndex.internalPointer()
-
-    def rowCount(self, parentIndex=QtCore.QModelIndex()):
-        """Required. Return the number of rows beneath the given parent."""
-        parentTrace = self.getTrace(parentIndex)
-        if parentIndex.column() > 0:
-            return 0
-        return parentTrace.childCount()
-
-    def columnCount(self, parent=QtCore.QModelIndex()): 
-        """Required. Return the number of columns."""
-        return 6
-
-    def data(self, traceIndex, role):
-        """Required. Return the data at the given index for the given role."""
-        trace = self.getTrace(traceIndex)
-        if trace == self.rootTrace:
-            return None
-        col = traceIndex.column()
-        return self.dataLookup.get((role,col), lambda trace: None)(trace)
-
-    def flags(self, index):
-        """Required. Return the flags for the given index."""
-        if not index.isValid():
-            return QtCore.Qt.NoItemFlags
-        col = index.column()
-        return self.flagsLookup.get(col, QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
-    headerLookup = [None, 'Plot   ', 'Name', 'Comment', 'Filename','Window']
-    def headerData(self, section, orientation, role):
-        """Required. Return the headers for each column."""
-        if (role == QtCore.Qt.DisplayRole) and (orientation == QtCore.Qt.Horizontal): 
-            return self.headerLookup[section]
-        return None #QtCore.QVariant()
-
-    def setValue(self, index, value):
-        self.setData(index, value, QtCore.Qt.EditRole )
-
-    def setData(self, traceIndex, value, role):
-        """Required. Set the data in the model from the value set in the view."""
-        row = traceIndex.row()
-        col = traceIndex.column()
-        trace = self.getTrace(traceIndex)
-        
-        if (role == QtCore.Qt.CheckStateRole) and (col == 0):
-            #If the checkbox is checked, replot.
-            if (value == QtCore.Qt.Unchecked) and (trace.curvePen > 0):
-                trace.plot(0)
-            elif len(trace.trace.x) != 0: #Make sure the x array isn't empty before trying to plot
-                trace.plot(-1)
-            leftInd = self.createIndex(row, 0, trace)
-            rightInd = self.createIndex(row, 4, trace)
+    def modelChange(self, index, value, changeType):
+        node = self.nodeFromIndex(index)
+        trace = node.content
+        success = {'checkbox' : self.checkboxChange,
+                   'pen'      : self.plotChange,
+                   'comment'  : self.commentChange,
+                   'plot'     : self.plotChange,
+                   'update'   : lambda trace, value:True
+                   }[changeType](trace, value)
+        if success:
+            leftInd = self.createIndex(node.row, 0, trace)
+            rightInd = self.createIndex(node.row, self.numColumns-1, trace)
             self.dataChanged.emit(leftInd, rightInd)
-            return True      
+        return success
 
-        elif (role == QtCore.Qt.EditRole) and (col == 1):
-            if len(trace.trace.x) != 0: #Make sure the x array isn't empty before trying to plot
-                trace.plot(value)
+    def checkboxChange(self, trace, value):
+        """Plot or unplot the trace at the given index based on the checkbox"""
+        if (value == QtCore.Qt.Unchecked) and (trace.curvePen > 0):
+            trace.plot(0) #unplot if unchecked
+            return True
+        elif len(trace.trace.x) != 0: #Make sure the x array isn't empty before trying to plot
+            trace.plot(-1)
             return True
 
-        elif (role == QtCore.Qt.EditRole) and (col == 3):
-            #If the comment changes, change it and resave the file.
-            comment = value if api2 else str(value.toString())
-            if not comment == trace.trace.comment:
-                trace.trace.comment = comment
-                trace.trace.resave()
+    def penChange(self, trace, value):
+        """plot using the pen specified by value"""
+        if trace.trace.x:
+            trace.plot(value)
             return True
-        
-        elif (role == QtCore.Qt.EditRole) and (col==5):
-            name = str(value)
-            if name in self.graphicsViewDict:
-                trace.setGraphicsView( self.graphicsViewDict[name]['view'], name )
-        
-        else:
-            return False
-            
-    def addTrace(self,trace):
-        """Add a new trace to the list of traces."""
-        self.beginInsertRows(QtCore.QModelIndex, self.rowCount(), self.rowCount())
-        self.traceList.append(trace)
-        #For the callback, we use a persistent index, so that when the trace "calls"
-        #that its data is changed, the index it calls remains valid.
-        trace.trace.filenameChanged.subscribe( partial(self.updateTrace, persistentIndex) )
-        self.endInsertRows()
-        return persistentIndex
 
-    def dropTrace(self, parentTraceIndex, row):
-        """Remove a trace from the list of traces."""
-        self.beginRemoveRows(parentTraceIndex, row, row)
-        parentTrace = self.getTrace(parentTraceIndex)
-        del parentTrace.childTraces[row]
-        self.endRemoveRows()
+    def commentChange(self, trace, value):
+        """resave the trace with the new comment"""
+        comment = value if api2 else str(value.toString())
+        if not comment == trace.trace.comment:
+            trace.trace.comment = comment
+            trace.trace.save()
+            return True
 
-    def updateTrace(self, persistentIndex, event=None):
-        """Emit the signal to update the trace."""
-        #the index passed in is of type QPersistentModelIndex, it has to be recast as a QModelIndex
-        traceIndex = QtCore.QModelIndex(persistentIndex)
-        trace = self.getTrace(traceIndex)
-        row = traceIndex.row()
-        leftInd = self.createIndex(row, 0, trace)
-        rightInd = self.createIndex(row, 4, trace)
-        self.dataChanged.emit(leftInd, rightInd) #Update all 5 columns
-        
-    def removeRows(self, row, count, parent):
-        print "removeRows"
-        return False
+    def plotChange(self, trace, value):
+        """change the plot on which the trace is displayed"""
+        plotname = str(value)
+        if plotname in self.graphicsViewDict:
+            trace.setGraphicsView( self.graphicsViewDict[plotname]['view'], plotname )
+            return True
