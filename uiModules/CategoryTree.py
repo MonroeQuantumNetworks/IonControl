@@ -2,6 +2,7 @@ __author__ = 'jmizrahi'
 
 from PyQt4 import QtCore, QtGui
 from modules.enum import enum
+from modules.Utility import indexWithDefault
 import functools
 from uiModules.KeyboardFilter import KeyListFilter
 nodeTypes = enum('category', 'data')
@@ -306,7 +307,7 @@ class CategoryTreeView(QtGui.QTreeView):
             self.model().beginResetModel()
             for id, childList in idTree.iteritems():
                 node=self.model().nodeFromId(id)
-                node.children.sort(key=lambda node: self.indexWithDefault(childList, node.id))
+                node.children.sort(key=lambda node: indexWithDefault(childList, node.id))
             self.model().endResetModel()
         if columnWidths:
             self.header().restoreState(columnWidths)
@@ -322,9 +323,6 @@ class CategoryTreeView(QtGui.QTreeView):
                     node = self.model().nodeDict[key]
                     node.isBold=True
 
-    def indexWithDefault(self, itemList, item):
-        """Return the index of item in itemList if it's present, otherwise -1"""
-        return itemList.index(item) if item in itemList else -1
 
 if __name__ == "__main__":
     import sys
