@@ -178,3 +178,17 @@ Optional Docks
 
 - AWG
    Will only be visible if AWG is enabled. See :ref:`AWG` .
+
+Plot Windows
+~~~~~~~~~~~~
+
+- Hovering over any of the plot windows shows the coordinates of the cursor in the lower right.
+- The plot windows can be clicked and dragged, or zoomed by scrolling.
+- Right clicking shows a number of display options.
+- All plot windows have three buttons in the lower left:
+
+  |auto| - Autoscale the plot
+
+  |zeroToAuto| - Hold the y-axis minimum at zero, and autoscale the maximum
+
+  |zeroToOne| - Hold the y-axis minimum at zero, and the maximum at one

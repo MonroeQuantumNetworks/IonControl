@@ -69,3 +69,12 @@
 
 .. |revert| image:: images/icons/document-revert-5.png
    :scale: 50%
+
+.. |zeroToOne| image:: images/icons/unity-range.png
+   :scale: 40%
+
+.. |zeroToAuto| image:: images/icons/hold-zero.png
+   :scale: 40%
+
+.. |auto| image:: images/icons/autoscale.png
+   :scale: 40%
