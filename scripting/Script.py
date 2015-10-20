@@ -54,9 +54,17 @@ class Script(QtCore.QThread):
     fitSignal = QtCore.pyqtSignal(str, str) #args: fitName, traceName
     
     def __init__(self, fullname='', code='', parent=None):
+        """
+        Initialize the script.
+
+        Args:
+            fullname (str): full path to script
+            code (str): code in the script
+            parent (QObject): parent QObject, if any
+        """
         super(Script,self).__init__(parent)
-        self.fullname = fullname #Full name, with path
-        self.code = code #The code in the script
+        self.fullname = fullname
+        self.code = code
         
         self.mutex = QtCore.QMutex() #used to control access to class variables that are accessed by ScriptHandler
         
@@ -125,7 +133,14 @@ class Script(QtCore.QThread):
         This decorator performs all the functions that are common to all the script functions. It checks
         whether the script has been stopped or paused, and emits the current location in the script. Once
         the function has executed, it waits to be told to continue by the main GUI. Exceptions that occur
-        during execution are sent back to the script thread and raised here."""
+        during execution are sent back to the script thread and raised here.
+
+        Args:
+            waitForGui (Optional[bool]): defaults to True. If True, script waits on guiWait after executing function.
+            waitForAnalysis (Optional[bool]): defaults to False. If True, script waits on analysisWait before executing function.
+            waitForData (Optional[bool]): defaults to False. If True, script waits on dataWait before executing function.
+            waitForAllData (Optional[bool]): defaults to False. If True, script waits on allDataWait before executing function.
+            runIfStopped (Optional[bool]): defaults to False. If True, function executes even if the script has been stopped."""
         def realScriptFunction(func):
             """The decorator without arguments (returned by the decorator with arguments)"""
             def baseScriptFunction(self, *args, **kwds):
@@ -165,13 +180,14 @@ class Script(QtCore.QThread):
         set global 'name' to (value, unit).
 
         This is equivalent to typing in a value/unit in the globals table.
-        If there is not a global with the given name, an exception is raised.
-        This is to avoid typos leading to unexpected behavior. To add a global,
-        use 'addGlobal'
-         
-        name: str
-        value: float
-        unit: str"""
+
+        Args:
+            name (str): name of the global to change
+            value (float): value to set it to
+            unit (str): unit to use
+
+        Raises:
+            ScriptException: if there is not a global with the given name. This is to avoid typos leading to unexpected behavior. To add a global, use 'addGlobal'"""
         self.setGlobalSignal.emit(name, value, unit)
          
     @scriptFunction()
@@ -179,12 +195,12 @@ class Script(QtCore.QThread):
         """addGlobal(name, value, unit)
         add a global 'name', set to (value, unit).     
          
-        This is equivalent to adding a global via the globals UI,and
-        then setting its value in the globals table.
+        This is equivalent to adding a global via the globals UI,and then setting its value in the globals table.
         
-        name: str
-        value: float
-        unit: str"""
+        Args:
+            name (str): name of the global to add
+            value (float): value to set it to
+            unit (str): unit to use"""
         self.addGlobalSignal.emit(name, value, unit)
         
     @scriptFunction()
@@ -218,54 +234,72 @@ class Script(QtCore.QThread):
     @scriptFunction()
     def setScan(self, name):
         """setScan(name)
-        set the scan interface to "name."
+        set the scan settings to "name."
         
-        This is equivalent to selecting "name" from the scan drop down menu.
-        If there is no scan by that name, an exception is raised.
-        
-        name: str"""
+        This is equivalent to selecting "name" from the scan settings drop down menu.
+
+        Args:
+            name (str): name of the scan settings to set
+
+        Raises:
+            ScriptException: if there is no scan by that name"""
         self.setScanSignal.emit(name)
      
     @scriptFunction()
     def setEvaluation(self, name):
         """setEvaluation(name)
-        set the evaluation interface to "name."
+        set the evaluation settings to "name."
         
-        This is equivalent to selecting "name" from the evaluation drop down menu.
-        If there is no evaluation by that name, an exception is raised.
-        
-        name: str"""
+        This is equivalent to selecting "name" from the evaluation settings drop down menu.
+
+        Args:
+            name (str): name of the evaluation settings to set
+
+        Raises:
+            ScriptException: if there is no evaluation by that name"""
         self.setEvaluationSignal.emit(name)
      
     @scriptFunction()
     def setAnalysis(self, name):
         """setAnalysis(name)
-        set the analysis interface to "name."
+        set the analysis settings to "name."
         
-        This is equivalent to selecting "name" from the analysis drop down menu.
-        If there is no analysis by that name, an exception is raised.
-        
-        name: str"""
+        This is equivalent to selecting "name" from the analysis settings drop down menu.
+
+        Args:
+            name (str): name of the analysis settings to set
+
+        Raises:
+            ScriptException: if there is no analysis by that name"""
         self.setAnalysisSignal.emit(name)
 
     @scriptFunction()
     def plotPoint(self, x, y, traceName):
         """plotPoint(x, y, traceName)
         Plot a single point (x, y) to trace traceName.
-        
-        x: float
-        y: float
-        traceName: str"""
+
+        Args:
+            x (float): x coordinate
+            y (float): y coordinate
+            traceName (str): name of trace to use
+
+        Raises:
+            ScriptException: if traceName is not a trace"""
         self.plotPointSignal.emit(x, y, traceName)
 
     @scriptFunction()
     def plotList(self, xList, yList, traceName):
         """plotList(xList, yList, traceName)
         Plot a set of points given in xList, yList to trace traceName.
-        
-        x: list
-        y: list
-        traceName: str"""
+
+        Args:
+            x (list[float]): x coordinates
+            y (list[float]): y coordinates
+            traceName (str): name of trace to use
+
+        Raises:
+            ScriptException: if traceName is not a trace
+            ScriptException: if x and y are of unequal lengths"""
         if type(xList).__module__ == 'numpy':
             xList = xList.tolist()
         if type(yList).__module__ == 'numpy':
@@ -277,9 +311,10 @@ class Script(QtCore.QThread):
         """addPlot(name)
         Add a plot named "name".
          
-        This is equivalent to clicking "add plot" on the experiment GUI.
+        This is equivalent to clicking "add plot" on the experiment GUI. If 'name' already exists, does nothing.
         
-        name: str"""
+        Args:
+            name (str): name of plot to add"""
         self.addPlotSignal.emit(name)
 
     @scriptFunction()
@@ -309,24 +344,26 @@ class Script(QtCore.QThread):
     @scriptFunction()
     def createTrace(self, traceName, plotName, xUnit='', xLabel='', comment=''):
         """createTrace(traceName, plotName, xUnit='', xLabel='', comment='')
-        
-        create a new trace with name 'traceName' to be plotted on plot
-        'plotName' with unit 'xUnit', label 'xLabel', and comment 'comment'.
-        
-        traceName: str
-        plotName: str
-        xUnit: str
-        xLabel: str
-        comment: str"""
+        create a new trace
+
+        Args:
+            traceName (str): name of new trace
+            plotName (str): plot to plot it on
+            xUnit (str): unit for x axis
+            xLabel (str): label for x axis
+            comment (str): comment for trace file
+
+        Raises:
+            ScriptException: if plotName is not a plot"""
         traceCreationData = [traceName, plotName, xUnit, xLabel, comment]
         self.createTraceSignal.emit(traceCreationData)
 
-    @scriptFunction()
-    def fit(self, fitName, traceName):
-        """fit(fitName, traceName)
-
-        fit the data in 'traceName' using 'fitName'"""
-        self.fitSignal.emit(fitName, traceName)
+    # @scriptFunction()
+    # def fit(self, fitName, traceName):
+    #     """fit(fitName, traceName)
+    #
+    #     fit the data in 'traceName' using 'fitName'"""
+    #     self.fitSignal.emit(fitName, traceName)
         
     @scriptFunction(waitForGui=False)
     def waitForScan(self):
@@ -340,10 +377,9 @@ class Script(QtCore.QThread):
     def getData(self):
         """getData()
         Get the most recent data point from a running scan.
-        
-        Data is returned as a dictionary. The key corresponds to
-        the name of each evaluation in the evaluation list. The value
-        is a tuple (x, y)."""
+
+        Returns:
+            dict: data from running scan. **key**: the name of each evaluation in the evaluation list. **val**: tuple (x, y)."""
         self.dataReady = False
         return self.data
 
@@ -352,9 +388,8 @@ class Script(QtCore.QThread):
         """getAllData()
         Get the full set of data from the most recent scan.
         
-        Data is returned as a dictionary. The key corresponds to
-        the name of each evaluation in the evaluation list. The value
-        is a tuple (xList, yList)."""
+        Returns:
+            dict: all data from most recent scan. **key**: name of each evaluation in the evaluation list. **val**: tuple (xList, yList)."""
         self.allDataReady = False
         return self.allData
 
@@ -363,34 +398,41 @@ class Script(QtCore.QThread):
         """getAnalysis()
         Get the analysis results for the most recent scan.
         
-        Analysis is returned as a dictionary of dictionaries. The key corresponds
-        to the name of each analysis in the analysis list. The value is another
-        dictionary, whose keys correspond to the names of fit parameters in the
-        specified evaluation.
+        Returns:
+            dict: analysis results as dictionary of dictionaries. **key**: to the name of each analysis in the analysis list. **val**: Another dictionary. **Inner key**: names of fit parameters in the specified evaluation. **Inner val**: fit value of that parameter
         
-        Example: a Gaussian fit named "myFit" in the analysis, with center parameter
-        x0, would return its center value as getAnalysis()['myFit']['x0']"""
+        Example:
+            A Gaussian fit named "myFit" in the analysis, with center parameter 'x0', would return its best fit center value as::
+
+                >>> getAnalysis()['myFit']['x0']"""
         self.analysisReady = False
         return self.analysisResults
 
     @scriptFunction(waitForGui=False)
     def scanRunning(self):
         """scanRunning()
-        Return True if the scan is running. Otherwise, False."""
+        Determine if scan is running.
+
+        Returns:
+            bool: True if the scan is running. Otherwise, False."""
         return self.scanIsRunning
     
     @scriptFunction(waitForGui=False)
     def getScanStatus(self):
         """getScanStatus()
         Return the current state of the scan.
-        
-        One of 'idle', 'running', 'paused', 'starting', 'stopping', or 'interrupted'"""
+
+        Returns:
+            str: One of 'idle', 'running', 'paused', 'starting', 'stopping', or 'interrupted'"""
         return self.scanStatus
         
     @scriptFunction(waitForGui=False, runIfStopped=True)
     def scriptIsStopped(self):
         """scriptIsStopped()
-        Return True if the script has been stopped, Otherwise, False."""
+        Determine if script is stopped.
+
+        Returns:
+            bool: True if the script has been stopped, Otherwise, False."""
         return self.stopped
 
 def checkScripting(func):

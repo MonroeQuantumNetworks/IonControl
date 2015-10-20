@@ -15,11 +15,11 @@ Table of Contents
    PulseProgram
    Scans
    GateSequences
+   Scripting
+   MeasurementLog
    ExternalParameters
    KnownHardware
    DedicatedCounters
-   Scripting
-   MeasurementLog
    VoltageControl
    LogicAnalyzer
    ExtendingTheCode

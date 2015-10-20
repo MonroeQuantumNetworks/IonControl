@@ -12,6 +12,7 @@ scripting.Script
 
 .. automodule:: scripting.Script
     :members:
+    :special-members:
 
 scripting.ScriptHandler
 -----------------------

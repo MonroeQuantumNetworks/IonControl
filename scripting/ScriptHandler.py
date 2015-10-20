@@ -240,19 +240,23 @@ class ScriptHandler:
     def onCreateTrace(self, traceCreationData):
         traceCreationData = map(str, traceCreationData)
         [traceName, plotName, xUnit, xLabel, comment] = traceCreationData
-        trace = Trace()
-        yColumnName = 'y0'
-        trace.addColumn( yColumnName )
-        plottedTrace = PlottedTrace(trace, self.scanExperiment.plotDict[plotName]["view"], pens.penList, xColumn = 'x',
-                                    yColumn=yColumnName, name=traceName, xAxisUnit = xUnit, xAxisLabel = xLabel, windowName=plotName)
-        self.scanExperiment.plotDict[plotName]["view"].enableAutoRange(axis=ViewBox.XAxis)
-        plottedTrace.trace.name = self.script.shortname
-        plottedTrace.trace.description["comment"] = comment
-        plottedTrace.trace.filenameCallback = functools.partial( plottedTrace.traceFilename, traceName)
-        self.scriptTraces[traceName] = plottedTrace
-        self.traceAlreadyCreated[traceName] = False #Keep track of whether the trace has already been added
-        error = False
-        message = "Added trace {0}\n plot: {1}\n xUnit: {2}\n xLabel: {3}\n comment: {4}".format(traceName, plotName, xUnit, xLabel, comment)
+        if plotName not in self.scanExperiment.plotDict:
+            message = "plot {0} does not exist".format(plotName)
+            error = True
+        else:
+            trace = Trace()
+            yColumnName = 'y0'
+            trace.addColumn( yColumnName )
+            plottedTrace = PlottedTrace(trace, self.scanExperiment.plotDict[plotName]["view"], pens.penList, xColumn = 'x',
+                                        yColumn=yColumnName, name=traceName, xAxisUnit = xUnit, xAxisLabel = xLabel, windowName=plotName)
+            self.scanExperiment.plotDict[plotName]["view"].enableAutoRange(axis=ViewBox.XAxis)
+            plottedTrace.trace.name = self.script.shortname
+            plottedTrace.trace.description["comment"] = comment
+            plottedTrace.trace.filenameCallback = functools.partial( plottedTrace.traceFilename, traceName)
+            self.scriptTraces[traceName] = plottedTrace
+            self.traceAlreadyCreated[traceName] = False #Keep track of whether the trace has already been added
+            error = False
+            message = "Added trace {0}\n plot: {1}\n xUnit: {2}\n xLabel: {3}\n comment: {4}".format(traceName, plotName, xUnit, xLabel, comment)
         return (error, message)
 
     @QtCore.pyqtSlot(str, str)
@@ -288,11 +292,17 @@ class ScriptHandler:
         
     def plotList(self, xList, yList, traceName):
         """Plot [x1, x2,...], [y1, y2,...] to traceName"""
-        plottedTrace = self.scriptTraces[traceName]
-        created = self.traceAlreadyCreated[traceName]
+        try:
+            plottedTrace = self.scriptTraces[traceName]
+            created = self.traceAlreadyCreated[traceName]
+        except KeyError:
+            message = "Trace {0} does not exist".format(traceName)
+            error = True
+            return (error, message)
         if not (len(xList)==len(yList)):
             message = 'x and y lists are of unequal lengths'
             error = True
+            return (error, message)
         else:
             if created:
                 plottedTrace.x = numpy.append(plottedTrace.x, xList)
