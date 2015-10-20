@@ -77,7 +77,7 @@ class TraceModel(CategoryTreeModel):
         parent (QtCore.QObject): parent QObject
     """
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
-        super(TraceModel, self).__init__(traceList, parent)
+        super(TraceModel, self).__init__(traceList, parent, categoriesAttr='displayName')
         self.penicons = penicons
         self.traceList = traceList
         self.graphicsViewDict = graphicsViewDict
@@ -91,7 +91,8 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 5):  'Window'
             })
         self.dataLookup.update({
-            (QtCore.Qt.DisplayRole,2): lambda node: ", ".join([str(node.content.trace.name), str(node.content.name)]),
+            (QtCore.Qt.DisplayRole, 0): lambda node: None,
+            (QtCore.Qt.DisplayRole,2): lambda node: node.content.name,
             (QtCore.Qt.DisplayRole,3): lambda node: node.content.trace.comment,
             (QtCore.Qt.DisplayRole,4): lambda node: getattr( node.content.trace, 'fileleaf', None ),
             (QtCore.Qt.DisplayRole,5): lambda node: node.content.windowName,
@@ -103,10 +104,10 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,3): lambda node: node.content.trace.comment
             })
         self.setDataLookup.update({
-            (QtCore.Qt.CheckStateRole,0): lambda index, value: self.checkboxChange(index, value, 'checkbox'),
-            (QtCore.Qt.EditRole,1): lambda index, value: self.penChange(index, value, 'pen'),
-            (QtCore.Qt.EditRole,3): lambda index, value: self.commentChange(index, value, 'comment'),
-            (QtCore.Qt.EditRole,5): lambda index, value: self.plotChange(index, value, 'plot')
+            (QtCore.Qt.CheckStateRole,0): lambda index, value: self.modelChange(index, value, 'checkbox'),
+            (QtCore.Qt.EditRole,1): lambda index, value: self.modelChange(index, value, 'pen'),
+            (QtCore.Qt.EditRole,3): lambda index, value: self.modelChange(index, value, 'comment'),
+            (QtCore.Qt.EditRole,5): lambda index, value: self.modelChange(index, value, 'plot')
             })
         self.flagsLookup = {
             0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
@@ -118,18 +119,21 @@ class TraceModel(CategoryTreeModel):
     def choice(self, index):
         return self.graphicsViewDict.keys() if index.column()==5 else []
 
+    def setValue(self, index, value):
+        self.setData(index, value, QtCore.Qt.EditRole)
+
     def modelChange(self, index, value=None, changeType='update'):
         node = self.nodeFromIndex(index)
         trace = node.content
         success = {'checkbox' : self.checkboxChange,
-                   'pen'      : self.plotChange,
+                   'pen'      : self.penChange,
                    'comment'  : self.commentChange,
                    'plot'     : self.plotChange,
                    'update'   : lambda trace, value:True
                    }[changeType](trace, value)
         if success:
-            leftInd = self.createIndex(node.row, 0, trace)
-            rightInd = self.createIndex(node.row, self.numColumns-1, trace)
+            leftInd = self.createIndex(node.row, 0, node)
+            rightInd = self.createIndex(node.row, self.numColumns-1, node)
             self.dataChanged.emit(leftInd, rightInd)
         return success
 
@@ -144,7 +148,7 @@ class TraceModel(CategoryTreeModel):
 
     def penChange(self, trace, value):
         """plot using the pen specified by value"""
-        if trace.trace.x:
+        if len(trace.trace.x) != 0:
             trace.plot(value)
             return True
 
@@ -162,3 +166,7 @@ class TraceModel(CategoryTreeModel):
         if plotname in self.graphicsViewDict:
             trace.setGraphicsView( self.graphicsViewDict[plotname]['view'], plotname )
             return True
+
+    def addTrace(self, trace):
+        """add a trace to the model"""
+        self.addNode(trace, trace.name)

@@ -111,11 +111,11 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     def addTrace(self, trace, pen):
         """Add a trace to the model and plot it."""
-        self.model.addNode(trace, trace.name)
+        self.model.addTrace(trace)
         trace.plot(pen,self.settings.plotstyle)
                 
     def resizeColumnsToContents(self):
-        for column in range(self.model.columnCount()):
+        for column in range(self.model.numColumns):
             self.traceView.resizeColumnToContents(column)
 
     def setPlotStyle(self,value):

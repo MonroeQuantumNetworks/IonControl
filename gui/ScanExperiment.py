@@ -503,7 +503,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].trace.description["comment"] = ""
             self.plottedTraceList[0].trace.description["PulseProgram"] = self.pulseProgramUi.description() 
             self.plottedTraceList[0].trace.description["Scan"] = self.scan.description()
-            self.plottedTraceList[0].trace.autoSave = scan.autoSave
+            self.plottedTraceList[0].trace.autoSave = self.scan.autoSave
             self.plottedTraceList[0].trace.filenamePattern = self.scan.filename
             self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
@@ -530,7 +530,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
                 if trace:
                     trace.description["traceFinalized"] = datetime.now(pytz.utc)
-                    trace.resave(saveIfUnsaved=self.scan.autoSave and saveData)
+                    if trace.autoSave:
+                        trace.save()
             if saveData:
                 failedList = self.dataAnalysis()
                 self.registerMeasurement(failedList)
@@ -605,7 +606,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.histogramTrace.addColumn( yColumnName, ignoreExisting=True )
                 plottedHistogramTrace = PlottedTrace(self.histogramTrace,self.plotDict["Histogram"]["view"],pens.penList,plotType=PlottedTrace.Types.steps, #@UndefinedVariable
                                                      yColumn=yColumnName, name="Histogram "+(histogram[2] if histogram[2] else ""), windowName="Histogram" )
-                self.histogramTrace.filenameCallback = functools.partial( plottedHistogramTrace.traceFilename, "Hist"+self.scan.filename )
+                self.histogramTrace.filenamePattern = "Hist_"+self.scan.filename
                 plottedHistogramTrace.x = histogram[1]
                 plottedHistogramTrace.y = histogram[0]
                 plottedHistogramTrace.trace.name = self.scan.settingsName

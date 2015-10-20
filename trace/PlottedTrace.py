@@ -357,7 +357,7 @@ class PlottedTrace(object):
     @property
     def displayName(self):
         """Name to use to categorize trace in traceList."""
-        return trace.fileleaf if trace.saved else "UNSAVED_"+trace.filenamePattern
+        return self.trace.fileleaf if self.trace.saved else "UNSAVED_"+self.trace.filenamePattern
 
 #     def __del__(self):
 #         super(PlottedTrace, self)__del__()
