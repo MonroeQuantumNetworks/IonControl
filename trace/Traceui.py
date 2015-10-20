@@ -39,40 +39,7 @@ class Settings:
         self.__dict__.setdefault( 'unplotLastTrace', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
-
-    """
-    Class for the trace interface. It displays the plotted traces (using a tree
-    view, and the model in TraceModel), and allows for selecting which are
-    plotted, in addition to deleting them, adding them, saving them, etc.
-    
-    instance variables:
-    penicons -- the list of icons available for the different traces
-    config -- configuration data, saved in pickled form to file
-    configname -- the name to use in the config file
-    settings -- the plot settings: plot style and last used directory
-    graphicsView -- the actual plot window, only used for opened files, otherwise the graphics view in the plotted trace is used
-    
-    methods:
-    __init__(self, penicons, config, parentname, graphicsView, parent=None, lastDir=None):
-        construct the Traceui and set instance variables. It inherits from a Qt Designer file.
-    setupUi(self, MainWindow): setup the UI.
-    uniqueSelectedIndexes(self): return from the selected elements of the tree one index for each row.
-    addTrace(self, trace, pen): add 'trace' to the plot and the model, using the specified pen
-    setPlotStyle(self,value): Set the plot style to 'value'
-    onViewClicked(self, index): Execute when view is clicked
-    onPlot(self): Execute when 'plot' is clicked
-    onClear(self): Execute when 'clear' is clicked
-    onApplyStyle(self): Execute when 'apply style' is clicked
-    onSave(self): Execute when 'save' is clicked
-    onOpenFile(self): Execute when 'open file' is clicked
-    onShredder(self): Execute when 'shredder' is clicked
-    onRemove(self): Execute when 'remove' is clicked
-    warningMessage(self): Pop up a warning message to confirm deletion
-    onCLose(self): Execute when UI is closed
-    """
-
     def __init__(self, penicons, config, parentname, graphicsViewDict, parent=None, lastDir=None):
-        """Construct the trace user interface, and set instance variables. Inherits from Qt Designer file."""
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
         self.penicons = penicons
@@ -85,12 +52,11 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Setup the UI. Create the model and the view. Connect all the buttons."""
         TraceuiForm.setupUi(self,MainWindow)
         self.model = TraceModel([], self.penicons, self.graphicsViewDict)
-        self.tracePersistentIndexes = []
         self.traceView.setModel(self.model)
         self.delegate = TraceComboDelegate(self.penicons)
         self.graphicsViewDelegate = ComboBoxDelegate()
         self.traceView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
-        self.traceView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which pen to use in the plot
+        self.traceView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which plot to use
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
         self.filter = KeyListFilter( [QtCore.Qt.Key_Delete] )
         self.filter.keyPressed.connect( self.onKey )

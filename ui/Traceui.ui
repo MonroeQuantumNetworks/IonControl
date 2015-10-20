@@ -317,12 +317,19 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QTreeView" name="traceView"/>
+     <widget class="CategoryTreeView" name="traceView"/>
      <widget class="QTableView" name="descriptionTableView"/>
     </widget>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CategoryTreeView</class>
+   <extends>QTreeView</extends>
+   <header>uiModules.CategoryTree</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Experiment.qrc"/>
  </resources>
