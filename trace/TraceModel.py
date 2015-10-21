@@ -71,6 +71,9 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 2): 'Window',
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 3): 'Comment',
             })
+        self.categoryDataLookup.update({
+            (QtCore.Qt.CheckStateRole,0): lambda node: self.isCategoryChecked(node)
+        })
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,0): lambda node: node.content.name,
             (QtCore.Qt.CheckStateRole,0): lambda node: QtCore.Qt.Checked if node.content.curvePen > 0 else QtCore.Qt.Unchecked,
@@ -88,12 +91,26 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,2): lambda index, value: self.modelChange(index, value, 'window'),
             (QtCore.Qt.EditRole,3): lambda index, value: self.modelChange(index, value, 'comment')
             })
+        self.categorySetDataLookup.update({
+            (QtCore.Qt.CheckStateRole,0): lambda index, value: self.setCategoryCheckbox(index, value)
+        })
         self.flagsLookup = {
             0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
             1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
             2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
             3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
             }
+        self.categoryFlagsLookup = {
+            0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+            }
+
+    def isCategoryChecked(self, categoryNode):
+        """Determine if category node should be checked or not, based on plot status of children"""
+        plottedList = [node.content.curvePen>0 for node in categoryNode.children]
+        if not plottedList: return QtCore.Qt.Unchecked
+        elif all(plottedList): return QtCore.Qt.Checked
+        elif any(plottedList): return QtCore.Qt.PartiallyChecked
+        else: return QtCore.Qt.Unchecked
 
     def choice(self, index):
         return self.graphicsViewDict.keys() if index.column()==2 else []
@@ -124,12 +141,16 @@ class TraceModel(CategoryTreeModel):
         elif len(trace.trace.x) != 0: #Make sure the x array isn't empty before trying to plot
             trace.plot(-1)
             return True
+        else:
+            return False
 
     def penChange(self, trace, value):
         """plot using the pen specified by value"""
         if len(trace.trace.x) != 0:
             trace.plot(value)
             return True
+        else:
+            return False
 
     def commentChange(self, trace, value):
         """resave the trace with the new comment"""
@@ -138,6 +159,8 @@ class TraceModel(CategoryTreeModel):
             trace.trace.comment = comment
             trace.trace.save()
             return True
+        else:
+            return False
 
     def plotChange(self, trace, value):
         """change the plot on which the trace is displayed"""
@@ -145,6 +168,26 @@ class TraceModel(CategoryTreeModel):
         if plotname in self.graphicsViewDict:
             trace.setGraphicsView( self.graphicsViewDict[plotname]['view'], plotname )
             return True
+        else:
+            return False
+
+    def setCategoryCheckbox(self, index, value):
+        """Check or uncheck the filename category of a set of traces"""
+        node = self.nodeFromIndex(index)
+        if node.children:
+            for childNode in node.children:
+                trace=childNode.content
+                success=self.checkboxChange(trace, value)
+                if success:
+                    leftInd = self.createIndex(childNode.row, 0, childNode)
+                    rightInd = self.createIndex(childNode.row, self.numColumns-1, childNode)
+                    self.dataChanged.emit(leftInd, rightInd)
+            leftInd = self.createIndex(node.row, 0, node)
+            rightInd = self.createIndex(node.row, self.numColumns-1, node)
+            self.dataChanged.emit(leftInd, rightInd)
+            return True
+        else:
+            return False
 
     def addTrace(self, trace):
         """add a trace to the model"""
