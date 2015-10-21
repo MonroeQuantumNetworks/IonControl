@@ -127,11 +127,26 @@ class Traceui(TraceuiForm, TraceuiBase):
         trace.plot(-1,self.settings.plotstyle)
         return True
 
-    def onRemove(self, node, trace):
+    def onRemove(self):
         """Remove trace from trace list (but don't delete files)."""
-        if trace.curvePen!=0: trace.plot(0)
-        self.model.removeNode(node)
-        return True
+        """Execute when remove button is clicked. Remove selected traces from list."""
+        selectedIndexes = self.selectedRows()
+        if selectedIndexes:
+            for index in selectedIndexes:
+                node = self.model.nodeFromIndex(index)
+                if node.nodeType == nodeTypes.data:
+                    trace = node.content
+                    if trace.curvePen!=0:
+                        trace.plot(0)
+                    self.model.removeNode(node)
+                elif node.nodeType == nodeTypes.category:
+                    for _ in range(node.childCount()):
+                        childNode = node.children[0]
+                        trace = childNode.content
+                        if trace.curvePen!=0:
+                            trace.plot(0)
+                        self.model.removeNode(childNode)
+                    self.model.removeNode(node)
 
     def onActiveTraceChanged(self, index):
         """Display trace description when a trace is clicked"""
