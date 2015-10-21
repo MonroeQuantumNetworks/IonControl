@@ -152,3 +152,19 @@ class TraceModel(CategoryTreeModel):
     def addTrace(self, trace):
         """add a trace to the model"""
         self.addNode(trace, trace.name)
+
+    def removeNode(self, node):
+        """unplots the trace before removing from model"""
+        if node.nodeType == nodeTypes.data:
+            trace = node.content
+            if trace.curvePen!=0:
+                trace.plot(0)
+            super(TraceModel,self).removeNode(node)
+        elif node.nodeType == nodeTypes.category:
+            for _ in range(node.childCount()):
+                childNode = node.children[0]
+                trace = childNode.content
+                if trace.curvePen!=0:
+                    trace.plot(0)
+                super(TraceModel,self).removeNode(childNode)
+            super(TraceModel,self).removeNode(node)

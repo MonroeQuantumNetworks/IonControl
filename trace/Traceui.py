@@ -147,31 +147,17 @@ class Traceui(TraceuiForm, TraceuiBase):
         return True
 
     def onRemove(self):
-        """Remove trace from trace list (but don't delete files)."""
-        """Execute when remove button is clicked. Remove selected traces from list."""
-        selectedIndexes = self.selectedRows()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                node = self.model.nodeFromIndex(index)
-                if node.nodeType == nodeTypes.data:
-                    trace = node.content
-                    if trace.curvePen!=0:
-                        trace.plot(0)
-                    self.model.removeNode(node)
-                elif node.nodeType == nodeTypes.category:
-                    for _ in range(node.childCount()):
-                        childNode = node.children[0]
-                        trace = childNode.content
-                        if trace.curvePen!=0:
-                            trace.plot(0)
-                        self.model.removeNode(childNode)
-                    self.model.removeNode(node)
+        """Execute when remove button is clicked. Remove selected traces from list (but don't delete files).."""
+        self.traceView.onDelete()
 
     def onActiveTraceChanged(self, index):
         """Display trace description when a trace is clicked"""
         node = self.model.nodeFromIndex(index)
-        if node.nodeType==nodeTypes.data: self.descriptionModel.setDescription(node.content.trace.description)
-        elif node.nodeType==nodeTypes.category: self.descriptionModel.setDescription(node.children[0].content.trace.description)
+        if node.nodeType==nodeTypes.data:
+            self.descriptionModel.setDescription(node.content.trace.description)
+        elif node.nodeType==nodeTypes.category:
+            if node.children:
+                self.descriptionModel.setDescription(node.children[0].content.trace.description)
 
     def onUnplotSetting(self, checked):
         self.settings.unplotLastTrace = checked
@@ -216,10 +202,11 @@ class Traceui(TraceuiForm, TraceuiBase):
             if allowUnplotted or trace.isPlotted:
                 outputIndexes.append(index)
         if not outputIndexes and useLastIfNoSelection:
-            trace = self.model.traceList[-1]
-            node = self.model.nodeFromContent(trace)
-            index = self.model.indexFromNode(node)
-            outputIndexes.append(index)
+            if self.model.traceList != []:
+                trace = self.model.traceList[-1]
+                node = self.model.nodeFromContent(trace)
+                index = self.model.indexFromNode(node)
+                outputIndexes.append(index)
         return outputIndexes
 
     def selectedTraces(self, useLastIfNoSelection=False, allowUnplotted=True):
