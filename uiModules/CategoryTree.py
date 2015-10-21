@@ -179,7 +179,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
 
     def removeNode(self, node):
         """Remove the specified node from the tree"""
-        if self.allowDeletion:
+        if self.allowDeletion and node!=self.root:
             parent = node.parent
             row = node.row
             id = node.id
@@ -278,7 +278,8 @@ class CategoryTreeView(QtGui.QTreeView):
             indexes = self.selectionModel().selectedRows(0)
             for leftIndex in indexes:
                 node=model.nodeFromIndex(leftIndex)
-                model.removeNode(node)
+                if node!=model.root:
+                    model.removeNode(node)
 
     def onReorder(self, up):
         if self.model().allowReordering:
