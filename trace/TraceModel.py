@@ -13,57 +13,39 @@ from PyQt4 import QtCore, QtGui
 import sip
 
 from PlottedTrace import PlottedTrace
-from uiModules.CategoryTree import CategoryTreeModel
+from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
 
 api2 = sip.getapi("QVariant")==2
 
 class TraceComboDelegate(QtGui.QItemDelegate):
-    
     """
-    This class is a delegate of the trace tree view, responsible for the combo box editor in the trace tree.
-    
-    The combo box editor is used to select which pen to use in drawing the
-    trace on the plot. The available pen icons to use are in the array penicons,
-    which is determined when the delegate is constructed.
-    
-    methods:
-    __init__: constructor for TraceComboDelegate. Construct the parent, and set the penicons array.
-    createEditor: create the combo box editor, and add in all the icons.
-    
-    The following methods are required reimplementations if QItemDelegate methods:
-    createEditor(self,parent, option, index): Create the combo box editor used to select the pen icon.
-    setEditorData(self,editor, index): Supply data to the editor from the model.
-    setModelData(self,editor, model, index): Supply data to the model from the editor.
-    updateEditorGeometry(self,editor, option, index): Set the size of the combo box appropriately.
-    """    
-    
+    Class for combo box editor to select what trace color to use
+
+    Args:
+        penicons (list[Qicon]): list of icons to select trace color"""
     def __init__(self, penicons):
-        """Construct the TraceComboDelegate object, and set the penicons array."""
         QtGui.QItemDelegate.__init__(self)
         self.penicons = penicons        
         
     def createEditor(self,parent, option, index ):
-        """Required. Create the combo box editor used to select pen icon.
-        
-           The for loop adds each pen icon into the combo box."""
-        editor = QtGui.QComboBox(parent);
+        """Create the combo box editor"""
+        editor = QtGui.QComboBox(parent)
         #for icon, string in zip(self.penicons, ["{0}".format(i) for i in range(0,len(self.penicons))] ):
         for icon, string in zip(self.penicons, ['']*len(self.penicons) ):
             editor.addItem( icon, string )
         return editor
 
     def setEditorData(self,editor, index):
-        """Required. Supply data to the editor from the model."""
+        """Set the data in the editor based on the model"""
         value = index.model().data(index, QtCore.Qt.EditRole) 
         editor.setCurrentIndex(value)
         
     def setModelData(self,editor, model, index):
-        """Required. Supply data to the model from the editor."""
+        """Set the data in the model based on the editor"""
         value = editor.currentIndex()
         model.setData(index, value, QtCore.Qt.EditRole)
          
     def updateEditorGeometry(self,editor, option, index ):
-        """Required. Set the size of the combo box appropriately."""
         editor.setGeometry(option.rect)
     
 class TraceModel(CategoryTreeModel):
