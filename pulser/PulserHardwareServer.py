@@ -481,22 +481,7 @@ class PulserHardwareServer(Process, OKBase):
         else:
             logging.getLogger(__name__).warning("Pulser Hardware not available")
             return 0,None
-        
-    configurationFields = ['magic', 'Type', 'HardwareConfigurationId', 'AD9912Channels', 'AD9910Channels', 'ADCChannels', 'DACChannels', 
-                           'CounterChannels', 'FirstDDSEnableShutter', 'SerialChannels' ]
-    def getConfiguration(self):
-        configuration = dict()
-        if self.xem:
-            data = bytearray('\000'*64)
-            self.xem.ReadFromPipeOut(0xAf, data)
-            for field, s in zip( self.configurationFields, sliceview(data,2) ):
-                (value, ) = struct.unpack('H', s)
-                configuration[field] = value
-            if configuration['magic']!= 0xfedc:
-                logging.getLogger(__name__).info('No Configuration information found in firmware')
-                return dict()
-        return configuration                            
-        
+
     def ppUploadData(self, binarydata,startaddress=0):
         if self.xem:
             logger = logging.getLogger(__name__)

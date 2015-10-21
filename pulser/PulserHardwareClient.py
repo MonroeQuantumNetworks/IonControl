@@ -120,26 +120,21 @@ class PulserHardware(QtCore.QObject):
         self.loggingReader = LoggingReader(self.loggingQueue)
         self.loggingReader.start()
         self.ppActive = False
+        self._pulserConfiguration = None
         
-        configpath = os.path.join(getProject().configDir, 'PulserConfig.xml')
-        if not os.path.exists(configpath):
-            skeletonpath = os.path.join( os.path.dirname(os.path.realpath(__file__)), '..', 'config', 'PulserConfig.xml' )
-            shutil.copy( skeletonpath, configpath )
-        self.pulserConfigurationList = getPulserConfiguration( configpath )
 
-    def pulserConfiguration(self):
-        config = self.getConfiguration()
-        if not config:
-            logging.getLogger(__name__).error("No configuration information returned from FPGA")
+    def pulserConfiguration(self, configfile=None, hardwareId=None):
+        if configfile is not None:
+            pulserConfigurationList = getPulserConfiguration(configfile)
+            hardwareId = self.hardwareConfigurationId() if hardwareId is None else hardwareId
+            if hardwareId in pulserConfigurationList:
+                self._pulserConfiguration = pulserConfigurationList[hardwareId]
+                return self._pulserConfiguration
+            else:
+                #logging.getLogger(__name__).error("No information on configuration {0} in configuration file".format(HardwareConfigurationId))
+                raise PulserHardwareException("No information on configuration 0x{0:x} in configuration file '{1}'".format(hardwareId, configfile))
             return None
-        HardwareConfigurationId = config['HardwareConfigurationId']
-        if HardwareConfigurationId in self.pulserConfigurationList:
-            return self.pulserConfigurationList[config['HardwareConfigurationId']]
-        else:
-            #logging.getLogger(__name__).error("No information on configuration {0} in configuration file".format(HardwareConfigurationId))
-            raise PulserHardwareException("No information on configuration 0x{0:x} in configuration file 'PulserConfig.xml'".format(HardwareConfigurationId))
-        return None
-            
+        return self._pulserConfiguration
 
     def shutdown(self):
         self.clientPipe.send( ('finish', () ) )

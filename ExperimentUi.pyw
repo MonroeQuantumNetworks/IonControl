@@ -55,6 +55,20 @@ if __name__=='__main__': #imports that aren't just definitions
 
 WidgetContainerForm, WidgetContainerBase = PyQt4.uic.loadUiType(r'ui\Experiment.ui')
 
+
+class ConfigException(Exception):
+    pass
+
+
+def checkFileValid( filename, typeName, FPGAName ):
+    if not filename:
+        raise ConfigException("No {0} specified".format(typeName))
+    elif not isinstance(filename, str):
+        raise ConfigException("{0} '{1}' specified in '{2}' config is not a string".format(typeName, filename, FPGAName))
+    elif not os.path.exists(filename):
+        raise ConfigException("Unable to open {0} '{1}' specified in '{2}' config: Invalid {0} path".format(typeName, filename, FPGAName))
+
+
 class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
     levelNameList = ["debug", "info", "warning", "error", "critical"]
     levelValueList = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
@@ -732,9 +746,9 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.OK_FPGA_Dict = self.pulser.listBoards() #all connected Opal Kelly FPGA boards
         logger.info( "Opal Kelly Devices found: {0}".format({k:v.modelName for k,v in self.OK_FPGA_Dict.iteritems()}) )
 
-        for FPGA, FPGAName, FPGAConfig, FPGAEnabled in [(self.pulser, hardwarePulserName, hardwarePulserConfig, self.pulserEnabled),
-                                                        (self.dac, dacName, dacConfig, self.dacEnabled),
-                                                        (self.pmt32, pmt32Name, pmt32Config, self.pmt32Enabled)]:
+        for FPGA, FPGAName, FPGAConfig, FPGAEnabled, hasConfig in [(self.pulser, hardwarePulserName, hardwarePulserConfig, self.pulserEnabled, True),
+                                                                   (self.dac, dacName, dacConfig, self.dacEnabled, False),
+                                                                   (self.pmt32, pmt32Name, pmt32Config, self.pmt32Enabled, False)]:
             if FPGAEnabled:
                 deviceName=FPGAConfig.get('device') #The 'device' field of an FPGA should be the identifier of the FPGA.
                 if not deviceName:
@@ -744,21 +758,21 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                 else:
                     device=self.OK_FPGA_Dict[deviceName]
                     FPGA.openBySerial(device.serial)
+                    bitFile=FPGAConfig.get('bitFile')
+                    checkFileValid(bitFile, 'bitfile', FPGAName)
+                    if hasConfig:
+                        configFile = os.path.splitext(bitFile)[0] + '.xml'
+                        checkFileValid(configFile, 'config file', FPGAName)
                     if FPGAConfig.get('uploadOnStartup'):
-                        bitFile=FPGAConfig.get('bitFile')
-                        if not bitFile:
-                            logger.error("No bitfile specified")
-                        elif not isinstance(bitFile, str):
-                            logger.error("bitfile {0} specified in '{1}' config is not a string".format(bitFile, FPGAName))
-                        elif not os.path.exists(bitFile):
-                            logger.error("Unable to upload bitfile {0} specified in '{1}' config: Invalid bitfile path".format(bitFile, FPGAName))
-                        else:
-                            FPGA.uploadBitfile(bitFile)
-                            logger.info("Uploaded file '{0}' to {1} (model {2}) in '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
+                        FPGA.uploadBitfile(bitFile)
+                        logger.info("Uploaded file '{0}' to {1} (model {2}) in '{3}' config".format(bitFile, deviceName, device.modelName, FPGAName))
+                    if hasConfig:   # check and make sure corrct hardware is loaded
+                        FPGA.pulserConfiguration(configFile)
                     if FPGA==self.pulser:
                         self.settings.deviceSerial = device.serial
                         self.settings.deviceDescription = device.identifier
                         self.settings.deviceInfo = device
+
 
 
 if __name__ == '__main__':

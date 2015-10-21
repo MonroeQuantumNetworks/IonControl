@@ -146,3 +146,9 @@ class OKBase(object):
     @property
     def isOpen(self):
         return self.xem is not None
+
+    def hardwareConfigurationId(self):
+        if self.xem:
+            self.xem.UpdateWireOuts()
+            return self.xem.GetWireOutValue(0x32)
+        return None

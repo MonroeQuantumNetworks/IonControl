@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<PulserList>
 <Pulser configurationId="0x4202">
     <Description>QGA Pulse Programmer with Duke breakout v2</Description>
     <ExtendedWireIns>
@@ -300,3 +301,4 @@
     <DAC numChannels="16" encoding="DAC8568_VOLTAGE" />
     <ADC numChannels="8" encoding="ADC7606_VOLTAGE" dedicatedfirstChannelNo="16" />
 </Pulser>
+</PulserList>
