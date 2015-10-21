@@ -84,9 +84,9 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.categoryDataLookup = {(QtCore.Qt.DisplayRole, 0): lambda node: node.content}
         self.categoryDataAllColLookup = {QtCore.Qt.FontRole: lambda node: self.fontLookup.get(getattr(node, 'isBold', False))}
         self.setDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
-        self.flagsLookup = {
-                            0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable #default, normally overwritten
-                            }
+        self.categorySetDataLookup = {} #overwrite to set data. key: (role, col). val: function that takes (index, value)
+        self.flagsLookup = {0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable} #default, normally overwritten
+        self.categoryFlagsLookup = {0: QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable}
         self.numColumns = 1 #Overwrite with number of columns
         self.allowReordering = False #If True, nodes can be moved around
         self.allowDeletion = False #If True, nodes can be deleted
@@ -139,7 +139,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def setData(self, index, value, role):
         node, col = self.getLocation(index)
         if node.nodeType==nodeTypes.category:
-            return None
+            return self.categorySetDataLookup.get( (role, col), lambda index, value: False)(index, value)
         else:
             return self.setDataLookup.get( (role, col), lambda index, value: False)(index, value)
 
@@ -151,7 +151,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def flags(self, index ):
         node, col = self.getLocation(index)
         if node.nodeType==nodeTypes.category:
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+            return self.categoryFlagsLookup.get(col, QtCore.Qt.NoItemFlags)
         else:
             return self.flagsLookup.get(col, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
 
