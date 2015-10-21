@@ -111,6 +111,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.accumulatedTimingViolations = set()
         self.project = getProject()
         self.timestampsEnabled = self.project.isEnabled('software', 'Timestamps')
+        self.unsavedTraceCount = 0
 
     def setupUi(self,MainWindow,config):
         logger = logging.getLogger(__name__)
@@ -507,6 +508,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].trace.description["Scan"] = self.scan.description()
             self.plottedTraceList[0].trace.autoSave = self.scan.autoSave
             self.plottedTraceList[0].trace.filenamePattern = self.scan.filename
+            for plottedTrace in self.plottedTraceList:
+                plottedTrace.category = plottedTrace.trace.fileleaf if self.scan.autoSave else "UNSAVED_"+plottedTrace.trace.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+            if not self.scan.autoSave: self.unsavedTraceCount+=1
             self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
                 self.traceui.addTrace(plottedTrace, pen=-1)
