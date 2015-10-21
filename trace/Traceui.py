@@ -15,10 +15,12 @@ import PyQt4.uic
 from ProjectConfig.Project import getProject
 from TraceModel import TraceComboDelegate
 from TraceModel import TraceModel
+from uiModules.CategoryTree import nodeTypes
 from trace.PlottedTrace import PlottedTrace
 from TraceDescriptionTableModel import TraceDescriptionTableModel
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.KeyboardFilter import KeyListFilter
+from functools import partial
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Traceui.ui')
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(uipath)
@@ -58,15 +60,19 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
         self.traceView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which plot to use
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
-        self.clearButton.clicked.connect(self.onClear)
-        self.saveButton.clicked.connect(self.onSave)
+
+        self.clearButton.clicked.connect(partial(self.onButton, self.clear))
+        self.saveButton.clicked.connect(partial(self.onButton, self.save))
+        self.pushButtonApplyStyle.clicked.connect(partial(self.onButton, self.applyStyle))
+        self.plotButton.clicked.connect(partial(self.onButton, self.plot))
+
         self.removeButton.clicked.connect(self.onRemove)
+
+        self.openFileButton.clicked.connect(self.onOpenFile)
+        self.comboBoxStyle.currentIndexChanged[int].connect(self.setPlotStyle)
         self.traceView.clicked.connect(self.onViewClicked)
         self.comboBoxStyle.setCurrentIndex(self.settings.plotstyle)
-        self.comboBoxStyle.currentIndexChanged[int].connect(self.setPlotStyle)
-        self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
-        self.openFileButton.clicked.connect(self.onOpenFile)
-        self.plotButton.clicked.connect(self.onPlot)
+
         self.showOnlyLastButton.clicked.connect(self.onShowOnlyLast)
         self.selectAllButton.clicked.connect(self.traceView.selectAll)
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -78,11 +84,60 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.descriptionModel = TraceDescriptionTableModel() 
         self.descriptionTableView.setModel( self.descriptionModel )
         self.traceView.clicked.connect( self.onActiveTraceChanged )
-        self.descriptionTableView.horizontalHeader().setStretchLastSection(True)   
+        self.descriptionTableView.horizontalHeader().setStretchLastSection(True)
+
+    def onButton(self, func):
+        """Execute when a trace action button is clicked. Execute its function on the selected traces."""
+        selectedIndexes = self.selectedRows()
+        if selectedIndexes:
+            for index in selectedIndexes:
+                node = self.model.nodeFromIndex(index)
+                if node.nodeType == nodeTypes.data:
+                    trace = node.content
+                    dataChanged = func(trace)
+                    if dataChanged: self.model.modelChange(index)
+                elif node.nodeType == nodeTypes.category:
+                    dataChangedList=[]
+                    for child in node.children:
+                        trace = child.content
+                        childIndex = self.model.indexFromNode(child)
+                        dataChanged = func(trace)
+                        dataChangedList.append(dataChanged)
+                        if dataChanged: self.model.modelChange(childIndex)
+                    if any(dataChangedList): self.model.modelChange(index)
+
+    def clear(self, trace):
+        """Unplot trace."""
+        if trace.curvePen != 0:
+            trace.plot(0)
+            return True
+
+    def save(self, trace):
+        """Save trace"""
+        trace.trace.save()
+        return False
+
+    def applyStyle(self, trace):
+        """Apply style to trace."""
+        trace.plot(-2, self.settings.plotstyle)
+        return False
+
+    def plot(self, trace):
+        """plot trace"""
+        trace.plot(-1,self.settings.plotstyle)
+        return True
+
+    def onRemove(self, node, trace):
+        """Remove trace from trace list (but don't delete files)."""
+        if trace.curvePen!=0: trace.plot(0)
+        self.model.removeNode(node)
+        return True
 
     def onActiveTraceChanged(self, index):
-        trace = self.model.contentFromIndex(index)
-        self.descriptionModel.setDescription(trace.trace.description)
+        """Display trace description when a trace is clicked"""
+        node = self.model.nodeFromIndex(index)
+        if node.nodeType==nodeTypes.data: self.descriptionModel.setDescription(node.content.trace.description)
+        elif node.nodeType==nodeTypes.category: self.descriptionModel.setDescription(node.children[0].content.trace.description)
 
     def onUnplotSetting(self, checked):
         self.settings.unplotLastTrace = checked
@@ -91,7 +146,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         return self.settings.unplotLastTrace
 
     def selectedRows(self, useLastIfNoSelection=True, allowUnplotted=True):
-        inputIndexes = self.selectionModel().selectedRows(0)
+        inputIndexes = self.traceView.selectionModel().selectedRows(0)
         outputIndexes = []
         for index in inputIndexes:
             trace = self.model.contentFromIndex(index)
@@ -127,54 +182,6 @@ class Traceui(TraceuiForm, TraceuiBase):
         """If one of the editable columns is clicked, begin to edit it."""
         if index.column() in [1,3]:
             self.traceView.edit(index)
-
-    def onPlot(self):
-        """Execute when the plot button is clicked. Plot the selected traces."""
-        selectedIndexes = self.selectedRows()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                trace = self.model.contentFromIndex(index)
-                trace.plot(-1,self.settings.plotstyle)
-                self.model.modelChange(index)
-
-    def onClear(self):
-        """Execute when the clear button is clicked. Remove the selected plots from the trace.
-        
-           This leaves the traces in the list of traces (i.e. in the model and view)."""
-        selectedIndexes = self.selectedRows()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                trace = self.model.contentFromIndex(index)
-                if trace.curvePen != 0:
-                    trace.plot(0)
-                self.model.modelChange(index)
-
-    def onApplyStyle(self):
-        """Execute when the apply style button is clicked. Change the selected traces to the new style."""
-        selectedIndexes = self.selectedRows()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                trace = self.model.contentFromIndex(index)
-                trace.plot(-2, self.settings.plotstyle)           
-
-    def onSave(self):
-        """Execute when the save button is clicked. Save the selected traces."""
-        selectedIndexes = self.selectedRows()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                trace = self.model.contentFromIndex(index)
-                trace.trace.save()
-
-    def onRemove(self):
-        """Execute when the remove button is clicked. Remove the selected traces from the model and view (but don't delete files)."""
-        selectedIndexes = self.selectedRows()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                node = self.model.nodeFromIndex(index)
-                trace = node.content
-                if trace.curvePen != 0:
-                    trace.plot(0)
-                self.model.removeNode(node)
 
     def onOpenFile(self):
         """Execute when the open button is clicked. Open an existing trace file from disk."""
