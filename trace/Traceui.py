@@ -38,7 +38,9 @@ class Settings:
         
     def __setstate__(self, state):
         self.__dict__ = state
-        self.__dict__.setdefault( 'unplotLastTrace', True)
+        self.__dict__.setdefault('unplotLastTrace', True)
+        self.__dict__.setdefault('collapseLastTrace', True)
+        self.__dict__.setdefault('expandNew', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
     def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None):
@@ -75,13 +77,30 @@ class Traceui(TraceuiForm, TraceuiBase):
 
         self.showOnlyLastButton.clicked.connect(self.onShowOnlyLast)
         self.selectAllButton.clicked.connect(self.traceView.selectAll)
+        self.collapseAllButton.clicked.connect(self.traceView.collapseAll)
+        self.expandAllButton.clicked.connect(self.traceView.expandAll)
+
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
-        self.unplotSettingsAction = QtGui.QAction( "Unplot last trace", self )
+
+        self.unplotSettingsAction = QtGui.QAction( "Unplot last trace set", self )
         self.unplotSettingsAction.setCheckable(True)
         self.unplotSettingsAction.setChecked( self.settings.unplotLastTrace)
         self.unplotSettingsAction.triggered.connect( self.onUnplotSetting )
         self.addAction( self.unplotSettingsAction )
-        self.descriptionModel = TraceDescriptionTableModel() 
+
+        self.collapseLastTraceAction = QtGui.QAction( "Collapse last trace set", self )
+        self.collapseLastTraceAction.setCheckable(True)
+        self.collapseLastTraceAction.setChecked( self.settings.collapseLastTrace)
+        self.collapseLastTraceAction.triggered.connect(self.onCollapseLastTrace)
+        self.addAction( self.collapseLastTraceAction )
+
+        self.expandNewAction = QtGui.QAction( "Expand new traces", self )
+        self.expandNewAction.setCheckable(True)
+        self.expandNewAction.setChecked( self.settings.expandNew)
+        self.expandNewAction.triggered.connect(self.onExpandNew)
+        self.addAction( self.expandNewAction )
+
+        self.descriptionModel = TraceDescriptionTableModel()
         self.descriptionTableView.setModel( self.descriptionModel )
         self.traceView.clicked.connect( self.onActiveTraceChanged )
         self.descriptionTableView.horizontalHeader().setStretchLastSection(True)
@@ -156,9 +175,38 @@ class Traceui(TraceuiForm, TraceuiBase):
 
     def onUnplotSetting(self, checked):
         self.settings.unplotLastTrace = checked
-        
+
+    def onCollapseLastTrace(self, checked):
+        self.settings.collapseLastTrace = checked
+
+    def onExpandNew(self, checked):
+        self.settings.expandNew = checked
+
+    @QtCore.pyqtProperty(bool)
     def unplotLastTrace(self):
         return self.settings.unplotLastTrace
+
+    @QtCore.pyqtProperty(bool)
+    def collapseLastTrace(self):
+        return self.settings.collapseLastTrace
+
+    @QtCore.pyqtProperty(bool)
+    def expandNew(self):
+        return self.settings.expandNew
+
+    def collapse(self, trace):
+        """collapse node associated with trace"""
+        node = self.model.nodeFromContent(trace)
+        if node:
+            index = self.model.indexFromNode(node.parent)
+            self.traceView.collapse(index)
+
+    def expand(self, trace):
+        """expand node associated with trace"""
+        node = self.model.nodeFromContent(trace)
+        if node:
+            index = self.model.indexFromNode(node.parent)
+            self.traceView.expand(index)
 
     def selectedRows(self, useLastIfNoSelection=True, allowUnplotted=True):
         inputIndexes = self.traceView.selectionModel().selectedRows(0)

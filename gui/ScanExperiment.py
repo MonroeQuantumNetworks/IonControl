@@ -355,10 +355,12 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.pulserHardware.ppWriteData(mycode)
             self.displayUi.onClear()
             self.timestampsNewRun = True
-            if self.plottedTraceList and self.traceui.unplotLastTrace():
+            if self.plottedTraceList and self.traceui.unplotLastTrace:
                 for plottedTrace in self.plottedTraceList:
                     plottedTrace.plot(0) #unplot previous trace
-            self.plottedTraceList = list() #reset plotted trace
+            if self.plottedTraceList and self.traceui.collapseLastTrace:
+                self.traceui.collapse(self.plottedTraceList[0])
+            self.plottedTraceList = list() #reset plotted trace list
             self.otherDataFile = None
             self.histogramBuffer = defaultdict( list )
             self.scanMethod.startScan()
@@ -507,7 +509,9 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             self.plottedTraceList[0].trace.filenamePattern = self.scan.filename
             self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
-                self.traceui.addTrace( plottedTrace, pen=-1)
+                self.traceui.addTrace(plottedTrace, pen=-1)
+            if self.traceui.expandNew:
+                self.traceui.expand(self.plottedTraceList[0])
             self.traceui.resizeColumnsToContents()
         else:
             self.generator.appendData(self.plottedTraceList, x, evaluated, timeinterval )
