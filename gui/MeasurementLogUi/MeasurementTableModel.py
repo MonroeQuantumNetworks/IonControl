@@ -54,9 +54,8 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                                (QtCore.Qt.EditRole, 9): self.setComment
                               }
         self.traceuiLookup = traceuiLookup
-        self.commentSignals = []
-        self.filenameSignals = []
-        self.connectToTrace()
+        self.subscriptions = list()
+        self.subscribeToTrace()
              
     def getFilename(self, row):
         filename = self.measurements[row].filename
@@ -64,32 +63,30 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             return None
         return os.path.split(filename)[1]
         
-    def connectToTrace(self, first=0, last=None):
+    def subscribeToTrace(self, first=0, last=None):
+        # register listeners
         last = firstNotNone( last, len(self.measurements) )
         for row, measurement in enumerate(self.measurements[first:last]):
             plottedTraceList = measurement.plottedTraceList
             if len(plottedTraceList)>0:
-                plottedTraceList[0].trace.commentChanged.connect(partial(self.commentChanged, row+first))
-                self.commentSignals.append((plottedTraceList[0].trace.commentChanged, row+first))
-                plottedTraceList[0].trace.filenameChanged.connect(partial(self.filenameChanged, row+first))
-                self.filenameSignals.append((plottedTraceList[0].trace.filenameChanged, row+first))
-
-    def clearConnections(self):
-        for signal, n in self.commentSignals:
-            signal.disconnect(partial(self.commentChanged, n))
-        for signal, n in self.filenameSignals:
-            signal.disconnect(partial(self.filenameChanged, n))
-        self.commentSignals[:] = []
-        self.filenameSignals[:] = []
+                callback = partial( self.commentChanged, row+first )
+                plottedTraceList[0].trace.commentChanged.subscribe( callback )
+                self.subscriptions.append( (plottedTraceList[0].trace.commentChanged, callback ))
+                callback = partial( self.filenameChanged, row+first)
+                plottedTraceList[0].trace.filenameChanged.subscribe( callback )
+                self.subscriptions.append( (plottedTraceList[0].trace.filenameChanged, callback ))
+                
+    def clearSubscriptions(self):
+        for observable, callback in self.subscriptions:
+            observable.unsubscribe( callback )
+        self.subscriptions[:] = []
     
-    @QtCore.pyqtSlot(str)
-    def commentChanged(self, row, comment):
-        self.setComment(row, comment)
+    def commentChanged(self, row, event ):
+        self.setComment( row, event.comment )
         self.dataChanged.emit( self.index(row,6), self.index(row,6) )
 
-    @QtCore.pyqtSlot(str)
-    def filenameChanged(self, row, filename):
-        self.setFilename( row, filename )
+    def filenameChanged(self, row, event ):
+        self.setFilename( row, event.filename )
         self.dataChanged.emit( self.index(row,7), self.index(row,7) )
     
     def addColumn(self, extraColumn ):
@@ -154,7 +151,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
 
     def endInsertRows(self):
-        self.connectToTrace(self.firstAdded, self.lastAdded+1)
+        self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
         return QtCore.QAbstractTableModel.endInsertRows(self)
         
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -203,7 +200,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def setMeasurements(self, event):
         self.beginResetModel()
         self.measurements = event.measurements
-        self.clearConnections()
-        self.connectToTrace()
+        self.clearSubscriptions()
+        self.subscribeToTrace()
         self.endResetModel()
         
