@@ -50,6 +50,8 @@
     <file>icons/document-new-icon.png</file>
     <file>icons/Terminal-icon.png</file>
     <file>icons/ions.jpg</file>
+    <file>icons/collapse-all.png</file>
+    <file>icons/expand-all.png</file>
   </qresource>
   <qresource prefix="openicon">
     <file>icons/road-sign-us-stop.png</file>
