@@ -59,9 +59,8 @@ class TraceModel(CategoryTreeModel):
         parent (QtCore.QObject): parent QObject
     """
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
-        super(TraceModel, self).__init__(traceList, parent, categoriesAttr='displayName')
+        super(TraceModel, self).__init__(traceList, parent, categoriesAttr='category')
         self.penicons = penicons
-        self.traceList = traceList
         self.graphicsViewDict = graphicsViewDict
         self.numColumns = 4
         self.allowDeletion = True
@@ -208,3 +207,16 @@ class TraceModel(CategoryTreeModel):
                     trace.plot(0)
                 super(TraceModel,self).removeNode(childNode)
             super(TraceModel,self).removeNode(node)
+
+    def onSaveUnsavedTrace(self, node):
+        """rename the category associated with trace"""
+        categoryNode = node.parent
+        self.nodeDict.pop(categoryNode.id)
+        newName = node.content.trace.fileleaf
+        categoryNode.content = newName
+        categoryNode.id = newName
+        self.nodeDict[newName] = categoryNode
+        for node in categoryNode.children:
+            node.content.category = node.content.trace.fileleaf
+
+

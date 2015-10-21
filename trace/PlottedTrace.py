@@ -32,6 +32,7 @@ class PlottedTrace(object):
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
                  yAxisLabel = None, yAxisUnit = None, fill=True, windowName=None):
+        self.category = ''
         self.fill = fill
         if penList is None:
             penList = pens.penList
@@ -353,11 +354,6 @@ class PlottedTrace(object):
     @fitFunction.setter
     def fitFunction(self, fitfunction):
         self.tracePlotting.fitFunction = fitfunction
-
-    @property
-    def displayName(self):
-        """Name to use to categorize trace in traceList."""
-        return self.trace.fileleaf if self.trace.saved else "UNSAVED_"+self.trace.filenamePattern
 
 #     def __del__(self):
 #         super(PlottedTrace, self)__del__()

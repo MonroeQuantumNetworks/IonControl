@@ -35,6 +35,8 @@ class Settings:
             self.lastDir = lastDir
         self.plotstyle = plotstyle
         self.unplotLastTrace = True
+        self.collapseLastTrace = True
+        self.expandNew = True
         
     def __setstate__(self, state):
         self.__dict__ = state
@@ -64,10 +66,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
 
         self.clearButton.clicked.connect(partial(self.onButton, self.clear))
-        self.saveButton.clicked.connect(partial(self.onButton, self.save))
         self.pushButtonApplyStyle.clicked.connect(partial(self.onButton, self.applyStyle))
         self.plotButton.clicked.connect(partial(self.onButton, self.plot))
 
+        self.saveButton.clicked.connect(self.onSave)
         self.removeButton.clicked.connect(self.onRemove)
 
         self.openFileButton.clicked.connect(self.onOpenFile)
@@ -125,16 +127,40 @@ class Traceui(TraceuiForm, TraceuiBase):
                         if dataChanged: self.model.modelChange(childIndex)
                     if any(dataChangedList): self.model.modelChange(index)
 
+    def selectedUniqueFilenames(self):
+        """Get selected data nodes which have unique filenames"""
+        selectedIndexes = self.selectedRows()
+        nodesWithUniqueFilenames = []
+        uniqueTraces = []
+        if selectedIndexes:
+            for index in selectedIndexes:
+                node = self.model.nodeFromIndex(index)
+                if node.nodeType == nodeTypes.data:
+                    if node.content.trace not in uniqueTraces:
+                        uniqueTraces.append(node.content.trace)
+                        nodesWithUniqueFilenames.append(node)
+                elif node.nodeType == nodeTypes.category:
+                    if node.children and node.children[0].content.trace not in uniqueTraces:
+                        uniqueTraces.append(node.children[0].content.trace)
+                        nodesWithUniqueFilenames.append(node.children[0])
+        return nodesWithUniqueFilenames
+
+    def onSave(self):
+        """Save button is clicked. Save selected traces. If a trace has never been saved before, update model."""
+        nodeList = self.selectedUniqueFilenames()
+        for node in nodeList:
+            alreadySaved = node.content.trace.saved
+            node.content.trace.save()
+            if not alreadySaved:
+                self.model.onSaveUnsavedTrace(node)
+                parentIndex = self.model.indexFromNode(node.parent)
+                self.model.modelChange(parentIndex)
+
     def clear(self, trace):
         """Unplot trace."""
         if trace.curvePen != 0:
             trace.plot(0)
             return True
-
-    def save(self, trace):
-        """Save trace"""
-        trace.trace.save()
-        return False
 
     def applyStyle(self, trace):
         """Apply style to trace."""
