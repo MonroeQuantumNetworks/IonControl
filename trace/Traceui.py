@@ -60,7 +60,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.delegate = TraceComboDelegate(self.penicons)
         self.graphicsViewDelegate = ComboBoxDelegate()
         self.traceView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
-        self.traceView.setItemDelegateForColumn(5,self.graphicsViewDelegate) #This is for selecting which plot to use
+        self.traceView.setItemDelegateForColumn(2,self.graphicsViewDelegate) #This is for selecting which plot to use
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
 
         self.clearButton.clicked.connect(partial(self.onButton, self.clear))
