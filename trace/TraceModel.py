@@ -4,14 +4,14 @@ Created on Wed Jan 02 09:53:48 2013
 
 @author: Jonathan Mizrahi
 
-This is the model used with TraceTreeView to view the list of traces in a tree.
+This is the model used for the list of traces.
 """
 
 from functools import partial
 
 from PyQt4 import QtCore, QtGui
 import sip
-
+from modules.enum import enum
 from PlottedTrace import PlottedTrace
 from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
 
@@ -58,50 +58,53 @@ class TraceModel(CategoryTreeModel):
         graphicsViewDict (dict): dictionary of the available plot windows
         parent (QtCore.QObject): parent QObject
     """
+    traceDataChanged = QtCore.pyqtSignal(str, str, str) #string with trace creation date, change type, value
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
         super(TraceModel, self).__init__(traceList, parent, categoriesAttr='category')
         self.traceList = traceList
         self.penicons = penicons
         self.graphicsViewDict = graphicsViewDict
-        self.numColumns = 4
         self.allowDeletion = True
+        self.columnNames = ['name','plot','window','comment']
+        self.numColumns = len(self.columnNames)
+        self.column = enum(*self.columnNames)
         self.headerLookup.update({
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 0): 'Name',
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 1): 'Plot',
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 2): 'Window',
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, 3): 'Comment',
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.name): self.columnNames[self.column.name].capitalize(),
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.plot): self.columnNames[self.column.plot].capitalize(),
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.window): self.columnNames[self.column.window].capitalize(),
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.comment): self.columnNames[self.column.comment].capitalize(),
             })
         self.categoryDataLookup.update({
-            (QtCore.Qt.CheckStateRole,0): lambda node: self.isCategoryChecked(node)
+            (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node)
         })
         self.dataLookup.update({
-            (QtCore.Qt.DisplayRole,0): lambda node: node.content.name,
-            (QtCore.Qt.CheckStateRole,0): lambda node: QtCore.Qt.Checked if node.content.curvePen > 0 else QtCore.Qt.Unchecked,
-            (QtCore.Qt.DecorationRole,1): lambda node: QtGui.QIcon(self.penicons[node.content.curvePen]) if hasattr(node.content, 'curve') and node.content.curve is not None else None,
-            (QtCore.Qt.BackgroundColorRole,1): lambda node: QtGui.QColor(QtCore.Qt.white) if not (hasattr(node.content, 'curve') and node.content.curve is not None) else None,
-            (QtCore.Qt.EditRole,1): lambda node: node.content.curvePen,
-            (QtCore.Qt.DisplayRole,2): lambda node: node.content.windowName,
-            (QtCore.Qt.EditRole,2): lambda node: node.content.windowName,
-            (QtCore.Qt.DisplayRole,3): lambda node: node.content.traceCollection.comment,
-            (QtCore.Qt.EditRole,3): lambda node: node.content.traceCollection.comment
+            (QtCore.Qt.DisplayRole,self.column.name): lambda node: node.content.name,
+            (QtCore.Qt.CheckStateRole,self.column.name): lambda node: QtCore.Qt.Checked if node.content.curvePen > 0 else QtCore.Qt.Unchecked,
+            (QtCore.Qt.DecorationRole,self.column.plot): lambda node: QtGui.QIcon(self.penicons[node.content.curvePen]) if hasattr(node.content, 'curve') and node.content.curve is not None else None,
+            (QtCore.Qt.BackgroundColorRole,self.column.plot): lambda node: QtGui.QColor(QtCore.Qt.white) if not (hasattr(node.content, 'curve') and node.content.curve is not None) else None,
+            (QtCore.Qt.EditRole,self.column.plot): lambda node: node.content.curvePen,
+            (QtCore.Qt.DisplayRole,self.column.window): lambda node: node.content.windowName,
+            (QtCore.Qt.EditRole,self.column.window): lambda node: node.content.windowName,
+            (QtCore.Qt.DisplayRole,self.column.comment): lambda node: node.content.traceCollection.comment,
+            (QtCore.Qt.EditRole,self.column.comment): lambda node: node.content.traceCollection.comment
             })
         self.setDataLookup.update({
-            (QtCore.Qt.CheckStateRole,0): lambda index, value: self.modelChange(index, value, 'checkbox'),
-            (QtCore.Qt.EditRole,1): lambda index, value: self.modelChange(index, value, 'plot'),
-            (QtCore.Qt.EditRole,2): lambda index, value: self.modelChange(index, value, 'window'),
-            (QtCore.Qt.EditRole,3): lambda index, value: self.modelChange(index, value, 'comment')
+            (QtCore.Qt.CheckStateRole,self.column.name): lambda index, value: self.modelChange(index, value, 'checkbox'),
+            (QtCore.Qt.EditRole,self.column.plot): lambda index, value: self.modelChange(index, value, 'plot'),
+            (QtCore.Qt.EditRole,self.column.window): lambda index, value: self.modelChange(index, value, 'window'),
+            (QtCore.Qt.EditRole,self.column.comment): lambda index, value: self.modelChange(index, value, 'comment')
             })
         self.categorySetDataLookup.update({
-            (QtCore.Qt.CheckStateRole,0): lambda index, value: self.setCategoryCheckbox(index, value)
+            (QtCore.Qt.CheckStateRole,self.column.name): lambda index, value: self.setCategoryCheckbox(index, value)
         })
         self.flagsLookup = {
-            0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-            1: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-            2: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-            3: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+            self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
+            self.column.plot: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+            self.column.window: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+            self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
             }
         self.categoryFlagsLookup = {
-            0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+            self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
             }
 
     def isCategoryChecked(self, categoryNode):
@@ -113,7 +116,7 @@ class TraceModel(CategoryTreeModel):
         else: return QtCore.Qt.Unchecked
 
     def choice(self, index):
-        return self.graphicsViewDict.keys() if index.column()==2 else []
+        return self.graphicsViewDict.keys() if index.column()==self.column.window else []
 
     def setValue(self, index, value):
         self.setData(index, value, QtCore.Qt.EditRole)

@@ -69,8 +69,8 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.setModel(self.model)
         self.delegate = TraceComboDelegate(self.penicons)
         self.graphicsViewDelegate = ComboBoxDelegate()
-        self.traceView.setItemDelegateForColumn(1,self.delegate) #This is for selecting which pen to use in the plot
-        self.traceView.setItemDelegateForColumn(2,self.graphicsViewDelegate) #This is for selecting which plot to use
+        self.traceView.setItemDelegateForColumn(self.model.column.plot, self.delegate) #This is for selecting which pen to use in the plot
+        self.traceView.setItemDelegateForColumn(self.model.column.window, self.graphicsViewDelegate) #This is for selecting which plot to use
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
 
         self.clearButton.clicked.connect(partial(self.onButton, self.clear))
@@ -264,7 +264,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         
     def onViewClicked(self,index):
         """If one of the editable columns is clicked, begin to edit it."""
-        if (index.column() in [1,2,3]) and self.model.isDataNode(index):
+        if (index.column() in [self.model.column.plot, self.model.column.window, self.model.column.comment]) and self.model.isDataNode(index):
             self.traceView.edit(index)
 
     def onOpenFile(self):
