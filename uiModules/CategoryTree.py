@@ -165,7 +165,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
             self.addNode(content, name)
 
     def addNode(self, content, name=None):
-        """Add a node to the tree containing 'content' with name 'name'"""
+        """Add a node to the tree containing 'content' with name 'name'. Return new Node."""
         if not name:
             name = getattr(content, self.nodeNameAttr)
         name = str(name)
@@ -178,6 +178,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         node = Node(parent, id, nodeType, content)
         self.addRow(parent, node)
         self.nodeDict[id] = node
+        return node
 
     def removeNode(self, node):
         """Remove the specified node from the tree"""
