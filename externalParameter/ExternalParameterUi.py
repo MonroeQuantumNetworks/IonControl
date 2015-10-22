@@ -135,7 +135,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
             if expr is not None:
                 value = self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict)
                 self._setValue(inst, value)
-                inst.savedValue = inst   # set saved value to make this new value the default
+                inst.savedValue = value   # set saved value to make this new value the default
                 node = self.nodeFromContent(inst)
                 index = self.indexFromNode(node,1)
                 self.dataChanged.emit(index, index)

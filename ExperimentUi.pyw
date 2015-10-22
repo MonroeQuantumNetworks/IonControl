@@ -161,7 +161,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         #setup FPGAs
         self.setupFPGAs()
-        logger.info("Pulser Configuration {0}".format(self.pulser.getConfiguration()))
+        logger.info("Pulser Configuration {0:x}".format(self.pulser.hardwareConfigurationId()))
 
         # initialize PulseProgramUi
         pulserConfig = self.pulser.pulserConfiguration()
