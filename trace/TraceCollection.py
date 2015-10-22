@@ -225,6 +225,14 @@ class TraceCollection(object):
         self.description['yUnit'] = magnitude
 
     @property
+    def traceCreation(self):
+        return self.description['traceCreation']
+
+    @traceCreation.setter
+    def traceCreation(self, date):
+        self.description['traceCreation'] = date
+
+    @property
     def filenamePattern(self):
         """Get the pattern of the file name"""
         return self._filenamePattern
