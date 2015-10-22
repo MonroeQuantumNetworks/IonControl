@@ -16,6 +16,7 @@ from pyparsing import Literal,CaselessLiteral,Word,Combine,Optional,\
 
 import magnitude as magnitude
 from itertools import dropwhile
+from modules.magnitude import is_magnitude
 
 
 point = Literal( "." )
@@ -54,7 +55,7 @@ def myround( value ):
 
 def nounitgen( fun ):
     def retfun(x):
-        if(x.dimensionless()):
+        if ((not is_magnitude(x)) or x.dimensionless()):
             return fun(x)
         else:
             raise magnitude.MagnitudeError("Must be dimensionless!")
