@@ -120,6 +120,29 @@ def set_dds( symboltable, arg=list(), kwarg=dict()):
         commandlist.append( "  DDSAMP {0}, {1}".format(channel.name, freq.name))
     return commandlist
 
+def pulse( symboltable, arg=list(), kwarg=dict() ):
+    """
+    pulse( [shutter=shutter] [, counter=counter] [, trigger=trigger] [, duration=time] [, end_shutter=shuttervar] )
+    Generate a pulse with shutter, trigger, counter and duration time. Equivalent to
+    """
+    code = list()
+    if 'shutter' in kwarg:
+        code.extend( set_shutter( symboltable, [arg[0], kwarg['shutter']]) )
+    if 'trigger' in kwarg:
+        code.extend( set_trigger( symboltable, [arg[0], kwarg['trigger']]) )
+    if 'counter' in kwarg:
+        code.extend( set_counter( symboltable, [arg[0], kwarg['counter']]) )
+    if 'duration' in kwarg:
+        code.extend( update(symboltable, [arg[0], kwarg['duration']], {'pulse_mode': 'False' if 'end_shutter' in kwarg else 'True'}))
+    else:
+        code.extend( update(symboltable, arg[0:1]))
+    code.extend( clear_counter(symboltable, arg[0:1]))
+    if 'end_shutter' in kwarg:
+        code.extend( set_shutter(symboltable, [arg[0], kwarg['end_shutter']]))
+    elif 'shutter'in kwarg:
+        code.extend( set_inv_shutter(symboltable, [arg[0], kwarg['shutter']]))
+    return code
+
 def set_dac( symboltable, arg=list(), kwarg=dict()):
     """
     set_dac( const_channel, parameter )
