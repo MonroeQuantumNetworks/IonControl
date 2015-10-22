@@ -13,6 +13,6 @@ def join( s, iterable ):
     """join ignoring None values"""
     return s.join( (i for i in iterable if i is not None and str(i) != ''))
 
-def indexWithDefault(self, itemList, item):
+def indexWithDefault(itemList, item):
     """Return the index of item in itemList if it's present, otherwise -1"""
     return itemList.index(item) if item in itemList else -1
