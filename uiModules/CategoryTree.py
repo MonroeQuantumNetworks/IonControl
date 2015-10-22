@@ -211,6 +211,11 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         self.endInsertRows()
 
     def nodeFromContent(self, content):
+        """Get the node associated with the specified content.
+
+        This is an inefficient O(n) search. However, there is no other way to do this reverse lookup without
+        making assumptions about the nature of 'content'. Child classes can re-implement this function to
+        make it more efficient."""
         success=False
         for node in self.nodeDict.itervalues():
             if node.content==content:
@@ -219,14 +224,11 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         return node if success else None
 
     def nodeFromId(self, id):
-        success=False
-        for node in self.nodeDict.itervalues():
-            if node.id==id:
-                success=True
-                break
-        return node if success else None
+        """return the node associated with the specified node id"""
+        return self.nodeDict.get(id)
 
     def clear(self):
+        """clear the tree content"""
         self.root.children = []
         self.nodeDict = {'': self.root}
 
