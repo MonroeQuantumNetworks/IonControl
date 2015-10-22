@@ -45,6 +45,14 @@ class Settings:
         self.__dict__.setdefault('expandNew', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
+    """
+    Class for the trace interface.
+    Attributes:
+        penicons (list[QtGui.QIcon]): icons to display available trace pens
+        config (configshelve): configuration dictionary
+        experimentName (str): name of experiment with which this Traceui is associated
+        graphicsViewDict (dict): dict of available plot windows
+    """
     def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None):
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
