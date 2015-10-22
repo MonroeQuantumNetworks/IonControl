@@ -191,7 +191,7 @@ class TraceModel(CategoryTreeModel):
 
     def addTrace(self, trace):
         """add a trace to the model"""
-        self.addNode(trace, trace.name)
+        self.addNode(trace)
         self.traceList.append(trace)
 
     def removeNode(self, node):

@@ -164,8 +164,10 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
             name = getattr(content, self.nodeNameAttr, str(listIndex))
             self.addNode(content, name)
 
-    def addNode(self, content, name):
+    def addNode(self, content, name=None):
         """Add a node to the tree containing 'content' with name 'name'"""
+        if not name:
+            name = getattr(content, self.nodeNameAttr)
         name = str(name)
         categories = getattr(content, self.categoriesAttr, None)
         categories = [categories] if categories.__class__==str else categories # make a list of one if it's a string
