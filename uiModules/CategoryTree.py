@@ -259,7 +259,8 @@ class CategoryTreeView(QtGui.QTreeView):
         if key==QtCore.Qt.Key_Delete:
             self.onDelete()
         elif key in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
-            self.onReorder(key==QtCore.Qt.Key_PageUp)
+            up = key==QtCore.Qt.Key_PageUp
+            self.onReorder(up)
 
     def onControl(self, key):
         if key==QtCore.Qt.Key_B:
@@ -285,7 +286,13 @@ class CategoryTreeView(QtGui.QTreeView):
 
     def onReorder(self, up):
         if self.model().allowReordering:
-            indexList = self.selectionModel().selectedRows(0)
+            allIndexList = self.selectedIndexes()
+            rows = set()
+            indexList = []
+            for index in allIndexList:
+                if index.row() not in rows:
+                    indexList.append(index)
+                    rows.add(index.row())
             indexList.sort(key=lambda index: index.row())
             if not up: indexList.reverse()
             for index in indexList:
