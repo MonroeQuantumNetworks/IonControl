@@ -314,7 +314,8 @@ class CategoryTreeView(QtGui.QTreeView):
             self.model().beginResetModel()
             for id, childList in idTree.iteritems():
                 node=self.model().nodeFromId(id)
-                node.children.sort(key=lambda node: indexWithDefault(childList, node.id))
+                if node:
+                    node.children.sort(key=lambda node: indexWithDefault(childList, node.id))
             self.model().endResetModel()
         if columnWidths:
             self.header().restoreState(columnWidths)
