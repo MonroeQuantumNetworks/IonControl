@@ -130,8 +130,9 @@ class StepInPlaceGenerator:
         return []
 
     def appendData(self, traceList, x, evaluated, timeinterval):
+        steps = len(self.scan.list)
         if evaluated and traceList:
-            if len(traceList[0].x)<self.scan.steps or self.scan.steps==0:
+            if len(traceList[0].x)<steps or steps==0:
                 traceList[0].x = numpy.append(traceList[0].x, x)
                 traceList[0].timeintervalAppend(timeinterval)
                 for trace, (y, error, raw) in zip(traceList, evaluated):                                  
@@ -141,10 +142,9 @@ class StepInPlaceGenerator:
                         trace.bottom = numpy.append(trace.bottom, error[0])
                         trace.top = numpy.append(trace.top, error[1])
             else:
-                steps = int(self.scan.steps)
+                steps = int(steps)
                 traceList[0].x = numpy.append(traceList[0].x[-steps+1:], x)
-                traceList[0].timeinterval = ( numpy.append( (traceList[0].timeinteval)[0][-steps+1:], timeinterval[0]),
-                                              numpy.append( (traceList[0].timeinteval)[1][-steps+1:], timeinterval[1]) )
+                traceList[0].timeintervalAppend(timeinterval, steps)
                 for trace, (y, error, raw) in zip(traceList, evaluated):                                  
                     trace.y = numpy.append(trace.y[-steps+1:], y)
                     trace.raw = numpy.append(trace.raw[-steps+1:], raw)

@@ -156,9 +156,13 @@ class Trace(object):
         self.addColumn('timeTickFirst')
         self.addColumn('timeTickLast')
     
-    def timeintervalAppend(self, timeinterval):
-        self.timeTickFirst = numpy.append(self.timeTickFirst, timeinterval[0])
-        self.timeTickLast = numpy.append(self.timeTickLast, timeinterval[1])
+    def timeintervalAppend(self, timeinterval, maxPoints=0):
+        if maxPoints>0 and len(self.timeTickFirst)>maxPoints:
+            self.timeTickFirst = numpy.append(self.timeTickFirst[-maxPoints+1:0], timeinterval[0])
+            self.timeTickLast = numpy.append(self.timeTickLast[-maxPoints+1:0], timeinterval[1])
+        else:
+            self.timeTickFirst = numpy.append(self.timeTickFirst, timeinterval[0])
+            self.timeTickLast = numpy.append(self.timeTickLast, timeinterval[1])
     
     @property
     def timeinterval(self):

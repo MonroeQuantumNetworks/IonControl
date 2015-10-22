@@ -119,8 +119,8 @@ class PlottedTrace(object):
     def hasRawColumn(self):
         return self._rawColumn and hasattr(self.trace, self._rawColumn)
         
-    def timeintervalAppend(self, timeinterval):
-        self.trace.timeintervalAppend(timeinterval)
+    def timeintervalAppend(self, timeinterval, maxPoints=0):
+        self.trace.timeintervalAppend(timeinterval, maxPoints)
         
     @property
     def timeinterval(self):
