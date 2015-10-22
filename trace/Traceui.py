@@ -264,7 +264,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         
     def onViewClicked(self,index):
         """If one of the editable columns is clicked, begin to edit it."""
-        if (index.column() in [self.model.column.plot, self.model.column.window, self.model.column.comment]) and self.model.isDataNode(index):
+        if self.model.isDataNode(index):
+            if index.column() in [self.model.column.plot, self.model.column.window, self.model.column.comment]:
+                self.traceView.edit(index)
+        elif index.column()==self.model.column.comment:
             self.traceView.edit(index)
 
     def onOpenFile(self):

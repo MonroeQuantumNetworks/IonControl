@@ -75,7 +75,8 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.comment): self.columnNames[self.column.comment].capitalize(),
             })
         self.categoryDataLookup.update({
-            (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node)
+            (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node),
+            (QtCore.Qt.DisplayRole, self.column.comment): lambda node: node.children[0].content.traceCollection.comment if node.children else None
         })
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,self.column.name): lambda node: node.content.name,
@@ -95,7 +96,8 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,self.column.comment): lambda index, value: self.modelChange(index, value, 'comment')
             })
         self.categorySetDataLookup.update({
-            (QtCore.Qt.CheckStateRole,self.column.name): lambda index, value: self.setCategoryCheckbox(index, value)
+            (QtCore.Qt.CheckStateRole,self.column.name): lambda index, value: self.setCategoryCheckbox(index, value),
+            (QtCore.Qt.EditRole,self.column.comment): lambda index, value: self.setCategoryComment(index, value)
         })
         self.flagsLookup = {
             self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
@@ -104,7 +106,8 @@ class TraceModel(CategoryTreeModel):
             self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
             }
         self.categoryFlagsLookup = {
-            self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+            self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
+            self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
             }
 
     def isCategoryChecked(self, categoryNode):
@@ -134,6 +137,10 @@ class TraceModel(CategoryTreeModel):
             leftInd = self.createIndex(node.row, 0, node)
             rightInd = self.createIndex(node.row, self.numColumns-1, node)
             self.dataChanged.emit(leftInd, rightInd)
+            if (changeType=='checkbox') or (changeType=='window'):
+                self.traceDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
+            elif changeType=='comment':
+                self.traceDataChanged.emit( str(trace.traceCollection.traceCreation), 'comment', str(value) if api2 else str( value.toString() ) )
         return success
 
     def checkboxChange(self, trace, value):
@@ -158,9 +165,17 @@ class TraceModel(CategoryTreeModel):
     def commentChange(self, trace, value):
         """resave the trace with the new comment"""
         comment = value if api2 else str(value.toString())
-        if not comment == trace.traceCollection.comment:
-            trace.traceCollection.comment = comment
-            trace.traceCollection.save()
+        traceCollection = trace.traceCollection
+        if not comment == traceCollection.comment:
+            traceCollection.comment = comment
+            alreadySaved = traceCollection.saved
+            traceCollection.save()
+            if not alreadySaved:
+                node = self.nodeFromContent(trace)
+                self.onSaveUnsavedTrace(node)
+                self.traceDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
+                parentIndex = self.indexFromNode(node.parent)
+                self.modelChange(parentIndex)
             return True
         else:
             return False
@@ -192,10 +207,30 @@ class TraceModel(CategoryTreeModel):
         else:
             return False
 
+    def setCategoryComment(self, index, value):
+        """Set the comment from the category level"""
+        node = self.nodeFromIndex(index)
+        if node.children:
+            for childNode in node.children:
+                trace=childNode.content
+                success=self.commentChange(trace, value)
+                if success:
+                    leftInd = self.createIndex(childNode.row, 0, childNode)
+                    rightInd = self.createIndex(childNode.row, self.numColumns-1, childNode)
+                    self.dataChanged.emit(leftInd, rightInd)
+            leftInd = self.createIndex(node.row, 0, node)
+            rightInd = self.createIndex(node.row, self.numColumns-1, node)
+            self.dataChanged.emit(leftInd, rightInd)
+            return True
+        else:
+            return False
+
+
     def addTrace(self, trace):
         """add a trace to the model"""
-        self.addNode(trace)
+        node = self.addNode(trace)
         self.traceList.append(trace)
+        trace.id = node.id #Add an id to the trace that matches the node id
 
     def removeNode(self, node):
         """unplots the trace before removing from model"""
