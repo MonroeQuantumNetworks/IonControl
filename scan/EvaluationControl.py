@@ -171,6 +171,7 @@ class EvaluationControl(ControlForm, ControlBase ):
         self.config = config
         self.configname = 'EvaluationControl.'+parentname
         self.globalDict = globalVariablesUi.variables
+        self.ppDict = None
         # History and Dictionary
         try:
             self.settingsDict = self.config.get(self.configname+'.dict',dict())

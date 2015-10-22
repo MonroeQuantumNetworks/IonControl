@@ -12,25 +12,37 @@ from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
 from modules.Observable import Observable
-from _collections import defaultdict
 from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
 from modules.XmlUtilit import xmlEncodeDictionary, xmlParseDictionary, prettify
 import xml.etree.ElementTree as ElementTree
 from modules import DataDirectory
+from externalParameter.persistence import DBPersist
+from externalParameter.decimation import StaticDecimation
+from modules import magnitude
+from modules.magnitude import is_magnitude
+from collections import defaultdict
+from functools import partial
+import time
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class GlobalVariables(SequenceDict):
+    persistSpace = 'globalVar'
     def __init__(self, *args, **kwds):
-        SequenceDict.__init__(self, *args, **kwds)
         self.customOrder = list()
         self.observables = defaultdict( Observable )
+        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(10, 's')))
+        self.persistence = DBPersist()
+        SequenceDict.__init__(self, *args, **kwds)
+        pass
             
     def __reduce__(self):
         data = SequenceDict.__reduce__(self)
         data[2].pop('observables')
+        data[2].pop('decimation')
+        data[2].pop('persistence')
         return data
     
     def exportXml(self, element):
@@ -39,6 +51,25 @@ class GlobalVariables(SequenceDict):
     @staticmethod
     def fromXmlElement( element ):
         return GlobalVariables( xmlParseDictionary(element, "Variable") )
+    
+    def __setitem__(self, key, value):
+        super(GlobalVariables, self).__setitem__(key, value)
+        self.observables[key].fire(name=key, value=value)
+        self.persistCallback(key, (time.time(), value, None, None))
+        
+    def setItem(self, key, value):
+        """set the item, but only commit to database after wait time"""
+        super(GlobalVariables, self).__setitem__(key, value)
+        self.observables[key].fire(name=key, value=value)
+        self.decimation[key].decimate(time.time(), value, partial(self.persistCallback, key))
+
+    def persistCallback(self, source, data):
+        time, value, minval, maxval = data
+        unit = None
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
+
 
 class GlobalVariableUi(Form, Base ):
     def __init__(self,config,parent=None):
