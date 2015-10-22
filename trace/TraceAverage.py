@@ -7,10 +7,10 @@ Created on Tue Feb 26 21:57:31 2013
 
 import numpy
 
-import Trace
+import TraceCollection
 
 
-class TraceAverage(Trace):
+class TraceAverage(TraceCollection):
     def __init__(self):
         self.traceList = list()
         self.x = None
@@ -34,10 +34,10 @@ class TraceAverage(Trace):
         
         
 if __name__=="__main__":
-    t1 = Trace.Trace()
+    t1 = TraceCollection.TraceCollection()
     t1.x = [1,2,3,4,5]
     t1.y = [4,5,6,7,8]
-    t2 = Trace.Trace()
+    t2 = TraceCollection.TraceCollection()
     t2.x = t1.x
     t2.y = [5,6,7,8,9]
     

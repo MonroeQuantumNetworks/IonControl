@@ -17,7 +17,7 @@ from dedicatedCounters import DedicatedCountersSettings
 from dedicatedCounters import DedicatedDisplay
 from dedicatedCounters import InputCalibrationUi
 from modules import enum
-from trace.Trace import Trace, TracePlotting
+from trace.TraceCollection import TraceCollection, TracePlotting
 from modules.DataDirectory import DataDirectory
 from trace.pens import penList
 from dedicatedCounters.StatusDisplay import StatusDisplay
@@ -184,7 +184,7 @@ class DedicatedCounters(DedicatedCountersForm,DedicatedCountersBase ):
         logger = logging.getLogger(__name__)
         for counter in range(8):
             if len(self.xData[counter])>0 and len(self.yData[counter])>0:
-                trace = Trace()
+                trace = TraceCollection()
                 trace.x = self.xData[counter]
                 trace.y = self.yData[counter]
                 trace.description["counter"] = counter

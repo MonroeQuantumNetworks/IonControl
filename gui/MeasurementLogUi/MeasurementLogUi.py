@@ -22,7 +22,7 @@ import weakref
 import logging
 import pytz
 import numpy
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace.PlottedTrace import PlottedTrace
 from modules import WeakMethod
 from modules.GuiAppearance import saveGuiState, restoreGuiState    
@@ -304,7 +304,7 @@ class MeasurementLogUi(Form, Base ):
                 epoch = datetime(1970, 1, 1) - timedelta(seconds=self.utcOffset) if xData[0].tzinfo is None else datetime(1970, 1, 1).replace(tzinfo=pytz.utc)
                 time = numpy.array([(value - epoch).total_seconds() for value in xData])
                 if plottedTrace is None:  # make a new plotted trace
-                    trace = Trace(record_timestamps=False)
+                    trace = TraceCollection(record_timestamps=False)
                     trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
                     _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
                     trace.y = numpy.array( [ d.toval(yUnit) for d in yData ] )
@@ -329,7 +329,7 @@ class MeasurementLogUi(Form, Base ):
                     plottedTrace.replot()     
             else:
                 if plottedTrace is None:  # make a new plotted trace
-                    trace = Trace(record_timestamps=False)
+                    trace = TraceCollection(record_timestamps=False)
                     trace.name = "{0} versus {1}".format( yDataDef[2], xDataDef[2 ])
                     _, yUnit = self.settings.yUnit if self.settings.yUnit else yData[0].toval( returnUnit=True )
                     _, xUnit = self.settings.xUnit if self.settings.xUnit else xData[0].toval( returnUnit=True )

@@ -99,7 +99,7 @@ varFactory = { 'str': str,
                'int': int }
     
 
-class Trace(object):
+class TraceCollection(object):
     """ Class to encapsulate one trace.
 
     This class contains the trace data, and takes care of saving and loading traces from file
@@ -422,7 +422,7 @@ class Trace(object):
 if __name__=="__main__":
     import sys
     import gc
-    t = Trace()
+    t = TraceCollection()
     print sys.getrefcount(t)
     del t
     gc.collect()

@@ -10,7 +10,7 @@ import logging
 from scipy.optimize import leastsq
 from modules import magnitude
 from math import sqrt
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 import xml.etree.ElementTree as ElementTree
 from itertools import izip_longest
 from copy import deepcopy
@@ -68,7 +68,7 @@ class FitHistogramEvaluation(EvaluationBase):
         for name in ['ZeroBright','OneBright', 'TwoBright']:
             filename = path.join(self.settings['Path'],self.settings[name])
             if filename and path.exists(filename):
-                t = Trace()
+                t = TraceCollection()
                 t.loadTrace(filename)
                 yColumnName = t.tracePlottingList[0].yColumn
                 setattr(self.fitFunction, name, self.normalizeHistogram( getattr(t, yColumnName )) )

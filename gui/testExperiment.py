@@ -19,7 +19,7 @@ from scan.ScanControl import ScanControl
 from fit.FitUi import FitUi
 from modules import DataDirectory
 from trace.PlottedTrace import PlottedTrace
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace.Traceui import Traceui
 
 import os
@@ -102,7 +102,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
 
 #start added
     def createAverageScan(self):
-        self.averagePlottedTrace = PlottedTrace(Trace(), self._graphicsView, pens.penList)
+        self.averagePlottedTrace = PlottedTrace(TraceCollection(), self._graphicsView, pens.penList)
         self.averagePlottedTrace.trace.name = "test average trace"
         self.averagePlottedTrace.trace.description["comment"] = "average trace comment"
         self.averagePlottedTrace.trace.filenameCallback = functools.partial(self.traceFilename, '')
@@ -112,7 +112,7 @@ class test(testForm, MainWindowWidget.MainWindowWidget):
     def startScan(self):
         if self.plottedTrace is not None and self.traceui.unplotLastTrace():
             self.plottedTrace.plot(0)
-        self.plottedTrace = PlottedTrace(Trace(),self._graphicsView,pens.penList)
+        self.plottedTrace = PlottedTrace(TraceCollection(),self._graphicsView,pens.penList)
         self.xvalue = 0
         self.phase = 0 #random.uniform(0,2*numpy.pi)
         self.plottedTrace.trace.x = numpy.array([self.xvalue])

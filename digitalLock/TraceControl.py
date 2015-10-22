@@ -5,7 +5,7 @@ from digitalLock.controller.ControllerClient import voltageToBin, binToVoltageV,
 from modules.magnitude import mg
 from modules.enum import enum
 import numpy
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace.PlottedTrace import PlottedTrace
 from modules.PyqtUtility import updateComboBoxItems
 import functools
@@ -101,7 +101,7 @@ class TraceControl(Form, Base):
         if data.errorSig and data.frequency:
             errorSig = map( binToVoltageV, data.errorSig )
             if self.trace is None:
-                self.trace = Trace()
+                self.trace = TraceCollection()
                 self.trace.name = "Scope"
                 self.trace.addColumn('freq')                
             self.trace.x = numpy.arange(len(errorSig))*(sampleTime.toval('us')*(1+self.traceSettings.subsample.toval()))

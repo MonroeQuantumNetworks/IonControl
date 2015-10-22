@@ -13,7 +13,7 @@ from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
 
 from modules import enum
-from trace.Trace import TracePlotting
+from trace.TraceCollection import TracePlotting
 import time 
 from modules import WeakMethod
 from functools import partial
@@ -98,6 +98,15 @@ class PlottedTrace(object):
             self._graphicsView = graphicsView
             self.windowName = name
             self.plot()
+
+    @property
+    def traceCollection(self):
+        """This is to make the code more readable while maintaining backwards compatibility. self.traceCollection is the same thing as self.trace."""
+        return self.trace
+
+    @traceCollection.setter
+    def traceCollection(self, t):
+        self.trace = t
 
     @property
     def hasTopColumn(self):
@@ -359,10 +368,10 @@ class PlottedTrace(object):
 #         super(PlottedTrace, self)__del__()
 
 if __name__=="__main__":
-    from trace.Trace import Trace
+    from trace.TraceCollection import TraceCollection
     import gc
     import sys
-    plottedTrace = PlottedTrace(Trace(),None,pens.penList)
+    plottedTrace = PlottedTrace(TraceCollection(),None,pens.penList)
     print sys.getrefcount(plottedTrace)
     plottedTrace = None
     del plottedTrace

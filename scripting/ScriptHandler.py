@@ -13,7 +13,7 @@ from datetime import datetime
 from modules import magnitude
 from Script import ScriptException
 from trace.PlottedTrace import PlottedTrace
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace import pens
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 import functools
@@ -244,7 +244,7 @@ class ScriptHandler:
             message = "plot {0} does not exist".format(plotName)
             error = True
         else:
-            trace = Trace()
+            trace = TraceCollection()
             yColumnName = 'y0'
             trace.addColumn( yColumnName )
             plottedTrace = PlottedTrace(trace, self.scanExperiment.plotDict[plotName]["view"], pens.penList, xColumn = 'x',

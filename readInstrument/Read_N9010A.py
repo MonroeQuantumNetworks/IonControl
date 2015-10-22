@@ -5,7 +5,7 @@ Created on Fri Dec 14 15:37:21 2012
 @author: plmaunz
 """
 
-from trace import Trace
+from trace import TraceCollection
 
 import numpy
 import visa #@UnresolvedImport
@@ -19,7 +19,7 @@ class N9010A(ReadGeneric.ReadGeneric):
         self.GPIB = self.rm.open_resource( address)
         
     def readTrace(self):
-        self.t = Trace.Trace()
+        self.t = TraceCollection.TraceCollection()
         self.t.description["Instrument"] = self.GPIB.query("*IDN?")
         self.t.description["Center"] = float(self.GPIB.query(":FREQuency:CENTer?"))
         self.t.description["Start"] = float(self.GPIB.query(":FREQuency:STARt?") )

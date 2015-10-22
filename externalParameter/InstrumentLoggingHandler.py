@@ -4,7 +4,7 @@ Created on Jun 21, 2014
 @author: pmaunz
 '''
 import numpy
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace.PlottedTrace import PlottedTrace
 from trace import pens
 from collections import defaultdict
@@ -127,7 +127,7 @@ class DataHandling(object):
                 maxval = maxval.toval(unit)
         if type(value) is not str: #ignore erroneous values like 'oor'
             if self.trace is None:
-                self.trace = Trace(record_timestamps=True)
+                self.trace = TraceCollection(record_timestamps=True)
                 self.trace.name = source
                 self.trace.x = numpy.array( [takentime] )
                 self.trace.y = numpy.array( [value] )

@@ -10,7 +10,7 @@ from functools import partial
 from persist.ValueHistory import ValueHistoryStore
 from modules.PyqtUtility import updateComboBoxItems
 from datetime import datetime
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from trace.PlottedTrace import PlottedTrace
 import numpy
 from collections import defaultdict
@@ -160,7 +160,7 @@ class InstrumentLoggerQueryUi(Form,Base):
             bottom = [e.value - e.bottom if e.bottom is not None else e.value for e in result]
             top = [e.top -e.value if e.top is not None else e.value for e in result]
             if plottedTrace is None:  # make a new plotted trace
-                trace = Trace(record_timestamps=False)
+                trace = TraceCollection(record_timestamps=False)
                 trace.name = parameter + " Query"
                 trace.y = numpy.array( value )
                 if plotName is None:

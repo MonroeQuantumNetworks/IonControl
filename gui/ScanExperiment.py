@@ -41,7 +41,7 @@ from modules import enum
 from modules import stringutilit
 from modules import magnitude
 from trace.PlottedTrace import PlottedTrace
-from trace.Trace import Trace
+from trace.TraceCollection import TraceCollection
 from uiModules.CoordinatePlotWidget import CoordinatePlotWidget
 from modules import WeakMethod
 from modules.SceneToPrint import SceneToPrint
@@ -471,8 +471,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         
     def updateMainGraph(self, x, evaluated, timeinterval, timeTickOffset, queuesize): # evaluated is list of mean, error, raw
         if not self.plottedTraceList:
-            trace = Trace(record_timestamps=True)
-            trace.recordTimeinterval(timeTickOffset)
+            traceCollection = TraceCollection(record_timestamps=True)
+            traceCollection.recordTimeinterval(timeTickOffset)
             self.plottedTraceList = list()
             for index, result in enumerate(evaluated):
                 if result is not None:  # result is None if there were no counter results
@@ -480,20 +480,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     showerror = error is not None
                     yColumnName = 'y{0}'.format(index) 
                     rawColumnName = 'raw{0}'.format(index)
-                    trace.addColumn( yColumnName )
-                    trace.addColumn( rawColumnName )
+                    traceCollection.addColumn( yColumnName )
+                    traceCollection.addColumn( rawColumnName )
                     if showerror:
                         topColumnName = 'top{0}'.format(index)
                         bottomColumnName = 'bottom{0}'.format(index)
-                        trace.addColumn( topColumnName )
-                        trace.addColumn( bottomColumnName )                                    
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None, 
+                        traceCollection.addColumn( topColumnName )
+                        traceCollection.addColumn( bottomColumnName )
+                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
                                                     pens.penList, xColumn=self.evaluation.evalList[index].abszisse.columnName,
                                                     yColumn=yColumnName, topColumn=topColumnName, bottomColumn=bottomColumnName, 
                                                     rawColumn=rawColumnName, name=self.evaluation.evalList[index].name, xAxisUnit = self.scan.xUnit,
                                                     xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname) 
                     else:                
-                        plottedTrace = PlottedTrace(trace, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
+                        plottedTrace = PlottedTrace(traceCollection, self.plotDict[self.evaluation.evalList[index].plotname]["view"] if self.evaluation.evalList[index].plotname != 'None' else None,
                                                     pens.penList, xColumn=self.evaluation.evalList[index].abszisse.columnName, yColumn=yColumnName, rawColumn=rawColumnName, name=self.evaluation.evalList[index].name,
                                                     xAxisUnit = self.scan.xUnit, xAxisLabel = self.scan.scanParameter, windowName=self.evaluation.evalList[index].plotname)               
                     xRange = self.generator.xRange() if isinstance(self.scan.start, magnitude.Magnitude) and magnitude.mg(self.scan.xUnit).dimension()==self.scan.start.dimension() else None
@@ -570,7 +570,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
             if self.currentTimestampTrace.rawdata:
                 self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
         else:    
-            self.currentTimestampTrace = Trace()
+            self.currentTimestampTrace = TraceCollection()
             if self.evaluation.saveRawData:
                 self.currentTimestampTrace.rawdata = RawData()
                 self.currentTimestampTrace.rawdata.addInt(data.timestamp[self.evaluation.timestampsChannel])
@@ -602,7 +602,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         numberTraces = index
         del self.histogramList[numberTraces:]   # remove elements that are not needed any more
         if not self.histogramTrace:
-            self.histogramTrace = Trace()            
+            self.histogramTrace = TraceCollection()
         for index, histogram in enumerate(self.histogramList):
             if index<len(self.histogramCurveList):
                 self.histogramCurveList[index].x = histogram[1]
@@ -628,7 +628,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
     def onCopyHistogram(self):
         for plottedtrace in self.histogramCurveList:
             self.traceui.addTrace(plottedtrace,pen=-1)   
-        self.histogramTrace = Trace()    
+        self.histogramTrace = TraceCollection()
         self.histogramCurveList = []        
              
     

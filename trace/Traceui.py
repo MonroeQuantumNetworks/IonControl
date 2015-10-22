@@ -6,7 +6,7 @@ Created on Fri Dec 28 18:40:30 2012
 """
 import logging
 import os.path
-from trace import Trace
+from trace import TraceCollection
 from trace import pens
 
 from PyQt4 import QtGui, QtCore
@@ -266,7 +266,7 @@ class Traceui(TraceuiForm, TraceuiBase):
             self.openFile(fname)
 
     def openFile(self, fname):
-        trace = Trace.Trace()
+        trace = TraceCollection.TraceCollection()
         trace.filename = str(fname)
         self.settings.lastDir, trace.name = os.path.split(str(fname))
         trace.loadTrace(str(fname))
