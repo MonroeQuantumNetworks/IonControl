@@ -60,6 +60,7 @@ class TraceModel(CategoryTreeModel):
     """
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
         super(TraceModel, self).__init__(traceList, parent, categoriesAttr='category')
+        self.traceList = traceList
         self.penicons = penicons
         self.graphicsViewDict = graphicsViewDict
         self.numColumns = 4
@@ -81,8 +82,8 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,1): lambda node: node.content.curvePen,
             (QtCore.Qt.DisplayRole,2): lambda node: node.content.windowName,
             (QtCore.Qt.EditRole,2): lambda node: node.content.windowName,
-            (QtCore.Qt.DisplayRole,3): lambda node: node.content.trace.comment,
-            (QtCore.Qt.EditRole,3): lambda node: node.content.trace.comment
+            (QtCore.Qt.DisplayRole,3): lambda node: node.content.traceCollection.comment,
+            (QtCore.Qt.EditRole,3): lambda node: node.content.traceCollection.comment
             })
         self.setDataLookup.update({
             (QtCore.Qt.CheckStateRole,0): lambda index, value: self.modelChange(index, value, 'checkbox'),
@@ -137,7 +138,7 @@ class TraceModel(CategoryTreeModel):
         if (value == QtCore.Qt.Unchecked) and (trace.curvePen > 0):
             trace.plot(0) #unplot if unchecked
             return True
-        elif len(trace.trace.x) != 0: #Make sure the x array isn't empty before trying to plot
+        elif len(trace.traceCollection.x) != 0: #Make sure the x array isn't empty before trying to plot
             trace.plot(-1)
             return True
         else:
@@ -145,7 +146,7 @@ class TraceModel(CategoryTreeModel):
 
     def penChange(self, trace, value):
         """plot using the pen specified by value"""
-        if len(trace.trace.x) != 0:
+        if len(trace.traceCollection.x) != 0:
             trace.plot(value)
             return True
         else:
@@ -154,9 +155,9 @@ class TraceModel(CategoryTreeModel):
     def commentChange(self, trace, value):
         """resave the trace with the new comment"""
         comment = value if api2 else str(value.toString())
-        if not comment == trace.trace.comment:
-            trace.trace.comment = comment
-            trace.trace.save()
+        if not comment == trace.traceCollection.comment:
+            trace.traceCollection.comment = comment
+            trace.traceCollection.save()
             return True
         else:
             return False
@@ -191,6 +192,7 @@ class TraceModel(CategoryTreeModel):
     def addTrace(self, trace):
         """add a trace to the model"""
         self.addNode(trace, trace.name)
+        self.traceList.append(trace)
 
     def removeNode(self, node):
         """unplots the trace before removing from model"""
@@ -198,6 +200,7 @@ class TraceModel(CategoryTreeModel):
             trace = node.content
             if trace.curvePen!=0:
                 trace.plot(0)
+            self.traceList.remove(trace)
             super(TraceModel,self).removeNode(node)
         elif node.nodeType == nodeTypes.category:
             for _ in range(node.childCount()):
@@ -205,6 +208,7 @@ class TraceModel(CategoryTreeModel):
                 trace = childNode.content
                 if trace.curvePen!=0:
                     trace.plot(0)
+                self.traceList.remove(trace)
                 super(TraceModel,self).removeNode(childNode)
             super(TraceModel,self).removeNode(node)
 
@@ -212,7 +216,7 @@ class TraceModel(CategoryTreeModel):
         """rename the category associated with trace"""
         categoryNode = node.parent
         self.nodeDict.pop(categoryNode.id)
-        newName = node.content.trace.fileleaf
+        newName = node.content.traceCollection.fileleaf
         categoryNode.content = newName
         categoryNode.id = newName
         self.nodeDict[newName] = categoryNode

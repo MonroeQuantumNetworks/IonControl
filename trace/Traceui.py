@@ -131,17 +131,17 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Get selected data nodes which have unique filenames"""
         selectedIndexes = self.selectedRows()
         nodesWithUniqueFilenames = []
-        uniqueTraces = []
+        uniqueTraceCollections = []
         if selectedIndexes:
             for index in selectedIndexes:
                 node = self.model.nodeFromIndex(index)
                 if node.nodeType == nodeTypes.data:
-                    if node.content.trace not in uniqueTraces:
-                        uniqueTraces.append(node.content.trace)
+                    if node.content.traceCollection not in uniqueTraceCollections:
+                        uniqueTraceCollections.append(node.content.traceCollection)
                         nodesWithUniqueFilenames.append(node)
                 elif node.nodeType == nodeTypes.category:
-                    if node.children and node.children[0].content.trace not in uniqueTraces:
-                        uniqueTraces.append(node.children[0].content.trace)
+                    if node.children and node.children[0].content.traceCollection not in uniqueTraceCollections:
+                        uniqueTraceCollections.append(node.children[0].content.traceCollection)
                         nodesWithUniqueFilenames.append(node.children[0])
         return nodesWithUniqueFilenames
 
@@ -149,8 +149,8 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Save button is clicked. Save selected traces. If a trace has never been saved before, update model."""
         nodeList = self.selectedUniqueFilenames()
         for node in nodeList:
-            alreadySaved = node.content.trace.saved
-            node.content.trace.save()
+            alreadySaved = node.content.traceCollection.saved
+            node.content.traceCollection.save()
             if not alreadySaved:
                 self.model.onSaveUnsavedTrace(node)
                 parentIndex = self.model.indexFromNode(node.parent)
@@ -180,10 +180,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Display trace description when a trace is clicked"""
         node = self.model.nodeFromIndex(index)
         if node.nodeType==nodeTypes.data:
-            self.descriptionModel.setDescription(node.content.trace.description)
+            self.descriptionModel.setDescription(node.content.traceCollection.description)
         elif node.nodeType==nodeTypes.category:
             if node.children:
-                self.descriptionModel.setDescription(node.children[0].content.trace.description)
+                self.descriptionModel.setDescription(node.children[0].content.traceCollection.description)
 
     def onUnplotSetting(self, checked):
         self.settings.unplotLastTrace = checked

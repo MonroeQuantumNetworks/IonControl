@@ -100,22 +100,27 @@ varFactory = { 'str': str,
     
 
 class TraceCollection(object):
-    """ Class to encapsulate one trace.
+    """ Class to encapsulate a collection of traces with a common array of x values (or a single trace).
 
-    This class contains the trace data, and takes care of saving and loading traces from file
+    This class contains the data for all the traces, and takes care of saving and loading the traces from file
 
     Attributes:
         x (list[float]): array of x values
-        y (list[float]): array of y values
-        name (str): name to display in table of traces
+        y (list[float]): array of y values for single trace
+        y<n> (list[float]): generated array of y values for collection of traces, where n=0,1,2,...
+        name (str): name associated with trace collection
         description (dict): description data
         description["comment"] (str): comment to add to file
-        description["traceCreation"] (str): the time the Trace object was created
+        description["traceCreation"] (str): the time the collection was created
         header (str): header for saved file
-        curvePen (): pen style to use for displaying the trace
         filenamePattern (str): filename pattern to use when saving the trace
+        autosave (bool): if True, trace collection will be saved as soon as filenamePattern is set
+        saved (bool): True if trace collection has been saved
+        filename (str): full path to file
+        fileleaf (str): name only
+        filepath (str): path only
+        columnNames (list[str]): all column names in the saved file
     """
-
     def __init__(self, record_timestamps=False):
         """Construct a trace object."""
         self._x_ = numpy.array([]) #array of x values

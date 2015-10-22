@@ -502,14 +502,14 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                     else:
                         self.plotDict["Scan Data"]["view"].enableAutoRange(axis=ViewBox.XAxis)     
                     self.plottedTraceList.append( plottedTrace )
-            self.plottedTraceList[0].trace.name = self.scan.settingsName
-            self.plottedTraceList[0].trace.description["comment"] = ""
-            self.plottedTraceList[0].trace.description["PulseProgram"] = self.pulseProgramUi.description() 
-            self.plottedTraceList[0].trace.description["Scan"] = self.scan.description()
-            self.plottedTraceList[0].trace.autoSave = self.scan.autoSave
-            self.plottedTraceList[0].trace.filenamePattern = self.scan.filename
+            self.plottedTraceList[0].traceCollection.name = self.scan.settingsName
+            self.plottedTraceList[0].traceCollection.description["comment"] = ""
+            self.plottedTraceList[0].traceCollection.description["PulseProgram"] = self.pulseProgramUi.description()
+            self.plottedTraceList[0].traceCollection.description["Scan"] = self.scan.description()
+            self.plottedTraceList[0].traceCollection.autoSave = self.scan.autoSave
+            self.plottedTraceList[0].traceCollection.filenamePattern = self.scan.filename
             for plottedTrace in self.plottedTraceList:
-                plottedTrace.category = plottedTrace.trace.fileleaf if self.scan.autoSave else "UNSAVED_"+plottedTrace.trace.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+                plottedTrace.category = plottedTrace.traceCollection.fileleaf if self.scan.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
             if not self.scan.autoSave: self.unsavedTraceCount+=1
             self.generator.appendData( self.plottedTraceList, x, evaluated, timeinterval )
             for index, plottedTrace in reversed(list(enumerate(self.plottedTraceList))):
@@ -535,7 +535,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
                 self.rawDataFile.close()
                 self.rawDataFile = None
                 logging.getLogger(__name__).info("Closed raw data file")
-            for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].trace] if self.plottedTraceList else[]):
+            for trace in ([self.currentTimestampTrace]+[self.plottedTraceList[0].traceCollection] if self.plottedTraceList else[]):
                 if trace:
                     trace.description["traceFinalized"] = datetime.now(pytz.utc)
                     if trace.autoSave:
@@ -793,8 +793,8 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         measurement = Measurement(scanType= 'Scan', scanName=self.scan.settingsName, scanParameter=self.scan.scanParameter, scanTarget=self.scan.scanTarget,
                                   scanPP = self.scan.loadPPName,
                                   evaluation=self.evaluation.settingsName, 
-                                  startDate=self.plottedTraceList[0].trace.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc), 
-                                  duration=None, filename=self.plottedTraceList[0].trace.filename if self.plottedTraceList else "none", 
+                                  startDate=self.plottedTraceList[0].traceCollection.description['traceCreation'] if self.plottedTraceList else datetime.now(pytz.utc),
+                                  duration=None, filename=self.plottedTraceList[0].traceCollection.filename if self.plottedTraceList else "none",
                                   comment=None, longComment=None, failedAnalysis=failedEntry)
         # add parameters
         space = self.measurementLog.container.getSpace('PulseProgram')
