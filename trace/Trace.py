@@ -129,6 +129,9 @@ class Trace(object):
         self.autoSave = False
         self.saved = False
         self._filenamePattern = None
+        self.filename = None
+        self.filepath = None
+        self.fileleaf = None
         self.rawdata = None
         self.columnNames = ['height', 'top', 'bottom','raw']
         self.description["tracePlottingList"] = TracePlottingList()

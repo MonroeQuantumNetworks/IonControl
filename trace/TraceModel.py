@@ -217,6 +217,8 @@ class TraceModel(CategoryTreeModel):
         categoryNode.id = newName
         self.nodeDict[newName] = categoryNode
         for node in categoryNode.children:
-            node.content.category = node.content.trace.fileleaf
-
-
+            trace = node.content
+            trace.category = newName #rename node category
+            self.nodeDict.pop(node.id)
+            node.id = newName + '_' + trace.name #rename the node id
+            self.nodeDict[node.id] = node
