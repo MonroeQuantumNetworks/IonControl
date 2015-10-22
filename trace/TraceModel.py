@@ -226,3 +226,7 @@ class TraceModel(CategoryTreeModel):
             self.nodeDict.pop(node.id)
             node.id = newName + '_' + trace.name #rename the node id
             self.nodeDict[node.id] = node
+
+    def isDataNode(self, index):
+        """check if index refers to a data node"""
+        return self.nodeFromIndex(index).nodeType==nodeTypes.data
