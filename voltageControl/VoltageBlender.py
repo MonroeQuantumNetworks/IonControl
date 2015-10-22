@@ -341,14 +341,15 @@ class VoltageBlender(QtCore.QObject):
         currentline = startline
         lineGain = MagnitudeUtilit.value(self.lineGain)
         globalGain = MagnitudeUtilit.value(self.globalGain)
-        for edge in shuttlingGraph:         
-            towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.iLines() ] )
-            edge.interpolStartLine = currentline
-            currentline = startline+len(towrite)
-            edge.interpolStopLine = currentline 
-        data = self.dacController.writeVoltages(1, towrite )
-        self.dacController.verifyVoltages(1, data )
-        self.uploadedDataHash = self.shuttlingDataHash()
+        if shuttlingGraph:
+            for edge in shuttlingGraph:
+                towrite.extend( [self.calculateLine(lineno, lineGain, globalGain ) for lineno in edge.iLines() ] )
+                edge.interpolStartLine = currentline
+                currentline = startline+len(towrite)
+                edge.interpolStopLine = currentline
+            data = self.dacController.writeVoltages(1, towrite )
+            self.dacController.verifyVoltages(1, data )
+            self.uploadedDataHash = self.shuttlingDataHash()
         
     def shuttlingDataHash(self):
         h =  hash( (self.lineGain, self.globalGain, self.adjustGain, tuple(self.adjustDict.values()), tuple(self.localAdjustVoltages) ))
