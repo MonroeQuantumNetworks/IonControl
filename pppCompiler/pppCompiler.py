@@ -550,7 +550,7 @@ if __name__=="__main__":
     import os.path
     resultMessage = { None: 'no comparison', False: 'failed', True: 'passed' }
     folder = "test"
-    testfiles =  [ "Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld" , "ProcedureCalls" ]
+    testfiles =  [ "Condition", "Assignements", "if_then_else", "ShiftOperations", "RealWorld" , "ProcedureCalls", "PulseCommand" ]
     result = list()
     for name in testfiles:    
         result.append( pppcompile( os.path.join(folder,name+".ppp"), os.path.join(folder,name+".ppc"), os.path.join(folder,name+".ppc.reference") ) )
