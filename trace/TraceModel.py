@@ -59,6 +59,7 @@ class TraceModel(CategoryTreeModel):
         graphicsViewDict (dict): dictionary of the available plot windows
     """
     traceModelDataChanged = QtCore.pyqtSignal(str, str, str) #string with trace creation date, change type, new value
+    traceRemoved = QtCore.pyqtSignal(str) #string with trace creation date
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
         super(TraceModel, self).__init__(traceList, parent, categoriesAttr='category')
         #traceDict is a mapping between trace collection creation times and trace collection top level nodes
@@ -80,9 +81,9 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node),
             (QtCore.Qt.DisplayRole, self.column.comment): lambda node: node.children[0].content.traceCollection.comment if node.children else None,
             (QtCore.Qt.BackgroundRole, self.column.name): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
-            (QtCore.Qt.BackgroundRole, self.column.pen): lambda node: None if node.children[0].content.traceCollection.saved else unsavedBG,
-            (QtCore.Qt.BackgroundRole, self.column.window): lambda node: None if node.children[0].content.traceCollection.saved else unsavedBG,
-            (QtCore.Qt.BackgroundRole, self.column.comment): lambda node: None if node.children[0].content.traceCollection.saved else unsavedBG
+            (QtCore.Qt.BackgroundRole, self.column.pen): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
+            (QtCore.Qt.BackgroundRole, self.column.window): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
+            (QtCore.Qt.BackgroundRole, self.column.comment): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
         })
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,self.column.name): lambda node: node.content.name,
@@ -245,6 +246,7 @@ class TraceModel(CategoryTreeModel):
         elif node.nodeType == nodeTypes.category:
             if node.children:
                 key = str(node.children[0].content.traceCollection.traceCreation)
+                self.traceRemoved.emit(key)
                 if key in self.traceDict:
                     del self.traceDict[key]
             for _ in range(node.childCount()):

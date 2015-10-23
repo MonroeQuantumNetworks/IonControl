@@ -82,6 +82,13 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                 self.setFilename(row, data)
                 self.dataChanged.emit(self.index(row, self.column.filename), self.index(row, self.column.filename))
 
+    @QtCore.pyqtSlot(str)
+    def onTraceRemoved(self, traceCreation):
+        """If the signal that a trace was removed is received, remove it from the measurement dict"""
+        traceCreation = str(traceCreation)
+        if traceCreation in self.container.measurementDict:
+            self.container.measurementDict.pop(traceCreation)
+
     def addColumn(self, extraColumn ):
         self.beginInsertColumns( QtCore.QModelIndex(), self.coreColumnCount+len(self.extraColumns), self.coreColumnCount+len(self.extraColumns))
         self.extraColumns.append( extraColumn )

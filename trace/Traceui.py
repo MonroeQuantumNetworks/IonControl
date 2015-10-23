@@ -208,7 +208,7 @@ class Traceui(TraceuiForm, TraceuiBase):
                 self.model.dataChanged.emit(parentInd, parentInd)
 
     def onRemove(self):
-        """Execute when remove button is clicked. Remove selected traces from list (but don't delete files).."""
+        """Execute when remove button is clicked. Remove selected traces from list (but don't delete files)."""
         self.traceView.onDelete()
 
     def onActiveTraceChanged(self, index):
