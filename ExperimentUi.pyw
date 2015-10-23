@@ -161,7 +161,6 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
 
         #setup FPGAs
         self.setupFPGAs()
-        logger.info("Pulser Configuration {0:x}".format(self.pulser.hardwareConfigurationId()))
 
         # initialize PulseProgramUi
         pulserConfig = self.pulser.pulserConfiguration()
@@ -772,6 +771,11 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
                         self.settings.deviceSerial = device.serial
                         self.settings.deviceDescription = device.identifier
                         self.settings.deviceInfo = device
+        pulserHardwareId = self.pulser.hardwareConfigurationId()
+        if pulserHardwareId:
+            logger.info("Pulser Configuration {0:x}".format(pulserHardwareId))
+        else:
+            logger.error("No pulser available")
 
 
 

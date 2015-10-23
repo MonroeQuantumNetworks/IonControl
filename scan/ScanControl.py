@@ -68,6 +68,7 @@ class Scan:
         # GateSequence Settings
         self.gateSequenceSettings = GateSequenceUi.Settings()
         self.scanSegmentList = [ScanSegmentDefinition()]
+        self.maxPoints = 0
         
     def __setstate__(self, state):
         """this function ensures that the given fields are present in the class object
@@ -90,6 +91,7 @@ class Scan:
         self.__dict__.setdefault('scanTarget', None)
         self.__dict__.setdefault('saveRawData', False)
         self.__dict__.setdefault('rawFilename', "")
+        self.__dict__.setdefault('maxPoints', 0)
 
     def __eq__(self,other):
         try:
@@ -106,7 +108,7 @@ class Scan:
         
     stateFields = ['scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'filename', 'histogramFilename', 'autoSave', 'histogramSave', 'xUnit', 'xExpression', 'loadPP', 'loadPPName', 'gateSequenceSettings',
-                'scanSegmentList', 'saveRawData', 'rawFilename' ]
+                'scanSegmentList', 'saveRawData', 'rawFilename', 'maxPoints' ]
 
     documentationList = [ 'scanParameter', 'scanTarget', 'scantype', 'scanMode', 'scanRepeat', 
                 'xUnit', 'xExpression', 'loadPP', 'loadPPName' ]
@@ -227,6 +229,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.histogramFilenameEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.histogramFilenameEdit, 'histogramFilename') )
         self.xUnitEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xUnitEdit, 'xUnit') )
         self.xExprEdit.editingFinished.connect( functools.partial(self.onEditingFinished, self.xExprEdit, 'xExpression') )
+        self.maxPointsBox.valueChanged.connect( self.onMaxPointsChanged )
         self.scanRepeatComboBox.currentIndexChanged[int].connect( functools.partial(self.onCurrentIndexChanged,'scanRepeat') )
         self.loadPPcheckBox.stateChanged.connect( functools.partial(self.onStateChanged, 'loadPP' ) )
         self.loadPPComboBox.currentIndexChanged[QtCore.QString].connect( self.onLoadPP )
@@ -332,6 +335,7 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.scanTypeCombo.setEnabled(self.settings.scanMode in [0,1])
         self.xUnitEdit.setText( self.settings.xUnit )
         self.xExprEdit.setText( self.settings.xExpression )
+        self.maxPointsBox.setValue( self.settings.maxPoints )
         self.scanRepeatComboBox.setCurrentIndex( self.settings.scanRepeat )
         self.loadPPcheckBox.setChecked( self.settings.loadPP )
         if self.settings.loadPPName: 
@@ -416,7 +420,11 @@ class ScanControl(ScanControlForm, ScanControlBase ):
     def onCurrentIndexChanged(self, attribute, index):        
         setattr( self.settings, attribute, index )        
         self.checkSettingsSavable()
-        
+
+    def onMaxPointsChanged(self, value):
+        self.settings.maxPoints = int( MagnitudeUtilit.value(value) )
+        self.checkSettingsSavable()
+
     def onModeChanged(self, index):       
         self.settings.scanMode = index
         self.scanTypeCombo.setEnabled(index in [0,2])
@@ -425,7 +433,9 @@ class ScanControl(ScanControlForm, ScanControlBase ):
         self.xExprEdit.setEnabled( index in [0,3] )
         self.comboBoxParameter.setEnabled( index==0 )
         self.comboBoxScanTarget.setEnabled( index==0 )    
-        self.tableView.setEnabled( index==0 )           
+        self.tableView.setEnabled( index==0 )
+        self.maxPointsLabel.setVisible( index==1 )
+        self.maxPointsBox.setVisible( index==1 )
         self.checkSettingsSavable()
     
     def onValueChanged(self, attribute, value):        
