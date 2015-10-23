@@ -126,13 +126,6 @@ class TraceModel(CategoryTreeModel):
         """set index EditRole to value"""
         self.setData(index, value, QtCore.Qt.EditRole)
 
-    def modelChange(self, index):
-        node = self.nodeFromIndex(index)
-        leftInd = self.indexFromNode(node, col=0)
-        rightInd = self.indexFromNode(node, col=self.numColumns-1)
-        self.dataChanged.emit(leftInd, rightInd)
-        return True
-
     def windowChange(self, index, value):
         """change the plot window on which the trace is displayed"""
         node = self.nodeFromIndex(index)

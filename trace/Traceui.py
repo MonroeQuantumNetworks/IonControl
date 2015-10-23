@@ -26,9 +26,17 @@ uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Traceui.ui')
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(uipath)
 
 class Settings:
-    """Class to hold Traceui settings"""
+    """
+    Class to hold Traceui settings
+
+    Attributes:
+        lastDir (str): last directory from which traces were opened
+        plotStyle (int): style to use for plotting new traces (i.e. lines, points, etc.)
+        unplotLastTrace (bool): whether last trace should be unplotted when new trace is created
+        collapseLastTrace (bool): whether last set of traces should be collapsed in tree when new trace set is created
+        expandNew (bool): whether new trace sets should be expanded when they are created
+    """
     def __init__(self, lastDir=None, plotstyle=0):
-        """Construct settings. Used only if configuration file has no Traceui settings."""
         if lastDir == None:
             self.lastDir = getProject().projectDir
         else:
@@ -73,13 +81,11 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.setItemDelegateForColumn(self.model.column.window, self.graphicsViewDelegate) #This is for selecting which plot to use
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
 
-        self.clearButton.clicked.connect(partial(self.onButton, self.clear))
-        self.pushButtonApplyStyle.clicked.connect(partial(self.onButton, self.applyStyle))
-        self.plotButton.clicked.connect(partial(self.onButton, self.plot))
-
+        self.clearButton.clicked.connect(partial(self.onClearOrPlot, 'clear'))
+        self.plotButton.clicked.connect(partial(self.onClearOrPlot, 'plot'))
+        self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.saveButton.clicked.connect(self.onSave)
         self.removeButton.clicked.connect(self.onRemove)
-
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.comboBoxStyle.currentIndexChanged[int].connect(self.setPlotStyle)
         self.traceView.clicked.connect(self.onViewClicked)
@@ -115,25 +121,60 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.clicked.connect( self.onActiveTraceChanged )
         self.descriptionTableView.horizontalHeader().setStretchLastSection(True)
 
-    def onButton(self, func):
-        """Execute when a trace action button is clicked. Execute its function on the selected traces."""
+    def onClearOrPlot(self, changeType):
+        """Execute when clear or plot action buttons are clicked. Plot or unplot selected traces."""
+        selectedIndexes = self.selectedRows()
+        changed=False
+        if selectedIndexes:
+            for index in selectedIndexes:
+                node = self.model.nodeFromIndex(index)
+                if node.nodeType == nodeTypes.data:
+                    trace = node.content
+                    if changeType=='clear' and trace.curvePen!=0:
+                        trace.plot(0)
+                        changed=True
+                    elif changeType=='plot' and trace.curvePen==0:
+                        trace.plot(-1,self.settings.plotstyle)
+                        changed=True
+                    if changed:
+                        self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
+                        leftInd = self.model.indexFromNode(node, col=self.model.column.name)
+                        rightInd = self.model.indexFromNode(node, col=self.model.column.pen)
+                        self.model.dataChanged.emit(leftInd, rightInd)
+                elif node.nodeType == nodeTypes.category:
+                    anyChanged=False
+                    for childNode in node.children:
+                        trace = childNode.content
+                        if changeType=='clear' and trace.curvePen != 0:
+                            trace.plot(0)
+                            changed=True
+                            anyChanged=True
+                        elif changeType=='plot' and trace.curvePen == 0:
+                            trace.plot(-1,self.settings.plotstyle)
+                            changed=True
+                            anyChanged=True
+                        if changed:
+                            leftInd = self.model.indexFromNode(childNode, col=self.model.column.name)
+                            rightInd = self.model.indexFromNode(childNode, col=self.model.column.pen)
+                            self.model.dataChanged.emit(leftInd, rightInd)
+                    if anyChanged:
+                        parentInd = self.model.indexFromNode(node, col=self.model.column.name)
+                        self.model.dataChanged.emit(parentInd, parentInd)
+                        self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
+
+    def onApplyStyle(self):
+        """Execute when apply style button is clicked. Changed style of selected traces."""
         selectedIndexes = self.selectedRows()
         if selectedIndexes:
             for index in selectedIndexes:
                 node = self.model.nodeFromIndex(index)
                 if node.nodeType == nodeTypes.data:
                     trace = node.content
-                    dataChanged = func(trace)
-                    if dataChanged: self.model.modelChange(index)
+                    trace.plot(-2, self.settings.plotstyle)
                 elif node.nodeType == nodeTypes.category:
-                    dataChangedList=[]
                     for child in node.children:
                         trace = child.content
-                        childIndex = self.model.indexFromNode(child)
-                        dataChanged = func(trace)
-                        dataChangedList.append(dataChanged)
-                        if dataChanged: self.model.modelChange(childIndex)
-                    if any(dataChangedList): self.model.modelChange(index)
+                        trace.plot(-2, self.settings.plotstyle)
 
     def selectedUniqueFilenames(self):
         """Get selected data nodes which have unique filenames"""
@@ -163,26 +204,8 @@ class Traceui(TraceuiForm, TraceuiBase):
             if not alreadySaved:
                 self.model.onSaveUnsavedTrace(node)
                 self.model.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
-                parentIndex = self.model.indexFromNode(node.parent)
-                self.model.modelChange(parentIndex)
-
-    def clear(self, trace):
-        """Unplot trace."""
-        if trace.curvePen != 0:
-            trace.plot(0)
-            self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
-            return True
-
-    def applyStyle(self, trace):
-        """Apply style to trace."""
-        trace.plot(-2, self.settings.plotstyle)
-        return False
-
-    def plot(self, trace):
-        """plot trace"""
-        trace.plot(-1,self.settings.plotstyle)
-        self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
-        return True
+                parentInd = self.model.indexFromNode(node.parent, col=self.model.column.name)
+                self.model.dataChanged.emit(parentInd, parentInd)
 
     def onRemove(self):
         """Execute when remove button is clicked. Remove selected traces from list (but don't delete files).."""
