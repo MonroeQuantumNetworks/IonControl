@@ -21,6 +21,7 @@ from modules.NamedTimespan import getRelativeDatetime, timespans
 import pytz
 from externalParameter.persistence import DBPersist
 from ProjectConfig.Project import getProject
+from copy import deepcopy
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\InstrumentLoggerQueryUi.ui')
@@ -54,6 +55,7 @@ class InstrumentLoggerQueryUi(Form,Base):
         self.config = config
         self.parameters = self.config.get("InstrumentLoggerQueryUi",Parameters())
         self.traceui = traceui
+        self.unsavedTraceCount = 0
         self.plotDict = plotDict
         self.project = getProject()
         self.connection = ValueHistoryStore(self.project.dbConnection)
@@ -161,7 +163,7 @@ class InstrumentLoggerQueryUi(Form,Base):
             top = [e.top -e.value if e.top is not None else e.value for e in result]
             if plottedTrace is None:  # make a new plotted trace
                 trace = TraceCollection(record_timestamps=False)
-                trace.name = parameter + " Query"
+                trace.name = parameter + "_Query"
                 trace.y = numpy.array( value )
                 if plotName is None:
                     plotName = str(self.comboBoxPlotName.currentText()) 
@@ -172,8 +174,12 @@ class InstrumentLoggerQueryUi(Form,Base):
                     trace.x = numpy.array( time )
                     trace.top = numpy.array( top )
                     trace.bottom = numpy.array( bottom )
-                    plottedTrace = PlottedTrace( trace, self.plotDict[plotName]["view"], xAxisLabel = "local time", windowName=plotName) 
-                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
+                    plottedTrace = PlottedTrace( trace, self.plotDict[plotName]["view"], xAxisLabel = "local time", windowName=plotName)
+                    plottedTrace.trace.autoSave = self.traceui.autoSaveTraces
+                    plottedTrace.name = trace.name
+                    plottedTrace.trace.filenamePattern = trace.name
+                    plottedTrace.category = plottedTrace.trace.fileleaf if plottedTrace.trace.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
+                    if not plottedTrace.trace.autoSave: self.unsavedTraceCount+=1
                 self.traceui.addTrace( plottedTrace, pen=-1)
                 self.traceui.resizeColumnsToContents()
                 self.cache[(space, parameter)] = ( weakref.ref(plottedTrace), (space, parameter, fromTime, toTime, plotName, steps) )
