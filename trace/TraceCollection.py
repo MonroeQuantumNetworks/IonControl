@@ -155,7 +155,7 @@ class TraceCollection(object):
         else:
             value = varFactory.get( mytype, str)( element.text )
             description[name] = value
-            if name=='comment' and mytype=='str' and not value:
+            if name=='comment' and mytype=='str' and not element.text:
                 description[name] = '' #avoid comments being set to the string 'None'
             
     def recordTimeinterval(self, timeTickOffset):

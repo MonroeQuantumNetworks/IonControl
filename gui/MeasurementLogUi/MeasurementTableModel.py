@@ -91,8 +91,8 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         if measurement:
             self.container.measurementDict.pop(traceCreation)
             if row >= 0:
+                self.measurements[row].plottedTraceList = []
                 self.dataChanged.emit(self.index(row, self.column.plot), self.index(row, self.column.plot))
-
 
     def addColumn(self, extraColumn ):
         self.beginInsertColumns( QtCore.QModelIndex(), self.coreColumnCount+len(self.extraColumns), self.coreColumnCount+len(self.extraColumns))

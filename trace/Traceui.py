@@ -319,6 +319,8 @@ class Traceui(TraceuiForm, TraceuiBase):
             plottedTrace.category = traceCollection.fileleaf
             plottedTraceList.append(plottedTrace)
             self.addTrace(plottedTrace,-1)
+        if self.expandNew:
+            self.expand(plottedTraceList[0])
         self.resizeColumnsToContents()
         return plottedTraceList
 
