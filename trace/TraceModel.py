@@ -242,6 +242,17 @@ class TraceModel(CategoryTreeModel):
         if key not in self.traceDict:
             self.traceDict[key] = node.parent
 
+    def nodeFromContent(self, trace):
+        """Use traceDict to efficiently find node from trace"""
+        key = str(trace.traceCollection.traceCreation)
+        if key in self.traceDict:
+            parentNode=self.traceDict[key]
+            for childNode in parentNode.children:
+                if childNode.content is trace:
+                    return childNode
+        return None
+
+
     def removeNode(self, node):
         """unplots the trace before removing from model"""
         if node.nodeType == nodeTypes.data:
