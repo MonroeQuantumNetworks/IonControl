@@ -207,11 +207,17 @@ class TraceModel(CategoryTreeModel):
                 if not alreadySaved:
                     self.onSaveUnsavedTrace(node)
                     self.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
-                topLeftInd = self.indexFromNode(categoryNode.children[0], col=self.column.comment)
-                bottomRightInd = self.indexFromNode(categoryNode.children[-1], col=self.column.comment)
+                    topLeftInd = self.indexFromNode(categoryNode.children[0], col=0)
+                    bottomRightInd = self.indexFromNode(categoryNode.children[-1], col=self.numColumns-1)
+                    categoryLeftInd = self.indexFromNode(categoryNode, col=0)
+                    categoryRightInd = self.indexFromNode(categoryNode, col=self.numColumns-1)
+                else:
+                    topLeftInd = self.indexFromNode(categoryNode.children[0], col=self.column.comment)
+                    bottomRightInd = self.indexFromNode(categoryNode.children[-1], col=self.column.comment)
+                    categoryLeftInd = self.indexFromNode(categoryNode, col=self.column.comment)
+                    categoryRightInd = self.indexFromNode(categoryNode, col=self.column.comment)
                 self.dataChanged.emit(topLeftInd,bottomRightInd)
-                categoryInd = self.indexFromNode(categoryNode, col=self.column.comment)
-                self.dataChanged.emit(categoryInd, categoryInd)
+                self.dataChanged.emit(categoryLeftInd, categoryRightInd)
                 return True
         return False
 

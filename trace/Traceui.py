@@ -176,36 +176,36 @@ class Traceui(TraceuiForm, TraceuiBase):
                         trace = child.content
                         trace.plot(-2, self.settings.plotstyle)
 
-    def selectedUniqueFilenames(self):
-        """Get selected data nodes which have unique filenames"""
+    def selectedCategoryNodes(self):
+        """Return selected parent filename nodes"""
         selectedIndexes = self.selectedRows()
-        nodesWithUniqueFilenames = []
-        uniqueTraceCollections = []
+        nodes = set()
         if selectedIndexes:
             for index in selectedIndexes:
                 node = self.model.nodeFromIndex(index)
                 if node.nodeType == nodeTypes.data:
-                    if node.content.traceCollection not in uniqueTraceCollections:
-                        uniqueTraceCollections.append(node.content.traceCollection)
-                        nodesWithUniqueFilenames.append(node)
+                    nodes.add(node.parent)
                 elif node.nodeType == nodeTypes.category:
-                    if node.children and node.children[0].content.traceCollection not in uniqueTraceCollections:
-                        uniqueTraceCollections.append(node.children[0].content.traceCollection)
-                        nodesWithUniqueFilenames.append(node.children[0])
-        return nodesWithUniqueFilenames
+                    nodes.add(node)
+        return nodes
 
     def onSave(self):
         """Save button is clicked. Save selected traces. If a trace has never been saved before, update model."""
-        nodeList = self.selectedUniqueFilenames()
-        for node in nodeList:
-            traceCollection = node.content.traceCollection
-            alreadySaved = traceCollection.saved
-            traceCollection.save()
-            if not alreadySaved:
-                self.model.onSaveUnsavedTrace(node)
-                self.model.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
-                parentInd = self.model.indexFromNode(node.parent, col=self.model.column.name)
-                self.model.dataChanged.emit(parentInd, parentInd)
+        selectedCategoryNodes = self.selectedCategoryNodes()
+        for categoryNode in selectedCategoryNodes:
+            traceCollection = categoryNode.children[0].content.traceCollection if categoryNode.children else None
+            if traceCollection:
+                alreadySaved = traceCollection.saved
+                traceCollection.save()
+                if not alreadySaved:
+                    self.model.onSaveUnsavedTrace(categoryNode)
+                    self.model.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
+                    categoryLeftInd = self.model.indexFromNode(categoryNode, col=0)
+                    categoryRightInd = self.model.indexFromNode(categoryNode, col=self.model.numColumns-1)
+                    self.model.dataChanged.emit(categoryLeftInd, categoryRightInd)
+                    childTopLeftInd = self.model.indexFromNode(categoryNode.children[0], col=0)
+                    childBottomRightInd = self.model.indexFromNode(categoryNode.children[-1], col=self.model.numColumns-1)
+                    self.model.dataChanged.emit(childTopLeftInd, childBottomRightInd)
 
     def onRemove(self):
         """Execute when remove button is clicked. Remove selected traces from list (but don't delete files)."""
