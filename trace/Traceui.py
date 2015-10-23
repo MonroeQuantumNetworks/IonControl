@@ -35,13 +35,13 @@ class Settings:
             self.lastDir = lastDir
         self.plotstyle = plotstyle
         self.unplotLastTrace = True
-        self.collapseLastTrace = True
+        self.collapseLastTrace = False
         self.expandNew = True
         
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault('unplotLastTrace', True)
-        self.__dict__.setdefault('collapseLastTrace', True)
+        self.__dict__.setdefault('collapseLastTrace', False)
         self.__dict__.setdefault('expandNew', True)
 
 class Traceui(TraceuiForm, TraceuiBase):
@@ -69,7 +69,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.setModel(self.model)
         self.delegate = TraceComboDelegate(self.penicons)
         self.graphicsViewDelegate = ComboBoxDelegate()
-        self.traceView.setItemDelegateForColumn(self.model.column.plot, self.delegate) #This is for selecting which pen to use in the plot
+        self.traceView.setItemDelegateForColumn(self.model.column.pen, self.delegate) #This is for selecting which pen to use in the plot
         self.traceView.setItemDelegateForColumn(self.model.column.window, self.graphicsViewDelegate) #This is for selecting which plot to use
         self.traceView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) #allows selecting more than one element in the view
 
@@ -157,10 +157,12 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Save button is clicked. Save selected traces. If a trace has never been saved before, update model."""
         nodeList = self.selectedUniqueFilenames()
         for node in nodeList:
-            alreadySaved = node.content.traceCollection.saved
-            node.content.traceCollection.save()
+            traceCollection = node.content.traceCollection
+            alreadySaved = traceCollection.saved
+            traceCollection.save()
             if not alreadySaved:
                 self.model.onSaveUnsavedTrace(node)
+                self.model.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
                 parentIndex = self.model.indexFromNode(node.parent)
                 self.model.modelChange(parentIndex)
 
@@ -168,6 +170,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Unplot trace."""
         if trace.curvePen != 0:
             trace.plot(0)
+            self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
             return True
 
     def applyStyle(self, trace):
@@ -178,6 +181,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     def plot(self, trace):
         """plot trace"""
         trace.plot(-1,self.settings.plotstyle)
+        self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
         return True
 
     def onRemove(self):
@@ -236,9 +240,8 @@ class Traceui(TraceuiForm, TraceuiBase):
             if allowUnplotted or trace.isPlotted:
                 outputIndexes.append(index)
         if not outputIndexes and useLastIfNoSelection:
-            if self.model.traceList != []:
-                trace = self.model.traceList[-1]
-                node = self.model.nodeFromContent(trace)
+            if self.model.root.children and self.model.root.children[0].children: #If there are filenames and traces in them
+                node = self.model.root.children[-1].children[-1]
                 index = self.model.indexFromNode(node)
                 outputIndexes.append(index)
         return outputIndexes
@@ -265,7 +268,7 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onViewClicked(self,index):
         """If one of the editable columns is clicked, begin to edit it."""
         if self.model.isDataNode(index):
-            if index.column() in [self.model.column.plot, self.model.column.window, self.model.column.comment]:
+            if index.column() in [self.model.column.pen, self.model.column.window, self.model.column.comment]:
                 self.traceView.edit(index)
         elif index.column()==self.model.column.comment:
             self.traceView.edit(index)

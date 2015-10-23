@@ -56,23 +56,23 @@ class TraceModel(CategoryTreeModel):
         traceList (list[PlottedTrace]): The initial list of traces
         penicons (list[QtGui.QIcon]): Icons for showing available plot colors
         graphicsViewDict (dict): dictionary of the available plot windows
-        parent (QtCore.QObject): parent QObject
     """
-    traceDataChanged = QtCore.pyqtSignal(str, str, str) #string with trace creation date, change type, value
+    traceModelDataChanged = QtCore.pyqtSignal(str, str, str) #string with trace creation date, change type, new value
     def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
         super(TraceModel, self).__init__(traceList, parent, categoriesAttr='category')
-        self.traceList = traceList
+        #traceDict is a mapping between trace collection creation times and trace collection top level nodes
+        self.traceDict = {node.children[0].content.traceCollection.traceCreation : node for node in self.root.children if node.children}
         self.penicons = penicons
         self.graphicsViewDict = graphicsViewDict
         self.allowDeletion = True
-        self.columnNames = ['name','plot','window','comment']
+        self.columnNames = ['name','pen','window','comment']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
         self.headerLookup.update({
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.name): self.columnNames[self.column.name].capitalize(),
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.plot): self.columnNames[self.column.plot].capitalize(),
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.window): self.columnNames[self.column.window].capitalize(),
-            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.comment): self.columnNames[self.column.comment].capitalize(),
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.name): "Name",
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.pen): "Pen    ",
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.window): "Window",
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.comment): "Comment",
             })
         self.categoryDataLookup.update({
             (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node),
@@ -81,27 +81,27 @@ class TraceModel(CategoryTreeModel):
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,self.column.name): lambda node: node.content.name,
             (QtCore.Qt.CheckStateRole,self.column.name): lambda node: QtCore.Qt.Checked if node.content.curvePen > 0 else QtCore.Qt.Unchecked,
-            (QtCore.Qt.DecorationRole,self.column.plot): lambda node: QtGui.QIcon(self.penicons[node.content.curvePen]) if hasattr(node.content, 'curve') and node.content.curve is not None else None,
-            (QtCore.Qt.BackgroundColorRole,self.column.plot): lambda node: QtGui.QColor(QtCore.Qt.white) if not (hasattr(node.content, 'curve') and node.content.curve is not None) else None,
-            (QtCore.Qt.EditRole,self.column.plot): lambda node: node.content.curvePen,
+            (QtCore.Qt.DecorationRole,self.column.pen): lambda node: QtGui.QIcon(self.penicons[node.content.curvePen]) if hasattr(node.content, 'curve') and node.content.curve is not None else None,
+            (QtCore.Qt.BackgroundColorRole,self.column.pen): lambda node: QtGui.QColor(QtCore.Qt.white) if not (hasattr(node.content, 'curve') and node.content.curve is not None) else None,
+            (QtCore.Qt.EditRole,self.column.pen): lambda node: node.content.curvePen,
             (QtCore.Qt.DisplayRole,self.column.window): lambda node: node.content.windowName,
             (QtCore.Qt.EditRole,self.column.window): lambda node: node.content.windowName,
             (QtCore.Qt.DisplayRole,self.column.comment): lambda node: node.content.traceCollection.comment,
             (QtCore.Qt.EditRole,self.column.comment): lambda node: node.content.traceCollection.comment
             })
         self.setDataLookup.update({
-            (QtCore.Qt.CheckStateRole,self.column.name): lambda index, value: self.modelChange(index, value, 'checkbox'),
-            (QtCore.Qt.EditRole,self.column.plot): lambda index, value: self.modelChange(index, value, 'plot'),
-            (QtCore.Qt.EditRole,self.column.window): lambda index, value: self.modelChange(index, value, 'window'),
-            (QtCore.Qt.EditRole,self.column.comment): lambda index, value: self.modelChange(index, value, 'comment')
+            (QtCore.Qt.CheckStateRole,self.column.name): self.checkboxChange,
+            (QtCore.Qt.EditRole,self.column.pen): self.penChange,
+            (QtCore.Qt.EditRole,self.column.window): self.windowChange,
+            (QtCore.Qt.EditRole,self.column.comment): self.commentChange
             })
         self.categorySetDataLookup.update({
-            (QtCore.Qt.CheckStateRole,self.column.name): lambda index, value: self.setCategoryCheckbox(index, value),
-            (QtCore.Qt.EditRole,self.column.comment): lambda index, value: self.setCategoryComment(index, value)
+            (QtCore.Qt.CheckStateRole,self.column.name): self.categoryCheckboxChange,
+            (QtCore.Qt.EditRole,self.column.comment): self.commentChange
         })
         self.flagsLookup = {
             self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-            self.column.plot: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+            self.column.pen: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
             self.column.window: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
             self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
             }
@@ -119,118 +119,118 @@ class TraceModel(CategoryTreeModel):
         else: return QtCore.Qt.Unchecked
 
     def choice(self, index):
+        """return available plot windows"""
         return self.graphicsViewDict.keys() if index.column()==self.column.window else []
 
     def setValue(self, index, value):
+        """set index EditRole to value"""
         self.setData(index, value, QtCore.Qt.EditRole)
 
-    def modelChange(self, index, value=None, changeType='update'):
+    def modelChange(self, index):
+        node = self.nodeFromIndex(index)
+        leftInd = self.indexFromNode(node, col=0)
+        rightInd = self.indexFromNode(node, col=self.numColumns-1)
+        self.dataChanged.emit(leftInd, rightInd)
+        return True
+
+    def windowChange(self, index, value):
+        """change the plot window on which the trace is displayed"""
         node = self.nodeFromIndex(index)
         trace = node.content
-        success = {'checkbox' : self.checkboxChange,
-                   'plot'      : self.penChange,
-                   'comment'  : self.commentChange,
-                   'window'     : self.plotChange,
-                   'update'   : lambda trace, value:True
-                   }[changeType](trace, value)
-        if success:
-            leftInd = self.createIndex(node.row, 0, node)
-            rightInd = self.createIndex(node.row, self.numColumns-1, node)
-            self.dataChanged.emit(leftInd, rightInd)
-            if (changeType=='checkbox') or (changeType=='window'):
-                self.traceDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
-            elif changeType=='comment':
-                self.traceDataChanged.emit( str(trace.traceCollection.traceCreation), 'comment', str(value) if api2 else str( value.toString() ) )
-        return success
-
-    def checkboxChange(self, trace, value):
-        """Plot or unplot the trace at the given index based on the checkbox"""
-        if (value == QtCore.Qt.Unchecked) and (trace.curvePen > 0):
-            trace.plot(0) #unplot if unchecked
-            return True
-        elif len(trace.traceCollection.x) != 0: #Make sure the x array isn't empty before trying to plot
-            trace.plot(-1)
-            return True
-        else:
-            return False
-
-    def penChange(self, trace, value):
-        """plot using the pen specified by value"""
-        if len(trace.traceCollection.x) != 0:
-            trace.plot(value)
-            return True
-        else:
-            return False
-
-    def commentChange(self, trace, value):
-        """resave the trace with the new comment"""
-        comment = value if api2 else str(value.toString())
-        traceCollection = trace.traceCollection
-        if not comment == traceCollection.comment:
-            traceCollection.comment = comment
-            alreadySaved = traceCollection.saved
-            traceCollection.save()
-            if not alreadySaved:
-                node = self.nodeFromContent(trace)
-                self.onSaveUnsavedTrace(node)
-                self.traceDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
-                parentIndex = self.indexFromNode(node.parent)
-                self.modelChange(parentIndex)
-            return True
-        else:
-            return False
-
-    def plotChange(self, trace, value):
-        """change the plot on which the trace is displayed"""
         plotname = str(value)
         if plotname in self.graphicsViewDict:
-            trace.setGraphicsView( self.graphicsViewDict[plotname]['view'], plotname )
+            trace.setGraphicsView(self.graphicsViewDict[plotname]['view'], plotname)
+            leftInd = self.indexFromNode(node, col=self.column.name)
+            rightInd = self.indexFromNode(node, col=self.column.window)
+            self.dataChanged.emit(leftInd, rightInd)
+            self.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
+        else:
+            return False
+
+    def penChange(self, index, value):
+        """plot using the pen specified by value"""
+        node = self.nodeFromIndex(index)
+        trace = node.content
+        if len(trace.traceCollection.x) != 0:
+            trace.plot(value)
+            leftInd  = self.indexFromNode(node, col=self.column.name)
+            rightInd = self.indexFromNode(node, col=self.column.pen)
+            self.dataChanged.emit(leftInd, rightInd)
+            self.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
             return True
         else:
             return False
 
-    def setCategoryCheckbox(self, index, value):
+    def checkboxChange(self, index, value):
+        """Plot or unplot the trace at the given index based on the checkbox"""
+        node = self.nodeFromIndex(index)
+        trace = node.content
+        success = False
+        if (value == QtCore.Qt.Unchecked) and (trace.curvePen > 0):
+            trace.plot(0) #unplot if unchecked
+            success=True
+        elif len(trace.traceCollection.x) != 0: #Make sure the x array isn't empty before trying to plot
+            trace.plot(-1)
+            success=True
+        if success:
+            leftInd = self.indexFromNode(node, col=self.column.name)
+            rightInd = self.indexFromNode(node, col=self.column.pen)
+            self.dataChanged.emit(leftInd, rightInd)
+            parentInd = self.indexFromNode(node.parent, col=self.column.name)
+            self.dataChanged.emit(parentInd, parentInd)
+            self.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
+        return success
+
+    def commentChange(self, index, value):
+        """change the comment and resave the trace"""
+        node = self.nodeFromIndex(index)
+        if node.nodeType==nodeTypes.data:
+            traceCollection = node.content.traceCollection
+            categoryNode = node.parent
+        else:
+            traceCollection = node.children[0].content.traceCollection if node.children else None
+            categoryNode = node
+        if traceCollection:
+            if isinstance(value, QtCore.QVariant):
+                comment = str(value) if api2 else str(value.toString())
+            else:
+                comment = str(value)
+            if not comment == traceCollection.comment:
+                traceCollection.comment = comment
+                alreadySaved = traceCollection.saved
+                traceCollection.save()
+                self.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'comment', comment)
+                if not alreadySaved:
+                    self.onSaveUnsavedTrace(node)
+                    self.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
+                topLeftInd = self.indexFromNode(categoryNode.children[0], col=self.column.comment)
+                bottomRightInd = self.indexFromNode(categoryNode.children[-1], col=self.column.comment)
+                self.dataChanged.emit(topLeftInd,bottomRightInd)
+                categoryInd = self.indexFromNode(categoryNode, col=self.column.comment)
+                self.dataChanged.emit(categoryInd, categoryInd)
+                return True
+        return False
+
+    def categoryCheckboxChange(self, index, value):
         """Check or uncheck the filename category of a set of traces"""
         node = self.nodeFromIndex(index)
         if node.children:
             for childNode in node.children:
-                trace=childNode.content
-                success=self.checkboxChange(trace, value)
-                if success:
-                    leftInd = self.createIndex(childNode.row, 0, childNode)
-                    rightInd = self.createIndex(childNode.row, self.numColumns-1, childNode)
-                    self.dataChanged.emit(leftInd, rightInd)
-            leftInd = self.createIndex(node.row, 0, node)
-            rightInd = self.createIndex(node.row, self.numColumns-1, node)
-            self.dataChanged.emit(leftInd, rightInd)
+                childIndex = self.indexFromNode(childNode)
+                self.checkboxChange(childIndex, value)
+            ind = self.indexFromNode(node, col=self.column.name)
+            self.dataChanged.emit(ind, ind)
+            self.traceModelDataChanged.emit(str(node.children[0].content.traceCollection.traceCreation), 'isPlotted', '')
             return True
         else:
             return False
-
-    def setCategoryComment(self, index, value):
-        """Set the comment from the category level"""
-        node = self.nodeFromIndex(index)
-        if node.children:
-            for childNode in node.children:
-                trace=childNode.content
-                success=self.commentChange(trace, value)
-                if success:
-                    leftInd = self.createIndex(childNode.row, 0, childNode)
-                    rightInd = self.createIndex(childNode.row, self.numColumns-1, childNode)
-                    self.dataChanged.emit(leftInd, rightInd)
-            leftInd = self.createIndex(node.row, 0, node)
-            rightInd = self.createIndex(node.row, self.numColumns-1, node)
-            self.dataChanged.emit(leftInd, rightInd)
-            return True
-        else:
-            return False
-
 
     def addTrace(self, trace):
         """add a trace to the model"""
-        node = self.addNode(trace)
-        self.traceList.append(trace)
-        trace.id = node.id #Add an id to the trace that matches the node id
+        node=self.addNode(trace)
+        key = str(trace.traceCollection.traceCreation)
+        if key not in self.traceDict:
+            self.traceDict[key] = node.parent
 
     def removeNode(self, node):
         """unplots the trace before removing from model"""
@@ -238,33 +238,55 @@ class TraceModel(CategoryTreeModel):
             trace = node.content
             if trace.curvePen!=0:
                 trace.plot(0)
-            self.traceList.remove(trace)
             super(TraceModel,self).removeNode(node)
         elif node.nodeType == nodeTypes.category:
+            if node.children:
+                key = str(node.children[0].content.traceCollection.traceCreation)
+                if key in self.traceDict:
+                    del self.traceDict[key]
             for _ in range(node.childCount()):
                 childNode = node.children[0]
                 trace = childNode.content
                 if trace.curvePen!=0:
                     trace.plot(0)
-                self.traceList.remove(trace)
                 super(TraceModel,self).removeNode(childNode)
             super(TraceModel,self).removeNode(node)
 
     def onSaveUnsavedTrace(self, node):
         """rename the category associated with trace"""
-        categoryNode = node.parent
-        self.nodeDict.pop(categoryNode.id)
-        newName = node.content.traceCollection.fileleaf
-        categoryNode.content = newName
-        categoryNode.id = newName
-        self.nodeDict[newName] = categoryNode
-        for node in categoryNode.children:
-            trace = node.content
-            trace.category = newName #rename node category
-            self.nodeDict.pop(node.id)
-            node.id = newName + '_' + trace.name #rename the node id
-            self.nodeDict[node.id] = node
+        categoryNode = node.parent if node.nodeType==nodeTypes.data else node
+        if categoryNode.children:
+            self.nodeDict.pop(categoryNode.id)
+            newName = categoryNode.children[0].content.traceCollection.fileleaf #new name is the base filename
+            categoryNode.content = newName
+            categoryNode.id = newName
+            self.nodeDict[newName] = categoryNode
+            for node in categoryNode.children:
+                trace = node.content
+                trace.category = newName #rename node category
+                self.nodeDict.pop(node.id)
+                node.id = newName + '_' + trace.name #rename the node id
+                self.nodeDict[node.id] = node
 
     def isDataNode(self, index):
         """check if index refers to a data node"""
         return self.nodeFromIndex(index).nodeType==nodeTypes.data
+
+    @QtCore.pyqtSlot(str, str, str)
+    def onMeasurementModelDataChanged(self, traceCreation, changeType, data):
+        """Trace data changed via MeasurementTableModel. Update model."""
+        traceCreation = str(traceCreation)
+        changeType = str(changeType)
+        data=str(data)
+        node = self.traceDict.get(traceCreation)
+        if node:
+            if changeType=='comment':
+                comment = data
+                if node.children and node.children[0].content.traceCollection.comment != comment:
+                    self.commentChange(self.indexFromNode(node.children[0]), comment)
+            elif changeType=='isPlotted':
+                topLeftInd = self.indexFromNode(node.parent.children[0], col=self.column.name)
+                bottomRightInd = self.indexFromNode(node.parent.children[-1], col=self.column.name)
+                self.dataChanged.emit(topLeftInd,bottomRightInd)
+                parentInd = self.indexFromNode(node.parent, col=self.column.name)
+                self.dataChanged.emit(parentInd, parentInd)

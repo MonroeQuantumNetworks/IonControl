@@ -17,6 +17,7 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Target', 'Parameter', 'Pulse Program', 'Started', 'Comment', 'Filename' ]
     column = enum('plot', 'study', 'scan', 'name', 'evaluation', 'target', 'parameter', 'pulseprogram', 'started', 'comment', 'filename')
     coreColumnCount = 11
+    measurementModelDataChanged = QtCore.pyqtSignal(str, str, str) #string with trace creation date, change type, new value
     def __init__(self, measurements, extraColumns, traceuiLookup, container=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.container = container 
@@ -56,41 +57,31 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
                                (QtCore.Qt.EditRole, self.column.comment): self.setComment
                               }
         self.traceuiLookup = traceuiLookup
-        self.subscriptions = list()
-        self.subscribeToTrace()
-             
+
     def getFilename(self, row):
         filename = self.measurements[row].filename
         if filename is None:
             return None
         return os.path.split(filename)[1]
-        
-    def subscribeToTrace(self, first=0, last=None):
-        # register listeners
-        last = firstNotNone( last, len(self.measurements) )
-        for row, measurement in enumerate(self.measurements[first:last]):
-            plottedTraceList = measurement.plottedTraceList
-            if len(plottedTraceList)>0:
-                callback = partial( self.commentChanged, row+first )
-                plottedTraceList[0].trace.commentChanged.subscribe( callback )
-                self.subscriptions.append( (plottedTraceList[0].trace.commentChanged, callback ))
-                callback = partial( self.filenameChanged, row+first)
-                plottedTraceList[0].trace.filenameChanged.subscribe( callback )
-                self.subscriptions.append( (plottedTraceList[0].trace.filenameChanged, callback ))
-                
-    def clearSubscriptions(self):
-        for observable, callback in self.subscriptions:
-            observable.unsubscribe( callback )
-        self.subscriptions[:] = []
-    
-    def commentChanged(self, row, event ):
-        self.setComment( row, event.comment )
-        self.dataChanged.emit( self.index(row,6), self.index(row,6) )
 
-    def filenameChanged(self, row, event ):
-        self.setFilename( row, event.filename )
-        self.dataChanged.emit( self.index(row,7), self.index(row,7) )
-    
+    @QtCore.pyqtSlot(str, str, str)
+    def onTraceModelDataChanged(self, traceCreationDate, changeType, data):
+        """Trace data changed via traceui. Update model."""
+        traceCreationDate = str(traceCreationDate)
+        changeType = str(changeType)
+        data=str(data)
+        measurement = self.container.measurementDict.get(traceCreationDate)
+        row = self.measurements.index(measurement) if measurement in self.measurements else -1
+        if row >= 0:
+            if changeType=='comment':
+                self.setComment(row, data)
+                self.dataChanged.emit(self.index(row, self.column.comment), self.index(row, self.column.comment))
+            elif changeType=='isPlotted':
+                self.dataChanged.emit(self.index(row, self.column.plot), self.index(row, self.column.plot))
+            elif changeType=='filename':
+                self.setFilename(row, data)
+                self.dataChanged.emit(self.index(row, self.column.filename), self.index(row, self.column.filename))
+
     def addColumn(self, extraColumn ):
         self.beginInsertColumns( QtCore.QModelIndex(), self.coreColumnCount+len(self.extraColumns), self.coreColumnCount+len(self.extraColumns))
         self.extraColumns.append( extraColumn )
@@ -116,7 +107,6 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         
     def setPlotted(self, row, value):
         plotted = value == QtCore.Qt.Checked
-        self
         if not plotted:
             for pt in self.measurements[row].plottedTraceList:
                 pt.plot(0)
@@ -128,24 +118,36 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
             else:
                 if self.measurements[row].filename is not None and exists(self.measurements[row].filename):
                     self.loadTrace(self.measurements[row])
+        self.measurementModelDataChanged.emit(str(self.measurements[row].startDate), 'isPlotted', '')
         return True
     
     def loadTrace(self, measurement):
         measurement.plottedTraceList = self.traceuiLookup[measurement.scanType].openFile(measurement.filename)
     
-    def setComment(self, row, value):
-        if isinstance(value, QtCore.QVariant):
-            value = value.toString()
-        self.measurements[row].comment = str(value) 
-        self.measurements[row]._sa_instance_state.session.commit()
-        return True
+    def setComment(self, row, comment):
+        """Set the comment at the specified row"""
+        if isinstance(comment, QtCore.QVariant):
+            comment = comment.toString()
+        comment = str(comment)
+        if self.measurements[row].comment != comment:
+            self.measurements[row].comment = comment
+            self.measurements[row]._sa_instance_state.session.commit()
+            self.measurementModelDataChanged.emit(str(self.measurements[row].startDate), 'comment', comment)
+            return True
+        else:
+            return False
 
-    def setFilename(self, row, value):
-        if isinstance(value, QtCore.QVariant):
-            value = value.toString()
-        self.measurements[row].filename = str(value) 
-        self.measurements[row]._sa_instance_state.session.commit()
-        return True
+    def setFilename(self, row, filename):
+        """Set the filename at the specified row"""
+        if isinstance(filename, QtCore.QVariant):
+            filename = filename.toString()
+        filename = str(filename)
+        if self.measurements[row].filename != filename:
+            self.measurements[row].filename = filename
+            self.measurements[row]._sa_instance_state.session.commit()
+            return True
+        else:
+            return False
         
     def beginInsertRows(self, event):
         self.firstAdded = event.first
@@ -153,7 +155,6 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         return QtCore.QAbstractTableModel.beginInsertRows(self, QtCore.QModelIndex(), event.first, event.last )
 
     def endInsertRows(self):
-        self.subscribeToTrace(self.firstAdded, self.lastAdded+1)
         return QtCore.QAbstractTableModel.endInsertRows(self)
         
     def rowCount(self, parent=QtCore.QModelIndex()): 
@@ -202,7 +203,5 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def setMeasurements(self, event):
         self.beginResetModel()
         self.measurements = event.measurements
-        self.clearSubscriptions()
-        self.subscribeToTrace()
         self.endResetModel()
         

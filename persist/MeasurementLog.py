@@ -182,6 +182,7 @@ class MeasurementContainer(object):
         self.engine = create_engine(self.database_conn_str, echo=dbConnection.echo)
         self.studies = list()
         self.measurements = list()
+        self.measurementDict = dict() #key - startDate, val - Measurement
         self.spaces = list()
         self.isOpen = False
         self.beginInsertMeasurement = Observable()
@@ -221,6 +222,7 @@ class MeasurementContainer(object):
         try:
             self.session.add( measurement )
             self.session.commit()
+            self.measurementDict[str(measurement.startDate)] = measurement
             if self._scanNameFilter is None or measurement.scanName in self._scanNameFilter:
                 self.beginInsertMeasurement.fire(first=0,last=0)
                 self.measurements.insert( 0, measurement )
