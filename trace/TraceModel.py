@@ -68,6 +68,7 @@ class TraceModel(CategoryTreeModel):
         self.columnNames = ['name','pen','window','comment']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
+        unsavedBG =  QtGui.QColor(255, 220, 220)
         self.headerLookup.update({
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.name): "Name",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.pen): "Pen    ",
@@ -76,18 +77,26 @@ class TraceModel(CategoryTreeModel):
             })
         self.categoryDataLookup.update({
             (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node),
-            (QtCore.Qt.DisplayRole, self.column.comment): lambda node: node.children[0].content.traceCollection.comment if node.children else None
+            (QtCore.Qt.DisplayRole, self.column.comment): lambda node: node.children[0].content.traceCollection.comment if node.children else None,
+            (QtCore.Qt.BackgroundRole, self.column.name): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
+            (QtCore.Qt.BackgroundRole, self.column.pen): lambda node: None if node.children[0].content.traceCollection.saved else unsavedBG,
+            (QtCore.Qt.BackgroundRole, self.column.window): lambda node: None if node.children[0].content.traceCollection.saved else unsavedBG,
+            (QtCore.Qt.BackgroundRole, self.column.comment): lambda node: None if node.children[0].content.traceCollection.saved else unsavedBG
         })
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,self.column.name): lambda node: node.content.name,
             (QtCore.Qt.CheckStateRole,self.column.name): lambda node: QtCore.Qt.Checked if node.content.curvePen > 0 else QtCore.Qt.Unchecked,
             (QtCore.Qt.DecorationRole,self.column.pen): lambda node: QtGui.QIcon(self.penicons[node.content.curvePen]) if hasattr(node.content, 'curve') and node.content.curve is not None else None,
-            (QtCore.Qt.BackgroundColorRole,self.column.pen): lambda node: QtGui.QColor(QtCore.Qt.white) if not (hasattr(node.content, 'curve') and node.content.curve is not None) else None,
             (QtCore.Qt.EditRole,self.column.pen): lambda node: node.content.curvePen,
             (QtCore.Qt.DisplayRole,self.column.window): lambda node: node.content.windowName,
             (QtCore.Qt.EditRole,self.column.window): lambda node: node.content.windowName,
             (QtCore.Qt.DisplayRole,self.column.comment): lambda node: node.content.traceCollection.comment,
-            (QtCore.Qt.EditRole,self.column.comment): lambda node: node.content.traceCollection.comment
+            (QtCore.Qt.EditRole,self.column.comment): lambda node: node.content.traceCollection.comment,
+            (QtCore.Qt.BackgroundRole, self.column.name): lambda node: None if node.content.traceCollection.saved else unsavedBG,
+            (QtCore.Qt.BackgroundRole, self.column.pen): lambda node: None if node.content.traceCollection.saved else unsavedBG,
+            (QtCore.Qt.BackgroundRole, self.column.window): lambda node: None if node.content.traceCollection.saved else unsavedBG,
+            (QtCore.Qt.BackgroundRole, self.column.comment): lambda node: None if node.content.traceCollection.saved else unsavedBG
+
             })
         self.setDataLookup.update({
             (QtCore.Qt.CheckStateRole,self.column.name): self.checkboxChange,
