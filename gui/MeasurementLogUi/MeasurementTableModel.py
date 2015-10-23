@@ -8,12 +8,14 @@ from PyQt4 import QtCore, QtGui
 from os.path import exists
 from _functools import partial
 from modules.firstNotNone import firstNotNone
+from modules.enum import enum
 import os.path
 from dateutil.tz import tzlocal
 
 class MeasurementTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
     headerDataLookup = ['Plot', 'Study', 'Scan', 'Name', 'Evaluation', 'Target', 'Parameter', 'Pulse Program', 'Started', 'Comment', 'Filename' ]
+    column = enum('plot', 'study', 'scan', 'name', 'evaluation', 'target', 'parameter', 'pulseprogram', 'started', 'comment', 'filename')
     coreColumnCount = 11
     def __init__(self, measurements, extraColumns, traceuiLookup, container=None, parent=None, *args): 
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
@@ -21,37 +23,37 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         self.extraColumns = extraColumns  # list of tuples (source, space, name)
         # measurements are given as a list
         self.measurements = measurements
-        self.flagsLookup = { 0: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-                             9: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+        self.flagsLookup = { self.column.plot: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
+                             self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
                             }
         self.failedBG =  QtGui.QColor(0xff,0xa6,0xa6,0xff)
         self.defaultBG = QtGui.QColor(QtCore.Qt.white)
-        self.dataLookup = {  (QtCore.Qt.CheckStateRole,0): lambda row: self.isPlotted(self.measurements[row]),
-                             (QtCore.Qt.DisplayRole, 1): lambda row: self.measurements[row].study,
-                             (QtCore.Qt.DisplayRole, 2): lambda row: self.measurements[row].scanType,
-                             (QtCore.Qt.DisplayRole, 3): lambda row: self.measurements[row].scanName,
-                             (QtCore.Qt.DisplayRole, 4): lambda row: self.measurements[row].evaluation,
-                             (QtCore.Qt.DisplayRole, 5): lambda row: self.measurements[row].scanTarget,
-                             (QtCore.Qt.DisplayRole, 6): lambda row: self.measurements[row].scanParameter,                       
-                             (QtCore.Qt.DisplayRole, 7): lambda row: self.measurements[row].scanPP,                       
-                             (QtCore.Qt.DisplayRole, 8): lambda row: self.measurements[row].startDate.astimezone(tzlocal()).strftime('%Y-%m-%d %H:%M:%S'),
-                             (QtCore.Qt.DisplayRole, 9): lambda row: self.measurements[row].comment,
-                             (QtCore.Qt.DisplayRole, 10): self.getFilename, 
-                             (QtCore.Qt.EditRole, 9): lambda row: self.measurements[row].comment,
-                             (QtCore.Qt.BackgroundColorRole, 0): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 1): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 2): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 3): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 4): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 5): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 6): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 7): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 8): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 9): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
-                             (QtCore.Qt.BackgroundColorRole, 10): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG
+        self.dataLookup = {  (QtCore.Qt.CheckStateRole, self.column.plot): lambda row: self.isPlotted(self.measurements[row]),
+                             (QtCore.Qt.DisplayRole, self.column.study): lambda row: self.measurements[row].study,
+                             (QtCore.Qt.DisplayRole, self.column.scan): lambda row: self.measurements[row].scanType,
+                             (QtCore.Qt.DisplayRole, self.column.name): lambda row: self.measurements[row].scanName,
+                             (QtCore.Qt.DisplayRole, self.column.evaluation): lambda row: self.measurements[row].evaluation,
+                             (QtCore.Qt.DisplayRole, self.column.target): lambda row: self.measurements[row].scanTarget,
+                             (QtCore.Qt.DisplayRole, self.column.parameter): lambda row: self.measurements[row].scanParameter,
+                             (QtCore.Qt.DisplayRole, self.column.pulseprogram): lambda row: self.measurements[row].scanPP,
+                             (QtCore.Qt.DisplayRole, self.column.started): lambda row: self.measurements[row].startDate.astimezone(tzlocal()).strftime('%Y-%m-%d %H:%M:%S'),
+                             (QtCore.Qt.DisplayRole, self.column.comment): lambda row: self.measurements[row].comment,
+                             (QtCore.Qt.DisplayRole, self.column.filename): self.getFilename,
+                             (QtCore.Qt.EditRole, self.column.comment): lambda row: self.measurements[row].comment,
+                             (QtCore.Qt.BackgroundColorRole,self.column.plot): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.study): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.scan): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.name): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.evaluation): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.target): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.parameter): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.pulseprogram): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.started): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.comment): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG,
+                             (QtCore.Qt.BackgroundColorRole, self.column.filename): lambda row: self.defaultBG if self.measurements[row].failedAnalysis is None else self.failedBG
                              }
-        self.setDataLookup = { (QtCore.Qt.CheckStateRole,0): self.setPlotted,
-                               (QtCore.Qt.EditRole, 9): self.setComment
+        self.setDataLookup = { (QtCore.Qt.CheckStateRole,self.column.plot): self.setPlotted,
+                               (QtCore.Qt.EditRole, self.column.comment): self.setComment
                               }
         self.traceuiLookup = traceuiLookup
         self.subscriptions = list()
