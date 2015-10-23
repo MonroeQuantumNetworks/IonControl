@@ -313,8 +313,9 @@ class Traceui(TraceuiForm, TraceuiBase):
         traceCollection.loadTrace(filename)
         plottedTraceList = list()
         for plotting in traceCollection.tracePlottingList:
-            name = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
-            plottedTrace = PlottedTrace(traceCollection,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name)
+            windowName = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
+            name = plotting.name
+            plottedTrace = PlottedTrace(traceCollection, self.graphicsViewDict[windowName]['view'], pens.penList, -1, tracePlotting=plotting, windowName=windowName, name=name)
             plottedTrace.category = traceCollection.fileleaf
             plottedTraceList.append(plottedTrace)
             self.addTrace(plottedTrace,-1)
