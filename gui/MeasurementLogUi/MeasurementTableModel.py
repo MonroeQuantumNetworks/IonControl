@@ -65,12 +65,12 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         return os.path.split(filename)[1]
 
     @QtCore.pyqtSlot(str, str, str)
-    def onTraceModelDataChanged(self, traceCreationDate, changeType, data):
+    def onTraceModelDataChanged(self, traceCreation, changeType, data):
         """Trace data changed via traceui. Update model."""
-        traceCreationDate = str(traceCreationDate)
+        traceCreation = str(traceCreation)
         changeType = str(changeType)
         data=str(data)
-        measurement = self.container.measurementDict.get(traceCreationDate)
+        measurement = self.container.measurementDict.get(traceCreation)
         row = self.measurements.index(measurement) if measurement in self.measurements else -1
         if row >= 0:
             if changeType=='comment':
@@ -86,8 +86,13 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     def onTraceRemoved(self, traceCreation):
         """If the signal that a trace was removed is received, remove it from the measurement dict"""
         traceCreation = str(traceCreation)
-        if traceCreation in self.container.measurementDict:
+        measurement = self.container.measurementDict.get(traceCreation)
+        row = self.measurements.index(measurement) if measurement in self.measurements else -1
+        if measurement:
             self.container.measurementDict.pop(traceCreation)
+            if row >= 0:
+                self.dataChanged.emit(self.index(row, self.column.plot), self.index(row, self.column.plot))
+
 
     def addColumn(self, extraColumn ):
         self.beginInsertColumns( QtCore.QModelIndex(), self.coreColumnCount+len(self.extraColumns), self.coreColumnCount+len(self.extraColumns))
