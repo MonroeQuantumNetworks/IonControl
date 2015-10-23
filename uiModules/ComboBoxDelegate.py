@@ -3,10 +3,10 @@ from functools import partial
 from PyQt4 import QtGui, QtCore
 
 
-class ComboBoxDelegate(QtGui.QItemDelegate):
+class ComboBoxDelegate(QtGui.QStyledItemDelegate):
     """Class for combo box editors in models"""
     def __init__(self):
-        QtGui.QItemDelegate.__init__(self)
+        QtGui.QStyledItemDelegate.__init__(self)
         
     def createEditor(self, parent, option, index ):
         """Create the combo box editor"""

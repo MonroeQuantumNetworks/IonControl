@@ -17,14 +17,14 @@ from uiModules.CategoryTree import CategoryTreeModel, nodeTypes
 
 api2 = sip.getapi("QVariant")==2
 
-class TraceComboDelegate(QtGui.QItemDelegate):
+class TraceComboDelegate(QtGui.QStyledItemDelegate):
     """
     Class for combo box editor to select what trace color to use
 
     Args:
         penicons (list[Qicon]): list of icons to select trace color"""
     def __init__(self, penicons):
-        QtGui.QItemDelegate.__init__(self)
+        QtGui.QStyledItemDelegate.__init__(self)
         self.penicons = penicons        
         
     def createEditor(self,parent, option, index ):
@@ -47,7 +47,8 @@ class TraceComboDelegate(QtGui.QItemDelegate):
          
     def updateEditorGeometry(self,editor, option, index ):
         editor.setGeometry(option.rect)
-    
+
+
 class TraceModel(CategoryTreeModel):
     """
     Construct the TraceModel.
