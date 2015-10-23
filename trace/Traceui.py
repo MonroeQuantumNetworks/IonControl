@@ -6,7 +6,7 @@ Created on Fri Dec 28 18:40:30 2012
 """
 import logging
 import os.path
-from trace import TraceCollection
+from trace.TraceCollection import TraceCollection
 from trace import pens
 
 from PyQt4 import QtGui, QtCore
@@ -302,17 +302,23 @@ class Traceui(TraceuiForm, TraceuiBase):
         for fname in fnames:
             self.openFile(fname)
 
-    def openFile(self, fname):
-        trace = TraceCollection.TraceCollection()
-        trace.filename = str(fname)
-        self.settings.lastDir, trace.name = os.path.split(str(fname))
-        trace.loadTrace(str(fname))
+    def openFile(self, filename):
+        filename = str(filename)
+        traceCollection = TraceCollection()
+        traceCollection.filename = filename
+        traceCollection.filepath, traceCollection.fileleaf = os.path.split(filename)
+        self.settings.lastDir = traceCollection.filepath
+        traceCollection.name = traceCollection.fileleaf
+        traceCollection.saved = True
+        traceCollection.loadTrace(filename)
         plottedTraceList = list()
-        for plotting in trace.tracePlottingList:
+        for plotting in traceCollection.tracePlottingList:
             name = plotting.windowName if plotting.windowName in self.graphicsViewDict else self.graphicsViewDict.keys()[0]
-            plottedTrace = PlottedTrace(trace,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name)
+            plottedTrace = PlottedTrace(traceCollection,self.graphicsViewDict[name]['view'],pens.penList,-1,tracePlotting=plotting, windowName=name)
+            plottedTrace.category = traceCollection.fileleaf
             plottedTraceList.append(plottedTrace)
             self.addTrace(plottedTrace,-1)
+        self.resizeColumnsToContents()
         return plottedTraceList
 
     def saveConfig(self):
