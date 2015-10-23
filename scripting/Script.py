@@ -51,6 +51,7 @@ class Script(QtCore.QThread):
     addPlotSignal = QtCore.pyqtSignal(str) #arg: plot name
     abortScanSignal = QtCore.pyqtSignal()
     createTraceSignal = QtCore.pyqtSignal(list) #arg: trace creation data
+    closeTraceSignal = QtCore.pyqtSignal(str) #arg: trace to close
     fitSignal = QtCore.pyqtSignal(str, str) #args: fitName, traceName
     
     def __init__(self, fullname='', code='', parent=None):
@@ -358,10 +359,19 @@ class Script(QtCore.QThread):
         traceCreationData = [traceName, plotName, xUnit, xLabel, comment]
         self.createTraceSignal.emit(traceCreationData)
 
+    @scriptFunction()
+    def closeTrace(self, traceName):
+        """closeTrace(traceName)
+        Finalize trace. Registers in the measurement log and saves. No new data can be added to the trace.
+
+        Args:
+            traceName (str): name of trace to close
+        """
+        self.closeTraceSignal.emit(traceName)
+
     # @scriptFunction()
     # def fit(self, fitName, traceName):
     #     """fit(fitName, traceName)
-    #
     #     fit the data in 'traceName' using 'fitName'"""
     #     self.fitSignal.emit(fitName, traceName)
         
