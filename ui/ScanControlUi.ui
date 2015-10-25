@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>406</width>
+    <width>488</width>
     <height>720</height>
    </rect>
   </property>
@@ -173,7 +173,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>386</width>
+        <width>468</width>
         <height>643</height>
        </rect>
       </property>
@@ -266,13 +266,6 @@
            <item row="4" column="2" colspan="2">
             <widget class="QLineEdit" name="filenameEdit"/>
            </item>
-           <item row="1" column="2">
-            <widget class="QLineEdit" name="xExprEdit">
-             <property name="toolTip">
-              <string>expression x is current value</string>
-             </property>
-            </widget>
-           </item>
            <item row="2" column="2" colspan="2">
             <widget class="QComboBox" name="scanTypeCombo">
              <item>
@@ -301,13 +294,6 @@
             <widget class="QComboBox" name="loadPPComboBox">
              <property name="maxVisibleItems">
               <number>100</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="3">
-            <widget class="QLineEdit" name="xUnitEdit">
-             <property name="toolTip">
-              <string>unit</string>
              </property>
             </widget>
            </item>
@@ -382,6 +368,42 @@
              </property>
             </widget>
            </item>
+           <item row="1" column="2">
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>expression</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="xExprEdit">
+               <property name="toolTip">
+                <string>expression x is current value</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="1" column="3">
+            <layout class="QHBoxLayout" name="horizontalLayout_10">
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>unit</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="xUnitEdit">
+               <property name="toolTip">
+                <string>unit</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
           </layout>
          </widget>
         </widget>
@@ -421,7 +443,6 @@
   <tabstop>comboBox</tabstop>
   <tabstop>saveButton</tabstop>
   <tabstop>scanModeComboBox</tabstop>
-  <tabstop>xExprEdit</tabstop>
   <tabstop>scanTypeCombo</tabstop>
   <tabstop>filenameEdit</tabstop>
   <tabstop>autoSaveCheckBox</tabstop>
