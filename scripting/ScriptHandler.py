@@ -273,8 +273,8 @@ class ScriptHandler:
             error = True
         else:
             plottedTrace = self.scriptTraces.pop(traceName) #remove from the list of script traces
-            plottedTrace.traceCollection.save()
             plottedTrace.traceCollection.description["traceFinalized"] = datetime.now(pytz.utc)
+            plottedTrace.traceCollection.save()
             self.registerMeasurement(plottedTrace)
             message = "Trace {0} closed".format(traceName)
             error = False
@@ -445,8 +445,8 @@ class ScriptHandler:
     @QtCore.pyqtSlot()
     def onFinished(self):
         for plottedTrace in self.scriptTraces.values():
-            plottedTrace.traceCollection.save()
             plottedTrace.traceCollection.description["traceFinalized"] = datetime.now(pytz.utc)
+            plottedTrace.traceCollection.save()
             self.registerMeasurement(plottedTrace)
 
     @QtCore.pyqtSlot(str, bool, str)
