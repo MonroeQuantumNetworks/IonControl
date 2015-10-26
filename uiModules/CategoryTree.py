@@ -278,9 +278,9 @@ class CategoryTreeView(QtGui.QTreeView):
             self.onBold()
 
     def onBold(self):
-        indexes = self.selectionModel().selectedRows(0)
+        indexList = self.selectedRows()
         model=self.model()
-        for leftIndex in indexes:
+        for leftIndex in indexList:
             node=model.nodeFromIndex(leftIndex)
             node.isBold = not node.isBold if hasattr(node,'isBold') else True
             rightIndex = model.indexFromNode(node, model.numColumns-1)
@@ -289,25 +289,34 @@ class CategoryTreeView(QtGui.QTreeView):
     def onDelete(self):
         model=self.model()
         if model.allowDeletion:
-            indexes = self.selectionModel().selectedRows(0)
-            for leftIndex in indexes:
+            indexList = self.selectedRows()
+            for leftIndex in indexList:
                 node=model.nodeFromIndex(leftIndex)
-                if node!=model.root and (not hasattr(node.content,'okToDelete') or node.content.okToDelete):  # make sure the trace is not still active
+                if node!=model.root and (not hasattr(node.content,'okToDelete') or node.content.okToDelete):  # make sure node is flagged as ok to delete
                     model.removeNode(node)
 
     def onReorder(self, up):
         if self.model().allowReordering:
-            allIndexList = self.selectedIndexes()
-            rows = set()
-            indexList = []
-            for index in allIndexList:
-                if index.row() not in rows:
-                    indexList.append(index)
-                    rows.add(index.row())
-            indexList.sort(key=lambda index: index.row())
+            indexList = self.selectedRows()
             if not up: indexList.reverse()
             for index in indexList:
                 self.model().moveRow(index, up)
+
+    def selectedRows(self, col=0):
+        """Returns a list of model indexes corresponding to column 'col' of each selected element, sorted by row.
+
+        Built-in selectionModel().selectedRows function seems to have a bug"""
+        allIndexList = self.selectedIndexes()
+        indexList = []
+        rows = set()
+        for index in allIndexList:
+            if index.row() not in rows:
+                node = self.model().nodeFromIndex(index)
+                colIndex = self.model().indexFromNode(node, col)
+                indexList.append(colIndex)
+                rows.add(index.row())
+        indexList.sort(key=lambda ind: ind.row())
+        return indexList
 
     def treeState(self):
         """Returns tree state for saving config"""
