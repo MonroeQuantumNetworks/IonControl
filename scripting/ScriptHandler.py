@@ -487,16 +487,19 @@ class ScriptHandler:
 
     def registerMeasurement(self, plottedTrace):
         """register a script created trace in the measurement log"""
-        measurement = Measurement(scanType= 'Scan', scanName=plottedTrace.traceCollection.filenamePattern,
+        measurement = Measurement(scanType= 'Script', scanName=plottedTrace.traceCollection.filenamePattern,
                                   scanParameter='', scanTarget='',
                                   scanPP = '',
-                                  evaluation='Script {0}'.format(self.script.shortname),
+                                  evaluation='<Script {0}>'.format(self.script.shortname),
                                   startDate=plottedTrace.traceCollection.description['traceCreation'],
                                   duration=None,
                                   filename=plottedTrace.traceCollection.filename,
                                   comment=plottedTrace.traceCollection.comment,
                                   longComment=None,
                                   failedAnalysis=None)
+        space = self.scanExperiment.measurementLog.container.getSpace('GlobalVariables')
+        for name, value in self.experimentUi.globalVariablesUi.variables.iteritems():
+            measurement.parameters.append( Parameter(name=name, value=value, space=space) )
         measurement.plottedTraceList = [plottedTrace]
         self.scanExperiment.measurementLog.container.addMeasurement(measurement)
 

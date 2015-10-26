@@ -149,6 +149,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict)
         self.traceui.setupUi(self.traceui)
         self.measurementLog.addTraceui( 'Scan', self.traceui )
+        self.measurementLog.traceuiLookup['Script'] = self.traceui
         self.traceui.model.traceModelDataChanged.connect(self.measurementLog.measurementModel.onTraceModelDataChanged)
         self.measurementLog.measurementModel.measurementModelDataChanged.connect(self.traceui.model.onMeasurementModelDataChanged)
         self.traceui.model.traceRemoved.connect(self.measurementLog.measurementModel.onTraceRemoved)
