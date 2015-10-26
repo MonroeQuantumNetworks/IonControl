@@ -256,6 +256,10 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         """Return the first data node under (and including) node"""
         return node if node.nodeType==nodeTypes.data else (self.getFirstDataNode(node.children[0]) if node.children else None)
 
+    def getLastDataNode(self, node):
+        """Return the last data node under (and including) node"""
+        return node if node.nodeType==nodeTypes.data else (self.getLastDataNode(node.children[-1]) if node.children else None)
+
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
