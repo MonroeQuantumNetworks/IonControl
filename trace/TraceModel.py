@@ -67,6 +67,7 @@ class TraceModel(CategoryTreeModel):
         self.penicons = penicons
         self.graphicsViewDict = graphicsViewDict
         self.allowDeletion = True
+        self.allowReordering = True
         self.columnNames = ['name','pen','window','comment']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
