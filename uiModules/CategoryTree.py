@@ -249,7 +249,7 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         return self.nodeFromIndex(index).content
 
     def getTopCategory(self, node):
-        """Return the highest level category before root in the tree above node"""
+        """Return the highest level category node before root in the tree above node"""
         return None if node is self.root else (node if node.parent is self.root else self.getTopCategory(node.parent)) #recursive
 
     def getFirstDataNode(self, node):
@@ -278,7 +278,7 @@ class CategoryTreeView(QtGui.QTreeView):
             self.onBold()
 
     def onBold(self):
-        indexList = self.selectedRows()
+        indexList = self.selectedRowIndexes()
         model=self.model()
         for leftIndex in indexList:
             node=model.nodeFromIndex(leftIndex)
@@ -289,21 +289,20 @@ class CategoryTreeView(QtGui.QTreeView):
     def onDelete(self):
         model=self.model()
         if model.allowDeletion:
-            indexList = self.selectedRows()
-            for leftIndex in indexList:
-                node=model.nodeFromIndex(leftIndex)
+            nodeList = self.selectedNodes()
+            for node in nodeList:
                 if node!=model.root and (not hasattr(node.content,'okToDelete') or node.content.okToDelete):  # make sure node is flagged as ok to delete
                     model.removeNode(node)
 
     def onReorder(self, up):
         if self.model().allowReordering:
-            indexList = self.selectedRows()
+            indexList = self.selectedRowIndexes()
             if not up: indexList.reverse()
             for index in indexList:
                 self.model().moveRow(index, up)
 
-    def selectedRows(self, col=0):
-        """Returns a list of model indexes corresponding to column 'col' of each selected element, sorted by row.
+    def selectedRowIndexes(self, col=0):
+        """Returns a list of unique model indexes corresponding to column 'col' of each selected element, sorted by row.
 
         Built-in selectionModel().selectedRows function seems to have a bug"""
         allIndexList = self.selectedIndexes()
@@ -317,6 +316,43 @@ class CategoryTreeView(QtGui.QTreeView):
                 rows.add(index.row())
         indexList.sort(key=lambda ind: ind.row())
         return indexList
+
+    def selectedNodes(self):
+        """Same as selectedRows, but returns list of nodes rather than list of model indexes"""
+        allIndexList = self.selectedIndexes()
+        nodeList = []
+        rows = set()
+        for index in allIndexList:
+            if index.row() not in rows:
+                node = self.model().nodeFromIndex(index)
+                nodeList.append(node)
+                rows.add(index.row())
+        nodeList.sort(key=lambda node: node.row)
+        return nodeList
+
+    def selectedCategoryIndexes(self, col=0):
+        """Returns list of unique model indexes corresponding to column 'col' of the top level category of each selected element, sorted by row."""
+        return [self.model().indexFromNode(node, col) for node in self.selectedCategoryNodes()]
+
+    def selectedCategoryNodes(self):
+        """Same as selectedCategories, but returns list of nodes rather than list of model indexes"""
+        nodeList = self.selectedNodes()
+        categoryNodeList = []
+        for node in nodeList:
+            categoryNode=self.model().getTopCategory(node)
+            if categoryNode not in categoryNodeList:
+                categoryNodeList.append(categoryNode)
+        return categoryNodeList
+
+    def selectedDataNodes(self):
+        """Returns list of selected data nodes, or first children of selected category nodes"""
+        nodeList = self.selectedNodes()
+        dataNodeList = []
+        for node in nodeList:
+            firstDataNode=self.model().getFirstDataNode(node)
+            if firstDataNode:
+                dataNodeList.append(firstDataNode)
+        return dataNodeList
 
     def treeState(self):
         """Returns tree state for saving config"""
