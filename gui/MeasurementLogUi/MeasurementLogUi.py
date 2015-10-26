@@ -360,5 +360,24 @@ class MeasurementLogUi(Form, Base ):
             if ref() is not None:
                 self.doCreatePlot(*context, update=True )
         self.cacheGarbageCollect()
-            
-        
+
+    @QtCore.pyqtSlot(list)
+    def onOpenMeasurementLog(self, traceCreationList):
+        """Called when traceui emits signal to open the corresponding measurement log entry"""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        measurementDict = self.measurementModel.container.measurementDict
+        measurements = self.measurementModel.measurements
+        selection = QtGui.QItemSelection()
+        self.measurementTableView.selectionModel().select(selection, QtGui.QItemSelectionModel.Clear) #clear selection
+        for traceCreation in traceCreationList:
+            measurement = measurementDict.get(traceCreation)
+            row = measurements.index(measurement) if measurement in measurements else -1
+            if row >= 0:
+                leftInd = self.measurementModel.index(row,0)
+                rightInd = self.measurementModel.index(row,self.measurementModel.columnCount()-1)
+                selection.select(leftInd, rightInd) #add the specified measurement to the selection
+        self.measurementTableView.selectionModel().select(selection, QtGui.QItemSelectionModel.Select) #select full selection
+        self.measurementTableView.scrollTo(leftInd) #scroll to left column of last measurement in list
+        self.measurementTableView.setFocus(True)

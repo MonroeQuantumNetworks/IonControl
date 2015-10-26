@@ -426,6 +426,9 @@
      <property name="text">
       <string>Open in Measurement Log</string>
      </property>
+     <property name="shortcut">
+      <string>Ctrl+M</string>
+     </property>
      <property name="toolButtonStyle">
       <enum>Qt::ToolButtonTextBesideIcon</enum>
      </property>

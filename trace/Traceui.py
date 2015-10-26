@@ -62,6 +62,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         experimentName (str): name of experiment with which this Traceui is associated
         graphicsViewDict (dict): dict of available plot windows
     """
+    openMeasurementLog = QtCore.pyqtSignal(list) #list of strings with trace creation dates
     def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None):
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
@@ -96,6 +97,8 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.selectAllButton.clicked.connect(self.traceView.selectAll)
         self.collapseAllButton.clicked.connect(self.traceView.collapseAll)
         self.expandAllButton.clicked.connect(self.traceView.expandAll)
+        self.traceView.clicked.connect(self.onActiveTraceChanged)
+        self.measurementLogButton.clicked.connect(self.onMeasurementLog)
 
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
 
@@ -117,7 +120,15 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.expandNewAction.triggered.connect(self.onExpandNew)
         self.addAction( self.expandNewAction )
 
-        self.traceView.clicked.connect( self.onActiveTraceChanged )
+    def onMeasurementLog(self):
+        """Execute when open measurement log is clicked. Emit signal containing list of traces selected."""
+        selectedCategoryNodes = self.selectedCategoryNodes()
+        traceCreationList = []
+        for categoryNode in selectedCategoryNodes:
+            traceCreation = str(categoryNode.children[0].content.traceCollection.traceCreation) if categoryNode.children else None
+            if traceCreation:
+                traceCreationList.append(traceCreation)
+        self.openMeasurementLog.emit(traceCreationList)
 
     def onClearOrPlot(self, changeType):
         """Execute when clear or plot action buttons are clicked. Plot or unplot selected traces."""
