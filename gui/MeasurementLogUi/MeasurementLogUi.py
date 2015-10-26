@@ -371,6 +371,7 @@ class MeasurementLogUi(Form, Base ):
         measurements = self.measurementModel.measurements
         selection = QtGui.QItemSelection()
         self.measurementTableView.selectionModel().select(selection, QtGui.QItemSelectionModel.Clear) #clear selection
+        leftInd=None
         for traceCreation in traceCreationList:
             measurement = measurementDict.get(traceCreation)
             row = measurements.index(measurement) if measurement in measurements else -1
@@ -379,5 +380,6 @@ class MeasurementLogUi(Form, Base ):
                 rightInd = self.measurementModel.index(row,self.measurementModel.columnCount()-1)
                 selection.select(leftInd, rightInd) #add the specified measurement to the selection
         self.measurementTableView.selectionModel().select(selection, QtGui.QItemSelectionModel.Select) #select full selection
-        self.measurementTableView.scrollTo(leftInd) #scroll to left column of last measurement in list
+        if leftInd:
+            self.measurementTableView.scrollTo(leftInd) #scroll to left column of last measurement in list
         self.measurementTableView.setFocus(True)
