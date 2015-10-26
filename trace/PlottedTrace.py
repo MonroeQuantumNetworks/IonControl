@@ -17,7 +17,6 @@ import time
 from modules import WeakMethod
 from functools import partial
 from itertools import izip
-from sys import getrefcount
 
 def sort_lists_by(lists, key_list=0, desc=False):
     return izip(*sorted(izip(*lists), reverse=desc,
@@ -100,7 +99,8 @@ class PlottedTrace(object):
 
     @property
     def okToDelete(self):
-        return getrefcount(self)<7 or 'finalized' in self.trace.description
+        """A trace is OK to delete if it has been finalized"""
+        return 'finalized' in self.trace.description
 
     @property
     def traceCollection(self):
