@@ -4,10 +4,9 @@ Created on Fri Dec 28 18:40:30 2012
 
 @author: pmaunz
 """
-import os.path
 from trace import pens
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import numpy
 from pyqtgraph.graphicsItems.ErrorBarItem import ErrorBarItem
 from pyqtgraph.graphicsItems.PlotCurveItem import PlotCurveItem
@@ -18,7 +17,7 @@ import time
 from modules import WeakMethod
 from functools import partial
 from itertools import izip
-from ProjectConfig.Project import getProject
+from sys import getrefcount
 
 def sort_lists_by(lists, key_list=0, desc=False):
     return izip(*sorted(izip(*lists), reverse=desc,
@@ -98,6 +97,10 @@ class PlottedTrace(object):
             self._graphicsView = graphicsView
             self.windowName = name
             self.plot()
+
+    @property
+    def okToDelete(self):
+        return getrefcount(self)<7 or 'finalized' in self.trace.description
 
     @property
     def traceCollection(self):

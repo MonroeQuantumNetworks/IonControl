@@ -3,7 +3,7 @@ __author__ = 'jmizrahi'
 from PyQt4 import QtCore, QtGui
 from modules.enum import enum
 from modules.Utility import indexWithDefault
-import functools
+from sys import getrefcount
 from uiModules.KeyboardFilter import KeyListFilter
 nodeTypes = enum('category', 'data')
 
@@ -284,7 +284,7 @@ class CategoryTreeView(QtGui.QTreeView):
             indexes = self.selectionModel().selectedRows(0)
             for leftIndex in indexes:
                 node=model.nodeFromIndex(leftIndex)
-                if node!=model.root:
+                if node!=model.root and (not hasattr(node.content,'okToDelete') or node.content.okToDelete):  # make sure the trace is not still active
                     model.removeNode(node)
 
     def onReorder(self, up):
