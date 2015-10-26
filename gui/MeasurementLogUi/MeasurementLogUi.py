@@ -314,7 +314,7 @@ class MeasurementLogUi(Form, Base ):
                         trace.bottom = bottomData
                     traceui, item, view = self.plotWindowIndex[plotName]
                     plottedTrace = PlottedTrace( trace, view, xAxisLabel = "local time", windowName=item) 
-                    plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
+                    #plottedTrace.trace.filenameCallback = partial( WeakMethod.ref(plottedTrace.traceFilename), "" )
                     traceui.addTrace( plottedTrace, pen=-1)
                     traceui.resizeColumnsToContents()
                     self.cache[(xDataDef, yDataDef)] = ( weakref.ref(plottedTrace), (xDataDef, yDataDef, plotName) )
