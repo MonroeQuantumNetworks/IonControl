@@ -81,6 +81,7 @@ class TraceModel(CategoryTreeModel):
         self.categoryDataLookup.update({
             (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node),
             (QtCore.Qt.DisplayRole, self.column.comment): lambda node: node.children[0].content.traceCollection.comment if node.children else None,
+            (QtCore.Qt.EditRole, self.column.comment): lambda node: node.children[0].content.traceCollection.comment if node.children else None,
             (QtCore.Qt.BackgroundRole, self.column.name): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
             (QtCore.Qt.BackgroundRole, self.column.pen): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
             (QtCore.Qt.BackgroundRole, self.column.window): lambda node: None if not node.children else (None if node.children[0].content.traceCollection.saved else unsavedBG),
