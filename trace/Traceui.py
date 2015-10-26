@@ -63,7 +63,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         graphicsViewDict (dict): dict of available plot windows
     """
     openMeasurementLog = QtCore.pyqtSignal(list) #list of strings with trace creation dates
-    def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None):
+    def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None, hasMeasurementLog=False):
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
         self.penicons = penicons
@@ -71,6 +71,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.configname = "Traceui."+experimentName
         self.settings = self.config.get(self.configname+".settings",Settings(lastDir=lastDir, plotstyle=0))
         self.graphicsViewDict = graphicsViewDict
+        self.hasMeasurementLog = hasMeasurementLog
 
     def setupUi(self,MainWindow):
         """Setup the UI. Create the model and the view. Connect all the buttons."""
@@ -119,6 +120,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.expandNewAction.setChecked( self.settings.expandNew)
         self.expandNewAction.triggered.connect(self.onExpandNew)
         self.addAction( self.expandNewAction )
+        self.measurementLogButton.setVisible(self.hasMeasurementLog)
 
     def onMeasurementLog(self):
         """Execute when open measurement log is clicked. Emit signal containing list of traces selected."""
