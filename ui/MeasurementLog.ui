@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Measurement Log</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="Experiment.qrc">
+    <normaloff>:/petersIcons/icons/Owwnotebook_icon.png</normaloff>:/petersIcons/icons/Owwnotebook_icon.png</iconset>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

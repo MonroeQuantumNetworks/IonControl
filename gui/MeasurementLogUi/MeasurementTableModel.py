@@ -11,6 +11,7 @@ from modules.firstNotNone import firstNotNone
 from modules.enum import enum
 import os.path
 from dateutil.tz import tzlocal
+import pytz
 
 class MeasurementTableModel(QtCore.QAbstractTableModel):
     valueChanged = QtCore.pyqtSignal(object)
@@ -118,19 +119,21 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
         return QtCore.Qt.Checked
         
     def setPlotted(self, row, value):
+        measurement = self.measurements[row]
         plotted = value == QtCore.Qt.Checked
         if not plotted:
-            for pt in self.measurements[row].plottedTraceList:
+            for pt in measurement.plottedTraceList:
                 pt.plot(0)
         else:
-            plottedTraceList = self.measurements[row].plottedTraceList
+            plottedTraceList = measurement.plottedTraceList
             if len(plottedTraceList)>0:
                 for pt in plottedTraceList:
                     pt.plot(-1)
             else:
-                if self.measurements[row].filename is not None and exists(self.measurements[row].filename):
-                    self.loadTrace(self.measurements[row])
-        self.measurementModelDataChanged.emit(str(self.measurements[row].startDate), 'isPlotted', '')
+                if measurement.filename is not None and exists(measurement.filename):
+                    self.loadTrace(measurement)
+                    self.container.measurementDict[str(measurement.startDate.astimezone(pytz.utc))] = measurement
+        self.measurementModelDataChanged.emit(str(measurement.startDate.astimezone(pytz.utc)), 'isPlotted', '')
         return True
     
     def loadTrace(self, measurement):
@@ -138,25 +141,27 @@ class MeasurementTableModel(QtCore.QAbstractTableModel):
     
     def setComment(self, row, comment):
         """Set the comment at the specified row"""
+        measurement = self.measurements[row]
         if isinstance(comment, QtCore.QVariant):
             comment = comment.toString()
         comment = str(comment)
-        if self.measurements[row].comment != comment:
-            self.measurements[row].comment = comment
-            self.measurements[row]._sa_instance_state.session.commit()
-            self.measurementModelDataChanged.emit(str(self.measurements[row].startDate), 'comment', comment)
+        if measurement.comment != comment:
+            measurement.comment = comment
+            measurement._sa_instance_state.session.commit()
+            self.measurementModelDataChanged.emit(str(measurement.startDate.astimezone(pytz.utc)), 'comment', comment)
             return True
         else:
             return False
 
     def setFilename(self, row, filename):
         """Set the filename at the specified row"""
+        measurement = self.measurements[row]
         if isinstance(filename, QtCore.QVariant):
             filename = filename.toString()
         filename = str(filename)
-        if self.measurements[row].filename != filename:
-            self.measurements[row].filename = filename
-            self.measurements[row]._sa_instance_state.session.commit()
+        if measurement.filename != filename:
+            measurement.filename = filename
+            measurement._sa_instance_state.session.commit()
             return True
         else:
             return False
