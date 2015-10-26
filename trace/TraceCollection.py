@@ -188,7 +188,7 @@ class TraceCollection(object):
     def x(self, val):
         """Set x array"""
         self._x_ = val
-        self.description["lastDataAquired"]  = datetime.now()
+        self.description["lastDataAquired"]  = datetime.now(pytz.utc)
         if self.record_timestamps:
             self.timestamp = numpy.append( self.timestamp, time.time() )
         
@@ -314,7 +314,7 @@ class TraceCollection(object):
     def saveTraceHeader(self,outfile):
         """ save the header of the trace to outfile
         """
-        self.description["fileCreation"] = datetime.now()
+        self.description["fileCreation"] = datetime.now(pytz.utc)
         self.description.sort()
         for var, value in self.description.iteritems():
             print >>outfile, "# {0}\t{1}".format(var, value)
