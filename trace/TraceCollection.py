@@ -237,7 +237,7 @@ class TraceCollection(object):
     @property
     def filenamePattern(self):
         """Get the pattern of the file name"""
-        return self._filenamePattern
+        return self._filenamePattern if self._filenamePattern else 'Untitled'
 
     @filenamePattern.setter
     def filenamePattern(self, pattern):
