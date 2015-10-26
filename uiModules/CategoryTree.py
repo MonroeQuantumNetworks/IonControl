@@ -248,6 +248,14 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         """Get the content associated with the given index"""
         return self.nodeFromIndex(index).content
 
+    def getTopCategory(self, node):
+        """Return the highest level category before root in the tree above node"""
+        return None if node is self.root else (node if node.parent is self.root else self.getTopCategory(node.parent)) #recursive
+
+    def getFirstDataNode(self, node):
+        """Return the first data node under (and including) node"""
+        return node if node.nodeType==nodeTypes.data else (self.getFirstDataNode(node.children[0]) if node.children else None)
+
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
