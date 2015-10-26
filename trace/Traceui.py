@@ -21,6 +21,7 @@ from TraceDescriptionTableModel import TraceDescriptionTableModel
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
 from uiModules.KeyboardFilter import KeyListFilter
 from functools import partial
+from dateutil.tz import tzlocal
 
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\Traceui.ui')
 TraceuiForm, TraceuiBase = PyQt4.uic.loadUiType(uipath)
@@ -116,10 +117,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.expandNewAction.triggered.connect(self.onExpandNew)
         self.addAction( self.expandNewAction )
 
-        self.descriptionModel = TraceDescriptionTableModel()
-        self.descriptionTableView.setModel( self.descriptionModel )
         self.traceView.clicked.connect( self.onActiveTraceChanged )
-        self.descriptionTableView.horizontalHeader().setStretchLastSection(True)
 
     def onClearOrPlot(self, changeType):
         """Execute when clear or plot action buttons are clicked. Plot or unplot selected traces."""
@@ -212,13 +210,28 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.traceView.onDelete()
 
     def onActiveTraceChanged(self, index):
-        """Display trace description when a trace is clicked"""
+        """Display trace creation/finalized date/time when a trace is clicked"""
         node = self.model.nodeFromIndex(index)
         if node.nodeType==nodeTypes.data:
-            self.descriptionModel.setDescription(node.content.traceCollection.description)
-        elif node.nodeType==nodeTypes.category:
-            if node.children:
-                self.descriptionModel.setDescription(node.children[0].content.traceCollection.description)
+            description = node.content.traceCollection.description
+        else:
+            description = node.children[0].content.traceCollection.description
+        traceCreation = description.get("traceCreation")
+        traceFinalized = description.get("traceFinalized")
+        if traceCreation:
+            traceCreationLocal = traceCreation.astimezone(tzlocal()) #use local time
+            self.createdDateLabel.setText(traceCreationLocal.strftime('%Y-%m-%d'))
+            self.createdTimeLabel.setText(traceCreationLocal.strftime('%H:%M:%S'))
+        else:
+            self.createdDateLabel.setText('')
+            self.createdTimeLabel.setText('')
+        if traceFinalized:
+            traceFinalizedLocal = traceFinalized.astimezone(tzlocal()) #use local time
+            self.finalizedDateLabel.setText(traceFinalizedLocal.strftime('%Y-%m-%d'))
+            self.finalizedTimeLabel.setText(traceFinalizedLocal.strftime('%H:%M:%S'))
+        else:
+            self.finalizedDateLabel.setText('')
+            self.finalizedTimeLabel.setText('')
 
     def onUnplotSetting(self, checked):
         self.settings.unplotLastTrace = checked
