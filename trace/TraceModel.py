@@ -284,14 +284,17 @@ class TraceModel(CategoryTreeModel):
         okToDelete = [getattr(dataNode.content, 'okToDelete', True) for dataNode in dataNodes]
         if all(okToDelete):
             for dataNode in dataNodes:
+                nodeHasNoSiblings = not self.hasSiblings(dataNode)
                 trace = dataNode.content
                 if trace.curvePen!=0:
                     trace.plot(0)
                 key = str(trace.traceCollection.traceCreation)
                 super(TraceModel, self).removeNode(dataNode)
-                if key in self.traceDict and not self.hasSiblings(dataNode):
+                if key in self.traceDict and nodeHasNoSiblings:
                     del self.traceDict[key]
                     self.traceRemoved.emit(key)
+                    if dataNode.parent is not self.root and dataNode.parent is not node:
+                        super(TraceModel, self).removeNode(dataNode.parent)
             if nodeIsNotData:
                 super(TraceModel, self).removeNode(node)
 
