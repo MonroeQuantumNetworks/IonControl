@@ -123,100 +123,72 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.measurementLogButton.setVisible(self.hasMeasurementLog)
 
     def onMeasurementLog(self):
-        """Execute when open measurement log is clicked. Emit signal containing list of traces selected."""
-        selectedCategoryNodes = self.selectedCategoryNodes()
+        """Execute when open measurement log is clicked. Emit signal containing list of trace creation keys selected."""
+        selectedTopNodes = self.traceView.selectedTopNodes()
         traceCreationList = []
-        for categoryNode in selectedCategoryNodes:
-            traceCreation = str(categoryNode.children[0].content.traceCollection.traceCreation) if categoryNode.children else None
-            if traceCreation:
+        for topNode in selectedTopNodes:
+            dataNode = self.model.getFirstDataNode(topNode)
+            if dataNode:
+                traceCreation = str(dataNode.content.traceCollection.traceCreation)
                 traceCreationList.append(traceCreation)
         self.openMeasurementLog.emit(traceCreationList)
 
     def onClearOrPlot(self, changeType):
-        """Execute when clear or plot action buttons are clicked. Plot or unplot selected traces."""
-        selectedIndexes = self.selectedRows()
-        changed=False
-        if selectedIndexes:
-            for index in selectedIndexes:
-                node = self.model.nodeFromIndex(index)
-                if node.nodeType == nodeTypes.data:
-                    trace = node.content
-                    if changeType=='clear' and trace.curvePen!=0:
-                        trace.plot(0)
-                        changed=True
-                    elif changeType=='plot' and trace.curvePen==0:
-                        trace.plot(-1,self.settings.plotstyle)
-                        changed=True
-                    if changed:
-                        self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
-                        leftInd = self.model.indexFromNode(node, col=self.model.column.name)
-                        rightInd = self.model.indexFromNode(node, col=self.model.column.pen)
-                        self.model.dataChanged.emit(leftInd, rightInd)
-                elif node.nodeType == nodeTypes.category:
-                    anyChanged=False
-                    for childNode in node.children:
-                        trace = childNode.content
-                        if changeType=='clear' and trace.curvePen != 0:
-                            trace.plot(0)
-                            changed=True
-                            anyChanged=True
-                        elif changeType=='plot' and trace.curvePen == 0:
-                            trace.plot(-1,self.settings.plotstyle)
-                            changed=True
-                            anyChanged=True
-                        if changed:
-                            leftInd = self.model.indexFromNode(childNode, col=self.model.column.name)
-                            rightInd = self.model.indexFromNode(childNode, col=self.model.column.pen)
-                            self.model.dataChanged.emit(leftInd, rightInd)
-                    if anyChanged:
-                        parentInd = self.model.indexFromNode(node, col=self.model.column.name)
-                        self.model.dataChanged.emit(parentInd, parentInd)
-                        self.model.traceModelDataChanged.emit(str(trace.traceCollection.traceCreation), 'isPlotted', '')
+        """Execute when clear or plot action buttons are clicked."""
+        leftCol=self.model.column.name
+        rightCol=self.model.column.pen
+        selectedNodes = self.traceView.selectedNodes()
+        uniqueSelectedNodes = [node for node in selectedNodes if node.parent not in selectedNodes]
+        for node in uniqueSelectedNodes:
+            dataNodes = self.model.getDataNodes(node)
+            for dataNode in dataNodes:
+                plottedTrace = dataNode.content
+                changed=False
+                if changeType=='clear' and plottedTrace.curvePen!=0:
+                    plottedTrace.plot(0)
+                    changed=True
+                elif changeType=='plot' and plottedTrace.curvePen==0:
+                    plottedTrace.plot(-1,self.settings.plotstyle)
+                    changed=True
+                if changed:
+                    self.model.traceModelDataChanged.emit(str(plottedTrace.traceCollection.traceCreation), 'isPlotted', '')
+                    leftInd = self.model.indexFromNode(dataNode, col=leftCol)
+                    rightInd = self.model.indexFromNode(dataNode, col=rightCol)
+                    self.model.dataChanged.emit(leftInd, rightInd)
+                    self.model.emitParentDataChanged(dataNode, leftCol, rightCol)
 
     def onApplyStyle(self):
         """Execute when apply style button is clicked. Changed style of selected traces."""
-        selectedIndexes = self.selectedRows()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                node = self.model.nodeFromIndex(index)
-                if node.nodeType == nodeTypes.data:
-                    trace = node.content
-                    trace.plot(-2, self.settings.plotstyle)
-                elif node.nodeType == nodeTypes.category:
-                    for child in node.children:
-                        trace = child.content
-                        trace.plot(-2, self.settings.plotstyle)
-
-    def selectedCategoryNodes(self):
-        """Return selected parent filename nodes"""
-        selectedIndexes = self.selectedRows()
-        nodes = set()
-        if selectedIndexes:
-            for index in selectedIndexes:
-                node = self.model.nodeFromIndex(index)
-                if node.nodeType == nodeTypes.data:
-                    nodes.add(node.parent)
-                elif node.nodeType == nodeTypes.category:
-                    nodes.add(node)
-        return nodes
+        selectedNodes = self.traceView.selectedNodes()
+        uniqueSelectedNodes = [node for node in selectedNodes if node.parent not in selectedNodes]
+        for node in uniqueSelectedNodes:
+            dataNodes = self.model.getDataNodes(node)
+            for dataNode in dataNodes:
+                trace = dataNode.content
+                trace.plot(-2, self.settings.plotstyle)
 
     def onSave(self):
         """Save button is clicked. Save selected traces. If a trace has never been saved before, update model."""
-        selectedCategoryNodes = self.selectedCategoryNodes()
-        for categoryNode in selectedCategoryNodes:
-            traceCollection = categoryNode.children[0].content.traceCollection if categoryNode.children else None
-            if traceCollection:
+        leftCol = 0
+        rightCol = self.model.numColumns-1
+        selectedTopNodes = self.traceView.selectedTopNodes()
+        for node in selectedTopNodes:
+            dataNode=self.model.getFirstDataNode(node)
+            if dataNode:
+                traceCollection = dataNode.content.traceCollection
                 alreadySaved = traceCollection.saved
                 traceCollection.save()
                 if not alreadySaved:
-                    self.model.onSaveUnsavedTrace(categoryNode)
+                    self.model.onSaveUnsavedTrace(dataNode)
                     self.model.traceModelDataChanged.emit(str(traceCollection.traceCreation), 'filename', traceCollection.filename)
-                    categoryLeftInd = self.model.indexFromNode(categoryNode, col=0)
-                    categoryRightInd = self.model.indexFromNode(categoryNode, col=self.model.numColumns-1)
-                    self.model.dataChanged.emit(categoryLeftInd, categoryRightInd)
-                    childTopLeftInd = self.model.indexFromNode(categoryNode.children[0], col=0)
-                    childBottomRightInd = self.model.indexFromNode(categoryNode.children[-1], col=self.model.numColumns-1)
-                    self.model.dataChanged.emit(childTopLeftInd, childBottomRightInd)
+                    if dataNode is node:
+                        topLeftInd = self.model.indexFromNode(dataNode, leftCol)
+                        bottomRightInd = self.model.indexFromNode(dataNode, rightCol)
+                    else:
+                        topLeftInd = self.model.indexFromNode(dataNode.parent.children[0], leftCol)
+                        bottomRightInd = self.model.indexFromNode(dataNode.parent.children[-1], rightCol)
+                    self.model.dataChanged.emit(topLeftInd, bottomRightInd)
+                    self.model.emitParentDataChanged(dataNode, leftCol, rightCol)
 
     def onRemove(self):
         """Execute when remove button is clicked. Remove selected traces from list (but don't delete files)."""
@@ -225,26 +197,30 @@ class Traceui(TraceuiForm, TraceuiBase):
     def onActiveTraceChanged(self, index):
         """Display trace creation/finalized date/time when a trace is clicked"""
         node = self.model.nodeFromIndex(index)
-        if node.nodeType==nodeTypes.data:
-            description = node.content.traceCollection.description
+        dataNode=self.model.getFirstDataNode(node)
+        if dataNode:
+            description = dataNode.content.traceCollection.description
+            traceCreation = description.get("traceCreation")
+            traceFinalized = description.get("traceFinalized")
+            if traceCreation:
+                traceCreationLocal = traceCreation.astimezone(tzlocal()) #use local time
+                self.createdDateLabel.setText(traceCreationLocal.strftime('%Y-%m-%d'))
+                self.createdTimeLabel.setText(traceCreationLocal.strftime('%H:%M:%S'))
+            else:
+                self.createdDateLabel.setText('')
+                self.createdTimeLabel.setText('')
+            if traceFinalized:
+                traceFinalizedLocal = traceFinalized.astimezone(tzlocal()) #use local time
+                self.finalizedDateLabel.setText(traceFinalizedLocal.strftime('%Y-%m-%d'))
+                self.finalizedTimeLabel.setText(traceFinalizedLocal.strftime('%H:%M:%S'))
+            else:
+                self.finalizedDateLabel.setText('')
+                self.finalizedTimeLabel.setText('')
         else:
-            description = node.children[0].content.traceCollection.description
-        traceCreation = description.get("traceCreation")
-        traceFinalized = description.get("traceFinalized")
-        if traceCreation:
-            traceCreationLocal = traceCreation.astimezone(tzlocal()) #use local time
-            self.createdDateLabel.setText(traceCreationLocal.strftime('%Y-%m-%d'))
-            self.createdTimeLabel.setText(traceCreationLocal.strftime('%H:%M:%S'))
-        else:
-            self.createdDateLabel.setText('')
-            self.createdTimeLabel.setText('')
-        if traceFinalized:
-            traceFinalizedLocal = traceFinalized.astimezone(tzlocal()) #use local time
-            self.finalizedDateLabel.setText(traceFinalizedLocal.strftime('%Y-%m-%d'))
-            self.finalizedTimeLabel.setText(traceFinalizedLocal.strftime('%H:%M:%S'))
-        else:
-            self.finalizedDateLabel.setText('')
-            self.finalizedTimeLabel.setText('')
+                self.createdDateLabel.setText('')
+                self.createdTimeLabel.setText('')
+                self.finalizedDateLabel.setText('')
+                self.finalizedTimeLabel.setText('')
 
     def onUnplotSetting(self, checked):
         self.settings.unplotLastTrace = checked
@@ -281,23 +257,24 @@ class Traceui(TraceuiForm, TraceuiBase):
             index = self.model.indexFromNode(node.parent)
             self.traceView.expand(index)
 
-    def selectedRows(self, useLastIfNoSelection=True, allowUnplotted=True):
-        inputIndexes = self.traceView.selectionModel().selectedRows(0)
+    def selectedRowIndexes(self, useLastIfNoSelection=True, allowUnplotted=True):
+        """Return selected row indexes, modified according to the boolean controls"""
+        inputIndexes = self.traceView.selectedRowIndexes()
         outputIndexes = []
         for index in inputIndexes:
             trace = self.model.contentFromIndex(index)
             if allowUnplotted or trace.isPlotted:
                 outputIndexes.append(index)
         if not outputIndexes and useLastIfNoSelection:
-            if self.model.root.children and self.model.root.children[0].children: #If there are filenames and traces in them
-                node = self.model.root.children[-1].children[-1]
+            node = self.model.getLastDataNode(self.model.root)
+            if node:
                 index = self.model.indexFromNode(node)
                 outputIndexes.append(index)
         return outputIndexes
 
     def selectedTraces(self, useLastIfNoSelection=False, allowUnplotted=True):
         """Return a list of the selected traces."""
-        selectedIndexes = self.selectedRows(useLastIfNoSelection, allowUnplotted)
+        selectedIndexes = self.selectedRowIndexes(useLastIfNoSelection, allowUnplotted)
         return [self.model.contentFromIndex(index) for index in selectedIndexes]
 
     def addTrace(self, trace, pen):
