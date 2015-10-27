@@ -278,20 +278,24 @@ class TraceModel(CategoryTreeModel):
         return None
 
     def removeNode(self, node):
-        """Recursively remove the node from the model, unplotting all connected traces"""
-        if node.nodeType == nodeTypes.data:
-            trace = node.content
-            if trace.curvePen!=0:
-                trace.plot(0)
-            super(TraceModel,self).removeNode(node)
-            key = str(node.content.traceCollection.traceCreation)
-            self.traceRemoved.emit(key)
-            if key in self.traceDict:
-                del self.traceDict[key]
-        elif node.nodeType == nodeTypes.category:
-            for childNode in node.children:
-                self.removeNode(childNode) #recursive
-            super(TraceModel,self).removeNode(node)
+        """Remove the node from the model, unplotting all connected traces"""
+        dataNodes = self.getDataNodes(node)
+        okToDelete = [getattr(dataNode.content, 'okToDelete', True) for dataNode in dataNodes]
+        if all(okToDelete):
+            for dataNode in dataNodes:
+                trace = dataNode.content
+                if trace.curvePen!=0:
+                    trace.plot(0)
+                key = str(trace.traceCollection.traceCreation)
+                super(TraceModel, self).removeNode(dataNode)
+                if key in self.traceDict and not self.hasSiblings(dataNode):
+                    del self.traceDict[key]
+                    self.traceRemoved.emit(key)
+            super(TraceModel, self).removeNode(node)
+
+    def hasSiblings(self, node):
+        """Returns True if node is not the only child of its parent, else False"""
+        return len(node.parent.children) > 1
 
     def onSaveUnsavedTrace(self, dataNode):
         """rename the category associated with dataNode, if any"""

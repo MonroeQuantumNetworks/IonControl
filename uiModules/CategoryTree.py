@@ -190,15 +190,20 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
     def removeNode(self, node):
         """Remove the specified node from the tree"""
         if self.allowDeletion and node!=self.root:
-            parent = node.parent
-            row = node.row
-            nodeID = node.id
-            parentIndex = self.indexFromNode(parent)
-            self.beginRemoveRows(parentIndex, row, row)
-            del parent.children[row]
-            del self.nodeDict[nodeID]
-            del node
-            self.endRemoveRows()
+            dataNodes = self.getDataNodes(node)
+            okToDelete = [getattr(dataNode.content, 'okToDelete', True) for dataNode in dataNodes]
+            if all(okToDelete):
+                for childNode in node.children:
+                    self.removeNode(childNode) #recursively delete children
+                parent = node.parent
+                row = node.row
+                nodeID = node.id
+                parentIndex = self.indexFromNode(parent)
+                self.beginRemoveRows(parentIndex, row, row)
+                del parent.children[row]
+                del self.nodeDict[nodeID]
+                del node
+                self.endRemoveRows()
 
     def makeCategoryNodes(self, categories):
         """Recursively creates tree nodes from the provided list of categories"""
@@ -279,8 +284,6 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
                     dataNodes.extend(childSubNodes)
         return dataNodes
 
-        return [node] if node.nodeType==nodeTypes.data else (self.getLastDataNode(node.children[-1]) if node.children else None)
-
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
@@ -316,7 +319,7 @@ class CategoryTreeView(QtGui.QTreeView):
         if model.allowDeletion:
             nodeList = self.selectedNodes()
             for node in nodeList:
-                if node!=model.root and (not hasattr(node.content,'okToDelete') or node.content.okToDelete):  # make sure node is flagged as ok to delete
+                if node!=model.root: #don't delete root
                     model.removeNode(node)
 
     def onReorder(self, up):
