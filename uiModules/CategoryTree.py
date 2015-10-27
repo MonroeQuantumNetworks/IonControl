@@ -174,10 +174,17 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         categories = None if categories.__class__!=list else categories #no categories if it's not a list
         categories = map(str, categories) if categories else categories #turn into list of strings
         parent = self.makeCategoryNodes(categories) if categories else self.root
-        id, nodeType = parent.id+'_'+name if parent.id else name, nodeTypes.data
-        node = Node(parent, id, nodeType, content)
+        nodeID = parent.id+'_'+name if parent.id else name
+        nodeType = nodeTypes.data
+        if nodeID in self.nodeDict: #nodeIDs must be unique. If the nodeID has already been used, we add "_n" to the ID and increment 'n' until we find an available ID
+            count=0
+            baseNodeID = nodeID
+            while nodeID in self.nodeDict:
+                nodeID = baseNodeID+"_{0}".format(count)
+                count+=1
+        node = Node(parent, nodeID, nodeType, content)
         self.addRow(parent, node)
-        self.nodeDict[id] = node
+        self.nodeDict[nodeID] = node
         return node
 
     def removeNode(self, node):
@@ -185,11 +192,11 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         if self.allowDeletion and node!=self.root:
             parent = node.parent
             row = node.row
-            id = node.id
+            nodeID = node.id
             parentIndex = self.indexFromNode(parent)
             self.beginRemoveRows(parentIndex, row, row)
             del parent.children[row]
-            del self.nodeDict[id]
+            del self.nodeDict[nodeID]
             del node
             self.endRemoveRows()
 
@@ -248,9 +255,9 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         """Get the content associated with the given index"""
         return self.nodeFromIndex(index).content
 
-    def getTopCategory(self, node):
+    def getTopNode(self, node):
         """Return the highest level category node before root in the tree above node"""
-        return None if node is self.root else (node if node.parent is self.root else self.getTopCategory(node.parent)) #recursive
+        return None if node is self.root else (node if node.parent is self.root else self.getTopNode(node.parent)) #recursive
 
     def getFirstDataNode(self, node):
         """Return the first data node under (and including) node"""
