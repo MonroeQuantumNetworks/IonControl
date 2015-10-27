@@ -98,7 +98,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.selectAllButton.clicked.connect(self.traceView.selectAll)
         self.collapseAllButton.clicked.connect(self.traceView.collapseAll)
         self.expandAllButton.clicked.connect(self.traceView.expandAll)
-        self.traceView.clicked.connect(self.onActiveTraceChanged)
+        self.traceView.selectionModel().selectionChanged.connect(self.onActiveTraceChanged)
         self.measurementLogButton.clicked.connect(self.onMeasurementLog)
 
         self.setContextMenuPolicy( QtCore.Qt.ActionsContextMenu )
@@ -194,10 +194,10 @@ class Traceui(TraceuiForm, TraceuiBase):
         """Execute when remove button is clicked. Remove selected traces from list (but don't delete files)."""
         self.traceView.onDelete()
 
-    def onActiveTraceChanged(self, index):
-        """Display trace creation/finalized date/time when a trace is clicked"""
-        node = self.model.nodeFromIndex(index)
-        dataNode=self.model.getFirstDataNode(node)
+    def onActiveTraceChanged(self):
+        """Display trace creation/finalized date/time when a trace is selected"""
+        nodes=self.traceView.selectedNodes()
+        dataNode=self.model.getFirstDataNode(nodes[0]) if nodes else None
         if dataNode:
             description = dataNode.content.traceCollection.description
             traceCreation = description.get("traceCreation")
