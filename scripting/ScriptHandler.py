@@ -257,7 +257,6 @@ class ScriptHandler:
             plottedTrace.traceCollection.comment = commentIntro + " -- " + comment if comment else commentIntro
             plottedTrace.traceCollection.autoSave = True
             plottedTrace.traceCollection.filenamePattern = traceName
-            plottedTrace.category = plottedTrace.traceCollection.fileleaf
             self.scriptTraces[traceName] = plottedTrace
             self.traceAlreadyCreated[traceName] = False #Keep track of whether the trace has already been added
             error = False
