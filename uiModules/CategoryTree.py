@@ -330,47 +330,35 @@ class CategoryTreeView(QtGui.QTreeView):
         """Returns a list of unique model indexes corresponding to column 'col' of each selected element, sorted by row.
 
         Built-in selectionModel().selectedRows function seems to have a bug"""
-        allIndexList = self.selectedIndexes()
-        indexList = []
-        rows = set()
-        for index in allIndexList:
-            if index.row() not in rows:
-                node = self.model().nodeFromIndex(index)
-                colIndex = self.model().indexFromNode(node, col)
-                indexList.append(colIndex)
-                rows.add(index.row())
-        indexList.sort(key=lambda ind: ind.row())
-        return indexList
+        return [self.model().indexFromNode(node, col) for node in self.selectedNodes()]
 
     def selectedNodes(self):
         """Same as selectedRows, but returns list of nodes rather than list of model indexes"""
         allIndexList = self.selectedIndexes()
-        nodeList = []
-        rows = set()
+        nodes = set()
         for index in allIndexList:
-            if index.row() not in rows:
-                node = self.model().nodeFromIndex(index)
-                nodeList.append(node)
-                rows.add(index.row())
+            node = self.model().nodeFromIndex(index)
+            nodes.add(node)
+        nodeList = list(nodes)
         nodeList.sort(key=lambda node: node.row)
         return nodeList
 
-    def selectedCategoryIndexes(self, col=0):
-        """Returns list of unique model indexes corresponding to column 'col' of the top level category of each selected element, sorted by row."""
-        return [self.model().indexFromNode(node, col) for node in self.selectedCategoryNodes()]
+    def selectedTopIndexes(self, col=0):
+        """Returns list of unique top level model indexes corresponding to column 'col' of the top level of each selected element, sorted by row."""
+        return [self.model().indexFromNode(node, col) for node in self.selectedTopNodes()]
 
-    def selectedCategoryNodes(self):
-        """Same as selectedCategories, but returns list of nodes rather than list of model indexes"""
+    def selectedTopNodes(self):
+        """Same as selectedTopIndexes, but returns list of nodes rather than list of model indexes"""
         nodeList = self.selectedNodes()
-        categoryNodeList = []
+        topNodeList = []
         for node in nodeList:
-            categoryNode=self.model().getTopCategory(node)
-            if categoryNode not in categoryNodeList:
-                categoryNodeList.append(categoryNode)
-        return categoryNodeList
+            topNode=self.model().getTopNode(node)
+            if topNode not in topNodeList:
+                topNodeList.append(topNode)
+        return topNodeList
 
     def selectedDataNodes(self):
-        """Returns list of selected data nodes, or first children of selected category nodes"""
+        """Returns list of first data nodes of selected nodes"""
         nodeList = self.selectedNodes()
         dataNodeList = []
         for node in nodeList:
