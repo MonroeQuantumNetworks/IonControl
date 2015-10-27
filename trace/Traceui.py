@@ -88,7 +88,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.plotButton.clicked.connect(partial(self.onClearOrPlot, 'plot'))
         self.pushButtonApplyStyle.clicked.connect(self.onApplyStyle)
         self.saveButton.clicked.connect(self.onSave)
-        self.removeButton.clicked.connect(self.onRemove)
+        self.removeButton.clicked.connect(self.traceView.onDelete)
         self.openFileButton.clicked.connect(self.onOpenFile)
         self.comboBoxStyle.currentIndexChanged[int].connect(self.setPlotStyle)
         self.traceView.clicked.connect(self.onViewClicked)
@@ -189,10 +189,6 @@ class Traceui(TraceuiForm, TraceuiBase):
                         bottomRightInd = self.model.indexFromNode(dataNode.parent.children[-1], rightCol)
                     self.model.dataChanged.emit(topLeftInd, bottomRightInd)
                     self.model.emitParentDataChanged(dataNode, leftCol, rightCol)
-
-    def onRemove(self):
-        """Execute when remove button is clicked. Remove selected traces from list (but don't delete files)."""
-        self.traceView.onDelete()
 
     def onActiveTraceChanged(self):
         """Display trace creation/finalized date/time when a trace is selected"""
