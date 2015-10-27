@@ -30,7 +30,7 @@ class PlottedTrace(object):
                  xColumn='x',yColumn='y',topColumn='top',bottomColumn='bottom',heightColumn='height',
                  rawColumn='raw', tracePlotting=None, name="", xAxisLabel = None, xAxisUnit = None,
                  yAxisLabel = None, yAxisUnit = None, fill=True, windowName=None):
-        self.category = ''
+        self.category = None
         self.fill = fill
         if penList is None:
             penList = pens.penList
