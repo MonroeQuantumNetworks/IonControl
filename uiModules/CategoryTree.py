@@ -317,7 +317,8 @@ class CategoryTreeView(QtGui.QTreeView):
     def onDelete(self):
         model=self.model()
         if model.allowDeletion:
-            topNodeList = self.selectedTopNodes()
+            selectedNodes = self.selectedNodes()
+            topNodeList = [node for node in selectedNodes if node.parent not in selectedNodes]
             for node in topNodeList:
                 if node!=model.root: #don't delete root
                     model.removeNode(node)
