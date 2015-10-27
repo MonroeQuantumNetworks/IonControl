@@ -260,6 +260,20 @@ class CategoryTreeModel(QtCore.QAbstractItemModel):
         """Return the last data node under (and including) node"""
         return node if node.nodeType==nodeTypes.data else (self.getLastDataNode(node.children[-1]) if node.children else None)
 
+    def getDataNodes(self, node):
+        """Get a list of all data nodes under (and including) node"""
+        dataNodes = []
+        if node.nodeType==nodeTypes.data:
+            dataNodes=[node]
+        else:
+            for childNode in node.children:
+                childSubNodes = self.getDataNodes(childNode) #recursive step
+                if childSubNodes:
+                    dataNodes.extend(childSubNodes)
+        return dataNodes
+
+        return [node] if node.nodeType==nodeTypes.data else (self.getLastDataNode(node.children[-1]) if node.children else None)
+
 
 class CategoryTreeView(QtGui.QTreeView):
     """Class for viewing category trees"""
@@ -444,6 +458,7 @@ if __name__ == "__main__":
             return True
 
     model = myModel([myContent('hot dog', 3, ['Foods', 'Red'], True, 'qq',isBold=True),
+                     myContent('grapes', 3, ['Foods'], True, 'qq',isBold=True),
                      myContent('strawberry', 4, ['Foods', 'Red']),
                      myContent('blueberry', 12, ['Foods', 'Blue'],isBold=True),
                      myContent('golf',2,['Games', 'ball based'],True,'abc'),
