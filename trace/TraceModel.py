@@ -290,7 +290,7 @@ class TraceModel(CategoryTreeModel):
                     trace.plot(0)
                 key = str(trace.traceCollection.traceCreation)
                 super(TraceModel, self).removeNode(dataNode)
-                if key in self.traceDict and nodeHasNoSiblings:
+                if key in self.traceDict and (node.parent is self.root or nodeHasNoSiblings):
                     del self.traceDict[key]
                     self.traceRemoved.emit(key)
                     if dataNode.parent is not self.root and dataNode.parent is not node:
