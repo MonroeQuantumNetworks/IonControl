@@ -68,7 +68,7 @@ class TraceModel(CategoryTreeModel):
         self.graphicsViewDict = graphicsViewDict
         self.allowDeletion = True
         self.allowReordering = True
-        self.columnNames = ['name','pen','window','comment']
+        self.columnNames = ['name','pen','window','comment', 'filename']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
         unsavedBG =  QtGui.QColor(255, 220, 220)
@@ -77,6 +77,7 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.pen): "Pen    ",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.window): "Window",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.comment): "Comment",
+            (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.filename): "Filename"
             })
         self.categoryDataLookup.update({
             (QtCore.Qt.CheckStateRole,self.column.name): lambda node: self.isCategoryChecked(node),
@@ -95,6 +96,7 @@ class TraceModel(CategoryTreeModel):
             (QtCore.Qt.EditRole,self.column.window): lambda node: node.content.windowName,
             (QtCore.Qt.DisplayRole,self.column.comment): lambda node: node.content.traceCollection.comment,
             (QtCore.Qt.EditRole,self.column.comment): lambda node: node.content.traceCollection.comment
+            (QtCore.Qt.DisplayRole,self.column.filename): lambda node: getattr(node.content.traceCollection, 'fileleaf', None)
             })
         self.dataAllColLookup.update({
             QtCore.Qt.BackgroundRole: lambda node: None if node.content.traceCollection.saved else unsavedBG
@@ -113,11 +115,15 @@ class TraceModel(CategoryTreeModel):
             self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
             self.column.pen: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
             self.column.window: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
-            self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+            self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+            self.column.filename: QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
             }
         self.categoryFlagsLookup = {
             self.column.name: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled,
-            self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+            self.column.pen: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
+            self.column.window: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled,
+            self.column.comment: QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled,
+            self.column.filename: QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
             }
 
     def isCategoryChecked(self, categoryNode):
