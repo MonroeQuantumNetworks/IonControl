@@ -280,6 +280,7 @@ class TraceModel(CategoryTreeModel):
     def removeNode(self, node):
         """Remove the node from the model, unplotting all connected traces"""
         dataNodes = self.getDataNodes(node)
+        nodeIsNotData = node not in dataNodes
         okToDelete = [getattr(dataNode.content, 'okToDelete', True) for dataNode in dataNodes]
         if all(okToDelete):
             for dataNode in dataNodes:
@@ -291,7 +292,8 @@ class TraceModel(CategoryTreeModel):
                 if key in self.traceDict and not self.hasSiblings(dataNode):
                     del self.traceDict[key]
                     self.traceRemoved.emit(key)
-            super(TraceModel, self).removeNode(node)
+            if nodeIsNotData:
+                super(TraceModel, self).removeNode(node)
 
     def hasSiblings(self, node):
         """Returns True if node is not the only child of its parent, else False"""
