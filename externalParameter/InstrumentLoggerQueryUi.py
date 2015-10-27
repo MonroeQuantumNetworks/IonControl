@@ -178,7 +178,6 @@ class InstrumentLoggerQueryUi(Form,Base):
                     plottedTrace.trace.autoSave = self.traceui.autoSaveTraces
                     plottedTrace.name = trace.name
                     plottedTrace.trace.filenamePattern = trace.name
-                    plottedTrace.category = plottedTrace.trace.fileleaf if plottedTrace.trace.autoSave else "UNSAVED_"+plottedTrace.traceCollection.filenamePattern+"_{0}".format(self.unsavedTraceCount)
                     if not plottedTrace.trace.autoSave: self.unsavedTraceCount+=1
                 self.traceui.addTrace( plottedTrace, pen=-1)
                 self.traceui.resizeColumnsToContents()
