@@ -309,7 +309,8 @@ if visaEnabled:
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
             logger.info( "trying to open '{0}'".format(instrument) )
-            self.instrument = visa.instrument(instrument) #open visa session
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
 
@@ -371,7 +372,8 @@ if visaEnabled:
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
             logger.info( "trying to open '{0}'".format(instrument) )
-            self.instrument = visa.instrument(instrument) #open visa session
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
     #        for channel in self._outputChannels:
@@ -431,7 +433,8 @@ if visaEnabled:
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
             logger.info( "trying to open '{0}'".format(instrument) )
-            self.instrument = visa.instrument(instrument) #open visa session
+            self.rm = visa.ResourceManager()
+            self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
     #        for channel in self._outputChannels:
