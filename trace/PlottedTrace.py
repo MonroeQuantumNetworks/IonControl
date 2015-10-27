@@ -100,7 +100,7 @@ class PlottedTrace(object):
     @property
     def okToDelete(self):
         """A trace is OK to delete if it has been finalized"""
-        return 'finalized' in self.trace.description
+        return 'traceFinalized' in self.trace.description
 
     @property
     def traceCollection(self):
