@@ -63,7 +63,7 @@ class Traceui(TraceuiForm, TraceuiBase):
         graphicsViewDict (dict): dict of available plot windows
     """
     openMeasurementLog = QtCore.pyqtSignal(list) #list of strings with trace creation dates
-    def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None, hasMeasurementLog=False):
+    def __init__(self, penicons, config, experimentName, graphicsViewDict, parent=None, lastDir=None, hasMeasurementLog=False, highlightUnsaved=False):
         TraceuiBase.__init__(self,parent)
         TraceuiForm.__init__(self)
         self.penicons = penicons
@@ -72,11 +72,12 @@ class Traceui(TraceuiForm, TraceuiBase):
         self.settings = self.config.get(self.configname+".settings",Settings(lastDir=lastDir, plotstyle=0))
         self.graphicsViewDict = graphicsViewDict
         self.hasMeasurementLog = hasMeasurementLog
+        self.highlightUnsaved = highlightUnsaved
 
     def setupUi(self,MainWindow):
         """Setup the UI. Create the model and the view. Connect all the buttons."""
         TraceuiForm.setupUi(self,MainWindow)
-        self.model = TraceModel([], self.penicons, self.graphicsViewDict)
+        self.model = TraceModel([], self.penicons, self.graphicsViewDict, highlightUnsaved=self.highlightUnsaved)
         self.traceView.setModel(self.model)
         self.delegate = TraceComboDelegate(self.penicons)
         self.graphicsViewDelegate = ComboBoxDelegate()

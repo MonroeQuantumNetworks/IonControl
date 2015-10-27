@@ -60,7 +60,7 @@ class TraceModel(CategoryTreeModel):
     """
     traceModelDataChanged = QtCore.pyqtSignal(str, str, str) #string with trace creation date, change type, new value
     traceRemoved = QtCore.pyqtSignal(str) #string with trace creation date
-    def __init__(self, traceList, penicons, graphicsViewDict, parent=None, *args): 
+    def __init__(self, traceList, penicons, graphicsViewDict, parent=None, highlightUnsaved=False):
         super(TraceModel, self).__init__(traceList, parent, categoriesAttr='category')
         #traceDict is a mapping between trace collection creation times and trace collection top level nodes
         self.traceDict = {node.children[0].content.traceCollection.traceCreation : node for node in self.root.children if node.children}
@@ -71,7 +71,7 @@ class TraceModel(CategoryTreeModel):
         self.columnNames = ['name','pen','window','comment', 'filename']
         self.numColumns = len(self.columnNames)
         self.column = enum(*self.columnNames)
-        unsavedBG =  QtGui.QColor(255, 220, 220)
+        unsavedBG =  QtGui.QColor(255, 220, 220) if highlightUnsaved else None
         self.headerLookup.update({
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.name): "Name",
             (QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole, self.column.pen): "Pen    ",

@@ -146,7 +146,7 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
 
         # Traceui
         self.penicons = pens.penicons().penicons()
-        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict,hasMeasurementLog=True)
+        self.traceui = Traceui.Traceui(self.penicons,self.config,self.experimentName,self.plotDict,hasMeasurementLog=True,highlightUnsaved=True)
         self.traceui.setupUi(self.traceui)
         self.measurementLog.addTraceui( 'Scan', self.traceui )
         self.measurementLog.traceuiLookup['Script'] = self.traceui
