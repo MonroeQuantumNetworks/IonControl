@@ -338,7 +338,7 @@ if visaEnabled:
                 command, unit = "MEAS:Curr?", "A"
             elif channel=="Volt":
                 command, unit = "Meas:Volt?", "V"
-            value = magnitude.mg(float(self.instrument.ask(command)), unit)
+            value = magnitude.mg(float(self.instrument.query(command)), unit)
             return value
 
         def currentValue(self, channel):
@@ -395,7 +395,7 @@ if visaEnabled:
         #         command = "OUTP?"
         #     else:
         #         command = "MEAS:{0}?".format(function)
-        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
+        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit)
         #     return self.settings.value[channel]
 
         def currentValue(self, channel):
@@ -407,7 +407,7 @@ if visaEnabled:
     #             command = "OUTP?"
     #         else:
     #             command = "MEAS:{0}?".format(function)
-    #         value = magnitude.mg( float( self.instrument.ask(command)), unit )
+    #         value = magnitude.mg( float( self.instrument.query(command)), unit )
     #         return value
 
         def paramDef(self):
@@ -456,7 +456,7 @@ if visaEnabled:
         # def _getValue(self, channel):
         #     function, unit = self._outputLookup[channel]
         #     command = "MEAS:{0} ?".format(function)
-        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.ask(command)), unit)
+        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit)
         #     return self.settings.value[channel]
 
         def currentValue(self, channel):
@@ -468,7 +468,7 @@ if visaEnabled:
     #             command = "OUTP?"
     #         else:
     #             command = "MEAS:{0}?".format(function)
-    #         value = magnitude.mg( float( self.instrument.ask(command)), unit )
+    #         value = magnitude.mg( float( self.instrument.query(command)), unit )
     #         return value
 
         def paramDef(self):
