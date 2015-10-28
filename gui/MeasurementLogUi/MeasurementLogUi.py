@@ -278,16 +278,19 @@ class MeasurementLogUi(Form, Base ):
         topList = list()
         xsource, xspace, xname = xDataDef
         ysource, yspace, yname = yDataDef
-        for measurement in self.measurementModel.measurements:
-            xData, _, _ = self.sourceLookup[xsource](measurement, xspace, xname)
-            yData, bottom, top  = self.sourceLookup[ysource](measurement, yspace, yname)
-            if xData is not None and yData is not None:
-                xDataList.append( xData )
-                yDataList.append( yData )
-                if bottom is not None:
-                    bottomList.append( bottom )
-                if top is not None:
-                    topList.append( top )
+        selectedRows = set(unique([ i.row() for i in self.measurementTableView.selectedIndexes() ]))
+        selectedRows = None if len(selectedRows)<2 else selectedRows
+        for index, measurement in enumerate(self.measurementModel.measurements):
+            if not selectedRows or index in selectedRows:
+                xData, _, _ = self.sourceLookup[xsource](measurement, xspace, xname)
+                yData, bottom, top  = self.sourceLookup[ysource](measurement, yspace, yname)
+                if xData is not None and yData is not None:
+                    xDataList.append( xData )
+                    yDataList.append( yData )
+                    if bottom is not None:
+                        bottomList.append( bottom )
+                    if top is not None:
+                        topList.append( top )
         if len(bottomList)==len(topList)==len(xDataList):
             return xDataList, yDataList, bottomList, topList
         return xDataList,yDataList, None, None
