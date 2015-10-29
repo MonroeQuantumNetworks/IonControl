@@ -731,15 +731,19 @@ class AutoLoad(UiForm,UiBase):
         self.ionReappeared.emit()        
     
     def exitTrapped(self):
-        self.loadingHistory.setTrappingDuration( now()-self.trappingTime )
+        self.updateTrappingTime()
+
+    def updateTrappingTime(self):
+        duration = now()-self.trappingTime
+        self.loadingHistory.setTrappingDuration(duration)
         self.historyTableModel.updateLast()
-    
+
     def setFrozen(self):
         self.startButton.setEnabled( False )
         self.stopButton.setEnabled( False )       
         self.elapsedLabel.setStyleSheet("QLabel { color:grey; }")
-        self.statusLabel.setText("Currently running pulse program")       
-    
+        self.statusLabel.setText("Currently running pulse program")
+
     def setDisappeared(self):
         self.startButton.setEnabled( True )
         self.stopButton.setEnabled( True )       
