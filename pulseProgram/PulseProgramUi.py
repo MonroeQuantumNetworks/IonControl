@@ -693,9 +693,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
     def getDocs(self):
         """Assemble the pulse program function documentation into dictionaries"""
-        definitionDocPath = os.path.join(os.path.dirname(__file__), '..', r'docs\\pppDefinitionDocs.rst')
+        definitionDocPath = os.path.join(os.path.dirname(__file__), '..', r'docs\\pppDefinitionDocs.include')
         definitionDict = self.readDocFile(definitionDocPath)
-        encodingDocPath = os.path.join(os.path.dirname(__file__), '..', r'docs\\pppEncodingDocs.rst')
+        encodingDocPath = os.path.join(os.path.dirname(__file__), '..', r'docs\\pppEncodingDocs.include')
         encodingDict = self.readDocFile(encodingDocPath)
         builtinDict = OrderedDict()
         symbolTable = SymbolTable()

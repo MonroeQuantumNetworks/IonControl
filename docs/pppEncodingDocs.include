@@ -17,3 +17,5 @@
 .. py:data:: DAC8568_VOLTAGE
 
    For writing voltage to a Texas Instruments DAC8568 DAC. Converts to 16 bit voltage word (0xffff = 5 V).
+
+.. TODO: There are other encodings, do we need them? Should we document them? Why do we have ADC encodings?
