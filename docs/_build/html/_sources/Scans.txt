@@ -283,29 +283,31 @@ Clicking on any trace will show when it was created and when it was finalized. T
 
 The buttons on the top do the following:
 
-|collapse| - CTRL-UP - collapse all trace sets
+|collapse| - collapse all trace sets (CTRL-UP)
 
-|expand| - CTRL-DOWN - expand all trace sets
+|expand| - expand all trace sets (CTRL-DOWN)
 
-|selectAll| - CTRL-A - select all traces
+|selectAll| - select all traces (CTRL-A)
 
 |clear| - unplot selected traces (equivalent to checkbox)
 
 |plot| - plot selected traces (equivalent to checkbox)
 
-|save| - CTRL-S - save selected trace. By default, assuming the traces are being automatically saved, the traces are saved when they are created and they are finalized. If you are running a long scan and wish to save the current status of a trace that hasn't yet been finalized, you can do so with this button.
+|save| - save selected trace (CTRL-S). By default, assuming the traces are being automatically saved, the traces are saved when they are created and they are finalized. If you are running a long scan and wish to save the current status of a trace that hasn't yet been finalized, you can do so with this button.
 
 |open| - open an existing trace.
 
-.. note:: I recommend doing this via the :ref:`MeasurementLog` if possible, rather than via this button.
+.. note:: It's recommended to do this via the :ref:`MeasurementLog` if possible, rather than via this button.
 
-|remove2| - DEL - remove the selected trace from the list. This has no effect on the file on disk. Only finalized traces can be removed.
+|remove2| - remove the selected trace from the list (DEL). This has no effect on the file on disk. Only finalized traces can be removed.
 
 |applyStyle| - Apply the style in the drop down menu to the selected traces.
 
 style drop down menu - Determines what style to use for plotting the trace (lines, points, linespoints, etc.)
 
 |magicWand| -
+
+Traces can be moved around in the dock using the PG-UP and PG-DOWN keys. Hitting CTRL-B on a trace will bold the text in that line. This has no effect on the trace, it is to make it easier to find a specific trace in a long list.
 
 Fit
 ---
