@@ -15,7 +15,7 @@ class ConexLinear(ExternalParameterBase):
     Adjust the position of the Conex linear stage
     """
     className = "Conex Linear Motion"
-    _dimension = magnitude.mg(1,'mm')
+    _outputChannels = {None: 'mm'}
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -25,8 +25,7 @@ class ConexLinear(ExternalParameterBase):
         self.instrument.homeSearch()
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.settings.value[None] = self._getValue(None)
-        self.lastValue = None
+        self.initializeChannelsToExternals()
 
     def setDefaults(self):
         ExternalParameterBase.setDefaults(self)
@@ -37,19 +36,11 @@ class ConexLinear(ExternalParameterBase):
         if v>self.settings.limit:
             v = self.settings.limit
         self.instrument.position = v.toval('mm')
-        self.settings.value[channel] = v
+        return v
         
-    def _getValue(self, channel):
-        self.settings.value[channel] = magnitude.mg(self.instrument.position, 'mm') #set voltage
-        return self.settings.value[channel]
+    def getValue(self, channel):
+        return magnitude.mg(self.instrument.position, 'mm') 
         
-    def currentValue(self, channel):
-        return self.settings.value[channel]
-    
-    def currentExternalValue(self, channel):
-        self.settings.value[channel] = magnitude.mg(self.instrument.position, 'mm') #set voltage
-        return self.settings.value[channel]
-
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'limit', 'type': 'magnitude', 'value': self.settings.limit})
@@ -60,10 +51,10 @@ class ConexLinear(ExternalParameterBase):
         del self.instrument
         
     def setValue(self, channel, value):
-        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
+        reported = self.getValue(channel) 
         if self.instrument.motionRunning():
-            return False
-        if value != self.settings.value[channel]:
+            return reported, False
+        if value != self.outputChannels[channel].settings.value:
             if self.lastValue is None or value < self.lastValue:
                 self._setValue( channel, value-self.settings.belowMargin )
                 self.lastValue = value-self.settings.belowMargin

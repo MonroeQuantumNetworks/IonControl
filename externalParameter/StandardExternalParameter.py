@@ -356,7 +356,6 @@ if visaEnabled and wavemeterEnabled:
             self.wavemeter = Wavemeter(self.settings.wavemeter_address) if self.wavemeter is None else self.wavemeter
             self.wavemeter.asyncGetFrequency(self.settings.wavemeter_channel, callbackfunc)
 
-
         def paramDef(self):
             superior = AgilentPowerSupply.paramDef(self)
             superior.append({'name': 'wavemeter_address', 'type': 'str', 'value': self.settings.wavemeter_address})
@@ -376,13 +375,14 @@ if wavemeterEnabled:
         currentExternalValue is frequency read from wavemeter
         """
         className = "Laser Wavemeter Lock"
-        _dimension = magnitude.mg(1,'GHz')
+        _outputChannels = { None: "GHz"}
         def __init__(self,name,config,instrument=None):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
             self.wavemeter = Wavemeter(instrument)
             logger.info( "LaserWavemeterScan savedValue {0}".format(self.savedValue) )
             self.setDefaults()
+            self.initializeChannelsToExternals()
 
         def setDefaults(self):
             ExternalParameterBase.setDefaults(self)
@@ -397,15 +397,9 @@ if wavemeterEnabled:
             logger = logging.getLogger(__name__)
             if value is not None:
                 self.currentFrequency = self.wavemeter.set_frequency(value, self.settings.channel, self.settings.maxAge)
-                self.settings.value[channel] = value
-                if self.savedValue is None:
-                    self.savedValue = self.currentFrequency
             logger.debug( "setFrequency {0}, current frequency {1}".format(self.settings.value[channel], self.currentFrequency) )
             arrived = self.currentFrequency is not None and abs(self.currentFrequency-self.settings.value[channel])<self.settings.maxDeviation
-            if arrived:
-                self.persist(channel, self.settings.value[channel])
-            return arrived
-
+            return value, arrived
 
         def currentExternalValue(self, channel):
             logger = logging.getLogger(__name__)

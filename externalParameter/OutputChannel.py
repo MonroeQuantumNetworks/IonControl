@@ -176,7 +176,8 @@ class SlowAdjustOutputChannel(OutputChannel):
         """
         self.settings.targetValue = targetValue
         newvalue, arrived = nextValue(self.settings.value, targetValue, self.settings.stepsize, self.settings.jump)
-        reportvalue = self.device.setValue(self.channelName, newvalue)
+        setValueReturn = tuple( self.device.setValue(self.channelName, newvalue) )
+        reportvalue, arrived = (setValueReturn[0], arrived) if len(setValueReturn)==1 else (setValueReturn[0], arrived & setValueReturn[1])
         self.settings.value = reportvalue
         self.valueChanged.emit( self.settings.value )
         if arrived:
