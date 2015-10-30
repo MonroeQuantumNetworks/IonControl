@@ -68,13 +68,49 @@
    :scale: 30 %
 
 .. |revert| image:: ../ui/icons/document-revert-5.png
-   :scale: 50%
+   :scale: 50 %
 
 .. |zeroToOne| image:: ../ui/icons/unity-range.png
-   :scale: 40%
+   :scale: 40 %
 
 .. |zeroToAuto| image:: ../ui/icons/hold-zero.png
-   :scale: 40%
+   :scale: 40 %
 
 .. |auto| image:: ../ui/icons/autoscale.png
-   :scale: 40%
+   :scale: 40 %
+
+.. |arrowLeft| image:: ../ui/icons/arrow-left-2.png
+   :scale: 50 %
+
+.. |continue| image:: ../ui/icons/continue.png
+   :scale: 50 %
+
+.. |eyedropper| image:: ../ui/icons/color-picker-black.png
+   :scale: 50 %
+
+.. |collapse| image:: ../ui/icons/collapse-all.png
+   :scale: 100 %
+
+.. |expand| image:: ../ui/icons/expand-all.png
+   :scale: 100 %
+
+.. |selectAll| image:: ../ui/icons/update_misc.png
+   :scale: 100 %
+
+.. |clear| image:: ../ui/icons/edit-clear.png
+   :scale: 50 %
+
+.. |plot| image:: ../ui/icons/office-chart-line.png
+   :scale: 50 %
+
+.. |open| image:: ../ui/icons/document-open-5.png
+   :scale: 50 %
+
+.. |remove2| image:: ../ui/icons/remove.png
+   :scale: 35 %
+
+.. |magicWand| image:: ../ui/icons/games-solve.png
+   :scale: 50 %
+
+.. |applyStyle| image:: ../ui/icons/colorize.png
+   :scale: 50 %
