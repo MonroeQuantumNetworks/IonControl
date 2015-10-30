@@ -17,20 +17,18 @@ from uiModules.KeyboardFilter import KeyListFilter
 from modules.PyqtUtility import updateComboBoxItems
 import itertools
 from uiModules.ComboBoxDelegate import ComboBoxDelegate
+from InstrumentSettings import InstrumentSettings
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ExternalParameterSelection.ui')
 SelectionForm, SelectionBase = PyQt4.uic.loadUiType(uipath)
-
-class Settings:
-    pass
 
 class Parameter:
     def __init__(self):
         self.className = None
         self.name = None
         self.instrument = None
-        self.settings = Settings()
+        self.settings = InstrumentSettings()
         self.enabled = False
         
     def __setstate__(self, state):
@@ -40,7 +38,7 @@ class SelectionUi(SelectionForm,SelectionBase):
     outputChannelsChanged = QtCore.pyqtSignal(object)
     inputChannelsChanged = QtCore.pyqtSignal(object)
     
-    def __init__(self, config, classdict, instancename="ExternalParameterSelection.ParametersSequence", parent=None):
+    def __init__(self, config, globalDict, classdict, instancename="ExternalParameterSelection.ParametersSequence", parent=None):
         SelectionBase.__init__(self,parent)
         SelectionForm.__init__(self)
         self.config = config
@@ -48,6 +46,7 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.parameters = self.config.get(self.instancename,SequenceDict())
         self.enabledParametersObjects = SequenceDict()
         self.classdict = classdict
+        self.globalDict = globalDict
     
     def setupUi(self,MainWindow):
         logger = logging.getLogger(__name__)
@@ -79,11 +78,11 @@ class SelectionUi(SelectionForm,SelectionBase):
         self.tableView.selectionModel().currentChanged.connect( self.onActiveInstrumentChanged )
 
     def outputChannels(self):
-        self._outputChannels =  dict(itertools.chain(*[p.outputChannels() for p in self.enabledParametersObjects.itervalues()]))        
+        self._outputChannels =  dict(itertools.chain(*[p.outputChannelList() for p in self.enabledParametersObjects.itervalues()]))        
         return self._outputChannels
         
     def inputChannels(self):
-        self._inputChannels =  dict(itertools.chain(*[p.inputChannels() for p in self.enabledParametersObjects.itervalues()]))        
+        self._inputChannels =  dict(itertools.chain(*[p.inputChannelList() for p in self.enabledParametersObjects.itervalues()]))        
         return self._inputChannels
         
     def emitSelectionChanged(self):
@@ -147,7 +146,7 @@ class SelectionUi(SelectionForm,SelectionBase):
     def enableInstrument(self,parameter):
         if parameter.name not in self.enabledParametersObjects:
             logger = logging.getLogger(__name__)
-            instance = self.classdict[parameter.className](parameter.name,parameter.settings,parameter.instrument)
+            instance = self.classdict[parameter.className](parameter.name, parameter.settings, self.globalDict, parameter.instrument)
             self.enabledParametersObjects[parameter.name] = instance
             self.enabledParametersObjects.sortToMatch( self.parameters.keys() )               
             self.emitSelectionChanged()

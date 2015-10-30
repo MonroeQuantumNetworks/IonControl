@@ -9,7 +9,7 @@ import sys
 import logging
 import numpy
 import modules.magnitude as magnitude
-from ExternalParameterBase import ExternalParameterBase, nextValue
+from ExternalParameterBase import ExternalParameterBase
 from ProjectConfig.Project import getProject
 from PyQt4 import QtGui
 from uiModules.ImportErrorPopup import importErrorPopup
@@ -27,13 +27,13 @@ if visaEnabled:
     except ImportError: #popup on failed import of enabled visa
         importErrorPopup('VISA')
 
+
 if visaEnabled:
     class N6700BPowerSupply(ExternalParameterBase):
         """
         Adjust the current on the N6700B current supply
         """
         className = "N6700 Powersupply"
-        _dimension = magnitude.mg(1,'A')
         _outputChannels = {"Curr1": "A", "Curr2": "A", "Curr3": "A", "Curr4": "A", "Volt1": "V" , "Volt2": "V", "Volt3": "V", "Volt4": "V"}
         _outputLookup = { "Curr1": ("Curr",1,"A"), "Curr2": ("Curr",2,"A"), "Curr3": ("Curr",3,"A"), "Curr4": ("Curr",4,"A"),
                           "Volt1": ("Volt",1,"V"), "Volt2": ("Volt",2,"V"), "Volt3": ("Volt",3,"V"), "Volt4": ("Volt",4,"V")}
@@ -46,41 +46,28 @@ if visaEnabled:
             self.instrument = self.rm.open_resource( instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
-            for channel in self._outputChannels:
-                self.settings.value[channel] = self._getValue(channel)
+            self.initializeChannelsToExternals()
 
-        def setDefaults(self):
-            ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
-
-        def _setValue(self, channel, v):
+        def setValue(self, channel, v):
             function, index, unit = self._outputLookup[channel]
             command = "{0} {1},(@{2})".format(function, v.toval(unit), index)
-            self.instrument.write(command)#set voltage
-            self.settings.value[channel] = v
+            self.instrument.write(command) #set voltage
+            return v
 
-        def _getValue(self, channel):
+        def getValue(self, channel):
             function, index, unit = self._outputLookup[channel]
             command = "{0}? (@{1})".format(function, index)
-            self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit) #set voltage
-            return self.settings.value[channel]
+            return magnitude.mg(float(self.instrument.query(command)), unit) #set voltage
 
-        def currentValue(self, channel):
-            return self.settings.value[channel]
-
-        def currentExternalValue(self, channel):
+        def getExternalValue(self, channel):
             function, index, unit = self._outputLookup[channel]
             command = "MEAS:{0}? (@{1})".format(function, index)
             value = magnitude.mg( float( self.instrument.query(command)), unit )
             return value
 
-        def paramDef(self):
-            superior = ExternalParameterBase.paramDef(self)
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-            return superior
-
         def close(self):
             del self.instrument
+            
 
     class HP8672A(ExternalParameterBase):
         """
@@ -91,7 +78,7 @@ if visaEnabled:
         This class programs the 8672A using the directions in the manual, p. 3-17: cp.literature.agilent.com/litweb/pdf/08672-90086.pdf
         """
         className = "HP8672A"
-        _dimension = magnitude.mg(1,'MHz')
+        _outputChannels = {'Freq': 'MHz', 'Power_dBm': ''}
         def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
             ExternalParameterBase.__init__(self,name,config)
             self.setDefaults()
@@ -100,40 +87,23 @@ if visaEnabled:
             self.synthesizer = self.rm.open_resource( instrument)
             self.synthesizer.write(initialAmplitudeString)
 
-        def setDefaults(self):
-            ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('lockPoint', magnitude.mg(384227.944,'GHz') )      # s delay between subsequent updates
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-            self.settings.__dict__.setdefault('amplitude_dBm', magnitude.mg(-13) )
-
-        def setValue(self, channel, value):
-            """
-            Move one steps towards the target, return current value
-            """
-            if value is None:
-                return True
-            newvalue, arrived = nextValue(self.settings.value[channel], value, self.settings.stepsize, self.settings.jump)
-            self._setValue( channel, newvalue )
-            self.displayValueObservable[channel].fire( value=self.settings.value[channel], tip="{0}".format( self.settings.lockPoint - self.settings.value[channel] ) )
-            if arrived:
-                self.persist(channel, self.settings.value[channel])
-            return arrived
-
-        def _setValue(self, channel, value ):
+        def setValue(self, channel, value ):
             """Send the command string to the HP8672A to set the frequency to 'value'."""
-            value = value.round('kHz')
-            command = "P{0:0>8.0f}".format(value.toval('kHz')) + 'Z0' + self.createAmplitudeString()
-            #Example string: P03205000Z0K1L6O1 would set the oscillator to 3.205 GHz, -13 dBm
+            if channel =='Freq':
+                value = value.round('kHz')
+                command = "P{0:0>8.0f}".format(value.toval('kHz')) + 'Z0' + self.createAmplitudeString()
+                #Example string: P03205000Z0K1L6O1 would set the oscillator to 3.205 GHz, -13 dBm
+            elif channel=='Power_dBm':
+                command = self.createAmplitudeString(value)
             self.synthesizer.write(command)
-            self.settings.value[channel] = value
+            return value
 
-        def createAmplitudeString(self):
+        def createAmplitudeString(self, value):
             """Create the string for setting the HP8672A amplitude.
-
             The string is of the form K_L_O_, where _ is a number or symbol indicating an amplitude."""
             KDict = {0:'0', -10:'1', -20:'2', -30:'3', -40:'4', -50:'5', -60:'6', -70:'7', -80:'8', -90:'9', -100:':', -110:';'}
             LDict = {3:'0', 2:'1', 1:'2', 0:'3', -1:'4', -2:'5', -3:'6', -4:'7', -5:'8', -6:'9', -7:':', -8:';', -9:'<', -10:'='}
-            amp = round(self.settings.amplitude_dBm.toval()) #convert the amplitude to a number, and round it to the nearest integer
+            amp = round(value.toval()) #convert the amplitude to a number, and round it to the nearest integer
             amp = max(-120, min(amp, 13)) #clamp the amplitude to be between -120 and +13
             Opart = '1' if amp <= 3 else '3' #Determine if the +10 dBm range option is necessary
             if Opart == '3':
@@ -146,119 +116,75 @@ if visaEnabled:
                 Lpart = LDict[divmod(amp, 10)[1]-10]
             return 'K' + Kpart + 'L' + Lpart + 'O' + Opart
 
-        def paramDef(self):
-            """
-            return the parameter definition used by pyqtgraph parametertree to show the gui
-            """
-            superior = ExternalParameterBase.paramDef(self)
-            superior.append({'name': 'lockpoint', 'type': 'magnitude', 'value': self.settings.lockPoint})
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-            superior.append({'name': 'amplitude_dBm', 'type': 'magnitude', 'value': self.settings.amplitude_dBm})
-            return superior
-
         def close(self):
             del self.synthesizer
 
-        def update(self, param, changes):
-            """update the parameter. If the amplitude was changed, write the new value to the HP8672A."""
-            super(HP8672A, self).update(param, changes) #call parent method
-            logger = logging.getLogger(__name__)
-            for param, _, data in changes:
-                if param.name() == 'amplitude_dBm':
-                    self.synthesizer.write(self.createAmplitudeString())
-                    logger.info("HP8672A output amplitude set to {0} dBm".format(data))
 
-    class MicrowaveSynthesizerScan(ExternalParameterBase):
+    class MicrowaveSynthesizer(ExternalParameterBase):
         """
         Scan the microwave frequency of microwave synthesizer
         """
         className = "Microwave Synthesizer"
-        _dimension = magnitude.mg(1,'MHz')
+        _outputChannels = {'Freq': 'MHz', 'Power_dBm': ''}
         def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
             ExternalParameterBase.__init__(self,name,config)
             self.rm = visa.ResourceManager()
             self.synthesizer = self.rm.open_resource( instrument)
             self.setDefaults()
+            self.initializeChannelsToExternals()
 
-        def setDefaults(self):
-            ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-
-        def _setValue(self, channel, v):
-            v = v.round('kHz')
-            command = ":FREQ:CW {0:.0f}KHZ".format(v.toval('kHz'))
+        def setValue(self, channel, v):
+            if channel =='Freq':
+                command = ":FREQ:CW {0:.5f}KHZ".format(v.toval('kHz'))
+            elif channel=='Power_dBm':
+                command = ":POWER {0:.3f}".format(v.toval())
             self.synthesizer.write(command)
-            self.settings.value[channel] = v
+            return v
 
-        def paramDef(self):
-            """
-            return the parameter definition used by pyqtgraph parametertree to show the gui
-            """
-            superior = ExternalParameterBase.paramDef(self)
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-            return superior
+        def getValue(self, channel):
+            if channel=='Frequency':
+                answer = self.synthesizer.query(":FREQ:CW?")
+                return magnitude.mg( float(answer), "Hz" )
+            elif channel=='Power':
+                answer = self.synthesizer.query(":POWER?")
+                return magnitude.mg( float(answer), "" )
 
         def close(self):
             del self.synthesizer
+
 
     class E4422Synthesizer(ExternalParameterBase):
         """
         Scan the microwave frequency of microwave synthesizer
         """
         className = "E4422 Synthesizer"
-        _dimension = magnitude.mg(1,'MHz')
+        _outputChannels = {'Freq': 'MHz', 'Power_dBm': ''}
         def __init__(self,name,config, instrument="GPIB0::23::INSTR"):
             ExternalParameterBase.__init__(self,name,config)
             self.rm = visa.ResourceManager()
             self.synthesizer = self.rm.open_resource( instrument)
             self.setDefaults()
-            self.settings.value[None] = self._getValue(None)
-            self.settings.value['Power'] = self._getValue('Power')
-            self.settings.amplitude_dBm = self.settings.value['Power']
+            self.initializeChannelsToExternals()
 
-        def setDefaults(self):
-            ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-            self.settings.__dict__.setdefault('amplitude_dBm', magnitude.mg(-13) )
-
-        def _setValue(self, channel, v):
-            if channel is None or channel=='Frequency':
+        def setValue(self, channel, v):
+            if channel =='Freq':
                 command = ":FREQ:CW {0:.5f}KHZ".format(v.toval('kHz'))
-            elif channel=='Power':
+            elif channel=='Power_dBm':
                 command = ":POWER {0:.3f}".format(v.toval())
             self.synthesizer.write(command)
-            self.settings.value[channel] = v
+            return v
 
-        def _getValue(self, channel):
-            if channel is None or channel=='Frequency':
+        def getValue(self, channel):
+            if channel=='Frequency':
                 answer = self.synthesizer.query(":FREQ:CW?")
-                self.settings.value[channel] = magnitude.mg( float(answer), "Hz" )
-                return self.settings.value[channel]
+                return magnitude.mg( float(answer), "Hz" )
             elif channel=='Power':
                 answer = self.synthesizer.query(":POWER?")
-                self.settings.value[channel] = magnitude.mg( float(answer), "" )
-                return self.settings.value[channel]
-
-        def paramDef(self):
-            """
-            return the parameter definition used by pyqtgraph parametertree to show the gui
-            """
-            superior = ExternalParameterBase.paramDef(self)
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-            superior.append({'name': 'amplitude_dBm', 'type': 'magnitude', 'value': self.settings.amplitude_dBm})
-            return superior
+                return magnitude.mg( float(answer), "" )
 
         def close(self):
             del self.synthesizer
 
-        def update(self, param, changes):
-            """update the parameter. If the amplitude was changed, write the new value to the HP8672A."""
-            super(E4422Synthesizer, self).update(param, changes) #call parent method
-            logger = logging.getLogger(__name__)
-            for param, _, data in changes:
-                if param.name() == 'amplitude_dBm':
-                    self._setValue('Power', self.settings.value['Power'])
-                    logger.info("E4422B output amplitude set to {0} dBm".format(data))
 
     class AgilentPowerSupply(ExternalParameterBase):
         """
@@ -267,32 +193,28 @@ if visaEnabled:
         currentValue and currentExternalValue are current applied voltage
         """
         className = "Agilent Powersupply"
-        _dimension = magnitude.mg(1,'V')
+        _outputChannels = {None: 'V'}
         def __init__(self,name,config,instrument="power_supply_next_to_397_box"):
             ExternalParameterBase.__init__(self,name,config)
             self.rm = visa.ResourceManager()
             self.powersupply = self.rm.open_resource( instrument)
-            self.savedValue = magnitude.mg( float(self.powersupply.query("volt?")), 'V')
             self.setDefaults()
+            self.initializeChannelsToExternals()
 
         def setDefaults(self):
             ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(10,'mV'))       # if True go to the target value in one jump
-            self.settings.__dict__.setdefault('AOMFreq' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
+            self.settings.__dict__.setdefault('AOMFreq' , magnitude.mg(1,'MHz'))     
 
-        def _setValue(self, channel, value):
+        def setValue(self, channel, value):
             """
             Move one steps towards the target, return current value
             """
             self.powersupply.write("volt {0}".format(value.toval('V')))
-            self.settings.value[channel] = value
-            logger = logging.getLogger(__name__)
-            logger.debug( "setValue volt {0}".format(value.toval('V')) )
+            return value
 
         def paramDef(self):
             superior = ExternalParameterBase.paramDef(self)
             superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.settings.AOMFreq})
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
             return superior
 
         def close(self):
@@ -303,7 +225,6 @@ if visaEnabled:
         Set the HP6632B power supply
         """
         className = "HP6632B Power Supply"
-        _dimension = magnitude.mg(1,'A')
         _outputChannels = {"Curr": "A", "Volt": "V", "OnOff": ""}
         def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
@@ -313,12 +234,9 @@ if visaEnabled:
             self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
+            self.initializeChannelsToExternals()
 
-        def setDefaults(self):
-            ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'A'))       # if True go to the target value in one jump
-
-        def _setValue(self, channel, v):
+        def setValue(self, channel, v):
             if channel=="OnOff":
                 command = "OUTP ON" if v > 0 else "OUTP OFF"
             elif channel=="Curr":
@@ -326,12 +244,9 @@ if visaEnabled:
             elif channel=="Volt":
                 command = "Volt {0}".format(v.toval("V"))
             self.instrument.write(command)
-            self.settings.value[channel] = v
-            for ch in self._outputChannels:
-                self.displayValueObservable[ch].fire( value=self._getValue(ch) )
             return v
 
-        def _getValue(self, channel):
+        def getValue(self, channel):
             if channel=="OnOff":
                 command, unit = "OUTP?", ""
             elif channel=="Curr":
@@ -340,21 +255,6 @@ if visaEnabled:
                 command, unit = "Meas:Volt?", "V"
             value = magnitude.mg(float(self.instrument.query(command)), unit)
             return value
-
-        def currentValue(self, channel):
-            return self.settings.value[channel]
-
-        def currentExternalValue(self, channel):
-            return self._getValue(channel)
-
-        def setValue(self, channel, value):
-            self._setValue(channel, value)
-            return True
-
-        def paramDef(self):
-            superior = ExternalParameterBase.paramDef(self)
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-            return superior
 
         def close(self):
             del self.instrument
@@ -365,9 +265,7 @@ if visaEnabled:
         Set the PTS3500 Frequency Source
         """
         className = "PTS3500 Frequency "
-        _dimension = magnitude.mg(1,'Hz')
         _outputChannels = {"Freq": "Hz"}
-        _inputChannels = dict({"Freq": "Hz"})
         def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
@@ -376,44 +274,13 @@ if visaEnabled:
             self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
-    #        for channel in self._outputChannels:
-    #            self.settings.value[channel] = self._getValue(channel)
+            self.initializeChannelsToExternals()
 
-        def setDefaults(self):
-            ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'Hz'))       # if True go to the target value in one jump
-
-        def _setValue(self, channel, v):
+        def setValue(self, channel, v):
             unit= self._outputChannels[channel]
             command = "F{0}\nA1\n".format(v.toval(unit))
             self.instrument.write(command)
-            self.settings.value[channel] = v
-
-        # def _getValue(self, channel):
-        #     function, unit = self._outputLookup[channel]
-        #     if channel=="OnOff":
-        #         command = "OUTP?"
-        #     else:
-        #         command = "MEAS:{0}?".format(function)
-        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit)
-        #     return self.settings.value[channel]
-
-        def currentValue(self, channel):
-            return self.settings.value[channel]
-
-    #     def currentExternalValue(self, channel):
-    #         function, unit = self._outputLookup[channel]
-    #         if channel=="OnOff":
-    #             command = "OUTP?"
-    #         else:
-    #             command = "MEAS:{0}?".format(function)
-    #         value = magnitude.mg( float( self.instrument.query(command)), unit )
-    #         return value
-
-        def paramDef(self):
-            superior = ExternalParameterBase.paramDef(self)
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-            return superior
+            return v
 
         def close(self):
             del self.instrument
@@ -424,11 +291,9 @@ if visaEnabled:
         Set the DS345 SRS Function Generator
         """
         className = "DS345 SRS Function Generator "
-        _dimension = magnitude.mg(1,'Hz')
         _outputChannels = {"Freq": "Hz", "Ampl": "dB"}
         _outputLookup = { "Freq": ("FREQ","Hz"),
                           "Ampl": ("AMPL","dB")}
-        _inputChannels = dict({"Freq":"MHz", "Ampl":"dB"})
         def __init__(self,name,config,instrument="GPIB0::8::INSTR"):
             logger = logging.getLogger(__name__)
             ExternalParameterBase.__init__(self,name,config)
@@ -437,44 +302,16 @@ if visaEnabled:
             self.instrument = self.rm.open_resource(instrument)
             logger.info( "opened {0}".format(instrument) )
             self.setDefaults()
-    #        for channel in self._outputChannels:
-    #            self.settings.value[channel] = self._getValue(channel)
+            self.initializeChannelsToExternals()
 
-        def setDefaults(self):
-            ExternalParameterBase.setDefaults(self)
-            self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'Hz'))       # if True go to the target value in one jump
-
-        def _setValue(self, channel, v):
+        def setValue(self, channel, v):
             function, unit = self._outputLookup[channel]
             if channel=="Ampl":
-             command = "{0}{1}DB".format(function, v.toval(unit))
+                command = "{0}{1}DB".format(function, v.toval(unit))
             else:
-             command = "{0} {1}".format(function, v.toval(unit))
+                command = "{0} {1}".format(function, v.toval(unit))
             self.instrument.write(command)
-            self.settings.value[channel] = v
-
-        # def _getValue(self, channel):
-        #     function, unit = self._outputLookup[channel]
-        #     command = "MEAS:{0} ?".format(function)
-        #     self.settings.value[channel] = magnitude.mg(float(self.instrument.query(command)), unit)
-        #     return self.settings.value[channel]
-
-        def currentValue(self, channel):
-            return self.settings.value[channel]
-
-    #     def currentExternalValue(self, channel):
-    #         function, unit = self._outputLookup[channel]
-    #         if channel=="OnOff":
-    #             command = "OUTP?"
-    #         else:
-    #             command = "MEAS:{0}?".format(function)
-    #         value = magnitude.mg( float( self.instrument.query(command)), unit )
-    #         return value
-
-        def paramDef(self):
-            superior = ExternalParameterBase.paramDef(self)
-            superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-            return superior
+            return v
 
         def close(self):
             del self.instrument
@@ -591,53 +428,32 @@ class DummyParameter(ExternalParameterBase):
     """
     className = "Dummy"
     _outputChannels = { 'O1':"Hz",'O7': "Hz"}
-    def __init__(self,name,settings,instrument=''):
+    def __init__(self, name, settings, globalDict, instrument=''):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self,name,settings)
+        ExternalParameterBase.__init__(self,name,settings,globalDict)
         logger.info( "Opening DummyInstrument {0}".format(instrument) )
+        self.initializeChannelsToExternals()
 
-    def setDefaults(self):
-        ExternalParameterBase.setDefaults(self)
-        self.settings.__dict__.setdefault('AOMFreq', magnitude.mg(123,'MHz') )      # s delay between subsequent updates
-        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump
-        self.settings.value.setdefault('O1', magnitude.mg(1,'kHz'))
-        self.settings.value.setdefault('O7', magnitude.mg(7,'kHz'))
-        
-   
-    def _setValue(self, channel, value):
+    def setValue(self, channel, value):
         logger = logging.getLogger(__name__)
         logger.debug( "Dummy output channel {0} set to: {1}".format( channel, value ) )
-        self.settings.value[channel] = value
-         
-    def paramDef(self):
-        superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.settings.AOMFreq})
-        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-        return superior
+        return value
+            
 
 class DummySingleParameter(ExternalParameterBase):
     """
     DummyParameter, used to debug this part of the software.
     """
     className = "DummySingle"
-    _dimension = magnitude.mg(1,'kHz')
-    def __init__(self,name,settings,instrument=''):
+    _outputChannels = { None:"Hz" }
+    def __init__(self, name, settings, globalDict, instrument=''):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self,name,settings)
+        ExternalParameterBase.__init__(self,name,settings,globalDict)
         logger.info( "Opening DummyInstrument {0}".format(instrument) )
+        self.initializeChannelsToExternals()
 
-    def setDefaults(self):
-        ExternalParameterBase.setDefaults(self)
-        self.settings.__dict__.setdefault('AOMFreq', magnitude.mg(123,'MHz') )      # s delay between subsequent updates
-        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1,'MHz'))       # if True go to the target value in one jump        
-   
-    def _setValue(self, channel, value):
+    def setValue(self, channel, value):
         logger = logging.getLogger(__name__)
         logger.debug( "Dummy output channel {0} set to: {1}".format( channel, value ) )
-        self.settings.value[channel] = value
+        return value
          
-    def paramDef(self):
-        superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'AOMFreq', 'type': 'magnitude', 'value': self.settings.AOMFreq})
-        superior.append({'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize})
-        return superior

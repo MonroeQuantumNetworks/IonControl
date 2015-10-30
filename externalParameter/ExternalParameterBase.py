@@ -5,17 +5,10 @@ Created on Jun 21, 2014
 '''
 from PyQt4 import QtCore
 from pyqtgraph.parametertree import Parameter
-import modules.magnitude as magnitude
 import logging
-from decimation import StaticDecimation
-from persistence import DBPersist
-import time
-from functools import partial
-from modules.magnitude import is_magnitude
-from modules.AttributeRedirector import AttributeRedirector
-from externalParameter.OutputChannel import OutputChannel #@UnresolvedImport
-from modules.Observable import Observable
+from externalParameter.OutputChannel import OutputChannel 
 from externalParameter.InputChannel import InputChannel
+from InstrumentSettings import InstrumentSettings
 
 InstrumentDict = dict()
 
@@ -31,34 +24,35 @@ class InstrumentMeta(type):
             InstrumentDict[dct['className']] = instrclass
         return instrclass
     
-def nextValue( current, target, stepsize, jump ):
-    if (current is None) or jump:
-        return (target,True)
-    else:
-        temp = target-current
-        return (target,True) if abs(temp)<=stepsize else (current + stepsize.copysign(temp), False)  
-
 class ExternalParameterBase(object):
-    persistSpace = 'externalOutput'
-    strValue = AttributeRedirector('settings', 'strValue', None)
     _outputChannels = { None: None }    # a single channel with key None designates a device only supporting a single channel
     _inputChannels = dict()
     __metaclass__ = InstrumentMeta
-    def __init__(self,name,settings):
+    def __init__(self, name, deviceSettings, globalDict):
         self.name = name
-        self.settings = settings
-        self.displayValueObservable = dict([(name,Observable()) for name in self._outputChannels])
+        self.settings = deviceSettings
         self.setDefaults()
         self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
-        self.savedValue = dict()
-        self.decimation = StaticDecimation()
-        self.persistence = DBPersist()
-        self.inputObservable = dict( ((name,Observable()) for name in self._inputChannels.iterkeys()) )
+        self.globalDict = globalDict
+        self.createOutputChannels()
+
+    def createOutputChannels(self):
+        """create all output channels"""
+        self.outputChannels = dict( [(channel, OutputChannel(self, self.name, channel, self.globalDict, self.settings.channelSettings.get(channel,dict()), unit)) 
+                                    for channel, unit in self._outputChannels.iteritems()] )
+        
+    def lastOutputValue(self, channel):
+        """return the last value written to channel""" 
+        return self.outputChannels[channel].settings.value
+        
+    def initializeChannelsToExternals(self):
+        """Initialize all channels to the values read from the instrument"""
+        for cname in self._outputChannels.iterkeys():
+            self.outputChannels[cname].settings.value = self.getValue(cname)
 
     def dimension(self, channel):
-        if channel is None and hasattr(self, ' _dimension'):
-            return self._dimension
+        """return the dimension eg 'Hz' or 'V' for channel""" 
         return self._outputChannels[channel] 
         
     @property
@@ -68,85 +62,33 @@ class ExternalParameterBase(object):
         self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
         return self._parameter        
         
-    def setDefaults(self):
-        self.settings.__dict__.setdefault('delay', magnitude.mg(100,'ms') )      # s delay between subsequent updates
-        self.settings.__dict__.setdefault('jump' , False)       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('value', dict() )      # the current value       
-        self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60,'s' ) )     # delay for persistency  
-        self.settings.__dict__.setdefault('strValue', dict() )
-        if not isinstance( self.settings.value, dict):
-            self.settings.value = dict()
-        if not isinstance( self.settings.strValue, dict ):
-            self.settings.strValue = dict()
-        for name in self._outputChannels.iterkeys():
-            self.settings.value.setdefault( name, None )
-            self.settings.strValue.setdefault( name, None )
-    
-    def saveValue(self, channel=None, overwrite=True):
-        """
-        save current value
-        """
-        if self.savedValue is None:
-            self.savedValue = dict()
-        if not channel in self.savedValue or overwrite:
-            self.savedValue[channel] = self.settings.value[channel]
-            
-    def restoreValue(self, channel=None):
-        """
-        restore the value saved previously, this routine only goes stepsize towards this value
-        if the stored value is reached returns True, otherwise False. Needs to be called repeatedly
-        until it returns True in order to restore the saved value.
-        """
-        return self.setValue(channel, self.savedValue[channel])
-    
-    def setValue(self, channel, value):
-        """
-        go stepsize towards the value. This function returns True if the value is reached. Otherwise
-        it should return False. The user should call repeatedly until the intended value is reached
-        and True is returned.
-        """
-        newvalue, arrived = nextValue(self.settings.value[channel], value, self.settings.stepsize, self.settings.jump)
-        self._setValue( channel, newvalue )
-        self.displayValueObservable[channel].fire(value=self.settings.value[channel])
-        if arrived:
-            self.persist(channel, self.settings.value[channel])
-        return arrived
-    
-    def persist(self, channel, value):
-        self.decimation.staticTime = self.settings.persistDelay
-        decimationName = self.name if channel is None else self.fullName(channel)
-        self.decimation.decimate(time.time(), value, partial(self.persistCallback, decimationName) )
-        
-    def persistCallback(self, source, data):
-        time, value, minval, maxval = data
-        if is_magnitude(value):
-            value, unit = value.toval(returnUnit=True)
+    def setDefaults(self, settings=None):
+        if settings is None:
+            for cname in self._outputChannels:
+                self.settings.channelSettings.setdefault( cname, InstrumentSettings() )
         else:
-            value, unit = value, None
-        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
+            for cname in self._outputChannels:
+                settings.channelSettings.setdefault( cname, InstrumentSettings() )
+               
+    def setValue(self, channel, v):
+        """write the value to the instrument"""
+        return None
     
-    def _setValue(self, channel, v):
-        self.settings.value[channel] = v
+    def getValue(self, channel=None):
+        """returns current value as read from instrument (if the instruments supports reading)"""
+        return self.lastOutputValue(channel)
     
-    def currentValue(self, channel=None):
-        """
-        returns current value
-        """
-        return self.settings.value.get(channel, 0) 
-    
-    def currentExternalValue(self, channel=None):
+    def getExternalValue(self, channel=None):
         """
         if the value is determined externally, return the external value, otherwise return value
         """
-        return self.settings.value[channel]
+        return self.getValue(channel)
 
     def paramDef(self):
         """
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
-        return [{'name': 'delay', 'type': 'magnitude', 'value': self.settings.delay, 'tip': "between steps"},
-                {'name': 'jump', 'type': 'bool', 'value': self.settings.jump},
-                {'name': 'persistDelay', 'type': 'magnitude', 'value': self.settings.persistDelay }]
+        return []
         
     def update(self, param, changes):
         """
@@ -170,14 +112,11 @@ class ExternalParameterBase(object):
     def useExternalValue(self, channel=None):
         return False
             
-    def outputChannels(self):
-        return [(self.fullName(channel), OutputChannel(self,self.name,channel)) for channel in self._outputChannels.iterkeys()]
+    def outputChannelList(self):
+        return [(self.fullName(channelName), channel) for channelName, channel in self.outputChannels.iteritems()]
     
-    def inputChannels(self):
+    def inputChannelList(self):
         return [(self.fullName(channel), InputChannel(self,self.name,channel)) for channel in self._inputChannels.iterkeys()]
         
-    def getValue(self, channel):
-        return None
-    
     def getInputData(self, channel):
         return None

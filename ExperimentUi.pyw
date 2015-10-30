@@ -282,7 +282,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.triggerDockWidget.hide()
         self.preferencesUiDock.hide()
 
-        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, classdict=InstrumentDict)
+        self.ExternalParametersSelectionUi = ExternalParameterSelection.SelectionUi(self.config, self.globalVariablesUi.variables, classdict=InstrumentDict)
         self.ExternalParametersSelectionUi.setupUi( self.ExternalParametersSelectionUi )
         self.ExternalParameterSelectionDock = QtGui.QDockWidget("Params Selection")
         self.ExternalParameterSelectionDock.setObjectName("_ExternalParameterSelectionDock")

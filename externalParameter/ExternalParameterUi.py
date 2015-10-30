@@ -38,7 +38,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
         self.dataLookup.update({
             (QtCore.Qt.DisplayRole,0): lambda node: node.content.displayName,
             (QtCore.Qt.DisplayRole,1): lambda node: str(node.content.targetValue),
-            (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.strValue, str(node.content.targetValue) ),
+            (QtCore.Qt.EditRole,1): lambda node: firstNotNone( node.content.string, str(node.content.targetValue) ),
             (QtCore.Qt.UserRole,1): lambda node: node.content.dimension,
             (QtCore.Qt.DisplayRole,2): lambda node: str(node.content.lastExternalValue),
             (QtCore.Qt.BackgroundRole,1): self.backgroundFunction,
@@ -66,15 +66,14 @@ class ExternalParameterControlModel(CategoryTreeModel):
             inst.targetValue = deepcopy(inst.value)
             inst.lastExternalValue = deepcopy(inst.externalValue)
             inst.toolTip = None
-            inst.observable.clear()
-            inst.observable.subscribe( functools.partial( self.showValue, listIndex ) )
+            inst.valueChanged.connect( functools.partial( self.showValue, listIndex ) )
         self.clear()
         self.endResetModel()
         self.addNodeList(self.parameterList)
 
     def showValue(self, listIndex, value, tooltip=None):
         inst=self.parameterList[listIndex]
-        inst.lastExternalValue = value.value
+        inst.lastExternalValue = value
         inst.toolTip = tooltip
         id=inst.name if inst.multipleChannels else inst.device.name
         node = self.nodeDict[id]
@@ -104,8 +103,8 @@ class ExternalParameterControlModel(CategoryTreeModel):
         try:
             logger = logging.getLogger(__name__)
             logger.debug( "setValueFollowup {0}".format( inst.value ) )
-            delay = int( inst.delay.toval('ms') )
             if not inst.setValue(inst.targetValue):
+                delay = int( inst.delay.toval('ms') )
                 QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,inst))
             else:
                 self.adjustingDevices -= 1
@@ -131,7 +130,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
                 
     def evaluate(self, name):
         for inst in self.parameterList:
-            expr = inst.strValue
+            expr = inst.string
             if expr is not None:
                 value = self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict)
                 self._setValue(inst, value)
