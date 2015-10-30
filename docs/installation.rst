@@ -46,9 +46,9 @@ Python Modules
     * Change into the folder pyqtgraph-develop-pm
     * Execute "\WinPython-64bit-2.7.9.4\python-2.7.9.amd64\python setup.py install"
 
-* Install pyvisa_ 1.4 -- used for communicating with many external instruments
+* Install pyvisa_ -- used for communicating with many external instruments
 
-    * Note: versions higher than 1.4 are not backwards compatible, and will not currently work!
+    * **Note:** versions 1.7 and 1.8 are definitely fine
 
 * Equipment specific dependencies
 

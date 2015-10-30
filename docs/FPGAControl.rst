@@ -71,3 +71,10 @@ The settings of the PI loop are set in the *PI Loop Parameters* section of the P
 
 - offset Coefficient (units: volts)
    This is the lock point of the PI loop. The PI loop will try and stabilize the ADC signal to this value.
+
+TODO: Write out equation relating output DAC voltage to input ADC voltage in terms of P, I, and offset
+
+Virtual DAC Channels
+~~~~~~~~~~~~~~~~~~~~
+
+TODO: Explain virtual DAC Channels 8-15
