@@ -6,7 +6,8 @@ Created on Jun 21, 2014
 from PyQt4 import QtCore
 from pyqtgraph.parametertree import Parameter
 import logging
-from externalParameter.OutputChannel import OutputChannel 
+from externalParameter.OutputChannel import OutputChannel ,\
+    SlowAdjustOutputChannel
 from externalParameter.InputChannel import InputChannel
 from InstrumentSettings import InstrumentSettings
 
@@ -39,7 +40,7 @@ class ExternalParameterBase(object):
 
     def createOutputChannels(self):
         """create all output channels"""
-        self.outputChannels = dict( [(channel, OutputChannel(self, self.name, channel, self.globalDict, self.settings.channelSettings.get(channel,dict()), unit)) 
+        self.outputChannels = dict( [(channel, SlowAdjustOutputChannel(self, self.name, channel, self.globalDict, self.settings.channelSettings.get(channel,dict()), unit)) 
                                     for channel, unit in self._outputChannels.iteritems()] )
         
     def lastOutputValue(self, channel):

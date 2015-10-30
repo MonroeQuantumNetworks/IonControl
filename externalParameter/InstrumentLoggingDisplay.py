@@ -14,7 +14,7 @@ from collections import defaultdict
 from externalParameter.InputData import InputData
 
 import os
-uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ExternalParameterUi.ui')
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\InstrumentLoggingDisplay.ui')
 UiForm, UiBase = PyQt4.uic.loadUiType(uipath)
 
 def defaultFontsize():

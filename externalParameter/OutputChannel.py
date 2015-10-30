@@ -143,17 +143,23 @@ class OutputChannel(QtCore.QObject):
         """
         return [{'name': 'persistDelay', 'type': 'magnitude', 'value': self.settings.persistDelay }]
 
-        
+    def update(self, param, changes):
+        """
+        update the parameter, called by the signal of pyqtgraph parametertree
+        """
+        for param, change, data in changes:
+            if change=='value':
+                setattr( self.settings, param.name(), data)       
         
 class SlowAdjustOutputChannel(OutputChannel):
     def __init__(self, device, deviceName, channelName, globalDict, settings, outputUnit):
         super(SlowAdjustOutputChannel, self).__init__(device, deviceName, channelName, globalDict, settings, outputUnit)
         
-    def setDefaults(self, settings):
-        super(SlowAdjustOutputChannel, self).setDefaults(settings)
+    def setDefaults(self):
+        super(SlowAdjustOutputChannel, self).setDefaults()
         self.settings.__dict__.setdefault('delay', magnitude.mg(100,'ms') )      # s delay between subsequent updates
         self.settings.__dict__.setdefault('jump' , False)       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(0, self.outputUnit) )       # if True go to the target value in one jump
+        self.settings.__dict__.setdefault('stepsize' , magnitude.mg(1, self.outputUnit) )       # if True go to the target value in one jump
         
     def paramDef(self):
         param = super(SlowAdjustOutputChannel, self).paramDef()

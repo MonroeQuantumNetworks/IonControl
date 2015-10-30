@@ -18,8 +18,12 @@ from modules.Expression import Expression
 from modules.Observable import Observable
 from modules.GuiAppearance import restoreGuiState, saveGuiState
 from modules.magnitude import MagnitudeError
-from uiModules.CategoryTree import CategoryTreeModel, CategoryTreeView
+from uiModules.CategoryTree import CategoryTreeModel, CategoryTreeView, nodeTypes
 from copy import deepcopy
+
+import os
+uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\ExternalParameterUi.ui')
+Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class ExternalParameterControlModel(CategoryTreeModel):
     valueChanged = QtCore.pyqtSignal(str, object)
@@ -96,7 +100,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
  
     def setStrValue(self, index, strValue):
         node=self.nodeFromIndex(index)
-        node.content.strValue = strValue
+        node.content.string = strValue
         return True
         
     def setValueFollowup(self, inst):
@@ -104,7 +108,7 @@ class ExternalParameterControlModel(CategoryTreeModel):
             logger = logging.getLogger(__name__)
             logger.debug( "setValueFollowup {0}".format( inst.value ) )
             if not inst.setValue(inst.targetValue):
-                delay = int( inst.delay.toval('ms') )
+                delay = int( inst.settings.delay.toval('ms') )
                 QtCore.QTimer.singleShot(delay,functools.partial(self.setValueFollowup,inst))
             else:
                 self.adjustingDevices -= 1
@@ -139,9 +143,10 @@ class ExternalParameterControlModel(CategoryTreeModel):
                 index = self.indexFromNode(node,1)
                 self.dataChanged.emit(index, index)
 
-class ControlUi(CategoryTreeView):
+class ControlUi(Form, Base):
     def __init__(self, config, globalDict=None, parent=None):
-        super(ControlUi, self).__init__(parent)
+        Base.__init__(self,parent)
+        Form.__init__(self)
         self.spacerItem = None
         self.myLabelList = list()
         self.myBoxList = list()
@@ -153,60 +158,69 @@ class ControlUi(CategoryTreeView):
         self.globalDict = firstNotNone( globalDict, dict() )
         self.config = config
         self.configName = 'ControlUi'
-        self.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
     
     def setupUi(self, outputChannels):
+        Form.setupUi(self, self)
+        self.categoryTreeView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         model = ExternalParameterControlModel(self)
-        self.setModel(model)
+        self.categoryTreeView.setModel(model)
         self.delegate = MagnitudeSpinBoxDelegate(self.globalDict)
-        self.setItemDelegateForColumn(1,self.delegate)
+        self.categoryTreeView.setItemDelegateForColumn(1,self.delegate)
         self.setupParameters(outputChannels)
         restoreGuiState(self, self.config.get(self.configName+'.guiState'))
         try:
-            self.restoreTreeState( self.config.get(self.configName+'.treeState',tuple([None]*4)) )
+            self.categoryTreeView.restoreTreeState( self.config.get(self.configName+'.treeState',tuple([None]*4)) )
         except Exception as e:
             logging.getLogger(__name__).error("unable to restore tree state in {0}: {1}".format(self.configName, e))
+        self.categoryTreeView.selectionModel().currentChanged.connect( self.onActiveChannelChanged )
 
     def setupParameters(self, outputChannels):
-        oldState=self.treeState()
-        oldNodeDictKeys=self.model().nodeDict.keys()
-        self.model().setParameterList(outputChannels)
-        self.header().setStretchLastSection(True)
-        self.restoreTreeState(oldState)
-        for key, node in self.model().nodeDict.iteritems():
+        oldState=self.categoryTreeView.treeState()
+        oldNodeDictKeys=self.categoryTreeView.model().nodeDict.keys()
+        self.categoryTreeView.model().setParameterList(outputChannels)
+        self.categoryTreeView.header().setStretchLastSection(True)
+        self.categoryTreeView.restoreTreeState(oldState)
+        for key, node in self.categoryTreeView.model().nodeDict.iteritems():
             if key not in oldNodeDictKeys: #Expand any new nodes
-                index = self.model().indexFromNode(node)
-                self.expand(index)
+                index = self.categoryTreeView.model().indexFromNode(node)
+                self.categoryTreeView.expand(index)
         try:
             self.evaluate(None)
         except (KeyError, MagnitudeError) as e:
             logging.getLogger(__name__).warning(str(e))
         
     def keys(self):
-        pList = self.model().parameterList
+        pList = self.categoryTreeView.model().parameterList
         return [p.name for p in pList]
     
     def update(self, iterable):
-        self.model().update(iterable)
-        self.viewport().repaint()
+        self.categoryTreeView.model().update(iterable)
+        self.categoryTreeView.viewport().repaint()
         
     def evaluate(self, name):
-        self.model().evaluate(name)
+        self.categoryTreeView.model().evaluate(name)
         
     def isAdjusting(self):
-        return self.model().adjustingDevices>0
+        return self.categoryTreeView.model().adjustingDevices>0
     
     def callWhenDoneAdjusting(self, callback):
         if self.isAdjusting():
-            self.model().doneAdjusting.subscribe(callback)
+            self.categoryTreeView.model().doneAdjusting.subscribe(callback)
         else:
             QtCore.QTimer.singleShot(0, callback)
             
     def saveConfig(self):
         self.config[self.configName+'.guiState'] = saveGuiState(self)
         try:
-            self.config[self.configName+'.treeState'] = self.treeState()
+            self.config[self.configName+'.treeState'] = self.categoryTreeView.treeState()
         except Exception as e:
             logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
 
-    
+    def onActiveChannelChanged(self, modelIndex, modelIndex2 ):
+        model = self.categoryTreeView.model()
+        node = model.nodeFromIndex(modelIndex)
+        if node.nodeType==nodeTypes.data:
+            index = model.parameterList.index(node.content)
+            outchannel = model.parameterList[index]
+            self.treeWidget.setParameters( outchannel.parameter )
+
