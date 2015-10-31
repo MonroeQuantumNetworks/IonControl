@@ -29,10 +29,10 @@ class ExpressionSpinBox(MagnitudeSpinBox):
 
     def setExpression(self, expressionValue):
         if self.expressionValue:
-            self.expressionValue.observable.unsubscribe(self.dependentUpdate)
+            self.expressionValue.valueChanged.disconnect(self.dependentUpdate)
         self.expressionValue = expressionValue
-        self.setValue( expressionValue.value )
-        self.expressionValue.observable.subscribe(self.dependentUpdate)
+        self.setValue(expressionValue.value)
+        self.expressionValue.valueChanged.connect(self.dependentUpdate)
         self.updateStyleSheet()
         
     def updateStyleSheet(self):
@@ -54,7 +54,7 @@ class ExpressionSpinBox(MagnitudeSpinBox):
             self.expressionChanged.emit( self.expressionValue )
             self.updateStyleSheet()
         
-    def dependentUpdate(self, event):
+    def dependentUpdate(self, name, value, string, origin):
         self.setValue( self.expressionValue.value )
         self.expressionChanged.emit( self.expressionValue )
         

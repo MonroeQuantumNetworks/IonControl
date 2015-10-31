@@ -92,7 +92,10 @@ class VoltageLocalAdjust(Form, Base ):
         self.localAdjustList = self.config.get( self.configname+".local" , list() )
         for record in self.localAdjustList:
             record.globalDict = globalDict
-            record.gain.observable.subscribe( partial( self.onValueChanged, record ), unique=True )
+            try:
+                record.gain.valueChanged.connect( partial( self.onValueChanged, record ), QtCore.Qt.UniqueConnection)
+            except:
+                pass
         self.channelDict = dict( ((record.name, record) for record in self.localAdjustList) )
         self.historyCategory = 'VoltageLocalAdjust'
         self.adjustHistoryName = None
@@ -111,15 +114,18 @@ class VoltageLocalAdjust(Form, Base ):
         self.addButton.clicked.connect( self.onAdd )
         self.removeButton.clicked.connect( self.onRemove )
         
-    def onValueChanged(self, record, event):
-        if event.origin=='recalculate':
+    def onValueChanged(self, record, name, value, string, origin):
+        if origin=='recalculate':
             self.tableModel.valueRecalcualted(record)
         record.gain._value = MagnitudeUtilit.value( record.gain._value )
         self.updateOutput.emit(self.localAdjustList,0)
 
     def onAdd(self):
         newrecord = self.tableModel.add( LocalAdjustRecord(globalDict=self.globalDict) )
-        newrecord.gain.observable.subscribe( partial( self.onValueChanged, newrecord ), unique=True )
+        try:
+            newrecord.gain.valueChanged.connect( partial( self.onValueChanged, newrecord ), QtCore.Qt.UniqueConnection )
+        except:
+            pass
     
     def onRemove(self):
         for index in sorted(unique([ i.row() for i in self.tableView.selectedIndexes() ]),reverse=True):

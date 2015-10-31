@@ -25,7 +25,7 @@ class PulserParameter(ExpressionValue):
         super(PulserParameter, self).__init__(name=name, globalDict=globalDict)
         self.address = address
         if onChange is not None:
-            self.observable.subscribe(onChange)
+            self.valueChanged.connect(onChange)
         self.string = string
         self.bitmask = bitmask
         self.shift = shift
@@ -121,11 +121,11 @@ class PulserParameterUi(CategoryTreeView):
         except Exception as e:
             logging.getLogger(__name__).error("unable to save tree state in {0}: {1}".format(self.configName, e))
 
-    def onChange(self, index, event ):
+    def onChange(self, index, name, value, string, origin):
         parameter = self.parameterList[index]
         self.currentWireValues[parameter.address] = parameter.setBits(self.currentWireValues[parameter.address])
         self.pulser.setExtendedWireIn( parameter.address, self.currentWireValues[parameter.address] )
-        if self.isSetup and event.origin!='value':
+        if self.isSetup and origin!='value':
             node = self.model().nodeFromContent(parameter)
             index = self.model().indexFromNode(node, col=1)
             self.model().dataChanged.emit(index, index)

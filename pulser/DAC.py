@@ -63,7 +63,7 @@ class DACChannelSetting(object):
         
     @SetterProperty
     def onChange(self, onChange):
-        self._voltage.observable.subscribe(onChange)
+        self._voltage.valueChanged.connect(onChange)
     
 class DAC:
     def __init__(self,pulser):

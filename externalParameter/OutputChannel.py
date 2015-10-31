@@ -36,14 +36,13 @@ class OutputChannel(QtCore.QObject):
         self.expressionValue = ExpressionValue(self.name, self.globalDict, None)
         self.settings = settings
         self.savedValue = None
-        self.displayValueObservable = Observable()
         self.decimation = StaticDecimation()
         self.persistence = DBPersist()
         self.outputUnit = outputUnit
         self.setDefaults()
         self.expressionValue.string = self.settings.strValue
         self.expressionValue.value = self.settings.targetValue
-        self.expressionValue.observable.subscribe(self.onExpressionUpdate)
+        self.expressionValue.valueChanged.connect(self.onExpressionUpdate)
         
     def setDefaults(self):
         self.settings.__dict__.setdefault('value', magnitude.mg(0, self.outputUnit))  # the current value
@@ -51,10 +50,10 @@ class OutputChannel(QtCore.QObject):
         self.settings.__dict__.setdefault('strValue', None)                          # requested value as string (formula)
         self.settings.__dict__.setdefault('targetValue', magnitude.mg(0, self.outputUnit) )  # requested value as string (formula)
 
-    def onExpressionUpdate(self, event):
-        if event.origin == 'recalculate':
-            self.setValue(event.value)
-            self.targetChanged.emit(event.value)
+    def onExpressionUpdate(self, name, value, string, origin):
+        if origin == 'recalculate':
+            self.setValue(value)
+            self.targetChanged.emit(value)
 
     @property
     def name(self):
@@ -199,10 +198,10 @@ class SlowAdjustOutputChannel(OutputChannel):
             self.persist(self.name, self.settings.value)
         return arrived
 
-    def onExpressionUpdate(self, event):
-        if event.origin == 'recalculate':
-            self.expressionUpdateBottomHalf(event.value)
-            self.targetChanged.emit(event.value)
+    def onExpressionUpdate(self, name, value, string, origin):
+        if origin == 'recalculate':
+            self.expressionUpdateBottomHalf(value)
+            self.targetChanged.emit(value)
 
     def expressionUpdateBottomHalf(self, target):
         if not self.setValue(target):

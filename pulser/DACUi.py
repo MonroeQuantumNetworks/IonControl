@@ -100,8 +100,8 @@ class DACUi(dacForm, dacBase):
     def onReset(self):
         self.dac.reset(0xff)
         
-    def onChange(self, index, event ):
-        if self.isSetup and event.origin!='value':
+    def onChange(self, index, name, value, string, origin ):
+        if self.isSetup and origin!='value':
             self.dacTableModel.dataChanged.emit( self.dacTableModel.createIndex(index,2), self.dacTableModel.createIndex(index,2))
         
              
