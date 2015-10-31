@@ -43,10 +43,10 @@ class OutputChannel(QtCore.QObject):
         self.expressionValue.value = self.settings.targetValue
         
     def setDefaults(self):
-        self.settings.__dict__.setdefault('value', magnitude.mg(0,self.outputUnit) )  # the current value       
-        self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60,'s' ) )     # delay for persistency  
-        self.settings.__dict__.setdefault('strValue', None )                          # requested value as string (formula)
-        self.settings.__dict__.setdefault('targetValue', magnitude.mg(0,self.outputUnit) )  # requested value as string (formula)
+        self.settings.__dict__.setdefault('value', magnitude.mg(0, self.outputUnit))  # the current value
+        self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60, 's'))     # delay for persistency
+        self.settings.__dict__.setdefault('strValue', None)                          # requested value as string (formula)
+        self.settings.__dict__.setdefault('targetValue', magnitude.mg(0, self.outputUnit) )  # requested value as string (formula)
          
     @property
     def name(self):
@@ -66,7 +66,7 @@ class OutputChannel(QtCore.QObject):
         self.expressionValue.value = targetValue
         reportvalue = self.device.setValue(self.channelName, targetValue)
         self.settings.value = reportvalue
-        self.valueChanged.emit( self.settings.value )
+        self.valueChanged.emit(self.settings.value)
         return True
     
     def persist(self, channel, value):

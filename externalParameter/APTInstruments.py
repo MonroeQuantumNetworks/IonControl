@@ -84,17 +84,18 @@ class APTInstrument(object):
 
 class APTRotation(ExternalParameterBase):
     className = "APT Rotation"
-    _dimension = magnitude.mg(1,'')
-    def __init__(self,name,config,instrument="COM3"):
+    _outputChannels = { None: "" }
+
+    def __init__(self, name, config, instrument="COM3"):
         logger = logging.getLogger(__name__)
-        ExternalParameterBase.__init__(self,name,config)
-        logger.info( "trying to open '{0}'".format(instrument) )
-        self.instrument = APTInstrument() #open visa session
+        ExternalParameterBase.__init__(self, name, config)
+        logger.info("trying to open '{0}'".format(instrument))
+        self.instrument = APTInstrument()
         self.instrument.open(instrument)
         self.instrument.homeSearch()
         logger.info( "opened {0}".format(instrument) )
         self.setDefaults()
-        self.settings.value[None] = self._getValue(None)
+        self.initializeChannelsToExternals()
         self.lastValue = None
         if self.settings.limit > self.instrument.maxPos:
             self.settings.limit = magnitude.mg(self.instrument.maxPos,'')
@@ -110,16 +111,9 @@ class APTRotation(ExternalParameterBase):
         self.instrument.position = v.toval()
         self.settings.value[channel] = v
         
-    def _getValue(self, channel):
-        return magnitude.mg(self.instrument.position) #set voltage
+    def getValue(self, channel):
+        return magnitude.mg(self.instrument.position)
         
-    def currentValue(self, channel):
-        return self.settings.value[channel]
-    
-    def currentExternalValue(self, channel):
-        self.settings.value[channel] = magnitude.mg(self.instrument.position) #set voltage
-        return self.settings.value[channel]
-
     def paramDef(self):
         superior = ExternalParameterBase.paramDef(self)
         superior.append({'name': 'limit', 'type': 'magnitude', 'value': self.settings.limit})
@@ -131,21 +125,19 @@ class APTRotation(ExternalParameterBase):
         del self.instrument
 
     def setValue(self, channel, value):
-        self.displayValueObservable[channel].fire( value=self._getValue(channel) )
+        reported=self.getValue(channel)
         if self.instrument.motionRunning():
-            return False
-        if value != self.settings.value[channel]:
+            return reported, False
+        if value != self.outputChannels[channel].settings.value:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( channel, value-self.settings.belowMargin )
+                self._setValue(channel, value-self.settings.belowMargin)
                 self.lastValue = value-self.settings.belowMargin
-                return False
+                return reported, False
             else:
                 self._setValue( channel, value )
                 self.lastValue = value
         arrived = not self.instrument.motionRunning()
-        if arrived:
-            self.persist(channel, self.settings.value[channel])
-        return arrived
+        return reported, arrived
     
 if __name__ == "__main__":
     a = APTRotation("APTRotation", dict(), "")
