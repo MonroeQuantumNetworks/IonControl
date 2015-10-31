@@ -33,8 +33,11 @@ class ExternalParameterBase(object):
         self.name = name
         self.settings = deviceSettings
         self.setDefaults()
-        self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())     
-        self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        self._parameter = Parameter.create(name='params', type='group',children=self.paramDef())
+        try:
+            self._parameter.sigTreeStateChanged.connect(self.update, QtCore.Qt.UniqueConnection)
+        except:
+            pass
         self.globalDict = globalDict
         self.createOutputChannels()
 
@@ -65,9 +68,11 @@ class ExternalParameterBase(object):
         
     def setDefaults(self, settings=None):
         if settings is None:
+            self.settings.__dict__.setdefault('channelSettings', dict())
             for cname in self._outputChannels:
                 self.settings.channelSettings.setdefault( cname, InstrumentSettings() )
         else:
+            settings.__dict__.setdefault('channelSettings', dict())
             for cname in self._outputChannels:
                 settings.channelSettings.setdefault( cname, InstrumentSettings() )
                

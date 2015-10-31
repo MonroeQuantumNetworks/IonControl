@@ -430,7 +430,7 @@ class DummyParameter(ExternalParameterBase):
 
     def setValue(self, channel, value):
         logger = logging.getLogger(__name__)
-        logger.debug( "Dummy output channel {0} set to: {1}".format( channel, value ) )
+        logger.info( "Dummy output channel {0} set to: {1}".format( channel, value ) )
         return value
             
 
@@ -439,7 +439,8 @@ class DummySingleParameter(ExternalParameterBase):
     DummyParameter, used to debug this part of the software.
     """
     className = "DummySingle"
-    _outputChannels = { None:"Hz" }
+    _outputChannels = {None: "Hz"}
+
     def __init__(self, name, settings, globalDict, instrument=''):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,settings,globalDict)
@@ -448,6 +449,6 @@ class DummySingleParameter(ExternalParameterBase):
 
     def setValue(self, channel, value):
         logger = logging.getLogger(__name__)
-        logger.debug( "Dummy output channel {0} set to: {1}".format( channel, value ) )
+        logger.info("Dummy output channel {0} set to: {1}".format(channel, value))
         return value
          

@@ -24,7 +24,9 @@ def nextValue( current, target, stepsize, jump ):
 
 class OutputChannel(QtCore.QObject):
     persistSpace = 'externalOutput'
-    valueChanged = QtCore.pyqtSignal( object )
+    valueChanged = QtCore.pyqtSignal(object)
+    targetChanged = QtCore.pyqtSignal(object)
+
     def __init__(self, device, deviceName, channelName, globalDict, settings, outputUnit):
         super(OutputChannel, self).__init__()
         self.device = device
@@ -41,13 +43,19 @@ class OutputChannel(QtCore.QObject):
         self.setDefaults()
         self.expressionValue.string = self.settings.strValue
         self.expressionValue.value = self.settings.targetValue
+        self.expressionValue.observable.subscribe(self.onExpressionUpdate)
         
     def setDefaults(self):
         self.settings.__dict__.setdefault('value', magnitude.mg(0, self.outputUnit))  # the current value
         self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60, 's'))     # delay for persistency
         self.settings.__dict__.setdefault('strValue', None)                          # requested value as string (formula)
         self.settings.__dict__.setdefault('targetValue', magnitude.mg(0, self.outputUnit) )  # requested value as string (formula)
-         
+
+    def onExpressionUpdate(self, event):
+        if event.origin == 'recalculate':
+            self.setValue(event.value)
+            self.targetChanged.emit(event.value)
+
     @property
     def name(self):
         return "{0}_{1}".format(self.deviceName, self.channelName) if self.deviceName else self.channelName
@@ -127,7 +135,7 @@ class OutputChannel(QtCore.QObject):
 
     @string.setter
     def string(self, s):
-        self.settings.strvalue = s
+        self.settings.strValue = s
         self.expressionValue.string = s
         
     @property
@@ -168,6 +176,14 @@ class SlowAdjustOutputChannel(OutputChannel):
                             {'name': 'stepsize', 'type': 'magnitude', 'value': self.settings.stepsize }])
         return param
 
+    @staticmethod
+    def encpasulate_value(arg, second=True):
+        if not isinstance(arg, tuple):
+            return arg, second
+        elif len(arg) == 1:
+            return arg[1], second
+        return arg[1], arg[2] and second
+
     def setValue(self, targetValue):
         """
         go stepsize towards the value. This function returns True if the value is reached. Otherwise
@@ -176,11 +192,18 @@ class SlowAdjustOutputChannel(OutputChannel):
         """
         self.settings.targetValue = targetValue
         newvalue, arrived = nextValue(self.settings.value, targetValue, self.settings.stepsize, self.settings.jump)
-        setValueReturn = tuple( self.device.setValue(self.channelName, newvalue) )
-        reportvalue, arrived = (setValueReturn[0], arrived) if len(setValueReturn)==1 else (setValueReturn[0], arrived & setValueReturn[1])
+        reportvalue, arrived = self.encpasulate_value(self.device.setValue(self.channelName, newvalue), second=arrived)
         self.settings.value = reportvalue
-        self.valueChanged.emit( self.settings.value )
+        self.valueChanged.emit(self.settings.value)
         if arrived:
             self.persist(self.name, self.settings.value)
         return arrived
 
+    def onExpressionUpdate(self, event):
+        if event.origin == 'recalculate':
+            self.expressionUpdateBottomHalf(event.value)
+            self.targetChanged.emit(event.value)
+
+    def expressionUpdateBottomHalf(self, target):
+        if not self.setValue(target):
+            QtCore.QTimer.singleShot(self.settings.delay.toval('ms'), partial(self.expressionUpdateBottomHalf, target))

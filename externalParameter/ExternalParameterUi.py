@@ -70,7 +70,8 @@ class ExternalParameterControlModel(CategoryTreeModel):
             inst.targetValue = deepcopy(inst.value)
             inst.lastExternalValue = deepcopy(inst.externalValue)
             inst.toolTip = None
-            inst.valueChanged.connect( functools.partial( self.showValue, listIndex ) )
+            inst.valueChanged.connect(functools.partial(self.showValue, listIndex))
+            inst.targetChanged.connect(functools.partial(self.onTargetChanged, listIndex))
         self.clear()
         self.endResetModel()
         self.addNodeList(self.parameterList)
@@ -82,6 +83,13 @@ class ExternalParameterControlModel(CategoryTreeModel):
         id=inst.name if inst.multipleChannels else inst.device.name
         node = self.nodeDict[id]
         modelIndex=self.indexFromNode(node, 2)
+        self.dataChanged.emit(modelIndex,modelIndex)
+
+    def onTargetChanged(self, listIndex, value):
+        inst=self.parameterList[listIndex]
+        id = inst.name if inst.multipleChannels else inst.device.name
+        node = self.nodeDict[id]
+        modelIndex = self.indexFromNode(node, 1)
         self.dataChanged.emit(modelIndex,modelIndex)
             
     def setValue(self, index, value):
@@ -134,9 +142,8 @@ class ExternalParameterControlModel(CategoryTreeModel):
                 
     def evaluate(self, name):
         for inst in self.parameterList:
-            expr = inst.string
-            if expr is not None:
-                value = self.expression.evaluateAsMagnitude(expr, self.controlUi.globalDict)
+            if inst.hasDependency:
+                value = self.expression.evaluateAsMagnitude(inst.string, self.controlUi.globalDict)
                 self._setValue(inst, value)
                 inst.savedValue = value   # set saved value to make this new value the default
                 node = self.nodeFromContent(inst)
