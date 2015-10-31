@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Thu Feb 07 22:55:28 2013
 
@@ -199,22 +200,9 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
 
         #setup documentation list
         definitionDict, builtinDict, encodingDict = self.getDocs()
-
-        defItem = QtGui.QTreeWidgetItem(self.docTreeWidget, ["Variable Definitions"])
-        self.docTreeWidget.addTopLevelItem(defItem)
-        #This populates the tree under "Variable Definitions" with each definition word and its documentation
-        [QtGui.QTreeWidgetItem(QtGui.QTreeWidgetItem(defItem, [name]), [documentation]) for name, documentation in definitionDict.iteritems()]
-
-        builtinItem = QtGui.QTreeWidgetItem(self.docTreeWidget, ["Pulse Program Commands"])
-        self.docTreeWidget.addTopLevelItem(builtinItem)
-        #This populates the tree under "Pulse Program Commands" with each builtin word and its documentation
-        [QtGui.QTreeWidgetItem(QtGui.QTreeWidgetItem(builtinItem, [name]), [documentation]) for name, documentation in builtinDict.iteritems()]
-
-        encodingItem = QtGui.QTreeWidgetItem(self.docTreeWidget, ["Encodings"])
-        self.docTreeWidget.addTopLevelItem(encodingItem)
-        #This populates the tree under "Encodings" with each encoding and its documentation
-        [QtGui.QTreeWidgetItem(QtGui.QTreeWidgetItem(encodingItem, [name]), [documentation]) for name, documentation in encodingDict.iteritems()]
-
+        self.addDocs(definitionDict, "Variable Definitions")
+        self.addDocs(builtinDict, "Pulse Program Commands")
+        self.addDocs(encodingDict, "Encodings")
 
         #connect actions
         self.actionOpen.triggered.connect( self.onLoad )
@@ -704,18 +692,47 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             edit.highlightTimingViolation( [l[1]-1 for l in linelist] )
 
     def getDocs(self):
-        """Assemble the pulse program function documentation into a dictionary"""
-        definitionDict = OrderedDict()
+        """Assemble the pulse program function documentation into dictionaries"""
+        definitionDocPath = os.path.join(os.path.dirname(__file__), '..', r'docs\\pppDefinitionDocs.include')
+        definitionDict = self.readDocFile(definitionDocPath)
+        encodingDocPath = os.path.join(os.path.dirname(__file__), '..', r'docs\\pppEncodingDocs.include')
+        encodingDict = self.readDocFile(encodingDocPath)
         builtinDict = OrderedDict()
-        encodingDict = OrderedDict()
         symbolTable = SymbolTable()
-        for name in self.definitionWords:
-            definitionDict[name] = "This should be documentation for definition word {0}".format(name)
         for name in self.builtinWords:
             builtinDict[name] = symbolTable[name].doc or "This should be documentation for builtin word {0}".format(name)
-        for name in encodings.keys():
-            encodingDict[str(name)] = "This should be documentation for encoding word {0}".format(name)
         return definitionDict, builtinDict, encodingDict
+
+    def readDocFile(self, filename):
+        """Read in the rst file 'filename' """
+        docdict = OrderedDict()
+        try:
+            with open(filename, 'r') as f:
+                docs = f.read()
+            sepdocs = docs.split('.. py:data:: ')
+            for doc in sepdocs:
+                if doc:
+                    doclines = doc.splitlines()
+                    name = doclines.pop(0)
+                    for line in doclines:
+                        if line:
+                            documentation = line.strip() #Take the first line with content as the documentation to display in the program
+                            break
+                    docdict[name] = documentation
+        except Exception as e:
+            logging.getLogger(__name__).warning("Unable to load documentation: {0}".format(e))
+        return docdict
+
+    def addDocs(self, docDict, category):
+        """Add the documentation dictionary docDict to the docTree under 'category' """
+        categoryItem = QtGui.QTreeWidgetItem(self.docTreeWidget, [category])
+        self.docTreeWidget.addTopLevelItem(categoryItem)
+        for name, documentation in docDict.iteritems():
+            nameItem = QtGui.QTreeWidgetItem(categoryItem, [name])
+            label = QtGui.QLabel(documentation)
+            label.setWordWrap(True)
+            docItem = QtGui.QTreeWidgetItem(nameItem)
+            self.docTreeWidget.setItemWidget(docItem, 0, label)
 
 
 class PulseProgramSetUi(QtGui.QDialog):

@@ -38,7 +38,7 @@ The IonControl program is based around the following concepts, which will be exp
         2) The **evaluation** interface determines how that data is plotted. An evaluation is a defined method for taking a set of data and reducing it to a single point for plotting, such as "mean" or "discriminator" or "parity." As many evaluations as needed can be added. The plot windows are completely reconfigurable; you can add as many plot windows as necessary, and each evaluation can be directed to any plot window.
         3) The **analysis** interface determines how the data is fit at the conclusion of the scan. In addition, the analysis interface can push the results of a fit to a global variable, which can in turn be referenced by any part of the program. In this way, calibrations are straightforward.
 
-    3) :ref:`DedicatedCounters`. The dedicated counters interface allows continuous monitoring of the counters and ADCs connected to the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.
+    3) :ref:`DedicatedCounters`. The dedicated counters interface allows continuous monitoring of the counters, ADCs, and PI Loops controlled by the FPGA. It displays counts whether or not a scan is running, and is therefore useful for continuous monitoring. It also has an interface for automatic ion loading.
 
     4) :ref:`Scripting`. The scripting interface allows for the creation of extremely complex, automated experiments. It executes Python scripts, but adds a number of commands which allow control over the experiment.
 
@@ -50,7 +50,7 @@ A few general points about the interface:
 Units
 ~~~~~
 
-Almost all quantities referenced in the program have units. This is for the simple reason that real physical quantities have units, and using them avoids any ambiguity. This means a few things:
+Almost all quantities referenced in the program have units. This is for the simple reason that real physical quantities have units, and using them avoids any ambiguity. (It also helps avoid spacecraft crashing into planets.) This means a few things:
 
 - quantities can be typed as 0.365 MHz or as 365 kHz or as 365000 Hz, they are all equivalent.
 - in fields which allow mathematical expressions, units are respected -- you could write something like:
