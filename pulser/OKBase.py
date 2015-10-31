@@ -151,4 +151,4 @@ class OKBase(object):
         if self.xem:
             self.xem.UpdateWireOuts()
             return self.xem.GetWireOutValue(0x32)
-        return None
+        return 0

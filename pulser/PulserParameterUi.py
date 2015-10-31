@@ -87,7 +87,8 @@ class PulserParameterUi(CategoryTreeView):
         self.config = config
         self.configName = 'PulserParameterUi'
         self.pulser = pulser
-        oldValues = self.config.get( 'PulserParameterValues', dict() )
+        self.pulserParamConfigName = "PulserParameterValues-{0:x}".format(self.pulser.hardwareConfigurationId())
+        oldValues = self.config.get('PulserParameterValues', dict()) if self.pulserParamConfigName not in self.config else self.config[self.pulserParamConfigName]
         self.parameterList = list()
         pulserconfig = self.pulser.pulserConfiguration()
         self.currentWireValues = defaultdict( lambda: 0 )
@@ -113,7 +114,7 @@ class PulserParameterUi(CategoryTreeView):
         self.isSetup = True
 
     def saveConfig(self):
-        self.config['PulserParameterValues'] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
+        self.config[self.pulserParamConfigName] = dict( (p.name,(p.value,p.string if p.hasDependency else None)) for p in self.parameterList )
         self.config[self.configName+'.guiState'] = saveGuiState(self)
         try:
             self.config[self.configName+'.treeState'] = self.treeState()
