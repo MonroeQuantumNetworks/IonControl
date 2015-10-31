@@ -45,6 +45,7 @@ from pulser.OKBase import OKBase
 from pulser.PulserParameterUi import PulserParameterUi
 from gui.FPGASettings import FPGASettings
 import ctypes
+import locket
 setID = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID
 if __name__=='__main__': #imports that aren't just definitions
     from uiModules import MagnitudeParameter #@UnusedImport
@@ -784,9 +785,18 @@ if __name__ == '__main__':
     logger = logging.getLogger("")
     setID('TrappedIons.FPGAControlProgram') #Makes the icon in the Windows taskbar match the icon set in Qt Designer
 
-    with configshelve.configshelve(project.guiConfigFile) as config:
-         with ExperimentUi(config, project) as ui:
-            ui.setupUi(ui)
-            LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
-            ui.show()
-            sys.exit(app.exec_())
+    lockfile = project.guiConfigFile+".lock"
+    try:
+        with locket.lock_file(lockfile, timeout=0):
+            with configshelve.configshelve(project.guiConfigFile) as config:
+                 with ExperimentUi(config, project) as ui:
+                    ui.setupUi(ui)
+                    LoggingSetup.qtHandler.textWritten.connect(ui.onMessageWrite)
+                    ui.show()
+                    sys.exit(app.exec_())
+    except locket.LockError:
+        messageBox = QtGui.QMessageBox()
+        response = messageBox.warning(messageBox,
+                                  'Configuration file is locked',
+                                  'Please make sure no other process is using the same project. If no other process is runnung delete lock file \n"{0}"\nand restart the program.'.format(lockfile),
+                                  QtGui.QMessageBox.Abort )
