@@ -13,6 +13,7 @@ from modules import Expression
 import modules.magnitude as magnitude
 from modules import MagnitudeUtilit
 from modules.MagnitudeParser import isIdentifier
+from functools import partial
 
 api2 = sip.getapi("QVariant") == 2
 
@@ -40,6 +41,11 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
                                (QtCore.Qt.EditRole, 1): self.setValue,
                                }
+        for item in self.variables:
+            item.valueChanged.connect(partial(self.onValueChanged, item.name))
+
+    def onValueChanged(self, name, value, origin):
+        self.valueChanged.emit(name)
 
     def rowCount(self, parent=QtCore.QModelIndex()): 
         return len(self.variables) 
@@ -59,8 +65,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
             result = self.expression.evaluate(strvalue, self.variabledict)
             name = self.variables.keyAt(index.row())
             self.variables[name] = result
-            self.valueChanged.emit(name)
-            return True    
+            return True
         except Exception:
             logger.exception("No match for {0}".format(str(value.toString())))
             return False
@@ -96,7 +101,6 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         old = self.variables.map[name]
         if not old.isIdenticalTo(value):
             self.variables.map[name] = value
-            self.valueChanged.emit(name)
 
     def getVariables(self):
         return self.variables.map
@@ -110,6 +114,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         if name not in self.variables.map and isIdentifier(name):
             self.beginInsertRows(QtCore.QModelIndex(), len(self.variables), len(self.variables))
             self.variables.map[name] = magnitude.mg(0, '')
+            self.variables.valueChanged(name).connect(partial(self.onValueChanged, name))
             self.endInsertRows()
         return len(self.variables) - 1
         
@@ -153,7 +158,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         # return False
     
     def toggleBold(self, index):
-        key = self.variables.keyAt(index.row())
+        key = self.variables[index.row()].name
         if key in self.boldSet:
             self.boldSet.remove(key)
         else:
@@ -167,7 +172,6 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
                 old = self.variables.map[key]
                 if value.dimension() != old.dimension() or value != old:
                     self.variables.map[key] = value
-                    self.valueChanged.emit(key)
                     index = self.variables.keyindex(key)
                     self.dataChanged.emit(self.createIndex(index, 1), self.createIndex(index, 1))
 

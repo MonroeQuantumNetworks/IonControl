@@ -63,13 +63,13 @@ class ExpressionValue(QtCore.QObject):
             raise ExpressionValueException("Global dictionary is not set in {0}".format(self.name))
         self._string = s
         for name, reference in self.registrations:
-            self._globalDict.observables[name].unsubscribe(reference)
+            self._globalDict.valueChanged(name).disconnect(reference)
         self.registrations[:] = []
         if self._string:
             self._value, dependencies = self.expression.evaluateAsMagnitude(self._string, self._globalDict, listDependencies=True)
             for dep in dependencies:
                 reference = WeakMethod.ref(self.recalculate)
-                self._globalDict.observables[dep].subscribe(reference)
+                self._globalDict.valueChanged(dep).connect(reference)
                 self.registrations.append((dep, reference))
                        
     @property
@@ -85,7 +85,7 @@ class ExpressionValue(QtCore.QObject):
     def data(self, val):
         self.name, self.value, self.string = val
     
-    def recalculate(self, event=None):
+    def recalculate(self, value, origin):
         if self._globalDict is None:
             raise ExpressionValueException("Global dictionary is not set in {0}".format(self.name))
         if self._string:

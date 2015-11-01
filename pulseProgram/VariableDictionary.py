@@ -51,13 +51,9 @@ class VariableDictionary(SequenceDict):
     def __getstate__(self):
         return dict( (key, value) for key, value in self.__dict__ if key not in ['globaldict'])
 
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.globaldict = dict()
-
     def __reduce__(self):
         theclass, theitems, inst_dict = super(VariableDictionary, self).__reduce__()
-        inst_dict.pop('globaldict',None)
+        inst_dict.pop('globaldict', None)
         return theclass, theitems, inst_dict
 
     def setGlobaldict(self, globaldict):

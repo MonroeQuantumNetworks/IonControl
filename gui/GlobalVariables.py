@@ -91,6 +91,9 @@ class GlobalVariablesLookup(ListWithKeyLookup):
         else:
             super(GlobalVariablesLookup, self).__setitem__(key, GlobalVariable(key, value))
 
+    def valueChanged(self, key):
+        return super(GlobalVariablesLookup, self).__getitem__(key).valueChanged
+
 
 class GlobalVariables(ListWithKey):
 
