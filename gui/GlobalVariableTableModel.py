@@ -30,12 +30,12 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.normalFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Normal )
         self.boldFont = QtGui.QFont("MS Shell Dlg 2",-1,QtGui.QFont.Bold )
         self.boldSet = self.config.get('GlobalVariables.BoldSet', set())
-        self.dataLookup = { (QtCore.Qt.DisplayRole, 0): lambda row: self.variables.keyAt(row),
-                             (QtCore.Qt.DisplayRole, 1): lambda row: str(self.variables.at(row)),
-                             (QtCore.Qt.EditRole, 0):    lambda row: self.variables.keyAt(row),
-                             (QtCore.Qt.EditRole, 1):    lambda row: str(self.variables.at(row)),
-                             (QtCore.Qt.FontRole,0): lambda row: self.boldFont if self.variables.keyAt(row) in self.boldSet else self.normalFont,
-                             (QtCore.Qt.FontRole,1): lambda row: self.boldFont if self.variables.keyAt(row) in self.boldSet else self.normalFont,
+        self.dataLookup = { (QtCore.Qt.DisplayRole, 0): lambda row: self.variables[row].name,
+                             (QtCore.Qt.DisplayRole, 1): lambda row: str(self.variables[row].value),
+                             (QtCore.Qt.EditRole, 0):    lambda row: self.variables[row].name,
+                             (QtCore.Qt.EditRole, 1):    lambda row: str(self.variables[row].value),
+                             (QtCore.Qt.FontRole,0): lambda row: self.boldFont if self.variables[row].name in self.boldSet else self.normalFont,
+                             (QtCore.Qt.FontRole,1): lambda row: self.boldFont if self.variables[row].name in self.boldSet else self.normalFont,
                              }
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
                                (QtCore.Qt.EditRole, 1): self.setValue,
@@ -69,7 +69,7 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         try:
             strvalue = str(value if api2 else str(value.toString())).strip()
             if isIdentifier(strvalue):
-                self.variables.renameAt(index.row(), strvalue)
+                self.variables.updateKey(index.row(), strvalue)
                 return True
             else:
                 logging.getLogger(__name__).warning("'{0}' is not a valid identifier".format(strvalue))    
@@ -92,63 +92,65 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return None  # QtCore.QVariant()
             
     def setValue(self, index, value):
-        name = self.variables.keyAt(index.row())
-        old = self.variables[name]
+        name = self.variables[index.row()].name
+        old = self.variables.map[name]
         if not old.isIdenticalTo(value):
-            self.variables.setItem(name, value)
+            self.variables.map[name] = value
             self.valueChanged.emit(name)
 
     def getVariables(self):
-        return self.variables
+        return self.variables.map
  
     def getVariableValue(self, name):
-        return self.variables[name]
+        return self.variables.map[name]
     
     def addVariable(self, name):
         if name=="":
             name = 'NewGlobalVariable'
-        if name not in self.variables and isIdentifier(name):
+        if name not in self.variables.map and isIdentifier(name):
             self.beginInsertRows(QtCore.QModelIndex(), len(self.variables), len(self.variables))
-            self.variables[name] = magnitude.mg(0, '')
+            self.variables.map[name] = magnitude.mg(0, '')
             self.endInsertRows()
         return len(self.variables) - 1
         
     def dropVariableByName(self, name):
-        if name in self.variables:
-            self.dropVariableByIndex(self.variables.index(name))        
+        if name in self.variables.map:
+            self.variables.map.pop(name)
         
     def dropVariableByIndex(self, row):
         self.beginRemoveRows(QtCore.QModelIndex(), row, row)
-        name = self.variables.keyAt(row)
-        self.variables.pop(name)
+        dropped = self.variables.pop(row)
         self.endRemoveRows()
-        return name
+        return dropped.name
     
     def sort(self, column, order):
-        if column == 0 and self.variables:
-            self.variables.sort(reverse=order == QtCore.Qt.DescendingOrder)
-            self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
+        pass
+        # if column == 0 and self.variables:
+        #     self.variables.sort(reverse=order == QtCore.Qt.DescendingOrder)
+        #     self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             
     def restoreCustomOrder(self):
-        self.variables.sortToMatch( self.variables.customOrder )
-        self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
+        pass
+        # self.variables.sortToMatch( self.variables.customOrder )
+        # self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             
     def moveRow(self, rows, up=True):
-        if up:
-            if len(rows) > 0 and rows[0] > 0:
-                for row in rows:
-                    self.variables.swap(row, row - 1)
-                    self.dataChanged.emit(self.createIndex(row - 1, 0), self.createIndex(row, 3))
-                    self.variables.customOrder = list( self.variables._keys )
-                return True
-        else:
-            if len(rows) > 0 and rows[0] < len(self.variables) - 1:
-                for row in rows:
-                    self.variables.swap(row, row + 1)
-                    self.dataChanged.emit(self.createIndex(row, 0), self.createIndex(row + 1, 3))
-                    self.variables.customOrder = list( self.variables._keys )
-                return True
-        return False
+        pass
+        # if up:
+        #     if len(rows) > 0 and rows[0] > 0:
+        #         for row in rows:
+        #             self.variables.swap(row, row - 1)
+        #             self.dataChanged.emit(self.createIndex(row - 1, 0), self.createIndex(row, 3))
+        #             self.variables.customOrder = list( self.variables._keys )
+        #         return True
+        # else:
+        #     if len(rows) > 0 and rows[0] < len(self.variables) - 1:
+        #         for row in rows:
+        #             self.variables.swap(row, row + 1)
+        #             self.dataChanged.emit(self.createIndex(row, 0), self.createIndex(row + 1, 3))
+        #             self.variables.customOrder = list( self.variables._keys )
+        #         return True
+        # return False
     
     def toggleBold(self, index):
         key = self.variables.keyAt(index.row())
@@ -161,12 +163,12 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
     def update(self, updlist):
         for destination, key, value in updlist:
             value = MagnitudeUtilit.mg(value)
-            if destination=='Global' and key in self.variables:
-                old = self.variables[key]
+            if destination=='Global' and key in self.variables.map:
+                old = self.variables.map[key]
                 if value.dimension() != old.dimension() or value != old:
-                    self.variables[key] = value
+                    self.variables.map[key] = value
                     self.valueChanged.emit(key)
-                    index = self.variables.index(key)
+                    index = self.variables.keyindex(key)
                     self.dataChanged.emit(self.createIndex(index, 1), self.createIndex(index, 1))
 
     def saveConfig(self):

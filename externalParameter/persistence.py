@@ -14,19 +14,22 @@ class DBPersist:
     name = "DB Persist"
     newPersistData = Observable()
     def __init__(self):
-        self.initDB()
-        
+        self.initialized = False
+
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self.initDB()
+        self.initialized = False
         
     def initDB(self):
         dbConnection = getProject().dbConnection
         if DBPersist.store is None:
             DBPersist.store = ValueHistoryStore(dbConnection)
-            DBPersist.store.open_session()        
+            DBPersist.store.open_session()
+        self.initialized = True
         
     def persist(self, space, source, time, value, minval=None, maxval=None, unit=None):
+        if not self.initialized:
+            self.initDB()
         if source:
             ts = datetime.fromtimestamp(time)
             DBPersist.store.add( space, source, value, unit, ts, bottom=minval, top=maxval )
@@ -36,6 +39,8 @@ class DBPersist:
         return []
 
     def sourceDict(self):
+        if not self.initialized:
+            self.initDB()
         return DBPersist.store.sourceDict
 
 persistenceDict = { DBPersist.name: DBPersist }

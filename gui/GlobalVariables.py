@@ -7,11 +7,9 @@ from PyQt4 import QtGui, QtCore
 import PyQt4.uic
 
 from GlobalVariableTableModel import GlobalVariableTableModel
-from modules.SequenceDict import SequenceDict
-from modules.Utility import unique 
+from modules.Utility import unique
 from uiModules.KeyboardFilter import KeyListFilter
 from uiModules.MagnitudeSpinBoxDelegate import MagnitudeSpinBoxDelegate
-from modules.Observable import Observable
 from modules.GuiAppearance import restoreGuiState, saveGuiState   #@UnresolvedImport
 from modules.XmlUtilit import xmlEncodeDictionary, xmlParseDictionary, prettify
 import xml.etree.ElementTree as ElementTree
@@ -20,83 +18,123 @@ from externalParameter.persistence import DBPersist
 from externalParameter.decimation import StaticDecimation
 from modules import magnitude
 from modules.magnitude import is_magnitude
-from collections import defaultdict
-from functools import partial
+from collections import deque
+from modules.ListWithKey import ListWithKey, ListWithKeyLookup
 import time
 
 import os
 uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui')
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
-class GlobalVariables(SequenceDict):
+class GlobalVariable(QtCore.QObject):
+    valueChanged = QtCore.pyqtSignal(object, object)
     persistSpace = 'globalVar'
-    def __init__(self, *args, **kwds):
-        self.customOrder = list()
-        self.observables = defaultdict( Observable )
-        self.decimation = defaultdict(lambda: StaticDecimation(magnitude.mg(10, 's')))
-        self.persistence = DBPersist()
-        SequenceDict.__init__(self, *args, **kwds)
-        pass
+    persistence = DBPersist()
+
+    def __init__(self, name, value=magnitude.mg(0)):
+        super(GlobalVariable, self).__init__()
+        self.decimation = StaticDecimation(magnitude.mg(10, 's'))
+        self.history = deque(maxlen=10)
+        self._value = value
+        self.name = name
+        self.categories = None
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, newvalue):
+        if isinstance(newvalue, tuple):
+            v, o = newvalue
+        else:
+            v, o = newvalue, None
+        if self._value != v:
+            self._value = v
+            self.valueChanged.emit(v, o)
+            self.history.appendleft((v, time.time(), o))
+            if o is not None:
+                self.persistCallback((time.time(), v, None, None))
+            else:
+                self.decimation.decimate(time.time(), v, self.persistCallback)
+
+    def rename(self, newname):
+        self.name = newname
+        return self
+
+    def __getstate__(self):
+        return self.name, self._value, self.categories, self.history
+
+    def __setstate__(self, state):
+        super(GlobalVariable, self).__init__()
+        self.decimation = StaticDecimation(magnitude.mg(10, 's'))
+        self.name, self._value, self.categories, self.history = state
+
+    def persistCallback(self, data):
+        time, value, minval, maxval = data
+        unit = None
+        if is_magnitude(value):
+            value, unit = value.toval(returnUnit=True)
+        self.persistence.persist(self.persistSpace, self.name, time, value, minval, maxval, unit)
+
+
+class GlobalVariablesLookup(ListWithKeyLookup):
+    def __init__(self, listWithKey):
+        super(GlobalVariablesLookup, self).__init__(listWithKey)
+
+    def __getitem__(self, item):
+        return super(GlobalVariablesLookup, self).__getitem__(item).value
+
+    def __setitem__(self, key, value):
+        if key in self.listWithKey.lookup:
+            super(GlobalVariablesLookup, self).__getitem__(key).value = value
+        else:
+            super(GlobalVariablesLookup, self).__setitem__(key, GlobalVariable(key, value))
+
+
+class GlobalVariables(ListWithKey):
+
+    def __init__(self, iterable):
+        super(GlobalVariables, self).__init__(iterable, key=lambda x: x.name, setkey=GlobalVariable.rename)
+        self.map = GlobalVariablesLookup(self)
             
-    def __reduce__(self):
-        data = SequenceDict.__reduce__(self)
-        data[2].pop('observables')
-        data[2].pop('decimation')
-        data[2].pop('persistence')
-        return data
-    
     def exportXml(self, element):
         xmlEncodeDictionary(self, element, "Variable")
     
     @staticmethod
     def fromXmlElement( element ):
         return GlobalVariables( xmlParseDictionary(element, "Variable") )
+
+    def keyindex(self, key):
+        return self.lookup[key]
+
     
-    def __setitem__(self, key, value):
-        super(GlobalVariables, self).__setitem__(key, value)
-        self.observables[key].fire(name=key, value=value)
-        self.persistCallback(key, (time.time(), value, None, None))
-        
-    def setItem(self, key, value):
-        """set the item, but only commit to database after wait time"""
-        super(GlobalVariables, self).__setitem__(key, value)
-        self.observables[key].fire(name=key, value=value)
-        self.decimation[key].decimate(time.time(), value, partial(self.persistCallback, key))
-
-    def persistCallback(self, source, data):
-        time, value, minval, maxval = data
-        unit = None
-        if is_magnitude(value):
-            value, unit = value.toval(returnUnit=True)
-        self.persistence.persist(self.persistSpace, source, time, value, minval, maxval, unit)
-
 
 class GlobalVariableUi(Form, Base ):
-    def __init__(self,config,parent=None):
+    def __init__(self, config, parent=None):
         Form.__init__(self)
-        Base.__init__(self,parent)
+        Base.__init__(self, parent)
         self.config = config
-        self.configname = 'GlobalVariables'
-        self._variables_ = self.config.get(self.configname,GlobalVariables())
+        self.configname = 'GlobalVariables-v2'
+        self._variables_ = GlobalVariables(self.config.get(self.configname,[]))
+        self._map = self._variables_.map
+
+    @property
+    def valueChanged(self):
+        return self.model.valueChanged
 
     @property
     def variables(self):
-        return self._variables_
+        return self._map
     
     def keys(self):
-        return self._variables_.keys()
-        
-        
-    @property
-    def valueChanged(self):
-        """PyQt Signal fired when a variable value changed"""
-        return self.model.valueChanged
+        return self._map.keys()
 
     def setupUi(self, parent):
         Form.setupUi(self,parent)
         self.addButton.clicked.connect( self.onAddVariable )
         self.dropButton.clicked.connect( self.onDropVariable )
-        self.model = GlobalVariableTableModel(self.config, self.variables)
+        self.model = GlobalVariableTableModel(self.config, self._variables_)
         self.tableView.setModel( self.model )
         self.delegate = MagnitudeSpinBoxDelegate()
         self.tableView.setItemDelegateForColumn(1,self.delegate) 
@@ -151,7 +189,7 @@ class GlobalVariableUi(Form, Base ):
             self.model.dropVariableByIndex(index)
         
     def saveConfig(self):
-        self.config[self.configname] = self._variables_
+        self.config[self.configname] = list(self._variables_)
         self.config[self.configname+".guiState"] = saveGuiState( self )
         self.model.saveConfig()
 
