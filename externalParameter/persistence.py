@@ -34,7 +34,12 @@ class DBPersist:
             ts = datetime.fromtimestamp(time)
             DBPersist.store.add( space, source, value, unit, ts, bottom=minval, top=maxval )
             self.newPersistData.fire( space=space, parameter=source, value=value, unit=unit, timestamp=ts, bottom=minval, top=maxval )
-        
+
+    def rename(self, space, oldsourcename, newsourcename):
+        if not self.initialized:
+            self.initDB()
+        DBPersist.store.rename(space, oldsourcename, newsourcename)
+
     def paramDef(self):
         return []
 

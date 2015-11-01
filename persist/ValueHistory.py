@@ -55,6 +55,14 @@ class ValueHistoryStore:
         self.engine = create_engine(self.database_conn_str, echo=dbConnection.echo)
         self.sourceDict = dict()
         self.databaseAvailable = False
+
+    def rename(self, space, oldsourcename, newsourcename):
+        if (space, oldsourcename) not in self.sourceDict:
+            raise HistoryException("cannot rename {0} to {1} because {0} does not exist in database".format(oldsourcename, newsourcename))
+        elem = self.session.query(HistorySource).filter(HistorySource.space==space).filter(HistorySource.name==oldsourcename).first()
+        elem.name = newsourcename
+        self.session.commit()
+        self.sourceDict[(space, newsourcename)] = self.sourceDict.pop((space, oldsourcename))
         
     def getSource(self, space, source):
         if space is None or source is None:

@@ -59,7 +59,8 @@ class GlobalVariable(QtCore.QObject):
                 self.decimation.decimate(time.time(), v, self.persistCallback)
 
     def rename(self, newname):
-        self.name = newname
+        self.name, oldname = newname, self.name
+        self.persistence.rename(self.persistSpace, oldname, newname)
         return self
 
     def __getstate__(self):
