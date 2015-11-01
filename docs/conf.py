@@ -301,3 +301,12 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+# -- Other ---------------------------------------------------------------
+
+def remove_class_docstring(app, what, name, obj, options, lines):
+    if what == "class" and name == "scripting.Script.Script" and 'private-members' in options:
+        del lines[:]
+
+def setup(app):
+    app.connect("autodoc-process-docstring", remove_class_docstring)

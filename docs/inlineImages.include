@@ -114,3 +114,18 @@
 
 .. |applyStyle| image:: ../ui/icons/colorize.png
    :scale: 50 %
+
+.. |circlepause| image:: ../ui/icons/media-playback-pause-3.png
+   :scale: 50 %
+
+.. |stopsign| image:: ../ui/icons/road-sign-us-stop.png
+   :scale: 50 %
+
+.. |new| image:: ../ui/icons/document-new-icon.png
+   :scale: 10 %
+
+.. |turtle| image:: ../ui/icons/slow-enabled-icon.png
+   :scale: 1 %
+
+.. |continuous| image:: ../ui/icons/Repeat-enabled-01.png
+   :scale: 16 %

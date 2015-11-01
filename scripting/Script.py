@@ -28,6 +28,12 @@ class Script(QtCore.QThread):
     the wait condition once the action has been done. 
     
     All the script functions are executed via the script function decorator, which simplifies the code.
+
+    Args:
+        fullname (str): full path to script
+        code (str): code in the script
+        parent (QObject): parent QObject, if any
+
     """
     #Signals to send information to the main thread
     locationSignal = QtCore.pyqtSignal(list)  # arg: trace locations corresponding to the script
@@ -55,14 +61,6 @@ class Script(QtCore.QThread):
     fitSignal = QtCore.pyqtSignal(str, str) #args: fitName, traceName
     
     def __init__(self, fullname='', code='', parent=None):
-        """
-        Initialize the script.
-
-        Args:
-            fullname (str): full path to script
-            code (str): code in the script
-            parent (QObject): parent QObject, if any
-        """
         super(Script,self).__init__(parent)
         self.fullname = fullname
         self.code = code
@@ -363,6 +361,8 @@ class Script(QtCore.QThread):
     def closeTrace(self, traceName):
         """closeTrace(traceName)
         Finalize trace. Registers in the measurement log and saves. No new data can be added to the trace.
+
+        If this function is not called on a trace, it will be closed automatically when the script ends.
 
         Args:
             traceName (str): name of trace to close
