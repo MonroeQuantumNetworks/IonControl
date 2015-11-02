@@ -99,7 +99,11 @@ class GlobalVariablesLookup(ListWithKeyLookup):
 class GlobalVariables(ListWithKey):
 
     def __init__(self, iterable=[]):
-        super(GlobalVariables, self).__init__(iterable, key=lambda x: x.name, setkey=GlobalVariable.rename)
+        data = list(iterable)
+        if not data or isinstance(data[0], GlobalVariable):
+            super(GlobalVariables, self).__init__(data, key=lambda x: x.name, setkey=GlobalVariable.rename)
+        else:  # we have old data that needs to be ported
+            super(GlobalVariables, self).__init__((GlobalVariable(name, value) for name, value in data), key=lambda x: x.name, setkey=GlobalVariable.rename)
         self.map = GlobalVariablesLookup(self)
             
     def exportXml(self, element):
@@ -119,7 +123,7 @@ class GlobalVariableUi(Form, Base ):
         Form.__init__(self)
         Base.__init__(self, parent)
         self.config = config
-        self.configname = 'GlobalVariables-v2'
+        self.configname = 'GlobalVariables'
         self._variables_ = GlobalVariables(self.config.get(self.configname, []))
         self._map = self._variables_.map
 
