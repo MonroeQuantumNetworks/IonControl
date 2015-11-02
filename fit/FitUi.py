@@ -139,18 +139,23 @@ class FitUi(fitForm, QtGui.QWidget):
             self.fitfunctionTableModel.startDataChanged()     
         
     def onFit(self):
-        for plot in self.traceui.selectedTraces(useLastIfNoSelection=True, allowUnplotted=False):
-            sigma = None
-            if plot.hasHeightColumn:
-                sigma = plot.height
-            elif plot.hasTopColumn and plot.hasBottomColumn:
-                sigma = abs(plot.top + plot.bottom)
-            self.fitfunction.leastsq(plot.x,plot.y,sigma=sigma)
-            plot.fitFunction = copy.deepcopy(self.fitfunction)
-            plot.plot(-2)
-            self.fitfunctionTableModel.fitDataChanged()
-            self.fitResultsTableModel.fitDataChanged()
-            
+        """Fit the selected traces using the current fit settings"""
+        for plottedTrace in self.traceui.selectedTraces(useLastIfNoSelection=True, allowUnplotted=False):
+            self.fit(plottedTrace)
+
+    def fit(self, plottedTrace):
+        """Fit plottedTrace using the current fit settings"""
+        sigma = None
+        if plottedTrace.hasHeightColumn:
+            sigma = plottedTrace.height
+        elif plottedTrace.hasTopColumn and plottedTrace.hasBottomColumn:
+            sigma = abs(plottedTrace.top + plottedTrace.bottom)
+        self.fitfunction.leastsq(plottedTrace.x,plottedTrace.y,sigma=sigma)
+        plottedTrace.fitFunction = copy.deepcopy(self.fitfunction)
+        plottedTrace.plot(-2)
+        self.fitfunctionTableModel.fitDataChanged()
+        self.fitResultsTableModel.fitDataChanged()
+
     def showAnalysis(self, analysis, fitfunction):
         if self.showAnalysisEnabled and analysis in self.analysisDefinitions:
             with BlockSignals(self.analysisNameComboBox):
