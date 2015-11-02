@@ -240,16 +240,20 @@ class ScanExperiment(ScanExperimentForm, MainWindowWidget.MainWindowWidget):
         if self.timestampsEnabled: self.plotDict["Timestamps"]["widget"].autoRange()
 
     def exportXml(self, element):
-        self.scanControlWidget.onExportXml(element)
-        self.analysisControlWidget.onExportXml(element)
-        self.evaluationControlWidget.onExportXml(element)
-        self.pulseProgramUi.onExportXml(element)
+        self.scanControlWidget.onExportXml(element, writeToFile=False)
+        self.analysisControlWidget.onExportXml(element, writeToFile=False)
+        self.evaluationControlWidget.onExportXml(element, writeToFile=False)
+        self.pulseProgramUi.onExportXml(element, writeToFile=False)
         
-    def importXml(self, element, mode):
-        self.scanControlWidget.importXml(element, mode=mode)
-        self.analysisControlWidget.importXml(element, mode=mode)
-        self.evaluationControlWidget.importXml(element, mode=mode)
-        self.pulseProgramUi.importXml(element, mode=mode)
+    def importXml(self, element, category, mode):
+        if category in ['All Settings','Scan Settings']:
+            self.scanControlWidget.importXml(element, mode=mode)
+        if category in ['All Settings', 'Analysis Settings']:
+            self.analysisControlWidget.importXml(element, mode=mode)
+        if category in ['All Settings', 'Evaluation Settings']:
+            self.evaluationControlWidget.importXml(element, mode=mode)
+        if category in ['All Settings', 'Pulse Program Settings']:
+            self.pulseProgramUi.importXml(element, mode=mode)
         
     def reAnalyze(self, plottedTrace):
         self.analysisControlWidget.analyze( dict( ( (evaluation.name,plottedTrace) for evaluation, plottedTrace in zip(self.evaluation.evalList, self.plottedTraceList) ) ) )

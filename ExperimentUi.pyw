@@ -339,10 +339,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.actionSave_GUI.triggered.connect(self.onSaveGUI)
         settingsCategories = ('All Settings', 'Scan Settings', 'Evaluation Settings', 'Analysis Settings', 'Pulse Program Settings', 'Global Variables')
         importModes = ('Replace', 'Update', 'Add')
+        self.actionSave_Settings.triggered.connect(self.onSaveSettings)
         for category in settingsCategories:
-            saveAction = QtGui.QAction(category, self)
-            self.menuSave_Settings.addAction(saveAction)
-            saveAction.triggered.connect(partial(self.onSaveSettings, category))
             loadMenu = QtGui.QMenu(category, self)
             self.menuLoad_Settings.addMenu(loadMenu)
             for mode in importModes:
@@ -485,7 +483,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         self.saveConfig()
         self.config.saveConfig(filename)
         
-    def onSaveSettings(self, category):
+    def onSaveSettings(self):
         """Save settings associated with given category"""
         #Not looking at category yet
         root = ElementTree.Element('IonControlSettings')
@@ -498,14 +496,14 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             
     def onLoadSettings(self, category, mode):
         """Load settings associated with given category, with given mode"""
-        #Not looking at category yet
         filename = QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filter="*.xml" )
         if filename:
             tree = ElementTree.parse(filename)
             root = tree.getroot()
-            self.globalVariablesUi.importXml(root, mode=mode)
+            if category in ['All Settings', 'Global Variables']:
+                self.globalVariablesUi.importXml(root, mode=mode)
             if hasattr(self.currentTab,'importXml'):
-                self.currentTab.importXml(root, mode)   
+                self.currentTab.importXml(root, category, mode)
          
     def onCommitConfig(self):
         logger = logging.getLogger(__name__)

@@ -309,19 +309,19 @@ class PulseProgramUi(PulseProgramWidget,PulseProgramBase):
             self.onImportXml(filename, mode="")
         return root
 
-    def onImportXml(self, filename=None, mode="addMissing"):
+    def onImportXml(self, filename=None, mode="Add"):
         filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filter="*.xml" )
         tree = ElementTree.parse(filename)
         element = tree.getroot()
         self.importXml(element, mode=mode)
             
-    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+    def importXml(self, element, mode="Add"):   # modes: replace, update, Add
         newDict = dict( PulseProgramContext.fromXmlElement(e, self.globaldict) for e in element.findall(PulseProgramContext.XMLTagName) )
-        if mode=="replace":
+        if mode == "Replace":
             self.contextDict = newDict
-        elif mode=="update":
+        elif mode == "Update":
             self.contextDict.update( newDict )
-        elif mode=="addMissing":
+        elif mode == "Add":
             newDict.update( self.contextDict )
             self.contextDict = newDict
        

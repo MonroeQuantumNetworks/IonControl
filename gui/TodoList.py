@@ -272,15 +272,15 @@ class TodoList(Form, Base):
         with open(filename,'w') as f:
             f.write(prettify(root))
             
-    def onImportXml(self, filename, mode="add"):   # modes: replace, update, addMissing
+    def onImportXml(self, filename, mode="Add"):   # modes: replace, update, Add
         tree = ElementTree.parse(filename)
         root = tree.getroot()
         newSettingsCache = dict( Settings.fromXmlElement(e) for e in root.findall(Settings.XMLTagName) )
-        if mode=="replace":
+        if mode == "Replace":
             self.settingsCache = newSettingsCache
-        elif mode=="update":
+        elif mode == "Update":
             self.settingsCache.update( newSettingsCache )
-        elif mode=="addMissing":
+        elif mode == "Add":
             newSettingsCache.update( self.settingsCache )
             self.settingsCache = newSettingsCache
        

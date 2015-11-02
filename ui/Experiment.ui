@@ -76,11 +76,6 @@
     <property name="title">
      <string>File</string>
     </property>
-    <widget class="QMenu" name="menuSave_Settings">
-     <property name="title">
-      <string>Save Settings</string>
-     </property>
-    </widget>
     <widget class="QMenu" name="menuLoad_Settings">
      <property name="title">
       <string>Load Settings</string>
@@ -88,7 +83,7 @@
     </widget>
     <addaction name="actionClear"/>
     <addaction name="actionProject"/>
-    <addaction name="menuSave_Settings"/>
+    <addaction name="actionSave_Settings"/>
     <addaction name="menuLoad_Settings"/>
     <addaction name="actionSave_GUI"/>
     <addaction name="separator"/>
@@ -640,6 +635,11 @@
   <action name="actionAdd_Global_Variables">
    <property name="text">
     <string>Add</string>
+   </property>
+  </action>
+  <action name="actionSave_Settings">
+   <property name="text">
+    <string>Save Settings</string>
    </property>
   </action>
  </widget>

@@ -27,7 +27,7 @@ uipath = os.path.join(os.path.dirname(__file__), '..', r'ui\\GlobalVariables.ui'
 Form, Base = PyQt4.uic.loadUiType(uipath)
 
 class GlobalVariable(QtCore.QObject):
-    valueChanged = QtCore.pyqtSignal(object, object)
+    valueChanged = QtCore.pyqtSignal(object, object, object)
     persistSpace = 'globalVar'
     persistence = DBPersist()
 
@@ -51,7 +51,7 @@ class GlobalVariable(QtCore.QObject):
             v, o = newvalue, None
         if self._value != v:
             self._value = v
-            self.valueChanged.emit(v, o)
+            self.valueChanged.emit(self.name, v, o)
             self.history.appendleft((v, time.time(), o))
             if o is not None:
                 self.persistCallback((time.time(), v, None, None))
@@ -98,16 +98,18 @@ class GlobalVariablesLookup(ListWithKeyLookup):
 
 class GlobalVariables(ListWithKey):
 
-    def __init__(self, iterable):
+    def __init__(self, iterable=[]):
         super(GlobalVariables, self).__init__(iterable, key=lambda x: x.name, setkey=GlobalVariable.rename)
         self.map = GlobalVariablesLookup(self)
             
     def exportXml(self, element):
-        xmlEncodeDictionary(self, element, "Variable")
+        xmlEncodeDictionary(self.map, element, "Variable")
     
     @staticmethod
     def fromXmlElement( element ):
-        return GlobalVariables( xmlParseDictionary(element, "Variable") )
+        newglobals = GlobalVariables()
+        newglobals.map.update(xmlParseDictionary(element, "Variable"))
+        return newglobals
 
     def keyindex(self, key):
         return self.lookup[key]
@@ -120,7 +122,7 @@ class GlobalVariableUi(Form, Base ):
         Base.__init__(self, parent)
         self.config = config
         self.configname = 'GlobalVariables-v2'
-        self._variables_ = GlobalVariables(self.config.get(self.configname,[]))
+        self._variables_ = GlobalVariables(self.config.get(self.configname, []))
         self._map = self._variables_.map
 
     @property
@@ -166,23 +168,25 @@ class GlobalVariableUi(Form, Base ):
                 f.write(prettify(root))
         return root
             
-    def onImportXml(self, filename=None, mode="addMissing"):
+    def onImportXml(self, filename=None, mode="Add"):
         filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
         tree = ElementTree.parse(filename)
         element = tree.getroot()
         self.importXml(element, mode=mode)
             
-    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
-        newGlobalDict = GlobalVariables.fromXmlElement(element) 
-        if mode=="replace":
-            self._variables_.clear()
-            self._variables_.update( newGlobalDict )
-        elif mode=="update":
-            self._variables_.update( newGlobalDict )
-        elif mode=="addMissing":
-            newGlobalDict.update( self._variables_ )
-            self._variables_.clear()
-            self._variables_.update( newGlobalDict )
+    def importXml(self, element, mode="Add"):   # modes: replace, update, Add
+        newGlobalDict = GlobalVariables.fromXmlElement(element)
+        self.model.beginResetModel()
+        if mode == "Replace":
+            self._map.clear()
+            self._map.update(newGlobalDict.map)
+        elif mode == "Update":
+            self._map.update(newGlobalDict.map)
+        elif mode == "Add":
+            newGlobalDict.map.update(self._map)
+            self._map.clear()
+            self._map.update(newGlobalDict.map)
+        self.model.endResetModel()
         
     def onAddVariable(self):
         self.model.addVariable( str(self.newNameEdit.text()))

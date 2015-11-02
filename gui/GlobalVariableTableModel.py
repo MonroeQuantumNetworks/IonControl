@@ -41,8 +41,18 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         self.setDataLookup = { (QtCore.Qt.EditRole, 0): self.setDataName,
                                (QtCore.Qt.EditRole, 1): self.setValue,
                                }
+        self.connectAllVariableSignals()
+
+    def connectAllVariableSignals(self):
         for item in self.variables:
-            item.valueChanged.connect(partial(self.onValueChanged, item.name))
+            try:
+                item.valueChanged.connect(self.onValueChanged, QtCore.Qt.UniqueConnection)
+            except:
+                pass
+
+    def endResetModel(self):
+        super(GlobalVariableTableModel, self).endResetModel()
+        self.connectAllVariableSignals()
 
     def onValueChanged(self, name, value, origin):
         self.valueChanged.emit(name)

@@ -265,19 +265,19 @@ class ScanControl(ScanControlForm, ScanControlBase ):
                 f.write(prettify(root))
         return root
 
-    def onImportXml(self, filename=None, mode="addMissing"):
+    def onImportXml(self, filename=None, mode="Add"):
         filename = filename if filename is not None else QtGui.QFileDialog.getOpenFileName(self, 'Import XML file', filer="*.xml" )
         tree = ElementTree.parse(filename)
         element = tree.getroot()
         self.importXml(element, mode=mode)
             
-    def importXml(self, element, mode="addMissing"):   # modes: replace, update, addMissing
+    def importXml(self, element, mode="Add"):   # modes: Replace, Update, Add
         newSettingsDict = dict( Scan.fromXmlElement(e) for e in element.findall(Scan.XMLTagName) )
-        if mode=="replace":
+        if mode == "Replace":
             self.settingsDict = newSettingsDict
-        elif mode=="update":
+        elif mode == "Update":
             self.settingsDict.update( newSettingsDict )
-        elif mode=="addMissing":
+        elif mode == "Add":
             newSettingsDict.update( self.settingsCache )
             self.settingsDict = newSettingsDict
        
