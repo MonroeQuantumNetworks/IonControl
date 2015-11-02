@@ -488,6 +488,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
         #Not looking at category yet
         root = ElementTree.Element('IonControlSettings')
         self.globalVariablesUi.onExportXml(root, writeToFile=False)
+        self.todoList.onExportXml(root, writeToFile=False)
         if hasattr(self.currentTab,'exportXml'):
             self.currentTab.exportXml(root)   
         filename = DataDirectory.DataDirectory().sequencefile("IonControlSettings.xml")[0]
@@ -502,6 +503,8 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             root = tree.getroot()
             if category in ['All Settings', 'Global Variables']:
                 self.globalVariablesUi.importXml(root, mode=mode)
+            if category in ['All Settings', 'Global Variables']:
+                self.todoList.importXml(root, mode=mode)
             if hasattr(self.currentTab,'importXml'):
                 self.currentTab.importXml(root, category, mode)
          

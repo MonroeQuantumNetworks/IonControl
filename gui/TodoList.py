@@ -262,15 +262,14 @@ class TodoList(Form, Base):
         # Stuff
         self.tableModel.copy_rows(row_list)
 
-
-
-    def onExportXml(self):
-        root = ElementTree.Element('TodoListContainer')
+    def onExportXml(self, root=None, writeToFile=True):
+        root = ElementTree.Element('TodoListContainer') if root is None else root
         for name, setting in self.settingsCache.iteritems():
             setting.exportXml(root,{'name':name})
-        filename = DataDirectory.DataDirectory().sequencefile("TodoList.xml")[0]
-        with open(filename,'w') as f:
-            f.write(prettify(root))
+        if writeToFile:
+            filename = DataDirectory.DataDirectory().sequencefile("TodoList.xml")[0]
+            with open(filename,'w') as f:
+                f.write(prettify(root))
             
     def onImportXml(self, filename, mode="Add"):   # modes: replace, update, Add
         tree = ElementTree.parse(filename)
