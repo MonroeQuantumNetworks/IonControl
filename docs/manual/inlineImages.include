@@ -129,3 +129,9 @@
 
 .. |continuous| image:: ../../ui/icons/Repeat-enabled-01.png
    :scale: 16 %
+
+.. |refresh| image:: ../../ui/icons/view-refresh-7.png
+   :scale: 40 %
+
+.. |filter| image:: ../../ui/icons/view-filter.png
+   :scale: 50 %

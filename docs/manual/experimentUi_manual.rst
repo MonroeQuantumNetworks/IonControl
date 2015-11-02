@@ -17,9 +17,8 @@ Table of Contents
    GateSequences
    Scripting
    MeasurementLog
+   Hardware
    ExternalParameters
-   KnownHardware
    DedicatedCounters
-   VoltageControl
    LogicAnalyzer
    ExtendingTheCode

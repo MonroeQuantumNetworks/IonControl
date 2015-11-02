@@ -12,7 +12,7 @@ Contents:
    :maxdepth: 2
 
    installation
-   hardware
+   FPGAhardware
    /manual/experimentUi_manual
    /manual/instrumentLoggerUi_manual
    /code/codeDocs
