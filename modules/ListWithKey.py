@@ -42,6 +42,10 @@ class ListWithKey(MutableSequence):
     def mapping(self):
         return ListWithKeyLookup(self)
 
+    def sort(self, reverse=False):
+        self.list.sort(key=self.key, reverse=reverse)
+        self.rebuildLookup()
+
     def updateKey(self, index, newkey):
         elem = self.list[index]
         oldkey = self.key(elem)
@@ -50,6 +54,10 @@ class ListWithKey(MutableSequence):
         self.list[index] = self.setkey(elem, newkey)
         self.lookup.pop(oldkey)
         self.lookup[newkey] = index
+
+    def rebuildLookup(self):
+        self.lookup.clear()
+        self.lookup.update(dict((self.key(elem),index) for index, elem in enumerate(self.list)))
 
 class ListWithKeyLookup(MutableMapping):
     def __init__(self, listWithKey):

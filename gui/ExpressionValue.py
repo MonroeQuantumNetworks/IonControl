@@ -85,7 +85,7 @@ class ExpressionValue(QtCore.QObject):
     def data(self, val):
         self.name, self.value, self.string = val
     
-    def recalculate(self, value, origin):
+    def recalculate(self, name, value, origin):
         if self._globalDict is None:
             raise ExpressionValueException("Global dictionary is not set in {0}".format(self.name))
         if self._string:

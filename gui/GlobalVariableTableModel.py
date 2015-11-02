@@ -139,10 +139,9 @@ class GlobalVariableTableModel(QtCore.QAbstractTableModel):
         return dropped.name
     
     def sort(self, column, order):
-        pass
-        # if column == 0 and self.variables:
-        #     self.variables.sort(reverse=order == QtCore.Qt.DescendingOrder)
-        #     self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
+        if column == 0 and self.variables:
+            self.variables.sort(reverse=order == QtCore.Qt.DescendingOrder)
+            self.dataChanged.emit(self.index(0, 0), self.index(len(self.variables) - 1, 1))
             
     def restoreCustomOrder(self):
         pass

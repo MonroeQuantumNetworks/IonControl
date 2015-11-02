@@ -114,8 +114,6 @@ class GlobalVariables(ListWithKey):
     def keyindex(self, key):
         return self.lookup[key]
 
-    
-
 class GlobalVariableUi(Form, Base ):
     def __init__(self, config, parent=None):
         Form.__init__(self)
