@@ -49,6 +49,8 @@ class OutputChannel(QtCore.QObject):
         self.settings.__dict__.setdefault('persistDelay', magnitude.mg(60, 's'))     # delay for persistency
         self.settings.__dict__.setdefault('strValue', None)                          # requested value as string (formula)
         self.settings.__dict__.setdefault('targetValue', magnitude.mg(0, self.outputUnit) )  # requested value as string (formula)
+        for d in self.device._channelParams.get(self.channelName,tuple()):
+            self.settings.__dict__.setdefault(d['name'], d['value'])
 
     def onExpressionUpdate(self, name, value, string, origin):
         if origin == 'recalculate':
@@ -148,7 +150,12 @@ class OutputChannel(QtCore.QObject):
         """
         return the parameter definition used by pyqtgraph parametertree to show the gui
         """
-        return [{'name': 'persistDelay', 'type': 'magnitude', 'value': self.settings.persistDelay }]
+        myparams = [{'name': 'persistDelay', 'type': 'magnitude', 'value': self.settings.persistDelay }]
+        for d in self.device._channelParams.get(self.channelName,tuple()):
+            p = dict(d)
+            p['value'] = getattr(self.settings, d['name'])
+            myparams.append(p)
+        return myparams
 
     def update(self, param, changes):
         """

@@ -28,6 +28,7 @@ class InstrumentMeta(type):
 class ExternalParameterBase(object):
     _outputChannels = { None: None }    # a single channel with key None designates a device only supporting a single channel
     _inputChannels = dict()
+    _channelParams = {None: ()}
     __metaclass__ = InstrumentMeta
     def __init__(self, name, deviceSettings, globalDict):
         self.name = name

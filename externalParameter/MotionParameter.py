@@ -16,6 +16,9 @@ class ConexLinear(ExternalParameterBase):
     """
     className = "Conex Linear Motion"
     _outputChannels = {None: 'mm'}
+    _channelParams = {None: ({'name': 'belowMargin','type': 'magnitude', 'value': magnitude.mg(0,'mm'), 'tip': 'if not zero: if coming from above always go that far below and then up'},
+                             {'name': 'limit', 'type': 'magnitude', 'value': magnitude.mg(25,'mm')})}
+
     def __init__(self,name,config,instrument="COM3"):
         logger = logging.getLogger(__name__)
         ExternalParameterBase.__init__(self,name,config)
@@ -28,26 +31,15 @@ class ConexLinear(ExternalParameterBase):
         self.initializeChannelsToExternals()
         self.lastValue = None
 
-    def setDefaults(self):
-        ExternalParameterBase.setDefaults(self)
-        self.settings.__dict__.setdefault('limit', magnitude.mg(10, 'mm'))       # if True go to the target value in one jump
-        self.settings.__dict__.setdefault('belowMargin', magnitude.mg(0, 'mm'))       # if True go to the target value in one jump
-           
     def _setValue(self, channel, v):
-        if v>self.settings.limit:
-            v = self.settings.limit
+        if v>self.outputChannels[channel].settings.limit:
+            v = self.outputChannels[channel].settings.limit
         self.instrument.position = v.toval('mm')
         return v
         
     def getValue(self, channel):
         return magnitude.mg(self.instrument.position, 'mm') 
         
-    def paramDef(self):
-        superior = ExternalParameterBase.paramDef(self)
-        superior.append({'name': 'limit', 'type': 'magnitude', 'value': self.settings.limit})
-        superior.append({'name': 'belowMargin','type': 'magnitude', 'value': self.settings.belowMargin, 'tip': 'if not zero: if coming from above always go that far below and then up'})
-        return superior
-    
     def close(self):
         del self.instrument
         
@@ -57,8 +49,8 @@ class ConexLinear(ExternalParameterBase):
             return reported, False
         if value != self.outputChannels[channel].settings.value:
             if self.lastValue is None or value < self.lastValue:
-                self._setValue( channel, value-self.settings.belowMargin )
-                self.lastValue = value-self.settings.belowMargin
+                self._setValue( channel, value-self.outputChannels[channel].settings.belowMargin )
+                self.lastValue = value-self.outputChannels[channel].settings.belowMargin
                 return False
             else:
                 self._setValue( channel, value )
