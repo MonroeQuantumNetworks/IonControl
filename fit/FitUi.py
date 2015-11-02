@@ -88,11 +88,6 @@ class FitUi(fitForm, QtGui.QWidget):
         self.autoSaveAction.setChecked(self.parameters.autoSave )
         self.autoSaveAction.triggered.connect( self.onAutoSave )
         self.addAction( self.autoSaveAction )
-#        self.showAnalysisAction = QtGui.QAction( "show analysis" , self)
-#        self.showAnalysisAction.setCheckable(True)
-#        self.showAnalysisAction.setChecked(self.showAnalysisEnabled )
-#        self.showAnalysisAction.triggered.connect( self.onShowAnalysisEnabled  )
-#        self.addAction( self.showAnalysisAction )
         restoreGuiState( self, self.config.get(self.configname+".guiState") )
         if not showCombos:
             self.fitSelectionComboBox.setVisible( False )
@@ -122,6 +117,7 @@ class FitUi(fitForm, QtGui.QWidget):
             self.setFitfunction( self.fitfunctionCache[name] )
         else:
             self.setFitfunction( fitFunctionMap[name]() )
+        self.autoSave()
         
     def setFitfunction(self, fitfunction):
         self.fitfunction = fitfunction
@@ -205,19 +201,19 @@ class FitUi(fitForm, QtGui.QWidget):
             if index>=0:
                 self.analysisNameComboBox.removeItem(index)
             self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
-                
-    
+
     def onSaveAnalysis(self):
-        name = str(self.analysisNameComboBox.currentText())       
-        definition = StoredFitFunction.fromFitfunction(self.fitfunction)
-        definition.name = name
-        isNew = name not in self.analysisDefinitions
-        self.analysisDefinitions[name] = definition
-        if self.analysisNameComboBox.findText(name)<0:
-            self.analysisNameComboBox.addItem(name)
-        if isNew:
-            self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
-        self.saveButton.setEnabled( False )
+        name = str(self.analysisNameComboBox.currentText())
+        if name:
+            definition = StoredFitFunction.fromFitfunction(self.fitfunction)
+            definition.name = name
+            isNew = name not in self.analysisDefinitions
+            self.analysisDefinitions[name] = definition
+            if self.analysisNameComboBox.findText(name)<0:
+                self.analysisNameComboBox.addItem(name)
+            if isNew:
+                self.analysisNamesChanged.emit( self.analysisDefinitions.keys() )
+            self.saveButton.setEnabled( False )
         
     def autoSave(self):
         if self.parameters.autoSave:
