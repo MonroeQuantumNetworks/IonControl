@@ -5,7 +5,7 @@
 Main GUI
 ========
 
-.. figure:: images/ExperimentUi.png
+.. figure:: ../images/ExperimentUi.png
    :scale: 100 %
 
    The main Experiment GUI
@@ -135,7 +135,7 @@ see :ref:`ExternalParameters` for information on all of these docks.
 Value History Dock
 ~~~~~~~~~~~~~~~~~~
 
-.. figure:: images/ValueHistory.png
+.. figure:: ../images/ValueHistory.png
    :scale: 100 %
 
    Value History Dock
@@ -145,7 +145,7 @@ Value History Dock
 Global Variables Dock
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: images/GlobalVariables.png
+.. figure:: ../images/GlobalVariables.png
    :scale: 100 %
 
    Global Variables Dock

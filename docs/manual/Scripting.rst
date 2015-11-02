@@ -7,7 +7,7 @@ Scripting
 
 The scripting functionality allows you to write Python scripts that can directly control (and read from) the rest of the program with simple commands. This allows the creation of complex experimental sequences such as multi-dimensional scans, conditional calibration sequences, averaging, or really whatever you can come up with.
 
-.. figure:: images/Scripting.png
+.. figure:: ../images/Scripting.png
    :scale: 100 %
 
    The scripting interface

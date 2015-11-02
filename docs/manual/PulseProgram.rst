@@ -7,7 +7,7 @@ Pulse Program
 
 Once the configuration files have been setup, the main program opens. The first time the program runs, the pulse program window will also open. On subsequent runs, it will return to whatever state it was in when it was closed last. To open the pulse program window, click |pulses| .
 
-.. figure:: images/PulseProgram.png
+.. figure:: ../images/PulseProgram.png
    :scale: 100 %
 
    The pulse program interface
@@ -27,7 +27,7 @@ The pulse program window consists of the following docks:
    - Parameters
       This is an interface for setting parameters which are declared in the pulse program. Any expression can be typed in here, and the result will be shown under "evaluated." Expressions can reference global variables, and can also reference other pulse program parameters. If parameter *A* depends on parameter *B*, and parameter *B* is scanned, parameter *A* is scanned too. This allows things like this:
 
-      .. figure:: images/parameterDependenciesExample.png
+      .. figure:: ../images/parameterDependenciesExample.png
          :scale: 100 %
          :align: center
 
@@ -159,7 +159,7 @@ Minimal example
 
 Below is a complete bare bones example of a very simple pulse program, which turns on four different shutters for times given by a parameter, set one DDS, and counts during detection. A more complex pulse program, with comments, can be found in \\IonControl\\config\\Example.ppp.
 
-.. literalinclude:: ../config/PulseProgramsPlus/barebones.ppp
+.. literalinclude:: ../../config/PulseProgramsPlus/barebones.ppp
    :language: Python
 
 control structures

@@ -12,7 +12,7 @@ Project Selection
 
 When you start the program for the very first time, you will be asked to select a base directory. This will be the directory under which will be the individual project directories. Once you select a base directory, the project selection GUI will appear:
 
-.. figure:: images/ProjectSelection.png
+.. figure:: ../images/ProjectSelection.png
    :scale: 100 %
 
    Project selection GUI.
@@ -28,7 +28,7 @@ Experiment Configuration
 
 Once a project is selected, the experiment configuration GUI will appear:
 
-.. figure:: images/ExptConfig.png
+.. figure:: ../images/ExptConfig.png
    :scale: 100 %
 
    Experiment configuration GUI.
