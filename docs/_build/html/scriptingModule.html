@@ -299,10 +299,6 @@ and calls like Script.quit and Script.exit do not work. Instead, the script emit
 change, and then enters a QWaitCondition. The ScriptingUi responds to the signal, and tells the script to exit
 the wait condition once the action has been done.</p>
 <p>All the script functions are executed via the script function decorator, which simplifies the code.</p>
-<dl class="method">
-<dt id="scripting.Script.Script.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>fullname=''</em>, <em>code=''</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#Script.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.Script.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize the script.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -316,8 +312,6 @@ the wait condition once the action has been done.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
 <dl class="method">
 <dt id="scripting.Script.Script.abortScan">
 <code class="descname">abortScan</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#Script.abortScan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.Script.abortScan" title="Permalink to this definition">¶</a></dt>
@@ -364,6 +358,7 @@ the wait condition once the action has been done.</p>
 <dt id="scripting.Script.Script.closeTrace">
 <code class="descname">closeTrace</code><span class="sig-paren">(</span><em>traceName</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/scripting/Script.html#Script.closeTrace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#scripting.Script.Script.closeTrace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finalize trace. Registers in the measurement log and saves. No new data can be added to the trace.</p>
+<p>If this function is not called on a trace, it will be closed automatically when the script ends.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

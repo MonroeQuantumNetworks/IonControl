@@ -145,7 +145,7 @@
 <span class="k">class</span> <span class="nc">ScriptException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="k">pass</span>
 
-<div class="viewcode-block" id="Script"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script">[docs]</a><span class="k">class</span> <span class="nc">Script</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QThread</span><span class="p">):</span>
+<div class="viewcode-block" id="Script"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script">[docs]</a><span class="k">class</span> <span class="nc">Script</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QThread</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Encapsulates a running script together with all the scripting functions. Script executes in separate thread.</span>
 <span class="sd">    </span>
 <span class="sd">    The script behavior is as follows: each script function that manipulates a GUI element does so by emitting a</span>
@@ -161,6 +161,12 @@
 <span class="sd">    the wait condition once the action has been done. </span>
 <span class="sd">    </span>
 <span class="sd">    All the script functions are executed via the script function decorator, which simplifies the code.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fullname (str): full path to script</span>
+<span class="sd">        code (str): code in the script</span>
+<span class="sd">        parent (QObject): parent QObject, if any</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c">#Signals to send information to the main thread</span>
     <span class="n">locationSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c"># arg: trace locations corresponding to the script</span>
@@ -187,15 +193,7 @@
     <span class="n">closeTraceSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c">#arg: trace to close</span>
     <span class="n">fitSignal</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c">#args: fitName, traceName</span>
     
-<div class="viewcode-block" id="Script.__init__"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the script.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            fullname (str): full path to script</span>
-<span class="sd">            code (str): code in the script</span>
-<span class="sd">            parent (QObject): parent QObject, if any</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Script</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fullname</span> <span class="o">=</span> <span class="n">fullname</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
@@ -235,12 +233,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allData</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exception</span> <span class="o">=</span> <span class="bp">None</span>
-</div>
+
     <span class="nd">@QtCore.pyqtProperty</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">shortname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullname</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Script.run"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.run"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;run the script&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">locals</span><span class="p">(),</span> <span class="o">**</span><span class="nb">globals</span><span class="p">())</span> <span class="c">#Executing in this scope allows a function defined in the script to call another function defined in the script</span>
@@ -253,7 +251,7 @@
             <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mutex</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">exceptionSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span><span class="o">+</span><span class="s">&quot;: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">),</span> <span class="n">trace</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Script.emitLocation"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.emitLocation">[docs]</a>    <span class="k">def</span> <span class="nf">emitLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.emitLocation"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.emitLocation">[docs]</a>    <span class="k">def</span> <span class="nf">emitLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Emits a signal containing the current script location&quot;&quot;&quot;</span>
         <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
         <span class="n">stack_trace</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">extract_stack</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span> <span class="c">#Gets the full stack trace</span>
@@ -309,7 +307,7 @@
         <span class="k">return</span> <span class="n">realScriptFunction</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.setGlobal"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.setGlobal">[docs]</a>    <span class="k">def</span> <span class="nf">setGlobal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.setGlobal"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.setGlobal">[docs]</a>    <span class="k">def</span> <span class="nf">setGlobal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setGlobal(name, value, unit)</span>
 <span class="sd">        set global &#39;name&#39; to (value, unit).</span>
 
@@ -325,7 +323,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setGlobalSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
          </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.addGlobal"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.addGlobal">[docs]</a>    <span class="k">def</span> <span class="nf">addGlobal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.addGlobal"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.addGlobal">[docs]</a>    <span class="k">def</span> <span class="nf">addGlobal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;addGlobal(name, value, unit)</span>
 <span class="sd">        add a global &#39;name&#39;, set to (value, unit).     </span>
 <span class="sd">         </span>
@@ -338,7 +336,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">addGlobalSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.pauseScript"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.pauseScript">[docs]</a>    <span class="k">def</span> <span class="nf">pauseScript</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.pauseScript"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.pauseScript">[docs]</a>    <span class="k">def</span> <span class="nf">pauseScript</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;pauseScript()</span>
 <span class="sd">        Pause the script.</span>
 <span class="sd">        </span>
@@ -346,7 +344,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pauseScriptSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.stopScript"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.stopScript">[docs]</a>    <span class="k">def</span> <span class="nf">stopScript</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.stopScript"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.stopScript">[docs]</a>    <span class="k">def</span> <span class="nf">stopScript</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;stopScript()</span>
 <span class="sd">        Stop the script.</span>
 <span class="sd">        </span>
@@ -354,7 +352,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stopScriptSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.startScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.startScan">[docs]</a>    <span class="k">def</span> <span class="nf">startScan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.startScan"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.startScan">[docs]</a>    <span class="k">def</span> <span class="nf">startScan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;startScan(wait=True)</span>
 <span class="sd">        Start the scan.</span>
 <span class="sd">        </span>
@@ -366,7 +364,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">startScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.setScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.setScan">[docs]</a>    <span class="k">def</span> <span class="nf">setScan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.setScan"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.setScan">[docs]</a>    <span class="k">def</span> <span class="nf">setScan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setScan(name)</span>
 <span class="sd">        set the scan settings to &quot;name.&quot;</span>
 <span class="sd">        </span>
@@ -380,7 +378,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
      </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.setEvaluation"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.setEvaluation">[docs]</a>    <span class="k">def</span> <span class="nf">setEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.setEvaluation"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.setEvaluation">[docs]</a>    <span class="k">def</span> <span class="nf">setEvaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setEvaluation(name)</span>
 <span class="sd">        set the evaluation settings to &quot;name.&quot;</span>
 <span class="sd">        </span>
@@ -394,7 +392,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setEvaluationSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
      </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.setAnalysis"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.setAnalysis">[docs]</a>    <span class="k">def</span> <span class="nf">setAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.setAnalysis"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.setAnalysis">[docs]</a>    <span class="k">def</span> <span class="nf">setAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setAnalysis(name)</span>
 <span class="sd">        set the analysis settings to &quot;name.&quot;</span>
 <span class="sd">        </span>
@@ -408,7 +406,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setAnalysisSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.plotPoint"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.plotPoint">[docs]</a>    <span class="k">def</span> <span class="nf">plotPoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.plotPoint"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.plotPoint">[docs]</a>    <span class="k">def</span> <span class="nf">plotPoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;plotPoint(x, y, traceName)</span>
 <span class="sd">        Plot a single point (x, y) to trace traceName.</span>
 
@@ -422,7 +420,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">plotPointSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">traceName</span><span class="p">)</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.plotList"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.plotList">[docs]</a>    <span class="k">def</span> <span class="nf">plotList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xList</span><span class="p">,</span> <span class="n">yList</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.plotList"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.plotList">[docs]</a>    <span class="k">def</span> <span class="nf">plotList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xList</span><span class="p">,</span> <span class="n">yList</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;plotList(xList, yList, traceName)</span>
 <span class="sd">        Plot a set of points given in xList, yList to trace traceName.</span>
 
@@ -441,7 +439,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">plotListSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">xList</span><span class="p">,</span> <span class="n">yList</span><span class="p">,</span> <span class="n">traceName</span><span class="p">)</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.addPlot"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.addPlot">[docs]</a>    <span class="k">def</span> <span class="nf">addPlot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.addPlot"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.addPlot">[docs]</a>    <span class="k">def</span> <span class="nf">addPlot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;addPlot(name)</span>
 <span class="sd">        Add a plot named &quot;name&quot;.</span>
 <span class="sd">         </span>
@@ -452,7 +450,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">addPlotSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.pauseScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.pauseScan">[docs]</a>    <span class="k">def</span> <span class="nf">pauseScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.pauseScan"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.pauseScan">[docs]</a>    <span class="k">def</span> <span class="nf">pauseScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;pauseScan()</span>
 <span class="sd">        Pause the scan.</span>
 <span class="sd">        </span>
@@ -460,7 +458,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pauseScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.stopScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.stopScan">[docs]</a>    <span class="k">def</span> <span class="nf">stopScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.stopScan"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.stopScan">[docs]</a>    <span class="k">def</span> <span class="nf">stopScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;stopScan()</span>
 <span class="sd">        Stop the scan.</span>
 <span class="sd">        </span>
@@ -468,7 +466,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stopScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
     </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>  
-<div class="viewcode-block" id="Script.abortScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.abortScan">[docs]</a>    <span class="k">def</span> <span class="nf">abortScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.abortScan"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.abortScan">[docs]</a>    <span class="k">def</span> <span class="nf">abortScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;abortScan()</span>
 <span class="sd">        Abort the scan.</span>
 <span class="sd">        </span>
@@ -476,7 +474,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">abortScanSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.createTrace"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.createTrace">[docs]</a>    <span class="k">def</span> <span class="nf">createTrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traceName</span><span class="p">,</span> <span class="n">plotName</span><span class="p">,</span> <span class="n">xUnit</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">xLabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.createTrace"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.createTrace">[docs]</a>    <span class="k">def</span> <span class="nf">createTrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traceName</span><span class="p">,</span> <span class="n">plotName</span><span class="p">,</span> <span class="n">xUnit</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">xLabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;createTrace(traceName, plotName, xUnit=&#39;&#39;, xLabel=&#39;&#39;, comment=&#39;&#39;)</span>
 <span class="sd">        create a new trace</span>
 
@@ -493,9 +491,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">createTraceSignal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">traceCreationData</span><span class="p">)</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">()</span>
-<div class="viewcode-block" id="Script.closeTrace"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.closeTrace">[docs]</a>    <span class="k">def</span> <span class="nf">closeTrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.closeTrace"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.closeTrace">[docs]</a>    <span class="k">def</span> <span class="nf">closeTrace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traceName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;closeTrace(traceName)</span>
 <span class="sd">        Finalize trace. Registers in the measurement log and saves. No new data can be added to the trace.</span>
+
+<span class="sd">        If this function is not called on a trace, it will be closed automatically when the script ends.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            traceName (str): name of trace to close</span>
@@ -509,7 +509,7 @@
     <span class="c">#     self.fitSignal.emit(fitName, traceName)</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<div class="viewcode-block" id="Script.waitForScan"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.waitForScan">[docs]</a>    <span class="k">def</span> <span class="nf">waitForScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.waitForScan"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.waitForScan">[docs]</a>    <span class="k">def</span> <span class="nf">waitForScan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;waitForScan()</span>
 <span class="sd">        Wait for scan to finish before continuing script.</span>
 <span class="sd">        </span>
@@ -517,7 +517,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">waitOnScan</span> <span class="o">=</span> <span class="bp">True</span>
     </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForData</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<div class="viewcode-block" id="Script.getData"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.getData">[docs]</a>    <span class="k">def</span> <span class="nf">getData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.getData"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.getData">[docs]</a>    <span class="k">def</span> <span class="nf">getData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getData()</span>
 <span class="sd">        Get the most recent data point from a running scan.</span>
 
@@ -527,7 +527,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForAllData</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<div class="viewcode-block" id="Script.getAllData"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.getAllData">[docs]</a>    <span class="k">def</span> <span class="nf">getAllData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.getAllData"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.getAllData">[docs]</a>    <span class="k">def</span> <span class="nf">getAllData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getAllData()</span>
 <span class="sd">        Get the full set of data from the most recent scan.</span>
 <span class="sd">        </span>
@@ -537,7 +537,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">allData</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">waitForAnalysis</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<div class="viewcode-block" id="Script.getAnalysis"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.getAnalysis">[docs]</a>    <span class="k">def</span> <span class="nf">getAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.getAnalysis"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.getAnalysis">[docs]</a>    <span class="k">def</span> <span class="nf">getAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getAnalysis()</span>
 <span class="sd">        Get the analysis results for the most recent scan.</span>
 <span class="sd">        </span>
@@ -552,7 +552,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">analysisResults</span>
 </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<div class="viewcode-block" id="Script.scanRunning"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.scanRunning">[docs]</a>    <span class="k">def</span> <span class="nf">scanRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.scanRunning"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.scanRunning">[docs]</a>    <span class="k">def</span> <span class="nf">scanRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;scanRunning()</span>
 <span class="sd">        Determine if scan is running.</span>
 
@@ -561,7 +561,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanIsRunning</span>
     </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<div class="viewcode-block" id="Script.getScanStatus"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.getScanStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getScanStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.getScanStatus"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.getScanStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getScanStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;getScanStatus()</span>
 <span class="sd">        Return the current state of the scan.</span>
 
@@ -570,7 +570,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanStatus</span>
         </div>
     <span class="nd">@scriptFunction</span><span class="p">(</span><span class="n">waitForGui</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">runIfStopped</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<div class="viewcode-block" id="Script.scriptIsStopped"><a class="viewcode-back" href="../../scriptingModule.html#scripting.Script.Script.scriptIsStopped">[docs]</a>    <span class="k">def</span> <span class="nf">scriptIsStopped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Script.scriptIsStopped"><a class="viewcode-back" href="../../Scripting.html#scripting.Script.Script.scriptIsStopped">[docs]</a>    <span class="k">def</span> <span class="nf">scriptIsStopped</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;scriptIsStopped()</span>
 <span class="sd">        Determine if script is stopped.</span>
 
