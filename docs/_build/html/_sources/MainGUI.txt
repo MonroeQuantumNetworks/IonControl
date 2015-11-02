@@ -18,7 +18,7 @@ Toolbar
 The effects of the different toolbar actions are:
 
 |start| -- start a scan
-   This will run the scan set in the scan control dock, with the evaulation set in the evaulation control dock. When the scan concludes, it will run the analysis set in the analysis control dock.
+   This will run the scan set in the scan control dock, with the evaulation set in the evaluation control dock. When the scan concludes, it will run the analysis set in the analysis control dock.
 
 |pause| -- pause a scan
    This will pause the scan wherever it currently is.
@@ -88,7 +88,7 @@ File > Save GUI Configuration:
    Note that this is only for taking a snapshot to return to. Ordinary saving of the GUI configuration happens automatically once a minute, and whenever the program is closed.
 
 File > Save Settings:
-   This will save experiment configuration data to a file in the day's data directory. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.
+   This will save experiment configuration data to a file in the day's data directory, in a human-readable format. This is useful for taking a snapshot of settings which can later be return to, or for moving settings between projects.
 
 File > Load Settings:
    Load experiment configuration data from a file saved via File > Save Settings.
