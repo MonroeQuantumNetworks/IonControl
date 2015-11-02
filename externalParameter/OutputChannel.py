@@ -60,7 +60,7 @@ class OutputChannel(QtCore.QObject):
 
     @property
     def name(self):
-        return "{0}_{1}".format(self.deviceName, self.channelName) if self.deviceName else self.channelName
+        return "{0}_{1}".format(self.deviceName, self.channelName) if self.channelName else self.deviceName
         
     @property
     def value(self):
@@ -146,6 +146,15 @@ class OutputChannel(QtCore.QObject):
         self.settings.strValue = s
         self.expressionValue.string = s
         
+    @property
+    def strValue(self):
+        return self.expressionValue.string
+
+    @strValue.setter
+    def strValue(self, s):
+        self.settings.strValue = s
+        self.expressionValue.string = s
+
     @property
     def parameter(self):
         # re-create the parameters each time to prevent a exception that says the signal is not connected

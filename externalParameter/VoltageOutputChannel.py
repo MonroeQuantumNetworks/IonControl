@@ -9,7 +9,11 @@ from modules.magnitude import mg
 class VoltageOutputChannel(OutputChannel):
     def __init__(self, device, deviceName, channelName, globalDict):
         super(VoltageOutputChannel, self).__init__(device, deviceName, channelName, globalDict)
-                
+
+    @property
+    def name(self):
+        return self.channelName
+
     @property
     def externalValue(self):
         return self.device.currentValue(self.channelName)
