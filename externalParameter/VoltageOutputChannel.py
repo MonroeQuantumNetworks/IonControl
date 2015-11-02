@@ -7,8 +7,8 @@ from externalParameter.OutputChannel import OutputChannel
 from modules.magnitude import mg
 
 class VoltageOutputChannel(OutputChannel):
-    def __init__(self, device, deviceName, channelName):
-        super(VoltageOutputChannel, self).__init__(device, deviceName, channelName)
+    def __init__(self, device, deviceName, channelName, globalDict):
+        super(VoltageOutputChannel, self).__init__(device, deviceName, channelName, globalDict)
                 
     @property
     def externalValue(self):

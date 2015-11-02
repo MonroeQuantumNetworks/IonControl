@@ -31,6 +31,12 @@ class DACChannelSetting(object):
     def __setstate__(self, state):
         self.__dict__ = state
         self.__dict__.setdefault( 'resetAfterPP', True )
+        self.__dict__.setdefault('_globalDict', dict())
+
+    def __getstate__(self):
+        dictcopy = dict(self.__dict__)
+        dictcopy.pop('_globalDict', None)
+        return dictcopy
         
     @property
     def outputVoltage(self):

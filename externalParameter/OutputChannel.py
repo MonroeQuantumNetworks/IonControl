@@ -13,6 +13,7 @@ from PyQt4 import QtCore
 import time
 from functools import partial
 from modules.magnitude import is_magnitude
+from InstrumentSettings import InstrumentSettings
 
 def nextValue( current, target, stepsize, jump ):
     if (current is None) or jump:
@@ -27,14 +28,14 @@ class OutputChannel(QtCore.QObject):
     valueChanged = QtCore.pyqtSignal(object)
     targetChanged = QtCore.pyqtSignal(object)
 
-    def __init__(self, device, deviceName, channelName, globalDict, settings, outputUnit):
+    def __init__(self, device, deviceName, channelName, globalDict, settings=None, outputUnit=''):
         super(OutputChannel, self).__init__()
         self.device = device
         self.deviceName = deviceName
         self.channelName = channelName
         self.globalDict = globalDict
         self.expressionValue = ExpressionValue(self.name, self.globalDict, None)
-        self.settings = settings
+        self.settings = settings if settings is not None else InstrumentSettings()
         self.savedValue = None
         self.decimation = StaticDecimation()
         self.persistence = DBPersist()

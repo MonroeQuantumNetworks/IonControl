@@ -26,7 +26,11 @@ class PulserParameter(ExpressionValue):
         self.address = address
         if onChange is not None:
             self.valueChanged.connect(onChange)
-        self.string = string
+        try:
+            self.string = string
+        except KeyError:
+            logging.getLogger(__name__).error("cannot interpret '{0}'".format(string))
+            self._string = string
         self.bitmask = bitmask
         self.shift = shift
         self.encoding = encoding

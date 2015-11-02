@@ -97,6 +97,15 @@ class Adjust(object):
     @globalGainString.setter
     def globalGainString(self, s):
         self._globalGain.string = s
+
+    def __getstate__(self):
+        dictcopy = dict(self.__dict__)
+        dictcopy.pop('_globalDict', None)
+        return dictcopy
+
+    def __setstate__(self, state):
+        state.setdefault('_globalDict', dict())
+        self.__dict__ = state
         
 class Settings:
     def __init__(self):

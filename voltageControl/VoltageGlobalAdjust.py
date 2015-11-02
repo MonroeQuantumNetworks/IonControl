@@ -31,6 +31,7 @@ class Settings:
 class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
     updateOutput = QtCore.pyqtSignal(object, object)
     outputChannelsChanged = QtCore.pyqtSignal(object)
+    _channelParams = {}
     
     def __init__(self, config, globalDict, parent=None):
         VoltageGlobalAdjustForm.__init__(self)
@@ -74,16 +75,19 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
             self.adjustHistoryName = name
         self.globalAdjustDict = adjustDict
         for name, adjust in self.globalAdjustDict.iteritems():
-            adjust.observable.subscribe( self.onValueChanged, unique=True )
+            try:
+                adjust.valueChanged.connect(self.onValueChanged, QtCore.Qt.UniqueConnection)
+            except:
+                pass
         self.tableModel.setGlobalAdjust( adjustDict )
         self.outputChannelsChanged.emit( self.outputChannels() )
         self.gainBox.setValue(self.settings.gain)
         #self.updateOutput.emit(self.globalAdjustDict, self.settings.gain)        
         
-    def onValueChanged(self, event):
-        if event.origin=='recalculate':
-            self.tableModel.valueRecalcualted(event.name)
-        self.globalAdjustDict[event.name]._value = MagnitudeUtilit.value( self.globalAdjustDict[event.name]._value )
+    def onValueChanged(self, name, value, string, origin):
+        if origin=='recalculate':
+            self.tableModel.valueRecalcualted(name)
+        self.globalAdjustDict[name]._value = MagnitudeUtilit.value(self.globalAdjustDict[name]._value)
         self.updateOutput.emit(self.globalAdjustDict, self.settings.gain)
     
     def saveConfig(self):
@@ -114,6 +118,6 @@ class VoltageGlobalAdjust(VoltageGlobalAdjustForm, VoltageGlobalAdjustBase ):
         pass
     
     def outputChannels(self):
-        self._outputChannels = dict(( (channelName, VoltageOutputChannel(self, None, channelName)) for channelName in self.globalAdjustDict.iterkeys() ))      
+        self._outputChannels = dict(( (channelName, VoltageOutputChannel(self, None, channelName, self.globalDict, )) for channelName in self.globalAdjustDict.iterkeys() ))
         return self._outputChannels
         

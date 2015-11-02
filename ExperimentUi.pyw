@@ -503,7 +503,7 @@ class ExperimentUi(WidgetContainerBase,WidgetContainerForm):
             root = tree.getroot()
             if category in ['All Settings', 'Global Variables']:
                 self.globalVariablesUi.importXml(root, mode=mode)
-            if category in ['All Settings', 'Global Variables']:
+            if category in ['All Settings']:
                 self.todoList.importXml(root, mode=mode)
             if hasattr(self.currentTab,'importXml'):
                 self.currentTab.importXml(root, category, mode)
